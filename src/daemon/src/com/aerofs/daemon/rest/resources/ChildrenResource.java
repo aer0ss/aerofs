@@ -13,7 +13,8 @@ import com.aerofs.daemon.rest.RestObject;
 import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.rest.event.EIListChildren;
 import com.aerofs.daemon.rest.jersey.RestObjectParam;
-import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.restless.Auth;
 import com.google.inject.Inject;
 
 import javax.ws.rs.GET;
@@ -28,28 +29,27 @@ import javax.ws.rs.core.Response;
 public class ChildrenResource
 {
     private final IIMCExecutor _imce;
-    private final CfgLocalUser _localUser;
 
     @Inject
-    public ChildrenResource(CoreIMCExecutor imce, CfgLocalUser localUser)
+    public ChildrenResource(CoreIMCExecutor imce)
     {
         _imce = imce.imce();
-        _localUser = localUser;
     }
 
     @GET
-    public Response listUserRoot()
+    public Response listUserRoot(@Auth AuthenticatedPrincipal principal)
     {
-        UserID userid = _localUser.get(); // TODO: get from auth info
+        UserID userid = principal.getUserID();
         return new EIListChildren(_imce, userid, new RestObject(SID.rootSID(userid), OID.ROOT))
                 .execute();
     }
 
     @GET
     @Path("/{object}")
-    public Response list(@PathParam("object") RestObjectParam object)
+    public Response list(@Auth AuthenticatedPrincipal principal,
+            @PathParam("object") RestObjectParam object)
     {
-        UserID userid = _localUser.get(); // TODO: get from auth info
+        UserID userid = principal.getUserID();
         return new EIListChildren(_imce, userid, object.get())
                 .execute();
     }

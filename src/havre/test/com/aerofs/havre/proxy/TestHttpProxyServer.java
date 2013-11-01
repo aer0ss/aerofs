@@ -5,10 +5,10 @@
 package com.aerofs.havre.proxy;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.testlib.AbstractBaseTest;
 import com.jayway.restassured.RestAssured;
 import org.jboss.netty.channel.Channel;
@@ -67,7 +67,7 @@ public class TestHttpProxyServer extends AbstractBaseTest
     @Test
     public void shouldReturn503WhenNoDeviceAvailable() throws Exception
     {
-        UserID user = UserID.fromInternal("foo@bar.baz");
+        AuthenticatedPrincipal user = new AuthenticatedPrincipal("foo@bar.baz");
         when(auth.authenticate(any(HttpRequest.class))).thenReturn(user);
 
         expect()
@@ -80,7 +80,7 @@ public class TestHttpProxyServer extends AbstractBaseTest
     @Test
     public void shouldReturn503WhenRequestedDeviceNotAvailable() throws Exception
     {
-        UserID user = UserID.fromInternal("foo@bar.baz");
+        AuthenticatedPrincipal user = new AuthenticatedPrincipal("foo@bar.baz");
         DID did = DID.generate();
 
         when(auth.authenticate(any(HttpRequest.class))).thenReturn(user);

@@ -5,6 +5,8 @@ import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.bifrost.server.Bifrost;
+import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
@@ -35,6 +37,9 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
+import com.jayway.restassured.specification.RequestSpecification;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.junit.After;
@@ -60,6 +65,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 
+import static com.jayway.restassured.RestAssured.given;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -96,6 +102,9 @@ public class AbstractRestTest extends AbstractTest
 
     protected @Mock IPhysicalStorage ps;
 
+    protected @Mock SessionFactory sessionFactory;
+    protected @Mock Session session;
+
     private static TempCert ca;
     private static TempCert client;
 
@@ -131,6 +140,7 @@ public class AbstractRestTest extends AbstractTest
 
     private RestTunnelClient tunnel;
     private Havre havre;
+    private Bifrost bifrost;
 
     protected static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
@@ -154,52 +164,37 @@ public class AbstractRestTest extends AbstractTest
 
         when(cacert.getCert()).thenReturn(ca.cert);
 
-        final IIMCExecutor imce = mock(IIMCExecutor.class);
-
-        // inject mock objects into service
-        Injector inj = Guice.createInjector(new AbstractModule()
-        {
-            @Override
-            protected void configure()
-            {
-                bind(CfgLocalUser.class).toInstance(localUser);
-                bind(IStores.class).toInstance(ss);
-                bind(NativeVersionControl.class).toInstance(nvc);
-                bind(DirectoryService.class).toInstance(ds);
-                bind(LocalACL.class).toInstance(acl);
-                bind(IMapSID2SIndex.class).toInstance(sm);
-                bind(IMapSIndex2SID.class).toInstance(sm);
-                bind(IPhysicalStorage.class).toInstance(ps);
-                bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));
-                bind(Configuration.class).to(RestConfiguration.class);
-            }
-        });
-
-        // wire event handlers (no queue, events are immediately executed)
-        ICoreEventHandlerRegistrar reg = inj.getInstance(RestCoreEventHandlerRegistar.class);
-        final CoreEventDispatcher disp = new CoreEventDispatcher(Collections.singleton(reg));
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                Object[] args = invocation.getArguments();
-                disp.dispatch_((IEvent)args[0], (Prio)args[1]);
-                return null;
-            }
-        }).when(imce).execute_(any(IEvent.class), any(Prio.class));
+        when(sessionFactory.openSession()).thenReturn(session);
 
         Properties prop = new Properties();
+        prop.setProperty("bifrost.port", "0");
+        ConfigurationProperties.setProperties(prop);
+
+        // start OAuth service
+        bifrost = new Bifrost(bifrostInjector(), kmgr);
+        bifrost.start();
+        l.info("OAuth service at {}", bifrost.getListeningPort());
+
+        String bifrostUrl =
+                "http://localhost:" + bifrost.getListeningPort() + "/tokeninfo";
+
         prop.setProperty("api.daemon.port", "0");
         prop.setProperty("api.tunnel.host", "localhost");
         prop.setProperty("api.tunnel.port", "48808");
+        prop.setProperty("daemon.oauth.id", BifrostTest.RESOURCEID);
+        prop.setProperty("daemon.oauth.secret", BifrostTest.RESOURCESECRET);
+        prop.setProperty("daemon.oauth.url", bifrostUrl);
         prop.setProperty("havre.tunnel.host", "localhost");
         prop.setProperty("havre.tunnel.port", "48808");
         prop.setProperty("havre.proxy.host", "localhost");
         prop.setProperty("havre.proxy.port", "0");
+        prop.setProperty("havre.oauth.id", BifrostTest.RESOURCEID);
+        prop.setProperty("havre.oauth.secret", BifrostTest.RESOURCESECRET);
+        prop.setProperty("havre.oauth.url", bifrostUrl);
         ConfigurationProperties.setProperties(prop);
 
         // start REST service
-        service = new RestService(inj, kmgr) {
+        service = new RestService(coreInjector(), kmgr) {
             @Override
             protected ServerSocketChannelFactory getServerSocketFactory()
             {
@@ -227,6 +222,54 @@ public class AbstractRestTest extends AbstractTest
         }
     }
 
+    private Injector coreInjector()
+    {
+        final IIMCExecutor imce = mock(IIMCExecutor.class);
+
+        Injector inj = Guice.createInjector(new RestModule(), new AbstractModule()
+        {
+            @Override
+            protected void configure()
+            {
+                bind(CfgLocalUser.class).toInstance(localUser);
+                bind(CfgCACertificateProvider.class).toInstance(cacert);
+                bind(IStores.class).toInstance(ss);
+                bind(NativeVersionControl.class).toInstance(nvc);
+                bind(DirectoryService.class).toInstance(ds);
+                bind(LocalACL.class).toInstance(acl);
+                bind(IMapSID2SIndex.class).toInstance(sm);
+                bind(IMapSIndex2SID.class).toInstance(sm);
+                bind(IPhysicalStorage.class).toInstance(ps);
+                bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));
+            }
+        });
+
+        // wire event handlers (no queue, events are immediately executed)
+        ICoreEventHandlerRegistrar reg = inj.getInstance(RestCoreEventHandlerRegistar.class);
+        final CoreEventDispatcher disp = new CoreEventDispatcher(Collections.singleton(reg));
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable
+            {
+                Object[] args = invocation.getArguments();
+                disp.dispatch_((IEvent)args[0], (Prio)args[1]);
+                return null;
+            }
+        }).when(imce).execute_(any(IEvent.class), any(Prio.class));
+
+        return inj;
+    }
+
+    private Injector bifrostInjector()
+    {
+        Injector inj = Guice.createInjector(Bifrost.bifrostModule(),
+                BifrostTest.mockDatabaseModule(sessionFactory));
+
+        BifrostTest.createTestEntities(user, inj);
+
+        return inj;
+    }
+
     @After
     public void tearDown() throws Exception
     {
@@ -235,6 +278,7 @@ public class AbstractRestTest extends AbstractTest
             havre.stop();
             tunnel.stop();
         }
+        bifrost.stop();
     }
 
     protected RestObject object(String path) throws SQLException
@@ -243,5 +287,11 @@ public class AbstractRestTest extends AbstractTest
         assertNotNull(path, soid);
         SID sid = sm.get_(soid.sidx());
         return new RestObject(sid, soid.oid());
+    }
+
+    protected RequestSpecification givenAcces()
+    {
+        return given()
+                .queryParam("access_token", BifrostTest.TOKEN);
     }
 }

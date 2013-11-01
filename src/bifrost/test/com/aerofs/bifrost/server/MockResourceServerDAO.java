@@ -26,6 +26,7 @@ public class MockResourceServerDAO extends ResourceServerDAO
         return m_byServerKey.get(resourceServerKey);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <S extends ResourceServer> S save(ResourceServer srv)
     {

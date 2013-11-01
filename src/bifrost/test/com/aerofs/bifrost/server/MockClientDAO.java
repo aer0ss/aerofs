@@ -29,6 +29,7 @@ public class MockClientDAO extends ClientDAO
         return m_map.get(clientId);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <S extends Client> S save(S s)
     {

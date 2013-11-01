@@ -18,6 +18,7 @@
       <element id="module-output" name="tunnel" />
       <element id="module-output" name="restless" />
       <element id="module-output" name="bifrost" />
+      <element id="module-output" name="oauth-verify" />
     </root>
   </artifact>
 </component>

@@ -3,10 +3,10 @@ package com.aerofs.havre.proxy;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.jboss.netty.channel.Channel;
@@ -53,7 +53,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     private final EndpointConnector _endpoints;
     private final ChannelGroup _channelGroup;
 
-    private UserID _user;
+    private AuthenticatedPrincipal _principal;
 
     private Channel _downstream;
     private Channel _upstream;
@@ -99,7 +99,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             HttpRequest req = (HttpRequest)message;
             if (_upstream == null || !_upstream.isConnected()) {
                 if ((_upstream = getUpstreamChannel(req)) == null) {
-                    sendError(downstream, _user == null
+                    sendError(downstream, _principal == null
                             ? HttpResponseStatus.UNAUTHORIZED
                             : HttpResponseStatus.SERVICE_UNAVAILABLE);
                     return;
@@ -128,9 +128,9 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         // First request in a given gateway connection
         //  - derive user id from OAuth token to pick an appropriate server
         //    and avoid load from unauthorized clients
-        if (_user == null) {
+        if (_principal == null) {
             try {
-                _user = _auth.authenticate(req);
+                _principal = _auth.authenticate(req);
             } catch (UnauthorizedUserException e) {
                 return null;
             }
@@ -141,7 +141,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
         l.info("{} {}", did, strictConsistency);
 
-        return _endpoints.connect(_user, did, strictConsistency,
+        return _endpoints.connect(_principal, did, strictConsistency,
                 Channels.pipeline(
                         new HttpClientCodec(),
                         new HttpResponseProxyHandler()

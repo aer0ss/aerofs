@@ -72,7 +72,8 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(400)
                 .header("Access-Control-Allow-Origin", "*")
                 .body("type", equalTo("BAD_ARGS"))
@@ -82,7 +83,8 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingStore() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(404)
                 .header("Access-Control-Allow-Origin", "*")
                 .body("type", equalTo("NOT_FOUND"))
@@ -92,7 +94,8 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingDir() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(404)
                 .header("Access-Control-Allow-Origin", "*")
                 .body("type", equalTo("NOT_FOUND"))
@@ -104,7 +107,8 @@ public class TestFileResource extends AbstractRestTest
     {
         mds.root().dir("d0");
 
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(404)
                 .header("Access-Control-Allow-Origin", "*")
                 .body("type", equalTo("NOT_FOUND"))
@@ -114,7 +118,8 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldGetMetadata() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(200)
                 .header("Access-Control-Allow-Origin", "*")
                 .body("id", equalTo(object("f1").toStringFormal()))
@@ -128,7 +133,8 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldGetMetadataWithMIME() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(200)
                 .header("Access-Control-Allow-Origin", "*")
                 .body("id", equalTo(object("f1.txt").toStringFormal()))
@@ -142,7 +148,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldGet406IfNotAcceptingOctetStream() throws Exception
     {
-        given()
+        givenAcces()
                 .header("Accept", "application/json")
         .expect()
                 .statusCode(406)
@@ -154,7 +160,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetContent() throws Exception
     {
         byte[] content =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
         .expect()
                 .statusCode(200)
@@ -172,7 +178,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetContentWithMIME() throws Exception
     {
         byte[] content =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
         .expect()
                 .statusCode(200)
@@ -189,7 +195,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldGet304WhenEtagUnchanged() throws Exception
     {
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("If-None-Match", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .expect()
@@ -204,7 +210,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetContentWhenEtagChanged() throws Exception
     {
         byte[] content =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("If-None-Match", "\"f00\"")
         .expect()
@@ -223,7 +229,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetContentWhenEtagInvalid() throws Exception
     {
         byte[] content =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("If-None-Match", "lowut")
         .expect()
@@ -242,7 +248,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetRangeWhenIfRangeMatchEtag() throws Exception
     {
         byte[] content =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1")
                 .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
@@ -262,7 +268,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetFullContentWhenIfRangeMismatchEtag() throws Exception
     {
         byte[] content =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1")
                 .header("If-Range", "\"f00\"")
@@ -284,7 +290,7 @@ public class TestFileResource extends AbstractRestTest
         // RFC 2616 does not specifically address this case so a safe
         // behavior was chosen
         byte[] content =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1")
                 .header("If-Range", "lolwut")
@@ -303,7 +309,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetFullContentWhenRangeInvalid() throws Exception
     {
         byte[] content =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=1-0")
                 .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
@@ -322,7 +328,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn416WhenRangeNotSatisfiable() throws Exception
     {
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=" + (FILE_CONTENT.length) + "-")
         .expect()
@@ -337,7 +343,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetFullContentWhenRangeEncompassing() throws Exception
     {
         byte[] content =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-2,3-")
                 .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
@@ -358,7 +364,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetMultipartWhenDisjointSubrangesRequested() throws Exception
     {
         Response r =
-        given()
+        givenAcces()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1,3-")
                 .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))

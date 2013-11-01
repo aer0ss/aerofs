@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.rest;
 
+import com.aerofs.daemon.rest.providers.OAuthProvider;
 import com.aerofs.daemon.rest.resources.ChildrenResource;
 import com.aerofs.daemon.rest.resources.FilesResource;
 import com.aerofs.daemon.rest.resources.FoldersResource;
@@ -52,7 +53,8 @@ public class RestService extends Service
         return ImmutableSet.of(
                 ChildrenResource.class,
                 FoldersResource.class,
-                FilesResource.class
+                FilesResource.class,
+                OAuthProvider.class
         );
     }
 }

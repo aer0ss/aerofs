@@ -1,7 +1,7 @@
 package com.aerofs.daemon.rest.jersey;
 
-import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.rest.api.Error;
+import com.aerofs.rest.api.Error.Type;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -21,7 +21,7 @@ public abstract class AbstractParam<T>
             this.value = parse(input);
         } catch (Exception e) {
             throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-                    .entity(new Error(Type.BAD_ARGS.name(),
+                    .entity(new Error(Type.BAD_ARGS,
                             String.format("Invalid parameter: %s (%s)", input, e.getMessage())))
                     .type(MediaType.APPLICATION_JSON)
                     .build());

@@ -68,6 +68,7 @@ public abstract class AbstractNettyServer
         _bootstrap.setPipelineFactory(getPipelineFactory());
         _listenChannel = _bootstrap.bind(_listenAddress);
         _allChannels.add(_listenChannel);
+        l.info("Started {} server on {}", _name, getListeningPort());
     }
 
     public int getListeningPort()

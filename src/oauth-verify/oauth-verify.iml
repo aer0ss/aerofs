@@ -7,12 +7,10 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="base" />
-    <orderEntry type="module" module-name="tunnel" />
-    <orderEntry type="module" module-name="oauth-verify" />
-    <orderEntry type="library" name="logback" level="project" />
-    <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
+    <orderEntry type="module" module-name="bifrost" scope="TEST" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="lib" scope="TEST" />
   </component>
 </module>
 

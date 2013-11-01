@@ -126,7 +126,7 @@ public class Bifrost extends Service
         };
     }
 
-    static protected Module bifrostModule()
+    static public Module bifrostModule()
     {
         return (new AbstractModule() {
             @Override
