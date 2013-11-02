@@ -39,7 +39,7 @@ public class TestTokenResource extends BifrostTest
     public void shouldHandleBadAccessCode() throws Exception
     {
         when(_spClient.authorizeMobileDevice(anyString(), anyString()))
-                .thenThrow(ExBadCredential.class);
+                .thenThrow(new ExBadCredential());
 
         expect()
                 .statusCode(400)
@@ -49,7 +49,6 @@ public class TestTokenResource extends BifrostTest
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
                 .formParam("code", "magic")
-                .log().everything()
                 .post(TOKEN_URL);
     }
 
