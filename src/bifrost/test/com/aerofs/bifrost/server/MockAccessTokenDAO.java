@@ -30,5 +30,9 @@ public class MockAccessTokenDAO extends AccessTokenDAO
 
     @SuppressWarnings("unchecked")
     @Override
-    public <S extends AccessToken> S save(S s) { return (S)m_map.put(s.getToken(), s); }
+    public <S extends AccessToken> S save(S s)
+    {
+        m_map.put(s.getToken(), s);
+        return s;
+    }
 }

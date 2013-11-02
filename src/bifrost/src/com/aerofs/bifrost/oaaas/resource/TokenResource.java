@@ -35,6 +35,7 @@ import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.model.ErrorResponse;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
+import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
@@ -66,6 +67,8 @@ import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_AUTHORIZA
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_CLIENT_CREDENTIALS;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_REFRESH_TOKEN;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.CLIENT_CREDENTIALS_NOT_PERMITTED;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.UNKNOWN_CLIENT_ID;
 
 /**
  * Resource for handling all calls related to tokens. It adheres to <a
@@ -89,6 +92,12 @@ public class TokenResource {
 
   @Inject
   private OAuth2Validator oAuth2Validator;
+
+  @Inject
+  private ClientRepository clientRepository;
+
+  @Inject
+  private SPBlockingClient.Factory spFactory;
 
   private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
@@ -145,8 +154,7 @@ public class TokenResource {
     if (authReq.getClient().isSkipConsent()) {
       // return the scopes in the authentication request since the requested scopes are stored in the
       // authorizationRequest.
-      // NOTE: clone the set; Hibernate notices if you reuse a ref to a set, and _hates_ it
-      authReq.setGrantedScopes(Sets.newHashSet(authReq.getRequestedScopes()));
+      authReq.setGrantedScopes(authReq.getRequestedScopes());
     } else {
       Set<String> scopes = (Set<String>) context.getProperties().get(AbstractUserConsentHandler.GRANTED_SCOPES);
         authReq.setGrantedScopes(scopes != null && !scopes.isEmpty() ? scopes : null);
@@ -173,8 +181,9 @@ public class TokenResource {
   @Path("/token")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes("application/x-www-form-urlencoded")
-  public Response token(@HeaderParam("Authorization")
-  String authorization, final MultivaluedMap<String, String> formParameters) {
+  public Response token(
+          @HeaderParam("Authorization") String authorization,
+          final MultivaluedMap<String, String> formParameters) {
     AccessTokenRequest accessTokenRequest = AccessTokenRequest.fromMultiValuedFormParameters(formParameters);
     UserPassCredentials credentials = getUserPassCredentials(authorization, accessTokenRequest);
     String grantType = accessTokenRequest.getGrantType();
@@ -238,16 +247,27 @@ public class TokenResource {
         }
 
         AuthorizationRequest authReq = new AuthorizationRequest();
+        Client client = getClientForRequest(accessTokenRequest);
         authReq.setPrincipal(principal);
-        authReq.setClient(accessTokenRequest.getClient());
-        authReq.setGrantedScopes(accessTokenRequest.getClient().getScopes());
+        authReq.setClient(client);
+        authReq.setGrantedScopes(client.getScopes());
 
         String uri = accessTokenRequest.getRedirectUri();
-        if (!authReq.getRedirectUri().equalsIgnoreCase(uri)) {
+        if (uri != null && (!authReq.getRedirectUri().equalsIgnoreCase(uri))) {
             throw new ValidationResponseException(ValidationResponse.REDIRECT_URI_DIFFERENT);
         }
 
         return authReq;
+    }
+
+    private Client getClientForRequest(AccessTokenRequest accessTokenRequest)
+    {
+        Client client = StringUtils.isBlank(accessTokenRequest.getClientId())
+                ? null : clientRepository.findByClientId(accessTokenRequest.getClientId());
+        if (client == null) {
+            throw new ValidationResponseException(UNKNOWN_CLIENT_ID);
+        }
+        return client;
     }
 
     private AuthorizationRequest handleAccessCode(AccessTokenRequest accessTokenRequest)
@@ -270,8 +290,8 @@ public class TokenResource {
     private AuthenticatedPrincipal getDeviceAuthorization(AccessTokenRequest tokenRequest)
             throws Exception
     {
-        SPBlockingClient.Factory spfact = new Factory();
-        SPBlockingClient client= spfact.create_(URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
+        SPBlockingClient client= spFactory.create_(
+                URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
 
         AuthorizeMobileDeviceReply authReply = client.authorizeMobileDevice(
                 tokenRequest.getDeviceAuthorizationNonce(), "todo");

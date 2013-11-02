@@ -52,23 +52,23 @@ public class TestAuthorizationRequest extends BifrostTest
         Response response = given()
                 .formParam("j_username", "foo")
                 .formParam("j_password", "bar")
-                .formParam("AUTH_STATE", authState)
+                .formParam("auth_state", authState)
             .post(AUTH_URL);
 
-        assertEquals(response.getStatusCode(), 303);
+        assertEquals(response.asString(), 303, response.getStatusCode());
         Map<String, String> q = extractQuery(response.getHeader("Location"));
         assertTrue(q.containsKey("code"));
         assertTrue(q.get("code").length() > 0);
     }
 
     @Test
-    public void testShouldReturnState()
+    public void testShouldReturnClientState()
     {
         String authState = oauthBegin();
         Response response = given()
                 .formParam("j_username", "foo")
                 .formParam("j_password", "bar")
-                .formParam("AUTH_STATE", authState)
+                .formParam("auth_state", authState)
                 .post(AUTH_URL);
 
         assertEquals(response.getStatusCode(), 303);

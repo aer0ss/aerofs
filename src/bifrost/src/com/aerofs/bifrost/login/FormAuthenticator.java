@@ -20,6 +20,7 @@ import com.sun.jersey.api.representation.Form;
 import com.sun.jersey.spi.container.ContainerRequest;
 import org.slf4j.Logger;
 
+import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -39,6 +40,8 @@ public class FormAuthenticator extends AbstractAuthenticator
 {
     private static final Logger l = Loggers.getLogger(FormAuthenticator.class);
     private static final String FORM_RESOURCE = "templates/loginform.xml";
+    @Inject
+    private SPBlockingClient.Factory spFactory;
 
     /**
      * Does this request have enough context to authenticate a user?
@@ -127,11 +130,11 @@ public class FormAuthenticator extends AbstractAuthenticator
         setPrincipal(request, principal);
     }
 
-    private static UserID validateCredential(MultivaluedMap<String, String> formParams)
+    private UserID validateCredential(MultivaluedMap<String, String> formParams)
             throws Exception
     {
-        SPBlockingClient.Factory spfactory = new Factory();
-        SPBlockingClient client= spfactory.create_(URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
+        SPBlockingClient client = spFactory.create_(
+                URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
 
         UserID user = UserID.fromExternal(formParams.getFirst("j_username"));
         String cred = formParams.getFirst("j_password");

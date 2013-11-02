@@ -18,6 +18,8 @@ import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.oauth.AuthenticatedPrincipal;
@@ -66,6 +68,7 @@ public abstract class BifrostTest extends AbstractTest
     protected final static String USERNAME = "user";
     public final static String TOKEN = "token";
     protected final static String AUTH_URL = "/authorize";
+    protected final static String TOKEN_URL = "/token";
     protected final static String CLIENTID = "testapp";
 
     protected static TempCert ca;
@@ -115,7 +118,6 @@ public abstract class BifrostTest extends AbstractTest
         RestAssured.config = newConfig().redirect(redirectConfig().followRedirects(false));
 
         createTestEntities(UserID.fromInternal(USERNAME), _injector);
-
         l.info("Bifrost service started at {}", RestAssured.port);
     }
 
@@ -216,6 +218,7 @@ public abstract class BifrostTest extends AbstractTest
             @Override
             protected void configure()
             {
+                bind(SPBlockingClient.class).toInstance(_spClient);
                 bind(SPBlockingClient.Factory.class).toInstance(_spClientFactory);
                 when(_spClientFactory.create_(Matchers.<IURLConnectionConfigurator>anyObject()))
                         .thenReturn(_spClient);

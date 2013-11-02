@@ -67,7 +67,7 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
       authorizationRequest.setRedirectUri(redirectUri);
 
       Set<String> scopes = determineScopes(authorizationRequest, client);
-      authorizationRequest.setRequestedScopes(ImmutableSet.copyOf(scopes));
+      authorizationRequest.setRequestedScopes(scopes);
 
     } catch (ValidationResponseException e) {
       return e.v;
@@ -75,23 +75,23 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
     return VALID;
   }
 
-  protected Set<String> determineScopes(AuthorizationRequest authorizationRequest, Client client) {
-    Set<String> scopes = authorizationRequest.getRequestedScopes();
-    if (scopes == null || scopes.isEmpty()) {
-      // TODO add default scopes.
-      return null;
-    } else {
-      Set<String> clientScopes = client.getScopes();
-      for (String scope : scopes) {
-        if (!clientScopes.contains(scope)) {
-          throw new ValidationResponseException(SCOPE_NOT_VALID);
+    protected Set<String> determineScopes(AuthorizationRequest authorizationRequest, Client client)
+    {
+        Set<String> scopes = authorizationRequest.getRequestedScopes();
+        if (scopes == null || scopes.isEmpty()) {
+            scopes = client.getScopes();
         }
-      }
-      return authorizationRequest.getRequestedScopes();
-    }
-  }
 
-  protected String determineRedirectUri(AuthorizationRequest authorizationRequest, String responseType, Client client) {
+        Set<String> clientScopes = client.getScopes();
+        for (String scope : scopes) {
+            if (!clientScopes.contains(scope)) {
+                throw new ValidationResponseException(SCOPE_NOT_VALID);
+            }
+        }
+        return authorizationRequest.getRequestedScopes();
+    }
+
+    protected String determineRedirectUri(AuthorizationRequest authorizationRequest, String responseType, Client client) {
     List<String> uris = client.getRedirectUris();
     String redirectUri = authorizationRequest.getRedirectUri();
     if (StringUtils.isBlank(redirectUri)) {
