@@ -1,5 +1,6 @@
 package com.aerofs.servlets.lib.db;
 
+import java.io.File;
 import java.sql.Connection;
 
 /**
@@ -32,6 +33,21 @@ public abstract class DatabaseParameters
         _mysqlUser = getOrDefault(JUNIT_MYSQL_USER_PARAMETER, DEFAULT_LOCAL_MYSQL_USER);
         _mysqlPass = getOrDefault(JUNIT_MYSQL_PASS_PARAMETER, DEFAULT_LOCAL_MYSQL_PASS);
         _mysqlHost = getOrDefault(JUNIT_MYSQL_HOST_PARAMETER, DEFAULT_LOCAL_MYSQL_HOST);
+    }
+
+    /**
+     * Given an ordered list of places that could be directories, return the first one that
+     * matches. Why? So we can run tests from IDEA without having to set the default CWD
+     * to something that disagrees with the ant default CWD.
+     * TL;DR: because Jon got annoyed.
+     */
+    protected String findExistingPath(String[] paths)
+    {
+        for (String p : paths) {
+            File f = new File(p);
+            if (f.exists() && f.isDirectory()) return p;
+        }
+        return paths[0];
     }
 
     /**

@@ -18,15 +18,19 @@ import java.sql.SQLException;
 
 public class TestSQLThreadLocalTransaction extends AbstractTest
 {
+    private static final String[] DEFAULT_TX_SCHEMA_PATHS = new String[] {
+            "../../src/libservlet/test/resources",
+            "../../../src/libservlet/test/resources"
+    };
     private class TransactionTestDatabaseParams extends DatabaseParameters
     {
         private static final String TX_SCHEMA_PATH_PARAMETER = "junit.mysqlTxSchemaPath";
-        private static final String DEFAULT_TX_SCHEMA_PATH = "../../src/libservlet/test/resources";
         private final String _mysqlSchemaPath;
 
         public TransactionTestDatabaseParams()
         {
-            _mysqlSchemaPath = getOrDefault(TX_SCHEMA_PATH_PARAMETER, DEFAULT_TX_SCHEMA_PATH);
+            _mysqlSchemaPath = getOrDefault(TX_SCHEMA_PATH_PARAMETER,
+                    findExistingPath(DEFAULT_TX_SCHEMA_PATHS));
         }
 
         @Override

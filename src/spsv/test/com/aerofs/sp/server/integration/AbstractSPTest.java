@@ -35,6 +35,7 @@ import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
@@ -202,7 +203,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         when(factEmailer.createOrganizationInvitationEmailer(any(User.class), any(User.class)))
                 .then(RETURNS_MOCKS);
         when(factEmailer.createSignUpInvitationEmailer(any(User.class), any(User.class),
-                any(String.class), any(Role.class), any(String.class), any(String.class))).then(RETURNS_MOCKS);
+                any(String.class), any(Role.class), any(String.class), any(String.class)))
+                .then(RETURNS_MOCKS);
     }
 
     // Do wiring for SP after its construction
@@ -249,7 +251,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             throws Exception
     {
         String idString = user.id().getString();
-        user.save(CRED, new FullName(idString, idString));
+        user.save(SPParam.getShaedSP(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())),
+                new FullName(idString, idString));
     }
 
     protected Device saveDevice(User owner)

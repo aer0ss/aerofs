@@ -23,7 +23,7 @@ import org.junit.Test;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
-public class TestSP_SignIn extends AbstractSPTest
+public class TestSP_SignInLegacy extends AbstractSPTest
 {
     private User tsUser;
     private Device tsDevice;
