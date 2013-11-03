@@ -13,7 +13,6 @@ base.status_url.unified=http://{{ base_host }}:8000/
 sp.redis.address=localhost:6379
 
 bootstrap.spdb.username=aerofs_sp
-bootstrap.spdb.password=password
 bootstrap.spdb.host=localhost
 bootstrap.spdb.schema=aerofs_sp
 
