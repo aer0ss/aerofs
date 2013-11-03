@@ -63,19 +63,7 @@ class unified {
     # Bootstrap
     # --------------
 
-    file { "/opt/bootstrap/tasks":
-        ensure => "directory",
-        require => Package["aerofs-bootstrap"]
-    }
-
-    file {"/opt/bootstrap/tasks/startup.tasks":
-        source => "puppet:///modules/unified/tasks/startup.tasks",
-        require => File["/opt/bootstrap/tasks"]
-    }
-    file {"/opt/bootstrap/tasks/manual.tasks":
-        source => "puppet:///modules/unified/tasks/manual.tasks",
-        require => File["/opt/bootstrap/tasks"]
-    }
+    include bootstrap
 
     cron { "bootstrap_startup":
         command => "/usr/bin/aerofs-bootstrap-taskfile /opt/bootstrap/tasks/startup.tasks",
@@ -85,8 +73,13 @@ class unified {
         require => Package["aerofs-bootstrap"]
     }
 
-    file { "/etc/aerofs-private-deployment-flag":
-        ensure => present
+    file { "/etc/aerofs":
+        ensure => "directory"
+    }
+
+    file { "/etc/aerofs/private-deployment-flag":
+        ensure => present,
+        require => File["/etc/aerofs"]
     }
 
     # --------------
