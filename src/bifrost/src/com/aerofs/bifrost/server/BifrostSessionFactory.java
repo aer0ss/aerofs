@@ -81,8 +81,6 @@ public class BifrostSessionFactory
         final Properties properties = new Properties();
         properties.setProperty("user",
                 getStringProperty("bifrost.db.user", "aerofs_sp"));
-        properties.setProperty("password",
-                getStringProperty("bifrost.db.password", "password"));
 
         final DriverManagerConnectionFactory factory = new DriverManagerConnectionFactory(
                 getStringProperty("bifrost.db.url", "jdbc:mysql://localhost:3306/bifrost"),
