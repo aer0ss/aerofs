@@ -263,6 +263,10 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
             final SubscriptionCategory category)
             throws SQLException
     {
+        // FIXME this query doesn't account for Daylight Savings Time. For more info, see
+        // {@link http://lists.mysql.com/mysql/176466}
+        //
+        // This bug is not fixed because of its nominal impact
         PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(T_ES, C_ES_EMAIL + "=? and " +
                         C_ES_SUBSCRIPTION + "=?",

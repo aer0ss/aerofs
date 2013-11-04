@@ -62,7 +62,12 @@ public class TestInvitationReminder extends AbstractBusinessObjectTest
     {
         odb.insert(ORG_ID);
 
-        _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
+        // an extra hour was added to the age because of a bug in how we computer the hour
+        // difference. DST was not taken into account and a hard 2 days cut will cause
+        // this unit test to break if run within 48 hours after DST ends.
+        // see EmailSubscriptionDatabase.getHoursSinceLastEmail() for details.
+        _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC + C.HOUR,
+                                    TWO_DAY_USERS_PREFIX);
         _threeDayUsers = setupUsers(NUM_THREE_DAY_USERS, THREE_DAYS_IN_MILLISEC,
                                     THREE_DAY_USERS_PREFIX);
     }
@@ -149,8 +154,6 @@ public class TestInvitationReminder extends AbstractBusinessObjectTest
 
             verify(_emailer, mode).send(eq(SPParam.EMAIL_FROM_NAME), eq(user.getString()),
                     anyString(), eq(tokenId));
-
         }
-
     }
 }
