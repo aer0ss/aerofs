@@ -24,7 +24,7 @@ public final class Configuration
     private static final String CONFIGURATION_URL = "http://localhost:5436/";
 
     // Flag created by puppet that tells us we are in private deployment mode.
-    public static final String PRIVATE_DEPLOYMENT_FLAG_FILE = "/etc/aerofs-private-deployment-flag";
+    public static final String PRIVATE_DEPLOYMENT_FLAG_FILE = "/etc/aerofs/private-deployment-flag";
 
     /**
      * Provides the initialization logic for the various AeroFS services.
