@@ -18,7 +18,6 @@ import static org.junit.Assert.fail;
 
 public class TestSP_GetACL extends AbstractSPACLTest
 {
-
     @Test
     public void getACL_shouldAllowAnyUserWithAnyRoleToGetACL()
             throws Exception

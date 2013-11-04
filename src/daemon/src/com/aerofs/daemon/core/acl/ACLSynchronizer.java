@@ -22,18 +22,13 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
-import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,25 +54,27 @@ public class ACLSynchronizer
     private final CfgLocalUser _cfgLocalUser;
     private final SPBlockingClient.Factory _factSP;
 
-    private static class StoreACL
+    private static class StoreInfo
     {
-        public @Nullable String _name;
+        public final String _name;
         public final boolean _external;
-        public final Map<UserID, Role> _roles;
+        public final ImmutableMap<UserID, Role> _roles;
 
-        StoreACL(boolean ext)
+        // See docs/design/sharing_and_migration.txt for information about the external flag.
+        StoreInfo(String name, boolean external, ImmutableMap<UserID, Role> roles)
         {
-            _external = ext;
-            _roles = Maps.newHashMap();
+            _name = name;
+            _external = external;
+            _roles = roles;
         }
     }
 
     private class ServerACLReturn
     {
         final long  _serverEpoch;
-        final Map<SID, StoreACL> _acl;
+        final Map<SID, StoreInfo> _acl;
 
-        private ServerACLReturn(long serverEpoch, Map<SID, StoreACL> acl)
+        private ServerACLReturn(long serverEpoch, Map<SID, StoreInfo> acl)
         {
             _serverEpoch = serverEpoch;
             _acl = acl;
@@ -196,17 +193,18 @@ public class ACLSynchronizer
 
         _lacl.clear_(t);
 
-        for (Map.Entry<SID, StoreACL> entry : serverACLReturn._acl.entrySet()) {
+        for (Map.Entry<SID, StoreInfo> entry : serverACLReturn._acl.entrySet()) {
             SID sid = entry.getKey();
-            StoreACL storeACL = entry.getValue();
-            Map<UserID, Role> roles = storeACL._roles;
+            StoreInfo storeInfo = entry.getValue();
+            Map<UserID, Role> roles = storeInfo._roles;
 
-            l.debug("processing ACL: {} {} {} {}", sid, storeACL._external, storeACL._name, roles);
+            l.debug("processing ACL: {} {} {} {}", sid, storeInfo._external, storeInfo._name, roles);
 
             // the local user should always be present in the ACL for each store in the reply
             if (!roles.containsKey(_cfgLocalUser.get())) {
-                l.error("Invalid ACL update " + roles);
-                throw new ExProtocolError("Invalid ACL update " + roles);
+                String msg = "Invalid ACL update " + roles;
+                l.error(msg);
+                throw new ExProtocolError(msg);
             }
 
             // create a new SIndex if needed
@@ -218,8 +216,8 @@ public class ACLSynchronizer
 
             if (!stores.contains(sidx) && (_sidx2sid.getNullable_(sidx) == null)) {
                 // not known and accessible: auto-join
-                assert storeACL._name != null : sid;
-                _storeJoiner.joinStore_(sidx, sid, storeACL._name, storeACL._external, t);
+                assert storeInfo._name != null : sid;
+                _storeJoiner.joinStore_(sidx, sid, storeInfo._name, storeInfo._external, t);
             }
             stores.remove(sidx);
         }
@@ -266,65 +264,21 @@ public class ACLSynchronizer
         }
 
         long serverEpoch = aclReply.getEpoch();
-        Map<SID, StoreACL> acl = newHashMapWithExpectedSize(aclReply.getStoreAclCount());
-        l.info("server return acl with epoch:" + serverEpoch);
+        Map<SID, StoreInfo> stores = newHashMapWithExpectedSize(aclReply.getStoreAclCount());
+        l.info("server return acl server epoch {} local epoch {}", serverEpoch, localEpoch);
 
-        if (aclReply.getStoreAclCount() == 0) {
-            return new ServerACLReturn(serverEpoch, acl);
-        }
-
-        // keep track of new stores: we need to query their names from SP
-        List<ByteString> newStores = Lists.newArrayList();
-        for (PBStoreACL storeACL : aclReply.getStoreAclList()) {
-            SID sid = new SID(storeACL.getStoreId());
-
-            if (!acl.containsKey(sid)) {
-                acl.put(sid, new StoreACL(storeACL.getExternal()));
-                if (isNewStore_(sid)) {
-                    l.debug("new store sid:{} external:{}", sid, storeACL.getExternal());
-                    newStores.add(sid.toPB());
-                }
-            }
-
-            Map<UserID, Role> subjectToRoleMap = acl.get(sid)._roles;
-            for (PBSubjectRolePair pbPair : storeACL.getSubjectRoleList()) {
+        for (PBStoreACL store : aclReply.getStoreAclList()) {
+            ImmutableMap.Builder<UserID, Role> builder = ImmutableMap.builder();
+            for (PBSubjectRolePair pbPair : store.getSubjectRoleList()) {
                 SubjectRolePair srp = new SubjectRolePair(pbPair);
-                subjectToRoleMap.put(srp._subject, srp._role);
+                builder.put(srp._subject, srp._role);
             }
+
+            StoreInfo si = new StoreInfo(store.getName(), store.getExternal(), builder.build());
+            stores.put(new SID(store.getStoreId()), si);
         }
 
-        getStoreNames_(sp, newStores, acl);
-
-        return new ServerACLReturn(serverEpoch, acl);
-    }
-
-    private boolean isNewStore_(SID sid) throws SQLException
-    {
-        SIndex sidx = _sid2sidx.getLocalOrAbsentNullable_(sid);
-        return (sidx == null || _lacl.get_(sidx).get(_cfgLocalUser.get()) == null);
-    }
-
-    private void getStoreNames_(SPBlockingClient sp, List<ByteString> storeIds,
-            Map<SID, StoreACL> acl)
-            throws Exception
-    {
-        if (!storeIds.isEmpty()) {
-            Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spfoldername");
-            try {
-                TCB tcb = tk.pseudoPause_("spfoldername");
-                try {
-                    GetSharedFolderNamesReply reply = sp.getSharedFolderNames(storeIds);
-                    assert storeIds.size() == reply.getFolderNameCount();
-                    for (int i = 0; i < storeIds.size(); ++i) {
-                        acl.get(new SID(storeIds.get(i)))._name = reply.getFolderName(i);
-                    }
-                } finally {
-                    tcb.pseudoResumed_();
-                }
-            } finally {
-                tk.reclaim_();
-            }
-        }
+        return new ServerACLReturn(serverEpoch, stores);
     }
 
     /**

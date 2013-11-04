@@ -51,7 +51,6 @@ import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetOrgPreferencesReply;
 import com.aerofs.proto.Sp.GetOrganizationIDReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
-import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.GetStripeDataReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
@@ -68,6 +67,7 @@ import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
 import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
 import com.aerofs.proto.Sp.MobileAccessCode;
+import com.aerofs.proto.Sp.Noop12Reply;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
@@ -985,27 +985,6 @@ public class SPService implements ISPService
                 .build();
     }
 
-    @Override
-    public ListenableFuture<GetSharedFolderNamesReply> getSharedFolderNames(
-            List<ByteString> shareIds)
-            throws Exception
-    {
-        _sqlTrans.begin();
-
-        User user = _sessionUser.getUser();
-        List<String> names = Lists.newArrayListWithCapacity(shareIds.size());
-        for (ByteString shareId : shareIds) {
-            SharedFolder sf = _factSharedFolder.create(shareId);
-            // throws ExNoPerm if the user doesn't have permission to view the name
-            sf.getMemberRoleThrows(user);
-            names.add(sf.getName());
-        }
-
-        _sqlTrans.commit();
-
-        return createReply(GetSharedFolderNamesReply.newBuilder().addAllFolderName(names).build());
-    }
-
     /**
      * Send an email to the user. This happens to only be used by the linux updater on failure.
      * TODO (MP) rename this to something more appropriate.
@@ -1692,7 +1671,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
-            throws SQLException, ExNoPerm, ExNotAuthenticated
+            throws SQLException, ExNoPerm, ExNotAuthenticated, ExNotFound
     {
         User user = _sessionUser.getUser();
         GetACLReply.Builder bd = GetACLReply.newBuilder();
@@ -1710,6 +1689,7 @@ public class SPService implements ISPService
                 PBStoreACL.Builder aclBuilder = PBStoreACL.newBuilder();
                 aclBuilder.setStoreId(sf.id().toPB());
                 aclBuilder.setExternal(sf.isExternal(user));
+                aclBuilder.setName(sf.getName());
                 for (SubjectRolePair srp : sf.getMemberACL()) {
                     l.trace("add subject {} role {}", srp._subject, srp._role.getDescription());
                     aclBuilder.addSubjectRole(srp.toPB());
@@ -2602,5 +2582,31 @@ public class SPService implements ISPService
     public ListenableFuture<Void> noop13()
     {
         return null;
+    }
+
+    // The method was getSharedFolderNames
+    //
+    // Keep the original logic for backward compatibility. Alternatively, this method can throw
+    // but that would block daemon's ACL sync with SP and thus syncing of shared folders.
+    //
+    // The logic can be removed on the next protocol version bump.
+    @Override
+    public ListenableFuture<Noop12Reply> noop12(List<ByteString> shareIds)
+            throws Exception
+    {
+        _sqlTrans.begin();
+
+        User user = _sessionUser.getUser();
+        List<String> names = Lists.newArrayListWithCapacity(shareIds.size());
+        for (ByteString shareId : shareIds) {
+            SharedFolder sf = _factSharedFolder.create(shareId);
+            // throws ExNoPerm if the user doesn't have permission to view the name
+            sf.getMemberRoleThrows(user);
+            names.add(sf.getName());
+        }
+
+        _sqlTrans.commit();
+
+        return createReply(Noop12Reply.newBuilder().addAllFolderName(names).build());
     }
 }

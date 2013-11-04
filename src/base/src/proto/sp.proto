@@ -450,11 +450,10 @@ service SPService {
     rpc RegisterTeamServerDevice(RegisterDeviceCall) returns (RegisterDeviceReply);
 
     /*
-     * Fetch shared folder names
-     *
-     * Required Auth Level: user, ACL on all shared folders in request
+     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove this
+     * Keep Noop12Call and Noop12Reply for backward compatibility
      */
-     rpc GetSharedFolderNames(GetSharedFolderNamesCall) returns(GetSharedFolderNamesReply);
+     rpc Noop12(Noop12Call) returns(Noop12Reply);
 
     /**
      * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE move this under AcceptOrganizationInvite
@@ -947,6 +946,7 @@ message GetACLReply {
         repeated PBSubjectRolePair subject_role = 2;
         // See docs/design/sharing_and_migration.txt for information about this flag.
         required bool external = 3;
+        required string name = 4;
     }
 
     repeated PBStoreACL store_acl = 1;
@@ -1174,11 +1174,12 @@ message GetUnsubscribeEmailReply {
     required string email_id = 1;
 }
 
-message GetSharedFolderNamesCall {
-    repeated bytes shared_id = 1;
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove these
+message Noop12Call {
+    repeated bytes folder_id = 1;
 }
 
-message GetSharedFolderNamesReply {
+message Noop12Reply {
     repeated string folder_name = 1;
 }
 

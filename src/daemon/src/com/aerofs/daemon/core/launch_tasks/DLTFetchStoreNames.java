@@ -5,9 +5,9 @@
 package com.aerofs.daemon.core.launch_tasks;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -17,18 +17,17 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
+import com.aerofs.proto.Sp.GetACLReply;
+import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
-import java.util.List;
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
  * For stores joined before 0.4.184, the name was not stored in the DB which turns out to be an
- * issue when trying to provide a consistent UX across different storage backends. Tthe single user
+ * issue when trying to provide a consistent UX across different storage backends. The single user
  * client can infer store names from anchors, TS w/ linked storage store name from the file system
  * but neither apporach work for TS w/ block storage...
  *
@@ -41,61 +40,65 @@ class DLTFetchStoreNames extends DaemonLaunchTask
     private final TC _tc;
     private final TransManager _tm;
     private final IStoreDatabase _sdb;
-    private final IMapSIndex2SID _sidx2sid;
+    private final IMapSID2SIndex _sid2sidx;
 
     @Inject
     public DLTFetchStoreNames(TC tc, TransManager tm, CoreScheduler sched, IStoreDatabase sdb,
-            IMapSIndex2SID sidx2sid)
+            IMapSID2SIndex sid2sidx)
     {
         super(sched);
         _tc = tc;
         _tm = tm;
         _sdb = sdb;
-        _sidx2sid = sidx2sid;
+        _sid2sidx = sid2sidx;
     }
 
     @Override
     protected void run_() throws Exception
     {
-        // find out which stores are still unnamed
-        List<SIndex> stores = Lists.newArrayList();
-        List<ByteString> sids = Lists.newArrayList();
-        for (SIndex sidx : _sdb.getAll_()) {
-            if (_sdb.getName_(sidx) == null) {
-                stores.add(sidx);
-                sids.add(_sidx2sid.get_(sidx).toPB());
-            }
-        }
+        if (!hasStoresWithNoNames()) return;
 
-        if (stores.isEmpty()) return;
+        l.info("fetching names for stores");
+        writeNamesToDatabase(getACL());
+    }
 
-        l.info("fetching names for {} stores", stores.size());
+    private boolean hasStoresWithNoNames() throws Exception
+    {
+        for (SIndex sidx : _sdb.getAll_()) if (isEmpty(_sdb.getName_(sidx))) return true;
+        return false;
+    }
 
-        // query sp for missing names
-        GetSharedFolderNamesReply reply;
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spfoldername");
+    private GetACLReply getACL() throws Exception
+    {
+        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl4foldername");
         try {
-            TCB tcb = tk.pseudoPause_("spfoldername");
+            TCB tcb = tk.pseudoPause_("spacl4foldername");
             try {
                 SPBlockingClient sp = new SPBlockingClient.Factory().create_(Cfg.user());
                 sp.signInRemote();
-                reply = sp.getSharedFolderNames(sids);
+                return sp.getACL(0L);
             } finally {
                 tcb.pseudoResumed_();
             }
         } finally {
             tk.reclaim_();
         }
+    }
 
-        if (stores.size() != reply.getFolderNameCount()) throw new ExProtocolError();
-
-        // write names to db
+    private void writeNamesToDatabase(GetACLReply reply)
+            throws Exception
+    {
         Trans t = _tm.begin_();
         try {
-            for (int i = 0; i < stores.size(); ++i) {
-                l.info("store {} {}", stores.get(i), reply.getFolderName(i));
-                _sdb.setName_(stores.get(i), reply.getFolderName(i));
+            for (PBStoreACL store : reply.getStoreAclList()) {
+                SID sid = new SID(store.getStoreId());
+                SIndex sidx = _sid2sidx.getNullable_(sid);
+
+                if (sidx != null) {
+                    _sdb.setName_(sidx, store.getName());
+                }
             }
+
             t.commit_();
         } finally {
             t.end_();

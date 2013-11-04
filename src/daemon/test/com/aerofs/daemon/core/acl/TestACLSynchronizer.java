@@ -29,7 +29,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBRole;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
-import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableMap;
@@ -42,19 +41,15 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -93,6 +88,7 @@ public class TestACLSynchronizer extends AbstractTest
     SID sid1 = SID.generate();
 
     private final boolean external;
+    private final String SHARED_FOLDER_NAME = "shared";
 
     public TestACLSynchronizer(boolean external)
     {
@@ -141,7 +137,8 @@ public class TestACLSynchronizer extends AbstractTest
     {
         PBStoreACL.Builder bd = PBStoreACL.newBuilder()
                 .setStoreId(sid.toPB())
-                .setExternal(external);
+                .setExternal(external)
+                .setName(SHARED_FOLDER_NAME);
         for (SubjectRolePair r : roles) bd.addSubjectRole(r.toPB());
         return bd.build();
     }
@@ -151,30 +148,6 @@ public class TestACLSynchronizer extends AbstractTest
         GetACLReply.Builder bd = GetACLReply.newBuilder().setEpoch(epoch);
         for (PBStoreACL acl : acls) bd.addStoreAcl(acl);
         when(spClient.getACL(anyLong())).thenReturn(bd.build());
-    }
-
-    private static <T> Iterable<T> anyIterable(Class<T> c)
-    {
-        return anyCollectionOf(c);
-    }
-
-    private void mockGetSharedFolderNames(final SID sid, final String name) throws Exception
-    {
-        when(spClient.getSharedFolderNames(anyIterable(ByteString.class)))
-                .thenAnswer(new Answer<GetSharedFolderNamesReply>()
-                {
-                    @Override
-                    @SuppressWarnings("unchecked")
-                    public GetSharedFolderNamesReply answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        Object[] args = invocation.getArguments();
-                        assert args.length == 1 && args[0] instanceof Iterable;
-                        Iterator<ByteString> it = ((Iterable<ByteString>)args[0]).iterator();
-                        assert sid.equals(new SID(it.next()));
-                        return GetSharedFolderNamesReply.newBuilder().addFolderName(name).build();
-                    }
-                });
     }
 
     @Test
@@ -282,7 +255,6 @@ public class TestACLSynchronizer extends AbstractTest
         when(sid2sidx.getAbsent_(sid1, t)).thenReturn(sidx);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(null);
 
-        mockGetSharedFolderNames(sid1, "shared");
         mockGetACL(42L, storeACL(sid1, new SubjectRolePair(user1, Role.OWNER),
                 new SubjectRolePair(user2, Role.EDITOR)));
 
@@ -294,7 +266,8 @@ public class TestACLSynchronizer extends AbstractTest
         newRoles.put(user1, Role.OWNER);
         newRoles.put(user2, Role.EDITOR);
 
-        verify(storeJoiner).joinStore_(eq(sidx), eq(sid1), eq("shared"), eq(external), eq(t));
+        verify(storeJoiner).joinStore_(eq(sidx), eq(sid1), eq(SHARED_FOLDER_NAME), eq(external),
+                eq(t));
     }
 
     @Test
