@@ -318,26 +318,15 @@ service SPService {
      */
     rpc SetAuthorizationLevel(SetAuthorizationLevelCall) returns(Void);
 
-    /**
-     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this.
-     */
-    rpc Noop3(Void) returns(Void);
 
     /////////
     // these are internal API calls only (meant to be called by the daemon only)
     // Required Auth Level: user for all of them
 
-    /**
-     * Retrieve ACL entries for the user, excluding those flagged as "external".
-     * See docs/design/sharing_and_migration.txt for information about the external flag.
-     *
-     * NB: for backward compatibility with old clients, this corresponds to the old GetACL rpc
-     *
-     * Required Auth Level: user
-     */
-    rpc GetACLExcludeExternal(GetACLCall) returns (GetACLReply);
-
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove these and move the new UpdateACL/DeleteACL calls to here
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove these and move the new UpdateACL/DeleteACL calls
+    // to here.
+    rpc Noop3(Void) returns(Void);
+    rpc Noop13(Void) returns (Void);
     rpc noop9(Void) returns (Void);
     rpc noop10(Void) returns (Void);
 
@@ -947,6 +936,8 @@ message SetUserPreferencesCall {
 }
 
 message GetACLCall {
+    // The epoch number the client holds. If the server has the same epoch number, store_acl in the
+    // reply message will be empty. See GetACLReply.
     required uint64 epoch = 1;
 }
 
@@ -959,6 +950,9 @@ message GetACLReply {
     }
 
     repeated PBStoreACL store_acl = 1;
+
+    // The epoch number on the server. store_acl is always empty if this number is the same as the
+    // epoch on the client. See GetACLCall.
     required uint64 epoch = 2;
 }
 
