@@ -1300,3 +1300,9 @@ message AuthorizeMobileDeviceReply {
     optional string orgId = 2;
     optional bool isOrgAdmin = 3;
 }
+
+enum PBSharedFolderState {
+    PENDING = 0;
+    JOINED = 1;
+    DELETED = 2;
+}

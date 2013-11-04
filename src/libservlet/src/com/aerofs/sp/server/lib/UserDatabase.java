@@ -18,6 +18,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.aerofs.base.id.OrganizationID;
+import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -34,7 +35,7 @@ import java.util.List;
 
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_PENDING;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_STATE;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
@@ -285,11 +286,11 @@ public class UserDatabase extends AbstractSQLDatabase
     public Collection<SID> getSharedFolders(UserID userId) throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_USER_ID + "=? and " + C_AC_PENDING + "=?",
+                C_AC_USER_ID + "=? and " + C_AC_STATE + "=?",
                 C_AC_STORE_ID));
 
         ps.setString(1, userId.getString());
-        ps.setBoolean(2, false);
+        ps.setInt(2, SharedFolderState.JOINED.ordinal());
 
         ResultSet rs = ps.executeQuery();
         try {
@@ -317,11 +318,11 @@ public class UserDatabase extends AbstractSQLDatabase
     public Collection<PendingSharedFolder> getPendingSharedFolders(UserID userId) throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_USER_ID + "=? and " + C_AC_PENDING + "=?",
+                C_AC_USER_ID + "=? and " + C_AC_STATE + "=?",
                 C_AC_STORE_ID, C_AC_SHARER));
 
         ps.setString(1, userId.getString());
-        ps.setBoolean(2, true);
+        ps.setInt(2, SharedFolderState.PENDING.ordinal());
 
         ResultSet rs = ps.executeQuery();
         try {

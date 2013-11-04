@@ -5,6 +5,9 @@ import com.aerofs.proto.Common.PBRole;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Note that this enum's structure is very similar to SharedFolderState.
+ */
 public enum Role
 {
     // N.B. roles with more permissions must go after those with less. This is required for
@@ -46,6 +49,8 @@ public enum Role
         case VIEWER: return VIEWER;
         case EDITOR: return EDITOR;
         case OWNER: return OWNER;
+        // Since the intput comes from external soruces, we should not throw runtime exceptions
+        // which may crash the process.
         default: throw new ExBadArgs("Unknown role: " + pb.toString());
         }
     }
@@ -55,6 +60,8 @@ public enum Role
         for (Role role : values()) {
             if (roleDescription.equals(role.getDescription())) return role;
         }
+        // Since the intput comes from external soruces, we should not throw runtime exceptions
+        // which may crash the process.
         throw new ExBadArgs("invalid role description " + roleDescription);
     }
 
