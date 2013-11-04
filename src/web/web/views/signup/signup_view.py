@@ -89,8 +89,8 @@ def json_signup(request):
     last_name = request.params[URL_PARAM_LAST_NAME]
     password = request.params[URL_PARAM_PASSWORD]
 
-    (is_valid_password, invalid_message) = is_valid_password(request, password)
-    if not is_valid_password:
+    (valid_password, invalid_message) = is_valid_password(request, password)
+    if not valid_password:
         return { 'error': invalid_message }
 
     cred = scrypt(password, email_address)
