@@ -6,7 +6,6 @@ package com.aerofs.bifrost.server;
 
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.bifrost.module.AccessTokenDAO;
 import com.aerofs.bifrost.module.AuthorizationRequestDAO;
@@ -18,14 +17,9 @@ import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
-import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
-import com.aerofs.testlib.TempCert;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
@@ -37,9 +31,7 @@ import com.jayway.restassured.specification.RequestSpecification;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 
@@ -47,13 +39,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.inject.matcher.Matchers.any;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.config.RedirectConfig.redirectConfig;
 import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
 import static com.jayway.restassured.path.json.JsonPath.from;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**

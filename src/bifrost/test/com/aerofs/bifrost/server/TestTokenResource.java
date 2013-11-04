@@ -5,19 +5,10 @@
 package com.aerofs.bifrost.server;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.id.UserID;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
-import com.aerofs.proto.Sp.MobileAccessCode;
 import com.jayway.restassured.response.Response;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.Map;
 
