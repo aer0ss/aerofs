@@ -1,44 +1,51 @@
 #!/bin/bash
-set -eu
-OUTPUT_DIR=build/bootstrap
+set -e -u
 
-RESOURCES=../src/bootstrap/resources
-OPT=$OUTPUT_DIR/opt/bootstrap
-BIN=$OUTPUT_DIR/usr/bin
+SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+SERVICE=bootstrap
+RESOURCES=../src/$SERVICE/resources
+OUTPUT_DIR=build/$SERVICE
+OPT=$OUTPUT_DIR/opt/$SERVICE
 DEBIAN=$OUTPUT_DIR/DEBIAN
-INIT=$OUTPUT_DIR/etc/init
 
-# Debian-related file copies.
+mkdir -p $OPT
 mkdir -p $DEBIAN
-for f in control
+mkdir -p $OUTPUT_DIR/etc/init
+mkdir -p $OUTPUT_DIR/usr/bin
+mkdir -p $OUTPUT_DIR/var/log/$SERVICE
+
+# XXX unfortunately much of this is shared with generate_service_deb_template.sh.
+# Need to keep these separate, because bootstrap needs to run as root.
+cp $RESOURCES/debian/control $DEBIAN/control
+for f in preinst prerm postrm
 do
-    # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
-    cp -a $RESOURCES/$f $DEBIAN
+    cp $RESOURCES/debian/$f $DEBIAN/$f
+    chmod 755 $DEBIAN/$f
 done
 
-mkdir -p $OUTPUT_DIR/var/log/bootstrap
+cp $RESOURCES/bootstrap.conf $OUTPUT_DIR/etc/init/
 
 # Java-related file copies.
-mkdir -p $OPT
-cp ../out.ant/artifacts/bootstrap-taskfile/*.jar $OPT
-cp ../out.ant/artifacts/bootstrap-command/*.jar $OPT
-cp ../out.ant/artifacts/bootstrap-service/*.jar $OPT
-cp $RESOURCES/logback.xml $OPT
-cp $RESOURCES/logback-service.xml $OPT
-cp -a $RESOURCES/scripts $OPT
+cp ../out.ant/artifacts/$SERVICE/*.jar $OPT/
+for jar in bootstrap-taskfile bootstrap-command
+do
+    cp ../out.ant/artifacts/$jar/$jar.jar $OPT/
+done
 
-# Put the scripts in user bin for convenience as well.
-mkdir -p $BIN
+# TODO (MP) logback.xml when we move to dropwizard.
+cp $RESOURCES/logback.xml $OPT
+cp $RESOURCES/logback-stdout.xml $OPT
+cp $RESOURCES/bootstrap.yml $OPT
+
+# Copy over additional scripts required in the bootstrap package.
+cp -a $RESOURCES/scripts $OPT
 for res in bootstrap-taskfile bootstrap-command install-cert
 do
     # N.B. these scripts are somewhat user facing, hence the aerofs prefix.
-    cp $RESOURCES/bin/$res $BIN/aerofs-$res
-    chmod a+x $BIN/aerofs-$res
+    cp $RESOURCES/bin/$res $OUTPUT_DIR/usr/bin/aerofs-$res
+    chmod a+x $OUTPUT_DIR/usr/bin/aerofs-$res
 done
 
 # Bootstrap task sets.
 cp -a $RESOURCES/tasks $OPT/tasks
-
-# Create the bootstrap service conf file.
-mkdir -p $INIT
-cp $RESOURCES/bootstrap.conf $INIT
