@@ -27,7 +27,7 @@ public class TestTokenVerificationClient extends BifrostTest
         verificationClient =
                 new TokenVerificationClient(
                         URI.create("https://localhost:" + _port + "/tokeninfo"),
-                        ca,
+                        null,
                         new NioClientSocketChannelFactory());
     }
 

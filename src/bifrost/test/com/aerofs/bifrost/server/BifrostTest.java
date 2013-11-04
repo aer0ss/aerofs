@@ -71,9 +71,6 @@ public abstract class BifrostTest extends AbstractTest
     protected final static String TOKEN_URL = "/token";
     protected final static String CLIENTID = "testapp";
 
-    protected static TempCert ca;
-    private static TempCert cert;
-    @Mock IPrivateKeyProvider _kmgr;
     @Mock SessionFactory _sessionFactory;
     @Mock SPBlockingClient _spClient;
     @Mock SPBlockingClient.Factory _spClientFactory;
@@ -81,21 +78,6 @@ public abstract class BifrostTest extends AbstractTest
     Bifrost _service;
     protected int _port;
     private Injector _injector;
-
-    @BeforeClass
-    public static void generateCert()
-    {
-        ca = TempCert.generateCA();
-        cert = TempCert.generate("baroo", ca);
-        RestAssured.keystore(ca.keyStore, TempCert.KS_PASSWD);
-    }
-
-    @AfterClass
-    public static void cleanupCert()
-    {
-        ca.cleanup();
-        cert.cleanup();
-    }
 
     @Before
     public void setUp() throws Exception
@@ -105,15 +87,13 @@ public abstract class BifrostTest extends AbstractTest
                 mockDatabaseModule(_sessionFactory),
                 mockSPClientModule());
 
-        _service = new Bifrost(_injector, _kmgr);
+        _service = new Bifrost(_injector, null);
         _service.start();
         _port = _service.getListeningPort();
 
         when(_sessionFactory.openSession()).thenReturn(_session);
-        when(_kmgr.getCert()).thenReturn(cert.cert);
-        when(_kmgr.getPrivateKey()).thenReturn(cert.key);
 
-        RestAssured.baseURI = "https://localhost";
+        RestAssured.baseURI = "http://localhost";
         RestAssured.port = _port;
         RestAssured.config = newConfig().redirect(redirectConfig().followRedirects(false));
 
