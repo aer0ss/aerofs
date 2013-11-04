@@ -2093,15 +2093,9 @@ public class SPService implements ISPService
     {
         User user = _factUser.createFromExternalID(userID);
 
-        // FIXME: this should call isExistingUserWithMatchingPassword
-        // but i hate dealing with an exception unwind within a DB transaction.
-        _sqlTrans.begin();
-        boolean userOk = user.exists() && user.isCredentialCorrect(credentials.toByteArray());
-        _sqlTrans.commit();
+        _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans);
 
-        if (!userOk) {throw new ExBadCredential();}
-
-        l.info("SI: validated credential for {}", user.id().getString());
+        l.info("SI: valid credential for {}", user.id().getString());
 
         return createVoidReply();
     }

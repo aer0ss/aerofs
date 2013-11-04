@@ -15,8 +15,6 @@ import org.junit.Test;
  */
 public class TestSP_ValidateCredential extends AbstractSPTest
 {
-    /** FIXME: ignored pending a bugfix in validateCredential */
-    @Ignore
     @Test
     public void shouldValidateCredential()
             throws Exception
