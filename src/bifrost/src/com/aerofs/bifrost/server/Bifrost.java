@@ -105,12 +105,6 @@ public class Bifrost extends Service
 
         Class.forName(getStringProperty("bifrost.db.driverClass", "com.mysql.jdbc.Driver"));
 
-        // Perform database migration (with implicit initialization)
-        Flyway flyway = new Flyway();
-        flyway.setDataSource(BifrostSessionFactory.dataSource());
-        flyway.setInitOnMigrate(true);
-        flyway.migrate();
-
         // Note, we expect nginx or similar to provide ssl termination...
         new Bifrost(Guice.createInjector(databaseModule(), bifrostModule()), null)
                 .start();

@@ -5,6 +5,7 @@
 package com.aerofs.bifrost.server;
 
 import com.aerofs.base.C;
+import com.googlecode.flyway.core.Flyway;
 import org.apache.tomcat.dbcp.dbcp.DriverManagerConnectionFactory;
 import org.apache.tomcat.dbcp.dbcp.PoolableConnectionFactory;
 import org.apache.tomcat.dbcp.dbcp.PoolingDataSource;
@@ -48,7 +49,7 @@ public class BifrostSessionFactory
 
         final DatasourceConnectionProviderImpl connectionProvider =
                 new DatasourceConnectionProviderImpl();
-        connectionProvider.setDataSource(dataSource());
+        connectionProvider.setDataSource(migratedDataSource());
         connectionProvider.configure(Collections.emptyMap());
 
         final ServiceRegistry registry = new ServiceRegistryBuilder()
@@ -59,7 +60,14 @@ public class BifrostSessionFactory
         return cfg.buildSessionFactory(registry);
     }
 
-    static DataSource dataSource()
+    static DataSource migratedDataSource()
+    {
+        DataSource ds = dataSource();
+        migrate(ds);
+        return ds;
+    }
+
+    private static DataSource dataSource()
     {
         final GenericObjectPool pool = new GenericObjectPool();
         pool.setMinIdle(
@@ -86,7 +94,6 @@ public class BifrostSessionFactory
                 getStringProperty("bifrost.db.url", "jdbc:mysql://localhost:3306/bifrost"),
                 properties);
 
-
         final PoolableConnectionFactory connectionFactory = new PoolableConnectionFactory(factory,
                 pool,
                 null,
@@ -99,4 +106,13 @@ public class BifrostSessionFactory
         return new PoolingDataSource(pool);
     }
 
+    private static void migrate(DataSource ds)
+    {
+        // Perform database migration (with implicit initialization)
+        Flyway flyway = new Flyway();
+        flyway.setDataSource(ds);
+        flyway.setInitOnMigrate(true);
+        flyway.setSchemas("bifrost");
+        flyway.migrate();
+    }
 }

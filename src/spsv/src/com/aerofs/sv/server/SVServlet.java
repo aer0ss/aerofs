@@ -4,9 +4,11 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
+import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.AeroServlet;
+import com.googlecode.flyway.core.Flyway;
 import com.yammer.metrics.reporting.GraphiteReporter;
 import org.slf4j.Logger;
 
@@ -14,6 +16,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -54,6 +57,18 @@ public class SVServlet extends AeroServlet
         String svdbRef = getServletContext().getInitParameter(SV_DATABASE_REFERENCE_PARAMETER);
 
         _conProvider.init_(svdbRef);
+        DataSource dataSource;
+        try {
+            dataSource = _conProvider.getDataSource();
+        } catch (ExDbInternal e) {
+            throw new SQLException(e.getCause());
+        }
+
+        Flyway flyway = new Flyway();
+        flyway.setDataSource(dataSource);
+        flyway.setInitOnMigrate(true);
+        flyway.setSchemas("aerofs_sv");
+        flyway.migrate();
     }
 
     private void initMetrics_()

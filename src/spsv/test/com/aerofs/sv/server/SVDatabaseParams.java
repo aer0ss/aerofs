@@ -13,8 +13,8 @@ public class SVDatabaseParams extends DatabaseParameters
 {
     private static final String JUNIT_MYSQL_SV_SCHEMA_PATH_PARAMETER = "junit.mysqlSvSchemaPath";
     private static final String[] DEFAULT_SV_SCHEMA_PATHS = new String[] {
-            "../src/spsv/resources/schemas",
-            "../../src/spsv/resources/schemas"
+            "../src/spsv/resources/sv/db/migration",
+            "../../src/spsv/resources/sv/db/migration"
     };
     private final String _mysqlSchemaPath;
 

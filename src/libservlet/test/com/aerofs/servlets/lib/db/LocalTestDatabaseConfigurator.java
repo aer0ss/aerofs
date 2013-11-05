@@ -5,6 +5,7 @@
 package com.aerofs.servlets.lib.db;
 
 import com.aerofs.base.Loggers;
+import com.googlecode.flyway.core.Flyway;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -31,6 +32,8 @@ public class LocalTestDatabaseConfigurator
 
     /**
      * Sets up a local MySQL database based on the given JUnitDatabaseParameters instance.
+     *
+     * TODO: in-memory db would be nice...
      */
     public static void initializeLocalDatabase(DatabaseParameters params)
             throws SQLException, ClassNotFoundException, InterruptedException, IOException
@@ -50,12 +53,6 @@ public class LocalTestDatabaseConfigurator
                 params.getMySQLPath(), params.getMySQLUser(), params.getMySQLHost(),
                 params.getMySQLPass(), params.getMySQLDatabaseName());
 
-        String loadSchema = String.format(
-                "%s/mysql -u%s -h%s -p%s %s < '%s/%s'",
-                params.getMySQLPath(), params.getMySQLUser(), params.getMySQLHost(),
-                params.getMySQLPass(), params.getMySQLDatabaseName(), params.getMySQLSchemaPath(),
-                params.getMySQLSchemaName());
-
         l.info("setting up database schema");
 
         if (runBashCommand(dropProcedures) != 0) {
@@ -70,8 +67,12 @@ public class LocalTestDatabaseConfigurator
             throw new RuntimeException("failed to make db (cmd: " + createDatabase  + ")");
         }
 
-        if (runBashCommand(loadSchema) != 0) {
-            throw new RuntimeException("failed to load schema (cmd: " + loadSchema + ")");
-        }
+        Flyway flyway = new Flyway();
+        flyway.setDataSource("jdbc:mysql://" + params.getMySQLHost() + "/" + params.getMySQLDatabaseName(),
+                params.getMySQLUser(), params.getMySQLPass());
+        flyway.setInitOnMigrate(true);
+        flyway.setLocations("filesystem:" + params.getMySQLSchemaPath());
+        flyway.setSchemas(params.getMySQLDatabaseName());
+        flyway.migrate();
     }
 }

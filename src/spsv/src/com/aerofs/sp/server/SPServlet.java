@@ -8,6 +8,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.DoPostDelegate;
+import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
@@ -46,12 +47,14 @@ import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.shared_folder_rules.SharedFolderRulesFactory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.googlecode.flyway.core.Flyway;
 import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import java.io.IOException;
 
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
@@ -154,6 +157,7 @@ public class SPServlet extends AeroServlet
                 getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER);
 
         _sqlConProvider.init_(dbResourceName);
+        migrate();
 
         String redisHost = REDIS.ADDRESS.getHostName();
         int redisPort = REDIS.ADDRESS.getPort();
@@ -164,6 +168,25 @@ public class SPServlet extends AeroServlet
 
         InvitationReminder er = new InvitationReminder(_esdb, _sqlTrans, _invitationReminderEmailer);
         er.start();
+    }
+
+    /**
+     * Perform any required DB migration (with implicit initialization)
+     */
+    private void migrate() throws ServletException
+    {
+        DataSource dataSource;
+        try {
+            dataSource = _sqlConProvider.getDataSource();
+        } catch (ExDbInternal e) {
+            throw new ServletException(e);
+        }
+
+        Flyway flyway = new Flyway();
+        flyway.setDataSource(dataSource);
+        flyway.setInitOnMigrate(true);
+        flyway.setSchemas("aerofs_sp");
+        flyway.migrate();
     }
 
     private VerkehrAdmin getVerkehrAdmin()

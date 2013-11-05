@@ -6,6 +6,7 @@ package com.aerofs.servlets.lib.db.sql;
 
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.google.common.base.Preconditions;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -24,11 +25,19 @@ public class PooledSQLConnectionProvider implements IDatabaseConnectionProvider<
     }
 
     @Override
-    public Connection getConnection()
-            throws ExDbInternal
+    public Connection getConnection() throws ExDbInternal
+    {
+        try {
+            return getDataSource().getConnection();
+        } catch (SQLException e) {
+            throw new ExDbInternal(e);
+        }
+    }
+
+    public DataSource getDataSource() throws ExDbInternal
     {
         // Must call init with a tomcat resource name before getting connections.
-        assert _dbResourceName != null;
+        Preconditions.checkNotNull(_dbResourceName);
 
         try {
             // The following is based on the example found here:
@@ -39,15 +48,10 @@ public class PooledSQLConnectionProvider implements IDatabaseConnectionProvider<
 
             Context initCtx = new InitialContext();
             Context envCtx = (Context) initCtx.lookup("java:comp/env");
-            DataSource ds = (DataSource) envCtx.lookup(_dbResourceName);
-
-            return ds.getConnection();
-        }
-        catch (NamingException e) {
+            return (DataSource) envCtx.lookup(_dbResourceName);
+        } catch (NamingException e) {
             // Turn NamingExceptions into ExDbInternals to prevent everyone from needing to throw
             // naming exceptions.
-            throw new ExDbInternal(e);
-        } catch (SQLException e) {
             throw new ExDbInternal(e);
         }
     }

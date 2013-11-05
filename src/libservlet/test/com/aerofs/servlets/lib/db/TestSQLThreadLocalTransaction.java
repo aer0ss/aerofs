@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Spy;
 
+import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,8 +20,7 @@ import java.sql.SQLException;
 public class TestSQLThreadLocalTransaction extends AbstractTest
 {
     private static final String[] DEFAULT_TX_SCHEMA_PATHS = new String[] {
-            "../../src/libservlet/test/resources",
-            "../../../src/libservlet/test/resources"
+            "../src/libservlet/test/resources"
     };
     private class TransactionTestDatabaseParams extends DatabaseParameters
     {

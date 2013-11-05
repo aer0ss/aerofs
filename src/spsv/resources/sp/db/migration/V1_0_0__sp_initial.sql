@@ -1,14 +1,21 @@
+--
+-- NB: for some (seriously beyond stupid) reason flyway breaks when using inline comments
+--
+
+/*
+ * We use random IDs instead of auto increment IDs only to prevent competitors from figuring out
+ * total number of orgs. It is NOT a security measure.
+ *
+ *  o_id : OrganizationID
+ *  o_name : organization friendly name, displayed to the user. May include spaces and all.
+ *  o_contact_phone : leave enough room for international numbers
+ *  o_stripe_cusotme_id : https://answers.stripe.com/questions/what-is-the-max-length-of-ids
+ */
 CREATE TABLE IF NOT EXISTS `sp_organization` (
-  -- We use random IDs instead of auto increment IDs only to prevent competitors from figuring out
-  -- total number of orgs. It is NOT a security measure.
-  `o_id` INTEGER NOT NULL, -- corresponding Java type: OrganizationID
-  `o_name` VARCHAR(80) CHARSET utf8, -- organization friendly name, displayed to the user.
-                                     -- May include spaces and all.
-  `o_contact_phone` VARCHAR(50), -- trying to leave enough room to handle international phone
-                                 -- numbers we are not doing any very restrained validation
-                                 -- on this input
-  `o_stripe_customer_id` VARCHAR(255),  -- https://answers.stripe.com/questions/what-is-the-max-length-of-ids
-                                        -- There's no well-defined maximum length on IDs, but VARCHAR(255) is certainly sufficient
+  `o_id` INTEGER NOT NULL,
+  `o_name` VARCHAR(80) CHARSET utf8,
+  `o_contact_phone` VARCHAR(50),
+  `o_stripe_customer_id` VARCHAR(255),
   PRIMARY KEY (`o_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -19,42 +26,51 @@ CREATE TABLE IF NOT EXISTS `sp_shared_folder` (
   PRIMARY KEY (`sf_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+/*
+ *  a_state : See docs/design/sharing_and_migration.txt
+ *  a_sharer : NULL if the member is not invited by anyone. i.e. team server users
+ *  o_contact_phone : leave enough room for international numbers
+ *  a_external : See docs/design/sharing_and_migration.txt
+ *
+ * Note: the foreign key implicitly create an index on a_sid
+ * for an org. See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
+ *
+ * latin1 because a_id is email address
+ */
 CREATE TABLE IF NOT EXISTS `sp_acl` (
   `a_sid` BINARY(16) NOT NULL,
   `a_id` VARCHAR(320) NOT NULL,
   `a_role` TINYINT NOT NULL,
-  `a_state` TINYINT NOT NULL,  -- one of the three state of the member. See docs/design/sharing_and_migration.txt
-  `a_sharer` VARCHAR(320),   -- NULL if the member is not invited by anyone. i.e. the initial owner and team server users
-  `a_external` BOOLEAN NOT NULL DEFAULT FALSE,  -- whether it's an external folder for the user. See docs/design/sharing_and_migration.txt
+  `a_pending` BOOLEAN NOT NULL DEFAULT FALSE,
+  `a_sharer` VARCHAR(320),
+  `a_external` BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (`a_sid`,`a_id`),
   INDEX `a_id` (`a_id`),
-  -- Note: the foreign key implicitly create an index on a_sid
-  -- for an org. See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
   CONSTRAINT `a_sid_foreign` FOREIGN KEY (`a_sid`) REFERENCES `sp_shared_folder` (`sf_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1; -- latin1 because a_id is email address
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- TODO rename u_id to u_email and most other 'ids' to 'email'
+-- Note: the foreign key implicitly creates an index on u_org_id, which helps list or count users
+-- for an org. See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
 CREATE TABLE IF NOT EXISTS `sp_user` (
-  -- TODO rename u_id to u_email and most other 'ids' to 'email'
-  `u_id` VARCHAR(320) NOT NULL, -- 320 is the maximum email address length
+  `u_id` VARCHAR(320) NOT NULL,
   `u_hashed_passwd` CHAR(44) NOT NULL,
   `u_id_created_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `u_first_name` VARCHAR(80) CHARSET utf8 NOT NULL, -- important UTF8
-  `u_last_name` VARCHAR(80) CHARSET utf8 NOT NULL,  -- important UTF8
+  `u_first_name` VARCHAR(80) CHARSET utf8 NOT NULL,
+  `u_last_name` VARCHAR(80) CHARSET utf8 NOT NULL,
   `u_auth_level` INT UNSIGNED NOT NULL,
   `u_org_id` INTEGER NOT NULL,
   `u_acl_epoch` BIGINT NOT NULL,
   PRIMARY KEY (`u_id`),
-  -- Note: the foreign key implicitly creates an index on u_org_id, which helps list or count users
-  -- for an org. See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
   CONSTRAINT `u_org_foreign` FOREIGN KEY (`u_org_id`) REFERENCES `sp_organization` (`o_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- TODO (MJ) why is d_id a CHAR(32) but sf_id (store id) is a BINARY(16)?
 CREATE TABLE IF NOT EXISTS `sp_device` (
   `d_id` CHAR(32) NOT NULL,
-  -- TODO (MJ) why is d_id a CHAR(32) but sf_id (store id) is a BINARY(16)?
-  `d_owner_id` VARCHAR(320) NOT NULL, -- this is the email address (u_id) in sp_user table
+  `d_owner_id` VARCHAR(320) NOT NULL,
   `d_os_family` VARCHAR(32) NOT NULL,
-  `d_os_name` VARCHAR(100) NOT NULL, -- the result from IOSUtil.getFullOSName()
+  `d_os_name` VARCHAR(100) NOT NULL,
   `d_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `d_name` VARCHAR(320) CHARACTER SET utf8 NOT NULL,
   `d_unlinked` BOOL DEFAULT FALSE,
@@ -62,14 +78,16 @@ CREATE TABLE IF NOT EXISTS `sp_device` (
   CONSTRAINT `d_owner_foreign` FOREIGN KEY (`d_owner_id`) REFERENCES `sp_user` (`u_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- c_serial: the increasing serial number that identifies the certificate (generated by the CA).
+-- c_revoke_ts: when the certificate has not been revoked, this is zero.
+-- c_did_idx is used when verifying that a cert-based signin is valid
 CREATE TABLE IF NOT EXISTS `sp_cert` (
-  `c_serial` BIGINT UNSIGNED NOT NULL, -- the increasing serial number that identifies the
-                                       -- certificate (generated by the CA).
+  `c_serial` BIGINT UNSIGNED NOT NULL,
   `c_device_id` VARCHAR(320) NOT NULL,
   `c_expire_ts` TIMESTAMP NOT NULL,
-  `c_revoke_ts` TIMESTAMP, -- when the certificate has not been revoked, this is zero.
+  `c_revoke_ts` TIMESTAMP,
   PRIMARY KEY (`c_serial`),
-  INDEX `c_did_idx` (`c_device_id`) -- used when verifying that a cert-based signin is valid
+  INDEX `c_did_idx` (`c_device_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE IF NOT EXISTS `sp_signup_code` (
@@ -80,19 +98,21 @@ CREATE TABLE IF NOT EXISTS `sp_signup_code` (
   INDEX `t_ts_idx` (`t_ts`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- m_signup_code: the signup code associated with the organization, null if the user
+-- already exists by the time the user is invited to the org.
+--
+-- Note: the foreign keys implicitly create indices on m_org_id and m_signup_code, which helps
+-- OrganizationInvitationDatabase.getInvitedUsers() and getInvitationForSignupCode().
+-- See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
 CREATE TABLE IF NOT EXISTS `sp_organization_invite` (
-  `m_from` VARCHAR(320) NOT NULL, -- i.e. inviter
-  `m_to` VARCHAR(320) NOT NULL, -- i.e. invitee
+  `m_from` VARCHAR(320) NOT NULL,
+  `m_to` VARCHAR(320) NOT NULL,
   `m_org_id` INTEGER NOT NULL,
-  `m_signup_code` CHAR(8),  -- the signup code associated with the organization, null if the user
-                            -- already exists by the time the user is invited to the org.
+  `m_signup_code` CHAR(8),
   `m_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`m_to`, `m_org_id`),
   UNIQUE KEY (`m_signup_code`),
   INDEX `m_ts_idx` (`m_ts`),
-  -- Note: the foreign keys implicitly create indices on m_org_id and m_signup_code, which helps
-  -- OrganizationInvitationDatabase.getInvitedUsers() and getInvitationForSignupCode().
-  -- See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
   CONSTRAINT `m_org_foreign` FOREIGN KEY (`m_org_id`) REFERENCES `sp_organization` (`o_id`),
   CONSTRAINT `m_signup_code_foreign` FOREIGN KEY (`m_signup_code`) REFERENCES `sp_signup_code` (`t_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -105,15 +125,16 @@ CREATE TABLE IF NOT EXISTS `sp_password_reset_token` (
   CONSTRAINT `r_user_foreign` FOREIGN KEY (`r_user_id`) REFERENCES `sp_user` (`u_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- the actual max email length supported by RFC is 254 bytes
+-- we use 254 bytes here because the maximum key length size
+-- for mysql is 767 bytes, and 254*3 = 762 (for UTF8
+-- strings)
+-- TODO (WW) this length is not consistent with the length of
+-- email fields in other tables.
+-- TODO (WW) latin1 should be used instead as the charset.
 CREATE TABLE IF NOT EXISTS `sp_email_subscriptions` (
   `es_token_id` CHAR(12) PRIMARY KEY NOT NULL,
-  `es_email` VARCHAR(254) NOT NULL,   -- the actual max email length supported by RFC is 254 bytes
-                                      -- we use 254 bytes here because the maximum key length size
-                                      -- for mysql is 767 bytes, and 254*3 = 762 (for UTF8
-                                      -- strings)
-                                      -- TODO (WW) this length is not consistent with the length of
-                                      -- email fields in other tables.
-                                      -- TODO (WW) latin1 should be used instead as the charset.
+  `es_email` VARCHAR(254) NOT NULL,
   `es_subscription` INT NOT NULL,
   `es_last_emailed` TIMESTAMP NOT NULL,
   UNIQUE KEY(`es_email`,`es_subscription`),

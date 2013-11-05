@@ -4,8 +4,6 @@
 
 package com.aerofs.servlets.lib.db;
 
-import java.io.File;
-
 /**
  * SP database parameters for unit testing.
  */
@@ -13,8 +11,8 @@ public class SPDatabaseParams extends DatabaseParameters
 {
     private static final String JUNIT_MYSQL_SP_SCHEMA_PATH_PARAMETER = "junit.mysqlSpSchemaPath";
     private static final String[] DEFAULT_SP_SCHEMA_PATHS = new String[] {
-            "../src/spsv/resources/schemas",
-            "../../src/spsv/resources/schemas"
+            "../src/spsv/resources/sp/db/migration",
+            "../../src/spsv/resources/sp/db/migration"
     };
     private final String _mysqlSchemaPath;
 
