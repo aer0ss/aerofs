@@ -9,8 +9,10 @@ import com.google.common.base.Throwables;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 
 import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getCertificateProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
 
@@ -28,6 +30,10 @@ public class BaseParam
 
     public static class Cacert
     {
+        // this property is used by the Android build
+        public static final X509Certificate CACERT = getCertificateProperty(
+                "config.loader.base_ca_certificate", null);
+
         // TODO (MP) need create ServerParam.java (or something) and move this there.
         public static final String FILE = "/etc/ssl/certs/AeroFS_CA.pem";
     }
@@ -58,6 +64,9 @@ public class BaseParam
 
     public static class Zephyr
     {
+        // this property is used by the Android build
+        public static final String TRANSPORT_ID = "z";
+
         // this value is dynamic but clients will not pick up the new value on failure
         public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.zephyr.address",
                 InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
