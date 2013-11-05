@@ -368,7 +368,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         // remove all ACLs
         ps = prepareStatement(DBUtil.deleteWhere(T_AC, C_AC_STORE_ID + "=?"));
         ps.setBytes(1, sid.getBytes());
-        Util.verify(ps.executeUpdate() > 0);
+        ps.executeUpdate();
 
         // remove shared folder
         ps = prepareStatement(DBUtil.deleteWhere(T_SF, C_SF_ID + "=?"));

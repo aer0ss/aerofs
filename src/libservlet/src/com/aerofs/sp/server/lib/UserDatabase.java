@@ -33,6 +33,7 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
 
+import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STATE;
@@ -46,6 +47,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ACL_EPOCH;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_CREDS;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_FIRST_NAME;
@@ -77,6 +79,12 @@ public class UserDatabase extends AbstractSQLDatabase
             AuthorizationLevel level)
             throws SQLException, ExAlreadyExist
     {
+        // if the user was previously deactivated, reactivate it
+        if (isDeactivated(id)) {
+            reactivate(id, fullName, shaedSP, orgID, level);
+            return;
+        }
+
         // we always create a user with initial epoch + 1 to ensure that the first time
         // a device is created it gets any acl updates that were made while the user
         // didn't have an entry in the user table
@@ -84,7 +92,7 @@ public class UserDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 DBUtil.insert(T_USER, C_USER_ID, C_USER_CREDS, C_USER_FIRST_NAME,
                         C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
-                        C_USER_ACL_EPOCH));
+                        C_USER_ACL_EPOCH, C_USER_DEACTIVATED));
 
         ps.setString(1, id.getString());
         ps.setString(2, Base64.encodeBytes(shaedSP));
@@ -94,6 +102,7 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setInt(6, level.ordinal());
         //noinspection PointlessArithmeticExpression
         ps.setInt(7, LibParam.INITIAL_ACL_EPOCH + 1);
+        ps.setBoolean(8, false);
 
         try {
             ps.executeUpdate();
@@ -103,10 +112,42 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
+    private boolean isDeactivated(UserID userId) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_USER,
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=1",
+                "count(*)"));
+        ps.setString(1, userId.getString());
+
+        return binaryCount(ps.executeQuery());
+    }
+
+    private void reactivate(UserID id, FullName fullName, byte[] shaedSP, OrganizationID orgID,
+            AuthorizationLevel level) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(DBUtil.updateWhere(T_USER,
+                C_USER_ID + "=?",
+                C_USER_CREDS, C_USER_FIRST_NAME, C_USER_LAST_NAME, C_USER_ORG_ID,
+                C_USER_AUTHORIZATION_LEVEL, C_USER_ACL_EPOCH, C_USER_DEACTIVATED));
+
+        ps.setString(8, id.getString());
+        ps.setString(1, Base64.encodeBytes(shaedSP));
+        ps.setString(2, fullName._first);
+        ps.setString(3, fullName._last);
+        ps.setInt(4, orgID.getInt());
+        ps.setInt(5, level.ordinal());
+        //noinspection PointlessArithmeticExpression
+        ps.setInt(6, LibParam.INITIAL_ACL_EPOCH + 1);
+        ps.setBoolean(7, false);
+
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
     public boolean hasUser(UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_USER, C_USER_ID + "=?", "count(*)"));
+        PreparedStatement ps = prepareStatement(selectWhere(T_USER,
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", "count(*)"));
         ps.setString(1, userId.getString());
         ResultSet rs = ps.executeQuery();
         try {
@@ -119,7 +160,9 @@ public class UserDatabase extends AbstractSQLDatabase
     public boolean hasUsers()
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement("select count(*) from " + T_USER);
+        PreparedStatement ps = prepareStatement(selectWhere(T_USER,
+                C_USER_DEACTIVATED + "=0",
+                "count(*)"));
         ResultSet rs = ps.executeQuery();
         try {
             return DBUtil.count(rs) > 0;
@@ -142,8 +185,9 @@ public class UserDatabase extends AbstractSQLDatabase
     public void setOrganizationID(UserID userId, OrganizationID orgId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                updateWhere(T_USER, C_USER_ID + "=?", C_USER_ORG_ID));
+        PreparedStatement ps = prepareStatement(updateWhere(T_USER,
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
+                C_USER_ORG_ID));
 
         ps.setInt(1, orgId.getInt());
         ps.setString(2, userId.getString());
@@ -226,7 +270,8 @@ public class UserDatabase extends AbstractSQLDatabase
     private ResultSet queryUser(UserID userId, String ... fields)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_USER, C_USER_ID + "=?", fields));
+        PreparedStatement ps = prepareStatement(selectWhere(T_USER,
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", fields));
         ps.setString(1, userId.getString());
         ResultSet rs = ps.executeQuery();
         if (!rs.next()) {
@@ -240,8 +285,9 @@ public class UserDatabase extends AbstractSQLDatabase
     public void setLevel(UserID userId, AuthorizationLevel authLevel)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                updateWhere(T_USER, C_USER_ID + "=?", C_USER_AUTHORIZATION_LEVEL));
+        PreparedStatement ps = prepareStatement(updateWhere(T_USER,
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
+                C_USER_AUTHORIZATION_LEVEL));
 
         ps.setInt(1, authLevel.ordinal());
         ps.setString(2, userId.getString());
@@ -251,8 +297,9 @@ public class UserDatabase extends AbstractSQLDatabase
     public void setName(UserID userId, FullName fullName)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                updateWhere(T_USER, C_USER_ID + "=?", C_USER_FIRST_NAME, C_USER_LAST_NAME));
+        PreparedStatement ps = prepareStatement(updateWhere(T_USER,
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
+                C_USER_FIRST_NAME, C_USER_LAST_NAME));
 
         // TODO (WW) instead of doing trim here, normalize the FullName at entry points.
         // See UserID.fromInternal/fromExternal
@@ -300,6 +347,26 @@ public class UserDatabase extends AbstractSQLDatabase
         } finally {
             rs.close();
         }
+    }
+
+    /**
+     * Deactivate a user
+     *
+     * NB: the system cannot currently (and maybe ever) gracefully deal with deletion for
+     * user/device information. This is mostly because the tick space is append-only: new
+     * ticks can be added but old ticks cannot ever be removed and some other features,
+     * most notably activity log, extract user-visible info from ticks and need to associate
+     * this info to user and device names.
+     */
+    public void deactivate(UserID userId) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(updateWhere(T_USER,
+                C_USER_ID + "=?", C_USER_DEACTIVATED));
+
+        ps.setBoolean(1, true);
+        ps.setString(2, userId.getString());
+
+        Util.verify(ps.executeUpdate() == 1);
     }
 
     public static class PendingSharedFolder

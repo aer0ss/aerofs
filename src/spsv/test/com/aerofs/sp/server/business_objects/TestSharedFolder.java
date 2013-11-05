@@ -438,6 +438,42 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
+    public void removeUser_shouldNotSelfDestroy() throws Exception
+    {
+        User user = saveUser();
+        SharedFolder shared = saveSharedFolder(user);
+        shared.addJoinedUser(saveUser(), Role.OWNER);
+
+        shared.removeUser(user);
+
+        assertTrue(shared.exists());
+    }
+
+    @Test
+    public void removeUser_shouldSelfDestroyWhenNoJoinedUsersLeft() throws Exception
+    {
+        User user = saveUser();
+        SharedFolder shared = saveSharedFolder(user);
+
+        User invited = saveUser();
+        shared.addPendingUser(invited, Role.EDITOR, user);
+
+        User left = saveUser();
+        shared.addJoinedUser(left, Role.EDITOR);
+        shared.setState(left, SharedFolderState.LEFT);
+
+        shared.removeUser(user);
+
+        assertFalse(shared.exists());
+        assertEquals(ImmutableList.of(factSharedFolder.create(SID.rootSID(invited.id()))),
+                invited.getSharedFolders());
+        assertTrue(invited.getPendingSharedFolders().isEmpty());
+        assertEquals(ImmutableList.of(factSharedFolder.create(SID.rootSID(left.id()))),
+                left.getSharedFolders());
+        assertTrue(left.getPendingSharedFolders().isEmpty());
+    }
+
+    @Test
     public void removeTeamServerForUser_shouldThrowIfTeamServerNotFound()
             throws Exception
     {
