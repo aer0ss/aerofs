@@ -24,6 +24,7 @@
       <entry name="?*.ftl" />
       <entry name="?*.pem" />
       <entry name="?*.yml" />
+      <entry name="?*.sql" />
     </wildcardResourcePatterns>
     <annotationProcessing>
       <profile default="true" name="Default" enabled="true">

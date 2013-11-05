@@ -59,7 +59,7 @@ public class BifrostSessionFactory
         return cfg.buildSessionFactory(registry);
     }
 
-    private static DataSource dataSource()
+    static DataSource dataSource()
     {
         final GenericObjectPool pool = new GenericObjectPool();
         pool.setMinIdle(
@@ -80,7 +80,7 @@ public class BifrostSessionFactory
 
         final Properties properties = new Properties();
         properties.setProperty("user",
-                getStringProperty("bifrost.db.user", "aerofs_sp"));
+                getStringProperty("bifrost.db.user", "bifrost"));
 
         final DriverManagerConnectionFactory factory = new DriverManagerConnectionFactory(
                 getStringProperty("bifrost.db.url", "jdbc:mysql://localhost:3306/bifrost"),
