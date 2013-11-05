@@ -259,7 +259,7 @@
             $.post("${request.route_path('json_setup_poll')}", getSerializedFormData())
             .done(function (response) {
                 statusZeroCount = 0;
-                if (response['completed'] == true) {
+                if (response['status'] == 'success') {
                     console.log("poll complete");
                     window.clearInterval(bootstrapPollInterval);
                     reloadToFinalize();
