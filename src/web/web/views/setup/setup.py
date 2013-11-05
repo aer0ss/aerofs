@@ -1,16 +1,24 @@
+# Views for site setup. Related document: docs/design/site_setup_auth.md
+#
+
 import logging
 import tempfile
 import shutil
 import os
 import socket
-import requests
 import random
-from aerofs_common.configuration import Configuration
-from pyramid.view import view_config
 from subprocess import call, Popen, PIPE
-from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError
+from pyramid.security import NO_PERMISSION_REQUIRED
+
+import requests
+from pyramid.view import view_config
+from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError, HTTPBadRequest
+
+from aerofs_common.configuration import Configuration
 from web.util import *
+from web.license import is_license_present_and_valid, is_license_present, set_license_file_and_shasum
 from web.views.login.login_view import URL_PARAM_EMAIL
+
 
 log = logging.getLogger("web")
 
@@ -42,12 +50,6 @@ _SMTP_VERIFICATION_SMTP_PASSWORD = "email_sender_public_password"
 _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
 
 # ------------------------------------------------------------------------
-# LDAP email verification interfact constants.
-# ------------------------------------------------------------------------
-
-# TODO (MP) finish this section.
-
-# ------------------------------------------------------------------------
 # Session keys
 # ------------------------------------------------------------------------
 
@@ -57,12 +59,12 @@ _SESSION_KEY_EMAIL_VERIFICATION_CODE = 'email_verification_code'
 # Settings utilities
 # ------------------------------------------------------------------------
 
-def _get_settings_from_configuration():
-    settings = {}
+def _get_configuration():
+    properties = {}
     configuration = Configuration()
-    configuration.fetch_and_populate(settings)
+    configuration.fetch_and_populate(properties)
 
-    return settings
+    return properties
 
 # ------------------------------------------------------------------------
 # Setup View
@@ -70,11 +72,32 @@ def _get_settings_from_configuration():
 
 @view_config(
     route_name='setup',
-    permission='admin',
+    # Should not require permission. See docs/design/site_setup_auth.md.
+    permission=NO_PERMISSION_REQUIRED,
     renderer='setup.mako'
 )
-def setup_view(request):
-    settings = _get_settings_from_configuration()
+def setup(request):
+    conf = _get_configuration()
+    # See docs/design/site_setup_auth.md for explanation of the following logic.
+    if is_license_present_and_valid(conf):
+        log.info("license is valid. redirect to setup_authorized")
+        return HTTPFound(request.route_path("setup_authorized", _query=request.params))
+    else:
+        log.info("license is invalid. ask for license")
+        return _setup_common(request, conf, True)
+
+@view_config(
+    route_name='setup_authorized',
+    permission='admin',
+    renderer='setup.mako',
+)
+def setup_authorized(request):
+    return _setup_common(request, _get_configuration(), False)
+
+def _setup_common(request, conf, license_page_only):
+    # Site setup is available only in private deployment
+    if not is_private_deployment(conf):
+        raise HTTPBadRequest("the page is not available")
 
     # Genearate email verification code. Keep the code constant across the
     # session so if the user sends multiple verification emails the user can use
@@ -84,14 +107,25 @@ def setup_view(request):
         code = random.randint(100000, 999999)
         request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE] = code
 
+    if license_page_only:
+        # We assume page 0 is the license page.
+        page = 0
+    else:
+        page = request.params.get('page')
+        page = int(page) if page else 0
+
     return {
-        'current_config': settings,
-        'is_configuration_initialized': is_configuration_initialized(settings),
+        'page': page,
+        'current_config': conf,
+        'is_configuration_initialized': is_configuration_initialized(conf),
+        # The following two parameters are used by welcome_and_license.mako
+        'is_license_present': is_license_present(conf),
+        'is_license_present_and_valid': is_license_present_and_valid(conf),
         # This parameter is used by apply_and_create_user_page.mako
         'url_param_email': URL_PARAM_EMAIL,
-        # These two parameters are used by email_page.mako
+        # The following two parameters are used by email_page.mako
         'email_verification_code': code,
-        'default_support_email': _get_default_support_email(settings['base.host.unified'])
+        'default_support_email': _get_default_support_email(conf['base.host.unified'])
     }
 
 def _get_default_support_email(hostname):
@@ -104,15 +138,24 @@ def _get_default_support_email(hostname):
     return 'support@{}'.format(match.group(1) if match else hostname)
 
 # ------------------------------------------------------------------------
-# Hostname
+# License
 # ------------------------------------------------------------------------
 
-def _is_hostname_resolvable(hostname):
-    try:
-        socket.gethostbyname(hostname)
-        return True
-    except socket.error:
-        return False
+@view_config(
+    route_name='json_set_license',
+    # This method doesn't require authentication.
+    # See docs/design/site_setup_auth.md.
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='json',
+    request_method='POST'
+)
+def json_set_license(request):
+    set_license_file_and_shasum(request, request.params['license'])
+    return HTTPOk()
+
+# ------------------------------------------------------------------------
+# Hostname
+# ------------------------------------------------------------------------
 
 @view_config(
     route_name = 'json_setup_hostname',
@@ -140,6 +183,13 @@ def _is_valid_ipv4_address(string):
     import socket
     try:
         socket.inet_aton(string)
+        return True
+    except socket.error:
+        return False
+
+def _is_hostname_resolvable(hostname):
+    try:
+        socket.gethostbyname(hostname)
         return True
     except socket.error:
         return False
@@ -445,14 +495,3 @@ def json_setup_finalize(request):
         f.write('delay\nuwsgi-reload')
 
     return {}
-
-# ------------------------------------------------------------------------
-# Redirect
-# ------------------------------------------------------------------------
-
-@view_config(
-    route_name = 'setup_redirect',
-    permission='admin'
-)
-def setup_redirect(request):
-    return HTTPFound(location='/setup')

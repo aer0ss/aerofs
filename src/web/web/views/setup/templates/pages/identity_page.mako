@@ -287,12 +287,12 @@
     }
 
     function submitForm() {
-        disableButtons();
+        disableNavButtons();
         var authenticator = $(':input[name=lib.authenticator]:checked').val();
         if (authenticator == 'local_credential') {
-            post(gotoNextPage, enableButtons);
+            post(gotoNextPage, enableNavButtons);
         } else {
-            validateAndSubmitLDAPForm(gotoNextPage, enableButtons);
+            validateAndSubmitLDAPForm(gotoNextPage, enableNavButtons);
         }
     }
 

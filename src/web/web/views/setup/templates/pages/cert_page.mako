@@ -49,7 +49,7 @@
     }
 
     function submitCertificateForm() {
-        disableButtons();
+        disableNavButtons();
 
         var choice = $(':input[name=cert.option]:checked').val();
         if (choice == 'existing') {
@@ -111,6 +111,6 @@
 
         doPost("${request.route_path('json_setup_certificate')}",
             serializedData + "&server.browser.certificate=" + certificateData + "&server.browser.key=" + keyData,
-            gotoNextPage, enableButtons);
+            gotoNextPage, enableNavButtons);
     }
 </script>

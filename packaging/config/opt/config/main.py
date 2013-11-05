@@ -138,7 +138,7 @@ def set_external_variable():
     return ""
 
 # No authentication required
-@app.route("/check_license_sha1", methods=["POST"])
+@app.route("/check_license_sha1", methods=["GET"])
 @returns_plaintext
 @require_matching_license_shasum()
 def check_license_sha1():

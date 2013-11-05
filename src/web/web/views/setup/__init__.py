@@ -1,18 +1,23 @@
-# Important: if you add a route here, you need to whitelist it in the
-# RedirectMiddleware class (see ../../__init__.py).
-def includeme(config):
-    config.add_route('setup', '/setup')
-    config.add_route('setup_redirect', '/setup_redirect')
+
+routes = {
+    'setup',
+    'setup_authorized',
 
     # Intermediate configuration steps.
-    config.add_route('json_setup_hostname', 'json_setup_hostname')
-    config.add_route('json_verify_smtp', 'json_verify_smtp')
-    config.add_route('json_setup_email', 'json_setup_email')
-    config.add_route('json_setup_certificate', 'json_setup_certificate')
-    config.add_route('json_verify_ldap', 'json_verify_ldap')
-    config.add_route('json_setup_identity', 'json_setup_identity')
+    'json_set_license',
+    'json_setup_hostname',
+    'json_setup_email',
+    'json_verify_smtp',
+    'json_setup_certificate',
+    'json_setup_identity',
+    'json_verify_ldap',
 
     # Final configuration steps.
-    config.add_route('json_setup_apply', 'json_setup_apply')
-    config.add_route('json_setup_poll', 'json_setup_poll')
-    config.add_route('json_setup_finalize', 'json_setup_finalize')
+    'json_setup_apply',
+    'json_setup_poll',
+    'json_setup_finalize'
+}
+
+def includeme(config):
+    for item in routes:
+        config.add_route(item, item)
