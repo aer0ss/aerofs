@@ -176,7 +176,7 @@ public class AbstractRestTest extends AbstractTest
         l.info("OAuth service at {}", bifrost.getListeningPort());
 
         String bifrostUrl =
-                "https://localhost:" + bifrost.getListeningPort() + "/tokeninfo";
+                "http://localhost:" + bifrost.getListeningPort() + "/tokeninfo";
 
         prop.setProperty("api.daemon.port", "0");
         prop.setProperty("api.tunnel.host", "localhost");

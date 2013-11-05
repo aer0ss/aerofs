@@ -14,6 +14,9 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+/**
+ *
+ */
 public class TestTokenVerificationClient extends BifrostTest
 {
     private TokenVerificationClient verificationClient;
@@ -23,7 +26,7 @@ public class TestTokenVerificationClient extends BifrostTest
     {
         verificationClient =
                 new TokenVerificationClient(
-                        URI.create("http://localhost:" + _port + "/tokeninfo"),
+                        URI.create("https://localhost:" + _port + "/tokeninfo"),
                         null,
                         new NioClientSocketChannelFactory());
     }

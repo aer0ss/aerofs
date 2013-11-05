@@ -47,17 +47,14 @@ public class TokenVerificationClient
             @Override
             public ChannelPipeline getPipeline() throws Exception
             {
-                ChannelPipeline p = Channels.pipeline(
+                return Channels.pipeline(
+                        NettyUtil.newSslHandler(new SSLEngineFactory(
+                                Mode.Client, Platform.Desktop, null, cacert, null)),
                         new HttpClientCodec(),
                         new HttpChunkAggregator(2 * C.KB),
                         new OAuthVerificationHandler<VerifyTokenResponse>(_endpoint.getPath(),
                                 VerifyTokenResponse.class)
                 );
-                if (_endpoint.getScheme().equals("https")) {
-                    p.addFirst("ssl", NettyUtil.newSslHandler(new SSLEngineFactory(
-                            Mode.Client, Platform.Desktop, null, cacert, null)));
-                }
-                return p;
             }
         });
     }
