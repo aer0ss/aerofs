@@ -1,4 +1,3 @@
-import re
 import requests
 import properties
 from cStringIO import StringIO

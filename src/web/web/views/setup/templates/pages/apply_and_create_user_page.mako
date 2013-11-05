@@ -311,10 +311,6 @@
         }, 3000);
     }
 
-    function hideAllModals() {
-        $('div.modal').modal('hide');
-    }
-
     function createUser() {
         setEnabled($('#create-user-btn'), false);
         ## See index.mako on why this request uses GET.

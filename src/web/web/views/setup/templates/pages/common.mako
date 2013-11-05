@@ -73,6 +73,10 @@
             });
         }
 
+        function hideAllModals() {
+            $('div.modal').modal('hide');
+        }
+
         function verifyAbsence(elementID) {
             var v = document.getElementById(elementID).value;
             return v == null || v == "";

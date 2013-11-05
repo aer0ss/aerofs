@@ -1,4 +1,5 @@
 <%namespace name="csrf" file="../csrf.mako"/>
+<%namespace name="modal" file="../modal.mako"/>
 <%namespace name="common" file="common.mako"/>
 
 <form id="hostnameForm" method="POST">
@@ -12,29 +13,64 @@
     ## current_config is a template parameter
     <input class="input-block-level" id="base-host-unified" name="base.host.unified" type="text" value=${val}>
 
-    <p>This is your AeroFS Appliance's hostname. You need to configure the hostname's DNS entry to point to the IP assigned to the appliance.</p>
-    <p>If you're using VirtualBox, get the appliance's IP from its console. If you're using OpenStack, configure a floating IP for this instance.</p>
-    <p>We recommend using <code>share.*</code> as the hostname. For example, ACME Corporation may choose <code>share.acme.com</code>.</p>
-
+    <p>This is your AeroFS Appliance's hostname. We recommend using <code>share.*</code> as the
+        hostname. For example, ACME Corporation may choose <code>share.acme.com</code>.</p>
+    <p>You need to configure the hostname's DNS entry to point to the IP assigned to the appliance.
+        If you're using VirtualBox, get the the IP from the appliance's console. If you're using
+        OpenStack, configure a floating IP for this instance.</p>
     <hr />
     ${common.render_previous_button(page)}
     ${common.render_next_button("submitHostnameForm()")}
 </form>
 
+<%modal:modal>
+    <%def name="id()">confirm-modal</%def>
+    <%def name="title()">Changing hostname</%def>
+    <%def name="footer()">
+        <a href="#" class="btn"
+           onclick="restoreHostname(); return false;">Undo Change</a>
+        <a href="#" class="btn btn-danger"
+           onclick="confirmHostnameChange(); return false;">Proceed</a>
+    </%def>
+    Are you sure you want to change the hostname? Depending on your DNS setup,
+    it might require users to reinstall AeroFS desktop apps and logout mobile apps.
+    <a href="#" target="_blank">More information</a>.
+</%modal:modal>
+
 <script>
     $(document).ready(function() {
         $('#base-host-unified').focus();
+        disableEsapingFromModal($('div.modal'));
     });
 
     function submitHostnameForm() {
         disableNavButtons();
 
         if (verifyPresence("base-host-unified", "Please specify a hostname.")) {
-            var $form = $('#hostnameForm');
-            var serializedData = $form.serialize();
-
-            doPost("${request.route_path('json_setup_hostname')}",
-                serializedData, gotoNextPage, enableNavButtons);
+            var val = $('#base-host-unified').val();
+            if (${1 if is_configuration_initialized else 0} &&
+                    val != "${current_config['base.host.unified']}") {
+                $('#confirm-modal').modal('show');
+            } else {
+                doSubmit();
+            }
         }
+    }
+
+    function restoreHostname() {
+        hideAllModals();
+        enableNavButtons();
+        $('#base-host-unified').val("${current_config['base.host.unified']}");
+    }
+
+    function confirmHostnameChange() {
+        hideAllModals();
+        doSubmit();
+    }
+
+    function doSubmit() {
+        var serializedData = $('#hostnameForm').serialize();
+        doPost("${request.route_path('json_setup_hostname')}",
+                serializedData, gotoNextPage, enableNavButtons);
     }
 </script>

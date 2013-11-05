@@ -25,7 +25,7 @@
         ## The license doesn't exist (i.e. initial setup)
         <h3>Welcome!</h3>
 
-        <p>You will set up the AeroFS Appliance.
+        <p>You will set up the AeroFS Appliance in the next few pages.
             Please upload your license to begin:</p>
 
         <input id="license-file" type="file" style="display: none">
