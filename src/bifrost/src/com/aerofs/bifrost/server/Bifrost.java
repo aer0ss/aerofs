@@ -107,7 +107,10 @@ public class Bifrost extends Service
 
         // Perform database migration (with implicit initialization)
         Flyway flyway = new Flyway();
-        flyway.setDataSource(BifrostSessionFactory.dataSource());
+        flyway.setDataSource(
+                getStringProperty("bifrost.db.url", "jdbc:mysql://localhost:3306/bifrost"),
+                getStringProperty("bifrost.db.user", "bifrost"),
+                getStringProperty("bifrost.db.password", ""));
         flyway.setInitOnMigrate(true);
         flyway.migrate();
 
