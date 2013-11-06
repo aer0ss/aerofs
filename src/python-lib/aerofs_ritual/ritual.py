@@ -139,6 +139,10 @@ class _RitualServiceWrapper(object):
                 return sf.store_id
         return None
 
+    def wait_shared(self, path):
+        while self.get_sid(path) is None:
+            time.sleep(param.POLLING_INTERVAL)
+
     def list_shared_folder_invitations(self):
         return self._service.list_shared_folder_invitations().invitation
 
@@ -356,6 +360,12 @@ class _RitualServiceWrapper(object):
             r.append(alias)
         return r
 
+    def test_wait_aliased(self, path, count):
+        while True:
+            if len(self.test_get_alias_object(path)) == count:
+                return
+            time.sleep(param.POLLING_INTERVAL)
+
     def wait_path(self, path):
         pbpath = convert.absolute_to_pbpath(path)
         self.wait_pbpath(pbpath)
@@ -398,3 +408,17 @@ class _RitualServiceWrapper(object):
             f.write(content.encode('utf-8'))
         tmpfile = cygpath_to_winpath(tmp.name) if 'cygwin' in sys.platform.lower() else tmp.name
         self.import_pbpath(pbpath, tmpfile)
+
+    def wait_file_with_content(self, path, content):
+        self.wait_pbpath_with_content(convert.absolute_to_pbpath(path), content)
+
+    def wait_pbpath_with_content(self, pbpath, content):
+        while True:
+            self.wait_pbpath(pbpath)
+            export_path = self.export_pbpath(pbpath)
+            if export_path:
+                with open(export_path, 'rb') as f:
+                    l = f.readline()
+                if l == content.encode('utf-8'):
+                    break
+            time.sleep(param.POLLING_INTERVAL)
