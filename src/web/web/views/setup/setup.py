@@ -145,6 +145,10 @@ def _get_default_support_email(hostname):
     request_method='POST'
 )
 def json_set_license(request):
+    # Due to the way we use JS to upload this file, the request parameter on
+    # the wire is urlencoded utf8 of a unicode string.
+    # request.params['license'] is that unicode string.
+    # We want raw bytes, not the Unicode string, so we encode to latin1
     set_license_file_and_shasum(request, request.params['license'].encode('latin1'))
     return HTTPOk()
 
