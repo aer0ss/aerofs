@@ -22,6 +22,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.common.Base62CodeGenerator;
+import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.UserDatabase;
@@ -61,11 +62,13 @@ public class User
         private final Organization.Factory _factOrg;
         private final OrganizationInvitation.Factory _factOrgInvite;
         private final SharedFolder.Factory _factSharedFolder;
+        private final License _license;
 
         @Inject
         public Factory(UserDatabase udb, OrganizationInvitationDatabase odb,
                 Device.Factory factDevice, Organization.Factory factOrg,
-                OrganizationInvitation.Factory factOrgInvite, SharedFolder.Factory factSharedFolder)
+                OrganizationInvitation.Factory factOrgInvite, SharedFolder.Factory factSharedFolder,
+                License license)
         {
             _udb = udb;
             _odb = odb;
@@ -73,6 +76,7 @@ public class User
             _factOrg = factOrg;
             _factOrgInvite = factOrgInvite;
             _factSharedFolder = factSharedFolder;
+            _license = license;
         }
 
         public User create(@Nonnull UserID id)
@@ -318,7 +322,7 @@ public class User
      *
      * @param shaedSP sha256(scrypt(p|u)|passwdSalt)
      * @throws ExAlreadyExist if the user ID already exists.
-     * @throws EXLicenseLimit if the user doesn't exist and the organization is
+     * @throws ExLicenseLimit if the user doesn't exist and the organization is
      *                        at or above their license's seat limit
      */
     public void save(byte[] shaedSP, FullName fullName)
@@ -337,18 +341,15 @@ public class User
                 authLevel = AuthorizationLevel.ADMIN;
             }
 
-            // Verify
-            String license_type = getStringProperty("license_type", "none");
-            if (license_type.equals("none")) {
-                throw new ExLicenseLimit("No license available - refusing to create a user");
+            // Verify valid license
+            if (!_f._license.isValid()) {
+                throw new ExLicenseLimit("No valid license available - refusing to create a user");
             }
+
             // Enforce seat limits
-            Optional<Integer> seatLimit = getOptionalIntegerProperty("license_seats");
-            if (seatLimit.isPresent()) {
-                if (privateOrg.countUsers() >= seatLimit.get()) {
-                    throw new ExLicenseLimit("Adding a user would exceed the organization's "
-                             + seatLimit.get() + "-seat limit");
-                }
+            if (privateOrg.countUsers() >= _f._license.seats()) {
+                throw new ExLicenseLimit("Adding a user would exceed the organization's "
+                         + _f._license.seats() + "-seat limit");
             }
 
             saveImpl(shaedSP, fullName, privateOrg, authLevel);

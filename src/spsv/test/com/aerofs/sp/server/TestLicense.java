@@ -6,6 +6,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.sp.server.lib.License;
 import org.junit.Test;
 
 import javax.annotation.Nullable;

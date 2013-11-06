@@ -32,6 +32,7 @@ import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -121,8 +122,9 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected JedisEpochCommandQueue commandQueue = new JedisEpochCommandQueue(jedisTrans);
 
+    License license = mock(License.class);
     @Spy protected User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg,
-            factOrgInvite, factSharedFolder);
+            factOrgInvite, factSharedFolder, license);
     {
         factDevice.inject(ddb, certdb, certgen, factUser, factCert);
         factSharedFolder.inject(sfdb, factUser);
@@ -178,6 +180,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
         mockInvitationEmailerFactory();
         wireSPService();
+        mockLicense();
 
         verkehrPublished = mockAndCaptureVerkehrPublish();
 
@@ -193,6 +196,12 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         saveUser(USER_3);
 
         sqlTrans.commit();
+    }
+
+    private void mockLicense()
+    {
+        when(license.isValid()).thenReturn(true);
+        when(license.seats()).thenReturn(Integer.MAX_VALUE);
     }
 
     private void mockInvitationEmailerFactory()
