@@ -33,8 +33,6 @@ do
     cp ../out.ant/artifacts/$jar/$jar.jar $OPT/
 done
 
-# TODO (MP) logback.xml when we move to dropwizard.
-cp $RESOURCES/logback.xml $OPT
 cp $RESOURCES/logback-stdout.xml $OPT
 cp $RESOURCES/bootstrap.yml $OPT
 
