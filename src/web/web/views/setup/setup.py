@@ -14,19 +14,13 @@ import requests
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError, HTTPBadRequest
 
+import aerofs_common.bootstrap
 from aerofs_common.configuration import Configuration
 from web.util import *
 from web.license import is_license_present_and_valid, is_license_present, set_license_file_and_shasum
 from web.views.login.login_view import URL_PARAM_EMAIL
 
-
 log = logging.getLogger("web")
-
-# ------------------------------------------------------------------------
-# Bootstrap pipe constants
-# ------------------------------------------------------------------------
-
-_BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
 
 # ------------------------------------------------------------------------
 # Verification interface constants.
@@ -54,6 +48,7 @@ _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
 # ------------------------------------------------------------------------
 
 _SESSION_KEY_EMAIL_VERIFICATION_CODE = 'email_verification_code'
+_SESSION_KEY_BOOTSTRAP_EID = 'bootstrap_eid'
 
 # ------------------------------------------------------------------------
 # Settings utilities
@@ -436,9 +431,10 @@ def _get_ldap_specific_parameters(request_params):
 )
 def json_setup_apply(request):
     log.info("applying configuration")
-    # kick off bootstrap by placing the task list at the designated location.
-    # (the bootstrap process is watching!)
-    shutil.copyfile('/opt/bootstrap/tasks/manual.tasks', _BOOTSTRAP_PIPE_FILE)
+
+    # Ask bootstrap to execute the set of "manual" tasks.
+    eid = aerofs_common.bootstrap.enqueue_task_set("manual")
+    request.session[_SESSION_KEY_BOOTSTRAP_EID] = eid
 
     return {}
 
@@ -453,12 +449,9 @@ def json_setup_apply(request):
     request_method = 'POST'
 )
 def json_setup_poll(request):
-    # bootstrap is complete if the task list file is removed by the process.
-    # TODO (WW) add error detection and handling.
-    running = os.stat(_BOOTSTRAP_PIPE_FILE).st_size != 0
-    log.warn("bootstrap in-progress: {}".format(running))
-
-    return {'completed': not running}
+    eid = request.session.get(_SESSION_KEY_BOOTSTRAP_EID)
+    status = aerofs_common.bootstrap.get_task_status(eid)
+    return {'status': status}
 
 # ------------------------------------------------------------------------
 # Finalize
@@ -490,8 +483,5 @@ def json_setup_finalize(request):
     #   initial setup wouldn't be able to call json_setup_poll or finalize after
     #   calling apply.
     #
-    with open(_BOOTSTRAP_PIPE_FILE, 'w') as f:
-        # Add the delay so that we have time to return this call before we reload.
-        f.write('delay\nuwsgi-reload')
-
+    aerofs_common.bootstrap.enqueue_task_set("web-reload")
     return {}
