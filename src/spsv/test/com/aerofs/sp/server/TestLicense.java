@@ -6,6 +6,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.lib.configuration.ClientConfigurationLoader;
 import com.aerofs.sp.server.lib.License;
 import org.junit.Test;
 
@@ -74,6 +75,7 @@ public class TestLicense
             String str = new SimpleDateFormat("yyyy-MM-dd").format(new Date(expiry));
             props.put("license_valid_until", str);
         }
+        props.put(ClientConfigurationLoader.PROPERTY_IS_PRIVATE_DEPLOYMENT, "true");
         ConfigurationProperties.setProperties(props);
     }
 }

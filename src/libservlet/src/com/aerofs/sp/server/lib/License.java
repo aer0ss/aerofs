@@ -1,11 +1,13 @@
 package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.google.common.base.Optional;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getOptionalIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
@@ -17,9 +19,15 @@ public class License
 {
     // 0 if the license is not present or the format is not supported.
     long _expireTimestamp;
-    Optional<Integer> _seats;
+    int _seats;
 
     public License()
+    {
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) initForPrivateDeployment();
+        else initForPublicDeployment();
+    }
+
+    private void initForPrivateDeployment()
     {
         Optional<String> type = getOptionalStringProperty("license_type");
 
@@ -35,8 +43,13 @@ public class License
             // leave _expireTimestamp as zero
         }
 
-        _seats = getOptionalIntegerProperty("license_seats");
+        _seats = getIntegerProperty("license_seats", 0);
+    }
 
+    private void initForPublicDeployment()
+    {
+        _expireTimestamp = Long.MAX_VALUE;
+        _seats = Integer.MAX_VALUE;
     }
 
     /**
@@ -52,17 +65,12 @@ public class License
     }
 
     /**
-     * Return the number of seats this license allows, if present.
-     * If absent, return Integer.MAX_VALUE.
+     * Return the number of seats this license allows.
      * N.B. this method does not check the license's validity, test that first with isValid().
-     * @return the number of seats this license should allow
      */
     public int seats()
     {
-        if (_seats.isPresent()) {
-            return _seats.get();
-        }
-        return Integer.MAX_VALUE;
+        return _seats;
     }
 
 }

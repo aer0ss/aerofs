@@ -31,7 +31,6 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.google.common.collect.ImmutableCollection;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -44,10 +43,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
-import static com.aerofs.base.config.ConfigurationProperties.getOptionalIntegerProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class User
 {

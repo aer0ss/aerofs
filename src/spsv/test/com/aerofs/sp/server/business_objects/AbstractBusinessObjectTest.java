@@ -30,7 +30,6 @@ import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import org.junit.Before;
-import org.mockito.Mock;
 import org.mockito.Spy;
 
 import java.io.IOException;

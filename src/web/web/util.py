@@ -173,4 +173,9 @@ def is_private_deployment(settings):
     return str2bool(settings.get('config.loader.is_private_deployment', False))
 
 def is_configuration_initialized(settings):
-    return str2bool(settings.get('base.configuration.initialized', False))
+    """
+    Return whether the configuration is initialized. Always return Rrue in
+    public deployment.
+    """
+    return not is_private_deployment(settings) or \
+           str2bool(settings.get('base.configuration.initialized', False))

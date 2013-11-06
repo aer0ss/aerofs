@@ -7,6 +7,7 @@ import logging
 import datetime
 from pyramid.security import remember
 import requests
+from web.util import is_private_deployment
 from web.error import error
 
 log = logging.getLogger(__name__)
@@ -23,16 +24,19 @@ _URL_CHECK_LICENSE_SHA1 = _URL_LICENSE_HOST + "/check_license_sha1"
 
 def is_license_present(conf):
     """
-    Return whether the license exists.
+    Return whether the license exists. Always return true for public deployment
     @param conf a dict of configuration properties
     """
-    return _CONF_KEY_LICENSE_TYPE in conf
+    return not is_private_deployment(conf) or _CONF_KEY_LICENSE_TYPE in conf
 
 def is_license_present_and_valid(conf):
     """
-    Return whether the license exists and has not expired
+    Return whether the license exists and has not expired. Always return true
+    for public deployment.
     @param conf a dict of configuration properties
     """
+    if not is_private_deployment(conf): return True
+
     if not is_license_present(conf): return False
 
     # We only accept normal licenses for the time being
