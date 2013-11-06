@@ -21,8 +21,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import com.aerofs.bifrost.oaaas.model.AccessTokenRequest;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;

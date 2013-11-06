@@ -39,7 +39,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.internal.Scoping;
-import com.googlecode.flyway.core.Flyway;
 import org.hibernate.SessionFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;

@@ -1,6 +1,5 @@
 package com.aerofs.gui;
 
-import com.aerofs.controller.InstallActor.MultiUser;
 import com.aerofs.controller.Setup;
 import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.base.Loggers;

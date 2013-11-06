@@ -40,9 +40,7 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPBlockingClient.Factory;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.sun.jersey.api.core.HttpContext;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -67,7 +65,6 @@ import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_AUTHORIZA
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_CLIENT_CREDENTIALS;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_REFRESH_TOKEN;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse;
-import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.CLIENT_CREDENTIALS_NOT_PERMITTED;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.UNKNOWN_CLIENT_ID;
 
 /**

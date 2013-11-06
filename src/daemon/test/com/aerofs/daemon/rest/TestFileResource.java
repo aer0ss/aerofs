@@ -23,8 +23,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
 
-import static com.jayway.restassured.RestAssured.expect;
-import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.mockito.Matchers.any;

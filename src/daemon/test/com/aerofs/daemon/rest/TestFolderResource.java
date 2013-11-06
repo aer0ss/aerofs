@@ -4,7 +4,6 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import org.junit.Test;
 
-import static com.jayway.restassured.RestAssured.expect;
 import static org.hamcrest.Matchers.equalTo;
 
 public class TestFolderResource extends AbstractRestTest

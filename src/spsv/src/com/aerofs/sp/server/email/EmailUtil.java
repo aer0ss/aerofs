@@ -6,7 +6,6 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.servlets.lib.AsyncEmailSender;
-import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
 

@@ -30,7 +30,6 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.restless.Configuration;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
 import com.google.inject.AbstractModule;

@@ -7,7 +7,6 @@ import org.junit.Test;
 
 import java.util.Date;
 
-import static com.jayway.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
 public class TestChildrenResource extends AbstractRestTest
