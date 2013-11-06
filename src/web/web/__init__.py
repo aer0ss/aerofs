@@ -32,6 +32,9 @@ class RedirectMiddleware(object):
         #     has expired, and
         #  3. The page is not a setup page.
         # See docs/design/site_setup_auth.md for more info.
+        #
+        # Note that static assets are served directly by nginx. We don't need to
+        # consider them here.
         return is_private_deployment(self.settings) and \
                 not self._is_config_inited_and_license_valid() and \
                 not self._is_setup_page(environ)
