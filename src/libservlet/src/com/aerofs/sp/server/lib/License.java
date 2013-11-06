@@ -8,7 +8,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getOptionalIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
