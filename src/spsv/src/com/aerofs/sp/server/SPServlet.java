@@ -24,6 +24,7 @@ import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -96,8 +97,9 @@ public class SPServlet extends AeroServlet
     private final Device.Factory _factDevice = new Device.Factory();
     private final OrganizationInvitation.Factory _factOrgInvite =
             new OrganizationInvitation.Factory();
+    private final License _license = new License();
     private final User.Factory _factUser = new User.Factory(_udb, _oidb, _factDevice, _factOrg,
-            _factOrgInvite, _factSharedFolder);
+            _factOrgInvite, _factSharedFolder, _license);
     {
         _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
         _factOrg.inject(_odb, _oidb, _factUser, _factSharedFolder, _factOrgInvite);
@@ -141,7 +143,6 @@ public class SPServlet extends AeroServlet
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,
             SP.SP_POST_PARAM_DATA);
 
-    private final License _license = new License();
 
     @Override
     public void init(ServletConfig config) throws ServletException

@@ -6,6 +6,7 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.acl.Role;
 import com.aerofs.sp.common.SharedFolderState;
+import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
@@ -29,12 +30,15 @@ import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import org.junit.Before;
+import org.mockito.Mock;
 import org.mockito.Spy;
 
 import java.io.IOException;
 import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestWithSPDatabase
 {
@@ -57,8 +61,10 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     @Spy protected final OrganizationInvitation.Factory factOrgInvite =
             new OrganizationInvitation.Factory();
 
+    License license = mock(License.class);
+
     @Spy protected final User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg,
-            factOrgInvite, factSharedFolder);
+            factOrgInvite, factSharedFolder, license);
     {
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
         factSharedFolder.inject(sfdb, factUser);
@@ -74,6 +80,8 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     {
         nextOrganizationID = 1;
         nextUserID = 1;
+        when(license.isValid()).thenReturn(true);
+        when(license.seats()).thenReturn(Integer.MAX_VALUE);
     }
 
     protected User newUser()

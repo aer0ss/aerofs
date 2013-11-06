@@ -1,4 +1,4 @@
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.Loggers;
 import com.google.common.base.Optional;
@@ -6,6 +6,7 @@ import com.google.common.base.Optional;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+import static com.aerofs.base.config.ConfigurationProperties.getOptionalIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
@@ -16,8 +17,9 @@ public class License
 {
     // 0 if the license is not present or the format is not supported.
     long _expireTimestamp;
+    Optional<Integer> _seats;
 
-    License()
+    public License()
     {
         Optional<String> type = getOptionalStringProperty("license_type");
 
@@ -32,6 +34,9 @@ public class License
             Loggers.getLogger(License.class).warn("invalid license_valid_until: {}", validUntil);
             // leave _expireTimestamp as zero
         }
+
+        _seats = getOptionalIntegerProperty("license_seats");
+
     }
 
     /**
@@ -45,4 +50,19 @@ public class License
         // N.B. keep the comparison consistent with license.py:is_license_present_and_valid()
         return System.currentTimeMillis() <= _expireTimestamp;
     }
+
+    /**
+     * Return the number of seats this license allows, if present.
+     * If absent, return Integer.MAX_VALUE.
+     * N.B. this method does not check the license's validity, test that first with isValid().
+     * @return the number of seats this license should allow
+     */
+    public int seats()
+    {
+        if (_seats.isPresent()) {
+            return _seats.get();
+        }
+        return Integer.MAX_VALUE;
+    }
+
 }
