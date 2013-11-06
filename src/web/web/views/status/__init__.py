@@ -1,2 +1,2 @@
 def includeme(config):
-    config.add_route('status', '/status')
+    config.add_route('status', 'status')
