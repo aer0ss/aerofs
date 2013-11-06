@@ -6,19 +6,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
-# TODO: Add aerofs.python-lib here
-requires = [
-    'protobuf==2.5.0',
-    'pyramid',
-    'pyramid_debugtoolbar',
-    'waitress',
-    'requests',
-    'pyramid_beaker',
-    'Babel',
-    'mock',
-    'stripe'
-    ]
-
 msg_extractors = {}
 for package in find_packages():
     msg_extractors[package] = [
@@ -44,12 +31,9 @@ setup(name='aerofs-web',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      install_requires=requires,
-      tests_require=requires,
       test_suite="unittests",
       entry_points = """\
       [paste.app_factory]
       main = web:main
       """,
       )
-
