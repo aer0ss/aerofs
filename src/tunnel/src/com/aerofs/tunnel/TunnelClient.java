@@ -1,55 +1,57 @@
 package com.aerofs.tunnel;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.base.net.AbstractNettyReconnectingClient;
 import com.aerofs.base.net.NettyUtil;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.util.Timer;
-import org.slf4j.Logger;
 
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
 /**
  * Tunnel client: connects to a Tunnel server and generates virtual server channels
  */
-public class TunnelClient
+public class TunnelClient extends AbstractNettyReconnectingClient
 {
-    protected static final Logger l = Loggers.getLogger(TunnelClient.class);
+    private final UserID _user;
+    private final DID _did;
+    private final SSLEngineFactory _sslEngineFactory;
+    private final ChannelPipelineFactory _pipelineFactory;
 
-    private final ClientBootstrap _bootstrap;
-
-    public TunnelClient(final UserID user, final DID did, ClientSocketChannelFactory channelFactory,
-            final SSLEngineFactory sslEngineFactory, final ChannelPipelineFactory pipelineFactory,
-            final Timer timer)
+    public TunnelClient(InetSocketAddress address, UserID user, DID did,
+            ClientSocketChannelFactory channelFactory, SSLEngineFactory sslEngineFactory,
+            ChannelPipelineFactory pipelineFactory, Timer timer)
     {
-        _bootstrap = new ClientBootstrap(channelFactory);
-        _bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+        super(address, timer, channelFactory);
+        _user = user;
+        _did = did;
+        _sslEngineFactory = sslEngineFactory;
+        _pipelineFactory = pipelineFactory;
+    }
+
+    @Override
+    protected ChannelPipelineFactory pipelineFactory()
+    {
+        return new ChannelPipelineFactory() {
             @Override
             public ChannelPipeline getPipeline() throws Exception
             {
-                TunnelHandler handler = new TunnelHandler(null, pipelineFactory);
+                TunnelHandler handler = new TunnelHandler(null, _pipelineFactory);
                 return Channels.pipeline(
-                        NettyUtil.newSslHandler(sslEngineFactory),
+                        NettyUtil.newSslHandler(_sslEngineFactory),
                         TunnelHandler.newFrameDecoder(),
                         TunnelHandler.newLengthFieldPrepender(),
-                        NettyUtil.newCNameVerificationHandler(handler, user, did),
+                        NettyUtil.newCNameVerificationHandler(handler, _user, _did),
                         new ChunkedWriteHandler(),
-                        TunnelHandler.newIdleStateHandler(timer),
+                        TunnelHandler.newIdleStateHandler(_timer),
                         handler);
             }
-        });
-    }
-
-    public ChannelFuture connect(SocketAddress addr)
-    {
-        return _bootstrap.connect(addr);
+        };
     }
 }

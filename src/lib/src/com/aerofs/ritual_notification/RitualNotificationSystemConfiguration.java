@@ -9,16 +9,13 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class RitualNotificationSystemConfiguration
 {
-    public InetAddress getAddress()
+    public InetSocketAddress getAddress()
     {
-        return LibParam.LOCALHOST_ADDR;
-    }
-
-    public int getPort()
-    {
-        return Cfg.port(PortType.RITUAL_NOTIFICATION);
+        return new InetSocketAddress(LibParam.LOCALHOST_ADDR,
+                Cfg.port(PortType.RITUAL_NOTIFICATION));
     }
 }

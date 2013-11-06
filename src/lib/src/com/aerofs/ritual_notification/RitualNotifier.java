@@ -9,21 +9,22 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.channel.group.ChannelGroup;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.slf4j.Logger;
 
 import java.net.SocketAddress;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Lists.newCopyOnWriteArrayList;
-import static com.google.common.collect.Sets.newCopyOnWriteArraySet;
 
 @org.jboss.netty.channel.ChannelHandler.Sharable
 public class RitualNotifier extends SimpleChannelHandler
 {
     private static final Logger l = Loggers.getLogger(RitualNotifier.class);
 
-    private final Set<Channel> _channels = newCopyOnWriteArraySet();
+    private final ChannelGroup _allChannels = new DefaultChannelGroup();
     private final List<IRitualNotificationClientConnectedListener> _listeners = newCopyOnWriteArrayList();
 
     protected RitualNotifier()
@@ -90,23 +91,10 @@ public class RitualNotifier extends SimpleChannelHandler
         final Integer channelId = channel.getId();
         final SocketAddress remoteAddress = channel.getRemoteAddress();
 
-        boolean added = _channels.add(channel);
+        boolean added = _allChannels.add(channel);
         if (!added) {
             throw new ExDuplicateNotificationClient(clientString(channelId, remoteAddress));
         }
-
-        channel.getCloseFuture().addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture future)
-                    throws Exception
-            {
-                boolean removed = _channels.remove(channel);
-                if (!removed) return;
-
-                l.info("del " + clientString(channelId, remoteAddress));
-            }
-        });
 
         l.info("add " + clientString(channelId, remoteAddress));
 
@@ -123,7 +111,7 @@ public class RitualNotifier extends SimpleChannelHandler
 
     public void sendNotification(PBNotification notification)
     {
-        for (Channel channel : _channels) {
+        for (Channel channel : _allChannels) {
             ChannelFuture writeFuture = channel.write(notification);
             addWriteFailureFuture(writeFuture);
         }
@@ -139,5 +127,11 @@ public class RitualNotifier extends SimpleChannelHandler
     {
         l.warn("caught err:{}", e.getCause());
         ctx.getChannel().close();
+    }
+
+    public void shutdown()
+    {
+        _allChannels.close().awaitUninterruptibly(500, TimeUnit.MILLISECONDS);
+        _allChannels.clear();
     }
 }

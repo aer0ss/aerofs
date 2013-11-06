@@ -1,124 +1,44 @@
 package com.aerofs.ritual_notification;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.TimerUtil;
+import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.net.AbstractNettyReconnectingClient;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
+import com.aerofs.lib.notifier.IListenerVisitor;
+import com.aerofs.lib.notifier.Notifier;
 import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.google.common.base.Preconditions;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
+import org.jboss.netty.handler.codec.protobuf.ProtobufDecoder;
 import org.slf4j.Logger;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.net.Socket;
+import java.util.concurrent.Executor;
 
-import static com.aerofs.lib.LibParam.RitualNotification.NOTIFICATION_SERVER_CONNECTION_RETRY_INTERVAL;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
-public class RitualNotificationClient
+public class RitualNotificationClient extends AbstractNettyReconnectingClient
 {
-    private final static Logger l = Loggers.getLogger(RitualNotificationClient.class);
+    private static final Logger l = Loggers.getLogger(RitualNotificationClient.class);
 
-    private boolean _started; // for debugging only
-
-    private volatile boolean _paused;
-    private volatile boolean _stopping;
-
-    // access protected by synchronized (_ls)
-    private final ConcurrentlyModifiableListeners<IRitualNotificationListener> _ls = ConcurrentlyModifiableListeners.create();
-
-    private final RitualNotificationSystemConfiguration _config;
+    private final Executor _executor = sameThreadExecutor();
+    private final Notifier<IRitualNotificationListener> _listeners = Notifier.create();
 
     public RitualNotificationClient(RitualNotificationSystemConfiguration config)
     {
-        _config = config;
-    }
-
-    /**
-     * @pre this method hasn't been called before.
-     */
-    public void start()
-    {
-        Preconditions.checkState(!_started);
-        Preconditions.checkState(!_stopping);
-        _started = true;
-
-        ThreadUtil.startDaemonThread("rnc", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                while (true) {
-                    try {
-                        thdRecv_();
-                    } catch (IOException e) {
-                        l.warn(Util.e(e, IOException.class));
-                    }
-
-                    // ugh
-
-                    synchronized (_ls) {
-                        try {
-                            for (IRitualNotificationListener l : _ls.beginIterating_()) {
-                                l.onNotificationChannelBroken();
-                            }
-                        } finally {
-                            _ls.endIterating_();
-                        }
-                    }
-
-                    if (_stopping) break;
-
-                    l.info("reconnect in " + NOTIFICATION_SERVER_CONNECTION_RETRY_INTERVAL + " ms");
-
-                    do {
-                        ThreadUtil.sleepUninterruptable(NOTIFICATION_SERVER_CONNECTION_RETRY_INTERVAL);
-                    } while (_paused);
-                }
-            }
-        });
-    }
-
-    public void stop()
-    {
-        if (!_started) l.warn("closing rnc before starting");
-        _stopping = true;
-    }
-
-    public void pause()
-    {
-        _paused = true;
-    }
-
-    public void resume()
-    {
-        _paused = false;
-    }
-
-    private void thdRecv_() throws IOException
-    {
-        Socket s = new Socket(_config.getAddress(), _config.getPort());
-        try {
-            DataInputStream is = new DataInputStream(new BufferedInputStream(s.getInputStream()));
-            while (true) {
-                byte[] bs = readMessage(is, LibParam.RITUAL_NOTIFICATION_MAGIC, Integer.MAX_VALUE);
-
-                if (_stopping) return;
-
-                synchronized (_ls) {
-                    try {
-                        for (IRitualNotificationListener l : _ls.beginIterating_()) {
-                            l.onNotificationReceived(PBNotification.parseFrom(bs));
-                        }
-                    } finally {
-                        _ls.endIterating_();
-                    }
-                }
-            }
-        } finally {
-            s.close();
-        }
+        super(config.getAddress(), TimerUtil.getGlobalTimer(),
+                ChannelFactories.getClientChannelFactory());
     }
 
     /**
@@ -127,30 +47,90 @@ public class RitualNotificationClient
      */
     public void addListener(IRitualNotificationListener l)
     {
-        synchronized (_ls) { _ls.addListener_(l); }
+        _listeners.addListener(l, _executor);
     }
 
     public void removeListener(IRitualNotificationListener l)
     {
-        synchronized (_ls) { _ls.removeListener_(l); }
+        _listeners.addListener(l, _executor);
     }
 
-    private static byte[] readMessage(DataInputStream is, int magic, int maxSize)
-            throws IOException
+    @Override
+    protected ChannelPipelineFactory pipelineFactory()
     {
-        int m = is.readInt();
-        if (m != magic) {
-            throw new IOException("Magic number doesn't match. Expect 0x" +
-                    String.format("%1$08x", magic) + " received 0x" +
-                    String.format("%1$08x", m));
-        }
-        int size = is.readInt();
+        return new ChannelPipelineFactory() {
+            @Override
+            public ChannelPipeline getPipeline() throws Exception
+            {
+                return Channels.pipeline(
+                        new MagicFrameDecoder(LibParam.RITUAL_NOTIFICATION_MAGIC),
+                        new ProtobufDecoder(PBNotification.getDefaultInstance()),
+                        new NotificationHandler()
+                );
+            }
+        };
+    }
 
-        if (size > maxSize) {
-            throw new IOException("Message too large (" + size + " > " + maxSize + ")");
+    @Override
+    public String toString()
+    {
+        return "RNC";
+    }
+
+    private static class MagicFrameDecoder extends LengthFieldBasedFrameDecoder
+    {
+        private final int _magic;
+
+        public MagicFrameDecoder(int magic)
+        {
+            super(Integer.MAX_VALUE, 4, 4, 0, 8);
+            _magic = magic;
         }
-        byte[] bs = new byte[size];
-        is.readFully(bs);
-        return bs;
+
+        @Override
+        protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer)
+                throws Exception
+        {
+            int magic = buffer.getInt(0);
+            if (magic != _magic) {
+                throw new ExProtocolError("bad magic exp:" + _magic + " act:" + magic);
+            }
+            return super.decode(ctx, channel, buffer);
+        }
+    }
+
+    private class NotificationHandler extends SimpleChannelUpstreamHandler
+    {
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
+        {
+            l.info("ex: ", e.getCause());
+            ctx.getChannel().close();
+        }
+
+        @Override
+        public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) throws IOException
+        {
+            final PBNotification notification = (PBNotification)me.getMessage();
+            _listeners.notifyOnOtherThreads(new IListenerVisitor<IRitualNotificationListener>() {
+                @Override
+                public void visit(IRitualNotificationListener listener)
+                {
+                    listener.onNotificationReceived(notification);
+                }
+            });
+        }
+
+        @Override
+        public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
+        {
+            _listeners.notifyOnOtherThreads(new IListenerVisitor<IRitualNotificationListener>() {
+                @Override
+                public void visit(IRitualNotificationListener listener)
+                {
+                    listener.onNotificationChannelBroken();
+                }
+            });
+        }
     }
 }

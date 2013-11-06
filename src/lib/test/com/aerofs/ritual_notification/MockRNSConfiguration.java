@@ -4,8 +4,7 @@
 
 package com.aerofs.ritual_notification;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
 import java.util.Random;
 
 public class MockRNSConfiguration extends RitualNotificationSystemConfiguration
@@ -13,18 +12,8 @@ public class MockRNSConfiguration extends RitualNotificationSystemConfiguration
     private final int port = 1024 + new Random().nextInt(10000);
 
     @Override
-    public InetAddress getAddress()
+    public InetSocketAddress getAddress()
     {
-        try {
-            return InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            return null;
-        }
-    }
-
-    @Override
-    public int getPort()
-    {
-        return port;
+        return new InetSocketAddress(port);
     }
 }

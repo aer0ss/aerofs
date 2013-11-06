@@ -3,17 +3,21 @@ package com.aerofs.ritual_notification;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.lib.BlockIncomingMessagesHandler;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.MagicHandler;
+import com.aerofs.lib.MagicPrepender;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.group.ChannelGroup;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.jboss.netty.handler.codec.protobuf.ProtobufEncoder;
 
 import javax.inject.Inject;
-import java.net.InetSocketAddress;
+
+import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
@@ -21,10 +25,12 @@ public class RitualNotificationServer
 {
     private final RitualNotifier _ritualNotifier = new RitualNotifier();
     private final ServerBootstrap _bootstrap;
+    private Channel _channel;
     private final RitualNotificationSystemConfiguration _config;
 
     @Inject
-    public RitualNotificationServer(ServerSocketChannelFactory serverSocketChannelFactory, RitualNotificationSystemConfiguration config)
+    public RitualNotificationServer(ServerSocketChannelFactory serverSocketChannelFactory,
+            RitualNotificationSystemConfiguration config)
     {
         ServerBootstrap bootstrap = new ServerBootstrap(serverSocketChannelFactory);
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
@@ -35,7 +41,7 @@ public class RitualNotificationServer
             {
                 return Channels.pipeline(
                         new AddressResolverHandler(newSingleThreadExecutor()),
-                        new MagicHandler(LibParam.RITUAL_NOTIFICATION_MAGIC),
+                        new MagicPrepender(LibParam.RITUAL_NOTIFICATION_MAGIC),
                         new BlockIncomingMessagesHandler(),
                         new LengthFieldPrepender(4),
                         new ProtobufEncoder(),
@@ -50,7 +56,13 @@ public class RitualNotificationServer
 
     public void start_()
     {
-        _bootstrap.bind(new InetSocketAddress(_config.getAddress().getHostName(), _config.getPort())); // resolves inline
+        _channel = _bootstrap.bind(_config.getAddress()); // resolves inline
+    }
+
+    public void stop_()
+    {
+        if (_channel != null) _channel.close();
+        _ritualNotifier.shutdown();
     }
 
     public void addListener(IRitualNotificationClientConnectedListener listener)

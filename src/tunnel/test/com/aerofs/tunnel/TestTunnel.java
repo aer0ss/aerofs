@@ -71,7 +71,6 @@ public class TestTunnel extends AbstractBaseTest
 
     private Timer timer = new HashedWheelTimer();
     private int port;
-    private TunnelClient client;
 
     private ServerConnectionWatcher serverConnections;
     private VirtualConnectionWatcher serverVirtualConnections;
@@ -85,17 +84,6 @@ public class TestTunnel extends AbstractBaseTest
         clientVirtualConnections = new VirtualConnectionWatcher();
         serverConnections.server.start();
         port = serverConnections.server.getListeningPort();
-        client = new TunnelClient(user, did,
-                clientChannelFactory,
-                clientSslEngineFactory,
-                new ChannelPipelineFactory() {
-                    @Override
-                    public ChannelPipeline getPipeline() throws Exception
-                    {
-                        return Channels.pipeline(clientVirtualConnections.handler);
-                    }
-                },
-                timer);
     }
 
     @After
@@ -121,7 +109,17 @@ public class TestTunnel extends AbstractBaseTest
      */
     Tunnel<Channel, TunnelHandler> makePhysical() throws Exception
     {
-        ChannelFuture cf = client.connect(new InetSocketAddress(port));
+        ChannelFuture cf = new TunnelClient(new InetSocketAddress(port), user, did,
+                clientChannelFactory,
+                clientSslEngineFactory,
+                new ChannelPipelineFactory() {
+                    @Override
+                    public ChannelPipeline getPipeline() throws Exception
+                    {
+                        return Channels.pipeline(clientVirtualConnections.handler);
+                    }
+                },
+                timer).connect();
         Channel c = cf.getChannel();
         cf.awaitUninterruptibly();
         return new Tunnel<Channel, TunnelHandler>(c, serverConnections.nextConnection().get());

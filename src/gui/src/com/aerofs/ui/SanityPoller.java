@@ -254,7 +254,6 @@ public class SanityPoller
             l.warn("Rpc call failure ignored: " + Util.e(e, Exception.class));
         }
         UIGlobals.dm().stopIgnoreException();
-        UIGlobals.rnc().pause();
     }
 
     /**
@@ -264,7 +263,6 @@ public class SanityPoller
     {
         try {
             UIGlobals.dm().start();  // restart the daemon
-            UIGlobals.rnc().resume(); // restart ritual notification client
         } catch (Exception e1) {
             UI.get().show(MessageType.ERROR,
                     "An error occured while starting up " + L.product() +
