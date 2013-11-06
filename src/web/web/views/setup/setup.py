@@ -432,8 +432,8 @@ def _get_ldap_specific_parameters(request_params):
 def json_setup_apply(request):
     log.info("applying configuration")
 
-    # Ask bootstrap to execute the set of "manual" tasks.
-    eid = aerofs_common.bootstrap.enqueue_task_set("manual")
+    # Ask bootstrap to execute the set of "apply-config" tasks.
+    eid = aerofs_common.bootstrap.enqueue_task_set("apply-config")
     request.session[_SESSION_KEY_BOOTSTRAP_EID] = eid
 
     return {}
