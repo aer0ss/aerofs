@@ -19,7 +19,8 @@
         ${upload_license_button()}
 
         <p class="text-right muted" style="margin-top: 80px;">
-            On the next few pages, please review and re-apply system configurations.
+            In order for the new license to take effect, you must click through<br>
+            to the last step, and click 'Apply and Finish'.
         </p>
     %else:
         ## The license doesn't exist (i.e. initial setup)

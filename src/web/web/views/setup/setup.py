@@ -3,7 +3,6 @@
 
 import logging
 import tempfile
-import shutil
 import os
 import socket
 import random
@@ -434,6 +433,7 @@ def json_setup_apply(request):
 
     # Ask bootstrap to execute the set of "apply-config" tasks.
     eid = aerofs_common.bootstrap.enqueue_task_set("apply-config")
+    # TODO (WW) pass the eid back to JS rather than saving it in the session
     request.session[_SESSION_KEY_BOOTSTRAP_EID] = eid
 
     return {}
@@ -449,6 +449,9 @@ def json_setup_apply(request):
     request_method = 'POST'
 )
 def json_setup_poll(request):
+    """
+    TODO (WW) share the code with backup_view.py:json_bootstrap_poll
+    """
     eid = request.session.get(_SESSION_KEY_BOOTSTRAP_EID)
     status = aerofs_common.bootstrap.get_task_status(eid)
     return {'status': status}
@@ -464,7 +467,7 @@ def json_setup_poll(request):
     request_method = 'POST'
 )
 def json_setup_finalize(request):
-    log.warn("Finalizing configuration...")
+    log.warn("finalizing configuration...")
 
     configuration = Configuration()
     configuration.set_external_property('configuration_initialized', 'true')

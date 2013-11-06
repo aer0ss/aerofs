@@ -96,3 +96,14 @@ function setEnabled($elem, enabled) {
     if (enabled) $elem.removeAttr("disabled");
     else $elem.attr("disabled", "disabled");
 }
+
+function disableEsapingFromModal($modal) {
+    // For all the modals on this page, prevent ESC or mouse clicking on the
+    // background to close the modal.
+    // See http://stackoverflow.com/questions/9894339/disallow-twitter-bootstrap-modal-window-from-closing
+    $modal.modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+    });
+}

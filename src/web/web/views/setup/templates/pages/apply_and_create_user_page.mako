@@ -1,5 +1,7 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
+<%namespace name="spinner" file="../spinner.mako"/>
+<%namespace name="progress_modal" file="../progress_modal.mako"/>
 
 ## N.B. When adding or removing content, adjust the modals' "top" style
 ## to match the content's position.
@@ -16,18 +18,18 @@
         class='btn btn-primary pull-right'>Apply and Finish</button>
 </form>
 
-<%common:progress_modal_html>
+<%progress_modal:html>
     <p><span id="count-down-text">Please wait for about
         <strong><span id="count-down-number"></span></strong>
         seconds while the system is being configured...</span>
         <span id="be-patient-text">It should be done very shortly...</span>
     </p>
-    <p>
-        Once configuration finishes, your browser will automatically refresh.
-    </p>
-</%common:progress_modal_html>
+    ## Don't use <p> to wrap the following line to avoid an ugly, big padding
+    ## between the line and the bottom of the modal.
+    Once configuration finishes, your browser will automatically refresh.
+</%progress_modal:html>
 
-## TODO (WW) use progress_modal
+## TODO (WW) use progress_modal?
 <div id="finalizing-modal" class="modal hide" tabindex="-1" role="dialog"
         style="top: 200px">
     <div class="modal-body">
@@ -129,7 +131,9 @@
     </div>
 </div>
 
-<%common:progress_modal_scripts/>
+<%progress_modal:scripts/>
+## spinner support is required by progress_modal
+<%spinner:scripts/>
 
 <script>
     var andFinalizeParam = '&finalize=1';
@@ -148,7 +152,7 @@
 
     function initializeModals() {
         var countDownInterval;
-        $('#${common.progress_modal_id()}').on('shown', function() {
+        $('#${progress_modal.id()}').on('shown', function() {
             ## Start countdown
             var countDown = 90;
             printCountDown();
@@ -200,7 +204,7 @@
 
     function submitForm() {
         ## Show the progress modal
-        $('#${common.progress_modal_id()}').modal('show');
+        $('#${progress_modal.id()}').modal('show');
 
         doPost("${request.route_path('json_setup_apply')}",
                 getSerializedFormData(), pollForBootstrap, hideAllModals);
@@ -252,6 +256,7 @@
     ## rest. JS calls the two parts separately. This can avoid forcing nginx
     ## restart to be the last step.
 
+    ## TODO (WW) use pollBootstrap() in backup.mako
     function pollForBootstrap() {
         ## the number of consecutive status-code-0 responses. See comments above
         var statusZeroCount = 0;

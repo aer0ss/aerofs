@@ -21,58 +21,8 @@
         Next ></button>
 </%def>
 
-<%def name="progress_modal_id()">progress-modal</%def>
-
-## N.B. there can be at most one progress modal on each HTML page because of ID
-## conflicts.
-<%def name="progress_modal_html()">
-    <div id="${progress_modal_id()}" class="modal hide" tabindex="-1" role="dialog"
-            style="top: 200px">
-        <div class="modal-body" style="margin-top: 7px;">
-            ## "display: table-cell" is needed for caller.body()s that have more
-            ## than one line of text.
-            ## TODO (WW) a better approach
-            <div id="progress-modal-spinner" class="pull-left"
-                  style="display: table-cell; margin-right: 28px; padding-top: -10px">&nbsp;</div>
-            <div style="display: table-cell;">
-                ${caller.body()}
-            </div>
-        </div>
-    </div>
-</%def>
-
-<%def name="progress_modal_scripts()">
-    <%spinner:scripts/>
-    <script>
-        function initializeProgressModal() {
-            initializeSpinners();
-            var $spinner = $('#progress-modal-spinner');
-
-            var $modal = $('#${progress_modal_id()}');
-            disableEsapingFromModal($modal);
-
-            $modal.on('shown', function() {
-                startSpinner($spinner, 0);
-            }).on('hidden', function() {
-                stopSpinner($spinner);
-            });
-        }
-    </script>
-</%def>
-
 <%def name="scripts(page)">
     <script>
-        function disableEsapingFromModal($modal) {
-            ## For all the modals on this page, prevent ESC or mouse clicking on the
-            ## background to close the modal.
-            ## See http://stackoverflow.com/questions/9894339/disallow-twitter-bootstrap-modal-window-from-closing
-            $modal.modal({
-                backdrop: 'static',
-                keyboard: false,
-                show: false
-            });
-        }
-
         function hideAllModals() {
             $('div.modal').modal('hide');
         }

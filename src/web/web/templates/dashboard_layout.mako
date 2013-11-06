@@ -5,6 +5,7 @@
 
 <%!
     from web.auth import is_admin, get_session_user
+    from web.util import is_private_deployment
 %>
 
 <div class="row">
@@ -82,7 +83,7 @@
         ${render_nonadmin_links()}
         <li class="nav-header">My Team</li>
         ${render_admin_team_links()}
-        %if request.registry.settings['deployment.mode'] != 'public':
+        %if is_private_deployment(request.registry.settings):
             <li class="nav-header">My Appliance</li>
             ${render_admin_appliance_links()}
         %endif
@@ -120,7 +121,9 @@
     <%
         links = [
             ('status', _("Service Status")),
-            ('setup', _("Setup"))
+            # ('backup', _("Backup")),
+            # ('update', _("Update")),
+            ('setup', _("Setup")),
         ]
     %>
     % for link in links:

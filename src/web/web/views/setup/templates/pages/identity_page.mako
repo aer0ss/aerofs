@@ -1,5 +1,7 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
+<%namespace name="spinner" file="../spinner.mako"/>
+<%namespace name="progress_modal" file="../progress_modal.mako"/>
 
 <%
     authenticator = current_config['lib.authenticator']
@@ -249,11 +251,13 @@
         if the certificate is <strong>not</strong> publicly signed.</div>
 </%def>
 
-<%common:progress_modal_html>
+<%progress_modal:html>
     Please wait while we are testing the LDAP server...
-</%common:progress_modal_html>
+</%progress_modal:html>
 
-<%common:progress_modal_scripts/>
+<%progress_modal:scripts/>
+## spinner support is required by progress_modal
+<%spinner:scripts/>
 
 <script>
     var ldapOptionChanged = false;
@@ -310,7 +314,7 @@
             console.log("ldap opt changed. test new opts");
 
             ## Show the progress dialog for testing LDAP
-            var $progressModal = $('#${common.progress_modal_id()}');
+            var $progressModal = $('#${progress_modal.id()}');
             $progressModal.modal('show');
             var onError = function() {
                 $progressModal.modal('hide');

@@ -11,7 +11,6 @@ from error import error
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
-from web.license import is_license_present_and_valid
 
 log = logging.getLogger("web")
 
