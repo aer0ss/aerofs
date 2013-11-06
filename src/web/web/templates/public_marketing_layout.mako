@@ -39,9 +39,13 @@
     ${request.route_path('marketing_home')}
 </%block>
 
+<%! from web.util import is_private_deployment %>
+
 <%block name="page_view_tracker">
-    ## We only track marketing page views
-    mixpanel.track('Page Viewed', {'Title' : document.title, 'URL' : window.location.pathname});
+    %if not is_private_deployment(request.registry.settings):
+            ## We only track marketing page views
+            mixpanel.track('Page Viewed', {'Title' : document.title, 'URL' : window.location.pathname});
+    %endif
 </%block>
 
 <%block name="footer">
