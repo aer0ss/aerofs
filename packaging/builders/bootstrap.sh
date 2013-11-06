@@ -47,3 +47,7 @@ done
 
 # Bootstrap task sets.
 cp -a $RESOURCES/tasks $OPT/tasks
+
+# Bootstrap public directory.
+mkdir $OPT/public
+chmod 777 $OPT/public
