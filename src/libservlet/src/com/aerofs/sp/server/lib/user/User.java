@@ -7,6 +7,7 @@ package com.aerofs.sp.server.lib.user;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.base.ex.ExLicenseLimit;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
@@ -29,6 +30,7 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.google.common.collect.ImmutableCollection;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -41,6 +43,10 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import static com.aerofs.base.config.ConfigurationProperties.getOptionalIntegerProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class User
 {
@@ -312,9 +318,11 @@ public class User
      *
      * @param shaedSP sha256(scrypt(p|u)|passwdSalt)
      * @throws ExAlreadyExist if the user ID already exists.
+     * @throws EXLicenseLimit if the user doesn't exist and the organization is
+     *                        at or above their license's seat limit
      */
     public void save(byte[] shaedSP, FullName fullName)
-            throws ExAlreadyExist, SQLException, ExNotFound
+            throws ExAlreadyExist, SQLException, ExNotFound, ExLicenseLimit
     {
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             // Private deployment: all users are created in the same organization (the "private
@@ -327,6 +335,20 @@ public class User
             if (!privateOrg.exists()) {
                 privateOrg = _f._factOrg.save(OrganizationID.PRIVATE_ORGANIZATION);
                 authLevel = AuthorizationLevel.ADMIN;
+            }
+
+            // Verify
+            String license_type = getStringProperty("license_type", "none");
+            if (license_type.equals("none")) {
+                throw new ExLicenseLimit("No license available - refusing to create a user");
+            }
+            // Enforce seat limits
+            Optional<Integer> seatLimit = getOptionalIntegerProperty("license_seats");
+            if (seatLimit.isPresent()) {
+                if (privateOrg.countUsers() >= seatLimit.get()) {
+                    throw new ExLicenseLimit("Adding a user would exceed the organization's "
+                             + seatLimit.get() + "-seat limit");
+                }
             }
 
             saveImpl(shaedSP, fullName, privateOrg, authLevel);

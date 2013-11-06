@@ -2034,6 +2034,7 @@ public class SPService implements ISPService
      * @throws ExBadCredential if username/password combination is incorrect, or in the case of the
      *                         team server, if they have not signed in successfully using mutual
      *                         authentication.
+     * @throws ExLicenseLimit if a seat limit prevents this new user from signing in
      */
     @Override
     public ListenableFuture<Void> signInUser(String userId, ByteString credentials)
@@ -2189,6 +2190,8 @@ public class SPService implements ISPService
      * return the user attributes and then delete the pending auth record to avoid a replay.
      *
      * @throws ExBadCredential indicates the session is unknown or already returned once.
+     * @throws ExLicenseLimit indicates that the user did not exist and adding the user would
+     *                        exceed the organization's seat limit.
      */
     @Override
     public ListenableFuture<OpenIdSessionAttributes> openIdGetSessionAttributes(String session)

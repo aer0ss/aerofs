@@ -125,6 +125,10 @@ message PBException {
         // A secure session nonce was invalid, which indicates that external authentication
         // (OpenId or other...) failed.
         EXTERNAL_AUTH_FAILURE = 412;
+
+        // An operation failed because the current software license does not
+        // permit the action to be taken
+        LICENSE_LIMIT = 413;
     }
 
     required Type type = 1;

@@ -69,6 +69,13 @@ public class ConfigurationProperties
         return Optional.fromNullable(_properties.getProperty(key));
     }
 
+    public static Optional<Integer> getOptionalIntegerProperty(String key)
+    {
+        String value = _properties.getProperty(key);
+        Integer intValue = (value != null) ? Integer.valueOf(value) : null ;
+        return Optional.fromNullable(intValue);
+    }
+
     public static URL getUrlProperty(String key, String defaultValue)
     {
         return parseUrl(_properties.getProperty(key, defaultValue));
