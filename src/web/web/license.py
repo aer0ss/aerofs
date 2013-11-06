@@ -55,10 +55,10 @@ def set_license_file_and_shasum(request, license_data):
     """
     Set the license file by calling the config server. Call error() if the
     request failed.
-    @param license_data: the content in a license file
+    @param license_data: the bytes of a license file
     """
     r = requests.post(_URL_SET_LICENSE_FILE, data = {
-        'license_file': license_data
+        'license_file': base64.urlsafe_b64encode(license_data)
     })
     if r.status_code == 200:
         log.info("set license file okay: {}".format(r.text))
@@ -70,11 +70,7 @@ def set_license_file_and_shasum(request, license_data):
     remember(request, 'license-admin')
 
 def _set_license_shasum(license_data, request):
-    # convert unicode data to latin -- urlsafe_b64decode doesn't like unicode
-    latin = license_data.encode('latin1')
-    # convert b64 text to binary
-    decoded = base64.urlsafe_b64decode(latin)
-    shasum = hashlib.sha1(decoded).hexdigest()
+    shasum = hashlib.sha1(license_data).hexdigest()
     request.session[_SESSION_KEY_LICENSE_SHASUM] = shasum
 
 def is_license_shasum_valid(request):
