@@ -42,7 +42,8 @@ class Configuration(object):
         # Exclude the browser key to avoid keeping it around in the python
         # process's memory, in case a stacktrace somewhere winds up doing a
         # state dump and exposing the SSL key
-        del configuration['server.browser.key']
+        if 'server.browser.key' in configuration:
+            del configuration['server.browser.key']
 
     def set_external_property(self, key, value):
         """
