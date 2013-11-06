@@ -1,5 +1,5 @@
 """
-Utility functions to support licensing
+Utility functions to support licensing. See License.java for its counterpart in Java
 """
 import base64
 import hashlib
@@ -44,6 +44,7 @@ def is_license_present_and_valid(conf):
 
     now = datetime.datetime.today()
     expiry_date = datetime.datetime.strptime(valid_until, "%Y-%m-%d")
+    # N.B. keep the comparison consistent with License.java:isValid()
     return now <= expiry_date
 
 def set_license_file_and_shasum(request, license_data):

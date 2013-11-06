@@ -141,6 +141,8 @@ public class SPServlet extends AeroServlet
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,
             SP.SP_POST_PARAM_DATA);
 
+    private final License _license = new License();
+
     @Override
     public void init(ServletConfig config) throws ServletException
     {
@@ -218,6 +220,15 @@ public class SPServlet extends AeroServlet
     protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
         throws IOException
     {
+        // We disable SP rather than shutting down the entire Tomcat process to keep other servlets
+        // (e.g. SMTP/LDAP verification servlets) running, which is required by the Site Setup to
+        // complete the setup without the need of restarting SP after the user inputs a valid license.
+        // See also docs/design/licensing.md
+        //
+        // Also, do not block doGet() so server status still works after license expires.
+        //
+        if (!_license.isValid()) throw new IOException("the license is invalid");
+
         _sessionProvider.setSession(req.getSession());
         _certauth.init(req);
 
@@ -253,6 +264,9 @@ public class SPServlet extends AeroServlet
         _postDelegate.sendReply(resp, bytes);
     }
 
+    /**
+     * GET is used only to report server status
+     */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
             throws IOException

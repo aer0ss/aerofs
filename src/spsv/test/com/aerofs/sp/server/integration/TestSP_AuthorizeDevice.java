@@ -39,7 +39,7 @@ public class TestSP_AuthorizeDevice extends AbstractSPTest
     @Test(expected = ExNoPerm.class)
     public void testShouldFailIfNotSignedIn() throws Exception
     {
-        MobileAccessCode auth = service.getMobileAccessCode().get();
+        service.getMobileAccessCode().get();
     }
 
     @Test
@@ -79,7 +79,7 @@ public class TestSP_AuthorizeDevice extends AbstractSPTest
         MobileAccessCode auth = service.getMobileAccessCode().get();
         sessionUser.remove();
 
-        AuthorizeMobileDeviceReply attrs = service.authorizeMobileDevice(auth.getAccessCode(),
+        service.authorizeMobileDevice(auth.getAccessCode(),
                 "My Test Device").get();
 
         try {
