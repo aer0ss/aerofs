@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # A script which is run periodically to see if the current license file has expired.
 # If the license file doesn't exist or is not currently valid, then it shuts
-# down SP, verkehr, zephyr, and ejabberd.
+# down verkehr and zephyr. Ideally it shuts down ejabberd to disable jingle transfers,
+# but ejabberd can't be shut down reliably.
 
 from aerofs_licensing import license_file
 import os
@@ -9,7 +10,7 @@ import subprocess
 import sys
 
 LICENSE_FILE_PATH = "/etc/aerofs/license.gpg"
-SERVICES_TO_STOP = ["tomcat6", "verkehr", "zephyr"]
+SERVICES_TO_STOP = [verkehr", "zephyr"]
 
 def shut_down_services_and_exit():
     for service in SERVICES_TO_STOP:
