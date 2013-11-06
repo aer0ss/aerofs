@@ -133,7 +133,7 @@ def json_signup(request):
                   " <a target='_blank' href='" + request.route_path('request_password_reset') + \
                   " '>click here</a> to reset it."
         elif e.get_type() == common.PBException.LICENSE_LIMIT:
-            support_email = settings.get('base.www.support_email_address')
+            support_email = request.registry.settings.get('base.www.support_email_address')
             # TODO (WW): format the support email address as a mailto: link
             msg = "Adding your user account would cause your organization to exceed its licensed user limit.<br>" \
                   "Please contact your administrator at {}.".format(support_email)
