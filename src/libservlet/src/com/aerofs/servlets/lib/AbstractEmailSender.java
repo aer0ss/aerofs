@@ -100,13 +100,14 @@ public abstract class AbstractEmailSender
         // relay for AeroFS Appliance.
         props.put("mail.smtp.localhost", "localhost");
 
-        props.put("mail.smtp.starttls.enable",   Boolean.toString(_enable_tls));
-        props.put("mail.smtp.starttls.required", Boolean.toString(_enable_tls));
-
         if (relayIsLocalhost()) {
             props.put("mail.smtp.host", "127.0.0.1");
             props.put("mail.smtp.auth", "false");
+            props.put("mail.smtp.starttls.enable",   "false");
+            props.put("mail.smtp.starttls.required", "false");
         } else {
+            props.put("mail.smtp.starttls.enable",   Boolean.toString(_enable_tls));
+            props.put("mail.smtp.starttls.required", Boolean.toString(_enable_tls));
             props.put("mail.smtp.host", _host);
             props.put("mail.smtp.auth", Boolean.toString(!isEmptyCredentials()));
         }
