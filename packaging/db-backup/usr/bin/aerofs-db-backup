@@ -2,6 +2,7 @@
 set -eu
 
 tempdir=$(mktemp -d /tmp/aerofs-db-backup.XXXXXXXXX)
+rm -rf $tempdir
 mkdir -p $tempdir/aerofs-db-backup
 pushd $tempdir 1>/dev/null 2>/dev/null
 
