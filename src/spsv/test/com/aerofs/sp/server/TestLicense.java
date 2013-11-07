@@ -8,6 +8,8 @@ import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.sp.server.lib.License;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.annotation.Nullable;
@@ -20,6 +22,21 @@ import static org.junit.Assert.assertTrue;
 
 public class TestLicense
 {
+    private boolean savedIsPrivateDeployment;
+
+    @Before
+    public void setupConfiguration()
+    {
+        savedIsPrivateDeployment = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
+    }
+
+    @After
+    public void resetConfiguration()
+    {
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = savedIsPrivateDeployment;
+    }
+
     @Test
     public void isValid_shouldReturnFalseIfLicenseIsAbsent()
     {
@@ -76,7 +93,5 @@ public class TestLicense
             props.put("license_valid_until", str);
         }
         ConfigurationProperties.setProperties(props);
-
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
     }
 }

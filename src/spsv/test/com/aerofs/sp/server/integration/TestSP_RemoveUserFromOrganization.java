@@ -100,14 +100,15 @@ public class TestSP_RemoveUserFromOrganization extends AbstractSPTest
         } catch (ExNoPerm e) { /* expected */ }
     }
 
-    @Test
+    @Test(expected = ExNoPerm.class)
     public void shouldFailInEnterpriseDeployment() throws Exception
     {
+        boolean savedIsPrivateDeployment = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
         PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
         try {
             shouldRemoveUserFromOrganization();
-            fail();
-        } catch (ExNoPerm e) { /* expected */ }
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;
+        } finally {
+            PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = savedIsPrivateDeployment;
+        }
     }
 }
