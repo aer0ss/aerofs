@@ -1,4 +1,5 @@
 import logging
+import re
 
 from pyramid import url
 from pyramid.httpexceptions import HTTPFound
@@ -10,7 +11,7 @@ from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_sp.scrypt import scrypt
 from web.auth import set_session_user
-from web.util import *
+from web.util import flash_error, get_rpc_stub, is_private_deployment
 
 # URL param keys.
 URL_PARAM_FORM_SUBMITTED = 'form_submitted'

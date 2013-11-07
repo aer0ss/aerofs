@@ -14,7 +14,7 @@ from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
 from web.auth import get_session_user, is_admin
 from web.sp_util import exception2error
-from web.util import *
+from web.util import get_rpc_stub, parse_rpc_error_exception
 from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException

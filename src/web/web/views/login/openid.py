@@ -6,10 +6,11 @@ from pyramid.view import view_config
 
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
+from aerofs_common.exception import ExceptionReply
 
 from login_view import resolve_next_url
 from web.auth import set_session_user
-from web.util import *
+from web.util import flash_error
 
 log = logging.getLogger(__name__)
 

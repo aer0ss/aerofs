@@ -4,7 +4,7 @@ from pyramid.view import view_config
 
 from aerofs_sp.gen.common_pb2 import PBException
 
-from web.util import *
+from web.util import get_rpc_stub
 
 log = logging.getLogger("web")
 

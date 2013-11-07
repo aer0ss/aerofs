@@ -4,7 +4,7 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNoContent, HTTPFound
 
 from web.auth import get_session_user
-from web.util import *
+from web.util import get_rpc_stub
 from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 
 
