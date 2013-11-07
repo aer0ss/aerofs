@@ -3,6 +3,7 @@
 ## caller.id(): the id of the modal
 ## caller.title(), body(), footer(): modal title, body, and footer
 ## Optinally define caller.error() to return true for modals that indicate errors.
+## Optinally define caller.success() to return true for modals that indicate success.
 ## Optinally define caller.modal_style() to specify CCS styles for the modal.
 ## Optinally define caller.body_style() to specify CCS styles for the modal body.
 <%def name="modal()">
@@ -16,6 +17,8 @@
             <h4
             %if hasattr(caller, "error"):
                 class="text-error"
+            %elif hasattr(caller, "success"):
+                class="text-success"
             %endif
             >${caller.title()}</h4>
         </div>

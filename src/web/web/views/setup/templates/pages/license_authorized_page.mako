@@ -37,4 +37,4 @@
 <hr />
 ${common.render_next_button("submitForm()")}
 
-${license_page.submit_form_scripts('submitForm', 'license-file')}
+${license_page.submit_scripts('license-file')}

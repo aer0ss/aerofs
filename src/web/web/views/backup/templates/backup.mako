@@ -5,16 +5,24 @@
 
 <h2>Back up your AeroFS appliance</h2>
 
-<p>TOOD (WW) complete the UI</p>
+<p>Backing up your AeroFS Appliance is easy. Simply click the button below to
+    download the appliance's user and configuration data as a single file.</p>
+
+<p>The backup preparation process may take a while, and during this time
+    some system services may be unavailable. At the end of the backup
+    process, your browser will automatically download the backup file.</p>
+
+<p>To restore an AeroFS Appliance from backup, boot up a new appliance
+    and select the restore option during the first step.</p>
+
+<hr/>
 
 <p>
-    Download the appliance's user data as a single file.
+    <button class="btn btn-primary"
+            onclick="backup(); return false;">
+        Backup Now
+    </button>
 </p>
-
-<button class="btn btn-primary"
-        onclick="backup(); return false;">
-    Back Up Now
-</button>
 
 <%common:html/>
 

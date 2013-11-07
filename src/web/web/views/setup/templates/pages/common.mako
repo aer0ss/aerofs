@@ -9,8 +9,7 @@
         id='${prev_button_id()}'
         class='btn'
         ## make it the last element in tab order (max allowed value is 32767)
-        tabindex='10000'
-        type='button'>Previous</button>
+        tabindex='10000'>Previous</button>
 </%def>
 
 <%def name="render_next_button(javascriptCallback)">

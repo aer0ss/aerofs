@@ -18,7 +18,8 @@ def enqueue_task_set(task_set_name):
     if response.status_code == 200:
         return response.json()[unicode('eid')]
     else:
-        raise Exception()
+        raise Exception('bootstrap.enqueue_task failed with status {}'
+            .format(response.status_code))
 
 def enum(**enums):
     """

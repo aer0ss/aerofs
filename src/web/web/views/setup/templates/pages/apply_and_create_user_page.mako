@@ -1,4 +1,5 @@
 <%namespace name="csrf" file="../csrf.mako"/>
+<%namespace name="bootstrap" file="../bootstrap.mako"/>
 <%namespace name="common" file="common.mako"/>
 <%namespace name="spinner" file="../spinner.mako"/>
 <%namespace name="progress_modal" file="../progress_modal.mako"/>
@@ -9,14 +10,12 @@
 <p>Your changes will be applied to various AeroFS system components.
     This might take a short while.</p>
 <hr />
-<form id="applyForm" method="POST">
-    ${csrf.token_input()}
-    ${common.render_previous_button(page)}
-    <button
-        onclick='submitForm(); return false;'
-        id='nextButton'
-        class='btn btn-primary pull-right'>Apply and Finish</button>
-</form>
+
+${common.render_previous_button(page)}
+<button
+    onclick='submitForm(); return false;'
+    id='nextButton'
+    class='btn btn-primary pull-right'>Apply and Finish</button>
 
 <%progress_modal:html>
     <p><span id="count-down-text">Please wait for about
@@ -134,6 +133,7 @@
 <%progress_modal:scripts/>
 ## spinner support is required by progress_modal
 <%spinner:scripts/>
+<%bootstrap:scripts/>
 
 <script>
     var andFinalizeParam = '&finalize=1';
@@ -188,10 +188,6 @@
         });
     }
 
-    function getSerializedFormData() {
-        return $('#applyForm').serialize();
-    }
-
     ########
     ## There are three steps to setup the system:
     ##  1. Kick-off the bootstrap process
@@ -206,8 +202,7 @@
         ## Show the progress modal
         $('#${progress_modal.id()}').modal('show');
 
-        doPost("${request.route_path('json_setup_apply')}",
-                getSerializedFormData(), pollForBootstrap, hideAllModals);
+        enqueueBootstrapTask('apply-config', pollBootstrap, hideAllModals);
     }
 
     ########
@@ -256,13 +251,13 @@
     ## rest. JS calls the two parts separately. This can avoid forcing nginx
     ## restart to be the last step.
 
-    ## TODO (WW) use pollBootstrap() in backup.mako
-    function pollForBootstrap() {
+    function pollBootstrap(eid) {
         ## the number of consecutive status-code-0 responses. See comments above
         var statusZeroCount = 0;
         var bootstrapPollInterval = window.setInterval(function() {
-            $.post("${request.route_path('json_setup_poll')}", getSerializedFormData())
-            .done(function (response) {
+            $.get('${request.route_path('json_get_bootstrap_task_status')}', {
+                execution_id: eid
+            }).done(function (response) {
                 statusZeroCount = 0;
                 if (response['status'] == 'success') {
                     console.log("poll complete");
@@ -274,8 +269,16 @@
                 }
             }).fail(function (xhr) {
                 console.log("status: " + xhr.status + " statusText: " + xhr.statusText);
-                if (xhr.status == 0 && statusZeroCount++ == 10) {
-                    reloadToFinalize();
+                if (xhr.status == 0) {
+                    if (statusZeroCount++ == 10) reloadToFinalize();
+
+                ## 400: aerofs specific error code, 500: internal server errors.
+                ## Because we are restarting nginx, the browser may throw
+                ## arbitrary codes. It's not safe to catch all error conditions.
+                } else if (xhr.status == 400 || xhr.status == 500) {
+                    window.clearInterval(bootstrapPollInterval);
+                    hideAllModals();
+                    showErrorMessageFromResponse(xhr);
                 }
             });
 
@@ -300,8 +303,9 @@
     ## server to finalize until the page is reloaded.
 
     function finalize() {
-        doPost("${request.route_path('json_setup_finalize')}",
-                getSerializedFormData(), pollForWebServerReadiness);
+        doPost("${request.route_path('json_setup_finalize')}", {
+                ${csrf.token_param()}
+            }, pollForWebServerReadiness);
     }
 
     ########

@@ -1,3 +1,4 @@
+from web.util import add_routes
 
 routes = {
     'setup',
@@ -11,13 +12,11 @@ routes = {
     'json_setup_certificate',
     'json_setup_identity',
     'json_verify_ldap',
+    'json_upload_backup',
 
     # Final configuration steps.
-    'json_setup_apply',
-    'json_setup_poll',
     'json_setup_finalize'
 }
 
 def includeme(config):
-    for item in routes:
-        config.add_route(item, item)
+    add_routes(config, routes)

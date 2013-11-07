@@ -16,5 +16,6 @@ __all__ = [
         'accept',
         'payment',
         'error',
-        'backup'
+        'backup',
+        'bootstrap'
     ]

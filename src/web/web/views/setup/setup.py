@@ -2,6 +2,7 @@
 #
 
 import logging
+import shutil
 import tempfile
 import os
 import socket
@@ -19,6 +20,7 @@ from aerofs_common.configuration import Configuration
 from web.error import error
 from web.util import is_private_deployment, is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, set_license_file_and_shasum
+from web.views.backup.backup_view import BACKUP_FILE_PATH
 from web.views.login.login_view import URL_PARAM_EMAIL
 from web.error import error
 
@@ -51,7 +53,6 @@ _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
 # ------------------------------------------------------------------------
 
 _SESSION_KEY_EMAIL_VERIFICATION_CODE = 'email_verification_code'
-_SESSION_KEY_BOOTSTRAP_EID = 'bootstrap_eid'
 
 # ------------------------------------------------------------------------
 # Settings utilities
@@ -148,6 +149,7 @@ def _get_default_support_email(hostname):
     request_method='POST'
 )
 def json_set_license(request):
+    log.info("set license")
     # Due to the way we use JS to upload this file, the request parameter on
     # the wire is urlencoded utf8 of a unicode string.
     # request.params['license'] is that unicode string.
@@ -435,42 +437,28 @@ def _get_ldap_specific_parameters(request_params):
     return ldap_params
 
 # ------------------------------------------------------------------------
-# Apply
+# Restore from backup data
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name = 'json_setup_apply',
+    route_name = 'json_upload_backup',
     permission='admin',
     renderer = 'json',
     request_method = 'POST'
 )
-def json_setup_apply(request):
-    log.info("applying configuration")
+def json_restore(request):
+    log.info("uploading backup file...")
+    # Clean up old file
+    if os.path.exists(BACKUP_FILE_PATH): os.remove(BACKUP_FILE_PATH)
 
-    # Ask bootstrap to execute the set of "apply-config" tasks.
-    eid = aerofs_common.bootstrap.enqueue_task_set("apply-config")
-    # TODO (WW) pass the eid back to JS rather than saving it in the session
-    request.session[_SESSION_KEY_BOOTSTRAP_EID] = eid
+    # See http://docs.pylonsproject.org/projects/pyramid_cookbook/en/latest/forms/file_uploads.html
+    input_file = request.POST['backup-file'].file
+    input_file.seek(0)
 
-    return {}
+    with open(BACKUP_FILE_PATH, 'wb') as output_file:
+        shutil.copyfileobj(input_file, output_file)
 
-# ------------------------------------------------------------------------
-# Poll
-# ------------------------------------------------------------------------
-
-@view_config(
-    route_name = 'json_setup_poll',
-    permission='admin',
-    renderer = 'json',
-    request_method = 'POST'
-)
-def json_setup_poll(request):
-    """
-    TODO (WW) share the code with backup_view.py:json_bootstrap_poll
-    """
-    eid = request.session.get(_SESSION_KEY_BOOTSTRAP_EID)
-    status = aerofs_common.bootstrap.get_task_status(eid)
-    return {'status': status}
+    return HTTPOk()
 
 # ------------------------------------------------------------------------
 # Finalize

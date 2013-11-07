@@ -5,7 +5,7 @@
     ## The script file is copied from http://fgnass.github.com/spin.js/
     <script src="${request.static_path('web:static/js/spin.min.js')}"></script>
 
-    <script type="text/javascript">
+    <script>
         function initializeSpinners() {
             $.fn.spin = function(opts) {
                 this.each(function() {

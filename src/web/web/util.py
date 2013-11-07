@@ -179,3 +179,10 @@ def is_configuration_initialized(settings):
     """
     return not is_private_deployment(settings) or \
            str2bool(settings.get('base.configuration.initialized', False))
+
+def add_routes(config, routes):
+    """
+    Add all the routes specified in routes to the Pyramid config. The URL path
+    is set to identical to the route name.
+    """
+    for route in routes: config.add_route(route, route)

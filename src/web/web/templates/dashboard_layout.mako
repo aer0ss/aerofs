@@ -121,8 +121,8 @@
     <%
         links = [
             ('status', _("Service Status")),
-            # ('backup', _("Backup")),
-            # ('update', _("Update")),
+            ('backup_appliance', _("Backup")),
+            ('upgrade_appliance', _("Upgrade")),
             ('setup', _("Setup")),
         ]
     %>

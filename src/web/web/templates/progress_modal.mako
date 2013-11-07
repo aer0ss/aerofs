@@ -7,8 +7,8 @@
 ##          Please wait while blah...
 ##      </%progress_modal:html>
 ##
-##      <%progress_modal:scripts/>
 ##      ## spinner support is required by progress_modal
+##      <%progress_modal:scripts/>
 ##      <%spinner:scripts/>
 ##
 ##      <script>
@@ -21,6 +21,15 @@
 ##      </script>
 ##
 ## The client of this file must include spinner.mako's script.
+##
+## If the modal contains multiple lines, don't use <p> for the last line:
+##
+##      <%progress_modal:html>
+##          <p>Please wait while blah...</p>
+##          ## Don't use <p> to wrap the following line to avoid an ugly, big padding
+##          ## between the line and the bottom of the modal.
+##          Blah Blah.
+##      </%progress_modal:html>
 ##
 ## N.B. there can be at most one progress modal on each HTML page because of ID
 ## conflicts.
