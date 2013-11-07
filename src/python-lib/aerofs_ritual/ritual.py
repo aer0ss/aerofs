@@ -12,12 +12,15 @@ RPC methods can be called.  For example
     r.share_folder(...)
 """
 
+import sys
 import socket
 import time
 import errno
+import tempfile
 import connection
 from lib import convert, param
 from lib.app.cfg import get_cfg
+from lib.cygpathtools import cygpath_to_winpath
 from aerofs_common import exception
 from gen import common_pb2, ritual_pb2
 from gen.common_pb2 import PBException, PBSubjectRolePair
@@ -378,3 +381,13 @@ class _RitualServiceWrapper(object):
         except exception.ExceptionReply as e:
             if e.get_type() == PBException.NOT_FOUND: pass
             else: raise e
+
+    def write_file(self, path, content):
+        self.write_pbpath(convert.absolute_to_pbpath(path), content)
+
+    def write_pbpath(self, pbpath, content):
+        tmp = tempfile.NamedTemporaryFile()
+        with tmp.file as f:
+            f.write(content.encode('utf-8'))
+        tmpfile = cygpath_to_winpath(tmp.name) if 'cygwin' in sys.platform.lower() else tmp.name
+        self.import_pbpath(pbpath, tmpfile)
