@@ -96,15 +96,20 @@
                     } else {
                         ## automatically sign in once the AJAX call succeeds
 
-                        if (response['existing_team'] == false) mixpanel.alias(response['team_id']);
-                        mixpanel.name_tag(response['team_id']);
+                        if (mixpanel) {
+                            if (response['existing_team'] == false) mixpanel.alias(response['team_id']);
+                            mixpanel.name_tag(response['team_id']);
 
-                        mixpanel.track("Signed Up", {'user_id': '${email_address}'});
+                            mixpanel.track("Signed Up", {'user_id': '${email_address}'});
 
-                        ## Wait 300 ms for the Mixpanel call to succeed and then proceed to sign in.
-                        ## This is the delay they recommend in their track_forms API.
-                        ## See: https://mixpanel.com/docs/integration-libraries/javascript-full-api#track_forms
-                        setTimeout(sign_in, 300);
+                            ## Wait 300 ms for the Mixpanel call to succeed and then proceed to sign in.
+                            ## This is the delay they recommend in their track_forms API.
+                            ## See: https://mixpanel.com/docs/integration-libraries/javascript-full-api#track_forms
+                            setTimeout(sign_in, 300);
+                        } else {
+                            ## no mixpanel, proceed to sig-in directly
+                            sign_in();
+                        }
                     }
                 })
                 .fail(function (jqXHR, textStatus, errorThrown) {

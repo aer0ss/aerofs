@@ -46,6 +46,9 @@
 
     %if not is_private_deployment(request.registry.settings):
         ${tracking_codes()}
+    % else:
+        ## Set the global mixpanel object to `false` so that we can do `if (mixpanel)` to check if mixpanel is enabled
+        <script>window.mixpanel = false;</script>
     %endif
 
     <script><%block name="page_view_tracker"/></script>

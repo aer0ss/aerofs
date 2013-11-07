@@ -132,7 +132,7 @@
                 addInvitedUserRow(email);
                 $('#invite_user_email').val('');
                 if (done) done();
-                mixpanel.track("Invited User to Team");
+                if (mixpanel) mixpanel.track("Invited User to Team");
 
             }).fail(function (xhr) {
                 if (getErrorTypeNullable(xhr) == 'NO_STRIPE_CUSTOMER_ID') {
