@@ -74,6 +74,7 @@ def main(global_config, **settings):
         settings['mako.directories'] += '\n{}.{}:templates'.format(views.__name__, view)
 
     authentication_policy = SessionAuthenticationPolicy(callback=get_principals)
+    # See root_factory.py for ACL definitions
     authorization_policy = ACLAuthorizationPolicy()
 
     config = Configurator(

@@ -5,10 +5,9 @@ import base64
 import hashlib
 import logging
 import datetime
-from pyramid.security import remember
 import requests
-from web.util import is_private_deployment
-from web.error import error
+from util import is_private_deployment
+from error import error
 
 log = logging.getLogger(__name__)
 
@@ -66,23 +65,22 @@ def set_license_file_and_shasum(request, license_data):
         log.error("set license file failed: {} {}".format(r.status_code, r.text))
         error("The provided license file is invalid.")
 
-    _set_license_shasum(license_data, request)
-    remember(request, 'license-admin')
+    set_license_shasum(request, license_data)
 
-def _set_license_shasum(license_data, request):
+def set_license_shasum(request, license_data):
     shasum = hashlib.sha1(license_data).hexdigest()
     request.session[_SESSION_KEY_LICENSE_SHASUM] = shasum
+
+def is_license_shasum_set(request):
+    return _SESSION_KEY_LICENSE_SHASUM in request.session
 
 def is_license_shasum_valid(request):
     """
     Call the config server to verify the shasum saved in the session matches the
-    current license data.
+    current license data. This method assumes the shasum is set.
     """
-    shasum = request.session.get(_SESSION_KEY_LICENSE_SHASUM)
-    if not shasum: return False
-
     r = requests.get(_URL_CHECK_LICENSE_SHA1, params = {
-        'license_sha1': shasum
+        'license_sha1': request.session[_SESSION_KEY_LICENSE_SHASUM]
     })
     if r.status_code == 200:
         return True

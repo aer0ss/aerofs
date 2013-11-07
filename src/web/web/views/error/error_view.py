@@ -2,9 +2,9 @@ import logging
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.common_pb2 import PBException
 from pyramid.exceptions import NotFound
-from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid
+from pyramid.security import NO_PERMISSION_REQUIRED, has_permission
 from pyramid.view import view_config, forbidden_view_config
-from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPOk
 from web.views.login.login_view import URL_PARAM_NEXT
 
 log = logging.getLogger(__name__)
@@ -26,14 +26,9 @@ def not_found_view(request):
     renderer="403.mako"
 )
 def forbidden_view(request):
-    log.error("default handling for forbidden request: " + request.path)
+    log.error("forbidden view for " + request.path)
 
-    # do not ask the user to login again if he is already logged in
-    if authenticated_userid(request):
-        request.response_status = 403
-        return {}
-    else:
-        return _force_login(request)
+    return _force_login(request)
 
 @view_config(
     context=ExceptionReply,

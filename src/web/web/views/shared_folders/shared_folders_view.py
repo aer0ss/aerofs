@@ -8,11 +8,12 @@ import logging
 import base64
 import json
 from cgi import escape
+from pyramid.security import authenticated_userid
 
 from pyramid.view import view_config
 
 import aerofs_sp.gen.common_pb2 as common
-from web.auth import get_session_user, is_admin
+from web.auth import is_admin
 from web.sp_util import exception2error
 from web.util import get_rpc_stub, parse_rpc_error_exception
 from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
@@ -134,7 +135,7 @@ def _shared_folders(datatables_paginate, request,
         'viewer_role': common.VIEWER,
 
         # variables
-        'session_user': get_session_user(request),
+        'session_user': authenticated_userid(request),
         'is_admin': is_admin(request),
         'datatables_paginate': datatables_paginate == DatatablesPaginate.YES,
         # N.B. can't use "page_title" as the variable name. base_layout.mako
@@ -157,7 +158,7 @@ def json_get_my_shared_folders(request):
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
-    session_user = get_session_user(request)
+    session_user = authenticated_userid(request)
     reply = sp.list_user_shared_folders(session_user)
     return _sp_reply2datatables(reply.shared_folder,
         _session_user_privileger,
@@ -188,7 +189,7 @@ def json_get_user_shared_folders(request):
     reply = sp.list_user_shared_folders(specified_user)
     return _sp_reply2datatables(reply.shared_folder,
         _session_team_privileger,
-        len(reply.shared_folder), echo, get_session_user(request))
+        len(reply.shared_folder), echo, authenticated_userid(request))
 
 
 @view_config(
@@ -206,7 +207,7 @@ def json_get_team_shared_folders(request):
     sp = util.get_rpc_stub(request)
     reply = sp.list_organization_shared_folders(count, offset)
     return _sp_reply2datatables(reply.shared_folder, _session_team_privileger,
-        reply.total_count, echo, get_session_user(request))
+        reply.total_count, echo, authenticated_userid(request))
 
 
 def _session_team_privileger(folder, session_user):

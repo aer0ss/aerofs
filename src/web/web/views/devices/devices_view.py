@@ -1,9 +1,9 @@
 import logging
+from pyramid.security import authenticated_userid
 
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNoContent, HTTPFound
 
-from web.auth import get_session_user
 from web.util import get_rpc_stub
 from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 
@@ -22,7 +22,7 @@ _URL_PARAM_DEVICE_NAME = 'device_name'
 def my_devices(request):
     _ = request.translate
 
-    user = get_session_user(request)
+    user = authenticated_userid(request)
 
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
@@ -131,5 +131,5 @@ def _get_device_id_from_request(request, action):
     N.B. This method assumes the parameter value is a HEX encoded device id
     """
     device_id = request.params[_URL_PARAM_DEVICE_ID]
-    log.info('{} {} device {}'.format(get_session_user(request), action, device_id))
+    log.info('{} {} device {}'.format(authenticated_userid(request), action, device_id))
     return device_id.decode('hex')

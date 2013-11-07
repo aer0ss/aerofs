@@ -4,7 +4,8 @@
 <%inherit file="base_layout.mako"/>
 
 <%!
-    from web.auth import is_admin, get_session_user
+    from web.auth import is_admin
+    from pyramid.security import  authenticated_userid
     from web.util import is_private_deployment
 %>
 
@@ -29,7 +30,7 @@
     <li><a href="http://support.aerofs.com" target="_blank">Support</a></li>
     <li><a href="http://blog.aerofs.com" target="_blank">Blog</a></li>
     <li class="pull-right"><a href="${request.route_path('logout')}">Sign out</a></li>
-    <li class="pull-right disabled"><a href="#">${get_session_user(request)}</a></li>
+    <li class="pull-right disabled"><a href="#">${authenticated_userid(request)}</a></li>
     % if is_admin(request):
         ${render_download_links(True)}
     % else:

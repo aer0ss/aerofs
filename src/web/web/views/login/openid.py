@@ -1,6 +1,6 @@
 import logging
 from pyramid import url
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden
 from pyramid.security import remember, NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
@@ -9,8 +9,8 @@ from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
 
 from login_view import resolve_next_url
-from web.auth import set_session_user
 from web.util import flash_error
+from web.auth import NON_SP_USER_ID
 
 log = logging.getLogger(__name__)
 
@@ -53,24 +53,27 @@ def _get_sp_auth(request, stay_signed_in):
     attrs = sp.open_id_get_session_attributes(session_nonce)
 
     if len(attrs.userId) == 0:
-        log.error('Session nonce is not logged in: ' + session_nonce);
+        log.error('Session nonce is not logged in: ' + session_nonce)
         support_email = settings.get('base.www.support_email_address', 'support@aerofs.com')
         flash_error(request, request.translate("An error occurred processing your" \
             " authentication request. Please try again, or contact {support_email}" \
-            " if the problem persists.", {'support_email': support_email }))
+            " if the problem persists.", {'support_email': support_email}))
         raise ExceptionReply('Authentication error')
 
     login = attrs.userId
     log.debug('SP auth returned ' + login)
+
+    if login == NON_SP_USER_ID:
+        raise HTTPForbidden("can't use builtin user ids")
 
     if stay_signed_in:
         log.debug("Extending session")
         sp.extend_session()
 
     # TOOD (WW) consolidate how we save authorization data in the session
+    # TODO (WW) share common code between login_view.py and openid.py
     request.session['sp_cookies'] = con._session.cookies
     request.session['team_id'] = sp.get_organization_id().org_id
-    set_session_user(request, login)
 
     return remember(request, login)
 

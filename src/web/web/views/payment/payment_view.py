@@ -1,10 +1,10 @@
 import logging
+from pyramid.security import authenticated_userid
 
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPBadRequest
 
 from stripe import CardError
-from web.auth import get_session_user
 
 from web.util import flash_success, get_rpc_stub, send_internal_email
 from web.error import error
@@ -90,7 +90,7 @@ def _get_invoices(stripe_customer):
 )
 def json_create_stripe_customer(request):
     stripe_card_token = request.params[URL_PARAM_STRIPE_CARD_TOKEN]
-    email = get_session_user(request)
+    email = authenticated_userid(request)
 
     log.info("create_stripe_customer " + email)
     stripe_customer_id = None
@@ -106,7 +106,7 @@ def json_create_stripe_customer(request):
 
     # The AeroFS team uses BUSINESS_USER as a tag to filter priority emails
     send_internal_email("[BUSINESS_USER] {} activated paid plan".format(
-        get_session_user(request)), "Congrats, Team!")
+        authenticated_userid(request)), "Congrats, Team!")
 
 @view_config(
     route_name='json.update_credit_card',
@@ -143,7 +143,7 @@ def json_cancel_subscription(request):
 
     # The AeroFS team uses BUSINESS_USER as a tag to filter priority emails
     title = "[BUSINESS_USER] {} paid plan cancellation {}".format(
-            get_session_user(request),
+            authenticated_userid(request),
             "- CHANCE WITHIN 24 HRS" if chance else "(members to be removed)")
 
     send_internal_email(title, "feedback: {}".format(feedback))

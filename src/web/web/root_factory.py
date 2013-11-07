@@ -1,13 +1,15 @@
-from aerofs_sp.gen.sp_pb2 import ADMIN, USER
 from pyramid.security import Allow, DENY_ALL
+from web.auth import GROUP_ID_ADMINS, GROUP_ID_USERS, GROUP_ID_MAINTAINERS
+
 
 class RootFactory(object):
     __name__ = ''
     __parent__ = None
 
     __acl__ = [
-        (Allow, ADMIN, ['admin', 'user']),
-        (Allow, USER, 'user'),
+        (Allow, GROUP_ID_MAINTAINERS, 'maintain'),
+        (Allow, GROUP_ID_ADMINS, ['admin', 'user']),
+        (Allow, GROUP_ID_USERS, 'user'),
         DENY_ALL
     ]
 

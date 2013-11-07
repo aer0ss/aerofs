@@ -2,7 +2,8 @@ import logging
 from pyramid.events import subscriber, NewRequest, BeforeRender
 from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.i18n import TranslationStringFactory, get_localizer
-from web.auth import is_logged_in, get_session_user
+from pyramid.security import authenticated_userid
+from web.auth import is_authenticated
 
 
 @subscriber(NewRequest)
@@ -13,10 +14,10 @@ def validate_csrf_token(event):
     request = event.request
     csrf = request.params.get('csrf_token')
 
-    if request.method != 'GET' and is_logged_in(request) and\
+    if request.method != 'GET' and is_authenticated(request) and\
             csrf != unicode(request.session.get_csrf_token()):
         logging.getLogger("web").warn("CSRF validation failed. user {} path {}"
-                .format(get_session_user(request), request.path))
+                .format(authenticated_userid(request), request.path))
         raise HTTPUnauthorized
 
 @subscriber(BeforeRender)
@@ -28,7 +29,7 @@ def add_renderer_globals(event):
     event['_'] = request.translate
     event['localizer'] = request.localizer
 
-tFactory = TranslationStringFactory('web')
+_translation_factory = TranslationStringFactory('web')
 
 @subscriber(NewRequest)
 def add_localizer(event):
@@ -41,7 +42,7 @@ def add_localizer(event):
     localizer = get_localizer(request)
 
     def auto_translate(*args, **kwargs):
-        return localizer.translate(tFactory(*args, **kwargs))
+        return localizer.translate(_translation_factory(*args, **kwargs))
 
     request.localizer = localizer
     request.translate = auto_translate

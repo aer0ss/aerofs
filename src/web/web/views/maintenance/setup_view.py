@@ -9,7 +9,7 @@ import socket
 import random
 import re
 from subprocess import call, Popen, PIPE
-from pyramid.security import NO_PERMISSION_REQUIRED
+from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid, remember
 
 import requests
 from pyramid.view import view_config
@@ -17,12 +17,12 @@ from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError, H
 
 import aerofs_common.bootstrap
 from aerofs_common.configuration import Configuration
+from web.auth import NON_SP_USER_ID, is_authenticated
 from web.error import error
 from web.util import is_private_deployment, is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, set_license_file_and_shasum
 from web.views.backup.backup_view import BACKUP_FILE_PATH
 from web.views.login.login_view import URL_PARAM_EMAIL
-from web.error import error
 
 log = logging.getLogger("web")
 
@@ -155,6 +155,13 @@ def json_set_license(request):
     # request.params['license'] is that unicode string.
     # We want raw bytes, not the Unicode string, so we encode to latin1
     set_license_file_and_shasum(request, request.params['license'].encode('latin1'))
+
+    # Log in the user as a maintainer if the user hasn't logged in yet. The
+    # test is necessary to keep the real user ID if the user is already
+    # logged in with the real ID.
+    if not is_authenticated(request):
+        remember(request, NON_SP_USER_ID)
+
     return HTTPOk()
 
 # ------------------------------------------------------------------------

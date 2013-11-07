@@ -35,8 +35,8 @@
 <div class="span8 offset2">
     %if page == 0:
         ## Page 0 must be the license page. See setup.py:_setup_common()
-        <%namespace name="license_page" file="pages/license_page.mako"/>
-        <%namespace name="license_authorized_page" file="pages/license_authorized_page.mako"/>
+        <%namespace name="license_page" file="setup/license_page.mako"/>
+        <%namespace name="license_authorized_page" file="setup/license_authorized_page.mako"/>
         ## See the logic in setup.py:setup()
         %if is_license_present_and_valid:
             <%license_authorized_page:body/>
@@ -45,28 +45,28 @@
         %endif
     %elif page == 1:
         <h3>Step 1 of 4</h3>
-        <%namespace name="hostname_page" file="pages/hostname_page.mako"/>
+        <%namespace name="hostname_page" file="setup/hostname_page.mako"/>
         <%hostname_page:body/>
     %elif page == 2:
         <h3>Step 2 of 4</h3>
-        <%namespace name="identity_page" file="pages/identity_page.mako"/>
+        <%namespace name="identity_page" file="setup/identity_page.mako"/>
         <%identity_page:body/>
     %elif page == 3:
         <h3>Step 3 of 4</h3>
-        <%namespace name="email_page" file="pages/email_page.mako"/>
+        <%namespace name="email_page" file="setup/email_page.mako"/>
         <%email_page:body/>
     %elif page == 4:
         <h3>Step 4 of 4</h3>
-        <%namespace name="cert_page" file="pages/cert_page.mako"/>
+        <%namespace name="cert_page" file="setup/cert_page.mako"/>
         <%cert_page:body/>
     %elif page == 5:
         <h3>Sit back and relax</h3>
-        <%namespace name="apply_page" file="pages/apply_and_create_user_page.mako"/>
+        <%namespace name="apply_page" file="setup/apply_and_create_user_page.mako"/>
         <%apply_page:body/>
     %endif
 </div>
 
-<%namespace name="common" file="pages/common.mako"/>
+<%namespace name="common" file="setup/common.mako"/>
 
 <%block name="scripts">
     ${common.scripts(page)}

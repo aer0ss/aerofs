@@ -12,7 +12,7 @@ BACKUP_FILE_PATH = '/opt/bootstrap/public/aerofs-db-backup.tar.gz'
 
 @view_config(
     route_name='backup_appliance',
-    permission='admin',
+    permission='maintain',
     renderer='backup.mako'
 )
 def backup(request):
@@ -20,7 +20,7 @@ def backup(request):
 
 @view_config(
     route_name='upgrade_appliance',
-    permission='admin',
+    permission='maintain',
     renderer='upgrade.mako'
 )
 def upgrade(request):
@@ -28,9 +28,7 @@ def upgrade(request):
 
 @view_config(
     route_name = 'download_backup_file',
-    # Since SP is down during backup, we can't authenticate the user
-    # (see auth.py:get_principal(). TOOD (WW) use license auth
-    permission=NO_PERMISSION_REQUIRED,
+    permission='maintain',
     request_method = 'GET'
 )
 def download_backup_file(request):

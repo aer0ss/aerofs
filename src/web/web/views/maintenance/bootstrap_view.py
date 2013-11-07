@@ -36,7 +36,7 @@ def json_enqueue_bootstrap_task(request):
 )
 def json_get_bootstrap_task_status(request):
     """
-    TODO (WW) share the code with setup.py:json_setup_poll
+    TODO (WW) share the code with setup_view.py:json_setup_poll
     """
     eid = request.params[_URL_PARAM_EXECUTION_ID]
     status, error_message = bootstrap.get_task_status(eid)

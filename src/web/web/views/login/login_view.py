@@ -2,7 +2,7 @@ import logging
 import re
 
 from pyramid import url
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden
 from pyramid.security import remember, forget, NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
@@ -10,7 +10,7 @@ from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_sp.scrypt import scrypt
-from web.auth import set_session_user
+from web.auth import NON_SP_USER_ID
 from web.util import flash_error, get_rpc_stub, is_private_deployment
 
 # URL param keys.
@@ -157,6 +157,9 @@ def _log_in_user(request, login, creds, stay_signed_in):
     protobuf exception that SP throws.
     """
 
+    if login == NON_SP_USER_ID:
+        raise HTTPForbidden("can't use builtin user ids")
+
     # ignore any session data that may be saved
     settings = request.registry.settings
     con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
@@ -169,9 +172,9 @@ def _log_in_user(request, login, creds, stay_signed_in):
         sp.extend_session()
 
     # TOOD (WW) consolidate how we save authorization data in the session
+    # TODO (WW) share common code between login_view.py and openid.py
     request.session['sp_cookies'] = con._session.cookies
     request.session['team_id'] = sp.get_organization_id().org_id
-    set_session_user(request, login)
 
     return remember(request, login)
 
@@ -189,8 +192,9 @@ def logout(request):
     sp = get_rpc_stub(request)
     try:
         sp.sign_out()
-    except Exception:
+    except Exception as e:
         # Server errors don't matter when logging out.
+        log.warn("sp.sign_out failed. ignore", e)
         pass
 
     # Delete session information from client cookies.
