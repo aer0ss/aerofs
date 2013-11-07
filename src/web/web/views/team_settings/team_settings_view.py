@@ -1,7 +1,8 @@
 import logging, base64
 from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
-from web.util import *
+from web.util import flash_error, flash_success, get_rpc_stub, \
+    parse_rpc_error_exception
 from web.views.payment.stripe_util \
     import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
 

@@ -7,7 +7,7 @@ from aerofs_sp.gen.common_pb2 import PBException
 from web import util
 from web.auth import get_session_user
 from web.sp_util import exception2error
-from web.util import *
+from web.util import error_on_invalid_email, get_rpc_stub, is_private_deployment
 from web.views.payment import stripe_util
 from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 

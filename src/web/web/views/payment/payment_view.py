@@ -6,7 +6,7 @@ from pyramid.httpexceptions import HTTPBadRequest
 from stripe import CardError
 from web.auth import get_session_user
 
-from web.util import *
+from web.util import flash_success, get_rpc_stub, send_internal_email
 from web.error import error
 import stripe_util
 from stripe_util import URL_PARAM_STRIPE_CARD_TOKEN

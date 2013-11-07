@@ -1,13 +1,11 @@
-import logging, json, urllib2
+import logging
+import json
+import urllib2
 from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.view import view_config
-from web.util import *
+from web.util import is_private_deployment
 
 log = logging.getLogger(__name__)
-
-URL_PARAM_ORG_ID = 'org_id'
-URL_PARAM_SHARE_ID = 'sid'
-URL_PARAM_JOINED_TEAM_NAME = 'new_team'
 
 @view_config(
     route_name='status',
