@@ -46,16 +46,18 @@ public abstract class AbstractEmailSender
     private final String _port;
     private final String _username;
     private final String _password;
+    private final boolean _enable_tls;
 
     /**
      * @param host when using local mail relay, set this to localhost.
      */
-    public AbstractEmailSender(String host, String port, String username, String password)
+    public AbstractEmailSender(String host, String port, String username, String password, boolean enable_tls)
     {
         _host = host;
         _port = port;
         _username = username;
         _password = password;
+        _enable_tls = enable_tls;
     }
 
     // SMTP command timeout, expressed in milliseconds.
@@ -78,24 +80,35 @@ public abstract class AbstractEmailSender
         return _host.equals("localhost");
     }
 
+    private boolean isEmptyCredentials() {
+        return _username.equals("") && _password.equals("");
+    }
+
     public Session getMailSession() {
         Properties props = new Properties();
+
+        if (l.isDebugEnabled()) {
+            // N.B. these log lines will end up in /var/log/tomcat6/catalina.out
+            props.put("mail.debug", "true");
+        }
         props.put("mail.smtp.timeout", TIMEOUT);
         props.put("mail.smtp.connectiontimeout", CONNECTION_TIMEOUT);
         props.put("mail.smtp.port", _port);
 
-        // Without it Java Mail would sene "EHLO" rather thant "EHLO <hostname>". The former
+        // Without it Java Mail would send "EHLO" rather thant "EHLO <hostname>". The former
         // is not supported by some mail relays include postfix which is used as the local mail
         // relay for AeroFS Appliance.
         props.put("mail.smtp.localhost", "localhost");
 
+        props.put("mail.smtp.starttls.enable",   Boolean.toString(_enable_tls));
+        props.put("mail.smtp.starttls.required", Boolean.toString(_enable_tls));
+
         if (relayIsLocalhost()) {
-            props.put("mail.stmp.host", "127.0.0.1");
-            props.put("mail.stmp.auth", "false");
+            props.put("mail.smtp.host", "127.0.0.1");
+            props.put("mail.smtp.auth", "false");
         } else {
-            props.put("mail.smtp.auth", "true");
-            props.put("mail.smtp.starttls.enable","true");
-            props.put("mail.smtp.starttls.required", "true");
+            props.put("mail.smtp.host", _host);
+            props.put("mail.smtp.auth", Boolean.toString(!isEmptyCredentials()));
         }
 
         return Session.getInstance(props);
@@ -214,12 +227,10 @@ public abstract class AbstractEmailSender
             // emails (for notifying us that a user has signed up, shared a folder, etc.)
             try {
                 if (publicFacingEmail) {
-                    if (relayIsLocalhost()) {
-                        // localhost does not require authentication.
-                        // In fact, it generally requires the lack thereof.
-                        t.connect();
+                    if (session.getProperty("mail.smtp.auth").equals("true")) {
+                        t.connect(_username, _password);
                     } else {
-                        t.connect(_host, _username, _password);
+                        t.connect();
                     }
                 } else {
                     t.connect(INTERNAL_HOST, INTERNAL_USERNAME, INTERNAL_PASSWORD);

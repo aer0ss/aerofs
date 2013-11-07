@@ -14,9 +14,9 @@ import java.util.concurrent.Future;
 
 public class SyncEmailSender extends AbstractEmailSender
 {
-    public SyncEmailSender(String host, String port, String username, String password)
+    public SyncEmailSender(String host, String port, String username, String password, boolean enable_tls)
     {
-        super(host, port, username, password);
+        super(host, port, username, password, enable_tls);
     }
 
     @Override

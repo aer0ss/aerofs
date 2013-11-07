@@ -16,6 +16,7 @@ from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError, H
 
 import aerofs_common.bootstrap
 from aerofs_common.configuration import Configuration
+from web.error import error
 from web.util import is_private_deployment, is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, set_license_file_and_shasum
 from web.views.login.login_view import URL_PARAM_EMAIL
@@ -32,7 +33,7 @@ _VERIFICATION_BASE_URL = "http://localhost:8080/verify/"
 
 # This is a tomcat servlet that is part of the SP package.
 _SMTP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "email"
-# N.B. these params are also defined in Java land in SmtpVerifiationServlet.java
+# N.B. these params are also defined in Java land in SmtpVerificationServlet.java
 _SMTP_VERIFICATION_FROM_EMAIL = "from_email"
 _SMTP_VERIFICATION_TO_EMAIL = "to_email"
 _SMTP_VERIFICATION_CODE = "verification_code"
@@ -40,6 +41,7 @@ _SMTP_VERIFICATION_SMTP_HOST = "email_sender_public_host"
 _SMTP_VERIFICATION_SMTP_PORT = "email_sender_public_port"
 _SMTP_VERIFICATION_SMTP_USERNAME = "email_sender_public_username"
 _SMTP_VERIFICATION_SMTP_PASSWORD = "email_sender_public_password"
+_SMTP_VERIFICATION_SMTP_ENABLE_TLS = "email_sender_public_enable_tls"
 
 # LDAP verification servlet URL.
 _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
@@ -158,10 +160,10 @@ def json_set_license(request):
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name = 'json_setup_hostname',
+    route_name='json_setup_hostname',
     permission='admin',
-    renderer = 'json',
-    request_method = 'POST'
+    renderer='json',
+    request_method='POST'
 )
 def json_setup_hostname(request):
     hostname = request.params['base.host.unified']
@@ -204,17 +206,22 @@ def _parse_email_request(request):
         port       = request.params['email-sender-public-port']
         username   = request.params['email-sender-public-username']
         password   = request.params['email-sender-public-password']
+        # N.B. if a checkbox is unchecked, its value is not included in the request. This is
+        # the way that javascript's .serialize() works, apparently. So, we use the presence
+        # of the param as its value.
+        enable_tls = 'email-sender-public-enable-tls' in request.params
     else:
         host = 'localhost'
         port = '25'
         username = ''
         password = ''
+        enable_tls = True
 
     support_address = request.params['base-www-support-email-address']
-    return host, port, username, password, support_address
+    return host, port, username, password, enable_tls, support_address
 
 def _send_verification_email(from_email, to_email, code, host, port,
-                             username, password):
+                             username, password, enable_tls):
     payload = {
         _SMTP_VERIFICATION_FROM_EMAIL: from_email,
         _SMTP_VERIFICATION_TO_EMAIL: to_email,
@@ -222,19 +229,20 @@ def _send_verification_email(from_email, to_email, code, host, port,
         _SMTP_VERIFICATION_SMTP_HOST: host,
         _SMTP_VERIFICATION_SMTP_PORT: port,
         _SMTP_VERIFICATION_SMTP_USERNAME: username,
-        _SMTP_VERIFICATION_SMTP_PASSWORD: password
+        _SMTP_VERIFICATION_SMTP_PASSWORD: password,
+        _SMTP_VERIFICATION_SMTP_ENABLE_TLS: enable_tls
     }
 
     return requests.post(_SMTP_VERIFICATION_URL, data=payload)
 
 @view_config(
-    route_name = 'json_verify_smtp',
+    route_name='json_verify_smtp',
     permission='admin',
-    renderer = 'json',
-    request_method = 'POST'
+    renderer='json',
+    request_method='POST'
 )
 def json_verify_smtp(request):
-    host, port, username, password, support_address = _parse_email_request(request)
+    host, port, username, password, enable_tls, support_address = _parse_email_request(request)
 
     r = _send_verification_email(
             support_address,
@@ -243,7 +251,8 @@ def json_verify_smtp(request):
             host,
             port,
             username,
-            password)
+            password,
+            enable_tls)
 
     if r.status_code != 200:
         log.error("send stmp verification email returns {}".format(r.status_code))
@@ -252,20 +261,21 @@ def json_verify_smtp(request):
     return {}
 
 @view_config(
-    route_name = 'json_setup_email',
+    route_name='json_setup_email',
     permission='admin',
-    renderer = 'json',
-    request_method = 'POST'
+    renderer='json',
+    request_method='POST'
 )
 def json_setup_email(request):
-    host, port, username, password, support_address = _parse_email_request(request)
+    host, port, username, password, enable_tls, support_address = _parse_email_request(request)
 
     configuration = Configuration()
-    configuration.set_external_property('support_address', support_address)
-    configuration.set_external_property('email_host',      host)
-    configuration.set_external_property('email_port',      port)
-    configuration.set_external_property('email_user',      username)
-    configuration.set_external_property('email_password',  password)
+    configuration.set_external_property('support_address',   support_address)
+    configuration.set_external_property('email_host',        host)
+    configuration.set_external_property('email_port',        port)
+    configuration.set_external_property('email_user',        username)
+    configuration.set_external_property('email_password',    password)
+    configuration.set_external_property('email_enable_tls',  enable_tls)
 
     return {}
 
