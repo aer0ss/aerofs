@@ -584,7 +584,9 @@ public class DlgHistory extends AeroFSDialog
         if (version.tmpFile == null) return; // Ritual call failed
 
         try {
-            FileUtil.moveInOrAcrossFileSystem(new File(version.tmpFile), new File(dst));
+            // override existing file because the user has implicitly consent it by choosing to
+            // save as the file in the file dialog.
+            FileUtil.copy(new File(version.tmpFile), new File(dst), false, true);
         } catch (Exception e) {
             ErrorMessages.show(getShell(), e, L.product() + " failed to save the selected version.");
         }
