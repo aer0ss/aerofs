@@ -5,6 +5,7 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sp.authentication.InMemoryServer.LdapSchema;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.sp.server.lib.user.User;
@@ -16,9 +17,12 @@ import org.junit.Test;
 import org.mockito.Spy;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TestSP_LDAP extends AbstractSPTest
 {
+    private static InMemoryServer _server;
     LdapConfiguration _cfg = new LdapConfiguration();
     @Spy IAuthenticator _authenticator = new LdapAuthenticator(_cfg);
 
@@ -32,54 +36,38 @@ public class TestSP_LDAP extends AbstractSPTest
     public void updateConfigs() { _server.resetConfig(_cfg); }
 
     @Test
-    public void shouldSimpleSignIn() throws Exception
+    public void testShouldSimpleSignIn() throws Exception
     {
-        _server.add("dn: uid=ldap1,dc=users,dc=example,dc=org", "objectClass: inetOrgPerson",
-                "cn: Joe Tester", "sn: Tester", "givenName: Joe",
-                "mail: ldap1@users.example.org", "userPassword: ldap1", "uid: ldap1",
-                "memberOf: cn=testgroup,dc=roles,dc=example,dc=org");
-        service.signInUser("ldap1@users.example.org", ByteString.copyFrom("ldap1".getBytes()));
+        service.credentialSignIn(createTestUser("ldap1@example.com", "ldap1"),
+                ByteString.copyFrom("ldap1".getBytes()));
     }
 
     @Test
-    public void shouldSimpleSignInTwo() throws Exception
+    public void testCheckUserRecord() throws Exception
     {
-        _server.add("dn: uid=test2,dc=users,dc=example,dc=org", "objectClass: inetOrgPerson",
-                "cn: Louise DoesNotExist", "sn: DoesNotExist", "givenName: Louise",
-                "mail: test2@users.example.org", "userPassword: cred2", "uid: test2",
-                "memberOf: cn=admins,dc=roles,dc=example,dc=org",
-                "memberOf: cn=testgroup,dc=roles,dc=example,dc=org");
-
-        service.signInUser("test2@users.example.org", ByteString.copyFrom("cred2".getBytes()));
-    }
-
-    @Test
-    public void checkUserRecord() throws Exception
-    {
-        _server.add("dn: uid=test9,dc=users,dc=example,dc=org", "objectClass: inetOrgPerson",
-                "cn: Joe Tester", "sn: Tester", "givenName: Joe", "mail: test9@users.example.org",
-                "userPassword: cred9", "uid: test9",
-                "memberOf: cn=testgroup,dc=roles,dc=example,dc=org");
-        service.signInUser("test9@users.example.org", ByteString.copyFrom("cred9".getBytes()));
+        service.credentialSignIn(createTestUser("test9@users.example.org", "cred9"),
+                ByteString.copyFrom("cred9".getBytes()));
 
         sqlTrans.begin();
         User u = factUser.createFromExternalID("test9@users.example.org");
-        assert u.exists();
-        assertEquals(u.getFullName()._first, "Joe");
-        assertEquals(u.getFullName()._last, "Tester");
+        assertTrue(u.exists());
+        assertEquals(u.getFullName()._first, "Firsty");
+        assertEquals(u.getFullName()._last, "Lasto");
         sqlTrans.commit();
     }
 
     @Test(expected = ExBadCredential.class)
-    public void shouldDisallowBadCred() throws Exception
+    public void testShouldDisallowBadCred() throws Exception
     {
-        service.signInUser("random@users.example.org", ByteString.copyFrom("badpw".getBytes()));
+        service.credentialSignIn(createTestUser("badcred1@example.org", "never gonna give you up"),
+                ByteString.copyFrom("badpw".getBytes()));
     }
 
     @Test(expected = ExBadCredential.class)
-    public void shouldDisallowEmptyPw() throws Exception
+    public void testShouldDisallowEmptyPw() throws Exception
     {
-        service.signInUser("random@users.example.org", ByteString.copyFrom(new byte[0]));
+        service.credentialSignIn(createTestUser("badcred2@example.org", "never gonna let you down"),
+                ByteString.copyFrom(new byte[0]));
     }
 
     @Test(expected = ExLdapConfigurationError.class)
@@ -88,5 +76,66 @@ public class TestSP_LDAP extends AbstractSPTest
         LdapConfiguration.convertPropertyNameToSecurityType("does.not.exist", "hi mom");
     }
 
-    private static InMemoryServer _server;
+    @Test
+    public void shouldClaimLdapUser() throws Exception
+    {
+        User user = newUser();
+        createTestUser(user.id().getString(), "dontcare");
+        assertTrue(new LdapAuthenticator(_cfg).canAuthenticate(user));
+    }
+
+    @Test
+    public void shouldNotClaimExternalUser() throws Exception
+    {
+        User user = factUser.create(UserID.fromExternal("this@does.not.exist.in.ldap"));
+        assertFalse(new LdapAuthenticator(_cfg).canAuthenticate(user));
+    }
+
+    private String createTestUser(String email, String credentialString) throws Exception
+    {
+        String uid = email.substring(0, email.indexOf('@'));
+        _server.add(
+                "dn: uid=" + uid + ",dc=users,dc=example,dc=org",
+                "cn: Firsty Lasto", "sn: Lasto", "givenName: Firsty",
+                "objectClass: inetOrgPerson",
+                "mail: " + email,
+                "userPassword: " + credentialString,
+                "uid: " + uid,
+                "memberOf: cn=admins,dc=roles,dc=example,dc=org",
+                "memberOf: cn=testgroup,dc=roles,dc=example,dc=org");
+        return email;
+    }
+
+    // ---- Tests for LDAP credentials in legacy signin methods ----
+    public void legacyShouldSimpleSignIn() throws Exception
+    {
+        service.signInUser(createTestUser("l_ldap1@example.com", "l_ldap1"),
+                ByteString.copyFrom("l_ldap1".getBytes()));
+    }
+
+    @Test
+    public void legacyCheckUserRecord() throws Exception
+    {
+        service.signInUser(createTestUser("l_test9@users.example.org", "l_cred9"),
+                ByteString.copyFrom("l_cred9".getBytes()));
+
+        sqlTrans.begin();
+        User u = factUser.createFromExternalID("l_test9@users.example.org");
+        assertTrue(u.exists());
+        assertEquals(u.getFullName()._first, "Firsty");
+        assertEquals(u.getFullName()._last, "Lasto");
+        sqlTrans.commit();
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void legacyShouldDisallowBadCred() throws Exception
+    {
+        service.signInUser("random@users.example.org", ByteString.copyFrom("badpw".getBytes()));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void legacyShouldDisallowEmptyPw() throws Exception
+    {
+        service.signInUser("random@users.example.org", ByteString.copyFrom(new byte[0]));
+    }
 }

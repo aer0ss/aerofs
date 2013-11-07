@@ -4,9 +4,11 @@
 
 package com.aerofs.sp.authentication;
 
+import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.lib.user.User;
+import com.unboundid.ldap.sdk.LDAPSearchException;
 
 import java.sql.SQLException;
 
@@ -16,11 +18,21 @@ import java.sql.SQLException;
  */
 public interface IAuthenticator
 {
-    // FIXME: I don't like the transaction interface being passed in here, it feels like poor
+    /** Legacy support - No new users of this enum!
+     * This is used to indicate backwards-compatible mode for authenticator
+     * FIXME: Remove this enum when we can drop support for client-side SCrypt. Review January 2014
+     */
+    public static enum CredentialFormat
+    {
+        TEXT,
+        LEGACY
+    }
+
+    // FIXME: Remove "format" arg when we drop support for client-side SCrypt. Review January 2014
+    // Ok; I don't like the transaction interface being passed in here, it feels like poor
     // cohesion. However, the various authenticators will have different SQL transaction
     // requirements depending on whether they look into the User.exists() field before or after
     // an expensive operation (like external authentication)
-
     /**
      * Authenticate the user using the given credentials. Throw an exception (ExBadCredential or
      * other) if the user is not valid. A normal return indicates the user is valid.
@@ -36,7 +48,8 @@ public interface IAuthenticator
      */
     public void authenticateUser(
             User user, byte[] credential,
-            IThreadLocalTransaction<SQLException> trans)
+            IThreadLocalTransaction<SQLException> trans,
+            CredentialFormat format)
             throws Exception;
 
     /**
@@ -47,5 +60,6 @@ public interface IAuthenticator
      *
      * TODO (WW) support OpenID
      */
-    public boolean isAutoProvisioned(UserID userID);
+    public boolean isAutoProvisioned(User user)
+            throws ExExternalServiceUnavailable, LDAPSearchException;
 }

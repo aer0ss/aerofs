@@ -639,29 +639,46 @@ public abstract class BaseSecUtil
     }
 
     // 8192/8/1 equals 100ms or so on Allen's MBP with a 2GHz i7 CPU
-    private static final int N = 8192;
-    private static final int r = 8;
-    private static final int p = 1;
 
     /**
-     * Use <b>only</b> this function to convert a char[] password to bytes
+     * Constants and utilities for key-derivation function (currently SCrypt).
+     * Kept here for compatibility while we still have client-side scrypt users.
+     * See: sp.server.authentication.LocalCredential
      */
-    public static byte[] getPasswordBytes(char[] passwd)
+    public static class KeyDerivation
     {
-        // even though it's not a good idea to convert the password into string
-        // we have to do it here for backward compatibility (due to a complex
-        // historical reason). we use getBytes() instead of string2utf() for the
-        // same reason
-        return new String(passwd).getBytes();
+        public static final int N = 8192;
+        public static final int r = 8;
+        public static final int p = 1;
+        public static final int dkLen = 64;
+
+        /** Convert a userId to salt for an scrypt invocation */
+        public static byte[] getSaltForUser(final UserID user)
+        {
+            return BaseUtil.string2utf(user.getString());
+        }
+
+        /**
+         * Use <b>only</b> this function to convert a char[] password to bytes
+         */
+        public static byte[] getPasswordBytes(char[] passwd)
+        {
+            // even though it's not a good idea to convert the password into string
+            // we have to do it here for backward compatibility (due to a complex
+            // historical reason). we use getBytes() instead of string2utf() for the
+            // same reason
+            return new String(passwd).getBytes();
+        }
     }
 
     protected static byte[] scryptImpl(char[] passwd, UserID user)
     {
-        byte[] bsPass = getPasswordBytes(passwd);
-        byte[] bsUser = BaseUtil.string2utf(user.getString());
+        byte[] bsPass = KeyDerivation.getPasswordBytes(passwd);
+        byte[] bsUser = KeyDerivation.getSaltForUser(user);
 
-        byte[] scrypted = new byte[64];
-        int rc = Scrypt.crypto_scrypt(bsPass, bsPass.length, bsUser, bsUser.length, N, r, p,
+        byte[] scrypted = new byte[KeyDerivation.dkLen];
+        int rc = Scrypt.crypto_scrypt(bsPass, bsPass.length, bsUser, bsUser.length,
+                KeyDerivation.N, KeyDerivation.r, KeyDerivation.p,
                 scrypted, scrypted.length);
 
         // sanity checks

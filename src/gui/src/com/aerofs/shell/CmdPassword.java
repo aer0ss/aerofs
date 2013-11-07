@@ -46,6 +46,7 @@ public class CmdPassword implements IShellCommand<ShProgram>
     {
         if (cl.getArgList().size() != 2) throw new ExBadArgs();
 
+        // FIXME: update to use server-side SCrypt
         SPBlockingClient sp = s.d().getSPClient_();
         byte[] oldPassword = SecUtil.scrypt(cl.getArgs()[0].toCharArray(), Cfg.user());
         byte[] newPassword = SecUtil.scrypt(cl.getArgs()[1].toCharArray(), Cfg.user());

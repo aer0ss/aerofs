@@ -21,6 +21,7 @@ import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
@@ -75,13 +76,12 @@ public class LdapAuthenticator implements IAuthenticator
      * Authenticate a user/credential pair by referring to an external LDAP server.
      */
     @Override
-    public void authenticateUser(
-            User user, byte[] credential,
-            IThreadLocalTransaction<SQLException> trans) throws Exception
+    public void authenticateUser(User user, byte[] credential,
+            IThreadLocalTransaction<SQLException> trans, CredentialFormat format) throws Exception
     {
         FullName fullName = throwIfBadCredential(user, credential);
 
-        _l.info("Authenticated LDAP user {}", user.id());
+        _l.info("LDAP auth ok {}", user.id());
         trans.begin();
         // Save the user record in the database with an empty password (which cannot be used to sign
         // in)
@@ -90,10 +90,30 @@ public class LdapAuthenticator implements IAuthenticator
     }
 
     @Override
-    public boolean isAutoProvisioned(UserID userID)
+    public boolean isAutoProvisioned(User user)
     {
         // All the users are auto provisioned
         return true;
+    }
+
+    /**
+     * Determine if the given user can be handled by this authenticator.
+     *
+     * @param user user record to check
+     */
+    public boolean canAuthenticate(User user)
+            throws ExExternalServiceUnavailable, LDAPSearchException
+    {
+        LDAPConnectionPool pool = getPool();
+        LDAPConnection conn = getConnectionFromPool(pool);
+
+        try {
+            return conn
+                    .search(_cfg.USER_BASE, _scope, buildFilter(user.id()), _cfg.USER_RDN)
+                    .getEntryCount() > 0;
+        } finally {
+            getPool().releaseAndReAuthenticateConnection(conn);
+        }
     }
 
     /**
@@ -124,7 +144,7 @@ public class LdapAuthenticator implements IAuthenticator
                             entry.getAttributeValue(_cfg.USER_LASTNAME));
                 } catch (LDAPException lde) {
                     // this just means that this record was not the login record.
-                    _l.info("LDAP bind error", lde);
+                    _l.info("LDAP bind error", LogUtil.suppress(lde));
                 }
             }
 
@@ -183,7 +203,6 @@ public class LdapAuthenticator implements IAuthenticator
                 Filter.createEqualityFilter(_cfg.USER_EMAIL, userId.getString()),
                 Filter.createEqualityFilter("objectClass", _cfg.USER_OBJECTCLASS));
     }
-
 
     /*
      * WARNING: Be careful here! This is easy to get wrong.
@@ -330,9 +349,8 @@ public class LdapAuthenticator implements IAuthenticator
         }
     }
 
-    volatile private LDAPConnectionPool _pool = null;
-
-    private SearchScope                 _scope = SearchScope.SUB;
-    private LdapConfiguration _cfg;
     private static Logger               _l = LoggerFactory.getLogger(LdapAuthenticator.class);
+    volatile private LDAPConnectionPool _pool = null;
+    private SearchScope                 _scope = SearchScope.SUB;
+    private LdapConfiguration           _cfg;
 }

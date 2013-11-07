@@ -4,8 +4,10 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseSecUtil.KeyDerivation;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -109,7 +111,8 @@ public class TestSP_Password extends AbstractTest
         throws Exception
     {
         _passwordManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
-        verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP("test123".getBytes()));
+        byte[] scrypted = SecUtil.scrypt("test123".toCharArray(), user.id());
+        verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP(scrypted));
     }
 
     @Test

@@ -19,8 +19,51 @@ import org.junit.Test;
 public class TestSP_SignInUser extends AbstractSPTest
 {
     @Test
-    public void shouldAllowCredentialSignIn()
-            throws Exception
+    public void testSignInClearText() throws Exception
+    {
+        sqlTrans.begin();
+        User user = saveUser();
+        sqlTrans.commit();
+
+        service.credentialSignIn(user.id().getString(), ByteString.copyFrom(CRED));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void testSignInClearTextBadUserFails() throws Exception
+    {
+        User user = newUser();
+
+        service.credentialSignIn(user.id().getString(), ByteString.copyFrom(CRED));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void testSignInClearTextBadCredFails() throws Exception
+    {
+        sqlTrans.begin();
+        User user = saveUser();
+        sqlTrans.commit();
+
+        service.credentialSignIn(user.id().getString(), ByteString.copyFrom("oh no".getBytes()));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void testSignInClearTextDoesNotNeedSCrypt() throws Exception
+    {
+        sqlTrans.begin();
+        User user = saveUser();
+        sqlTrans.commit();
+
+        service.credentialSignIn(user.id().getString(),
+                ByteString.copyFrom(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())));
+    }
+
+    // ---- ---- ---- ----
+    // From here down, there are only tests for legacy paths
+    // Abandon all hope ye who enter here
+    // ---- ---- ---- ----
+
+    @Test
+    public void testLegacySignInRequiresScrypt() throws Exception
     {
         sqlTrans.begin();
         User user = saveUser();
@@ -31,8 +74,7 @@ public class TestSP_SignInUser extends AbstractSPTest
     }
 
     @Test
-    public void shouldAllowCredentialSignInUser()
-            throws Exception
+    public void testLegacySignInUserRequiresScrypt() throws Exception
     {
         sqlTrans.begin();
         User user = saveUser();
@@ -43,7 +85,7 @@ public class TestSP_SignInUser extends AbstractSPTest
     }
 
     @Test(expected = ExBadCredential.class)
-    public void shouldNotAllowNonExistingUserIDToSignIn()
+    public void testLegacySignInUserFailsNonExistingUser()
             throws Exception
     {
         User user = newUser();
@@ -53,8 +95,17 @@ public class TestSP_SignInUser extends AbstractSPTest
     }
 
     @Test(expected = ExBadCredential.class)
-    public void shouldNotAllowCleartextCred()
-            throws Exception
+    public void testLegacySignInFailsWithClearText() throws Exception
+    {
+        sqlTrans.begin();
+        User user = saveUser();
+        sqlTrans.commit();
+
+        service.signIn(user.id().getString(), ByteString.copyFrom(CRED));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void testLegacySignInUserFailsWithClearText() throws Exception
     {
         sqlTrans.begin();
         User user = saveUser();

@@ -32,6 +32,7 @@ import java.security.PublicKey;
 
 public class CredentialUtil
 {
+    // FIXME: tick tock, buddy. You're next. This method gonna go away.
     // updateStoredPassword updated the credentials stored locally.  This must be called
     // when a password is changed so the client can authenticate successfully.  It also
     // is called when a new password is provided (after ExBadCredentials).

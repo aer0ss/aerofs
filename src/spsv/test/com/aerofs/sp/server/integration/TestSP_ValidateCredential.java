@@ -15,35 +15,30 @@ import org.junit.Test;
 public class TestSP_ValidateCredential extends AbstractSPTest
 {
     @Test
-    public void shouldValidateCredential()
-            throws Exception
-    {
-        sqlTrans.begin();
-        User user = saveUser();
-        sqlTrans.commit();
-
-        service.validateCredential(user.id().getString(),
-                ByteString.copyFrom(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())));
-    }
-
-    @Test(expected = ExBadCredential.class)
-    public void shouldNotValidateNonExistingUserID()
-            throws Exception
-    {
-        User user = newUser();
-
-        service.validateCredential(user.id().getString(),
-                ByteString.copyFrom(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())));
-    }
-
-    @Test(expected = ExBadCredential.class)
-    public void shouldNotValidateBadCredential()
-            throws Exception
+    public void shouldValidateCredential() throws Exception
     {
         sqlTrans.begin();
         User user = saveUser();
         sqlTrans.commit();
 
         service.validateCredential(user.id().getString(), ByteString.copyFrom(CRED));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void shouldNotValidateNonExistingUserID() throws Exception
+    {
+        User user = newUser();
+
+        service.validateCredential(user.id().getString(), ByteString.copyFrom(CRED));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void shouldNotValidateBadCredential() throws Exception
+    {
+        sqlTrans.begin();
+        User user = saveUser();
+        sqlTrans.commit();
+
+        service.validateCredential(user.id().getString(), ByteString.copyFrom("oh no!".getBytes()));
     }
 }

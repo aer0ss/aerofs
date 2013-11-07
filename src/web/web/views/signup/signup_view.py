@@ -9,7 +9,6 @@ from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
 from aerofs_common.exception import ExceptionReply
-from aerofs_sp.scrypt import scrypt
 import aerofs_sp.gen.common_pb2 as common
 from web.sp_util import exception2error
 
@@ -90,17 +89,15 @@ def json_signup(request):
     email_address = request.params[URL_PARAM_EMAIL]
     first_name = request.params[URL_PARAM_FIRST_NAME]
     last_name = request.params[URL_PARAM_LAST_NAME]
-    password = request.params[URL_PARAM_PASSWORD]
+    password = request.params[URL_PARAM_PASSWORD].encode("utf-8")
 
     (valid_password, invalid_message) = is_valid_password(request, password)
     if not valid_password:
         return { 'error': invalid_message }
 
-    cred = scrypt(password, email_address)
-
     try:
         sp = get_rpc_stub(request)
-        result = sp.sign_up_with_code(code, cred, first_name, last_name)
+        result = sp.sign_up_with_code(code, password, first_name, last_name)
 
         # NOTE: We don't verify that the lead was successfully captured because we don't want to
         #       prevent the user from signing up even if salesforce fails

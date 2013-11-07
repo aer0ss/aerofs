@@ -7,7 +7,6 @@ should probably be extracted out and left here while the rest goes into syndet_t
 """
 from connection import SyncConnectionService
 from gen import sp_pb2
-from scrypt import scrypt
 from lib import param
 from lib.app import cfg
 from syncdet.case import local_actor
@@ -28,9 +27,8 @@ class _SPServiceWrapper(object):
         if actor is None:
             actor = local_actor()
         user_id = actor.aero_userid
-        password = actor.aero_password
-        scrypted_password = scrypt(password, user_id)
-        self._service.sign_in(user_id, scrypted_password)
+        password = actor.aero_password.encode("utf-8")
+        self._service.credential_sign_in(user_id, password)
 
 
     def list_shared_folders(self):

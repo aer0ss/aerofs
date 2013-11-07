@@ -12,8 +12,10 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExInviteeListEmpty;
+import com.aerofs.base.ex.ExLicenseLimit;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.Exceptions;
@@ -91,21 +93,21 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
+import com.aerofs.sp.authentication.IAuthenticator;
+import com.aerofs.sp.authentication.IAuthenticator.CredentialFormat;
+import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
-import com.aerofs.sp.authentication.IAuthenticator;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
-import com.aerofs.sp.server.lib.SharedFolder.UserRoleAndState;
-import com.aerofs.sp.server.lib.user.ISessionUser;
-import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
+import com.aerofs.sp.server.lib.SharedFolder.UserRoleAndState;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
@@ -114,11 +116,13 @@ import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
+import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -130,6 +134,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+import com.unboundid.ldap.sdk.LDAPSearchException;
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
@@ -1096,7 +1101,8 @@ public class SPService implements ISPService
 
     private List<InvitationEmailer> createFolderInvitationAndEmailer(String folderName, String note,
             SharedFolder sf, User sharer, List<SubjectRolePair> srps)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist,
+            ExExternalServiceUnavailable, LDAPSearchException
     {
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
@@ -1115,7 +1121,8 @@ public class SPService implements ISPService
 
     private InvitationEmailer createFolderInvitationAndEmailer(SharedFolder sf, User sharer,
             User sharee, Role role, String note, String folderName)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist,
+            ExExternalServiceUnavailable, LDAPSearchException
     {
         SharedFolderState state = sf.getStateNullable(sharee);
         if (state == SharedFolderState.JOINED) {
@@ -1158,12 +1165,13 @@ public class SPService implements ISPService
      */
     private InviteToSignUpResult inviteToSignUp(User inviter, User invitee, @Nullable String folderName,
             @Nullable Role role, @Nullable String note)
-            throws SQLException, IOException, ExNotFound
+            throws SQLException, IOException, ExNotFound, ExExternalServiceUnavailable,
+            LDAPSearchException
     {
         assert !invitee.exists();
 
         String code;
-        if (_authenticator.isAutoProvisioned(invitee.id())) {
+        if (_authenticator.isAutoProvisioned(invitee)) {
             // No signup code is needed for auto-provisioned users. They can simply sign in using
             // LDAP or OpenID credentials.
             code = null;
@@ -1363,7 +1371,7 @@ public class SPService implements ISPService
         // (via the setup UI).
         if (!OPEN_SIGNUP && _factUser.hasUsers()) {
             throw new ExNoPerm("invitation-only sign up");
-        } else if (_authenticator.isAutoProvisioned(user.id())) {
+        } else if (_authenticator.isAutoProvisioned(user)) {
             throw new ExNoPerm("auto-provisioned users don't need to request for sign-up");
         }
 
@@ -1848,8 +1856,10 @@ public class SPService implements ISPService
         return m;
     }
 
-    // TODO: Remove this method; maintained for compatibility with old (pre-0.4.202) clients.
-    // Remove after 01/01/2014
+    /* == No new client paths should use this. See credentialSignIn(). ==
+     *
+     * == Remove this; review after January 2014. ==
+     */
     @Override
     public ListenableFuture<Void> signIn(String userIdString, ByteString credentials) throws Exception
     {
@@ -1873,7 +1883,12 @@ public class SPService implements ISPService
             _sqlTrans.commit();
         } else {
             // Regular users still use username/password credentials.
-            _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans);
+            // FIXME: Legacy clients will submit scrypt'ed credential information if the
+            // user is an external user, or if local_credential signin is used, or if
+            // the mode is Hybrid Cloud...
+            // This call needs to go away eventually, review after January 2014.
+            _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans,
+                    CredentialFormat.LEGACY);
         }
 
         // Set the session cookie.
@@ -1933,23 +1948,28 @@ public class SPService implements ISPService
             ByteString password, String firstName, String lastName)
             throws Exception
     {
-        byte[] shaedSP = SPParam.getShaedSP(password.toByteArray());
-
         // is the user joining a new team or an existing team?
         boolean joinExistingTeam;
 
+        // FIXME(jP): WAAAAAH! I don't want to do hash-generation in a database transaction!
+        // But how else will I get the user id given nothing but this lousy signup code?
         _sqlTrans.begin();
 
         UserID userID = _db.getSignUpCode(signUpCode);
         User user = _factUser.create(userID);
         Collection<UserID> users;
-        if (isExistingUserWithMatchingPassword(user, shaedSP)) {
+        byte[] shaedSP = LocalCredential.hashScrypted(
+                LocalCredential.deriveKeyForUser(userID, password.toByteArray()));
+
+        if (user.exists()) {
+            if (!user.isCredentialCorrect(shaedSP)) {
+                throw new ExBadCredential("Password doesn't match the existing account");
+            }
             // If the user already exists and the password matches the existing password, we do an
             // no-op. This is needed for the user to retry signing up using the link in the signup
             // verification email.
             users = Collections.emptyList();
             joinExistingTeam = true;
-
         } else {
             SignUpWithCodeImplResult result = signUpWithCodeImpl(signUpCode, user, firstName,
                     lastName, shaedSP);
@@ -2028,11 +2048,13 @@ public class SPService implements ISPService
      * A signed-in user can certify devices.
      * Does not require a mutually-auth'ed session (obviously)
      *
+     * == No new client paths should use this. See credentialSignIn(). ==
+     *
+     * == Remove this; review after January 2014. ==
+     *
      * @throws ExEmptyEmailAddress if the user id is empty
-     * @throws ExBadCredential if username/password combination is incorrect, or in the case of the
-     *                         team server, if they have not signed in successfully using mutual
-     *                         authentication.
      * @throws ExLicenseLimit if a seat limit prevents this new user from signing in
+     * @throws ExBadCredential if username/password combination is incorrect
      */
     @Override
     public ListenableFuture<Void> signInUser(String userId, ByteString credentials)
@@ -2040,7 +2062,12 @@ public class SPService implements ISPService
     {
         User user = _factUser.createFromExternalID(userId);
 
-        _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans);
+        // FIXME: Legacy clients will submit scrypt'ed credential information if the
+        // user is an external user (or if local_credential signin is used, or if
+        // the mode is Hybrid Cloud).
+        // Review after January 2014
+        _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans,
+                CredentialFormat.LEGACY);
 
         // Set the session cookie.
         _sessionUser.setUser(user);
@@ -2048,6 +2075,49 @@ public class SPService implements ISPService
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
 
         return createVoidReply();
+    }
+
+    /**
+     * Unified user sign-in method - regardless of authenticator being used, this takes
+     * a cleartext credential. When needed (i.e., when the user has an AeroFS-managed
+     * password), we will perform the needed key derivation on the server side.
+     *
+     * IOW, no mo' client SCrypt.
+     *
+     * == All new client signin paths should use this entry point ==
+     *
+     * signIn() and signInUser() are *deprecated* and are being kept for compatibility with
+     * clients that refuse to upgrade.
+     *
+     * A signed-in user can certify devices.
+     * Does not require a mutually-auth'ed session.
+     *
+     * @throws ExEmptyEmailAddress if the user id is empty
+     * @throws ExBadCredential if username/credential combination is incorrect
+     */
+    @Override
+    public ListenableFuture<Void> credentialSignIn(String userId, ByteString credentials)
+            throws Exception
+    {
+        User user = authByCredentials(userId, credentials);
+        _sessionUser.setUser(user);
+        _userTracker.signIn(user.id(), _sessionUser.getSessionID());
+        return createVoidReply();
+    }
+
+    /**
+     * Check the given username and credentials. Throw an exception if
+     * @param userId user identifier to check
+     * @param cred credentials in cleartext
+     * @return User object if authentication succeeds
+     * @throws Exception if authentication fails
+     */
+    private User authByCredentials(String userId, ByteString cred) throws Exception
+    {
+        User user = _factUser.createFromExternalID(userId);
+        _authenticator.authenticateUser(user, cred.toByteArray(), _sqlTrans, CredentialFormat.TEXT);
+        l.info("SI: cred auth ok {}", user.id().getString());
+        return user;
     }
 
     /**
@@ -2083,18 +2153,15 @@ public class SPService implements ISPService
     /**
      * Validate the given userid/credential pair without signing in the user.
      *
+     * IMPORTANT: This method only accepts cleartext credentials. TLS is your friend!
+     *
      * @throws ExBadCredential if the user can not be authenticated
      */
     @Override
     public ListenableFuture<Void> validateCredential(String userID, ByteString credentials)
             throws Exception
     {
-        User user = _factUser.createFromExternalID(userID);
-
-        _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans);
-
-        l.info("SI: valid credential for {}", user.id().getString());
-
+        authByCredentials(userID, credentials);
         return createVoidReply();
     }
 
@@ -2118,6 +2185,7 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         if (!userExists) throw new ExNoPerm("Attempt to create device auth for non-existent user");
+        l.info("Gen mobile access code for {}", _sessionUser.getUser().id());
 
         // Important: recall that IdentitySessionManager speaks seconds, not milliseconds,
         // due to the underlying key-expiration technology.
@@ -2225,20 +2293,6 @@ public class SPService implements ISPService
                 .setFirstName(attrs.getFirstName())
                 .setLastName(attrs.getLastName())
                 .build());
-    }
-
-    /**
-     * Throw ExBadCredential if the user exists but the provided password doesn't match the user's
-     * password.
-     */
-    private boolean isExistingUserWithMatchingPassword(User user, byte[] shaedSP)
-            throws SQLException, ExNotFound, ExBadCredential
-    {
-        if (!user.exists()) return false;
-        if (!user.isCredentialCorrect(shaedSP)) {
-            throw new ExBadCredential("Password doesn't match the existing account");
-        }
-        return true;
     }
 
     // TODO (WW) similar to UserID, create FullName.fromExternal(), fromInternal()?

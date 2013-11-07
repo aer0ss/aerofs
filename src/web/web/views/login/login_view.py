@@ -10,7 +10,6 @@ from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
-from aerofs_sp.scrypt import scrypt
 from web.auth import NON_SP_USER_ID
 from web.util import flash_error, get_rpc_stub, is_private_deployment
 
@@ -30,28 +29,6 @@ def _is_openid_enabled(request):
     return is_private_deployment(request.registry.settings) \
         and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'openid'
 
-def _is_external_cred_enabled(settings):
-    """
-    True if the server allows external authentication, usually LDAP.
-    This determines whether we should scrypt the user password.
-    """
-    return is_private_deployment(settings) \
-        and settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
-
-def _format_password(settings, password, login):
-    """
-    If the server configuration expects an scrypt'ed credential for this user, do so here;
-    otherwise return the cleartext password as provided.
-    NOTE the logic embedded here is also found in IUserFilter/UserFilterFactory; any
-    changes need to be reflected in both places.
-    """
-    if _is_external_cred_enabled(settings):
-        internal_pattern = settings.get('internal_email_pattern')
-        if internal_pattern is None or re.compile(internal_pattern).search(login) is not None:
-            return str(password)
-
-    return scrypt(password, login)
-
 def _do_login(request):
     """
     Log in the user. Return HTTPFound if login is successful; otherwise call
@@ -61,12 +38,11 @@ def _do_login(request):
 
     # Remember to normalize the email address.
     login = request.params[URL_PARAM_EMAIL]
-    password = request.params[URL_PARAM_PASSWORD]
-    hashed_password = _format_password(request.registry.settings, password, login)
+    password = request.params[URL_PARAM_PASSWORD].encode("utf-8")
     stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
     try:
         try:
-            headers = _log_in_user(request, login, hashed_password, stay_signed_in)
+            headers = _log_in_user(request, login, password, stay_signed_in)
             return redirect_to_next_page(request, headers, DEFAULT_DASHBOARD_NEXT)
         except ExceptionReply as e:
             if e.get_type() == PBException.BAD_CREDENTIAL:
@@ -124,10 +100,14 @@ def login_view(request):
 
 def _log_in_user(request, login, creds, stay_signed_in):
     """
-    Logs in the given user with the given hashed password (creds) and returns a
+    Logs in the given user with the given credentials and returns a
     set of headers to create a session for the user. Could potentially throw any
     protobuf exception that SP throws.
+
+    creds is expected to be converted to bytes (we are using utf8)
     """
+    if not isinstance(creds, bytes):
+        raise TypeError("credentials require encoding")
 
     if login == NON_SP_USER_ID:
         raise HTTPForbidden("can't use builtin user ids")
@@ -137,7 +117,7 @@ def _log_in_user(request, login, creds, stay_signed_in):
     con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
     sp = SPServiceRpcStub(con)
 
-    sp.sign_in(login, creds)
+    sp.credential_sign_in(login, creds)
 
     if stay_signed_in:
         log.debug("Extending session")
