@@ -162,10 +162,10 @@
         $('#public-host-options').show();
     }
 
-    function hideAllModals() {
+    function hideAllModalsAndEnableButtons() {
         $('div.modal').modal('hide');
-        enableNavButtons();
 
+        enableNavButtons();
         setEnabled($('#send-verification-code-button'), true);
         setEnabled($('#continue-button'), true);
     }
@@ -233,7 +233,7 @@
 
         disableModalButtons();
         doPost("${request.route_path('json_verify_smtp')}",
-            serializedData, enableVerifyModalCodeInput, hideAllModals);
+            serializedData, enableVerifyModalCodeInput, hideAllModalsAndEnableButtons);
     }
 
     function enableVerifyModalEmailInput() {
@@ -254,7 +254,7 @@
 
         if (inputtedCode == actualCode) {
             doPost("${request.route_path('json_setup_email')}",
-                serializedData, showVerificationSuccessModal, hideAllModals);
+                serializedData, showVerificationSuccessModal, hideAllModalsAndEnableButtons);
         } else {
             displayError("The verification code you provided was not correct.");
         }
