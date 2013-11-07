@@ -19,6 +19,7 @@ from aerofs_common.configuration import Configuration
 from web.util import is_private_deployment, is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, set_license_file_and_shasum
 from web.views.login.login_view import URL_PARAM_EMAIL
+from web.error import error
 
 log = logging.getLogger("web")
 
