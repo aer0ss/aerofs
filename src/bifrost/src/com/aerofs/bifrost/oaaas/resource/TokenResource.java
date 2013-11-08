@@ -302,9 +302,6 @@ public class TokenResource {
         principal.setUserID(UserID.fromExternal(authReply.getUserId()));
         principal.setOrganizationID(new OrganizationID(Integer.valueOf(authReply.getOrgId())));
         principal.setAdminPrincipal(authReply.getIsOrgAdmin());
-        principal.setAttributes(ImmutableMap.of(
-                AuthenticatedPrincipal.ORGID_ATTRIB, authReply.getOrgId(),
-                AuthenticatedPrincipal.USERID_ATTRIB, authReply.getUserId()));
 
         return principal;
     }
