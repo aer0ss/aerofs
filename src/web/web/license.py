@@ -13,10 +13,12 @@ log = logging.getLogger(__name__)
 _CONF_KEY_LICENSE_TYPE = 'license_type'
 _CONF_KEY_LICENSE_VALID_UNTIL = 'license_valid_until'
 
+_URL_PARAM_KEY_LICENSE_SHASUM = 'license_shasum'
+
 _SESSION_KEY_LICENSE_SHASUM = 'license_shasum'
 
 # 'https://unified.syncfs.com/config' for testing
-_URL_LICENSE_HOST = 'http://localhost:5434'
+_URL_LICENSE_HOST = 'https://unified.syncfs.com/config' # 'http://localhost:5434'
 _URL_SET_LICENSE_FILE = _URL_LICENSE_HOST + "/set_license_file"
 _URL_CHECK_LICENSE_SHA1 = _URL_LICENSE_HOST + "/check_license_sha1"
 
@@ -49,11 +51,14 @@ def is_license_present_and_valid(conf):
     # N.B. keep the comparison consistent with License.java:isValid()
     return now <= expiry_date
 
-def set_license_file_and_shasum(request, license_data):
+def set_license_file(request, license_data):
     """
     Set the license file by calling the config server, and attach the shasum to
     the session. Call error() if the request failed.
+
     @param license_data: content of a license file as received in HTTP requests
+
+    TODO (WW) read the file the same way as verify_license_file()
     """
 
     # Due to the way we use JS to upload this file, the request parameter on
@@ -67,16 +72,17 @@ def set_license_file_and_shasum(request, license_data):
     })
     if r.status_code == 200:
         log.info("set license file okay: {}".format(r.text))
-        _attach_checksum_to_session(request, hashlib.sha1(license_bytes))
+        shasum = hashlib.sha1(license_bytes).hexdigest()
+        _attach_checksum_to_session(request, shasum)
         return True
     else:
         log.error("set license file failed: {} {}".format(r.status_code, r.text))
         return False
 
-def verify_license_file_shasum(request, license_file):
+def verify_license_file(request, license_file):
     """
     Verify the shasum of the provided file with the config server, and attach
-    the checksum to the session.
+    the checksum to the session if verification is successful.
     @return whether verification succeeds
     """
     digest = hashlib.sha1()
@@ -84,23 +90,53 @@ def verify_license_file_shasum(request, license_file):
         buf = license_file.read(4096)
         if not buf: break
         digest.update(buf)
+    shasum = digest.hexdigest()
 
-    _attach_checksum_to_session(request, digest)
-    return is_license_shasum_valid(request)
+    if is_license_shasum_valid(shasum):
+        _attach_checksum_to_session(request, shasum)
+        return True
+    else:
+        return False
 
-def _attach_checksum_to_session(request, digest):
-    request.session[_SESSION_KEY_LICENSE_SHASUM] = digest.hexdigest()
+def verify_license_shasum(request, shasum):
+    """
+    Verify the shasum provided in the request param, and attach the checksum to
+    the session if verification is successful.
+    @return whether verification succeeds
+    """
+    if shasum and is_license_shasum_valid(shasum):
+        _attach_checksum_to_session(request, shasum)
+        return True
+    else:
+        return False
 
-def is_license_shasum_set(request):
-    return _SESSION_KEY_LICENSE_SHASUM in request.session
+def _attach_checksum_to_session(request, shasum):
+    request.session[_SESSION_KEY_LICENSE_SHASUM] = shasum
 
-def is_license_shasum_valid(request):
+def get_license_shasum_from_query(request):
+    """
+    Return the license shasum specified in the request query string. Return None
+    if no shasum is specified.
+    """
+    return request.params.get(_URL_PARAM_KEY_LICENSE_SHASUM)
+
+def get_license_shasum_from_session(request):
+    """
+    Return the license shasum attached to the session by one of the verify*()
+    methods. Return None if no shasum is attached.
+
+    N.B. The returned shasum is potentially un-verified if the user tempers
+    with session cookies.
+    """
+    return request.session.get(_SESSION_KEY_LICENSE_SHASUM)
+
+def is_license_shasum_valid(shasum):
     """
     Call the config server to verify the shasum saved in the session matches the
-    current license data. This method assumes the shasum is set.
+    current license data. This method assumes the shasum is non-null.
     """
     r = requests.get(_URL_CHECK_LICENSE_SHA1, params = {
-        'license_sha1': request.session[_SESSION_KEY_LICENSE_SHASUM]
+        'license_sha1': shasum
     })
     if r.status_code == 200:
         return True

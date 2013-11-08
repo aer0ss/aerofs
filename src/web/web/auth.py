@@ -10,10 +10,11 @@ import logging
 from pyramid.security import authenticated_userid
 from aerofs_sp.gen.sp_pb2 import ADMIN
 from util import get_rpc_stub
-from web.license import is_license_shasum_set, is_license_shasum_valid
 
 # A fake user ID for the system to tell if the user has logged in with SP. SP
 # login system must prevent users from signing in using this ID.
+from web.license import is_license_shasum_valid, get_license_shasum_from_session
+
 NON_SP_USER_ID = 'fakeuser'
 
 GROUP_ID_MAINTAINERS = 'group:maintainers'
@@ -58,9 +59,10 @@ def get_principals(authed_userid, request):
     """
     principals = []
 
-    if is_license_shasum_set(request):
+    shasum = get_license_shasum_from_session(request)
+    if shasum:
         try:
-            if is_license_shasum_valid(request):
+            if is_license_shasum_valid(shasum):
                 principals.append(GROUP_ID_MAINTAINERS)
         except Exception as e:
             log.error("is_license_shasum_valid() for {}:".format(authed_userid), e)

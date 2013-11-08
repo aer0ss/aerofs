@@ -5,8 +5,9 @@ from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config, forbidden_view_config
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from web.license import get_license_shasum_from_query, get_license_shasum_from_session, verify_license_shasum
 from web.views import maintenance
-from web.login_util import URL_PARAM_NEXT
+from web.login_util import URL_PARAM_NEXT, remember_license_based_login
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +30,33 @@ def not_found_view(request):
 def forbidden_view(request):
     log.error("forbidden view for " + request.path)
 
+    response = _attempt_license_shasum_login(request)
+    if response:
+        return response
+    else:
+        return _force_login(request, _get_login_route(request))
+
+def _attempt_license_shasum_login(request):
+    """
+    If a request is made with a license shasum in the query string, attempt
+    to login with the shasum and retry the request. This is necessary for
+    access to the appliance management API through command lines.
+
+    Skip this step if the shasum stored in the session is equal to the shasum
+    in the query. This is to prevent infinite loops if the user got permission
+    denied after he logs in with the license.
+
+    @return a response if login successful, None otherwise
+    """
+    shasum = get_license_shasum_from_query(request)
+    if shasum == get_license_shasum_from_session(request):
+        log.info('license shasum already set. skip license-based login')
+    elif verify_license_shasum(request, shasum):
+        log.info('license shasum in query string verified. login w/ license')
+        remember_license_based_login(request)
+        return request.invoke_subrequest(request, use_tweens=True)
+
+def _get_login_route(request):
     # Ideally we should redirect to maintenance_login as long as the requested
     # view callable requires 'maintain' permission. However it's difficult to
     # retrieve the callable's permission info (pyramid introspector is the way
@@ -36,11 +64,9 @@ def forbidden_view(request):
     # is one of the maintenance pages.
     if request.matched_route and \
             request.matched_route.name in maintenance.routes:
-        login_route = 'maintenance_login'
+        return 'maintenance_login'
     else:
-        login_route = 'login'
-
-    return _force_login(request, login_route)
+        return 'login'
 
 @view_config(
     context=ExceptionReply,
