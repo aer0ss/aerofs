@@ -1,5 +1,6 @@
 package com.aerofs.tunnel;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.net.NettyUtil;
 import org.jboss.netty.channel.AbstractChannel;
 import org.jboss.netty.channel.AbstractChannelSink;
@@ -12,6 +13,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.DefaultChannelConfig;
 import org.jboss.netty.channel.MessageEvent;
+import org.slf4j.Logger;
 
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -28,6 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class VirtualChannel extends AbstractChannel
 {
+    private final static Logger l = Loggers.getLogger(VirtualChannel.class);
+
     private static class ConnectionAddress extends SocketAddress
     {
         private static final long serialVersionUID = 0L;
@@ -145,10 +149,12 @@ public class VirtualChannel extends AbstractChannel
 
     void fireDisconnected()
     {
+        l.info("disconnecting {}", this);
         _connected.set(false);
         Channels.fireChannelDisconnected(this);
-        setClosed();
+        l.info("closing {}", this);
         Channels.fireChannelClosed(this);
+        setClosed();
     }
 
     void fireInterestChanged(int ops)

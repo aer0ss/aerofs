@@ -231,7 +231,7 @@ public class TestTunnel extends AbstractBaseTest
         Tunnel<Channel, TunnelHandler> p = makePhysical();
         Tunnel<Channel, Channel> v = makeVirtual(p.server);
 
-        v.server.write(ChannelBuffers.wrappedBuffer(MSG_HELLO));
+        v.server.write(ChannelBuffers.wrappedBuffer(MSG_HELLO)).awaitUninterruptibly();
 
         assertBufferEquals(MSG_HELLO, clientVirtualConnections.messageReceived(v.client).get());
     }
@@ -242,7 +242,7 @@ public class TestTunnel extends AbstractBaseTest
         Tunnel<Channel, TunnelHandler> p = makePhysical();
         Tunnel<Channel, Channel> v = makeVirtual(p.server);
 
-        v.client.write(ChannelBuffers.wrappedBuffer(MSG_HELLO));
+        v.client.write(ChannelBuffers.wrappedBuffer(MSG_HELLO)).awaitUninterruptibly();
 
         assertBufferEquals(MSG_HELLO, serverVirtualConnections.messageReceived(v.server).get());
     }
