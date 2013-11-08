@@ -4,7 +4,7 @@
 # login_view.py:get_principals() calls _get_auth_level() every time
 # a request is made, it is not a problem.
 #
-# Related documentation: docs/design/site_setup_auth.md
+# Related documentation: docs/design/pyramid_auth.md
 #
 import logging
 from pyramid.security import authenticated_userid
@@ -53,7 +53,7 @@ def get_principals(authed_userid, request):
     potentially triggers the forbidden view which redirects the user to the
     login page.
 
-    See docs/design/site_setup_auth.md for more information.
+    See docs/design/pyramid_auth.md for more information.
 
     @return the list of principals
     """
@@ -65,7 +65,7 @@ def get_principals(authed_userid, request):
             if is_license_shasum_valid(shasum):
                 principals.append(GROUP_ID_MAINTAINERS)
         except Exception as e:
-            log.error("is_license_shasum_valid() for {}:".format(authed_userid), e)
+            log.error("is_license_shasum_valid() for {}: {}".format(authed_userid, e))
 
     if authed_userid != NON_SP_USER_ID:
         try:
@@ -73,7 +73,7 @@ def get_principals(authed_userid, request):
             group = GROUP_ID_ADMINS if level == ADMIN else GROUP_ID_USERS
             principals.append(group)
         except Exception as e:
-            log.error("sp.get_auth_level() for {}:".format(authed_userid), e)
+            log.error("sp.get_auth_level() for {}: {}".format(authed_userid, e))
 
     # Cache result for is_admin() everytime this method is called.
     request.session[_SESSION_KEY_IS_ADMIN] = GROUP_ID_ADMINS in principals

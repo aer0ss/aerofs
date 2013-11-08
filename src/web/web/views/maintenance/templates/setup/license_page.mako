@@ -1,6 +1,6 @@
 ## This page is used when the system's license is either absent or expired.
 ## In this case, uploading a new license does not require authentication.
-## See docs/design/site_setup_auth.md, setup() in setup.py, and setup.mako.
+## See docs/design/pyramid_auth.md, setup() in setup.py, and setup.mako.
 
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="bootstrap" file="../bootstrap.mako"/>

@@ -15,6 +15,7 @@ routes = {
     'json_verify_ldap',
     'json_upload_backup',
     'json_setup_finalize',
+    'json_get_license_shasum_from_session',
 
     # Bootstrap
     'json_enqueue_bootstrap_task',

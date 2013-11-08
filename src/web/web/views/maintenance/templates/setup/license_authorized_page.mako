@@ -1,6 +1,6 @@
 ## This page is used when the system's license is valid. In this case,
 ## updating the license requires authentication.
-## See docs/design/site_setup_auth.md, setup() in setup.py, and setup.mako.
+## See docs/design/pyramid_auth.md, setup() in setup.py, and setup.mako.
 
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>

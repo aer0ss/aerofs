@@ -31,7 +31,7 @@ class RedirectMiddleware(object):
         #  2. Configuration has not been initialized (first run), or the license
         #     has expired, and
         #  3. The page is not a setup page.
-        # See docs/design/site_setup_auth.md for more info.
+        # See docs/design/pyramid_auth.md for more info.
         #
         # Note that static assets are served directly by nginx. We don't need to
         # consider them here.

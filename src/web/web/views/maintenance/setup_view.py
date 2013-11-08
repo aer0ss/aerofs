@@ -1,4 +1,4 @@
-# Views for site setup. Related document: docs/design/site_setup_auth.md
+# Views for site setup. Related document: docs/design/pyramid_auth.md
 #
 
 import logging
@@ -20,7 +20,7 @@ from aerofs_common.configuration import Configuration
 from web.error import error
 from web.login_util import remember_license_based_login
 from web.util import is_private_deployment, is_configuration_initialized
-from web.license import is_license_present_and_valid, is_license_present, set_license_file
+from web.license import is_license_present_and_valid, is_license_present, set_license_file, get_license_shasum_from_session, URL_PARAM_KEY_LICENSE_SHASUM
 from backup_view import BACKUP_FILE_PATH
 from web.views.login.login_view import URL_PARAM_EMAIL
 
@@ -71,13 +71,13 @@ def _get_configuration():
 
 @view_config(
     route_name='setup',
-    # Should not require permission. See docs/design/site_setup_auth.md.
+    # Should not require permission. See docs/design/pyramid_auth.md.
     permission=NO_PERMISSION_REQUIRED,
     renderer='setup.mako'
 )
 def setup(request):
     conf = _get_configuration()
-    # See docs/design/site_setup_auth.md for explanation of the following logic.
+    # See docs/design/pyramid_auth.md for explanation of the following logic.
     if is_license_present_and_valid(conf):
         log.info("license is valid. redirect to setup_authorized")
         return HTTPFound(request.route_path("setup_authorized", _query=request.params))
@@ -124,7 +124,9 @@ def _setup_common(request, conf, license_page_only):
         'url_param_email': URL_PARAM_EMAIL,
         # The following two parameters are used by email_page.mako
         'email_verification_code': code,
-        'default_support_email': _get_default_support_email(conf['base.host.unified'])
+        'default_support_email': _get_default_support_email(conf['base.host.unified']),
+        ## This parameter is used by finalize
+        'url_param_license_shasum': URL_PARAM_KEY_LICENSE_SHASUM
     }
 
 def _get_default_support_email(hostname):
@@ -143,7 +145,7 @@ def _get_default_support_email(hostname):
 @view_config(
     route_name='json_set_license',
     # This method doesn't require authentication.
-    # See docs/design/site_setup_auth.md.
+    # See docs/design/pyramid_auth.md.
     permission=NO_PERMISSION_REQUIRED,
     renderer='json',
     request_method='POST'
@@ -155,6 +157,19 @@ def json_set_license(request):
 
     headers = remember_license_based_login(request)
     return HTTPOk(headers=headers)
+
+@view_config(
+    route_name='json_get_license_shasum_from_session',
+    # Since this method returns the information already stored in the user's
+    # session cookie, it doesn't require authentication.
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='json',
+    request_method='GET'
+)
+def json_get_license_shasum_from_session(request):
+    return {
+        'shasum': get_license_shasum_from_session(request)
+    }
 
 # ------------------------------------------------------------------------
 # Hostname

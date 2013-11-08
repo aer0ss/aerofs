@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 _CONF_KEY_LICENSE_TYPE = 'license_type'
 _CONF_KEY_LICENSE_VALID_UNTIL = 'license_valid_until'
 
-_URL_PARAM_KEY_LICENSE_SHASUM = 'license_shasum'
+URL_PARAM_KEY_LICENSE_SHASUM = 'license_shasum'
 
 _SESSION_KEY_LICENSE_SHASUM = 'license_shasum'
 
@@ -118,7 +118,7 @@ def get_license_shasum_from_query(request):
     Return the license shasum specified in the request query string. Return None
     if no shasum is specified.
     """
-    return request.params.get(_URL_PARAM_KEY_LICENSE_SHASUM)
+    return request.params.get(URL_PARAM_KEY_LICENSE_SHASUM)
 
 def get_license_shasum_from_session(request):
     """

@@ -135,6 +135,8 @@ ${common.render_previous_button(page)}
 <%spinner:scripts/>
 <%bootstrap:scripts/>
 
+<script src="${request.static_path('web:static/js/purl.js')}"></script>
+
 <script>
     var andFinalizeParam = '&finalize=1';
 
@@ -202,7 +204,14 @@ ${common.render_previous_button(page)}
         ## Show the progress modal
         $('#${progress_modal.id()}').modal('show');
 
-        enqueueBootstrapTask('apply-config', pollBootstrap, hideAllModals);
+        var onFailure = hideAllModals;
+        $.get('${request.route_path('json_get_license_shasum_from_session')}')
+        .done(function(response) {
+            var poll = function(eid) {
+                pollBootstrap(eid, response['shasum']);
+            };
+            enqueueBootstrapTask('apply-config', poll, onFailure);
+        }).fail(onFailure);
     }
 
     ########
@@ -251,7 +260,7 @@ ${common.render_previous_button(page)}
     ## rest. JS calls the two parts separately. This can avoid forcing nginx
     ## restart to be the last step.
 
-    function pollBootstrap(eid) {
+    function pollBootstrap(eid, licenseShasum) {
         ## the number of consecutive status-code-0 responses. See comments above
         var statusZeroCount = 0;
         var bootstrapPollInterval = window.setInterval(function() {
@@ -262,7 +271,7 @@ ${common.render_previous_button(page)}
                 if (response['status'] == 'success') {
                     console.log("poll complete");
                     window.clearInterval(bootstrapPollInterval);
-                    reloadToFinalize();
+                    reloadToFinalize(licenseShasum);
                 } else {
                     console.log("poll incomplete");
                     ## TODO (WW) add timeout?
@@ -270,7 +279,7 @@ ${common.render_previous_button(page)}
             }).fail(function (xhr) {
                 console.log("status: " + xhr.status + " statusText: " + xhr.statusText);
                 if (xhr.status == 0) {
-                    if (statusZeroCount++ == 10) reloadToFinalize();
+                    if (statusZeroCount++ == 10) reloadToFinalize(licenseShasum);
 
                 ## 400: aerofs specific error code, 500: internal server errors.
                 ## Because we are restarting nginx, the browser may throw
@@ -285,11 +294,16 @@ ${common.render_previous_button(page)}
         }, 1000);
     }
 
-    ## See the comments above.
-    function reloadToFinalize() {
+    ## Reload the page and then call finalize() (see above comments). If the
+    ## new hostname is different from the current hostname, we will lose the
+    ## session cookie and no longer be able to call priviledged APIs.
+    ## Therefore, we pass license_shasum to the new page which uses it to
+    ## to perform license-shasum-based login.
+    function reloadToFinalize(licenseShasum) {
         ## N.B. We expect a non-empty window.location.search here (i.e. '?page=X')
         window.location.href = 'https://${current_config['base.host.unified']}' +
-                window.location.pathname + window.location.search + andFinalizeParam;
+                window.location.pathname + window.location.search +
+                andFinalizeParam + "&shasum_reloaded=" + licenseShasum;
     }
 
     ########
@@ -303,9 +317,9 @@ ${common.render_previous_button(page)}
     ## server to finalize until the page is reloaded.
 
     function finalize() {
-        doPost("${request.route_path('json_setup_finalize')}", {
-                ${csrf.token_param()}
-            }, pollForWebServerReadiness);
+        doPost("${request.route_path('json_setup_finalize')}" +
+                    "?${url_param_license_shasum}=" + $.url().param('shasum_reloaded'),
+            { ${csrf.token_param()} }, pollForWebServerReadiness);
     }
 
     ########
