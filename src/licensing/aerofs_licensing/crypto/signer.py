@@ -27,7 +27,7 @@ def sign_with_aerofs_licensing_privkey(input_flo, output_flo, gpg_homedir=None, 
 
     # Use the keys available in the specified homedir
     ctx = gpgme.Context()
-    ctx.set_engine_info(gpgme.PROTOCOL_OpenPGP, find_gpg_executable(), gpg_homedir)
+    ctx.set_engine_info(gpgme.PROTOCOL_OpenPGP, find_gpg_executable(), homedir)
 
     # Set the key to be used for signing
     licensing_privkey = get_licensing_key(ctx)
