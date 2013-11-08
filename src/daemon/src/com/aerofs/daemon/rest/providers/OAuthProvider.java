@@ -49,7 +49,10 @@ public class OAuthProvider
     {
         String accessToken = context.getRequest().getQueryParameters().getFirst("access_token");
         try {
-            if (accessToken != null) return _verifier.verify(accessToken).principal;
+            if (accessToken != null) {
+                AuthenticatedPrincipal principal = _verifier.verify(accessToken).principal;
+                if (principal != null) return principal;
+            }
         } catch (Exception e) {
             l.error("failed to verify token", BaseLogUtil.suppress(e,
                     ClosedChannelException.class));

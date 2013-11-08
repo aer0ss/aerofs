@@ -57,6 +57,7 @@ public abstract class BifrostTest extends AbstractTest
     protected final static String CLIENTREDIRECT = "http://client.example.com:9000/redirect";
     protected final static String USERNAME = "user";
     public final static String TOKEN = "token";
+    public final static String EXPIRED = "expired";
     protected final static String AUTH_URL = "/authorize";
     protected final static String TOKEN_URL = "/token";
     protected final static String CLIENTID = "testapp";
@@ -158,10 +159,17 @@ public abstract class BifrostTest extends AbstractTest
                 0,
                 scopes,
                 "");
+        AccessToken expired = new AccessToken(EXPIRED,
+                principal,
+                client,
+                1,
+                scopes,
+                "");
 
         inj.getInstance(ResourceServerRepository.class).save(rs);
         inj.getInstance(ClientRepository.class).save(client);
         inj.getInstance(AccessTokenRepository.class).save(token);
+        inj.getInstance(AccessTokenRepository.class).save(expired);
     }
 
     public static Module mockDatabaseModule(final SessionFactory sessionFactory)

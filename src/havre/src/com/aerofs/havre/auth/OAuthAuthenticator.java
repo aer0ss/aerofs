@@ -48,11 +48,12 @@ public class OAuthAuthenticator implements Authenticator
         if (access == null || access.isEmpty()) throw new UnauthorizedUserException();
 
         try {
-            return _verifier.verify(access.get(0)).principal;
+            AuthenticatedPrincipal principal = _verifier.verify(access.get(0)).principal;
+            if (principal != null) return principal;
         } catch (Exception e) {
             l.error("failed to verify token", BaseLogUtil.suppress(e.getCause(),
                     ClosedChannelException.class));
-            throw new UnauthorizedUserException();
         }
+        throw new UnauthorizedUserException();
     }
 }
