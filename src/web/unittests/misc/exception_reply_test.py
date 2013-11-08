@@ -28,3 +28,7 @@ class ExceptionReplyTest(unittest.TestCase):
             pbe.type = i
             er = ExceptionReply(pbe)
             self.assertEquals(er.get_type_name(), map[i])
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

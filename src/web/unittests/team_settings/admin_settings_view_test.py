@@ -1,3 +1,4 @@
+import unittest
 from ..test_base import TestBase
 
 class AdminSettingsViewTest(TestBase):
@@ -41,3 +42,7 @@ class AdminSettingsViewTest(TestBase):
 
         self.assertEqual(self.sp_rpc_stub.set_org_preferences.call_count, 0)
         self.sp_rpc_stub.get_org_preferences.assert_called_once_with()
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

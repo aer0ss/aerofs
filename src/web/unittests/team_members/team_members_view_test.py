@@ -1,3 +1,4 @@
+import unittest
 from pyramid import testing
 from mock import Mock
 from ..test_base import TestBase
@@ -20,3 +21,7 @@ class TeamMembersViewTest(TestBase):
         from web.views.team_members.team_members_view import team_members
         ret = team_members(testing.DummyRequest())
         self.assertTrue(ret['invited_users'] == [_USER_ID])
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

@@ -1,3 +1,4 @@
+import unittest
 from aerofs_sp.gen.sp_pb2 import PBStripeData
 from ..test_base import TestBase
 from mock import Mock
@@ -40,3 +41,7 @@ class SetStripCustomerSubscriptionTest(TestBase):
         from web.views.payment import stripe_util
         stripe_util.get_stripe_customer = Mock(return_value=self.stripe_customer)
         stripe_util.update_stripe_subscription(self.stripe_data)
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

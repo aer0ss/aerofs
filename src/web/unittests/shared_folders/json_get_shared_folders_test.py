@@ -1,3 +1,4 @@
+import unittest
 from mock import Mock
 from aerofs_sp.gen.sp_pb2 import \
     ListOrganizationSharedFoldersReply, ListSharedFoldersReply
@@ -83,3 +84,7 @@ class GetSharedFoldersTest(TestBase):
 
         response = json_get_user_shared_folders(request)
         self.assertEquals(len(response['aaData']), 2)
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

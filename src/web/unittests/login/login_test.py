@@ -1,3 +1,4 @@
+import unittest
 from unittests.test_base import TestBase
 from web.util import is_private_deployment
 from web.views.login.login_view import URL_PARAM_NEXT, resolve_next_url, _is_external_cred_enabled, _format_password
@@ -71,3 +72,7 @@ class LoginTest(TestBase):
         passwd = "hellosecret"
         self.assertNotEqual(passwd, _format_password(settings, passwd, username))
         self.assertEqual(_format_password(settings, passwd, username).__len__(), 64)
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)
