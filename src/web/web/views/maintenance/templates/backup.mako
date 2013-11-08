@@ -1,9 +1,9 @@
-<%inherit file="dashboard_layout.mako"/>
+<%inherit file="maintenance_layout.mako"/>
 <%! page_title = "Backup" %>
 
 <%namespace name="common" file="backup_common.mako"/>
 
-<h2>Back up your AeroFS appliance</h2>
+<h2>Back up your AeroFS Appliance</h2>
 
 <p>Backing up your AeroFS Appliance is easy. Simply click the button below to
     download the appliance's user and configuration data as a single file.</p>

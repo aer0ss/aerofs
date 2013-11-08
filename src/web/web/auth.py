@@ -63,7 +63,7 @@ def get_principals(authed_userid, request):
             if is_license_shasum_valid(request):
                 principals.append(GROUP_ID_MAINTAINERS)
         except Exception as e:
-            print "is_license_shasum_valid() for {}:".format(authed_userid), e
+            log.error("is_license_shasum_valid() for {}:".format(authed_userid), e)
 
     if authed_userid != NON_SP_USER_ID:
         try:
@@ -71,10 +71,9 @@ def get_principals(authed_userid, request):
             group = GROUP_ID_ADMINS if level == ADMIN else GROUP_ID_USERS
             principals.append(group)
         except Exception as e:
-            print "sp.get_auth_level() for {}:".format(authed_userid), e
+            log.error("sp.get_auth_level() for {}:".format(authed_userid), e)
 
     # Cache result for is_admin() everytime this method is called.
     request.session[_SESSION_KEY_IS_ADMIN] = GROUP_ID_ADMINS in principals
 
-    log.debug("{}'s principals: {}".format(authed_userid, principals))
     return principals

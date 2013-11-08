@@ -7,6 +7,7 @@
 <%namespace name="modal" file="../modal.mako"/>
 <%namespace name="spinner" file="../spinner.mako"/>
 <%namespace name="progress_modal" file="../progress_modal.mako"/>
+<%namespace name="upload_license_button" file="../upload_license_button.mako"/>
 <%namespace name="common" file="common.mako"/>
 
 <form method="post" id="license-form">
@@ -19,8 +20,7 @@
             license to proceed:
         </strong></p>
 
-        <input id="license-file" type="file" style="display: none">
-        ${upload_license_button()}
+        ${upload_license_button.button('license-file', '')}
 
         <p class="text-right muted">
             In order for the new license to take effect, please click through<br>
@@ -32,28 +32,10 @@
 
         <p>To setup this AeroFS Appliance, please upload your license to begin.</p>
 
-        <input id="license-file" type="file" style="display: none">
-        ${upload_license_button()}
+        ${upload_license_button.button('license-file', '')}
     %endif
 </form>
 
-<%def name='upload_license_button()'>
-    <div class="row-fluid" style="margin-top: 80px; margin-bottom: 50px;">
-        <div class="span6 offset3">
-            <p>
-                <a href='#' id='license-btn' class="btn btn-large input-block-level"
-                        onclick="$('#license-file').click(); return false;">
-                    <span class="no-license">Upload License File</span>
-                    <span class="has-license">License Ready to Upload</span>
-                </a>
-            </p>
-            <p class="text-center">
-                <span class="no-license">Your license file ends in <em>.license</em></span>
-                <span class="has-license"><span id="license-filename"></span> selected for upload</span>
-            </p>
-        </div>
-    </div>
-</%def>
 
 <hr />
 
@@ -90,12 +72,14 @@
     </%def>
 </%modal:modal>
 
-${submit_scripts('license-file')}
-
 ## spinner support is required by progress_modal
 <%progress_modal:scripts/>
 <%spinner:scripts/>
 <%bootstrap:scripts/>
+## N.B. 'next-btn' must be consistent with common.next_button_id().
+## Due to limitation of mako we can't use common.next_button_id() directly here.
+${upload_license_button.scripts('license-file', 'next-btn')}
+${submit_scripts('license-file')}
 
 <script>
     $(document).ready(function() {
@@ -103,11 +87,6 @@ ${submit_scripts('license-file')}
 
         initializeProgressModal();
 
-        $('#license-file').on('change', function() {
-            updateLicenseFileUI();
-        });
-
-        updateLicenseFileUI();
         updateBackupFileUI();
 
         $('#backup-file-check').click(function() {
@@ -123,9 +102,7 @@ ${submit_scripts('license-file')}
             }
         });
 
-        $('#backup-file').on('change', function() {
-            updateBackupFileUI();
-        });
+        $('#backup-file').change(updateBackupFileUI);
     });
 
     function updateBackupFileUI() {
@@ -137,28 +114,9 @@ ${submit_scripts('license-file')}
         else $checkbox.removeAttr("checked");
         $('#backup-file-change').toggle(hasFile);
         $('#backup-file-name').text(hasFile ?
-                'from ' + formatPath(filename) : 'an appliance from backup');
-    }
-
-    function updateLicenseFileUI() {
-        var filename = $('#license-file').val();
-        var hasFile = filename != "";
-        $('.no-license').toggle(!hasFile);
-        $('.has-license').toggle(hasFile);
-        if (filename) {
-            $('#license-btn').removeClass('btn-primary').addClass('btn-success');
-            $('#license-filename').text(formatPath(filename));
-            $('#${common.next_button_id()}').removeClass('disabled')
-                    .addClass('btn-primary').focus();
-        } else {
-            $('#license-btn').removeClass('btn-success').addClass('btn-primary');
-            $('#${common.next_button_id()}').removeClass('btn-primary')
-                    .addClass('disabled');
-        }
-    }
-
-    function formatPath(filename) {
-        return filename.replace("C:\\fakepath\\", '');
+                ## "C:\\fakepath\\" is a weirdo from the browser standard.
+                'from ' + filename.replace("C:\\fakepath\\", '') :
+                'an appliance from backup');
     }
 
     function restore(onSuccess, onFailure) {
@@ -199,7 +157,7 @@ ${submit_scripts('license-file')}
     }
 </script>
 
-<%def name="submit_scripts(license_file_elem_id)">
+<%def name="submit_scripts(license_file_input_id)">
     <script>
         ## postLicenseUpload a callback function after the license file is uploaded.
         ## Required signature: post_license_file_upload(onSuccess, onFailure).
@@ -208,12 +166,12 @@ ${submit_scripts('license-file')}
             ## Go to the next page if no license file is specified. This is
             ## needed for license_authorized_page.mako to skip license upload if
             ## the license already exists.
-            if (!$('#${license_file_elem_id}').val()) gotoNextPage();
+            if (!$('#${license_file_input_id}').val()) gotoNextPage();
 
             disableNavButtons();
             ## TODO (WW) is there a clean way to submit the file data?
             ## Note: FileReader is supported in IE9.
-            var file = document.getElementById('${license_file_elem_id}').files[0];
+            var file = document.getElementById('${license_file_input_id}').files[0];
             var reader = new FileReader();
             reader.onload = function() {
                 submitLicenseFile(this.result, postLicenseUpload);

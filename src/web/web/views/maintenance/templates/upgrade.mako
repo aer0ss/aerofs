@@ -1,9 +1,9 @@
-<%inherit file="dashboard_layout.mako"/>
+<%inherit file="maintenance_layout.mako"/>
 <%! page_title = "Backup" %>
 
 <%namespace name="common" file="backup_common.mako"/>
 
-<h2>Update your AeroFS appliance</h2>
+<h2>Upgrade your AeroFS Appliance</h2>
 
 <p>You may upgrade your AeroFS Appliance to a new version by following
     these steps:</p>

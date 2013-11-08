@@ -16,7 +16,8 @@ from web.sp_util import exception2error
 from web.error import error
 from web.util import get_error, get_rpc_stub, is_private_deployment, is_valid_password
 from web.views.login.login_view import URL_PARAM_FORM_SUBMITTED, URL_PARAM_EMAIL, \
-    URL_PARAM_PASSWORD, URL_PARAM_REMEMBER_ME, URL_PARAM_NEXT
+    URL_PARAM_PASSWORD, URL_PARAM_REMEMBER_ME
+from web.login_util import URL_PARAM_NEXT
 
 from urllib import urlencode
 from urllib2 import urlopen

@@ -5,6 +5,7 @@ from pyramid import url
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden
 from pyramid.security import remember, forget, NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
+from aerofs_common.exception import ExceptionReply
 
 from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
@@ -13,40 +14,14 @@ from aerofs_sp.scrypt import scrypt
 from web.auth import NON_SP_USER_ID
 from web.util import flash_error, get_rpc_stub, is_private_deployment
 
-# URL param keys.
+from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page, DEFAULT_DASHBOARD_NEXT
+
 URL_PARAM_FORM_SUBMITTED = 'form_submitted'
 URL_PARAM_EMAIL = 'email'
 URL_PARAM_PASSWORD = 'password'
 URL_PARAM_REMEMBER_ME = 'remember_me'
 
-# N.B. This parameter is also used in aerofs.js. Remember to update this and all
-# other references to this parameter when modifying handling of the next parameter.
-URL_PARAM_NEXT = 'next'
-
 log = logging.getLogger(__name__)
-
-def _get_next_url(request):
-    """
-    Return the value of the 'next' parameter in the request. Return the
-    dashboard home URL if the parameter is absent. It never returns None
-    """
-    next_url = request.params.get(URL_PARAM_NEXT)
-    return next_url if next_url else request.route_path('dashboard_home')
-
-def resolve_next_url(request):
-    """
-    Return the value of the 'next' parameter in the request. Return
-    dashboard_home if the next param is not set. Always prefix with the host URL
-    to prevent attackers to insert arbitrary URLs in the parameter, e.g.:
-    aerofs.com/login?next=http%3A%2F%2Fcnn.com.
-    """
-    next_url = _get_next_url(request)
-
-    # If _get_next_url()'s return value doesn't include a leading slash, add it.
-    # This is to prevent the next_url being things like .cnn.com and @cnn.com
-    if next_url[:1] != '/': next_url = '/' + next_url
-
-    return request.host_url + next_url
 
 def _is_openid_enabled(request):
     """
@@ -92,9 +67,7 @@ def _do_login(request):
     try:
         try:
             headers = _log_in_user(request, login, hashed_password, stay_signed_in)
-            redirect = resolve_next_url(request)
-            log.debug(login + " logged in. redirect to " + redirect)
-            return HTTPFound(location=redirect, headers=headers)
+            return redirect_to_next_page(request, headers, DEFAULT_DASHBOARD_NEXT)
         except ExceptionReply as e:
             if e.get_type() == PBException.BAD_CREDENTIAL:
                 log.warn(login + " attempts to login w/ bad password")
@@ -111,7 +84,6 @@ def _do_login(request):
                 " Please try again later. Contact " + support_email + " if the" +
                 " problem persists."))
 
-
 @view_config(
     route_name='login',
     permission=NO_PERMISSION_REQUIRED,
@@ -120,7 +92,7 @@ def _do_login(request):
 def login_view(request):
     _ = request.translate
     settings = request.registry.settings
-    next_url = _get_next_url(request)
+    next_url = get_next_url(request, DEFAULT_DASHBOARD_NEXT)
 
     if URL_PARAM_FORM_SUBMITTED in request.params:
         ret = _do_login(request)
@@ -129,7 +101,7 @@ def login_view(request):
     openid_enabled = _is_openid_enabled(request)
     # if openid_enabled is false we don't need to do any of the following. :(
     openid_url = "{0}?{1}".format(request.route_url('login_openid_begin'),
-                                  url.urlencode({'next': next_url}))
+                                  url.urlencode({URL_PARAM_NEXT: next_url}))
     identifier = settings.get('identity_service_identifier', 'OpenID')
     external_hint = 'AeroFS user with no {} account?'.format(identifier)
 
@@ -172,7 +144,7 @@ def _log_in_user(request, login, creds, stay_signed_in):
         sp.extend_session()
 
     # TOOD (WW) consolidate how we save authorization data in the session
-    # TODO (WW) share common code between login_view.py and openid.py
+    # TODO (WW) move common code between login_view.py and openid.py to login_util.py
     request.session['sp_cookies'] = con._session.cookies
     request.session['team_id'] = sp.get_organization_id().org_id
 

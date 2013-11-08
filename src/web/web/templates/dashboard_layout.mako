@@ -2,6 +2,7 @@
 ## deployment modes.
 
 <%inherit file="base_layout.mako"/>
+<%namespace name="navigation" file="navigation.mako"/>
 
 <%!
     from web.auth import is_admin
@@ -9,8 +10,9 @@
     from web.util import is_private_deployment
 %>
 
+## N.B. maintenance_layout.mako uses the same layout
 <div class="row">
-    ## Vertical navigation bar
+    ## Left navigation bar
     <div class="span2 offset1">
         %if is_admin(request):
             ${render_left_navigation_for_admin()}
@@ -21,7 +23,6 @@
 
     ## Main body
     <div class="span8">
-        ## pages that require navigation bars are bounded by "span8"
         ${next.body()}
     </div>
 </div>
@@ -86,7 +87,7 @@
         ${render_admin_team_links()}
         %if is_private_deployment(request.registry.settings):
             <li class="nav-header">My Appliance</li>
-            ${render_admin_appliance_links()}
+            ${navigation.link(('manage', _("Manage")))}
         %endif
     </ul>
 </%def>
@@ -100,7 +101,7 @@
         ]
     %>
     % for link in links:
-        ${render_navigation_link(link)}
+        ${navigation.link(link)}
     % endfor
 </%def>
 
@@ -114,29 +115,6 @@
         ]
     %>
     % for link in links:
-        ${render_navigation_link(link)}
+        ${navigation.link(link)}
     % endfor
-</%def>
-
-<%def name="render_admin_appliance_links()">
-    <%
-        links = [
-            ('status', _("Service Status")),
-            ('backup_appliance', _("Backup")),
-            ('upgrade_appliance', _("Upgrade")),
-            ('setup', _("Setup")),
-        ]
-    %>
-    % for link in links:
-        ${render_navigation_link(link)}
-    % endfor
-</%def>
-
-## param link: tuple (route_name, text_to_display)
-<%def name="render_navigation_link(link)">
-    <li
-        %if request.matched_route and request.matched_route.name == link[0]:
-            class="active"
-        %endif
-    ><a href="${request.route_path(link[0])}">${link[1]}</a></li>
 </%def>

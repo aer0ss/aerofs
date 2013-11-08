@@ -1,5 +1,7 @@
 <%namespace name="spinner" file="../spinner.mako"/>
 
+## N.B. the content of next_button_id() must be consistent with the 'next-btn'
+## string in license_page.mako.
 <%def name="next_button_id()">next-btn</%def>
 <%def name="prev_button_id()">prev-btn</%def>
 

@@ -1,7 +1,9 @@
 import unittest
 from unittests.test_base import TestBase
 from web.util import is_private_deployment
-from web.views.login.login_view import URL_PARAM_NEXT, resolve_next_url, _is_external_cred_enabled, _format_password
+from web.login_util import URL_PARAM_NEXT, resolve_next_url
+from web.views.login.login_view import _is_external_cred_enabled, _format_password
+
 
 class LoginTest(TestBase):
 

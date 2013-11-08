@@ -9,7 +9,7 @@ import socket
 import random
 import re
 from subprocess import call, Popen, PIPE
-from pyramid.security import NO_PERMISSION_REQUIRED, remember
+from pyramid.security import NO_PERMISSION_REQUIRED
 
 import requests
 from pyramid.view import view_config
@@ -17,8 +17,8 @@ from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError, H
 
 import aerofs_common.bootstrap
 from aerofs_common.configuration import Configuration
-from web.auth import NON_SP_USER_ID, is_authenticated
 from web.error import error
+from web.login_util import remember_license_based_login
 from web.util import is_private_deployment, is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, set_license_file_and_shasum
 from backup_view import BACKUP_FILE_PATH
@@ -150,19 +150,11 @@ def _get_default_support_email(hostname):
 )
 def json_set_license(request):
     log.info("set license")
-    # Due to the way we use JS to upload this file, the request parameter on
-    # the wire is urlencoded utf8 of a unicode string.
-    # request.params['license'] is that unicode string.
-    # We want raw bytes, not the Unicode string, so we encode to latin1
-    set_license_file_and_shasum(request, request.params['license'].encode('latin1'))
+    if not set_license_file_and_shasum(request, request.params['license']):
+        error("The provided license file is invalid.")
 
-    # Log in the user as a maintainer if the user hasn't logged in yet. The
-    # test is necessary to keep the real user ID if the user is already
-    # logged in with the real ID.
-    if not is_authenticated(request):
-        remember(request, NON_SP_USER_ID)
-
-    return HTTPOk()
+    headers = remember_license_based_login(request)
+    return HTTPOk(headers=headers)
 
 # ------------------------------------------------------------------------
 # Hostname

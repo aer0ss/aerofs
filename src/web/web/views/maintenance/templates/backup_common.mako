@@ -1,5 +1,3 @@
-<%inherit file="dashboard_layout.mako"/>
-<%! page_title = "Backup" %>
 
 <%namespace name="spinner" file="spinner.mako"/>
 <%namespace name="progress_modal" file="progress_modal.mako"/>

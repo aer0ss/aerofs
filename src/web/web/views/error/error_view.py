@@ -2,10 +2,11 @@ import logging
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.common_pb2 import PBException
 from pyramid.exceptions import NotFound
-from pyramid.security import NO_PERMISSION_REQUIRED, has_permission
+from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config, forbidden_view_config
-from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPOk
-from web.views.login.login_view import URL_PARAM_NEXT
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from web.views import maintenance
+from web.login_util import URL_PARAM_NEXT
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +29,18 @@ def not_found_view(request):
 def forbidden_view(request):
     log.error("forbidden view for " + request.path)
 
-    return _force_login(request)
+    # Ideally we should redirect to maintenance_login as long as the requested
+    # view callable requires 'maintain' permission. However it's difficult to
+    # retrieve the callable's permission info (pyramid introspector is the way
+    # to go), so we redirect to maintenance_login as long as the requested route
+    # is one of the maintenance pages.
+    if request.matched_route and \
+            request.matched_route.name in maintenance.routes:
+        login_route = 'maintenance_login'
+    else:
+        login_route = 'login'
+
+    return _force_login(request, login_route)
 
 @view_config(
     context=ExceptionReply,
@@ -56,7 +68,7 @@ def exception_view(context, request):
     request.response_status = 500
     return {}
 
-def _force_login(request):
+def _force_login(request, login_route):
 
     log.warn("request to login (xhr={})".format(request.is_xhr))
 
@@ -80,8 +92,8 @@ def _force_login(request):
     # Test against '/' so that we don't get annoying next=%2F in the url when we
     # click on the home button.
     if next_url and next_url != '/':
-        loc = request.route_url('login', _query={URL_PARAM_NEXT: next_url})
+        loc = request.route_url(login_route, _query={URL_PARAM_NEXT: next_url})
     else:
-        loc = request.route_url('login')
+        loc = request.route_url(login_route)
 
     return HTTPFound(location=loc)

@@ -7,7 +7,6 @@ import logging
 import datetime
 import requests
 from util import is_private_deployment
-from error import error
 
 log = logging.getLogger(__name__)
 
@@ -52,24 +51,45 @@ def is_license_present_and_valid(conf):
 
 def set_license_file_and_shasum(request, license_data):
     """
-    Set the license file by calling the config server. Call error() if the
-    request failed.
-    @param license_data: the bytes of a license file
+    Set the license file by calling the config server, and attach the shasum to
+    the session. Call error() if the request failed.
+    @param license_data: content of a license file as received in HTTP requests
     """
+
+    # Due to the way we use JS to upload this file, the request parameter on
+    # the wire is urlencoded utf8 of a unicode string.
+    # request.params['license'] is that unicode string.
+    # We want raw bytes, not the Unicode string, so we encode to latin1
+    license_bytes = license_data.encode('latin1')
+
     r = requests.post(_URL_SET_LICENSE_FILE, data = {
-        'license_file': base64.urlsafe_b64encode(license_data)
+        'license_file': base64.urlsafe_b64encode(license_bytes)
     })
     if r.status_code == 200:
         log.info("set license file okay: {}".format(r.text))
+        _attach_checksum_to_session(request, hashlib.sha1(license_bytes))
+        return True
     else:
         log.error("set license file failed: {} {}".format(r.status_code, r.text))
-        error("The provided license file is invalid.")
+        return False
 
-    set_license_shasum(request, license_data)
+def verify_license_file_shasum(request, license_file):
+    """
+    Verify the shasum of the provided file with the config server, and attach
+    the checksum to the session.
+    @return whether verification succeeds
+    """
+    digest = hashlib.sha1()
+    while True:
+        buf = license_file.read(4096)
+        if not buf: break
+        digest.update(buf)
 
-def set_license_shasum(request, license_data):
-    shasum = hashlib.sha1(license_data).hexdigest()
-    request.session[_SESSION_KEY_LICENSE_SHASUM] = shasum
+    _attach_checksum_to_session(request, digest)
+    return is_license_shasum_valid(request)
+
+def _attach_checksum_to_session(request, digest):
+    request.session[_SESSION_KEY_LICENSE_SHASUM] = digest.hexdigest()
 
 def is_license_shasum_set(request):
     return _SESSION_KEY_LICENSE_SHASUM in request.session

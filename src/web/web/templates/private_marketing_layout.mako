@@ -3,7 +3,7 @@
 <%inherit file="base_layout.mako"/>
 
 <%block name="home_url">
-    ${request.route_path('login')}
+    ${request.route_path('dashboard_home')}
 </%block>
 
 <%block name="footer">

@@ -1,7 +1,7 @@
-<%inherit file="dashboard_layout.mako"/>
+<%inherit file="maintenance_layout.mako"/>
 <%! page_title = "Server Status" %>
 
-<h2>Service Status</h2>
+<h2>Service status</h2>
 
 <div class="page_block" id="server-status-div">
     <table class="table table-hover" style="border: 1px">
