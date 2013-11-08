@@ -7,9 +7,9 @@ class ErrorTest(unittest.TestCase):
     def test_should_normalize_empty_message(self):
         try:
             error("")
+            self.assertTrue(False)
         except HTTPBadRequest as e:
             self.assertEqual(e.body, '{"message": "", "type": "unspecified"}')
-
 
     def test_should_normalize_as_expected(self):
         """
@@ -20,11 +20,17 @@ class ErrorTest(unittest.TestCase):
         """
         try:
             error("viktor FranKl")
+            self.assertTrue(False)
         except HTTPBadRequest as e:
             self.assertEqual(e.body, '{"message": "Viktor FranKl.", "type": "unspecified"}')
 
     def test_should_not_add_period_if_unnecessary(self):
         try:
             error("Test?")
+            self.assertTrue(False)
         except HTTPBadRequest as e:
             self.assertEqual(e.body, '{"message": "Test?", "type": "unspecified"}')
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

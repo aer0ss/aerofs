@@ -94,3 +94,7 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
         first_name = '<&>'
         str = self._render_shared_folder_users([first_name])
         self.assertEquals(str, "&lt;&amp;&gt; only")
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

@@ -44,3 +44,7 @@ class LicenseTest(unittest.TestCase):
 
     def _format(self, datetime):
         return datetime.strftime("%Y-%m-%d")
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

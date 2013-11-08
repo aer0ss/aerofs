@@ -1,6 +1,5 @@
-from pyramid import testing
 from ..test_base import TestBase
-
+import unittest
 
 class AcceptViewTest(TestBase):
     def setUp(self):
@@ -15,3 +14,7 @@ class AcceptViewTest(TestBase):
         accept_folder_invitation(self.create_dummy_request({
             URL_PARAM_SHARE_ID: sid
         }))
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

@@ -1,3 +1,4 @@
+import unittest
 import base64
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from ..test_base import TestBase
@@ -66,3 +67,7 @@ class JsonSharedFolderPermTest(TestBase):
         request = self.create_dummy_request(params)
 
         json_delete_shared_folder_perm(request)
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

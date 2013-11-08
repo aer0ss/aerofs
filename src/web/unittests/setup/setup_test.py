@@ -1,3 +1,4 @@
+import unittest
 from pyramid.httpexceptions import HTTPBadRequest
 from unittests.test_base import TestBase
 from web.views.setup.setup import _get_default_support_email, json_setup_hostname
@@ -47,3 +48,7 @@ class SetupTest(TestBase):
         json_setup_hostname(self.create_dummy_request({
             'base.host.unified': hostname
         }))
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)
