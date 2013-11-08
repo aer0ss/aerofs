@@ -252,7 +252,7 @@ public class MightCreate
 
         if (sameType && targetSOID.equals(sourceSOID)) return EnumSet.of(Update);
 
-        if (canSafelyReplaceFID(pc, targetOA, sameType)) {
+        if (canSafelyReplaceFID(pc, sourceSOID, targetOA, sameType)) {
             // The assertion below is guaranteed by the above code. N.B. oa.fid() may be null if
             // no branch is present.
             Preconditions.checkState(!fnt._fid.equals(targetOA.fid()));
@@ -265,8 +265,8 @@ public class MightCreate
     }
 
     /**
-     * For locally present files, we can use the Replace operation that adjusts the FID of the
-     * target and update the master CA if necessary
+     * For locally present files, we can always safely use the Replace operation that adjusts the
+     * FID of the target and update the master CA if necessary
      *
      * Folders are trickier to handle and shared folders especially so.
      *
@@ -294,10 +294,14 @@ public class MightCreate
      * In the case of shared folders however we can exploit the presence of the .aerofs tag file
      * to check whether the OA and the physical folder match despite the FIDs suggesting they don't.
      * This is important to avoid breaking shared folders on filesystems with ephemeral FIDs.
+     *
+     * Regular folders can still be eligible for FID replacement provided the new FID is not
+     * associated with any existing SOID.
      */
-    private boolean canSafelyReplaceFID(PathCombo pc, OA target, boolean sameType)
+    private boolean canSafelyReplaceFID(PathCombo pc, SOID sourceSOID, OA target, boolean sameType)
     {
         if (target.isExpelled()) return false;
+
         if (target.isAnchor()) {
             try {
                 // if the tag file matches the anchor we can replace the FID
@@ -308,7 +312,6 @@ public class MightCreate
             }
         }
 
-        // we can safely replace FID for files
-        return sameType && target.isFile();
+        return sameType && (target.isFile() || sourceSOID == null);
     }
 }

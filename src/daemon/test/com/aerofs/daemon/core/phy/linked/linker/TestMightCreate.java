@@ -71,6 +71,8 @@ public class TestMightCreate extends AbstractMightCreateTest
                 .dir("d0").parent()
                 .file("f1").parent()
                 .anchor("a2").parent()
+                .file("f3").parent()
+                .dir("d4").parent()
                 .dir("d-expelled", true)
                     .file("f", 0).parent().parent();
     }
@@ -219,7 +221,20 @@ public class TestMightCreate extends AbstractMightCreateTest
     }
 
     @Test
-    public void shouldRenameExistingFolderAndCreateNewFolder() throws Exception
+    public void shouldReplaceExistingFileWhenSourceExist() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("f1"));
+        SOID src = ds.resolveNullable_(mkpath("f3"));
+        generateFileFnt(soid);
+        FIDAndType fnt2 = generateFileFnt(src);
+
+        Assert.assertEquals(Result.FILE, mightCreate("f1", fnt2));
+
+        verifyOperationExecuted(EnumSet.of(Operation.Replace), src, soid, "f1");
+    }
+
+    @Test
+    public void shouldReplaceExistingFolder() throws Exception
     {
         SOID soid = ds.resolveNullable_(mkpath("d0"));
         generateDirFnt(soid);
@@ -227,8 +242,36 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d0", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.Replace),
                 null, soid, "d0");
+    }
+
+    @Test
+    public void shouldUpdateSourceFileAndRenameTargetDir() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("d0"));
+        SOID src = ds.resolveNullable_(mkpath("f1"));
+        generateDirFnt(soid);
+        FIDAndType fnt = generateDirFnt(src);
+
+        Assert.assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
+
+        verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
+                src, soid, "d0");
+    }
+
+    @Test
+    public void shouldUpdateSourceDirAndRenameTargetDir() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("d0"));
+        SOID src = ds.resolveNullable_(mkpath("d4"));
+        generateDirFnt(soid);
+        FIDAndType fnt = generateDirFnt(src);
+
+        Assert.assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
+
+        verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
+                src, soid, "d0");
     }
 
     @Test
