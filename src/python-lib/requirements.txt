@@ -1,5 +1,4 @@
 argparse==1.2.1
 protobuf==2.5.0
-pycrypto==2.6
 requests==1.2.0
 wsgiref==0.1.2
