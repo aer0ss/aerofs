@@ -498,7 +498,17 @@ class BlockStorage implements IPhysicalStorage
     void delete_(BlockFile file, Trans t) throws IOException, SQLException
     {
         FileInfo oldInfo = getFileInfoNullable_(file._sokid);
-        if (!FileInfo.exists(oldInfo)) throw new FileNotFoundException(toString());
+        if (!FileInfo.exists(oldInfo)) {
+            // It's possible that we never got content for that file, which would explain
+            // why we can't find it.
+            // It's also possible, though less likely, that due to a bug in aliasing we forgot
+            // to move content from alias to target and end up with no content
+            // Unfortunately we cannot easily distinguish between these two cases. Anyway, in both
+            // case, the correct behavior is simply to return with no error. In the worst case we
+            // may end up with some blocks of content associated with a "ghost" object (i.e. the
+            // alias OID) but that's unlikely to be a problem.
+            return;
+        }
 
         FileInfo info = FileInfo.newDeletedFileInfo(oldInfo._id, new Date().getTime());
         updateFileInfo_(file._path, info, t);
