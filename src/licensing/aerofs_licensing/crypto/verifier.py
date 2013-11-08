@@ -7,7 +7,7 @@ def verify_with_aerofs_licensing_pubkey(input_flo, output_flo, gpg_homedir=None)
     homedir = gpg_homedir or gpg_public_homedir
     # Use the keys available in the specified homedir
     ctx = gpgme.Context()
-    ctx.set_engine_info(gpgme.PROTOCOL_OpenPGP, find_gpg_executable(), gpg_homedir)
+    ctx.set_engine_info(gpgme.PROTOCOL_OpenPGP, find_gpg_executable(), homedir)
 
     # Set the key to be used for verification
     licensing_key = get_licensing_key(ctx)
