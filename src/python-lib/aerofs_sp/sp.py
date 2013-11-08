@@ -34,20 +34,14 @@ class _SPServiceWrapper(object):
 
 
     def list_shared_folders(self):
-        sids = []
         reply = self._service.get_acl(0)
-        for s in reply.store_acl:
-            sids.append(s.store_id)
+        sids = [s.store_id for s in reply.store_acl]
         return sids
 
     def list_shared_folders_with_names(self):
         sids = self.list_shared_folders()
-        names = self._service.get_shared_folder_names(sids)
-        zipped_array = zip(sids, names.folder_name)
-        shared_folders = [
-            {"name":name, "sid":sid.encode("hex")} for (sid, name) in zipped_array
-        ]
-        return shared_folders
+        pb_folders = self._service.list_shared_folders(sids)
+        return [{"name": f.name, "sid": f.store_id.encode("hex")} for f in pb_folders]
 
     def leave_shared_folder(self, sid):
         self._service.leave_shared_folder(sid)
