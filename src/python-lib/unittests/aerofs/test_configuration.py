@@ -24,3 +24,7 @@ class TestConfiguration(unittest.TestCase):
         config = {}
         Configuration().fetch_and_populate(config)
         self.assertEqual(config, expected)
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)
