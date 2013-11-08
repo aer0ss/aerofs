@@ -450,7 +450,7 @@ public class DlgHistory extends AeroFSDialog
                 _statusLabel.setText(
                         "You can restore files and folders that have been deleted under the" +
                         " selected folder. Only their latest versions will be restored." +
-                        " Restoring a large folder may take a few moments.\n \n" +
+                        " Restoring a large folder may take some time.\n \n" +
                         "You can also delete all old versions under the selected folder. This" +
                         // have an extra space so Windows will not ignore the trailing line breaks.
                         " will save disk space but cannot be undone, so proceed with caution.\n ");
