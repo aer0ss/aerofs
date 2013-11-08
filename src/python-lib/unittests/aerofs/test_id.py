@@ -70,3 +70,7 @@ class TestSOID(unittest.TestCase):
         self.assertTrue(soid1 > soid2)
         self.assertFalse(soid1 < soid2)
         self.assertNotEqual(soid1, soid2)
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)

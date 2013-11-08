@@ -23,3 +23,7 @@ class PlainTextMessagePBExceptionTest(unittest.TestCase):
         reply = exception.ExceptionReply(pbException)
         self.assertEqual(common_pb2.PBException.INTERNAL_ERROR, reply.get_type())
         self.assertEqual(u"INTERNAL_ERROR: This is a pretty string", str(reply))
+
+def test_suite():
+    loader = unittest.TestLoader()
+    return loader.loadTestsFromName(__name__)
