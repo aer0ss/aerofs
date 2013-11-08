@@ -1,6 +1,8 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
 
+<%! from web.util import str2bool %>
+
 <%
     public_host_name = current_config['email.sender.public_host']
     is_remote_host = public_host_name != "" and public_host_name != "localhost"
@@ -71,7 +73,11 @@
             </div>
 
             <label for="email-sender-public-enable-tls" class="checkbox">
-                <input id="email-sender-public-enable-tls" name="email-sender-public-enable-tls" type="checkbox" checked>Use STARTTLS encryption
+                <input id="email-sender-public-enable-tls" name="email-sender-public-enable-tls" type="checkbox"
+                    %if str2bool(current_config['email.sender.public_enable_tls']):
+                        checked
+                    %endif
+                >Use STARTTLS encryption
             </label>
         </div>
 
@@ -194,13 +200,14 @@
         var port = $("#email-sender-public-port").val();
         var username = $("#email-sender-public-username").val();
         var password = $("#email-sender-public-password").val();
-        var enable_tls = $("#email-sender-public-enable-tls").val();
+        ## type: boolean
+        var enable_tls = $("#email-sender-public-enable-tls").val() == 'on';
 
         var current_host = "${current_config['email.sender.public_host']}";
         var current_port = "${current_config['email.sender.public_port']}";
         var current_username = "${current_config['email.sender.public_username']}";
         var current_password = "${current_config['email.sender.public_password']}";
-        var current_enable_tls = "${current_config['email.sender.public_enable_tls']}";
+        var current_enable_tls = ${true if str2bool(current_config['email.sender.public_enable_tls']) else false};
 
         ## Only enable smtp verification modal if something has changed.
         var initial = ${str(not is_configuration_initialized).lower()};
