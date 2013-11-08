@@ -92,12 +92,16 @@ def generate_unique_userid(userid_fmt):
     return userid_fmt.format(timestamp)
 
 
-def create_user(userid, password, sp_url=CI_SP_URL):
+def create_user(userid, password, admin_userid=None, admin_pass=None, sp_url=CI_SP_URL):
     if userid is None:
         userid = generate_unique_userid(DEFAULT_USERID_FMT)
     conn = connection.SyncConnectionService(sp_url, CI_SP_VERSION)
     sp = sp_pb2.SPServiceRpcStub(conn)
-    sp.request_to_sign_up(userid)
+    if admin_userid is None:
+        sp.request_to_sign_up(userid)
+    else:
+        sp.sign_in_user(admin_userid, scrypt(admin_pass, admin_userid))
+        sp.invite_to_organization(userid)
     code = get_signup_code(userid)
     sp.sign_up_with_code(code, scrypt(password, userid), "SyncDET", "TestUser")
     return userid
@@ -249,12 +253,12 @@ def main():
     if args.multiuser:
         username = []
         for a in actor_data:
-            username.append(create_user(args.userid, args.password))
+            username.append(create_user(args.userid, args.password, ADMIN_USERID, ADMIN_PASS))
             if a.get('teamserver') is not None:
                 make_user_admin(username[-1])
         username.reverse()
     else:
-        username = create_user(args.userid, args.password)
+        username = create_user(args.userid, args.password, ADMIN_USERID, ADMIN_PASS)
         if any(a.get('teamserver') is not None for a in actor_data):
             make_user_admin(username)
 
