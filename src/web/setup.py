@@ -1,38 +1,48 @@
 import os
+from distutils.core import setup
 
-from setuptools import setup, find_packages
-
-here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
-
-msg_extractors = {}
-for package in find_packages():
-    msg_extractors[package] = [
-        ('**.py', 'python', None),
-        ('**.mako', 'mako', None),
-    ]
+# If you want a package (something with an __init__.py)
+# to wind up installed, you need to list it here.
+packages = [
+        "web",
+        "web.views",
+        "web.views.accept",
+        "web.views.backup",
+        "web.views.bootstrap",
+        "web.views.devices",
+        "web.views.download",
+        "web.views.error",
+        "web.views.login",
+        "web.views.marketing",
+        "web.views.password_reset",
+        "web.views.payment",
+        "web.views.setup",
+        "web.views.shared_folders",
+        "web.views.signup",
+        "web.views.status",
+        "web.views.team_members",
+        "web.views.team_settings",
+        "web.views.unsubscribe",
+        "web.views.unsubscribe.templates",
+        ]
 
 setup(name='aerofs-web',
       version='0.0.1',
       description='web',
-      long_description=README + '\n\n' +  CHANGES,
       classifiers=[
         "Programming Language :: Python",
         "Framework :: Pylons",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         ],
-      author='',
-      author_email='',
-      url='',
+      author='AeroFS Team',
+      author_email='team@aerofs.com',
+      url='https://www.aerofs.com',
       keywords='web pyramid pylons',
-      message_extractors = msg_extractors,
-      packages=find_packages(),
+      packages=packages,
       include_package_data=True,
       zip_safe=False,
-      test_suite="unittests",
-      entry_points = """\
+      entry_points = """
       [paste.app_factory]
       main = web:main
       """,
