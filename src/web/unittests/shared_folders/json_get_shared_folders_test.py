@@ -1,11 +1,13 @@
 import unittest
 from mock import Mock
+from pyramid.security import authenticated_userid
 from aerofs_sp.gen.sp_pb2 import \
     ListOrganizationSharedFoldersReply, ListSharedFoldersReply
 from aerofs_common._gen.common_pb2 import EDITOR, OWNER
 from aerofs_sp.gen.sp_pb2 import ADMIN, JOINED
 from ..test_base import TestBase
-from web.auth import _USER_ID_KEY, _SESSION_KEY_AUTH_LEVEL_KEY
+from web import auth
+
 
 class GetSharedFoldersTest(TestBase):
     def setUp(self):
@@ -65,8 +67,8 @@ class GetSharedFoldersTest(TestBase):
             'iDisplayLength': 10,
             'iDisplayStart': 0
         })
-        request.session[_USER_ID_KEY] = 'test@email'
-        request.session[_SESSION_KEY_AUTH_LEVEL_KEY] = ADMIN
+        auth.is_admin = Mock(return_value=True)
+        authenticated_userid = Mock(return_value='test@email')
 
         response = json_get_team_shared_folders(request)
         self.assertEquals(len(response['aaData']), 2)
@@ -79,8 +81,8 @@ class GetSharedFoldersTest(TestBase):
             'sEcho': 'hoho',
             URL_PARAM_USER: 'some@email'
         })
-        request.session[_USER_ID_KEY] = 'test@email'
-        request.session[_SESSION_KEY_AUTH_LEVEL_KEY] = ADMIN
+        auth.is_admin = Mock(return_value=True)
+        authenticated_userid = Mock(return_value='test@email')
 
         response = json_get_user_shared_folders(request)
         self.assertEquals(len(response['aaData']), 2)

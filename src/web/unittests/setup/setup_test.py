@@ -1,3 +1,6 @@
+# TODO (WW) move this file to the maintenance package to be consistent with
+# the file under test.
+
 import unittest
 from pyramid.httpexceptions import HTTPBadRequest
 from unittests.test_base import TestBase

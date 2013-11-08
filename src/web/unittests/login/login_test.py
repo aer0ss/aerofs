@@ -19,7 +19,7 @@ class LoginTest(TestBase):
 
         request.host_url = "hahahhoho"
 
-        self.assertEqual(resolve_next_url(request), "hahahhoho/cnn.com")
+        self.assertEqual(resolve_next_url(request, 'default'), "hahahhoho/cnn.com")
 
     def test_internal_should_be_default(self):
         """
