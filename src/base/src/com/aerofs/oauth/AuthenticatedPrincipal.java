@@ -51,8 +51,8 @@ public class AuthenticatedPrincipal implements Serializable, Principal
     private Map<String, String> attributes;
 
     // AeroFS-specific attributes
-    private static final String USERID_ATTRIB = "userid";
-    private static final String ORGID_ATTRIB = "orgid";
+    public static final String USERID_ATTRIB = "userid";
+    public static final String ORGID_ATTRIB = "orgid";
 
 
     public AuthenticatedPrincipal() {

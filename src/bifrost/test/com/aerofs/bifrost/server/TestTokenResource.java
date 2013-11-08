@@ -88,6 +88,17 @@ public class TestTokenResource extends BifrostTest
 
         assertNotNull(from(response).get("token_type"));
         assertNotNull(from(response).get("scope"));
+
+        // Verify the token has orgid and userid:
+        String verifyResponse = given()
+                .header("Authorization", buildAuthHeader(RESOURCEID, RESOURCESECRET))
+                .queryParam("access_token", token)
+                .get("/tokeninfo").asString();
+
+        Map<String, Map<String, String>> princ = from(verifyResponse).get("principal");
+        Map<String, String> attr = princ.get("attributes");
+        assertNotNull(attr.get("orgid"));
+        assertNotNull(attr.get("userid"));
     }
 
     @Test
