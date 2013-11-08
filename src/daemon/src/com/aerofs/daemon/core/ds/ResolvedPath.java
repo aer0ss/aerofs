@@ -43,6 +43,14 @@ public class ResolvedPath extends Path
                 ImmutableList.<String>builder().addAll(Arrays.asList(elements())).add(name).build());
     }
 
+    public ResolvedPath substituteLastSOID(SOID soid)
+    {
+        return new ResolvedPath(sid(),
+                ImmutableList.<SOID>builder()
+                        .addAll(soids.subList(0, soids.size() - 1)).add(soid).build(),
+                Arrays.asList(elements()));
+    }
+
     public static ResolvedPath root(SID sid)
     {
         return new ResolvedPath(sid, Collections.<SOID>emptyList(), Collections.<String>emptyList());

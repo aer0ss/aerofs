@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
@@ -22,6 +23,7 @@ import com.aerofs.lib.Version;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.*;
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -370,7 +372,7 @@ public class AliasingMover
     public void moveContentOrChildren_(SOID alias, SOID target, Trans t)
             throws Exception
     {
-        assert alias.sidx().equals(target.sidx());
+        Preconditions.checkState(alias.sidx().equals(target.sidx()));
 
         OA oaAlias = _ds.getOANullable_(alias);
         OA oaTarget = _ds.getOANullable_(target);
@@ -385,8 +387,14 @@ public class AliasingMover
         }
 
         if (oaTarget == null) {
-            assert oaAlias != null : alias + " " + target;
+            oaAlias = Preconditions.checkNotNull(oaAlias, alias + " " + target);
             l.info("remote target: fast path");
+
+            // some physical storages use the OID to address objects so we need to
+            // rename or we may end up in a broken state
+            ResolvedPath src = _ds.resolve_(oaAlias);
+            ResolvedPath dest = src.substituteLastSOID(target);
+
             _os.replaceOID_(alias, target, t);
 
             if (oaAlias.isFile()) {
@@ -401,6 +409,12 @@ public class AliasingMover
 
                 _pvc.deleteAllPrefixVersions_(alias, t);
                 _nvc.moveAllLocalVersions_(cAlias, cTarget, t);
+
+                for (KIndex kidx : oaAlias.cas().keySet()) {
+                    _ps.newFile_(src, kidx).move_(_ps.newFile_(dest, kidx), PhysicalOp.APPLY, t);
+                }
+            } else {
+                _ps.newFolder_(src).move_(_ps.newFolder_(dest), PhysicalOp.APPLY, t);
             }
         } else {
             if (oaTarget.isDir()) {

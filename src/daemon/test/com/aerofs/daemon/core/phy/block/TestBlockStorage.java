@@ -464,20 +464,16 @@ public class TestBlockStorage extends AbstractBlockTest
     }
 
     @Test
-    public void shouldThrowWhenTryingToDeleteNonExistingFile() throws Exception
+    public void shouldSucceedWhenTryingToDeleteNonExistingFile() throws Exception
     {
         SOKID sokid = newSOKID();
 
-        boolean ok = false;
-        try {
-            deleteFile("foo/bar", sokid);
-        } catch (FileNotFoundException e) {
-            ok = true;
-        }
-        Assert.assertTrue(ok);
+        deleteFile("foo/bar", sokid);
+
         verify(bsb, never())
                 .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
         verify(bsb, never()).getBlock(any(ContentHash.class));
+        verify(bsb, never()).deleteBlock(any(ContentHash.class), any(TokenWrapper.class));
     }
 
     @Test
