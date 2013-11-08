@@ -1,7 +1,7 @@
 import unittest
 from pyramid.httpexceptions import HTTPBadRequest
 from unittests.test_base import TestBase
-from web.views.setup.setup import _get_default_support_email, json_setup_hostname
+from web.views.maintenance.setup_view import _get_default_support_email, json_setup_hostname
 
 class SetupTest(TestBase):
 

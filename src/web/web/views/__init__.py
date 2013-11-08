@@ -1,10 +1,9 @@
 ## This list is used in web/__init__.py:main
 
 __all__ = [
+        'maintenance',
         'marketing',
         'signup',
-        'status',
-        'setup',
         'login',
         'download',
         'devices',
@@ -16,6 +15,4 @@ __all__ = [
         'accept',
         'payment',
         'error',
-        'backup',
-        'bootstrap'
     ]

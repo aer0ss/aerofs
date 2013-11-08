@@ -9,7 +9,7 @@ import socket
 import random
 import re
 from subprocess import call, Popen, PIPE
-from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid, remember
+from pyramid.security import NO_PERMISSION_REQUIRED, remember
 
 import requests
 from pyramid.view import view_config
@@ -21,7 +21,7 @@ from web.auth import NON_SP_USER_ID, is_authenticated
 from web.error import error
 from web.util import is_private_deployment, is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, set_license_file_and_shasum
-from web.views.backup.backup_view import BACKUP_FILE_PATH
+from backup_view import BACKUP_FILE_PATH
 from web.views.login.login_view import URL_PARAM_EMAIL
 
 log = logging.getLogger("web")
@@ -87,7 +87,7 @@ def setup(request):
 
 @view_config(
     route_name='setup_authorized',
-    permission='admin',
+    permission='maintain',
     renderer='setup.mako',
 )
 def setup_authorized(request):
@@ -170,7 +170,7 @@ def json_set_license(request):
 
 @view_config(
     route_name='json_setup_hostname',
-    permission='admin',
+    permission='maintain',
     renderer='json',
     request_method='POST'
 )
@@ -246,7 +246,7 @@ def _send_verification_email(from_email, to_email, code, host, port,
 
 @view_config(
     route_name='json_verify_smtp',
-    permission='admin',
+    permission='maintain',
     renderer='json',
     request_method='POST'
 )
@@ -271,7 +271,7 @@ def json_verify_smtp(request):
 
 @view_config(
     route_name='json_setup_email',
-    permission='admin',
+    permission='maintain',
     renderer='json',
     request_method='POST'
 )
@@ -327,7 +327,7 @@ def _format_pem(string):
 
 @view_config(
     route_name = 'json_setup_certificate',
-    permission='admin',
+    permission='maintain',
     renderer = 'json',
     request_method = 'POST'
 )
@@ -373,7 +373,7 @@ def json_setup_certificate(request):
 
 @view_config(
     route_name = 'json_verify_ldap',
-    permission='admin',
+    permission='maintain',
     renderer = 'json',
     request_method = 'POST'
 )
@@ -405,7 +405,7 @@ def json_verify_ldap(request):
 
 @view_config(
     route_name = 'json_setup_identity',
-    permission='admin',
+    permission='maintain',
     renderer = 'json',
     request_method = 'POST'
 )
@@ -449,7 +449,7 @@ def _get_ldap_specific_parameters(request_params):
 
 @view_config(
     route_name = 'json_upload_backup',
-    permission='admin',
+    permission='maintain',
     renderer = 'json',
     request_method = 'POST'
 )
@@ -473,7 +473,7 @@ def json_restore(request):
 
 @view_config(
     route_name = 'json_setup_finalize',
-    permission='admin',
+    permission='maintain',
     renderer = 'json',
     request_method = 'POST'
 )

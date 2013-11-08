@@ -15,7 +15,7 @@ BACKUP_FILE_PATH = '/opt/bootstrap/public/aerofs-db-backup.tar.gz'
     permission='maintain',
     renderer='backup.mako'
 )
-def backup(request):
+def backup_appliance(request):
     return {}
 
 @view_config(
@@ -23,7 +23,7 @@ def backup(request):
     permission='maintain',
     renderer='upgrade.mako'
 )
-def upgrade(request):
+def upgrade_appliance(request):
     return {}
 
 @view_config(

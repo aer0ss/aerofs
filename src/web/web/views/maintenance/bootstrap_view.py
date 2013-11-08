@@ -12,9 +12,7 @@ _URL_PARAM_EXECUTION_ID = 'execution_id'
 
 @view_config(
     route_name = 'json_enqueue_bootstrap_task',
-    # Since SP may be down during maintenance, we can't authenticate the user
-    # (see auth.py:get_principal(). TOOD (WW) use license auth
-    permission=NO_PERMISSION_REQUIRED,
+    permission='maintain',
     renderer = 'json',
     request_method = 'POST'
 )
@@ -28,9 +26,7 @@ def json_enqueue_bootstrap_task(request):
 
 @view_config(
     route_name = 'json_get_bootstrap_task_status',
-    # Since SP may be down during maintenance, we can't authenticate the user
-    # (see auth.py:get_principal(). TOOD (WW) use license auth
-    permission=NO_PERMISSION_REQUIRED,
+    permission='maintain',
     renderer = 'json',
     request_method = 'GET'
 )

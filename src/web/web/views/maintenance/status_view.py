@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 @view_config(
     route_name='status',
-    permission='user',
+    permission='maintain',
     renderer='status.mako'
 )
 def status_view(request):

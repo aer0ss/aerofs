@@ -245,7 +245,7 @@
             ## Don't leave spaces around the config value; otherwise they will
             ## show up in the box.
             ## the .replace() converts the cert from properties format to HTML format.
-            ## Also see setup.py:_format_pem() for the reversed convertion.
+            ## Also see setup_view.py:_format_pem() for the reversed convertion.
             >${current_config['ldap.server.ca_certificate'].replace('\\n', '\n')}</textarea>
     <div class="input-footnote">Supply the LDAP server's certificate only
         if the certificate is <strong>not</strong> publicly signed.</div>

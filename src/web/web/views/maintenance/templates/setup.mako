@@ -34,10 +34,10 @@
 
 <div class="span8 offset2">
     %if page == 0:
-        ## Page 0 must be the license page. See setup.py:_setup_common()
+        ## Page 0 must be the license page. See setup_view.py:_setup_common()
         <%namespace name="license_page" file="setup/license_page.mako"/>
         <%namespace name="license_authorized_page" file="setup/license_authorized_page.mako"/>
-        ## See the logic in setup.py:setup()
+        ## See the logic in setup_view.py:setup()
         %if is_license_present_and_valid:
             <%license_authorized_page:body/>
         %else:

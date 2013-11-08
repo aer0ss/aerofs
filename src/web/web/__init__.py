@@ -10,7 +10,6 @@ from web.license import is_license_present_and_valid
 from web.util import is_private_deployment, is_configuration_initialized
 from pyramid.request import Request
 import views
-from views import bootstrap, setup
 
 class RedirectMiddleware(object):
     """
@@ -18,9 +17,6 @@ class RedirectMiddleware(object):
     configuration system has not been initialized.
     """
     log = logging.getLogger(__name__)
-
-    # TODO (WW) temporary. remove it once unified authentication is implemented
-    _no_redirect_routes = setup.routes | bootstrap.routes
 
     def __init__(self, application, settings):
         self.app = application
@@ -49,7 +45,7 @@ class RedirectMiddleware(object):
 
     def _is_setup_page(self, environ):
         # [1:] is to remove the leading slash
-        return environ['PATH_INFO'][1:] in self._no_redirect_routes
+        return environ['PATH_INFO'][1:] in views.maintenance.routes
 
     def __call__(self, environ, start_response):
         if self._should_redirect(environ):

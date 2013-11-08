@@ -15,7 +15,16 @@ routes = {
     'json_upload_backup',
 
     # Final configuration steps.
-    'json_setup_finalize'
+    'json_setup_finalize',
+
+    'json_enqueue_bootstrap_task',
+    'json_get_bootstrap_task_status',
+
+    'backup_appliance',
+    # 'upgrade' is already taken by the team settings page
+    'upgrade_appliance',
+    'download_backup_file',
+    'status',
 }
 
 def includeme(config):
