@@ -132,6 +132,13 @@ class _RitualServiceWrapper(object):
             r.append(convert.pbpath_to_absolute(sf.path))
         return r
 
+    def get_sid(self, path):
+        # NB: this does NOT handle external roots properly...
+        for sf in self._service.list_shared_folders().shared_folder:
+            if path == convert.pbpath_to_absolute(sf.path):
+                return sf.store_id
+        return None
+
     def list_shared_folder_invitations(self):
         return self._service.list_shared_folder_invitations().invitation
 

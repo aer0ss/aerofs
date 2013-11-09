@@ -136,8 +136,9 @@ class MightCreateOperations
             return true;
         case Update:
             Preconditions.checkNotNull(sourceSOID);
-            updateLogicalObject_(sourceSOID, pc, fnt._dir, t);
-            fixTagFileIfNeeded(sourceSOID.oid(), pc._absPath, t);
+            SOID m = updateLogicalObject_(sourceSOID, pc, fnt._dir, t);
+            // change of SOID indicate migration, in which case the tag file MUST NOT be recreated
+            if (m.equals(sourceSOID)) fixTagFileIfNeeded(sourceSOID.oid(), pc._absPath, t);
             delBuffer.remove_(sourceSOID);
             return false;
         case Replace:
@@ -255,12 +256,13 @@ class MightCreateOperations
      * @param soid logical object to update
      * @param pc physical path from which to derive required updates, if any
      * @param dir whether the physical object is a directory
+     * @return SOID after update (changes if migration occurs)
      *
      * This function may:
      *  * rename the logical object to match the physical path
      *  * update the master CA if the object is a file and is deemed to have changed
      */
-    private void updateLogicalObject_(@Nonnull SOID soid, PathCombo pc, boolean dir, Trans t)
+    private SOID updateLogicalObject_(@Nonnull SOID soid, PathCombo pc, boolean dir, Trans t)
             throws Exception
     {
         // move the logical object if it's at a different path
@@ -290,6 +292,8 @@ class MightCreateOperations
 
         // update content if needed
         if (!dir) detectAndApplyModification_(soid, pc._absPath, false, t);
+
+        return soid;
     }
 
     /**
