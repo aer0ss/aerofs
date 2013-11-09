@@ -127,6 +127,13 @@
     <script src="${request.static_path('web:static/js/jquery.easing.1.3.js')}"></script>
     <script src="${request.static_path('web:static/js/bootstrap.min.js')}"></script>
     <script src="${request.static_path('web:static/js/aerofs.js')}"></script>
+
+    ## apply_and_create_user_page.mako is the only consumer of purl. However,
+    ## purl.js has to go below the last inclusion of bootstrap.js otherwise its
+    ## functions would not be registered.
+    ## TODO (WW) fix layout for setup pages and move purl to the apply page.
+    <script src="${request.static_path('web:static/js/purl.js')}"></script>
+
     <%
         from web.util import get_last_flash_message_and_empty_queue
         ret = get_last_flash_message_and_empty_queue(request)

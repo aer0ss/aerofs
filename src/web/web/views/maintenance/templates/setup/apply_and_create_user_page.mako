@@ -135,8 +135,6 @@ ${common.render_previous_button(page)}
 <%spinner:scripts/>
 <%bootstrap:scripts/>
 
-<script src="${request.static_path('web:static/js/purl.js')}"></script>
-
 <script>
     var andFinalizeParam = '&finalize=1';
 
@@ -303,7 +301,7 @@ ${common.render_previous_button(page)}
         ## N.B. We expect a non-empty window.location.search here (i.e. '?page=X')
         window.location.href = 'https://${current_config['base.host.unified']}' +
                 window.location.pathname + window.location.search +
-                andFinalizeParam + "&shasum_reloaded=" + licenseShasum;
+                andFinalizeParam + "&shasum=" + licenseShasum;
     }
 
     ########
@@ -318,7 +316,7 @@ ${common.render_previous_button(page)}
 
     function finalize() {
         doPost("${request.route_path('json_setup_finalize')}" +
-                    "?${url_param_license_shasum}=" + $.url().param('shasum_reloaded'),
+                    "?${url_param_license_shasum}=" + $.url().param('shasum'),
             { ${csrf.token_param()} }, pollForWebServerReadiness);
     }
 

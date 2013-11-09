@@ -30,6 +30,8 @@
 ## pages can't be included *after* base_layout.mako includes jQuery. A proper
 ## fix is to change how these pages are included/inherited to allow standard
 ## <%block name="script">'s to be defined here.
+##
+## Also, move purl.js from base_layout.mako to apply*.mako after the fix is done.
 <script src="${request.static_path('web:static/js/jquery.min.js')}"></script>
 
 <div class="span8 offset2">

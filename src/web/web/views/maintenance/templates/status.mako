@@ -5,8 +5,6 @@
 
 <div class="page_block" id="server-status-div">
     <table class="table table-hover" style="border: 1px">
-        <thead><th style="width:4%"></th><th style="width:12%"></th>
-        <th style="width:84%"></th></thead>
         <tbody id="server-status-tbody">
             % for server_status in server_statuses:
                 ${render_server_row(server_status)}
@@ -28,7 +26,7 @@
     %>
 
     <tr>
-        <td><img src=${status_image} /></td>
+        <td style="width: 16px;"><img src="${status_image}"/></td>
         <td>${service}</td>
         <td>${message}</td>
     </tr>
