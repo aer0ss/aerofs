@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="scrypt-1.4.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../resource/server/lib/scrypt-1.4.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -4,8 +4,15 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.ex.ExCannotResetPassword;
+import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.LibParam.Identity;
+import com.aerofs.lib.LibParam.Identity.Authenticator;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.sp.authentication.IAuthenticator;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -13,9 +20,12 @@ import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.testlib.AbstractTest;
 import com.google.protobuf.ByteString;
+import com.unboundid.ldap.sdk.LDAPSearchException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 
 import static org.mockito.Matchers.anyString;
@@ -29,11 +39,14 @@ public class TestSP_Password extends AbstractTest
     @Mock SPDatabase db;
     @Mock User.Factory factUser;
     @Mock PasswordResetEmailer passwordResetEmailer;
+    @Mock IAuthenticator authenticator;
     @InjectMocks PasswordManagement _passwordManagement;
 
     @Mock User user;
 
     UserID userId = UserID.fromInternal("test@awesome.com");
+    private Boolean _cachedPrivate;
+    private Authenticator _cachedAuth;
 
     @Before
     public void setup()
@@ -45,6 +58,17 @@ public class TestSP_Password extends AbstractTest
         when(user.exists()).thenReturn(true);
 
         mockSPDatabaseGetUserByPasswordResetTokenTestUser();
+
+        _cachedPrivate = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
+        _cachedAuth = Identity.AUTHENTICATOR;
+    }
+
+    // put back twiddled configuration values
+    @After
+    public void tearDown()
+    {
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = _cachedPrivate;
+        Identity.AUTHENTICATOR = _cachedAuth;
     }
 
     private void mockNonexistingUser()
@@ -66,6 +90,16 @@ public class TestSP_Password extends AbstractTest
         when(db.resolvePasswordResetToken(anyString())).thenReturn(userId);
     }
 
+    private void mockLookLikeExternalPassword() throws ExExternalServiceUnavailable, LDAPSearchException
+    {
+        when(authenticator.isAutoProvisioned(Matchers.any(User.class))).thenReturn(true);
+    }
+
+    private void mockLookLikeInternalPassword() throws ExExternalServiceUnavailable, LDAPSearchException
+    {
+        when(authenticator.isAutoProvisioned(Matchers.any(User.class))).thenReturn(true);
+    }
+
     // Tests for sendPasswordResetEmail
 
     @Test
@@ -73,14 +107,14 @@ public class TestSP_Password extends AbstractTest
         throws Exception
     {
         mockNonexistingUser();
-        _passwordManagement.sendPasswordResetEmail(user);
+        _passwordManagement.sendPasswordResetEmail(user, authenticator);
         verify(user).exists();
     }
     @Test
     public void shouldCallDatabaseToAddPasswordResetToken()
         throws Exception
     {
-        _passwordManagement.sendPasswordResetEmail(user);
+        _passwordManagement.sendPasswordResetEmail(user, authenticator);
         verify(db).insertPasswordResetToken(eq(user.id()), anyString());
     }
 
@@ -88,8 +122,26 @@ public class TestSP_Password extends AbstractTest
     public void shouldSendPasswordResetEmail()
         throws Exception
     {
-        _passwordManagement.sendPasswordResetEmail(user);
+        _passwordManagement.sendPasswordResetEmail(user, authenticator);
         verify(passwordResetEmailer).sendPasswordResetEmail(eq(user.id()),anyString());
+    }
+
+    @Test(expected=ExCannotResetPassword.class)
+    public void shouldSucceedResetEmailForInternals() throws Exception
+    {
+        mockLookLikeInternalPassword();
+        Identity.AUTHENTICATOR = Authenticator.EXTERNAL_CREDENTIAL;
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
+        _passwordManagement.sendPasswordResetEmail(user, authenticator);
+    }
+
+    @Test(expected=ExCannotResetPassword.class)
+    public void shouldThrowExCannotResetPasswordForExternals() throws Exception
+    {
+        mockLookLikeExternalPassword();
+        Identity.AUTHENTICATOR = Authenticator.EXTERNAL_CREDENTIAL;
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
+        _passwordManagement.sendPasswordResetEmail(user, authenticator);
     }
 
     //  Tests for resetPassword
@@ -109,7 +161,8 @@ public class TestSP_Password extends AbstractTest
         throws Exception
     {
         _passwordManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
-        verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP("test123".getBytes()));
+        byte[] scrypted = SecUtil.scrypt("test123".toCharArray(), user.id());
+        verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP(scrypted));
     }
 
     @Test

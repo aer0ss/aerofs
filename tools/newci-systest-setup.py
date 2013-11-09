@@ -35,7 +35,6 @@ file_root = os.path.dirname(__file__)
 python_aerofs_lib = os.path.join(file_root, "../src/python-lib")
 sys.path.append(python_aerofs_lib)
 
-from aerofs_sp.scrypt import scrypt
 from aerofs_sp import connection
 from aerofs_sp.gen import sp_pb2
 
@@ -100,17 +99,17 @@ def create_user(userid, password, admin_userid=None, admin_pass=None, sp_url=CI_
     if admin_userid is None:
         sp.request_to_sign_up(userid)
     else:
-        sp.sign_in_user(admin_userid, scrypt(admin_pass, admin_userid))
+        sp.credential_sign_in(admin_userid, admin_pass)
         sp.invite_to_organization(userid)
     code = get_signup_code(userid)
-    sp.sign_up_with_code(code, scrypt(password, userid), "SyncDET", "TestUser")
+    sp.sign_up_with_code(code, password, "SyncDET", "TestUser")
     return userid
 
 
 def make_user_admin(userid, admin_userid=ADMIN_USERID, admin_pass=ADMIN_PASS, sp_url=CI_SP_URL):
     conn = connection.SyncConnectionService(sp_url, CI_SP_VERSION)
     sp = sp_pb2.SPServiceRpcStub(conn)
-    sp.sign_in_user(admin_userid, scrypt(admin_pass, admin_userid))
+    sp.credential_sign_in(admin_userid, admin_pass)
     sp.set_authorization_level(userid, sp_pb2.PBAuthorizationLevel.Value("ADMIN"))
     return userid
 

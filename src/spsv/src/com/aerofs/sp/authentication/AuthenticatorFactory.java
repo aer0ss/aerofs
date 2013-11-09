@@ -16,7 +16,7 @@ import com.aerofs.lib.LibParam.Identity.Authenticator;
  *  - a local authenticator (compare scrypt'ed password against sp database)
  *
  *  - an LDAP authenticator (pass raw credential to an external LDAP server).
- *    NOTE the LDAP authenticator may support auto-provisioning.
+ *    NOTE the LDAP authenticator supports auto-provisioning.
  *
  *  - a switching authenticator that uses the LDAP auth for internal users and the local
  *    authenticator for externals.

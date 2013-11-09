@@ -9,8 +9,6 @@ from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
 from aerofs_sp.gen.common_pb2 import PBException
-from aerofs_sp.scrypt import scrypt
-
 from web.util import flash_error, get_rpc_stub, is_valid_email, is_valid_password
 
 log = logging.getLogger("web")
@@ -62,7 +60,7 @@ def request_password_reset(request):
 def password_reset(request):
     token = request.params.get("token")
     user_id = request.params.get("user_id")
-    password = request.params.get("password")
+    password = request.params.get("password").encode("utf-8")
 
     error = None
     valid_password = True
@@ -79,10 +77,9 @@ def password_reset(request):
         (valid_password, error) = is_valid_password(request, password)
         if valid_password:
             sp = get_rpc_stub(request)
-            scrypted = scrypt(password,user_id)
 
             try:
-                sp.reset_password(token, scrypted)
+                sp.reset_password(token, password)
                 success = True
             except PBException as e:
                 # TODO (WW) What? We don't throw PBExceptions.

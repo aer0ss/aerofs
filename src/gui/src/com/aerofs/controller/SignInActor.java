@@ -49,13 +49,14 @@ public abstract class SignInActor
             SPBlockingClient sp = new SPBlockingClient.Factory()
                     .create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
 
-            // NOTE: In LDAP mode, for internal users, we pass the un-scrypt'ed password
-            // so it can be referred to an external service for verification.
-            // This is the only difference in the two following calls to SP.
-            if ((Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL)
-                    && _filter.isInternalUser(model.getUserID())) {
-                sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getPassword()));
+            // FIXME: Soon we will remove this if() statement. The client
+            // should not bother with scrypt'ing the credential and talking to
+            // (legacy) signInUser. credentialSignIn() accepts cleartext credential for
+            // LDAP and locally-authenticated users.
+            if (Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL) {
+                sp.credentialSignIn(model.getUsername(), ByteString.copyFrom(model.getPassword()));
             } else {
+                // legacy call:
                 sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getScrypted()));
             }
             model.setClient(sp);

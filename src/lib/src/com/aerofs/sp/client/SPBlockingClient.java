@@ -80,7 +80,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
     }
 
     /**
-     * Sign into the SP server with the config scryted credentials
+     * Sign into the SP server using a device certificate
      */
     public void signInRemote() throws Exception
     {

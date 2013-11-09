@@ -4,8 +4,6 @@
 
 package com.aerofs.bifrost.login;
 
-import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
@@ -13,9 +11,7 @@ import com.aerofs.bifrost.core.URLConnectionConfigurator;
 import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPBlockingClient.Factory;
 import com.google.protobuf.ByteString;
-import com.lambdaworks.crypto.SCrypt;
 import com.sun.jersey.api.representation.Form;
 import com.sun.jersey.spi.container.ContainerRequest;
 import org.slf4j.Logger;
@@ -140,15 +136,9 @@ public class FormAuthenticator extends AbstractAuthenticator
         String cred = formParams.getFirst("j_password");
 
         l.info("Validate user credential {}", user.getString());
-        byte[] scrypted = SCrypt.scrypt(BaseSecUtil.getPasswordBytes(cred.toCharArray()),
-                BaseUtil.string2utf(user.getString()),
-                8192,
-                8,
-                1,
-                64);
 
         try {
-            client.validateCredential(user.getString(), ByteString.copyFrom(scrypted));
+            client.validateCredential(user.getString(), ByteString.copyFromUtf8(cred));
         } catch (ExBadCredential badCredential) {
             throw new WebApplicationException(
                     Response.status(Status.UNAUTHORIZED)

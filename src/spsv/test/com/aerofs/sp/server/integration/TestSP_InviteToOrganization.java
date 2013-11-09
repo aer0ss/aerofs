@@ -103,7 +103,7 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
     public void shouldSendEmailWithNoSignUpCodeForNewAutoProvisionedUser()
             throws Exception
     {
-        when(authenticator.isAutoProvisioned(any(UserID.class))).thenReturn(true);
+        when(authenticator.isAutoProvisioned(any(User.class))).thenReturn(true);
 
         User user = newUser();
         service.inviteToOrganization(user.id().getString());

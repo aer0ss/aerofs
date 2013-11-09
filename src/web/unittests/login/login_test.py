@@ -32,48 +32,6 @@ class LoginTest(TestBase):
 
         self.assertTrue(is_private_deployment(settings))
         self.assertTrue(_is_external_cred_enabled(settings))
-        self._assert_internal(settings, "joe@example.com")
-        self._assert_internal(settings, "a@b.c")
-
-    def test_internal_matches(self):
-        """
-        This test verifies that if internal_email_pattern is .*, we treat all
-        addresses as internal.
-        """
-        settings = {"config.loader.is_private_deployment": "true",
-                    "internal_email_pattern": ".*",
-                    "lib.authenticator": "external_credential" }
-
-        self._assert_internal(settings, "joe@example.com")
-        self._assert_internal(settings, "a@b.c")
-
-    def test_external_matches(self):
-        """
-        This test verifies that internal_email_pattern return scrypt'ed passwords
-        for external addresses.
-        """
-        settings = {"config.loader.is_private_deployment": "true",
-                    "internal_email_pattern": ".example.com",
-                    "lib.authenticator": "external_credential"}
-
-        self._assert_internal(settings, "joe@example.com")
-        self._assert_internal(settings, "blah@example.com")
-        self._assert_external(settings, "a@b.c")
-
-    def _assert_internal(self, settings, username):
-        """
-        Internal username means it should be cleartext, not scrypt'ed.
-        """
-        passwd = "hellosecret"
-        self.assertEqual(passwd, _format_password(settings, passwd, username))
-
-    def _assert_external(self, settings, username):
-        """
-        External username means it should be scrypted: not equal to the input string, and 64 characters long.
-        """
-        passwd = "hellosecret"
-        self.assertNotEqual(passwd, _format_password(settings, passwd, username))
-        self.assertEqual(_format_password(settings, passwd, username).__len__(), 64)
 
 def test_suite():
     loader = unittest.TestLoader()

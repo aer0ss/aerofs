@@ -35,6 +35,8 @@ service SPService {
      * This is needed for the business users to retry signing up using the link in their email.
      * That link points to the user signup page with business signup as the followup page.
      *
+     * NOTE: this expects the credential to be submitted in clear text.
+     *
      * Required Auth Level: none
      *
      * Throws:
@@ -50,9 +52,7 @@ service SPService {
      *
      * Throws:
      *   ExEmptyEmailAddress if the user id is empty
-     *   ExBadCredential if username/password combination is incorrect, or in the case of the team
-     *                   server, if they have not signed in successfully using mutual
-     *                   authentication.
+     *   ExBadCredential if username/password combination is incorrect
      *
      * TODO: Remove this once we feel confident dropping support for team servers from
      * before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
@@ -761,6 +761,22 @@ service SPService {
      *   ExNoPerm if the caller does not have the required privileges for any store inquired
      */
     rpc ListSharedFolders(ListSharedFoldersCall) returns (ListSharedFoldersReply);
+
+    /**
+     * Sign in a user using userid/password credentials.
+     *
+     * NOTE: this method expects the user credential information in the clear. Key-derivation
+     * (SCrypt or similar) will be applied on the server side if needed.
+     *
+     * This method should replace all use of SignIn and SignInUser.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   ExEmptyEmailAddress if the user id is empty
+     *   ExBadCredential if username/password combination is incorrect
+     */
+    rpc CredentialSignIn(SignInUserCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
