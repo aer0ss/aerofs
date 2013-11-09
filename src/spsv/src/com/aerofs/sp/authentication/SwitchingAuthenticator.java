@@ -36,6 +36,7 @@ public class SwitchingAuthenticator implements IAuthenticator
             throws Exception
     {
         IAuthenticator authenticator = _ldap.canAuthenticate(user) ? _ldap : _local;
+        l.debug("authenticator {} for {} ", authenticator.toString(), user);
         authenticator.authenticateUser(user, credential, trans, format);
         l.debug("switching auth ok {} for user {} ...", authenticator.toString(), user.id());
     }

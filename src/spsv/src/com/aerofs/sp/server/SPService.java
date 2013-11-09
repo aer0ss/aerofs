@@ -1912,7 +1912,8 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        _passwordManagement.sendPasswordResetEmail(_factUser.createFromExternalID(userIdString));
+        _passwordManagement.sendPasswordResetEmail(
+                _factUser.createFromExternalID(userIdString), _authenticator);
         _sqlTrans.commit();
 
         return createVoidReply();
