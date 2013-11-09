@@ -20,11 +20,10 @@ public class SyncEmailSender extends AbstractEmailSender
     }
 
     @Override
-    protected Future<Void> sendMessage(final Message msg, final boolean publicFacingEmail,
-            final Session session)
+    protected Future<Void> sendMessage(final Message msg, final Session session)
             throws MessagingException
     {
-        sendMessageImpl(session, publicFacingEmail, msg);
+        sendMessageImpl(session, msg);
         return UncancellableFuture.createSucceeded(Void.getDefaultInstance());
     }
 }

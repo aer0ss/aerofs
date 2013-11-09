@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 public class EmailUtil
 {
     private static final Logger l = Loggers.getLogger(EmailUtil.class);
-    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+    private static final AsyncEmailSender _emailSender = AsyncEmailSender.createDeprecatedForLogEmails();
 
     /**
      * Send email notification to the AeroFS team.
@@ -24,8 +24,8 @@ public class EmailUtil
 
         try {
             String sender = "sp@aerofs.com";
-            _emailSender.sendNotificationEmail(sender, sender, "team@aerofs.com", null, subject,
-                    body, null);
+            _emailSender.sendDeprecatedNotificationEmail(sender, sender, "team@aerofs.com", null,
+                    subject, body, null);
         } catch (Exception e) {
             l.error("cannot email notification: ", e);
         }

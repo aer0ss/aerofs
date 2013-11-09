@@ -11,7 +11,7 @@ import com.aerofs.sv.common.EmailCategory;
 
 public class InvitationReminderEmailer
 {
-    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+    private static final AsyncEmailSender _emailSender = AsyncEmailSender.create();
 
     public void send(String fromName, final String to, String signUpCode, String unsubscribeId)
             throws Exception

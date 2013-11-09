@@ -30,7 +30,7 @@ import java.util.concurrent.Callable;
 public class InvitationEmailer
 {
     private final static String ACCEPT_INVITATION_LINK = WWW.DASHBOARD_HOST_URL + "/accept";
-    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+    private static final AsyncEmailSender _emailSender = AsyncEmailSender.create();
 
     public static class Factory
     {

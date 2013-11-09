@@ -8,6 +8,8 @@ node "sp.aerofs.com" inherits default {
     include redis::aof
     include jeq
 
+    include public-email-creds
+
     # install sp servlet
     include servlet
     class{"servlet::config::sp":

@@ -4,6 +4,8 @@ node "sv.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
+    include public-email-creds
+
     # install sv servlet
     include servlet
     class{"servlet::config::sv":

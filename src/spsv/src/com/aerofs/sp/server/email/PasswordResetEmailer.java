@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public class PasswordResetEmailer
 {
-    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+    private static final AsyncEmailSender _emailSender = AsyncEmailSender.create();
 
     public void sendPasswordResetEmail(UserID userId, String resetToken)
             throws IOException, MessagingException
