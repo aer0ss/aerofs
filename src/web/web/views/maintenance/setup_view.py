@@ -234,7 +234,8 @@ def _parse_email_request(request):
         port = '25'
         username = ''
         password = ''
-        enable_tls = True
+        # The server ignores this flag if mail relay is localhost.
+        enable_tls = False
 
     support_address = request.params['base-www-support-email-address']
     return host, port, username, password, enable_tls, support_address

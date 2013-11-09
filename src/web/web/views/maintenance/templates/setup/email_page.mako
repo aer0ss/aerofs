@@ -109,7 +109,7 @@
         <p>Please test the email settings before proceeding. Enter your email
             address so that we can send you a test email.</p>
         <form id="verify-modal-email-input-form" method="post" class="form-inline"
-                onsubmit="sendVerificationCodeAndEnableCodeModal(); return false;">
+                onsubmit="sendVerificationCodeAndShowCodeInputModal(); return false;">
             ${csrf.token_input()}
 
             <label for="verification-to-email">Email address:</label>
@@ -119,7 +119,7 @@
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Close</a>
         <a href="#" id="send-verification-code-button" class="btn btn-primary"
-           onclick="sendVerificationCodeAndEnableCodeModal(); return false;">Send verification code</a>
+           onclick="sendVerificationCodeAndShowCodeInputModal(); return false;">Send verification code</a>
     </div>
 </div>
 
@@ -160,6 +160,18 @@
 </div>
 
 <script type="text/javascript">
+    $(document).ready(function() {
+        $('#verify-modal-email-input').on('shown', function() {
+            $('#verification-to-email').focus();
+            setEnabled($('#send-verification-code-button'), true);
+        });
+
+        $('#verify-modal-code-input').on('shown', function() {
+            $('#verification-code').focus();
+            setEnabled($('#continue-button'), true);
+        });
+    });
+
     function localMailServerSelected() {
         $('#public-host-options').hide();
     }
@@ -168,22 +180,8 @@
         $('#public-host-options').show();
     }
 
-    function hideAllModalsAndEnableButtons() {
-        $('div.modal').modal('hide');
-
-        enableNavButtons();
-        setEnabled($('#send-verification-code-button'), true);
-        setEnabled($('#continue-button'), true);
-    }
-
-    function disableModalButtons() {
-       setEnabled($('#send-verification-code-button'), false);
-       setEnabled($('#continue-button'), false);
-    }
-
     var serializedData;
     function submitEmailForm() {
-        disableNavButtons();
         serializedData = $('#emailForm').serialize();
 
         if (!verifyPresence("base-www-support-email-address",
@@ -200,14 +198,13 @@
         var port = $("#email-sender-public-port").val();
         var username = $("#email-sender-public-username").val();
         var password = $("#email-sender-public-password").val();
-        ## type: boolean
-        var enable_tls = $("#email-sender-public-enable-tls").val() == 'on';
+        var enable_tls = $("#email-sender-public-enable-tls").is(':checked');
 
         var current_host = "${current_config['email.sender.public_host']}";
         var current_port = "${current_config['email.sender.public_port']}";
         var current_username = "${current_config['email.sender.public_username']}";
         var current_password = "${current_config['email.sender.public_password']}";
-        var current_enable_tls = ${true if str2bool(current_config['email.sender.public_enable_tls']) else false};
+        var current_enable_tls = ${str(str2bool(current_config['email.sender.public_enable_tls'])).lower()};
 
         ## Only enable smtp verification modal if something has changed.
         var initial = ${str(not is_configuration_initialized).lower()};
@@ -218,8 +215,11 @@
                 username != current_username ||
                 password != current_password ||
                 enable_tls != current_enable_tls))) {
-            enableVerifyModalEmailInput();
+            ## As we are showing modals, do not disable nav buttons
+            showVerifyEmailInputModal();
+
         } else {
+            disableNavButtons();
             var support_email = $("#base-www-support-email-address").val();
             var current_support_email = "${current_config['base.www.support_email_address']}";
 
@@ -232,27 +232,29 @@
         }
     }
 
-    function sendVerificationCodeAndEnableCodeModal() {
+    function sendVerificationCodeAndShowCodeInputModal() {
         if (!verifyPresence("verification-to-email",
                     "Please specify an email address.")) return;
 
         serializedData = serializedData + "&" + $('#verify-modal-email-input-form').serialize();
 
-        disableModalButtons();
-        doPost("${request.route_path('json_verify_smtp')}",
-            serializedData, enableVerifyModalCodeInput, hideAllModalsAndEnableButtons);
+        var $btn = $('#send-verification-code-button');
+        setEnabled($btn, false);
+
+        doPost("${request.route_path('json_verify_smtp')}", serializedData,
+                showVerifyCodeInputModal, function() {
+                    setEnabled($btn, true);
+                });
     }
 
-    function enableVerifyModalEmailInput() {
+    function showVerifyEmailInputModal() {
         hideAllModals();
         $('#verify-modal-email-input').modal('show');
-        $('#verification-to-email').focus();
     }
 
-    function enableVerifyModalCodeInput() {
+    function showVerifyCodeInputModal() {
         hideAllModals();
         $('#verify-modal-code-input').modal('show');
-        $('#verification-code').focus();
     }
 
     function checkVerificationCodeAndSetConfiguration() {
@@ -260,10 +262,13 @@
         var actualCode = parseInt("${email_verification_code}");
 
         if (inputtedCode == actualCode) {
+            ## The button will be enabled next time the dialog shows.
+            ## (The dialog is always dismissed after the doPost() call.)
+            setEnabled($('#continue-button'), false);
             doPost("${request.route_path('json_setup_email')}",
-                serializedData, showVerificationSuccessModal, hideAllModalsAndEnableButtons);
+                serializedData, showVerificationSuccessModal, hideAllModals);
         } else {
-            displayError("The verification code you provided was not correct.");
+            showErrorMessage("The verification code you provided was not correct.");
         }
     }
 
