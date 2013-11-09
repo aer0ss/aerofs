@@ -20,7 +20,9 @@ from aerofs_common.configuration import Configuration
 from web.error import error
 from web.login_util import remember_license_based_login
 from web.util import is_private_deployment, is_configuration_initialized
-from web.license import is_license_present_and_valid, is_license_present, set_license_file, get_license_shasum_from_session, URL_PARAM_KEY_LICENSE_SHASUM
+from web.license import is_license_present_and_valid, is_license_present,\
+    set_license_file_and_attach_shasum_to_session, get_license_shasum_from_session,\
+    URL_PARAM_KEY_LICENSE_SHASUM
 from backup_view import BACKUP_FILE_PATH
 from web.views.login.login_view import URL_PARAM_EMAIL
 
@@ -152,7 +154,8 @@ def _get_default_support_email(hostname):
 )
 def json_set_license(request):
     log.info("set license")
-    if not set_license_file(request, request.params['license']):
+    if not set_license_file_and_attach_shasum_to_session(request,
+            request.params['license']):
         error("The provided license file is invalid.")
 
     headers = remember_license_based_login(request)

@@ -18,7 +18,7 @@ URL_PARAM_KEY_LICENSE_SHASUM = 'license_shasum'
 _SESSION_KEY_LICENSE_SHASUM = 'license_shasum'
 
 # 'https://unified.syncfs.com/config' for testing
-_URL_LICENSE_HOST = 'https://unified.syncfs.com/config' # 'http://localhost:5434'
+_URL_LICENSE_HOST = 'http://localhost:5434'
 _URL_SET_LICENSE_FILE = _URL_LICENSE_HOST + "/set_license_file"
 _URL_CHECK_LICENSE_SHA1 = _URL_LICENSE_HOST + "/check_license_sha1"
 
@@ -51,14 +51,14 @@ def is_license_present_and_valid(conf):
     # N.B. keep the comparison consistent with License.java:isValid()
     return now <= expiry_date
 
-def set_license_file(request, license_data):
+def set_license_file_and_attach_shasum_to_session(request, license_data):
     """
     Set the license file by calling the config server, and attach the shasum to
     the session. Call error() if the request failed.
 
     @param license_data: content of a license file as received in HTTP requests
 
-    TODO (WW) read the file the same way as verify_license_file()
+    TODO (WW) read the file the same way as verify_license_file*()
     """
 
     # Due to the way we use JS to upload this file, the request parameter on
@@ -79,7 +79,7 @@ def set_license_file(request, license_data):
         log.error("set license file failed: {} {}".format(r.status_code, r.text))
         return False
 
-def verify_license_file(request, license_file):
+def verify_license_file_and_attach_shasum_to_session(request, license_file):
     """
     Verify the shasum of the provided file with the config server, and attach
     the checksum to the session if verification is successful.
@@ -98,7 +98,7 @@ def verify_license_file(request, license_file):
     else:
         return False
 
-def verify_license_shasum(request, shasum):
+def verify_license_shasum_and_attach_to_session(request, shasum):
     """
     Verify the shasum provided in the request param, and attach the checksum to
     the session if verification is successful.

@@ -5,7 +5,8 @@ from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config, forbidden_view_config
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden
-from web.license import get_license_shasum_from_query, get_license_shasum_from_session, verify_license_shasum
+from web.license import get_license_shasum_from_query,\
+    get_license_shasum_from_session, verify_license_shasum_and_attach_to_session
 from web.views import maintenance
 from web.login_util import URL_PARAM_NEXT, remember_license_based_login
 
@@ -31,10 +32,7 @@ def forbidden_view(request):
     log.error("forbidden view for " + request.path)
 
     response = _attempt_license_shasum_login(request)
-    if response:
-        return response
-    else:
-        return _force_login(request, _get_login_route(request))
+    return response if response else _force_login(request)
 
 def _attempt_license_shasum_login(request):
     """
@@ -51,22 +49,10 @@ def _attempt_license_shasum_login(request):
     shasum = get_license_shasum_from_query(request)
     if shasum == get_license_shasum_from_session(request):
         log.info('license shasum already set. skip license-based login')
-    elif verify_license_shasum(request, shasum):
+    elif verify_license_shasum_and_attach_to_session(request, shasum):
         log.info('license shasum in query string verified. login w/ license')
         remember_license_based_login(request)
         return request.invoke_subrequest(request, use_tweens=True)
-
-def _get_login_route(request):
-    # Ideally we should redirect to maintenance_login as long as the requested
-    # view callable requires 'maintain' permission. However it's difficult to
-    # retrieve the callable's permission info (pyramid introspector is the way
-    # to go), so we redirect to maintenance_login as long as the requested route
-    # is one of the maintenance pages.
-    if request.matched_route and \
-            request.matched_route.name in maintenance.routes:
-        return 'maintenance_login'
-    else:
-        return 'login'
 
 @view_config(
     context=ExceptionReply,
@@ -94,7 +80,7 @@ def exception_view(context, request):
     request.response_status = 500
     return {}
 
-def _force_login(request, login_route):
+def _force_login(request):
 
     log.warn("request to login (xhr={})".format(request.is_xhr))
 
@@ -115,6 +101,8 @@ def _force_login(request, login_route):
     # method for detail.
     next_url = request.path_qs
 
+    login_route = _get_login_route(request)
+
     # Test against '/' so that we don't get annoying next=%2F in the url when we
     # click on the home button.
     if next_url and next_url != '/':
@@ -123,3 +111,15 @@ def _force_login(request, login_route):
         loc = request.route_url(login_route)
 
     return HTTPFound(location=loc)
+
+def _get_login_route(request):
+    # Ideally we should redirect to maintenance_login as long as the requested
+    # view callable requires 'maintain' permission. However it's difficult to
+    # retrieve the callable's permission info (pyramid introspector is the way
+    # to go), so we redirect to maintenance_login as long as the requested route
+    # is one of the maintenance pages.
+    if request.matched_route and \
+            request.matched_route.name in maintenance.routes:
+        return 'maintenance_login'
+    else:
+        return 'login'
