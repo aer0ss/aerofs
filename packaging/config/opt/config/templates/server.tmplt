@@ -12,10 +12,6 @@ base.status_url.unified=http://{{ base_host }}:8000/
 
 sp.redis.address=localhost:6379
 
-bootstrap.spdb.username=aerofs_sp
-bootstrap.spdb.host=localhost
-bootstrap.spdb.schema=aerofs_sp
-
 email.sender.public_host={{ email_host }}
 email.sender.public_port={{ email_port }}
 email.sender.public_username={{ email_user }}
