@@ -34,9 +34,9 @@ public class RestModule extends AbstractModule
     {
         if (verifier == null) {
             verifier = new TokenVerifier(
-                    getStringProperty("daemon.oauth.id", ""),
-                    getStringProperty("daemon.oauth.secret", ""),
-                    URI.create(getStringProperty("daemon.oauth.url", "https://unified.syncfs.com/auth")),
+                    getStringProperty("daemon.oauth.id", "oauth-havre"),
+                    getStringProperty("daemon.oauth.secret", "i-am-not-a-restful-secret"),
+                    URI.create(getStringProperty("daemon.oauth.url", "https://unified.syncfs.com:4433/auth/tokeninfo")),
                     cacert,
                     ChannelFactories.getClientChannelFactory()
             );

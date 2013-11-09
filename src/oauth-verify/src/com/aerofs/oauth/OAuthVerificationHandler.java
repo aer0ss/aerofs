@@ -1,6 +1,7 @@
 package com.aerofs.oauth;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.SettableFuture;
@@ -19,7 +20,9 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
+import org.slf4j.Logger;
 
+import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.util.Queue;
 
@@ -33,6 +36,8 @@ import java.util.Queue;
  */
 public class OAuthVerificationHandler<T> extends SimpleChannelHandler
 {
+    private final static Logger l = Loggers.getLogger(OAuthVerificationHandler.class);
+
     static class VerifyTokenRequest<T>
     {
         final String auth;
@@ -54,6 +59,7 @@ public class OAuthVerificationHandler<T> extends SimpleChannelHandler
         public UnexpectedResponse(int code) { statusCode = code; }
     }
 
+    private final String _host;
     private final String _path;
     private final Class<T> _class;
 
@@ -63,19 +69,21 @@ public class OAuthVerificationHandler<T> extends SimpleChannelHandler
 
     private final Queue<VerifyTokenRequest<T>> _requests = Queues.newConcurrentLinkedQueue();
 
-    OAuthVerificationHandler(String path, Class<T> clazz)
+    OAuthVerificationHandler(URI endpoint, Class<T> clazz)
     {
-        _path = path;
+        _host = endpoint.getHost();
+        _path = endpoint.getPath();
         _class = clazz;
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
-        ctx.getChannel().close();
+        l.warn("ex ", e.getCause());
         while (!_requests.isEmpty()) {
-            _requests.poll().future.setException(new ClosedChannelException());
+            _requests.remove().future.setException(new ClosedChannelException());
         }
+        ctx.getChannel().close();
     }
 
     @Override
@@ -83,13 +91,20 @@ public class OAuthVerificationHandler<T> extends SimpleChannelHandler
     {
         HttpResponse msg = (HttpResponse)me.getMessage();
         String content = BaseUtil.utf2string(msg.getContent().array());
-        VerifyTokenRequest<T> req = Preconditions.checkNotNull(_requests.poll());
+
+        l.debug("response {}", content);
+
+        VerifyTokenRequest<T> req = Preconditions.checkNotNull(_requests.peek());
         T response = _gson.fromJson(content, _class);
         if (response != null) {
             req.future.set(response);
         } else {
+            l.warn("unexpected {}", msg.getStatus());
             req.future.setException(new UnexpectedResponse(msg.getStatus().getCode()));
         }
+        // IMPORTANT: dequeue request *AFTER* setting future, to ensure that if an exception
+        // occurs before that, the exceptionCaught handler will still be able to set it
+        _requests.remove();
     }
 
     @SuppressWarnings("unchecked")
@@ -102,7 +117,10 @@ public class OAuthVerificationHandler<T> extends SimpleChannelHandler
         encoder.addParam("access_token", req.accessToken);
         HttpRequest http = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET,
                 encoder.toString());
+        http.setHeader(Names.HOST, _host);
         http.setHeader(Names.AUTHORIZATION, req.auth);
+
+        l.debug("request {}", http);
 
         _requests.add(req);
         ctx.sendDownstream(
