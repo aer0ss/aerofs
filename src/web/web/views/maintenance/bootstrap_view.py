@@ -38,7 +38,7 @@ def json_get_bootstrap_task_status(request):
     status, error_message = bootstrap.get_task_status(eid)
     if status == Status.ERROR:
         log.error("bootstrap task {} failed: {}".format(eid, error_message))
-        error("The opreation couldn't complete. Please try again later."
+        error("The operation couldn't complete. Please try again later."
               " (Error detail: {})".format(error_message))
     else:
         return {'status': status}
