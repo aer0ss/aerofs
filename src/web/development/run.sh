@@ -25,6 +25,10 @@ if [ "$MODE" = "private" ]
 then
     echo ">>> Configuring your local prod to allow incoming connections..."
     pushd "$SRC_ROOT"/../packaging/bakery/development 1>/dev/null
+
+    # the "sed 127.0.0.1..." below is so the config server listens to the
+    # world so we can test license file uploads using locally deployed web
+    # (see the Wiki page for setting up locally deployed web).
     vagrant ssh -c\
         "cd /etc/nginx/sites-available && \
         sudo sed -i 's/localhost://g' * && \

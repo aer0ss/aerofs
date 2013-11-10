@@ -40,15 +40,16 @@ def _attempt_license_shasum_login(request):
     to login with the shasum and retry the request. This is necessary for
     access to the appliance management API through command lines.
 
-    Skip this step if the shasum stored in the session is equal to the shasum
-    in the query. This is to prevent infinite loops if the user got permission
-    denied after he logs in with the license.
-
     @return a response if login successful, None otherwise
     """
     shasum = get_license_shasum_from_query(request)
-    if shasum == get_license_shasum_from_session(request):
-        log.info('license shasum already set. skip license-based login')
+    # Skip license-based login if:
+    # 1. the query has no license shasum, or
+    # 2. the shasum stored in the session is the same as the shasum
+    #    in the query. This is to prevent infinite loops if the user got
+    #    permission denied after he logs in with the license.
+    if not shasum or shasum == get_license_shasum_from_session(request):
+        log.info('skip license-based login. shasum: {}'.format(shasum))
     elif verify_license_shasum_and_attach_to_session(request, shasum):
         log.info('license shasum in query string verified. login w/ license')
         remember_license_based_login(request)
