@@ -7,13 +7,3 @@ server {
         proxy_pass http://127.0.0.1:5434/server;
     }
 }
-
-server {
-    # External variable setting interface.
-    listen localhost:5437;
-    access_log /var/log/nginx/config.set.access.log;
-
-    location / {
-        proxy_pass http://127.0.0.1:5434/set;
-    }
-}

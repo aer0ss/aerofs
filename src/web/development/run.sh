@@ -29,6 +29,9 @@ then
         "cd /etc/nginx/sites-available && \
         sudo sed -i 's/localhost://g' * && \
         sudo service nginx restart && \
+        cd /opt/config && \
+        sudo sed -i 's/127.0.0.1/0.0.0.0/g' *.py && \
+        sudo service config restart && \
         sudo iptables --flush"
     popd 1>/dev/null
 fi
