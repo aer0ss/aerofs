@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
@@ -11,6 +12,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
@@ -25,6 +27,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgDatabase;
@@ -55,8 +58,10 @@ import org.mockito.stubbing.Answer;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
@@ -103,7 +108,7 @@ public class TestLinkedStorage extends AbstractTest
         rootDir = factFile.create(tmpDir, "AeroFS");
         rootDir.mkdirs();
         String auxDir = Cfg.absAuxRootForPath(rootDir.getAbsolutePath(), rootSID);
-        revDir = factFile.create(auxDir, AuxFolder.REVISION._name);
+        revDir = factFile.create(auxDir, AuxFolder.HISTORY._name);
         revDir.ensureDirExists();
         factFile.create(auxDir, AuxFolder.PREFIX._name).ensureDirExists();
 
@@ -172,7 +177,8 @@ public class TestLinkedStorage extends AbstractTest
                 mock(IMetaDatabase.class), nro, factFile);
 
         storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
-                rh, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, null);
+                rh, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, null,
+                new LinkedRevProvider(lrm, factFile, new LinkedRevProvider.TimeSource()));
 
         tm = new TransManager(new Trans.Factory(dbcw));
 
@@ -225,7 +231,7 @@ public class TestLinkedStorage extends AbstractTest
         trans = tm.begin_();
         pfile = createNamedFile("TestLocalStore");
         assert rootDir.list().length == (fcount + 1) : "Didn't create a new file?!";
-        checkRevDirContents(0);
+        checkVersionCount("TestLocalStore", 0);
         trans.commit_();
         trans.end_();
 
@@ -233,7 +239,7 @@ public class TestLinkedStorage extends AbstractTest
         trans = tm.begin_();
         pfile.delete_(PhysicalOp.APPLY, trans);
         assert rootDir.list().length == (fcount) : "Move out of root";
-        checkRevDirContents(1);
+        checkVersionCount("TestLocalStore", 1);
         trans.commit_();
         trans.end_();
     }
@@ -250,7 +256,7 @@ public class TestLinkedStorage extends AbstractTest
         txn.commit_();
         txn.end_();
 
-        checkRevDirContents(0);
+        checkVersionCount("updateme", 0);
 
         // update & check that the revision dir is populated:
         prefix = new LinkedPrefix(storage, sokid,
@@ -263,7 +269,7 @@ public class TestLinkedStorage extends AbstractTest
         txn.commit_();
         txn.end_();
 
-        checkRevDirContents(1);
+        checkVersionCount("updateme", 1);
     }
 
     @Test
@@ -277,7 +283,7 @@ public class TestLinkedStorage extends AbstractTest
         txn.commit_();
         txn.end_();
 
-        checkRevDirContents(0);
+        checkVersionCount("rollbackapply", 0);
 
         prefix = new LinkedPrefix(storage, sokid,
                 LinkedPath.auxiliary(null, storage.auxFilePath(sokid, AuxFolder.PREFIX)));
@@ -287,7 +293,7 @@ public class TestLinkedStorage extends AbstractTest
         storage.apply_(prefix, pfile, true, 0, txn);
         txn.end_();
 
-        checkRevDirContents(0);
+        checkVersionCount("rollbackapply", 0);
     }
 
     // test behavior of delete when sync history is disabled.
@@ -304,7 +310,7 @@ public class TestLinkedStorage extends AbstractTest
         trans = tm.begin_();
         pfile = createNamedFile("TestLocalStore");
         assert rootDir.list().length == (fcount + 1) : "Didn't create a new file?!";
-        checkRevDirContents(0);
+        checkVersionCount("TestLocalStore", 0);
         trans.commit_();
         trans.end_();
 
@@ -314,7 +320,7 @@ public class TestLinkedStorage extends AbstractTest
         assert rootDir.list().length == (fcount) : "Move out of root";
         trans.commit_();
         trans.end_();
-        checkRevDirContents(0);
+        checkVersionCount("TestLocalStore", 0);
 
         // delete with rollback should preserve original file:
         trans = tm.begin_();
@@ -328,7 +334,7 @@ public class TestLinkedStorage extends AbstractTest
         assert rootDir.list().length == (fcount) : "delete from root";
         trans.end_();
 
-        checkRevDirContents(0);
+        checkVersionCount("TestRollback", 0);
         assert rootDir.list().length == (fcount + 1) : "restored to root";
         FileUtil.getLength(new File(pfile.getAbsPath_()));
     }
@@ -359,7 +365,7 @@ public class TestLinkedStorage extends AbstractTest
         txn.commit_();
         txn.end_();
 
-        checkRevDirContents(0);
+        checkVersionCount("update.nohistory", 0);
 
         // test the original file is replaced on rollback:
         prefix = new LinkedPrefix(storage, sokid,
@@ -369,7 +375,7 @@ public class TestLinkedStorage extends AbstractTest
         storage.apply_(prefix, pfile, true, 0, txn);
         txn.end_();
 
-        checkRevDirContents(0);
+        checkVersionCount("update.nohistory", 0);
         assert FileUtil.getLength(new File(pfile.getAbsPath_())) == 0 : "Original file missing";
     }
 
@@ -390,7 +396,7 @@ public class TestLinkedStorage extends AbstractTest
 
         for (InjectableFile ifile : revDir.listFiles())
         {
-            ifile.delete();
+            ifile.deleteIgnoreErrorRecursively();
         }
         txn.commit_();
         txn.end_();
@@ -407,18 +413,17 @@ public class TestLinkedStorage extends AbstractTest
         return retval;
     }
 
-    private void checkRevDirContents(int expected)
+    private void checkVersionCount(String path, int expected) throws IOException, SQLException
     {
-        if (revDir.listFiles().length != expected)
+        Collection<Revision> revisions = storage.getRevProvider()
+                .listRevHistory_(Path.fromString(rootSID, path));
+        if (revisions.size() != expected)
         {
-            System.out.println("revDir " + revDir.listFiles().length
-                    + " , expected " + expected);
-            for (InjectableFile file : revDir.listFiles())
+            for (Revision rev : revisions)
             {
-                System.out.println(": " + file.getAbsolutePath());
+                System.out.println(": " + BaseUtil.utf2string(rev._index));
             }
+            fail("revDir " + revisions.size() + " , expected " + expected);
         }
-        assert revDir.listFiles().length == expected : "Wrong # files in revDir ("
-                + revDir.listFiles().length + ")";
     }
 }

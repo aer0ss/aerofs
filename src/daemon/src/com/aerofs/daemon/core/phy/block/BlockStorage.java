@@ -39,7 +39,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -562,7 +561,7 @@ class BlockStorage implements IPhysicalStorage
     class BlockRevProvider implements IPhysicalRevProvider
     {
         @Override
-        public Collection<Child> listRevChildren_(Path path) throws Exception
+        public Collection<Child> listRevChildren_(Path path) throws IOException, SQLException
         {
             try {
                 long dirId = _bsdb.getHistDirByPath_(path);
@@ -575,7 +574,7 @@ class BlockStorage implements IPhysicalStorage
         }
 
         @Override
-        public Collection<Revision> listRevHistory_(Path path) throws Exception
+        public Collection<Revision> listRevHistory_(Path path) throws IOException, SQLException
         {
             try {
                 long dirId = _bsdb.getHistDirByPath_(path.removeLast());
@@ -588,11 +587,12 @@ class BlockStorage implements IPhysicalStorage
         }
 
         @Override
-        public RevInputStream getRevInputStream_(Path path, byte[] index) throws Exception
+        public RevInputStream getRevInputStream_(Path path, byte[] index)
+                throws IOException, SQLException, ExInvalidRevisionIndex
         {
             try {
                 FileInfo info = _bsdb.getHistFileInfo_(index);
-                if (info == null) throw new InvalidRevisionIndexException();
+                if (info == null) throw new ExInvalidRevisionIndex();
                 return new RevInputStream(readChunks(info._chunks), info._length, info._mtime);
             } catch (SQLException e) {
                 l.warn("get rev stream fail: " + Util.e(e));
@@ -601,11 +601,12 @@ class BlockStorage implements IPhysicalStorage
         }
 
         @Override
-        public void deleteRevision_(Path path, byte[] index) throws Exception
+        public void deleteRevision_(Path path, byte[] index)
+                throws IOException, SQLException, ExInvalidRevisionIndex
         {
             try {
                 FileInfo info = _bsdb.getHistFileInfo_(index);
-                if (info == null) throw new InvalidRevisionIndexException();
+                if (info == null) throw new ExInvalidRevisionIndex();
 
                 Trans t = _tm.begin_();
                 try {
@@ -624,11 +625,11 @@ class BlockStorage implements IPhysicalStorage
         }
 
         @Override
-        public void deleteAllRevisionsUnder_(Path path) throws Exception
+        public void deleteAllRevisionsUnder_(Path path) throws IOException, SQLException
         {
             try {
                 long dirId = _bsdb.getHistDirByPath_(path);
-                if (dirId == DIR_ID_NOT_FOUND) throw new ExNotFound();
+                if (dirId == DIR_ID_NOT_FOUND) return;
 
                 Trans t = _tm.begin_();
                 try {

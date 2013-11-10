@@ -1,26 +1,29 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.lib.ExternalSorter;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.os.OSUtil;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -28,38 +31,78 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Provider for backup revisions
+ * Provider for version history
+ *
+ * To correctly support case-sensitivity and non-representable objects, each path component is
+ * (utf-8 then hex)-encoded.
+ *
+ * Why hex? Because Windows. Because OSX. Because some stupid morons somewhere someday decided that
+ * case-insensitive filesystems where a good idea. This rules out Base64 because it uses both
+ * lowercase and uppercase letters and would therefore lead to all sorts of crazyness on case
+ * insensitive filesystems. If we really cared about density we could roll our own Base32 or Base38
+ * that would be case-insensitive-safe but that's just not worth the effort at this point.
+ *
+ * TL;DR Case-sensitivity is a luxury. We want to offer it but cannot rely on it.
+ *
+ * To simplify version listing and reduce scalability problems when the number of versions
+ * grow, each file gets a folder and versions are stored as sub files of that folder. A single
+ * letter prefix is used to distinguish folders that contain subfolders from those that contain
+ * versions.
+ *
+ * For instance, suppose you have two versions of file 'foo' and one version of file 'foo/bar',
+ * the resulting history structure would be:
+ *
+ * {AuxFolder.HISTORY}/
+ *      F666f6f/
+ *          {revinfo}
+ *          {revinfo}
+ *      D666f6f
+ *          F626172/
+ *              {revinfo}
+ *
+ * where {revinfo} is an hex encoding of RevisionInfo (i.e. KIndex, mtime, rtime tuple)
+ *
+ * If the hex-encoding is larger than 255 the following splitting pattern is used:
+ *
+ * {AuxFolder.HISTORY}/
+ *      E{hex(name).substring(0, 254)}/
+ *          E{hex(name).substring(254, 509)}/
+ *              F{hex(name).substring(510)}
+ *
+ * This approach ensures that long path can be moved to history while still allowing simple and
+ * efficient listing of revision children.
+ *
+ * NB: this still isn't foolproof on Windows because the geniuses at Microsoft decided to place
+ * an arbitrary limit on total path length (32767 characters). We could conceivably work around
+ * that limitation using a different prefix char and "rebasing" the split hierarchy. However
+ * the likelihood of users actually running into that limit is low enough that it's not worth
+ * doing at this time.
  */
 public class LinkedRevProvider implements IPhysicalRevProvider
 {
+    private static final Logger l = Loggers.getLogger(LinkedRevProvider.class);
+
     /*
-     * - Keep revision contents as files in {AuxFolder.REVISION}/<path>/<name>-<kidx>_<date>
-     *   - do we need an index of file paths to their OIDs, versions, etc?
-     *   - how do we make this persistent?
+     * TODO
      * - Keep track of amount of space used by old revisions
      *   - how do we make this persistent?
      * - Put a limit (high water mark) on space taken by old revisions
      *   - how do we pick this? e.g. 10% of AeroFS folder space + 100MB
      * - When space used exceeds limit, run garbage collection
      *   - collect until space used is below water mark, e.g. 50% of limit
-     *
      */
 
-    static final Logger l = Loggers.getLogger(LinkedRevProvider.class);
-
-    // public for use in DPUTMigrateRevisionSuffixToBase64
-    public static class RevisionSuffix implements Serializable
+    // public for use in DPUTs
+    public static class RevisionInfo implements Serializable, Comparable<RevisionInfo>
     {
         private static final long serialVersionUID = 1L;
-
-        // separates file name from encoded revision suffix
-        public static final char SEPARATOR = '.';
 
         // KIndex + 2 timestamps
         public static int DECODED_LENGTH = 2 * C.LONG_SIZE + C.INTEGER_SIZE;
@@ -76,24 +119,19 @@ public class LinkedRevProvider implements IPhysicalRevProvider
          * is necessary to avoid losing revision information on Unix devices and avoid no-sync on
          * Windows ones (renaming fails when the target exists)).
          */
-
-        public RevisionSuffix(int kidx, long mtime, long rtime)
+        public RevisionInfo(int kidx, long mtime, long rtime)
         {
             _kidx = kidx;
             _mtime = mtime;
             _rtime = rtime;
         }
 
-        /**
-         * @param encoded url-safe base64 encoded suffix extracted from the name of a revision file
-         * @return decoded suffix, null if the suffix was not valid
-         */
-        public static @Nullable RevisionSuffix fromEncodedNullable(String encoded)
+        public static @Nullable RevisionInfo fromHexEncodedNullable(String encoded)
         {
             byte[] decoded;
             try {
-                decoded = Base64.decode(encoded, Base64.URL_SAFE);
-            } catch (IOException e) {
+                decoded = BaseUtil.hexDecode(encoded);
+            } catch (ExFormatError e) {
                 return null;
             }
             if (decoded.length != DECODED_LENGTH) return null;
@@ -101,34 +139,44 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             int kidx = buf.getInt();
             long mtime = buf.getLong();
             long rtime = buf.getLong();
-            return new RevisionSuffix(kidx, mtime, rtime);
+            return new RevisionInfo(kidx, mtime, rtime);
         }
 
-        public String encoded()
+        public String hexEncoded()
         {
             if (encoded == null) {
-                byte d[] = new byte[DECODED_LENGTH];
-                ByteBuffer buf = ByteBuffer.wrap(d);
+                ByteBuffer buf = ByteBuffer.allocate(DECODED_LENGTH);
                 buf.putInt(_kidx);
                 buf.putLong(_mtime);
                 buf.putLong(_rtime);
-                try {
-                    encoded = Base64.encodeBytes(d, Base64.URL_SAFE);
-                } catch (IOException e) {
-                    // the base64 encoder can only throw IOException when using the GZIP option...
-                    throw SystemUtil.fatalWithReturn(e);
-                }
+                encoded = BaseUtil.hexEncode(buf.array());
             }
             return encoded;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            return this == o || (o != null && o instanceof RevisionInfo
+                                         && ((RevisionInfo)o).compareTo(this) == 0);
+        }
+
+        @Override
+        public int compareTo(RevisionInfo o)
+        {
+            int c = BaseUtil.compare(_rtime, _rtime);
+            return c != 0 ? c : BaseUtil.compare(_mtime, o._mtime);
         }
     }
 
     class LinkedRevFile
     {
+        private final Path _path;
         private final InjectableFile _fRev, _fOrg;
 
-        private LinkedRevFile(InjectableFile fRev, InjectableFile fOrg)
+        private LinkedRevFile(Path path, InjectableFile fRev, InjectableFile fOrg)
         {
+            _path = path;
             _fRev = fRev;
             _fOrg = fOrg;
         }
@@ -146,6 +194,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         void rollback_() throws IOException
         {
             _fRev.moveInSameFileSystem(_fOrg);
+            deleteEmptyParentRecursively(_path.sid(), _fRev.getParentFile());
             changeSpace(-_fOrg.getLength());
         }
 
@@ -165,14 +214,16 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     // sigh, can't use PowerMock in the daemon due to OSUtil so we have to use this
     // stupid wrapper to be able to test the cleaner...
-    class TimeSource {
+    static class TimeSource {
         long getTime() { return System.currentTimeMillis(); }
     }
 
-    TimeSource _ts = new TimeSource();
+    private final TimeSource _ts;
 
-    public LinkedRevProvider(LinkerRootMap lrm, InjectableFile.Factory factFile)
+    @Inject
+    public LinkedRevProvider(LinkerRootMap lrm, InjectableFile.Factory factFile, TimeSource ts)
     {
+        _ts = ts;
         _lrm = lrm;
         _factFile = factFile;
     }
@@ -183,128 +234,179 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         _cleanerScheduler.start();
     }
 
-    String revPath(Path path)
+    public enum PathType
     {
-        return Util.join(_lrm.auxRoot_(path.sid()), AuxFolder.REVISION._name,
-                Util.join(path.elements()));
+        FILE('F'),
+        EXTENDED('E'), // to handle long filenames
+        DIR('D');
+
+        public final Character _prefix;
+
+        PathType(Character prefix)
+        {
+            _prefix = prefix;
+        }
+
+        private final static Map<Character, PathType> PREFIX_TO_VALUE;
+        static {
+            Builder<Character, PathType> bd = ImmutableMap.builder();
+            for (PathType t : values()) bd.put(t._prefix, t);
+            PREFIX_TO_VALUE = bd.build();
+        }
+
+        static @Nullable PathType fromPrefix(Character c)
+        {
+            return PREFIX_TO_VALUE.get(c);
+        }
     }
 
-    // called from LocalStorage
+    private static String splitLongName(String hex, int maxLength, PathType p)
+    {
+        return hex.length() < maxLength
+                ? p._prefix + hex
+                : Util.join(PathType.EXTENDED._prefix + hex.substring(0, maxLength - 1),
+                        splitLongName(hex.substring(maxLength - 1), maxLength, p));
+    }
+
+    public static String encode(String filename, PathType type)
+    {
+        return splitLongName(BaseUtil.hexEncode(BaseUtil.string2utf(filename)), 255, type);
+    }
+
+    private String revPath(Path path, PathType type)
+    {
+        StringBuilder bd = new StringBuilder();
+
+        String[] elems = path.elements();
+        for (int i = 0; i < elems.length; ++i) {
+            bd.append(File.separatorChar);
+            bd.append(encode(elems[i], i == elems.length - 1 ? type : PathType.DIR));
+        }
+
+        return Util.join(_lrm.auxRoot_(path.sid()), AuxFolder.HISTORY._name) + bd.toString();
+    }
+
     LinkedRevFile newLocalRevFile_(Path path, String absPath, KIndex kidx) throws IOException
     {
         InjectableFile f = _factFile.create(absPath);
-        RevInfo rev = new RevInfo(revPath(path.removeLast()), f.getName(), kidx.getInt(),
-                _ts.getTime(), f.lastModified(), f.getLengthOrZeroIfNotFile());
-
-        // TODO use alternate folder for history of NROs
-
-        String pathRev = rev.getAbsolutePath();
-
-        if (OSUtil.isWindows() && pathRev.length() > 260) {
-            // TODO: shorten name, will break rev history but will keep sync working...
-        }
-
-        return new LinkedRevFile(_factFile.create(pathRev), f);
+        String revPath = revPath(path, PathType.FILE);
+        RevisionInfo info = new RevisionInfo(kidx.getInt(), _ts.getTime(), f.lastModified());
+        return new LinkedRevFile(path, _factFile.create(revPath, info.hexEncoded()), f);
     }
 
     @Override
-    public Collection<Child> listRevChildren_(Path path)
-            throws Exception
+    public Collection<Child> listRevChildren_(Path path) throws IOException
     {
-        String auxPath = revPath(path);
         Set<Child> children = Sets.newHashSet();
-
-        InjectableFile parent = _factFile.create(auxPath);
-        InjectableFile[] files = parent.listFiles();
-
-        if (files != null) {
-            for (InjectableFile file : files) {
-                String name = file.getName();
-                boolean dir = file.isDirectory();
-                if (!dir) {
-                    RevInfo info = RevInfo.fromRevisionFileNullable(file);
-                    if (info == null) {
-                        continue;
-                    }
-                    name = info._name;
-                }
-                children.add(new Child(name, dir));
-            }
-        }
-
+        listChildren(_factFile.create(revPath(path, PathType.DIR)), "", children);
         return children;
     }
 
-    @Override
-    public Collection<Revision> listRevHistory_(Path path)
-            throws Exception
+    private void listChildren(InjectableFile parent, String prefix, Set<Child> children)
     {
-        if (path.isEmpty())
-            return Collections.emptyList();
-
-        String auxPath = revPath(path.removeLast());
-
-        InjectableFile parent = _factFile.create(auxPath);
-        SortedMap<Long, Revision> revisions = Maps.newTreeMap();
         InjectableFile[] files = parent.listFiles();
 
-        if (files != null) {
-            for (InjectableFile file : files) {
-                if (file.isDirectory()) {
-                    continue;
-                }
-                RevInfo info = RevInfo.fromRevisionFileNullable(file);
-                if (info == null) {
-                    continue;
-                }
-                if (path.last().equals(info._name)) {
-                    revisions.put(info._suffix._rtime,
-                                  new Revision(BaseUtil.string2utf(info.index()),
-                                               info._suffix._mtime,
-                                               info._length));
-                }
+        if (files == null) return;
+
+        for (InjectableFile file : files) {
+            if (!file.isDirectory()) continue;
+            String name = file.getName();
+            PathType type = PathType.fromPrefix(name.charAt(0));
+            if (type == null) continue;
+
+            try {
+                name = prefix + BaseUtil.utf2string(BaseUtil.hexDecode(name.substring(1)));
+            } catch (ExFormatError e) {
+                continue;
+            }
+
+            if (type == PathType.EXTENDED) {
+                listChildren(file, name, children);
+            } else {
+                children.add(new Child(name, type == PathType.DIR));
             }
         }
+    }
 
+    @Override
+    public Collection<Revision> listRevHistory_(Path path) throws IOException
+    {
+        if (path.isEmpty()) return Collections.emptyList();
+
+        InjectableFile parent = _factFile.create(revPath(path, PathType.FILE));
+        InjectableFile[] files = parent.listFiles();
+
+        if (files == null) return Collections.emptyList();
+
+        SortedMap<RevisionInfo, Revision> revisions = Maps.newTreeMap();
+        for (InjectableFile file : files) {
+            RevisionInfo info = file.isFile()
+                    ? RevisionInfo.fromHexEncodedNullable(file.getName())
+                    : null;
+            if (info != null) {
+                revisions.put(info,
+                        new Revision(BaseUtil.string2utf(file.getName()), info._mtime,
+                                file.getLengthOrZeroIfNotFile()));
+            }
+        }
         return revisions.values();
     }
 
-    private InjectableFile getRevFile_(Path path, byte[] index)
+    private InjectableFile getRevFile_(Path path, byte[] index) throws IOException
     {
-        String auxPath = revPath(path) + RevisionSuffix.SEPARATOR + BaseUtil.utf2string(index);
+        String auxPath = Util.join(revPath(path, PathType.FILE), BaseUtil.utf2string(index));
         return _factFile.create(auxPath);
     }
 
     private InjectableFile getExistingRevFile_(Path path, byte[] index)
-            throws InvalidRevisionIndexException
+            throws ExInvalidRevisionIndex, IOException
     {
         InjectableFile file = getRevFile_(path, index);
-        if (!file.exists() || file.isDirectory()) throw new InvalidRevisionIndexException();
+        if (!(file.exists() && file.isFile())) throw new ExInvalidRevisionIndex();
         return file;
     }
 
     @Override
     public RevInputStream getRevInputStream_(Path path, byte[] index)
-            throws Exception
+            throws IOException, ExInvalidRevisionIndex
     {
-        RevisionSuffix suffix = RevisionSuffix.fromEncodedNullable(BaseUtil.utf2string(index));
-        if (suffix == null) throw new InvalidRevisionIndexException();
+        RevisionInfo suffix = RevisionInfo.fromHexEncodedNullable(BaseUtil.utf2string(index));
+        if (suffix == null) throw new ExInvalidRevisionIndex();
         InjectableFile file = getExistingRevFile_(path, index);
         return new RevInputStream(file.newInputStream(), file.getLength(), suffix._mtime);
     }
 
     @Override
-    public void deleteRevision_(Path path, byte[] index) throws Exception
+    public void deleteRevision_(Path path, byte[] index)
+            throws IOException, ExInvalidRevisionIndex
     {
         InjectableFile file = getExistingRevFile_(path, index);
         file.deleteOrThrowIfExist();
+        deleteEmptyParentRecursively(path.sid(), file.getParentFile());
     }
 
     @Override
-    public void deleteAllRevisionsUnder_(Path path) throws Exception
+    public void deleteAllRevisionsUnder_(Path path) throws IOException
     {
-        InjectableFile dir = _factFile.create(revPath(path));
+        InjectableFile dir = _factFile.create(revPath(path, PathType.DIR));
         dir.deleteOrThrowIfExistRecursively();
+        if (path.isEmpty()) {
+            // we just deleted the HISTORY folder, recreate it
+            dir.mkdirs();
+        } else {
+            deleteEmptyParentRecursively(path.sid(), dir.getParentFile());
+        }
+    }
+
+    private void deleteEmptyParentRecursively(SID sid, InjectableFile dir)
+    {
+        String base = revPath(Path.root(sid), PathType.DIR);
+        while (!base.equals(dir.getAbsolutePath())) {
+            String[] l = dir.list();
+            if (l == null || l.length != 0) break;
+            dir.deleteIgnoreError();
+            dir = dir.getParentFile();
+        }
     }
 
     private synchronized void changeSpace(long delta)
@@ -357,12 +459,12 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         {
             while (true) {
                 for (LinkerRoot root : _lrm.getAllRoots_()) {
-                    sweep(Util.join(_lrm.auxRoot_(root.sid()), AuxFolder.REVISION._name));
+                    sweep(root.sid());
                 }
             }
         }
 
-        private void sweep(String absRevRoot)
+        private void sweep(SID sid)
         {
             try {
                 synchronized (this) {
@@ -376,7 +478,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     if (_thread == null) return;
                     _trigger = false;
                 }
-                _cleaner.run(absRevRoot);
+                _cleaner.run(sid, Util.join(_lrm.auxRoot_(sid), AuxFolder.HISTORY._name));
             } catch (InterruptedException e) {
                 l.warn("cleaner interrupted: " + Util.e(e));
                 return;
@@ -384,7 +486,6 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 l.error("cleaner error: " + Util.e(e));
             }
         }
-
 
         /** Run between 3 and 5 in the morning in the local time zone */
         private long getSleepMillis()
@@ -408,8 +509,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         long _delayMillis = 10;
         long _minSpaceLimit = 100 * C.MB;
 
-        public void run(String absRoot) throws IOException, InterruptedException {
-            RunData runData = new RunData(absRoot);
+        public void run(SID sid, String absRoot) throws IOException, InterruptedException {
+            RunData runData = new RunData(sid, absRoot);
             runData.run();
         }
 
@@ -449,10 +550,12 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             long _dirCount;
             long _startTime = _ts.getTime();
             int _delayCount;
+            final SID _sid;
             final String _absRevRoot;
 
-            RunData(String absRoot)
+            RunData(SID sid, String absRoot)
             {
+                _sid = sid;
                 _absRevRoot = absRoot;
             }
 
@@ -501,9 +604,10 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                         if (needed <= 0) return;
                         RevInfo revInfo = it.next();
                         long length = revInfo._length;
-                        InjectableFile file = _factFile.create(revInfo.getAbsolutePath());
+                        InjectableFile file = _factFile.create(revInfo._path);
                         if (tryDeleteOldRev(file)) {
                             needed -= length;
+                            deleteEmptyParentRecursively(_sid, file.getParentFile());
                         }
                         delay();
                     }
@@ -520,8 +624,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     RevInfo revInfo = RevInfo.fromRevisionFileNullable(file);
                     if (revInfo != null) {
                         _totalSize += revInfo._length;
-                        if (_startTime > revInfo._suffix._rtime) {
-                            l.debug("Old file: " + revInfo);
+                        if (_startTime > revInfo._info._rtime) {
+                            l.debug("Old file: {}", revInfo);
                             _sorter.add(revInfo);
                         }
                     }
@@ -559,49 +663,26 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             @Override
             public int compare(RevInfo o1, RevInfo o2)
             {
-                int r = BaseUtil.compare(o1._suffix._rtime, o2._suffix._rtime);
-                if (r == 0) r = BaseUtil.compare(o1._suffix._mtime, o2._suffix._mtime);
+                int r = BaseUtil.compare(o1._info._rtime, o2._info._rtime);
+                if (r == 0) r = BaseUtil.compare(o1._info._mtime, o2._info._mtime);
                 return r;
             }
         };
 
-        private final String _path;    // absolute path of directory in which revision file resides
-        final String _name;            // name of file to which revision is associated
-        final RevisionSuffix _suffix;  // decoded revision suffix
-        final long _length;            // length in bytes of revision file
+        final String _path;             // absolute path of revision file
+        final RevisionInfo _info;       // decoded revision info
+        final long _length;             // length in bytes of revision file
 
         @Override
         public String toString()
         {
-            return getAbsolutePath();
+            return _path;
         }
 
-        /**
-         * @return revision index (used to distinguish revisions and open a RevInputStream)
-         */
-        public String index()
+        public RevInfo(String path, RevisionInfo info, long length)
         {
-            return _suffix.encoded();
-        }
-
-        /**
-         * @return absolute path to the actual location of the revision file
-         */
-        public String getAbsolutePath()
-        {
-            return Util.join(_path, _name) + RevisionSuffix.SEPARATOR + index();
-        }
-
-        public RevInfo(String revBase, String name, int kidx, long rtime, long mtime, long length)
-        {
-            this(revBase, name, new RevisionSuffix(kidx, mtime, rtime), length);
-        }
-
-        public RevInfo(String revBase, String name, RevisionSuffix suffix, long length)
-        {
-            _path = revBase;
-            _name = name;
-            _suffix = suffix;
+            _path = path;
+            _info = info;
             _length = length;
         }
 
@@ -617,15 +698,11 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         public static @Nullable RevInfo fromRevisionFileNullable(InjectableFile file)
         {
             String revName = file.getName();
-            int pos = revName.lastIndexOf(RevisionSuffix.SEPARATOR);
-            if (pos <= 0) return null;
-            String path = file.getParent();
-            String name = revName.substring(0, pos);
-            RevisionSuffix suffix = RevisionSuffix.fromEncodedNullable(revName.substring(pos + 1));
-            if (suffix == null) return null;
+            RevisionInfo info = RevisionInfo.fromHexEncodedNullable(revName);
+            if (info == null) return null;
             long length = file.getLengthOrZeroIfNotFile();
             // Check for file disappearance while we where building the RevInfo (support-143)
-            return file.isFile() ? new RevInfo(path, name, suffix, length) : null;
+            return file.isFile() ? new RevInfo(file.getAbsolutePath(), info, length) : null;
         }
     }
 }

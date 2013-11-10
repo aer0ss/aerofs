@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
@@ -21,7 +20,6 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.lib.id.SOKID;
 import com.google.inject.Inject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;

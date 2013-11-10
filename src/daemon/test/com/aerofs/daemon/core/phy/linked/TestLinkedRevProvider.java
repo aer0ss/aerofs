@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -63,7 +64,7 @@ public class TestLinkedRevProvider extends AbstractTest
         dataDir = factFile.create(rootDir, "AeroFS");
         dataDir.mkdirs();
         String auxDir = Cfg.absAuxRootForPath(dataDir.getAbsolutePath(), rootSID);
-        revDir = factFile.create(auxDir, LibParam.AuxFolder.REVISION._name);
+        revDir = factFile.create(auxDir, LibParam.AuxFolder.HISTORY._name);
         revDir.mkdirs();
 
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn(rootDir.getAbsolutePath());
@@ -75,7 +76,7 @@ public class TestLinkedRevProvider extends AbstractTest
         when(lrm.getAllRoots_()).thenReturn(ImmutableList.of(root));
         when(lrm.absRootAnchor_(rootSID)).thenReturn(dataDir.getAbsolutePath());
 
-        localRevProvider = new LinkedRevProvider(lrm, factFile);
+        localRevProvider = new LinkedRevProvider(lrm, factFile, ts);
     }
 
     @After
@@ -85,41 +86,67 @@ public class TestLinkedRevProvider extends AbstractTest
     }
 
     @Test
-    public void shouldSaveRevFileInAuxDirectory() throws Exception
+    public void shouldSaveRevFile() throws Exception
     {
-        InjectableFile test1 = factFile.create(dataDir, "test1");
+        Path path = Path.fromString(rootSID, "test1");
+        InjectableFile test1 = factFile.create(dataDir, path.last());
         writeFile(test1, "test1");
         LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
-            Path.fromAbsoluteString(rootSID, dataDir.getPath(), test1.getPath()), test1.getPath(),
-            new KIndex(0));
+                path, test1.getPath(), KIndex.MASTER);
         Assert.assertTrue(test1.isFile());
-        Assert.assertEquals(1, dataDir.list().length);
-        Assert.assertEquals(0, revDir.list().length);
+        assertEquals(1, dataDir.list().length);
+        assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(0, localRevProvider.listRevHistory_(path).size());
         localRevFile.save_();
         Assert.assertTrue(!test1.isFile());
-        Assert.assertEquals(0, dataDir.list().length);
-        Assert.assertEquals(1, revDir.list().length);
+        assertEquals(0, dataDir.list().length);
+        assertEquals(1, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(1, localRevProvider.listRevHistory_(path).size());
+    }
+
+    @Test
+    public void shouldSaveFileWithLongName() throws Exception
+    {
+        StringBuilder longName = new StringBuilder();
+        for (int i = 0; i < 255; ++i) longName.append('x');
+        Path path = Path.fromString(rootSID, longName.toString());
+        InjectableFile test1 = factFile.create(dataDir, path.last());
+        writeFile(test1, "test1");
+        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
+                path, test1.getPath(), KIndex.MASTER);
+        Assert.assertTrue(test1.isFile());
+        assertEquals(1, dataDir.list().length);
+        assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(0, localRevProvider.listRevHistory_(path).size());
+        localRevFile.save_();
+        Assert.assertTrue(!test1.isFile());
+        assertEquals(0, dataDir.list().length);
+        assertEquals(1, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(1, localRevProvider.listRevHistory_(path).size());
     }
 
     @Test
     public void shouldRollbackToOriginalLocation() throws Exception
     {
-        InjectableFile test1 = factFile.create(dataDir, "test1");
+        Path path = Path.fromString(rootSID, "test1");
+        InjectableFile test1 = factFile.create(dataDir, path.last());
         writeFile(test1, "test1");
         LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
-            Path.fromAbsoluteString(rootSID, dataDir.getPath(), test1.getPath()), test1.getPath(),
-            new KIndex(0));
+                path, test1.getPath(), KIndex.MASTER);
         Assert.assertTrue(test1.isFile());
-        Assert.assertEquals(1, dataDir.list().length);
-        Assert.assertEquals(0, revDir.list().length);
+        assertEquals(1, dataDir.list().length);
+        assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(0, localRevProvider.listRevHistory_(path).size());
         localRevFile.save_();
         Assert.assertTrue(!test1.isFile());
-        Assert.assertEquals(0, dataDir.list().length);
-        Assert.assertEquals(1, revDir.list().length);
+        assertEquals(0, dataDir.list().length);
+        assertEquals(1, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(1, localRevProvider.listRevHistory_(path).size());
         localRevFile.rollback_();
         Assert.assertTrue(test1.isFile());
-        Assert.assertEquals(1, dataDir.list().length);
-        Assert.assertEquals(0, revDir.list().length);
+        assertEquals(1, dataDir.list().length);
+        assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(0, localRevProvider.listRevHistory_(path).size());
     }
 
     @Test
@@ -148,33 +175,35 @@ public class TestLinkedRevProvider extends AbstractTest
 
         Date now = new Date();
         Date backThen = new Date(now.getTime() - age);
+        Path path = Path.fromString(rootSID, "test1");
         InjectableFile test1 = factFile.create(dataDir, "test1");
         writeFile(test1, "test1");
         test1.setLastModified(backThen.getTime());
 
-        localRevProvider._ts = ts;
         when(ts.getTime()).thenReturn(backThen.getTime());
 
         test1.setLastModified(backThen.getTime());
         LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
-            Path.fromAbsoluteString(rootSID, dataDir.getPath(), test1.getPath()), test1.getPath(),
-            new KIndex(0));
+                path, test1.getPath(), KIndex.MASTER);
         Assert.assertTrue(test1.isFile());
-        Assert.assertEquals(1, dataDir.list().length);
-        Assert.assertEquals(0, revDir.list().length);
+        assertEquals(1, dataDir.list().length);
+        assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(0, localRevProvider.listRevHistory_(path).size());
 
         localRevFile.save_();
         Assert.assertTrue(!test1.isFile());
-        Assert.assertEquals(0, dataDir.list().length);
-        Assert.assertEquals(1, revDir.list().length);
+        assertEquals(0, dataDir.list().length);
+        assertEquals(1, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(1, localRevProvider.listRevHistory_(path).size());
 
         when(ts.getTime()).thenReturn(now.getTime());
 
-        cleaner.run(revDir.getAbsolutePath());
-        Assert.assertEquals(1, deletedFiles.size());
+        cleaner.run(rootSID, revDir.getAbsolutePath());
+        assertEquals(1, deletedFiles.size());
         Assert.assertTrue(!test1.isFile());
-        Assert.assertEquals(0, dataDir.list().length);
-        Assert.assertEquals(0, revDir.list().length);
+        assertEquals(0, dataDir.list().length);
+        assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
+        assertEquals(0, localRevProvider.listRevHistory_(path).size());
     }
 
     private InjectableFile makeNestedDirs(InjectableFile base, int i, int len)
@@ -210,7 +239,6 @@ public class TestLinkedRevProvider extends AbstractTest
         Date now = new Date();
         Date backThen = new Date(now.getTime() - age);
 
-        localRevProvider._ts = ts;
         when(ts.getTime()).thenReturn(backThen.getTime());
 
         int numDirs = 5;
@@ -222,19 +250,20 @@ public class TestLinkedRevProvider extends AbstractTest
             InjectableFile dir = makeNestedDirs(dataDir, di, dirLen);
             for (int fi = 0; fi < numFiles; ++fi) {
                 String name = "f" + fi;
+                Path path = Path.fromString(rootSID, name);
                 InjectableFile file = factFile.create(dir, name);
                 writeFile(file, name);
                 file.setLastModified(backThen.getTime());
                 LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
-                    Path.fromAbsoluteString(rootSID, dataDir.getPath(), file.getPath()), file.getPath(),
-                    new KIndex(0));
+                        path, file.getPath(), KIndex.MASTER);
                 localRevFile.save_();
             }
         }
 
         when(ts.getTime()).thenReturn(now.getTime());
 
-        LinkedRevProvider.Cleaner.RunData runData = cleaner.new RunData(revDir.getAbsolutePath());
+        LinkedRevProvider.Cleaner.RunData runData =
+                cleaner.new RunData(rootSID, revDir.getAbsolutePath());
         runData._sorter.setMaxSize(10);
         runData.run();
         listRecursively(rootDir);
@@ -244,7 +273,7 @@ public class TestLinkedRevProvider extends AbstractTest
     {
         PrintWriter pw = new PrintWriter(file.getImplementation());
         try {
-            pw.print("test1");
+            pw.print(contents);
             if (pw.checkError()) throw new IOException("error writing " + file);
         } finally {
             pw.close();

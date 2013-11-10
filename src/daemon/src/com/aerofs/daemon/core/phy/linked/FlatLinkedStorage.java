@@ -51,10 +51,11 @@ public class FlatLinkedStorage extends LinkedStorage
             IgnoreList il,
             SharedFolderTagFileAndIcon sfti,
             LocalACL lacl,
-            IOSUtil os)
+            IOSUtil os,
+            LinkedRevProvider revProvider)
     {
         super(factFile, factFIDMan, lrm, rh, stores, sidx2sid, cfgAbsRoots,
-                cfgStoragePolicy, il, sfti);
+                cfgStoragePolicy, il, sfti, revProvider);
         _os = os;
         _lacl = lacl;
         _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.USERS_DIR));

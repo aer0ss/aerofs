@@ -76,7 +76,8 @@ public class LinkedStorage implements IPhysicalStorage
             CfgAbsRoots cfgAbsRoots,
             CfgStoragePolicy cfgStoragePolicy,
             IgnoreList il,
-            SharedFolderTagFileAndIcon sfti)
+            SharedFolderTagFileAndIcon sfti,
+            LinkedRevProvider revProvider)
     {
         _il = il;
         _rh = rh;
@@ -88,7 +89,7 @@ public class LinkedStorage implements IPhysicalStorage
         _stores = stores;
         _sidx2sid = sidx2sid;
         _cfgAbsRoots = cfgAbsRoots;
-        _revProvider = new LinkedRevProvider(lrm, factFile);
+        _revProvider = revProvider;
     }
 
     @Override
@@ -240,7 +241,7 @@ public class LinkedStorage implements IPhysicalStorage
             @Override
             public void run_() throws IOException
             {
-                if (rev != null) rev.rollback_();
+                rev.rollback_();
             }
         });
 

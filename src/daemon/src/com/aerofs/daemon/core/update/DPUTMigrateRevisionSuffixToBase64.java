@@ -4,14 +4,15 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.RevisionSuffix;
+import com.aerofs.base.Base64;
+import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.RevisionInfo;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -27,6 +28,9 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
     private final String DATE_FORMAT = "yyyyMMdd_HHmmss_SSS";
     private final DateFormat _dateFormat = new SimpleDateFormat(DATE_FORMAT);
     private final FrequentDefectSender _fds = new FrequentDefectSender();
+
+    // separates file name from encoded revision suffix
+    private static final char REVISION_SUFFIX_SEPARATOR = '.';
 
     DPUTMigrateRevisionSuffixToBase64()
     {
@@ -55,10 +59,14 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
         } catch (ParseException e) {
             return false;
         }
-        RevisionSuffix suffix = new RevisionSuffix(kidx, mtime, 0);
         try {
+            ByteBuffer buf = ByteBuffer.allocate(RevisionInfo.DECODED_LENGTH);
+            buf.putInt(kidx);
+            buf.putLong(mtime);
+            buf.putLong(0);
+            String encoded = Base64.encodeBytes(buf.array(), Base64.URL_SAFE);
             String newName = name.substring(0, posHyphen)
-                    + RevisionSuffix.SEPARATOR + suffix.encoded();
+                    + REVISION_SUFFIX_SEPARATOR + encoded;
             FileUtil.moveInSameFileSystem(f, new File(f.getParent(), newName));
         } catch (IOException e) {
             _fds.logSendAsync("Failed to fix revision: " + f.getAbsolutePath(), e);
@@ -84,7 +92,6 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        fixFolder(new File(Util.join(DPUTMigrateAuxRoot.getOldAuxRoot(),
-                LibParam.AuxFolder.REVISION._name)));
+        fixFolder(new File(Util.join(DPUTMigrateAuxRoot.getOldAuxRoot(), "r")));
     }
 }
