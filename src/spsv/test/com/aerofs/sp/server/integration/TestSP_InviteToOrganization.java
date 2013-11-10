@@ -6,7 +6,6 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -103,9 +102,8 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
     public void shouldSendEmailWithNoSignUpCodeForNewAutoProvisionedUser()
             throws Exception
     {
-        when(authenticator.isAutoProvisioned(any(User.class))).thenReturn(true);
-
         User user = newUser();
+        when(authenticator.isLocallyManaged(user.id())).thenReturn(false);
         service.inviteToOrganization(user.id().getString());
 
         verify(factEmailer).createSignUpInvitationEmailer(eq(USER_1), eq(user),

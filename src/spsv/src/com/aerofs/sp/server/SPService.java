@@ -93,8 +93,7 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
-import com.aerofs.sp.authentication.IAuthenticator;
-import com.aerofs.sp.authentication.IAuthenticator.CredentialFormat;
+import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
@@ -200,7 +199,7 @@ public class SPService implements ISPService
     private final Analytics _analytics;
 
     private final IdentitySessionManager _identitySessionManager;
-    private IAuthenticator _authenticator;
+    private Authenticator _authenticator;
 
     // Remember to udpate text in team_members.mako, team_settings.mako, and pricing.mako when
     // changing this number.
@@ -230,7 +229,7 @@ public class SPService implements ISPService
             DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
             Analytics analytics, IdentitySessionManager identitySessionManager,
-            IAuthenticator authenticator, ISharedFolderRules sharedFolderRules,
+            Authenticator authenticator, ISharedFolderRules sharedFolderRules,
             SharedFolderNotificationEmailer sfnEmailer)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
@@ -1171,19 +1170,18 @@ public class SPService implements ISPService
         assert !invitee.exists();
 
         String code;
-        if (_authenticator.isAutoProvisioned(invitee)) {
-            // No signup code is needed for auto-provisioned users. They can simply sign in using
-            // LDAP or OpenID credentials.
+        if (_authenticator.isLocallyManaged(invitee.id())) {
+            code = invitee.addSignUpCode();
+            _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+        } else {
+            // No signup code is needed for auto-provisioned users.
+            // They can simply sign in using their externally-managed account credentials.
             code = null;
 
-            // We can't set up reminder emails as what the other conditional branch does, because
+            // We can't set up reminder emails as we do for locall-managed users, because
             // reminder email implementation requires valid signup codes. We can implement
             // different reminder emails if we'd like. In doing that, we need to remove the
             // reminder when creating the user during auto-provisioning.
-
-        } else {
-            code = invitee.addSignUpCode();
-            _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
         }
 
         InvitationEmailer emailer = _factInvitationEmailer.createSignUpInvitationEmailer(inviter,
@@ -1371,7 +1369,8 @@ public class SPService implements ISPService
         // (via the setup UI).
         if (!OPEN_SIGNUP && _factUser.hasUsers()) {
             throw new ExNoPerm("invitation-only sign up");
-        } else if (_authenticator.isAutoProvisioned(user)) {
+        }
+        if (!_authenticator.isLocallyManaged(user.id())) {
             throw new ExNoPerm("auto-provisioned users don't need to request for sign-up");
         }
 
@@ -1888,7 +1887,7 @@ public class SPService implements ISPService
             // the mode is Hybrid Cloud...
             // This call needs to go away eventually, review after January 2014.
             _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans,
-                    CredentialFormat.LEGACY);
+                    Authenticator.CredentialFormat.LEGACY);
         }
 
         // Set the session cookie.
@@ -1912,8 +1911,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        _passwordManagement.sendPasswordResetEmail(
-                _factUser.createFromExternalID(userIdString), _authenticator);
+        _passwordManagement.sendPasswordResetEmail(_factUser.createFromExternalID(userIdString));
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -2068,7 +2066,7 @@ public class SPService implements ISPService
         // the mode is Hybrid Cloud).
         // Review after January 2014
         _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans,
-                CredentialFormat.LEGACY);
+                Authenticator.CredentialFormat.LEGACY);
 
         // Set the session cookie.
         _sessionUser.setUser(user);
@@ -2116,7 +2114,8 @@ public class SPService implements ISPService
     private User authByCredentials(String userId, ByteString cred) throws Exception
     {
         User user = _factUser.createFromExternalID(userId);
-        _authenticator.authenticateUser(user, cred.toByteArray(), _sqlTrans, CredentialFormat.TEXT);
+        _authenticator.authenticateUser(
+                user, cred.toByteArray(), _sqlTrans, Authenticator.CredentialFormat.TEXT);
         l.info("SI: cred auth ok {}", user.id().getString());
         return user;
     }

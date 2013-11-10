@@ -15,6 +15,7 @@ import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
+import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.lib.user.User;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnection;
@@ -50,22 +51,20 @@ import java.sql.SQLException;
  *  Notes:
  *      - LDAP errors should all be wrapped in ExBadCredential or ExServiceError rather than
  *      letting callers know about internals of the LDAP library used here.
+ *
+ * TODO: This class is only public for the verifier servlet; rework to make this package-private
  */
-public class LdapAuthenticator implements IAuthenticator
+public class LdapAuthority implements IAuthority
 {
     /**
      * Initialize this authenticator with a provisioning strategy.
      */
-    public LdapAuthenticator(LdapConfiguration cfg)
-    {
-        _cfg = cfg;
-    }
+    public LdapAuthority(LdapConfiguration cfg) { _cfg = cfg; }
 
     /**
      * Test the LDAP connection.
      */
-    public void testConnection()
-        throws ExExternalServiceUnavailable
+    public void testConnection() throws ExExternalServiceUnavailable
     {
         // For now to test the connection we just verify a call to the getPool() function works.
         // In the future we can query users, and do other fancy things to verify sanity.
@@ -90,26 +89,36 @@ public class LdapAuthenticator implements IAuthenticator
     }
 
     @Override
-    public boolean isAutoProvisioned(User user)
+    public boolean managesLocalCredential() { return false; }
+
+    @Override
+    public boolean isInternalUser(UserID userID) throws ExExternalServiceUnavailable
     {
-        // All the users are auto provisioned
-        return true;
+        return canAuthenticate(userID);
     }
 
     /**
      * Determine if the given user can be handled by this authenticator.
-     *
-     * @param user user record to check
+     * @throws ExExternalServiceUnavailable The external authority cannot be reached
      */
-    public boolean canAuthenticate(User user)
+    @Override
+    public boolean canAuthenticate(UserID userID) throws ExExternalServiceUnavailable
+    {
+        try {
+            return canAuthenticateThrows(userID);
+        } catch (LDAPSearchException e) {
+            _l.warn("LDAP search exception", LogUtil.suppress(e));
+            return false;
+        }
+    }
+
+    private boolean canAuthenticateThrows(UserID userID)
             throws ExExternalServiceUnavailable, LDAPSearchException
     {
         LDAPConnectionPool pool = getPool();
         LDAPConnection conn = getConnectionFromPool(pool);
-
         try {
-            return conn
-                    .search(_cfg.USER_BASE, _scope, buildFilter(user.id()), _cfg.USER_RDN)
+            return conn.search(_cfg.USER_BASE, _scope, buildFilter(userID), _cfg.USER_RDN)
                     .getEntryCount() > 0;
         } finally {
             getPool().releaseAndReAuthenticateConnection(conn);
@@ -170,10 +179,8 @@ public class LdapAuthenticator implements IAuthenticator
             //   for objects that match "buildFilter(userId)",
             //   and returning for each object the following fields:
             //     USER_FIRSTNAME, USER_LASTNAME
-            return conn.search(
-                    _cfg.USER_BASE, _scope,
-                    buildFilter(userId),
-                    _cfg.USER_FIRSTNAME, _cfg.USER_LASTNAME);
+            return conn.search(_cfg.USER_BASE, _scope, buildFilter(userId), _cfg.USER_FIRSTNAME,
+                    _cfg.USER_LASTNAME);
         } catch (LDAPException lde) {
             _l.error("Error searching on LDAP server", lde);
             pool.releaseDefunctConnection(conn);
@@ -349,7 +356,7 @@ public class LdapAuthenticator implements IAuthenticator
         }
     }
 
-    private static Logger               _l = LoggerFactory.getLogger(LdapAuthenticator.class);
+    private static Logger               _l = LoggerFactory.getLogger(LdapAuthority.class);
     volatile private LDAPConnectionPool _pool = null;
     private SearchScope                 _scope = SearchScope.SUB;
     private LdapConfiguration           _cfg;

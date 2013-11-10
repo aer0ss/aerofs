@@ -7,30 +7,19 @@ package com.aerofs.sp.authentication;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
+import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.lib.user.User;
-import com.unboundid.ldap.sdk.LDAPSearchException;
 
 import java.sql.SQLException;
 
 /**
- * An authenticator type that will throw an exception if the given user/credential pair can not
- * be authenticated.
+ * An authority is a class that can authenticate a user/credential pair.
  */
-public interface IAuthenticator
+interface IAuthority
 {
-    /** Legacy support - No new users of this enum!
-     * This is used to indicate backwards-compatible mode for authenticator
-     * FIXME: Remove this enum when we can drop support for client-side SCrypt. Review January 2014
-     */
-    public static enum CredentialFormat
-    {
-        TEXT,
-        LEGACY
-    }
-
     // FIXME: Remove "format" arg when we drop support for client-side SCrypt. Review January 2014
     // Ok; I don't like the transaction interface being passed in here, it feels like poor
-    // cohesion. However, the various authenticators will have different SQL transaction
+    // cohesion. However, the various authorities will have different SQL transaction
     // requirements depending on whether they look into the User.exists() field before or after
     // an expensive operation (like external authentication)
     /**
@@ -46,20 +35,36 @@ public interface IAuthenticator
      * @param trans A transaction class that can be begin'ed and commit'ed.
      * @throws Exception The user cannot be verified.
      */
-    public void authenticateUser(
+    void authenticateUser(
             User user, byte[] credential,
             IThreadLocalTransaction<SQLException> trans,
             CredentialFormat format)
             throws Exception;
 
     /**
-     * Check if the given userId is able to be automatically provisioned on first signin.
+     * Return true if an account authenticated by this authority has a local credential.
      *
-     * @return whether the user can be automatically provisioned on first signin (i.e. without
-     * explicitly requesting for signup or being invited).
+     * Locally-managed accounts require a signup flow.
      *
-     * TODO (WW) support OpenID
+     * Locally-managed accounts have a credential that is stored and owned by SP; which also
+     * implies that credential is changeable.
      */
-    public boolean isAutoProvisioned(User user)
-            throws ExExternalServiceUnavailable, LDAPSearchException;
+    boolean managesLocalCredential();
+
+    /**
+     * Return true if this authority can authenticate the given user.
+     */
+    boolean canAuthenticate(UserID userID) throws ExExternalServiceUnavailable;
+
+    /**
+     * Check if the given user is an internal user. NOTE that "internal" refers to whether the
+     * accountholder belongs to the primary organization. This influences things like warnings
+     * for shared-folder invitations, signup, etc. It does not necessarily tell you _where_
+     * their account is managed.
+     *
+     * IMPORTANT: the internal/external axis is not always related to where the account is managed.
+     *
+     * @see IAuthority#managesLocalCredential()
+     */
+    boolean isInternalUser(UserID userID) throws ExExternalServiceUnavailable;
 }
