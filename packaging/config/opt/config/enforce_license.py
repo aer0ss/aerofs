@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 LICENSE_FILE_PATH = "/etc/aerofs/license.gpg"
-SERVICES_TO_STOP = [verkehr", "zephyr"]
+SERVICES_TO_STOP = ["verkehr", "zephyr"]
 
 def shut_down_services_and_exit():
     for service in SERVICES_TO_STOP:
