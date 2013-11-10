@@ -18,6 +18,10 @@
         ##
         ## @param onComplete it will be called with execution id as the parameter
         function enqueueBootstrapTask(task, onComplete, onFailure) {
+            enqueueBootstrapTaskImpl(task, onComplete, onFailure, false);
+        }
+
+        function enqueueBootstrapTaskImpl(task, onComplete, onFailure, retry) {
             $.post('${request.route_path('json_enqueue_bootstrap_task')}', {
                 ${csrf.token_param()}
                 task: task
@@ -25,10 +29,22 @@
                 var eid = resp['execution_id'];
                 console.log("bootstrap task " + eid + " enqueued: " + task);
                 onComplete(eid);
-            }).fail(function(xhr) {
-                console.log("enqueue bootstrap task failed");
-                showErrorMessageFromResponse(xhr);
-                onFailure();
+            }).fail(function(xhr, textStatus, errorThrown) {
+                if (!retry && xhr.readyState == 0 && xhr.status == 0) {
+                    ## See comments in pollBootstrapTask() for detail
+                    console.log("enqueue bootstrap task readyState == 0. retry.");
+                    ## Wait a bit to avoid the same error on the retry.
+                    ## Self note: without the delay Chrome's JS console shows
+                    ## an error along the line of ""can't load resources".
+                    setTimeout(function () {
+                        enqueueBootstrapTaskImpl(task, onComplete, onFailure, true);
+                    }, 3000);
+                } else {
+                    console.log("enqueue bootstrap task failed: " +
+                        xhr.status + " " + textStatus + " " + errorThrown);
+                    showErrorMessageFromResponse(xhr);
+                    onFailure();
+                }
             });
         }
 
@@ -39,15 +55,17 @@
                 $.get('${request.route_path('json_get_bootstrap_task_status')}', {
                     execution_id: eid
                 }).done(function(resp) {
-                    if (resp['status'] == 'success') {
+                    var status = resp['status'];
+                    if (status == 'success') {
                         console.log("bootstrap task " + eid + " complete");
                         window.clearInterval(interval);
                         onComplete();
                     } else {
-                        console.log("bootstrap task " + eid + " in progress");
+                        console.log("bootstrap task " + eid + " in progress. status: " +
+                            status);
                         ## TODO (WW) add timeout?
                     }
-                }).fail(function(xhr) {
+                }).fail(function(xhr, textStatus, errorThrown) {
                     ## According to stack overflow, readyState == 0 can occur when you cancel your
                     ## ajax request before it completes, when you navigate to another page or when
                     ## you refresh the page.
@@ -62,7 +80,8 @@
                     if (xhr.readyState == 0 && xhr.status == 0) {
                         console.log("get bootstrap task status readyState == 0. retry.");
                     } else {
-                        console.log("get bootstrap task status failed");
+                        console.log("get bootstrap task status failed: " +
+                                xhr.status + " " + textStatus + " " + errorThrown);
                         window.clearInterval(interval);
                         showErrorMessageFromResponse(xhr);
                         onFailure();
