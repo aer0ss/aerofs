@@ -29,7 +29,7 @@ fi
 echo ">>> Reading backup file..."
 
 tempdir=$(mktemp -d /tmp/aerofs-db-backup.XXXXXXXXX)
-cp "$file" "$tempdir"
+cp -a "$file" "$tempdir"
 
 pushd $tempdir 1>/dev/null 2>/dev/null
 tar xf $file
@@ -61,7 +61,7 @@ fi
 echo ">>> Restoring redis database..."
 service redis-server stop 1>/dev/null 2>/dev/null
 rm -f /data/redis/*
-cp aerofs-db-backup/redis.aof /data/redis
+cp -a aerofs-db-backup/redis.aof /data/redis
 service redis-server start 1>/dev/null 2>/dev/null
 
 echo ">>> Restoring mysql database..."
@@ -73,6 +73,9 @@ rm -rf /opt/ca/prod
 mkdir -p /opt/ca/prod
 cp -a aerofs-db-backup/ca-files/* /opt/ca/prod
 service ca-server start 1>/dev/null 2>/dev/null
+
+echo ">>> Restoring configuration properties..."
+cp -a aerofs-db-backup/external.properties /opt/config/properties
 
 popd 1>/dev/null 2>/dev/null
 
