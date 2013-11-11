@@ -1,7 +1,6 @@
 from datetime import datetime
 import logging
 from pyramid.response import Response
-from pyramid.security import NO_PERMISSION_REQUIRED
 
 from pyramid.view import view_config
 
@@ -38,7 +37,7 @@ def download_backup_file(request):
 
     Also see http://docs.pylonsproject.org/projects/pyramid_cookbook/en/latest/static_assets/files.html for alternatives to send file content as responses.
     """
-    # The brower will use this name as the name for the downloaded file
+    # The browser will use this name as the name for the downloaded file
     name = 'aerofs-backup_{}.dat'.format(datetime.today().strftime('%Y%m%d-%H%M%S'))
     f = open(BACKUP_FILE_PATH)
     return Response(content_type='application/x-compressed', app_iter=f,

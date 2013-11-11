@@ -1,5 +1,4 @@
 import logging
-from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 from aerofs_common import bootstrap
 from aerofs_common.bootstrap import Status
