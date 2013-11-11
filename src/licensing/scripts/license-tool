@@ -45,6 +45,8 @@ def build_tool(args):
     d["license_type"] = "normal"
     customer_id_override = prompt_for("Enter customer id (empty string will use a random one): ")
     d["customer_id"] = customer_id_override if len(customer_id_override) > 0 else str(random.Random().randint(0, 2 ** 24 - 1))
+    company = prompt_for("Enter company name: ")
+    d["license_company"] = company
     license_days_s = prompt_for("Enter number of days license should be valid for: ")
     license_days = int(license_days_s)
     license_expiry_date = (datetime.datetime.today() + datetime.timedelta(days=license_days)).date().isoformat()
