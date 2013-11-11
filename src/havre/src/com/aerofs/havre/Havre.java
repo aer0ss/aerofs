@@ -42,7 +42,9 @@ public class Havre
             @Override
             public void uncaughtException(Thread t, Throwable e)
             {
-                l.error("uncaught exception thd:{} err:{} - kill system", t.getName(), e, e);
+                System.err.println("uncaught exception thd:" + t.getName()
+                        + " err:" + e + " - kill system");
+                e.printStackTrace(System.err);
                 System.exit(1);
             }
         });
