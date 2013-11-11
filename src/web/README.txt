@@ -15,7 +15,7 @@ Known issues:
     - Sign in does not work when running in prod mode (cookie issue).
 
 # To run test cases:
-cd ~/repos/aerofs/src/web && ~/env/bin/python setup.py test -q
+cd ~/repos/aerofs/src/web && ~/env/bin/python test_all.py
 
 Creating new modules for AeroFS website
 ================================================
