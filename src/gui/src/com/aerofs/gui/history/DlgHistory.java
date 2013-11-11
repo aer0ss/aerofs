@@ -103,10 +103,9 @@ public class DlgHistory extends AeroFSDialog
 
         final Shell shell = sh;
         // setup dialog controls
-        GridLayout grid = new GridLayout(1, false);
+        GridLayout grid = new GridLayout(2, false);
         grid.marginHeight = GUIParam.MARGIN;
         grid.marginWidth = GUIParam.MARGIN;
-        grid.horizontalSpacing = 4;
         grid.verticalSpacing = GUIParam.VERTICAL_SPACING;
         shell.setMinimumSize(600, 400);
         shell.setSize(600, 400);
@@ -114,7 +113,7 @@ public class DlgHistory extends AeroFSDialog
 
         // Use a SashFrom to allow the user to adjust the relative width of version tree and table
         SashForm sashForm = new SashForm(shell, SWT.HORIZONTAL | SWT.SMOOTH);
-        GridData sashData = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+        GridData sashData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
         sashData.widthHint = 600;
         sashData.heightHint = 350;
         sashForm.setLayoutData(sashData);
@@ -134,17 +133,6 @@ public class DlgHistory extends AeroFSDialog
         _statusLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
         createVersionTable(_group);
-
-        Link historyLink = new Link(_group, SWT.NONE);
-        historyLink.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, true, false));
-        historyLink.setText("\n<a>Learn more about Sync History</a>");
-        historyLink.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent selectionEvent)
-            {
-                GUIUtil.launch("https://support.aerofs.com/entries/23753136");
-            }
-        });
 
         _actionButtons = GUIUtil.newPackedButtonContainer(_group);
         _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
@@ -237,9 +225,15 @@ public class DlgHistory extends AeroFSDialog
         // NOTE: must be done AFTER children have been added to the SashForm
         sashForm.setWeights(new int[] {1, 2});
 
+        Link lnkHistory = new Link(shell, SWT.NONE);
+        lnkHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+        lnkHistory.setText("<a>Learn more about Sync History</a>");
+        lnkHistory.addSelectionListener(
+                GUIUtil.createUrlLaunchListener("https://support.aerofs.com/entries/23753136"));
+
         // Create a composite that will hold the buttons row
         Composite buttons = GUIUtil.newPackedButtonContainer(shell);
-        buttons.setLayoutData(new GridData(SWT.END, SWT.CENTER, true, false, 2, 1));
+        buttons.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
 
         Button refreshBtn = GUIUtil.createButton(buttons, SWT.NONE);
         refreshBtn.setText("Refresh");
@@ -410,10 +404,10 @@ public class DlgHistory extends AeroFSDialog
         ((RowData)b.getLayoutData()).exclude = !visible;
     }
 
-    private void setCompositeVisible(Composite c, boolean visible)
+    private void setRevTableVisible(boolean visible)
     {
-        c.setVisible(visible);
-        ((GridData)c.getLayoutData()).exclude = !visible;
+        _revTableWrap.setVisible(visible);
+        ((GridData)_revTableWrap.getLayoutData()).exclude = !visible;
     }
 
     private void refreshVersionTable(final TreeItem item)
@@ -423,7 +417,7 @@ public class DlgHistory extends AeroFSDialog
             boolean ok = fillVersionTable(_revTable, index, _statusLabel);
             if (!ok) {
                 _actionButtons.setVisible(false);
-                setCompositeVisible(_revTableWrap, false);
+                setRevTableVisible(false);
                 _statusLabel.setText("No old versions available for this file");
                 _group.layout(true, true);
                 return;
@@ -438,7 +432,7 @@ public class DlgHistory extends AeroFSDialog
             setButtonVisible(_saveBtn, ok);
             setButtonVisible(_deleteBtn, ok);
             ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.RIGHT;
-            setCompositeVisible(_revTableWrap, true);
+            setRevTableVisible(true);
             _group.layout(true, true);
         } else {
             if (_restoreBtn != null) _restoreBtn.setText("Restore Deleted Files...");
@@ -468,7 +462,7 @@ public class DlgHistory extends AeroFSDialog
                 ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.LEFT;
             }
             _revTable.removeAll();
-            setCompositeVisible(_revTableWrap, false);
+            setRevTableVisible(false);
             _group.layout(true, true);
         }
     }
