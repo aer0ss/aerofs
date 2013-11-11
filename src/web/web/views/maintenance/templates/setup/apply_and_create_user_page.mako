@@ -219,11 +219,11 @@ ${common.render_previous_button(page)}
     ## Issue 1: certificate change in the middle of bootstrap
     ## ======
     ##
-    ## the user may uploads new browser
-    ## certificates, and part of bootstrap is to restart nginx which is a
-    ## front-end of the uwsgi server. On restart, nginx will server Web requests
-    ## with the new browser cert. This may cause subsequent AJAX calls (including
-    ## the call in finalize() below) to fail if:
+    ## the user may uploads a new browser certificates, and part of bootstrap is
+    ## to restart nginx which is a front-end of the uwsgi server. On restart,
+    ## nginx will serve web requests with the new browser cert. This may cause
+    ## subsequent AJAX calls (including the call in finalize() below) to fail
+    ## if:
     ##
     ##  1. the new browser cert provided by the user is self-signed, or
     ##  2. the cert's cname doesn't match the current page's hostname, which is
@@ -251,12 +251,10 @@ ${common.render_previous_button(page)}
     ## several times, then we assume the bootstrap is done and it's time to
     ## reload the page. (The call may occasionally fail with code 0 due to
     ## restarts of other services.) If nginx restart doesn't cause AJAX calls to
-    ## fail, we use normal returns from json_setup_poll() to determin completion.
+    ## fail, we use normal returns from json_setup_poll() to determine
+    ## completion.
     ##
-    ## TODO (WW) a better alternative? split the bootstrap process into two
-    ## parts. The first part only restarts nginx, and the second does the
-    ## rest. JS calls the two parts separately. This can avoid forcing nginx
-    ## restart to be the last step.
+    ## TODO (WW) a better alternative?
 
     function pollBootstrap(eid, licenseShasum) {
         ## the number of consecutive status-code-0 responses. See comments above
