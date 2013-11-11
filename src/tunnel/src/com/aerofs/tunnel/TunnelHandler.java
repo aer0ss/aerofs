@@ -217,6 +217,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e)
     {
+        l.debug("disconnect {}", this);
         _provider.foreach(new Function<VirtualChannel, Void>() {
             @Override
             public Void apply(VirtualChannel c)
@@ -232,6 +233,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
     {
+        l.debug("close {}", this);
         Preconditions.checkState(_provider.isEmpty());
     }
 

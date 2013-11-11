@@ -52,8 +52,10 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
         {
             l.info("connected {}", ctx.getChannel());
             connected(ctx.getChannel());
-            Preconditions.checkState(_watchers.put(ctx.getChannel(),
-                    new Watcher(ctx.getChannel().isWritable())) == null);
+            synchronized (_watchers) {
+                Preconditions.checkState(_watchers.put(ctx.getChannel(),
+                        new Watcher(ctx.getChannel().isWritable())) == null);
+            }
         }
 
         @Override
@@ -61,7 +63,9 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
         {
             l.info("disconnected {}", ctx.getChannel());
             disconnected(ctx.getChannel());
-            Preconditions.checkNotNull(_watchers.remove(ctx.getChannel()));
+            synchronized (_watchers) {
+                Preconditions.checkNotNull(_watchers.remove(ctx.getChannel()));
+            }
         }
 
         @Override

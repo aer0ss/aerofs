@@ -57,10 +57,10 @@ public class VirtualChannel extends AbstractChannel
                 case CLOSE:
                 case UNBIND:
                 case DISCONNECT:
-                    c.onDisconnect(c, future);
+                    c.onDisconnect(future);
                     break;
                 case INTEREST_OPS:
-                    c.onInterestChanged(c, (Integer)value, future);
+                    c.onInterestChanged((Integer)value, future);
                     break;
                 default:
                     break;
@@ -149,10 +149,10 @@ public class VirtualChannel extends AbstractChannel
 
     void fireDisconnected()
     {
-        l.info("disconnecting {}", this);
+        l.debug("disconnecting {}", this);
         _connected.set(false);
         Channels.fireChannelDisconnected(this);
-        l.info("closing {}", this);
+        l.debug("closing {}", this);
         Channels.fireChannelClosed(this);
         setClosed();
     }
@@ -175,13 +175,13 @@ public class VirtualChannel extends AbstractChannel
         }
     }
 
-    private void onDisconnect(VirtualChannel c, ChannelFuture future)
+    private void onDisconnect(ChannelFuture future)
     {
-        _tunnel.onDisconnect(c, future);
+        _tunnel.onDisconnect(this, future);
     }
 
-    private void onInterestChanged(VirtualChannel c, int ops, ChannelFuture future)
+    private void onInterestChanged(int ops, ChannelFuture future)
     {
-        _tunnel.onInterestChanged(c, ops, future);
+        _tunnel.onInterestChanged(this, ops, future);
     }
 }
