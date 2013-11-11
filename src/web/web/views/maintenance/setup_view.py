@@ -1,5 +1,4 @@
 # Views for site setup. Related document: docs/design/pyramid_auth.md
-#
 
 import logging
 import shutil
@@ -28,6 +27,7 @@ from web.views.login.login_view import URL_PARAM_EMAIL
 
 log = logging.getLogger("web")
 
+
 # ------------------------------------------------------------------------
 # Verification interface constants.
 # ------------------------------------------------------------------------
@@ -50,11 +50,13 @@ _SMTP_VERIFICATION_SMTP_ENABLE_TLS = "email_sender_public_enable_tls"
 # LDAP verification servlet URL.
 _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
 
+
 # ------------------------------------------------------------------------
 # Session keys
 # ------------------------------------------------------------------------
 
 _SESSION_KEY_EMAIL_VERIFICATION_CODE = 'email_verification_code'
+
 
 # ------------------------------------------------------------------------
 # Settings utilities
@@ -66,6 +68,7 @@ def _get_configuration():
     configuration.fetch_and_populate(properties)
 
     return properties
+
 
 # ------------------------------------------------------------------------
 # Setup View
@@ -87,6 +90,7 @@ def setup(request):
         log.info("license is invalid. ask for license")
         return _setup_common(request, conf, True)
 
+
 @view_config(
     route_name='setup_authorized',
     permission='maintain',
@@ -94,6 +98,7 @@ def setup(request):
 )
 def setup_authorized(request):
     return _setup_common(request, _get_configuration(), False)
+
 
 def _setup_common(request, conf, license_page_only):
     # Site setup is available only in private deployment
@@ -131,14 +136,17 @@ def _setup_common(request, conf, license_page_only):
         'url_param_license_shasum': URL_PARAM_KEY_LICENSE_SHASUM
     }
 
+
 def _get_default_support_email(hostname):
-    if not hostname: hostname = 'localhost'
+    if not hostname:
+        hostname = 'localhost'
 
     # Get the hostname excluding the first level (left-most) subdomain. e.g.
     # given "share.google.com" return "google.com". See the test code for the
     # exact spec.
     match = re.search(r'^[^\.]+\.(.+)', hostname)
     return 'support@{}'.format(match.group(1) if match else hostname)
+
 
 # ------------------------------------------------------------------------
 # License
@@ -154,12 +162,12 @@ def _get_default_support_email(hostname):
 )
 def json_set_license(request):
     log.info("set license")
-    if not set_license_file_and_attach_shasum_to_session(request,
-            request.params['license']):
+    if not set_license_file_and_attach_shasum_to_session(request, request.params['license']):
         error("The provided license file is invalid.")
 
     headers = remember_license_based_login(request)
     return HTTPOk(headers=headers)
+
 
 @view_config(
     route_name='json_get_license_shasum_from_session',
@@ -173,6 +181,7 @@ def json_get_license_shasum_from_session(request):
     return {
         'shasum': get_license_shasum_from_session(request)
     }
+
 
 # ------------------------------------------------------------------------
 # Hostname
@@ -200,6 +209,7 @@ def json_setup_hostname(request):
 
     return {}
 
+
 def _is_valid_ipv4_address(string):
     import socket
     try:
@@ -208,6 +218,7 @@ def _is_valid_ipv4_address(string):
     except socket.error:
         return False
 
+
 def _is_hostname_resolvable(hostname):
     try:
         socket.gethostbyname(hostname)
@@ -215,18 +226,19 @@ def _is_hostname_resolvable(hostname):
     except socket.error:
         return False
 
+
 # ------------------------------------------------------------------------
 # Email
 # ------------------------------------------------------------------------
 
 def _parse_email_request(request):
     if request.params['email-server'] == 'remote':
-        host       = request.params['email-sender-public-host']
-        port       = request.params['email-sender-public-port']
-        username   = request.params['email-sender-public-username']
-        password   = request.params['email-sender-public-password']
+        host = request.params['email-sender-public-host']
+        port = request.params['email-sender-public-port']
+        username = request.params['email-sender-public-username']
+        password = request.params['email-sender-public-password']
         # N.B. if a checkbox is unchecked, its value is not included in the request. This is
-        # the way that javascript's .serialize() works, apparently. So, we use the presence
+        # the way that JavaScript's .serialize() works, apparently. So, we use the presence
         # of the param as its value.
         enable_tls = 'email-sender-public-enable-tls' in request.params
     else:
@@ -239,6 +251,7 @@ def _parse_email_request(request):
 
     support_address = request.params['base-www-support-email-address']
     return host, port, username, password, enable_tls, support_address
+
 
 def _send_verification_email(from_email, to_email, code, host, port,
                              username, password, enable_tls):
@@ -255,6 +268,7 @@ def _send_verification_email(from_email, to_email, code, host, port,
 
     return requests.post(_SMTP_VERIFICATION_URL, data=payload)
 
+
 @view_config(
     route_name='json_verify_smtp',
     permission='maintain',
@@ -264,21 +278,16 @@ def _send_verification_email(from_email, to_email, code, host, port,
 def json_verify_smtp(request):
     host, port, username, password, enable_tls, support_address = _parse_email_request(request)
 
-    r = _send_verification_email(
-            support_address,
-            request.params['verification-to-email'],
-            request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE],
-            host,
-            port,
-            username,
-            password,
-            enable_tls)
+    r = _send_verification_email(support_address, request.params['verification-to-email'],
+                                 request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE], host, port,
+                                 username, password, enable_tls)
 
     if r.status_code != 200:
         log.error("send stmp verification email returns {}".format(r.status_code))
         error("Unable to send email. Please check your SMTP settings.")
 
     return {}
+
 
 @view_config(
     route_name='json_setup_email',
@@ -299,6 +308,7 @@ def json_setup_email(request):
 
     return {}
 
+
 # ------------------------------------------------------------------------
 # Certificate
 # ------------------------------------------------------------------------
@@ -306,8 +316,10 @@ def json_setup_email(request):
 def _is_certificate_formatted_correctly(certificate_filename):
     return call(["/usr/bin/openssl", "x509", "-in", certificate_filename, "-noout"]) == 0
 
+
 def _is_key_formatted_correctly(key_filename):
     return call(["/usr/bin/openssl", "rsa", "-in", key_filename, "-noout"]) == 0
+
 
 def _write_pem_to_file(pem_string):
     os_handle, filename = tempfile.mkstemp()
@@ -315,20 +327,24 @@ def _write_pem_to_file(pem_string):
     os.close(os_handle)
     return filename
 
+
 def _get_modulus_helper(cmd):
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
     return stdout.split('=')[1]
+
 
 # Expects as input a filename pointing to a valid PEM certtificate file.
 def _get_modulus_of_certificate_file(certificate_filename):
     cmd = ["/usr/bin/openssl", "x509", "-noout", "-modulus", "-in", certificate_filename]
     return _get_modulus_helper(cmd)
 
+
 # Expects as input a filename pointing to a valid PEM key file.
 def _get_modulus_of_key_file(key_filename):
     cmd = ["/usr/bin/openssl", "rsa", "-noout", "-modulus", "-in", key_filename]
     return _get_modulus_helper(cmd)
+
 
 # Format certificate and key using this function before saving to the
 # configuration service.
@@ -336,11 +352,12 @@ def _get_modulus_of_key_file(key_filename):
 def _format_pem(string):
         return string.strip().replace('\n', '\\n').replace('\r', '')
 
+
 @view_config(
-    route_name = 'json_setup_certificate',
+    route_name='json_setup_certificate',
     permission='maintain',
-    renderer = 'json',
-    request_method = 'POST'
+    renderer='json',
+    request_method='POST'
 )
 def json_setup_certificate(request):
     certificate = request.params['server.browser.certificate']
@@ -378,15 +395,16 @@ def json_setup_certificate(request):
         os.unlink(certificate_filename)
         os.unlink(key_filename)
 
+
 # ------------------------------------------------------------------------
 # Identity
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name = 'json_verify_ldap',
+    route_name='json_verify_ldap',
     permission='maintain',
-    renderer = 'json',
-    request_method = 'POST'
+    renderer='json',
+    request_method='POST'
 )
 def json_verify_ldap(request):
     cert = request.params['ldap_server_ca_certificate']
@@ -414,11 +432,12 @@ def json_verify_ldap(request):
     # Server failure. No human readable error message is available.
     raise HTTPInternalServerError()
 
+
 @view_config(
-    route_name = 'json_setup_identity',
+    route_name='json_setup_identity',
     permission='maintain',
-    renderer = 'json',
-    request_method = 'POST'
+    renderer='json',
+    request_method='POST'
 )
 def json_setup_identity(request):
     log.info("setup identity")
@@ -429,18 +448,23 @@ def json_setup_identity(request):
     # All is well - set the external properties.
     conf = Configuration()
     conf.set_external_property('authenticator', auth)
-    if ldap: _write_ldap_properties(conf, request.params)
+    if ldap:
+        _write_ldap_properties(conf, request.params)
 
     return HTTPOk()
+
 
 def _write_ldap_properties(conf, request_params):
     for key in _get_ldap_specific_parameters(request_params):
         if key == 'ldap_server_ca_certificate':
             cert = request_params[key]
-            if cert: conf.set_external_property(key, _format_pem(cert))
-            else: conf.set_external_property(key, '')
+            if cert:
+                conf.set_external_property(key, _format_pem(cert))
+            else:
+                conf.set_external_property(key, '')
         else:
             conf.set_external_property(key, request_params[key])
+
 
 def _get_ldap_specific_parameters(request_params):
     """
@@ -454,20 +478,22 @@ def _get_ldap_specific_parameters(request_params):
 
     return ldap_params
 
+
 # ------------------------------------------------------------------------
 # Restore from backup data
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name = 'json_upload_backup',
+    route_name='json_upload_backup',
     permission='maintain',
-    renderer = 'json',
-    request_method = 'POST'
+    renderer='json',
+    request_method='POST'
 )
 def json_restore(request):
     log.info("uploading backup file...")
     # Clean up old file
-    if os.path.exists(BACKUP_FILE_PATH): os.remove(BACKUP_FILE_PATH)
+    if os.path.exists(BACKUP_FILE_PATH):
+        os.remove(BACKUP_FILE_PATH)
 
     # See http://docs.pylonsproject.org/projects/pyramid_cookbook/en/latest/forms/file_uploads.html
     input_file = request.POST['backup-file'].file
@@ -478,15 +504,17 @@ def json_restore(request):
 
     return HTTPOk()
 
+
 # ------------------------------------------------------------------------
 # Finalize
 # ------------------------------------------------------------------------
 
+#noinspection PyUnusedLocal
 @view_config(
-    route_name = 'json_setup_finalize',
+    route_name='json_setup_finalize',
     permission='maintain',
-    renderer = 'json',
-    request_method = 'POST'
+    renderer='json',
+    request_method='POST'
 )
 def json_setup_finalize(request):
     log.warn("finalizing configuration...")
