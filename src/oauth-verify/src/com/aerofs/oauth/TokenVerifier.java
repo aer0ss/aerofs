@@ -1,10 +1,12 @@
 package com.aerofs.oauth;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.slf4j.Logger;
 
 import java.net.URI;
 import java.util.concurrent.ExecutionException;
@@ -15,6 +17,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
 {
+    private final static Logger l = Loggers.getLogger(TokenVerifier.class);
+
     private final String _auth;
     private final TokenVerificationClient _client;
     private final LoadingCache<String, VerifyTokenResponse> _cache;
@@ -53,6 +57,7 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
     public VerifyTokenResponse verify(String accessToken) throws Exception
     {
         try {
+            l.debug("verify {}", accessToken);
             return _cache.get(accessToken);
         } catch (ExecutionException e) {
             throw rethrowCause(e);
@@ -63,6 +68,7 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
     public VerifyTokenResponse load(String accessToken) throws Exception
     {
         try {
+            l.debug("cache miss: {}", accessToken);
             return _client.verify(accessToken, _auth).get();
         } catch (ExecutionException e) {
             throw rethrowCause(e);

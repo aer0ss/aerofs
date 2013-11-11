@@ -50,7 +50,7 @@ public class TokenVerificationClient
                 ChannelPipeline p = Channels.pipeline(
                         new HttpClientCodec(),
                         new HttpChunkAggregator(2 * C.KB),
-                        new OAuthVerificationHandler<VerifyTokenResponse>(_endpoint.getPath(),
+                        new OAuthVerificationHandler<VerifyTokenResponse>(_endpoint,
                                 VerifyTokenResponse.class)
                 );
                 if (_endpoint.getScheme().equals("https")) {

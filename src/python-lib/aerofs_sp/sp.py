@@ -50,3 +50,6 @@ class _SPServiceWrapper(object):
 
     def ignore_shared_folder_invitation(self, sid):
         self._service.ignore_shared_folder_invitation(sid)
+
+    def get_mobile_access_code(self):
+        return self._service.get_mobile_access_code().accessCode
