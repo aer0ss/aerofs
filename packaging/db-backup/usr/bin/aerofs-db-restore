@@ -58,6 +58,12 @@ then
     exit 6
 fi
 
+if [ ! -f aerofs-db-backup/external.properties ]
+then
+    malformed_db_backup "expected dir \"aerofs-db-backup/external.properties\" not found"
+    exit 7
+fi
+
 echo ">>> Restoring redis database..."
 service redis-server stop 1>/dev/null 2>/dev/null
 rm -f /data/redis/*
