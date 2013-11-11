@@ -323,13 +323,34 @@ ${common.render_previous_button(page)}
     ########
     ## Last, wait until uwsgi finishes reloading, which is caused by
     ## json_setup_finalize(). See that method for detail.
-
-    ## TODO (WW) poll an actual URL, and add timeouts
     function pollForWebServerReadiness() {
-        setTimeout(function() {
-            hideAllModals();
-            $('#success-modal').modal('show');
-        }, 3000);
+        var interval = window.setInterval(function() {
+            $.get('${request.route_path('json_is_uwsgi_reloading')}')
+            .done(function(resp) {
+                var reloading = resp['reloading'];
+                console.log("uwsgi reloading: " + reloading);
+
+                if (!reloading) {
+                    console.log("uwsgi reloaded successfully");
+                    window.clearInterval(interval);
+                    hideAllModals();
+                    $('#success-modal').modal('show');
+                } else {
+                    console.log("uwsgi still reloading");
+                    ## TODO (WW) add timeout?
+                }
+            }).fail(function(xhr) {
+                console.log("status: " + xhr.status + " statusText: " + xhr.statusText);
+
+                ## Ignore 403 and 0's. We'll see this when uwsgi is reloading.
+                ## For more details see bootstrap.mako.
+                if (xhr.status != 403 && xhr.status != 0) {
+                    window.clearInterval(interval);
+                    hideAllModals();
+                    showErrorMessageFromResponse(xhr);
+                }
+            });
+        }, 1000);
     }
 
     function createUser() {

@@ -70,13 +70,12 @@
                     ## ajax request before it completes, when you navigate to another page or when
                     ## you refresh the page.
                     ##
-                    ## Reference:
-                    ## http://stackoverflow.com/questions/13892529/ajax-request-fails-cant-see-why
-                    ##
                     ## In this case, we do not clear the interval, and retry the request.
                     ##
-                    ## TODO (MP) need to figure out exactly why we're getting a ready state here.
-                    ## Maybe is has something to do with our progress modal?
+                    ## TODO (WW) need to figure out exactly why we're getting a ready state here
+                    ##
+                    ## Reference:
+                    ## http://stackoverflow.com/questions/13892529/ajax-request-fails-cant-see-why
                     if (xhr.readyState == 0 && xhr.status == 0) {
                         console.log("get bootstrap task status readyState == 0. retry.");
                     } else {

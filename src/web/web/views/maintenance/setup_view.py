@@ -52,11 +52,14 @@ _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
 
 
 # ------------------------------------------------------------------------
-# Session keys
+# Other
 # ------------------------------------------------------------------------
 
 _SESSION_KEY_EMAIL_VERIFICATION_CODE = 'email_verification_code'
 
+# Bit used to indicate whether or not UWSGI is reloading. Used by the front end to reliably detect
+# UWSGI reload completion.
+_UWSGI_RELOADING = False
 
 # ------------------------------------------------------------------------
 # Settings utilities
@@ -536,5 +539,16 @@ def json_setup_finalize(request):
     #   initial setup wouldn't be able to call json_setup_poll or finalize after
     #   calling apply.
     #
+    global _UWSGI_RELOADING
+    _UWSGI_RELOADING = True
     aerofs_common.bootstrap.enqueue_task_set("web-reload")
     return {}
+
+@view_config(
+    route_name = 'json_is_uwsgi_reloading',
+    permission='maintain',
+    renderer = 'json',
+    request_method = 'GET'
+)
+def json_is_uwsgi_reloading(request):
+    return {'reloading': _UWSGI_RELOADING}
