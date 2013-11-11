@@ -100,7 +100,7 @@ def _setup_common(request, conf, license_page_only):
     if not is_private_deployment(conf):
         raise HTTPBadRequest("the page is not available")
 
-    # Genearate email verification code. Keep the code constant across the
+    # Generate email verification code. Keep the code constant across the
     # session so if the user sends multiple verification emails the user can use
     # the code from any email.
     code = request.session.get(_SESSION_KEY_EMAIL_VERIFICATION_CODE)

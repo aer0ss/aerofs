@@ -300,8 +300,11 @@ ${common.render_previous_button(page)}
     function reloadToFinalize(licenseShasum) {
         ## N.B. We expect a non-empty window.location.search here (i.e. '?page=X')
         window.location.href = 'https://${current_config['base.host.unified']}' +
-                window.location.pathname + window.location.search +
-                andFinalizeParam + "&shasum=" + licenseShasum;
+                ## N.B. Can't use the 'setup' route here since it requires no
+                ## permission and thus bypasses license-based login in the
+                ## forbidden view.
+                '${request.route_path('setup_authorized')}' + window.location.search +
+                andFinalizeParam + "&${url_param_license_shasum}=" + licenseShasum;
     }
 
     ########
@@ -315,8 +318,7 @@ ${common.render_previous_button(page)}
     ## server to finalize until the page is reloaded.
 
     function finalize() {
-        doPost("${request.route_path('json_setup_finalize')}" +
-                    "?${url_param_license_shasum}=" + $.url().param('shasum'),
+        doPost("${request.route_path('json_setup_finalize')}",
             { ${csrf.token_param()} }, pollForWebServerReadiness);
     }
 

@@ -315,8 +315,8 @@ def main():
     menu = Menu("Or select an option below:")
     menu.add_choice(MenuOption(dhcp_menu_text(), select_dhcp))
     menu.add_choice(MenuOption(static_menu_text(), show_static_menu))
-    menu.add_choice(MenuOption("Reboot system", restart))
-    menu.add_choice(MenuOption("Shutdown system", shutdown))
+    menu.add_choice(MenuOption("Reboot System", restart))
+    menu.add_choice(MenuOption("Shutdown System", shutdown))
     menu.interact()
 
 if __name__ == "__main__":
