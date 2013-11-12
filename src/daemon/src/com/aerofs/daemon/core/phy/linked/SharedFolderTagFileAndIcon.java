@@ -99,7 +99,7 @@ public class SharedFolderTagFileAndIcon
         });
     }
 
-    private void addTagFileAndIconIn(SID sid, String absPath) throws IOException
+    public void addTagFileAndIconIn(SID sid, String absPath) throws IOException
     {
         l.info("add sf tag for {} in {}", sid, absPath);
 
