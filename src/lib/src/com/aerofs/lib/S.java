@@ -30,7 +30,6 @@ public class S
             SETUP_PASSWD             = "Password",
             SETUP_LINK_FORGOT_PASSWD = "<a>Forgot password?</a>",
             SETUP_DEV_ALIAS          = "Computer name",
-            SETUP_TRY_AGAIN          = "Try Again",
             SETUP_ERR_CONN           = "Sorry, couldn't connect to the server.",
             SETUP_INSTALL_MESSAGE    = "Performing magic",
 
@@ -98,9 +97,8 @@ public class S
             CORE_DB_TAMPERING = "It looks like the database file may have been tampered with. This"
                     + " can happen when restoring from a backup or using a migration tool.\n\n"
                     + "It is strongly recommended that you reinstall " + L.product() + ".",
-            CONFIRM_FORCE_LAUNCH = "Forcing launch could have dire consequences such as missing"
-                    + " files and unpredictable behaviors in all folders managed by " + L.product()
-                    + ".",
+            CONFIRM_FORCE_LAUNCH = "Forcing launch may have severe consequences, including missing"
+                    + " files and other unpredictable behaviors.",
             FORCE_LAUNCH = "Force Launch",
 
             // transfers dialog
@@ -184,7 +182,6 @@ public class S
             // use trailing spaces to force right margins
             TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ",
             INVITATION_WAS_SENT = "Invited successfully.",
-            COULDNT_SEND_INVITATION = "Couldn't invite users.",
             CLI_NAME = L.productUnixName() + "-cli",
             SH_NAME = L.productUnixName()  + "-sh",
             TRY_AGAIN_LATER = "Please try again later.",
