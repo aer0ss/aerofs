@@ -22,6 +22,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
+import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.collect.Maps;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
@@ -55,7 +56,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -441,10 +441,10 @@ public class DlgHistory extends AeroFSDialog
             if (index == null) {
                 _statusLabel.setText(
                         L.product() + " keeps previous versions of a file when receiving new" +
-                                " updates from remote devices. When disk space runs low, old versions may" +
-                                " be deleted to save space.\n\n" +
-                                "Select a file in the left column to view all the versions stored on this" +
-                                " computer.");
+                        " updates from remote devices. When disk space runs low, old versions may" +
+                        " be deleted to save space.\n\n" +
+                        "Select a file in the left column to view all the versions stored on this" +
+                        " computer.");
                 _actionButtons.setVisible(false);
             } else {
                 _statusLabel.setText(
@@ -528,7 +528,7 @@ public class DlgHistory extends AeroFSDialog
         try {
             versions = _model.versions(index);
         } catch (Exception e) {
-            GUI.get().show(MessageType.ERROR, "Failed to retrieve version list: " + e);
+            ErrorMessages.show(getShell(), e, L.product() + " failed to retrieve version list.");
             return false;
         }
         if (versions.isEmpty()) {
@@ -585,11 +585,8 @@ public class DlgHistory extends AeroFSDialog
 
         try {
             FileUtil.moveInOrAcrossFileSystem(new File(version.tmpFile), new File(dst));
-        } catch (IOException e) {
-            l.warn("Saving revision failed: " + Util.e(e));
-            new AeroFSMessageBox(this.getShell(), false, e.getLocalizedMessage(),
-                    AeroFSMessageBox.IconType.ERROR)
-                    .open();
+        } catch (Exception e) {
+            ErrorMessages.show(getShell(), e, L.product() + " failed to save the selected version.");
         }
 
         // refresh the version tree if we saved under the root anchor
@@ -628,10 +625,7 @@ public class DlgHistory extends AeroFSDialog
         try {
             _model.delete(version);
         } catch (Exception e) {
-            l.warn("Deleting revision failed: " + Util.e(e));
-            new AeroFSMessageBox(this.getShell(), false, e.getLocalizedMessage(),
-                    AeroFSMessageBox.IconType.ERROR)
-                    .open();
+            ErrorMessages.show(getShell(), e, L.product() + " failed to delete the selected version.");
         }
 
         TreeItem[] items = _revTree.getSelection();
@@ -715,7 +709,7 @@ public class DlgHistory extends AeroFSDialog
                     });
 
                     // TODO: wait for daemon to pick up restored files before closing dialog?
-                    // -> this would aovid having to manually refresh...
+                    // -> this would avoid having to manually refresh...
                 }
             }.openDialog();
         }
@@ -730,10 +724,7 @@ public class DlgHistory extends AeroFSDialog
         try {
             _model.export(version);
         } catch (Exception e) {
-            l.warn("Fetching revision failed: " + Util.e(e));
-            new AeroFSMessageBox(this.getShell(), false, e.getLocalizedMessage(),
-                    AeroFSMessageBox.IconType.ERROR)
-                    .open();
+            ErrorMessages.show(getShell(), e, L.product() + " failed to fetch the selected version.");
         }
     }
 
