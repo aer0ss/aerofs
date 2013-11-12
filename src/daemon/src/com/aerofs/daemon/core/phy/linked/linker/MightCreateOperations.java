@@ -12,6 +12,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -22,16 +23,19 @@ import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.analytics.AnalyticsEventCounter;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
@@ -73,6 +77,9 @@ class MightCreateOperations
     private final SharedFolderTagFileAndIcon _sfti;
     private final InjectableDriver _dr;
     private final AnalyticsEventCounter _saveCounter;
+    private final CoreScheduler _sched;
+    private final IMapSID2SIndex _sid2sidx;
+    private final LinkerRootMap _lrm;
 
     static enum Operation
     {
@@ -98,15 +105,19 @@ class MightCreateOperations
     @Inject
     public MightCreateOperations(DirectoryService ds, ObjectMover om, ObjectCreator oc,
             InjectableDriver driver, VersionUpdater vu, InjectableFile.Factory factFile,
-            SharedFolderTagFileAndIcon sfti, Analytics analytics)
+            SharedFolderTagFileAndIcon sfti, Analytics analytics, CoreScheduler sched,
+            IMapSID2SIndex sid2sidx, LinkerRootMap lrm)
     {
         _ds = ds;
         _oc = oc;
         _om = om;
         _vu = vu;
+        _lrm = lrm;
         _factFile = factFile;
         _sfti = sfti;
         _dr = driver;
+        _sched = sched;
+        _sid2sidx = sid2sidx;
         _saveCounter = new AnalyticsEventCounter("analytics-save-file", analytics)
         {
             @Override
@@ -138,30 +149,64 @@ class MightCreateOperations
             Preconditions.checkNotNull(sourceSOID);
             SOID m = updateLogicalObject_(sourceSOID, pc, fnt._dir, t);
             // change of SOID indicate migration, in which case the tag file MUST NOT be recreated
-            if (m.equals(sourceSOID)) fixTagFileIfNeeded(sourceSOID.oid(), pc._absPath, t);
+            if (m.equals(sourceSOID)) scheduleTagFileFixIfNeeded(sourceSOID.oid(), pc._absPath);
             delBuffer.remove_(sourceSOID);
             return false;
         case Replace:
             Preconditions.checkNotNull(targetSOID);
             replaceObject_(pc, fnt, delBuffer, sourceSOID, targetSOID, t);
-            fixTagFileIfNeeded(targetSOID.oid(), pc._absPath, t);
+            scheduleTagFileFixIfNeeded(targetSOID.oid(), pc._absPath);
             return true;
         default:
             throw SystemUtil.fatalWithReturn("unhandled op:" + ops);
         }
     }
 
-    private void fixTagFileIfNeeded(OID oid, String absPath, Trans t)
+
+    public void scheduleTagFileFixIfNeeded(OID oid, String absPath)
     {
         if (!oid.isAnchor()) return;
         SID sid = SID.anchorOID2storeSID(oid);
         try {
             if (!_sfti.isSharedFolderRoot(absPath, sid)) {
-                _sfti.addTagFileAndIconIn(sid, absPath, t);
+                // schedule fix instead of performing immediately
+                // this is necessary to prevent interference with in-progress deletion operations
+                // on some OSes (most notably interference was observed with syncdet tests on
+                // Windows)
+                scheduleTagFileFix(sid, absPath);
             }
         } catch (Exception e) {
-            l.error("failed to fix tag file for {} {}", oid.toStringFormal(), absPath, e);
+            l.error("failed to fix tag file for {} {}", sid.toStringFormal(), absPath, e);
         }
+    }
+
+    private void scheduleTagFileFix(final SID sid, final String absPath)
+    {
+        _sched.schedule(new AbstractEBSelfHandling() {
+            @Override
+            public void handle_()
+            {
+                try {
+                    fixTagFile(sid, absPath);
+                } catch (Exception e) {
+                    l.error("failed to fix tag file for {} {}", sid.toStringFormal(), absPath, e);
+                }
+            }
+        }, TimeoutDeletionBuffer.TIMEOUT);
+    }
+
+    private void fixTagFile(SID sid, String absPath) throws Exception
+    {
+        SIndex sidx = _sid2sidx.getNullable_(sid);
+        String absRoot = _lrm.absRootAnchor_(sid);
+        // abort if store disappeared
+        if (sidx == null || absRoot == null) return;
+
+        Path p = _ds.resolveNullable_(new SOID(sidx, OID.ROOT));
+        // abort if path mapping changed
+        if (p == null || !absPath.equals(p.toAbsoluteString(absRoot))) return;
+
+        if (!_sfti.isSharedFolderRoot(absPath, sid)) _sfti.addTagFileAndIconIn(sid, absPath);
     }
 
     /**
