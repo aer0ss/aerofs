@@ -19,8 +19,11 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.Future;
+
+import static org.junit.Assert.fail;
 
 /**
  * Helper class to keep track of virtual connections and generate Futures for various
@@ -55,6 +58,8 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
             synchronized (_watchers) {
                 Preconditions.checkState(_watchers.put(ctx.getChannel(),
                         new Watcher(ctx.getChannel().isWritable())) == null);
+                // verifier may already be waiting for watcher, wake if needed
+                _watchers.notifyAll();
             }
         }
 
@@ -114,8 +119,7 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
     Future<ChannelBuffer> messageReceived(Channel c)
     {
         synchronized (_watchers) {
-            Watcher w = _watchers.get(c);
-            Preconditions.checkNotNull(w);
+            Watcher w = get(c);
             if (w.buffer.readableBytes() > 0) {
                 Future<ChannelBuffer> f = Futures.immediateFuture(w.buffer);
                 w.buffer = ChannelBuffers.dynamicBuffer();
@@ -130,10 +134,22 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
     public Future<Boolean> interestChanged(Channel c)
     {
         synchronized (_watchers) {
-            Watcher w = _watchers.get(c);
-            Preconditions.checkNotNull(w);
+            Watcher w = get(c);
             Preconditions.checkState(w.interestFuture == null);
             return (w.interestFuture = SettableFuture.create());
         }
+    }
+
+    private @Nonnull Watcher get(Channel c)
+    {
+        Watcher w;
+        while ((w = _watchers.get(c)) == null) {
+            try {
+                _watchers.wait();
+            } catch (InterruptedException e) {
+                fail();
+            }
+        }
+        return w;
     }
 }
