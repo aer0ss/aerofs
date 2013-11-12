@@ -8,47 +8,39 @@ service SyncStatusService {
     // Sets the message type used when errors occur.
     rpc __error__(Void) returns(PBException);
 
-    /**
-     * Sign in to the SyncStat server.
-     *
-     * Throws:
-     *   ExBadCredential if the username/password combination is incorrect, certificate sign in
-     *                   failed, or if the device does not belong to the calling user.
-     *   ExNotFound if the given device does not exist.
-     *   ExFormatError if the cookie DID is malformed.
-     */
+    // Sign in to the SyncStat server.
+    //
+    // Throws:
+    //   ExBadCredential if the username/password combination is incorrect, certificate sign in
+    //                   failed, or if the device does not belong to the calling user.
+    //   ExNotFound if the given device does not exist.
+    //   ExFormatError if the cookie DID is malformed.
     rpc SignIn(SyncSignInCall) returns(SyncSignInReply);
 
-    /**
-     * Set the version hash for a given DID and OID.
-     *
-     * Throws:
-     *   ExNoPerm if the user has not yet signed in.
-     *   ExFormatError if the cookie DID is malformed.
-     *   ExBadArgs if the length of the repeated fields are not equal.
-     *   ExNoResource if the verkehr publish fails.
-     */
+    // Set the version hash for a given DID and OID.
+    //
+    // Throws:
+    //   ExNoPerm if the user has not yet signed in.
+    //   ExFormatError if the cookie DID is malformed.
+    //   ExBadArgs if the length of the repeated fields are not equal.
+    //   ExNoResource if the verkehr publish fails.
     rpc SetVersionHash(SetVersionHashCall) returns(Void);
 
-    /**
-     * Tell the server the current epoch the client has received, so that the server can clean older
-     * entries.
-     *
-     * Throws:
-     *   ExNoPerm if the user has not yet signed in.
-     *   ExFormatError if the cookie DID is malformed.
-     */
+    // Tell the server the current epoch the client has received, so that the server can clean older
+    // entries.
+    //
+    // Throws:
+    //   ExNoPerm if the user has not yet signed in.
+    //   ExFormatError if the cookie DID is malformed.
     rpc AckServerEpoch(AckServerEpochCall) returns(Void);
 
-    /**
-     * Given the client's current version hash epoch number, this call returns the new version
-     * hash epoch corresponding to the device in question and a list of updated OID sync statuses.
-     *
-     * Throws:
-     *   ExNoPerm if the user has not yet signed in.
-     *   ExFormatError if the cookie DID is malformed.
-     *   ExBadArgs if you have called get syncstatus with the same epoch too many consecutive times.
-     */
+    // Given the client's current version hash epoch number, this call returns the new version
+    // hash epoch corresponding to the device in question and a list of updated OID sync statuses.
+    //
+    // Throws:
+    //   ExNoPerm if the user has not yet signed in.
+    //   ExFormatError if the cookie DID is malformed.
+    //   ExBadArgs if you have called get syncstatus with the same epoch too many consecutive times.
     rpc GetSyncStatus(GetSyncStatusCall) returns(GetSyncStatusReply);
 }
 

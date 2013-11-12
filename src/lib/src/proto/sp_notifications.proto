@@ -3,9 +3,7 @@ option optimize_for = LITE_RUNTIME; // remove reflection
 
 import "sync_status.proto";
 
-/**
- * This file should only contain messages which are pushed by SP through verkher
- */
+// This file should only contain messages which are pushed by SP through verkher
 
 message PBACLNotification {
     required uint64 acl_epoch = 1;

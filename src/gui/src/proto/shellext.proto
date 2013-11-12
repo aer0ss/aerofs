@@ -3,14 +3,10 @@ option optimize_for = LITE_RUNTIME;
 
 import "path_status.proto";
 
-/**
- * This file defines communication between the shell extension and the GUI process.
- * Note that all the path variables defined in this file should be absolute paths.
- */
+// This file defines communication between the shell extension and the GUI process.
+// Note that all the path variables defined in this file should be absolute paths.
 
-/**
- * Calls from the shell extension to the GUI. The GUI should not reply anything to those calls.
- */
+// Calls from the shell extension to the GUI. The GUI should not reply anything to those calls.
 message ShellextCall {
 
     enum Type {
@@ -64,9 +60,7 @@ message GetPathStatusCall {
     required string path = 1;
 }
 
-/**
- * Notifications sent from the GUI to the shell extension
- */
+// Notifications sent from the GUI to the shell extension
 message ShellextNotification {
 
     enum Type {

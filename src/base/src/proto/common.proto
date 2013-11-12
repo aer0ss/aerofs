@@ -1,18 +1,14 @@
 option java_package = "com.aerofs.proto";
 option optimize_for = LITE_RUNTIME; // remove reflection
 
-/**
- * PBPath specifies an *absolute* path of a object within a given root store
- */
+// PBPath specifies an *absolute* path of a object within a given root store
 message PBPath {
     // root store in which the object resides
     required bytes sid = 1;
 
-    /**
-     * A list of object path elements. The 0th element refers to the object
-     * directly under the root of the store, the 1st element to the object under
-     * the 0th one, and so on. An empty list refers to the store's root.
-     */
+    // A list of object path elements. The 0th element refers to the object
+    // directly under the root of the store, the 1st element to the object under
+    // the 0th one, and so on. An empty list refers to the store's root.
     repeated string elem = 2;
 }
 
@@ -21,14 +17,10 @@ message PBVer {
     repeated uint64 tick = 2 [packed=true];
 }
 
-/**
- * Intended for rpc calls and replies that take no parameter
- */
+// Intended for rpc calls and replies that take no parameter
 message Void {}
 
-/**
- * Protobuf representation of exceptions
- */
+// Protobuf representation of exceptions
 message PBException {
 
     enum Type {
@@ -133,34 +125,26 @@ message PBException {
 
     required Type type = 1;
 
-    /**
-     * DEPRECATED: the new unified error handling framework doesn't use this field. Use the data
-     * field instead to encode exception-specific information.
-     *
-     * The message from the Exception's getMessage() call. This is not guaranteed
-     * to be human readable (e.g. the exception may contain obfuscated paths). Note that some
-     * exception types use this field to hold JSON strings.
-     */
+    // DEPRECATED: the new unified error handling framework doesn't use this field. Use the data
+    // field instead to encode exception-specific information.
+    //
+    // The message from the Exception's getMessage() call. This is not guaranteed
+    // to be human readable (e.g. the exception may contain obfuscated paths). Note that some
+    // exception types use this field to hold JSON strings.
     optional string message_deprecated = 4;
 
-    /**
-     * DEPRECATED: the new unified error handling framework doesn't use this field. Use the data
-     * field instead to encode exception-specific information.
-     *
-     * User-friendly error message, if available.
-     * This message *can* be displayed to the user, and should be localized if possible.
-     */
+    // DEPRECATED: the new unified error handling framework doesn't use this field. Use the data
+    // field instead to encode exception-specific information.
+    //
+    // User-friendly error message, if available.
+    // This message *can* be displayed to the user, and should be localized if possible.
     optional string plain_text_message_deprecated = 2;
 
-    /**
-     * The call stack of the exception, if available. Note that stack trace should not be sent
-     * across machine boundaries for security concerns.
-     */
+    // The call stack of the exception, if available. Note that stack trace should not be sent
+    // across machine boundaries for security concerns.
     optional string stack_trace = 3;
 
-    /**
-     * Option data associated with the exception. Individual exceptions dictate their data format.
-     */
+    // Option data associated with the exception. Individual exceptions dictate their data format.
     optional bytes data = 5;
 }
 
@@ -181,12 +165,10 @@ message PBFolderInvitation {
     required string sharer = 3;
 }
 
-/*
- * This message is not meant for remote communication. It is used to encode the aggregate sync
- * status stored in the local DB.
- * To reduce the size footprint of the aggregated sync status we leverage the varint encoding of
- * protobufs : https://developers.google.com/protocol-buffers/docs/encoding
- */
+// This message is not meant for remote communication. It is used to encode the aggregate sync
+// status stored in the local DB.
+// To reduce the size footprint of the aggregated sync status we leverage the varint encoding of
+// protobufs : https://developers.google.com/protocol-buffers/docs/encoding
 message PBCounterVector {
     repeated int32 counter = 1 [packed = true];
 }

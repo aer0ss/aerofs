@@ -5,317 +5,267 @@ option optimize_for = LITE_RUNTIME; // remove reflection
 import "common.proto";
 import "cmd.proto";
 
-/**
- * NOTE: When modifying the service declaration below, if you are not appending your new RPC
- * calls at the end of the declaration make sure to increment the SP_PROTOCOL_VERSION parameter
- * in C.java and the sp.version parameter in development.ini and production.ini (in src/web/)
- * and syncdet_test/lib/param.py
- */
+// NOTE: When modifying the service declaration below, if you are not appending your new RPC
+// calls at the end of the declaration make sure to increment the SP_PROTOCOL_VERSION parameter
+// in C.java and the sp.version parameter in development.ini and production.ini (in src/web/)
+// and syncdet_test/lib/param.py
 
 service SPService {
 
     // Sets the message type used in case of errors
     rpc __error__(Void) returns(PBException);
 
-    /**
-     * Send the specified email address a signup verification email that contains the link to
-     * complete signup. If the user is an AeroFS user, a different email is sent indicating that the
-     * user already exists.
-     *
-     * Required Auth Level: none
-     *
-     * Throws: ExEmptyEmailAddress is the email address is empty
-     */
+    // Send the specified email address a signup verification email that contains the link to
+    // complete signup. If the user is an AeroFS user, a different email is sent indicating that the
+    // user already exists.
+    //
+    // Required Auth Level: none
+    //
+    // Throws: ExEmptyEmailAddress is the email address is empty
     rpc RequestToSignUp(RequestToSignUpCall) returns(Void);
 
-    /**
-     * Sign up a user using a signup code.
-     *
-     * No-op if the user already exists and the password matches the existing user's password.
-     * This is needed for the business users to retry signing up using the link in their email.
-     * That link points to the user signup page with business signup as the followup page.
-     *
-     * NOTE: this expects the credential to be submitted in clear text.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExNotFound if the targeted signup code was not found
-     *   ExBadCredential if the user exists and the password doesn't match the existing user
-     */
+    // Sign up a user using a signup code.
+    //
+    // No-op if the user already exists and the password matches the existing user's password.
+    // This is needed for the business users to retry signing up using the link in their email.
+    // That link points to the user signup page with business signup as the followup page.
+    //
+    // NOTE: this expects the credential to be submitted in clear text.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   ExNotFound if the targeted signup code was not found
+    //   ExBadCredential if the user exists and the password doesn't match the existing user
     rpc SignUpWithCode(SignUpWithCodeCall) returns(SignUpWithCodeReply);
 
-    /**
-     * Sign into the SP server. Return the authorization level of the caller.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExEmptyEmailAddress if the user id is empty
-     *   ExBadCredential if username/password combination is incorrect
-     *
-     * TODO: Remove this once we feel confident dropping support for team servers from
-     * before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
-     * (Remove after Dec.2013)
-     */
+    // Sign into the SP server. Return the authorization level of the caller.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   ExEmptyEmailAddress if the user id is empty
+    //   ExBadCredential if username/password combination is incorrect
+    //
+    // TODO: Remove this once we feel confident dropping support for team servers from
+    // before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
+    // (Remove after Dec.2013)
     rpc SignIn(SignInCall) returns(Void);
 
-    /**
-     * Finds the email address associated with an signup code.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExNotFound if the signup code wasn't found
-     */
+    // Finds the email address associated with an signup code.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   ExNotFound if the signup code wasn't found
     rpc ResolveSignUpCode(ResolveSignUpCodeCall)
             returns (ResolveSignUpCodeReply);
 
-    /**
-     * Send a verification code to the user's email address. This function will be called
-     * automatically when a user signs-up, but we may need to call again if the user
-     * can't find the email (spam filter, etc...)
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExAlreadyExist if the user has already been verified
-     */
+    // Send a verification code to the user's email address. This function will be called
+    // automatically when a user signs-up, but we may need to call again if the user
+    // can't find the email (spam filter, etc...)
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExAlreadyExist if the user has already been verified
      rpc SendEmailVerification(Void) returns(Void);
 
-    /**
-     * Checks an email verification code, and mark the email address as verified
-     *
-     * Required Auth Level: none (protected by the randomness of the verification code)
-     *
-     * Throws:
-     *   ExNotFound if the verification code wasn't found
-     *   ExAlreadyExist if the user has already been verified
-     */
+    // Checks an email verification code, and mark the email address as verified
+    //
+    // Required Auth Level: none (protected by the randomness of the verification code)
+    //
+    // Throws:
+    //   ExNotFound if the verification code wasn't found
+    //   ExAlreadyExist if the user has already been verified
      rpc VerifyEmail(VerifyEmailCall) returns(Void);
 
-    /**
-     * Signs out of SP
-     *
-     * Required Auth Level: user
-     */
+    // Signs out of SP
+    //
+    // Required Auth Level: user
     rpc SignOut(Void) returns (Void);
 
-    /**
-     * Creates a certificate for the specified device which is bound to the calling user. Creates
-     * an entry in the device table to save registration information.
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExBadArgs   if the cname does not match the required format (hashed concatenation of user
-     *               email, did).
-     *   ExDeviceIDAlreadyExist if the device ID already exists
-     */
+    // Creates a certificate for the specified device which is bound to the calling user. Creates
+    // an entry in the device table to save registration information.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExBadArgs   if the cname does not match the required format (hashed concatenation of user
+    //               email, did).
+    //   ExDeviceIDAlreadyExist if the device ID already exists
     rpc RegisterDevice(RegisterDeviceCall) returns (RegisterDeviceReply);
 
     rpc Noop11(Void) returns (Void);
 
-    /**
-     * Invite a person to become a member of the caller's organization. An email will be sent to the
-     * requested user. When the user clicks on the link the admin panel will accept the organization
-     * invite by calling the below rpc (AcceptOrganizationInvitation). At that point the user will
-     * be moved in the new organization.
-     *
-     * Required Auth Level: admin
-     *
-     * Throws:
-     *   ExEmptyEmailAddress if the user id is empty
-     *   ExAlreadyExist if the email address is already a member of that organization.
-     *   ExAlreadyInvited if the user has already been invited to the organization but has not yet
-     *                  accepted the invitation.
-     *   ExEmailSendingFailed if we were unable to send the email.
-     *   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
-     *                  customer ID.
-     *   ExEmailNotVerified if the user's email hasn't been verified
-     */
+    // Invite a person to become a member of the caller's organization. An email will be sent to the
+    // requested user. When the user clicks on the link the admin panel will accept the organization
+    // invite by calling the below rpc (AcceptOrganizationInvitation). At that point the user will
+    // be moved in the new organization.
+    //
+    // Required Auth Level: admin
+    //
+    // Throws:
+    //   ExEmptyEmailAddress if the user id is empty
+    //   ExAlreadyExist if the email address is already a member of that organization.
+    //   ExAlreadyInvited if the user has already been invited to the organization but has not yet
+    //                  accepted the invitation.
+    //   ExEmailSendingFailed if we were unable to send the email.
+    //   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
+    //                  customer ID.
+    //   ExEmailNotVerified if the user's email hasn't been verified
      rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
 
-    /**
-     * Accept an organization invitation and move the caller into that organization. Makes
-     * appropriate ACL updates to allow for team server sync.
-     *
-     * This call will also delete the pending organization invitation, since it has already been
-     * acted upon.
-     *
-     * Throws:
-     *   ExNotFound if the user does not have a pending invitation for the specified organization.
-     *   ExBadArgs if the user is already a member of the target organization.
-     *   ExNoAdminForNonEmptyTeam if the team would have no admins but non-admin members.
-     *   ExEmailNotVerified if the user's email hasn't been verified
-     */
+    // Accept an organization invitation and move the caller into that organization. Makes
+    // appropriate ACL updates to allow for team server sync.
+    //
+    // This call will also delete the pending organization invitation, since it has already been
+    // acted upon.
+    //
+    // Throws:
+    //   ExNotFound if the user does not have a pending invitation for the specified organization.
+    //   ExBadArgs if the user is already a member of the target organization.
+    //   ExNoAdminForNonEmptyTeam if the team would have no admins but non-admin members.
+    //   ExEmailNotVerified if the user's email hasn't been verified
     rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall)
             returns(AcceptOrganizationInvitationReply);
 
-    /**
-     * Shares a folder with another user.
-     *
-     * If the user doesn't exist yet, this method invites the user to sign up AeroFS first.
-     *
-     * See docs/design/sharing_and_migration.txt for high-level design.
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExNoPerm if the sharer isn't authorized to modify ACLs for the given SID
-     *   ExAlreadyExists if the user is already a member of the folder
-     *   ExCannotInviteSelf if the sharer appears in the list of sharees
-     *   ExInviteeListEmpty if the list of invitees is empty AND the external flag is false
-     *   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
-     *                  customer ID.
-     *   ExEmailNotVerified if the user's email hasn't been verified
-     *
-     * Exceptions from shared folder rules: (only when the corresponding flag is set on config)
-     *   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if a user is an external
-     *                  user and has Editor role.
-     *   ExSharedFolderRulesWarningAddExternalUser if an external user is being added.
-     *   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if a user is an external user
-     *                  and has Owner role.
-     */
+    // Shares a folder with another user.
+    //
+    // If the user doesn't exist yet, this method invites the user to sign up AeroFS first.
+    //
+    // See docs/design/sharing_and_migration.txt for high-level design.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNoPerm if the sharer isn't authorized to modify ACLs for the given SID
+    //   ExAlreadyExists if the user is already a member of the folder
+    //   ExCannotInviteSelf if the sharer appears in the list of sharees
+    //   ExInviteeListEmpty if the list of invitees is empty AND the external flag is false
+    //   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
+    //                  customer ID.
+    //   ExEmailNotVerified if the user's email hasn't been verified
+    //
+    // Exceptions from shared folder rules: (only when the corresponding flag is set on config)
+    //   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if a user is an external
+    //                  user and has Editor role.
+    //   ExSharedFolderRulesWarningAddExternalUser if an external user is being added.
+    //   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if a user is an external user
+    //                  and has Owner role.
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
-    /**
-     * Add the user to a shared folder (provided he/she was invited).
-     *
-     * NB: pushes ACL update to clients
-     *
-     * Calling this function with a valid shared folder code will set the user's email address
-     * as verified.
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExNotFound if the shared folder code wasn't found
-     *   ExNoPerm if the user was not invited to the shared folder
-     *   ExEmailNotVerified if the user's email hasn't been verified
-     */
+    // Add the user to a shared folder (provided he/she was invited).
+    //
+    // NB: pushes ACL update to clients
+    //
+    // Calling this function with a valid shared folder code will set the user's email address
+    // as verified.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNotFound if the shared folder code wasn't found
+    //   ExNoPerm if the user was not invited to the shared folder
+    //   ExEmailNotVerified if the user's email hasn't been verified
     rpc JoinSharedFolder(JoinSharedFolderCall) returns(Void);
 
-    /**
-     * Ignore an invite to a shared folder.
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExNotFound if the shared folder does not exist.
-     *   ExNoPerm if the user has not been invited to this shared folder.
-     *   ExAlreadyExist if the user is already a member of this shared folder.
-     */
+    // Ignore an invite to a shared folder.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNotFound if the shared folder does not exist.
+    //   ExNoPerm if the user has not been invited to this shared folder.
+    //   ExAlreadyExist if the user is already a member of this shared folder.
     rpc IgnoreSharedFolderInvitation(IgnoreSharedFolderCall) returns(Void);
 
-    /**
-     * Remove the user from a shared folder (provided he/she was a member).
-     *
-     * NB: pushes ACL update to clients
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExNotFound if the shared folder wasn't found.
-     *   ExNoPerm if the user was not invited to the shared folder.
-     */
+    // Remove the user from a shared folder (provided he/she was a member).
+    //
+    // NB: pushes ACL update to clients
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNotFound if the shared folder wasn't found.
+    //   ExNoPerm if the user was not invited to the shared folder.
     rpc LeaveSharedFolder(LeaveSharedFolderCall) returns(Void);
 
-    /**
-     * Returns a list of pending shared folder invitations for the user
-     *
-     * Required Auth Level: user
-     */
+    // Returns a list of pending shared folder invitations for the user
+    //
+    // Required Auth Level: user
     rpc ListPendingFolderInvitations(Void) returns(ListPendingFolderInvitationsReply);
 
-    /**
-     * Sends an email to the user.
-     *
-     * Required Auth Level: user
-     */
+    // Sends an email to the user.
+    //
+    // Required Auth Level: user
     rpc EmailUser(EmailUserCall) returns (Void);
 
-    /**
-     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this method
-     */
+    //WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this method
     rpc Noop(Void) returns (Void);
 
-    /**
-     * Get the user's preferences (name, device name, etc)
-     *
-     * Required Auth Level: user
-     */
+    // Get the user's preferences (name, device name, etc)
+    //
+    // Required Auth Level: user
     rpc GetUserPreferences(GetUserPreferencesCall) returns (GetUserPreferencesReply);
 
-    /**
-     * Set a given user's preferences (name, device name, etc). Optional fields that aren't present
-     * won't be changed. The session user must be either the given user or the admin of the user's
-     * organization.
-     *
-     * Required Auth Level: user or admin (see above)
-     */
+    // Set a given user's preferences (name, device name, etc). Optional fields that aren't present
+    // won't be changed. The session user must be either the given user or the admin of the user's
+    // organization.
+    //
+    // Required Auth Level: user or admin (see above)
     rpc SetUserPreferences(SetUserPreferencesCall) returns (Void);
 
-    /**
-     * List members of the current organization
-     *
-     * Required Auth Level: admin
-     *
-     * Throws:
-     *   ExNoPerm if the user does not have admin privileges
-     */
+    // List members of the current organization
+    //
+    // Required Auth Level: admin
+    //
+    // Throws:
+    //   ExNoPerm if the user does not have admin privileges
     rpc ListOrganizationMembers(ListOrganizationMembersCall) returns(ListOrganizationMembersReply);
 
     // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove it
     rpc noop7(Void) returns(Void);
 
-    /**
-     * Sends an email to a user with instructions to reset his password. The user
-     * will be sent an email containing a link with a reset password token. The link
-     * will take the user to a form when they can set a new password.
-     * The reset_password token and the new password will be used in the ResetPassword
-     * call.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   Nothing... No feedback makes brute force attacks useless
-     */
+    // Sends an email to a user with instructions to reset his password. The user
+    // will be sent an email containing a link with a reset password token. The link
+    // will take the user to a form when they can set a new password.
+    // The reset_password token and the new password will be used in the ResetPassword
+    // call.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   Nothing... No feedback makes brute force attacks useless
     rpc SendPasswordResetEmail(SendPasswordResetEmailCall) returns(Void);
 
-    /**
-     * Reset a user's password. The user will already have received a reset_password token
-     * via email.
-     *
-     * Required Auth Level: none
-     *
-     *
-     * Throws:
-     *   ExNotFound if the provided token has no associated user account
-     */
+    // Reset a user's password. The user will already have received a reset_password token
+    // via email.
+    //
+    // Required Auth Level: none
+    //
+    //
+    // Throws:
+    //   ExNotFound if the provided token has no associated user account
     rpc ResetPassword(ResetPasswordCall) returns(Void);
 
-    /**
-     * Changes a users password.  The old password is replaced with the new password.
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExNoPerm   if the authorization requirements are not met
-     *              if the old password is not correct
-     */
+    // Changes a users password.  The old password is replaced with the new password.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNoPerm   if the authorization requirements are not met
+    //              if the old password is not correct
     rpc ChangePassword(ChangePasswordCall) returns(Void);
 
-    /**
-     * Set the user's authorization level for SP services
-     *
-     * Required Auth Level: admin
-     * throws:
-     *   ExNotFound if the provided user email has no AeroFS account set up.
-     *   ExNoPerm   if the authorization requirements are not met,
-     *              if the new authorization level exceeds that of the caller,
-     *              if the caller does not belong to the same organization as the user email
-     */
+    // Set the user's authorization level for SP services
+    //
+    // Required Auth Level: admin
+    // throws:
+    //   ExNotFound if the provided user email has no AeroFS account set up.
+    //   ExNoPerm   if the authorization requirements are not met,
+    //              if the new authorization level exceeds that of the caller,
+    //              if the caller does not belong to the same organization as the user email
     rpc SetAuthorizationLevel(SetAuthorizationLevelCall) returns(Void);
 
 
@@ -330,38 +280,32 @@ service SPService {
     rpc noop9(Void) returns (Void);
     rpc noop10(Void) returns (Void);
 
-    /**
-     * Get the certificate revocations relevant to a specific user, based on the certificate
-     * revocation list epoch number.
-     *
-     * Required Auth Level: user
-     */
+    // Get the certificate revocations relevant to a specific user, based on the certificate
+    // revocation list epoch number.
+    //
+    // Required Auth Level: user
     rpc GetUserCRL(GetUserCRLCall) returns(GetUserCRLReply);
 
-    /**
-     * Get global (full, non-user specific) certificate revocation list.
-     */
+    // Get global (full, non-user specific) certificate revocation list.
     rpc GetCRL(Void) returns(GetCRLReply);
 
-    /**
-     * Revoke the certificate of a specific device and optionally erase AeroFS files from the
-     * device. This will trigger a verkehr notification for the CRL.
-     *
-     * Q. Why is this needed? Isn't it sufficient to manage users only by the ACL system?
-     * A. Consider the case where a user quits AeroFS and we revoke all privileges via ACLs. Their
-     * certs will still be valid but it won't matter due to the fact that they lack ACLs.
-     * But then consider that the user could re-join aerofs with the same email address, then these
-     * certs will be valid again, which would be bad.
-     *
-     * The session user must be the owner of the specified device, or the admin of the organization
-     * the device owner belongs to.
-     *
-     * Required Auth Level: user or admin (see above)
-     *
-     * Throws:
-     *   ExNoPerm   if the user does not have enough privilege (see above)
-     *   ExNotFound if the user is trying to unlink a device that does not exist.
-     */
+    // Revoke the certificate of a specific device and optionally erase AeroFS files from the
+    // device. This will trigger a verkehr notification for the CRL.
+    //
+    // Q. Why is this needed? Isn't it sufficient to manage users only by the ACL system?
+    // A. Consider the case where a user quits AeroFS and we revoke all privileges via ACLs. Their
+    // certs will still be valid but it won't matter due to the fact that they lack ACLs.
+    // But then consider that the user could re-join aerofs with the same email address, then these
+    // certs will be valid again, which would be bad.
+    //
+    // The session user must be the owner of the specified device, or the admin of the organization
+    // the device owner belongs to.
+    //
+    // Required Auth Level: user or admin (see above)
+    //
+    // Throws:
+    //   ExNoPerm   if the user does not have enough privilege (see above)
+    //   ExNotFound if the user is trying to unlink a device that does not exist.
     rpc UnlinkDevice(UnlinkDeviceCall) returns(Void);
 
     // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this.
@@ -373,409 +317,333 @@ service SPService {
     // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this.
     rpc Noop6(Void) returns(Void);
 
-    /**
-     * Get information about a device ID.
-     *
-     * Required Auth Level: user
-     */
+    // Get information about a device ID.
+    //
+    // Required Auth Level: user
     rpc GetDeviceInfo(GetDeviceInfoCall) returns(GetDeviceInfoReply);
 
-    /**
-     * Get list of folders being shared by users in organization. See also: ListUserSharedFolders
-     *
-     * Required Auth Level: admin
-     */
+    // Get list of folders being shared by users in organization. See also: ListUserSharedFolders
+    //
+    // Required Auth Level: admin
     rpc ListOrganizationSharedFolders(ListOrganizationSharedFoldersCall)
             returns(ListOrganizationSharedFoldersReply);
 
-    /**
-     * Gets a list of organizations the user has been invited to, excluding their current
-     * organization.
-     *
-     * Required Auth Level: user
-     */
+    // Gets a list of organizations the user has been invited to, excluding their current
+    // organization.
+    //
+    // Required Auth Level: user
     rpc GetOrganizationInvitations(Void) returns (GetOrganizationInvitationsReply);
 
-    /**
-     * Get the user's organization's preferences (organization name).
-     *
-     * Required Auth Level: user
-     */
+    // Get the user's organization's preferences (organization name).
+    //
+    // Required Auth Level: user
     rpc GetOrgPreferences(Void) returns (GetOrgPreferencesReply);
 
-    /**
-     * Set the user's organization's preferences (organization name).
-     *
-     * Required Auth Level: admin
-     *
-     * Throws:
-     *   ExNoPerm if the user calling this does not have admin privileges
-     */
+    // Set the user's organization's preferences (organization name).
+    //
+    // Required Auth Level: admin
+    //
+    // Throws:
+    //   ExNoPerm if the user calling this does not have admin privileges
     rpc SetOrgPreferences(SetOrgPreferencesCall) returns (Void);
 
-    /**
-     * Unsubscribe a user from email reminders based on the unsubscribe token id
-     *
-     * Required Auth Level: none
-     */
+    // Unsubscribe a user from email reminders based on the unsubscribe token id
+    //
+    // Required Auth Level: none
     rpc UnsubscribeEmail(SetUnsubscribeEmailCall) returns (GetUnsubscribeEmailReply);
 
-    /**
-     * Return the auth level of the current user
-     *
-     * Required Auth Level: none
-     */
+    // Return the auth level of the current user
+    //
+    // Required Auth Level: none
     rpc GetAuthorizationLevel(Void) returns (GetAuthorizationLevelReply);
 
-    /**
-     * Return the Team Server user id of the current organization
-     *
-     * Required Auth Level: admin
-     */
+    // Return the Team Server user id of the current organization
+    //
+    // Required Auth Level: admin
     rpc GetTeamServerUserID(Void) returns (GetTeamServerUserIDReply);
 
-    /**
-     * Certify a Team Server's device and save the device information on SP. It is different from
-     * RegisterDevice in that the this call allows the user to register the device under a user
-     * ID different from his own ID. This call is needed only for setting up the team server.
-     *
-     * Required Auth Level: Admin
-     *
-     * Throws:
-     *   ExDeviceIDAlreadyExist if the device ID already exists
-     *   ExEmailNotVerified if the user's email hasn't been verified. We do it to avoid
-     *   security complications on Team Servers, such as inviting users from the Team Server
-     *   desktop app.
-     */
+    // Certify a Team Server's device and save the device information on SP. It is different from
+    // RegisterDevice in that the this call allows the user to register the device under a user
+    // ID different from his own ID. This call is needed only for setting up the team server.
+    //
+    // Required Auth Level: Admin
+    //
+    // Throws:
+    //   ExDeviceIDAlreadyExist if the device ID already exists
+    //   ExEmailNotVerified if the user's email hasn't been verified. We do it to avoid
+    //   security complications on Team Servers, such as inviting users from the Team Server
+    //   desktop app.
     rpc RegisterTeamServerDevice(RegisterDeviceCall) returns (RegisterDeviceReply);
 
-    /*
-     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove this
-     * Keep Noop12Call and Noop12Reply for backward compatibility
-     */
-     rpc Noop12(Noop12Call) returns(Noop12Reply);
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove this
+    // Keep Noop12Call and Noop12Reply for backward compatibility
+    rpc Noop12(Noop12Call) returns(Noop12Reply);
 
-    /**
-     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE move this under AcceptOrganizationInvite
-     *
-     * Ignore an invitation to a specific organization. This call deletes the entry in the
-     * organization invitation table so that when the user views the pending organization invites
-     * page in the admin panel, that organization will no longer appear in the list.
-     *
-     * This method returns the user counts as well as Stripe customer id of the specific
-     * organization, so the Python Web server may update Stripe subscription plan for that org.
-     * TODO (WW) This design smells badly. Alternatively we can use a separate method to retrieve
-     * the number but it would bring up several security issues. The fundamental problem is that the
-     * Web server shouldn't have handled Stripe calls. Either SP or a service that SP depends on
-     * should do the job.
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExNotFound if the user does not have a pending invitation for the specified organization.
-     */
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE move this under AcceptOrganizationInvite
+    //
+    // Ignore an invitation to a specific organization. This call deletes the entry in the
+    // organization invitation table so that when the user views the pending organization invites
+    // page in the admin panel, that organization will no longer appear in the list.
+    //
+    // This method returns the user counts as well as Stripe customer id of the specific
+    // organization, so the Python Web server may update Stripe subscription plan for that org.
+    // TODO (WW) This design smells badly. Alternatively we can use a separate method to retrieve
+    // the number but it would bring up several security issues. The fundamental problem is that the
+    // Web server shouldn't have handled Stripe calls. Either SP or a service that SP depends on
+    // should do the job.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNotFound if the user does not have a pending invitation for the specified organization.
     rpc DeleteOrganizationInvitation(DeleteOrganizationInvitationCall) returns(
             DeleteOrganizationInvitationReply);
 
-    /**
-     * Extend the tomcat session. Does not throw, since we are guaranteed by tomcat that the session
-     * will exist in the tracker.
-     *
-     * Required Auth Level: user
-     */
+    // Extend the tomcat session. Does not throw, since we are guaranteed by tomcat that the session
+    // will exist in the tracker.
+    //
+    // Required Auth Level: user
     rpc ExtendSession(Void) returns(Void);
 
-    /**
-     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under GetDeviceInfo.
-     *
-     * List all the devices belonging to a specified user. If the specified user is not the
-     * current user, the current user must be the admin of the organization the specified user
-     * belongs to.
-     *
-     * Required Auth Level: user or admin (see above)
-     *
-     * Throws: ExEmptyEmailAddress if the user id is empty
-     */
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under GetDeviceInfo.
+    //
+    // List all the devices belonging to a specified user. If the specified user is not the
+    // current user, the current user must be the admin of the organization the specified user
+    // belongs to.
+    //
+    // Required Auth Level: user or admin (see above)
+    //
+    // Throws: ExEmptyEmailAddress if the user id is empty
     rpc ListUserDevices(ListUserDevicesCall) returns(ListUserDevicesReply);
 
-    /**
-     * Retrieve Stripe data of the current organization.
-     *
-     * Required Auth Level: admin
-     */
+    // Retrieve Stripe data of the current organization.
+    //
+    // Required Auth Level: admin
     rpc GetStripeData(Void) returns(GetStripeDataReply);
 
-    /**
-     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under ListOrganizationSharedFolders
-     *
-     * Get list of folders being shared by a specified user. If the specified user is not the
-     * current user, the current user must be the admin of the organization the specified user
-     * belongs to.
-     *
-     * See also: ListOrganizationSharedFolders
-     *
-     * Required Auth Level: user or admin (see above)
-     *
-     * Throws:
-     *   ExNoPerm       if the user calling this does not have enough privileges (see above)
-     */
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under ListOrganizationSharedFolders
+    //
+    // Get list of folders being shared by a specified user. If the specified user is not the
+    // current user, the current user must be the admin of the organization the specified user
+    // belongs to.
+    //
+    // See also: ListOrganizationSharedFolders
+    //
+    // Required Auth Level: user or admin (see above)
+    //
+    // Throws:
+    //   ExNoPerm       if the user calling this does not have enough privileges (see above)
     rpc ListUserSharedFolders(ListUserSharedFoldersCall) returns(ListSharedFoldersReply);
 
-    /**
-     * List all the users who have been invited to the current user's organization.
-     *
-     * Required Auth Level: admin
-     */
-     rpc ListOrganizationInvitedUsers(Void) returns(ListOrganizationInvitedUsersReply);
+    // List all the users who have been invited to the current user's organization.
+    //
+    // Required Auth Level: admin
+    rpc ListOrganizationInvitedUsers(Void) returns(ListOrganizationInvitedUsersReply);
 
-    /**
-     * Get the head of the command queue for a given device.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExNotFound: if the specified device does not exist.
-     */
+    // Get the head of the command queue for a given device.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   ExNotFound: if the specified device does not exist.
     rpc GetCommandQueueHead(GetCommandQueueHeadCall) returns(GetCommandQueueHeadReply);
 
-    /**
-     * Acknowledge the command at the head of the command queue for a given device. If the client
-     * is unable to process the command they should specify error = true and the command will be
-     * retried later.
-     *
-     * To reduce the number of messages transferred this call also returns the new head of this
-     * device's command queue.
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExNotFound: if the specified device does not exist or does not belong to you.
-     */
+    // Acknowledge the command at the head of the command queue for a given device. If the client
+    // is unable to process the command they should specify error = true and the command will be
+    // retried later.
+    //
+    // To reduce the number of messages transferred this call also returns the new head of this
+    // device's command queue.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNotFound: if the specified device does not exist or does not belong to you.
     rpc AckCommandQueueHead(AckCommandQueueHeadCall) returns(AckCommandQueueHeadReply);
 
-     /**
-      * Delete organization invitation for a given user.
-      *
-      * Required Auth Level: admin
-      *
-      * Throws: ExEmptyEmailAddress if the user id is empty
-      */
-     rpc DeleteOrganizationInvitationForUser(DeleteOrganizationInvitationForUserCall) returns(
+    // Delete organization invitation for a given user.
+    //
+    // Required Auth Level: admin
+    //
+    // Throws: ExEmptyEmailAddress if the user id is empty
+    rpc DeleteOrganizationInvitationForUser(DeleteOrganizationInvitationForUserCall) returns(
             DeleteOrganizationInvitationForUserReply);
 
-     /**
-      * Used only by a DaemonPostUpdateTask to set OS information for existing devices
-      *
-      * Required Auth Level: user
-      */
-     rpc SetDeviceOSFamilyAndName(SetDeviceOSFamilyAndNameCall) returns(Void);
+    // Used only by a DaemonPostUpdateTask to set OS information for existing devices
+    //
+    // Required Auth Level: user
+    rpc SetDeviceOSFamilyAndName(SetDeviceOSFamilyAndNameCall) returns(Void);
 
-     /**
-      * Set the Stripe customer ID of the current organization
-      *
-      * Required Auth Level: admin
-      */
-     rpc SetStripeCustomerID(SetStripeCustomerIDCall) returns(Void);
+    // Set the Stripe customer ID of the current organization
+    //
+    // Required Auth Level: admin
+    rpc SetStripeCustomerID(SetStripeCustomerIDCall) returns(Void);
 
-     // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move them to in place of UpdateACL/DeleteACL_Deprecated
-     /**
-      * Update the ACL for an existing member of a shared folder
-      *
-      * Required Auth Level: user
-      *
-      * Throws: ExNotFound if the user is not a member of the specified folder
-      *
-      * Exceptions from shared folder rules: (only when the corresponding flag is set on config)
-      *   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if this folder is shared
-      *                         with an external user and we are updating the user's role to editor.
-      *   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if this folder is shared with an
-      *                         external user and we are updating the user's role to owner.
-      */
-     rpc UpdateACL(UpdateACLCall) returns (Void);
+    // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move them to in place of UpdateACL/DeleteACL_Deprecated
+    // Update the ACL for an existing member of a shared folder
+    //
+    // Required Auth Level: user
+    //
+    // Throws: ExNotFound if the user is not a member of the specified folder
+    //
+    // Exceptions from shared folder rules: (only when the corresponding flag is set on config)
+    //   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if this folder is shared
+    //                         with an external user and we are updating the user's role to editor.
+    //   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if this folder is shared with an
+    //                         external user and we are updating the user's role to owner.
+    rpc UpdateACL(UpdateACLCall) returns (Void);
 
-     // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move them to in place of UpdateACL/DeleteACL_Deprecated
-     /**
-      * Delete the ACL for an existing member or an pending user of a shared folder
-      *
-      * Required Auth Level: user
-      *
-      * Throws: ExNotFound if the user is not a member or pending user of the specified folder
-      */
-     rpc DeleteACL(DeleteACLCall) returns (Void);
+    // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move them to in place of UpdateACL/DeleteACL_Deprecated
+    // Delete the ACL for an existing member or an pending user of a shared folder
+    //
+    // Required Auth Level: user
+    //
+    // Throws: ExNotFound if the user is not a member or pending user of the specified folder
+    rpc DeleteACL(DeleteACLCall) returns (Void);
 
-     /**
-      * Delete the Stripe customer ID of the current organization
-      *
-      * Required Auth Level: admin
-      */
-     rpc DeleteStripeCustomerID(Void) returns (Void);
+    // Delete the Stripe customer ID of the current organization
+    //
+    // Required Auth Level: admin
+    rpc DeleteStripeCustomerID(Void) returns (Void);
 
-    /**
-     * Retrieve ACL entries for the user, including those flagged as "external".
-     * See docs/design/sharing_and_migration.txt for information about the external flag.
-     *
-     * Required Auth Level: user
-     */
+    // Retrieve ACL entries for the user, including those flagged as "external".
+    // See docs/design/sharing_and_migration.txt for information about the external flag.
+    //
+    // Required Auth Level: user
     rpc GetACL(GetACLCall) returns(GetACLReply);
 
-     // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move this after AcceptOrganizationInvitation
-     /**
-      * Remove a user from the caller's organization. The user will be moved to a new empty
-      * organization, and will be seen as an external collaborator on any shared folders that he
-      * may have with the previous organization.
-      *
-      * Required Auth Level: admin
-      *
-      * Throws: ExNoPerm if the current user isn't an admin of the target user, or if an admin tries
-      *         to remove itself from the organization
-      */
+    // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move this after AcceptOrganizationInvitation
+    // Remove a user from the caller's organization. The user will be moved to a new empty
+    // organization, and will be seen as an external collaborator on any shared folders that he
+    // may have with the previous organization.
+    //
+    // Required Auth Level: admin
+    //
+    // Throws: ExNoPerm if the current user isn't an admin of the target user, or if an admin tries
+    //         to remove itself from the organization
     rpc RemoveUserFromOrganization(RemoveUserFromOrganizationCall)
             returns(RemoveUserFromOrganizationReply);
 
-    /**
-     * Issue a new certificate to the requesting user/did.
-     *
-     * Required Auth Level: user
-     * Throws: ExNotFound if the specified device id is not known to be owned by that user.
-     */
+    // Issue a new certificate to the requesting user/did.
+    //
+    // Required Auth Level: user
+    // Throws: ExNotFound if the specified device id is not known to be owned by that user.
     rpc RecertifyDevice(RecertifyDeviceCall) returns (RecertifyDeviceReply);
 
-    /**
-     * Issue a new team server (organization) certificate for the requesting user/did.
-     * Requires
-     *
-     * Required Auth Level: admin
-     * Throws: ExNoPerm if the current user isn't an admin of her organization
-     *         ExNotFound if the specified device does not exist for the given organization. Note
-     *              that this is necessary, otherwise, we would allow email-unverified users to
-     *              certify Team Servers, bypassing RegisterTeamServerDevice(). The latter method
-     *              throws if the requesting user's email is not verified.
-     */
+    // Issue a new team server (organization) certificate for the requesting user/did.
+    // Requires
+    //
+    // Required Auth Level: admin
+    // Throws: ExNoPerm if the current user isn't an admin of her organization
+    //         ExNotFound if the specified device does not exist for the given organization. Note
+    //              that this is necessary, otherwise, we would allow email-unverified users to
+    //              certify Team Servers, bypassing RegisterTeamServerDevice(). The latter method
+    //              throws if the requesting user's email is not verified.
     rpc RecertifyTeamServerDevice(RecertifyDeviceCall) returns (RecertifyDeviceReply);
 
-    /**
-     * Get User's Organization ID
-     *
-     * Required Auth Level: user
-     */
+    // Get User's Organization ID
+    //
+    // Required Auth Level: user
     rpc GetOrganizationID(Void) returns(GetOrganizationIDReply);
 
     // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE remove this
     rpc Noop8(Void) returns(Void);
 
-    /**
-     * Sign in a device using an existing device certificate.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExBadCredential if the certificate is not recognized or the DID does not match.
-     */
+    // Sign in a device using an existing device certificate.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   ExBadCredential if the certificate is not recognized or the DID does not match.
     rpc SignInDevice(SignInDeviceCall) returns (Void);
 
-    /**
-     * Sign in a user using userid/password credentials.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExEmptyEmailAddress if the user id is empty
-     *   ExBadCredential if username/password combination is incorrect, or in the case of the team
-     *                   server, if they have not signed in successfully using mutual
-     *                   authentication.
-     */
+    // Sign in a user using userid/password credentials.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   ExEmptyEmailAddress if the user id is empty
+    //   ExBadCredential if username/password combination is incorrect, or in the case of the team
+    //                   server, if they have not signed in successfully using mutual
+    //                   authentication.
     rpc SignInUser(SignInUserCall) returns (Void);
 
-    /**
-     * Kick off the OpenId authentication flow by generating session keys for the
-     * authenticating session, and returning those to the client.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   Something Bad if the server does not have openid enabled.
-     */
+    // Kick off the OpenId authentication flow by generating session keys for the
+    // authenticating session, and returning those to the client.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   Something Bad if the server does not have openid enabled.
     rpc OpenIdBeginTransaction(Void) returns (OpenIdSessionNonces);
 
-    /**
-     * Complete the authentication flow by returning the session attributes from
-     * the authenticated session.
-     * This will return null if the session referenced by the
-     * query key is not yet authenticated by an OpenId provider.
-     *
-     * An exception indicates non-retryable error (timeout or otherwise).
-     *
-     * NOTE: this will only return session attributes _once_.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   Something Bad if the server does not have openid enabled.
-     */
+    // Complete the authentication flow by returning the session attributes from
+    // the authenticated session.
+    // This will return null if the session referenced by the
+    // query key is not yet authenticated by an OpenId provider.
+    //
+    // An exception indicates non-retryable error (timeout or otherwise).
+    //
+    // NOTE: this will only return session attributes _once_.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   Something Bad if the server does not have openid enabled.
     rpc OpenIdGetSessionAttributes(OpenIdSessionQuery) returns (OpenIdSessionAttributes);
 
-    /**
-     * Validate the given username/credential pair without signing the user in.
-     *
-     *   ExEmptyEmailAddress if the user id is empty
-     *   ExBadCredential if username/password combination is incorrect, or in the case of the team
-     *                   server, if they have not signed in successfully using mutual
-     *                   authentication.
-     */
+    // Validate the given username/credential pair without signing the user in.
+    //
+    //   ExEmptyEmailAddress if the user id is empty
+    //   ExBadCredential if username/password combination is incorrect, or in the case of the team
+    //                   server, if they have not signed in successfully using mutual
+    //                   authentication.
     rpc ValidateCredential(SignInUserCall) returns (Void);
 
-    /**
-     * Generate an access code that can be used to request an access token for a mobile device.
-     * The access code will be valid for a short time. Each access code can be used
-     * only once to generate an access token.
-     *
-     * TODO: configure and document access code lifetime; currently 3 minutes.
-     * Required Auth Level: User
-     */
+    // Generate an access code that can be used to request an access token for a mobile device.
+    // The access code will be valid for a short time. Each access code can be used
+    // only once to generate an access token.
+    //
+    // TODO: configure and document access code lifetime; currently 3 minutes.
+    // Required Auth Level: User
     rpc GetMobileAccessCode(Void) returns (MobileAccessCode);
 
-    /**
-     * Given a valid mobile access code, get the user attributes to be cached
-     * for the user account. This will implicitly invalidate the access code so it cannot
-     * be reused.
-     *
-     * The mobile client that will own the access token should submit a name
-     * ("Greg's iPad") along with the authorization request in the deviceName field.
-     *
-     * Required Auth Level: None
-     */
+    // Given a valid mobile access code, get the user attributes to be cached
+    // for the user account. This will implicitly invalidate the access code so it cannot
+    // be reused.
+    //
+    // The mobile client that will own the access token should submit a name
+    // ("Greg's iPad") along with the authorization request in the deviceName field.
+    //
+    // Required Auth Level: None
     rpc AuthorizeMobileDevice(AuthorizeMobileDeviceCall) returns (AuthorizeMobileDeviceReply);
 
-    /**
-     * Lists the shared folder information associated with the given list of Store IDs. The
-     * caller must be a member of every shared folder.
-     *
-     * The returned shared folders will match the input store IDs by the indices in the list.
-     * Alternatively, the client can also inspect the store ID of the returned folders.
-     *
-     * See Also: ListUserSharedFolders, ListOrganizationSharedFolders
-     *
-     * Required Auth Level: user (see above)
-     *
-     * Throws:
-     *   ExNoPerm if the caller does not have the required privileges for any store inquired
-     */
+    // Lists the shared folder information associated with the given list of Store IDs. The
+    // caller must be a member of every shared folder.
+    //
+    // The returned shared folders will match the input store IDs by the indices in the list.
+    // Alternatively, the client can also inspect the store ID of the returned folders.
+    //
+    // See Also: ListUserSharedFolders, ListOrganizationSharedFolders
+    //
+    // Required Auth Level: user (see above)
+    //
+    // Throws:
+    //   ExNoPerm if the caller does not have the required privileges for any store inquired
     rpc ListSharedFolders(ListSharedFoldersCall) returns (ListSharedFoldersReply);
 
-    /**
-     * Sign in a user using userid/password credentials.
-     *
-     * NOTE: this method expects the user credential information in the clear. Key-derivation
-     * (SCrypt or similar) will be applied on the server side if needed.
-     *
-     * This method should replace all use of SignIn and SignInUser.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExEmptyEmailAddress if the user id is empty
-     *   ExBadCredential if username/password combination is incorrect
-     */
+    // Sign in a user using userid/password credentials.
+    //
+    // NOTE: this method expects the user credential information in the clear. Key-derivation
+    // (SCrypt or similar) will be applied on the server side if needed.
+    //
+    // This method should replace all use of SignIn and SignInUser.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   ExEmptyEmailAddress if the user id is empty
+    //   ExBadCredential if username/password combination is incorrect
     rpc CredentialSignIn(SignInUserCall) returns (Void);
 }
 
@@ -831,11 +699,9 @@ message SignUpWithCodeReply {
     required bool existing_team = 2; // is the user joining an existing team, or a new team?
 }
 
-/*
- * TODO: Remove this once we feel confident dropping support for team servers from
- * before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
- * (Remove after Dec.2013)
- */
+// TODO: Remove this once we feel confident dropping support for team servers from
+// before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
+// (Remove after Dec.2013)
 message SignInCall {
     required string user_id = 1;
     optional bytes credentials = 2;

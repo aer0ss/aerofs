@@ -256,11 +256,9 @@ message PBObjectAttributes {
     required bool excluded = 3;
 }
 
-/**
- * Each Branch object describes the attributes of a branch of a file. Files that
- * haven't been downloaded have zero branches. Otherwise, they must have
- * as least a master branch.
- */
+// Each Branch object describes the attributes of a branch of a file. Files that
+// haven't been downloaded have zero branches. Otherwise, they must have
+// as least a master branch.
 message PBBranch {
     // the KIndex of the branch this content attribute refers to. The KIndex of
     // master branches is always KIndex.MASTER. The value of the field can be

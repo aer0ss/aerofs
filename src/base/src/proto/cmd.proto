@@ -1,18 +1,16 @@
 option java_package = "com.aerofs.proto";
 option optimize_for = LITE_RUNTIME; // remove reflection
 
-/**
- * Persistent commands use the persistent reqis queue on SP and are guaranteed to be delivered to
- * clients.
- *
- * Steps to add a new command:
- *
- *   1. Add an enum to CommandType, below.
- *   2. Add a handler in processCommand() (CommandNotificationSubscriber.java).
- *
- * And that's it! The command tools script infrastrucutre will automatically pick up the new command
- * and you can invoke it via the 'cmd' tools script.
- */
+// Persistent commands use the persistent reqis queue on SP and are guaranteed to be delivered to
+// clients.
+//
+// Steps to add a new command:
+//
+//   1. Add an enum to CommandType, below.
+//   2. Add a handler in processCommand() (CommandNotificationSubscriber.java).
+//
+// And that's it! The command tools script infrastrucutre will automatically pick up the new command
+// and you can invoke it via the 'cmd' tools script.
 
 //
 // Command messages and enums.

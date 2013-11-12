@@ -8,13 +8,11 @@ service MobileService {
     // Sets the message type used in case of errors
     rpc __error__(Void) returns(PBException);
 
-    /**
-     * Lists the children names and their attributes for a given parent folder
-     *
-     * Throws:
-     *   ExNotFound if the parent path doesn't exist
-     *   ExNotDir if the parent path isn't a directory
-     */
+    // Lists the children names and their attributes for a given parent folder
+    //
+    // Throws:
+    //   ExNotFound if the parent path doesn't exist
+    //   ExNotDir if the parent path isn't a directory
     rpc ListChildren(ListChildrenCall) returns(ListChildrenReply);
 
     // Download a file
@@ -72,10 +70,8 @@ message DownloadCookie {
     required PBVer version = 4;
 }
 
-/**
- * This message is used for the CName verification process.
- * See CNameVerifier.java
- */
+// This message is used for the CName verification process.
+// See CNameVerifier.java
 message CNameVerificationInfo {
     required string user = 1;
     required bytes did = 2;
