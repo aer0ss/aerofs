@@ -79,7 +79,6 @@ class MightCreateOperations
     private final AnalyticsEventCounter _saveCounter;
     private final CoreScheduler _sched;
     private final IMapSID2SIndex _sid2sidx;
-    private final LinkerRootMap _lrm;
 
     static enum Operation
     {
@@ -106,13 +105,12 @@ class MightCreateOperations
     public MightCreateOperations(DirectoryService ds, ObjectMover om, ObjectCreator oc,
             InjectableDriver driver, VersionUpdater vu, InjectableFile.Factory factFile,
             SharedFolderTagFileAndIcon sfti, Analytics analytics, CoreScheduler sched,
-            IMapSID2SIndex sid2sidx, LinkerRootMap lrm)
+            IMapSID2SIndex sid2sidx)
     {
         _ds = ds;
         _oc = oc;
         _om = om;
         _vu = vu;
-        _lrm = lrm;
         _factFile = factFile;
         _sfti = sfti;
         _dr = driver;
@@ -149,13 +147,13 @@ class MightCreateOperations
             Preconditions.checkNotNull(sourceSOID);
             SOID m = updateLogicalObject_(sourceSOID, pc, fnt._dir, t);
             // change of SOID indicate migration, in which case the tag file MUST NOT be recreated
-            if (m.equals(sourceSOID)) scheduleTagFileFixIfNeeded(sourceSOID.oid(), pc._absPath);
+            if (m.equals(sourceSOID)) scheduleTagFileFixIfNeeded(sourceSOID.oid(), pc);
             delBuffer.remove_(sourceSOID);
             return false;
         case Replace:
             Preconditions.checkNotNull(targetSOID);
             replaceObject_(pc, fnt, delBuffer, sourceSOID, targetSOID, t);
-            scheduleTagFileFixIfNeeded(targetSOID.oid(), pc._absPath);
+            scheduleTagFileFixIfNeeded(targetSOID.oid(), pc);
             return true;
         default:
             throw SystemUtil.fatalWithReturn("unhandled op:" + ops);
@@ -163,50 +161,55 @@ class MightCreateOperations
     }
 
 
-    public void scheduleTagFileFixIfNeeded(OID oid, String absPath)
+    public void scheduleTagFileFixIfNeeded(OID oid, PathCombo pc)
     {
         if (!oid.isAnchor()) return;
         SID sid = SID.anchorOID2storeSID(oid);
         try {
-            if (!_sfti.isSharedFolderRoot(absPath, sid)) {
+            if (!_sfti.isSharedFolderRoot(pc._absPath, sid)) {
                 // schedule fix instead of performing immediately
                 // this is necessary to prevent interference with in-progress deletion operations
                 // on some OSes (most notably interference was observed with syncdet tests on
                 // Windows)
-                scheduleTagFileFix(sid, absPath);
+                scheduleTagFileFix(sid, pc);
             }
         } catch (Exception e) {
-            l.error("failed to fix tag file for {} {}", sid.toStringFormal(), absPath, e);
+            l.error("failed to fix tag file for {} {}", sid.toStringFormal(), pc, e);
         }
     }
 
-    private void scheduleTagFileFix(final SID sid, final String absPath)
+    private void scheduleTagFileFix(final SID sid, final PathCombo pc)
     {
         _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
                 try {
-                    fixTagFile(sid, absPath);
+                    fixTagFile(sid, pc);
                 } catch (Exception e) {
-                    l.error("failed to fix tag file for {} {}", sid.toStringFormal(), absPath, e);
+                    l.error("failed to fix tag file for {} {}", sid.toStringFormal(), pc, e);
                 }
             }
         }, TimeoutDeletionBuffer.TIMEOUT);
     }
 
-    private void fixTagFile(SID sid, String absPath) throws Exception
+    private void fixTagFile(SID sid, PathCombo pc) throws Exception
     {
         SIndex sidx = _sid2sidx.getNullable_(sid);
-        String absRoot = _lrm.absRootAnchor_(sid);
         // abort if store disappeared
-        if (sidx == null || absRoot == null) return;
+        if (sidx == null) {
+            l.warn("store disappeared before tag fix {}", sid, pc);
+            return;
+        }
 
         Path p = _ds.resolveNullable_(new SOID(sidx, OID.ROOT));
-        // abort if path mapping changed
-        if (p == null || !absPath.equals(p.toAbsoluteString(absRoot))) return;
+        // abort if anchor moved
+        if (p == null || !p.equals(pc._path)) {
+            l.info("anchor moved before tag fix {} {}: {}", sid, pc, p);
+            return;
+        }
 
-        if (!_sfti.isSharedFolderRoot(absPath, sid)) _sfti.addTagFileAndIconIn(sid, absPath);
+        if (!_sfti.isSharedFolderRoot(pc._absPath, sid)) _sfti.addTagFileAndIconIn(sid, pc._absPath);
     }
 
     /**

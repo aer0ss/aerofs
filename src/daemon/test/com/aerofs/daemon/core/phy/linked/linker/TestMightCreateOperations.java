@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
@@ -15,8 +16,12 @@ import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
@@ -37,13 +42,16 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.*;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.*;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 
 import java.util.Arrays;
 import java.util.EnumSet;
 
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -57,6 +65,8 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
     @Mock SharedFolderTagFileAndIcon sfti;
     @Mock Analytics analytics;
     @Mock IDeletionBuffer delBuffer;
+    @Mock SIDMap sm;
+    @Mock CoreScheduler sched;
 
     @InjectMocks MightCreateOperations mcop;
 
@@ -66,7 +76,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
     public void setUp() throws Exception
     {
         // setup a basic object tree for tests
-        mds = new MockDS(rootSID, ds);
+        mds = new MockDS(rootSID, ds, sm, sm);
         mds.root()
                 .dir("foo")
                         .dir("bar")
@@ -92,6 +102,17 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
                     }
                 }
         );
+
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable
+            {
+                Object[] args = invocation.getArguments();
+                AbstractEBSelfHandling e = (AbstractEBSelfHandling)args[0];
+                e.handle_();
+                return null;
+            }
+        }).when(sched).schedule(any(IEvent.class), anyLong());
     }
 
     void fileModified(Path path) throws Exception
@@ -381,8 +402,9 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         op("shared", fnt, Update);
 
         verify(delBuffer).remove_(soid);
-        verify(sfti).isSharedFolderRoot(absPath, sid);
-        verify(sfti).addTagFileAndIconIn(sid, absPath, t);
+        verify(sched).schedule(any(IEvent.class), anyLong());
+        verify(sfti, times(2)).isSharedFolderRoot(absPath, sid);
+        verify(sfti).addTagFileAndIconIn(sid, absPath);
         verifyZeroInteractions(oc, om, vu);
     }
 
@@ -402,8 +424,9 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(om).move_(eq(soid), soidAt(""), eq("quux"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
-        verify(sfti).isSharedFolderRoot(absPath, sid);
-        verify(sfti).addTagFileAndIconIn(sid, absPath, t);
+        verify(sched).schedule(any(IEvent.class), anyLong());
+        verify(sfti, times(2)).isSharedFolderRoot(absPath, sid);
+        verify(sfti).addTagFileAndIconIn(sid, absPath);
         verifyZeroInteractions(oc, om, vu);
     }
 
@@ -423,8 +446,9 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(ds).setFID_(soid, fnt._fid, t);
         verify(delBuffer).remove_(soid);
-        verify(sfti).isSharedFolderRoot(absPath, sid);
-        verify(sfti).addTagFileAndIconIn(sid, absPath, t);
+        verify(sched).schedule(any(IEvent.class), anyLong());
+        verify(sfti, times(2)).isSharedFolderRoot(absPath, sid);
+        verify(sfti).addTagFileAndIconIn(sid, absPath);
         verifyZeroInteractions(oc, om, vu);
     }
 }

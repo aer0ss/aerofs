@@ -331,24 +331,17 @@ public class MockDS
             Path oldPath = getPath();
             MockDSDir oldParent = _parent;
 
-            if (newParent == oldParent) {
-                when(_oa.name()).thenReturn(newName);
-                return;
+            _name = newName;
+            when(_oa.name()).thenReturn(newName);
+
+            if (newParent != oldParent) {
+                _parent.remove(this);
+                _parent = newParent;
+                when(_oa.parent()).thenReturn(_parent.soid().oid());
+                _parent.add(this);
             }
-
-            _parent.remove(this);
-            _parent = newParent;
-            when(_oa.parent()).thenReturn(_parent.soid().oid());
-
-            if (!_name.equalsIgnoreCase(newName)) {
-                _name = newName;
-                when(_oa.name()).thenReturn(newName);
-            }
-
-            _parent.add(this);
 
             Path newPath = getPath();
-
 
             if (_ds.isTrashOrDeleted_(_parent.soid())) {
                 for (IDirectoryServiceListener listener : listeners)
