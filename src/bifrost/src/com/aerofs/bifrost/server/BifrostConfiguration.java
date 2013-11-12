@@ -4,24 +4,29 @@
 
 package com.aerofs.bifrost.server;
 
+import com.aerofs.base.Version;
 import com.aerofs.restless.Configuration;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.net.URI;
 
 public class BifrostConfiguration implements Configuration
 {
     @Override
     public void addGlobalHeaders(HttpResponse response)
     {
-
     }
 
     @Override
-    public Response URINotFound(URI uri)
+    public Response resourceNotFound(String path)
     {
         return Response.status(Status.BAD_REQUEST).build();
+    }
+
+    @Override
+    public boolean isSupportedVersion(Version version)
+    {
+        throw new UnsupportedOperationException();
     }
 }

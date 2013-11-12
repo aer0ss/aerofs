@@ -30,8 +30,6 @@ public class TestVersionResource extends AbstractRestTest
     @Test
     public void shouldFindClientForLowerVersion()
     {
-        assumeTrue(useProxy);
-
         givenAcces()
         .expect()
                 .statusCode(200)

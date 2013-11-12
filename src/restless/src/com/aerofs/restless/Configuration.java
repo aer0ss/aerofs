@@ -4,18 +4,17 @@
 
 package com.aerofs.restless;
 
+import com.aerofs.base.Version;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import javax.ws.rs.core.Response;
-import java.net.URI;
 
-/**
- *
- */
 public interface Configuration
 {
     // global headers (cache control, Cross-Origin Resource Sharing, ...)
     void addGlobalHeaders(HttpResponse response);
 
-    Response URINotFound(URI uri);
+    Response resourceNotFound(String path);
+
+    boolean isSupportedVersion(Version version);
 }

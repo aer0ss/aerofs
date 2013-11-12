@@ -15,6 +15,7 @@ import com.aerofs.daemon.rest.event.EIListChildren;
 import com.aerofs.daemon.rest.jersey.RestObjectParam;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.restless.Auth;
+import com.aerofs.restless.Since;
 import com.google.inject.Inject;
 
 import javax.ws.rs.GET;
@@ -36,6 +37,7 @@ public class ChildrenResource
         _imce = imce.imce();
     }
 
+    @Since("0.8")
     @GET
     public Response listUserRoot(@Auth AuthenticatedPrincipal principal)
     {
@@ -44,6 +46,7 @@ public class ChildrenResource
                 .execute();
     }
 
+    @Since("0.9")
     @GET
     @Path("/{object}")
     public Response list(@Auth AuthenticatedPrincipal principal,

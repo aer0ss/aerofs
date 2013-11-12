@@ -6,6 +6,7 @@ package com.aerofs.restless;
 
 import com.aerofs.base.net.AbstractNettyServer;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
+import com.aerofs.restless.jersey.VersionFilterFactory;
 import com.aerofs.restless.netty.JerseyHandler;
 import com.aerofs.restless.providers.ContentStreamProvider;
 import com.aerofs.restless.providers.GsonProvider;
@@ -108,5 +109,11 @@ public class Service extends AbstractNettyServer
     protected Set<Class<?>> singletons()
     {
         return Collections.emptySet();
+    }
+
+    protected void enableVersioning()
+    {
+        _resources.getProperties()
+                .put(ResourceConfig.PROPERTY_RESOURCE_FILTER_FACTORIES, VersionFilterFactory.class);
     }
 }

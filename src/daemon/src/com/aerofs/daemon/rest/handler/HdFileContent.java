@@ -1,9 +1,6 @@
 package com.aerofs.daemon.rest.handler;
 
-import com.aerofs.base.BaseUtil;
-import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -14,20 +11,18 @@ import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.stream.MultipartStream;
 import com.aerofs.daemon.rest.stream.SimpleStream;
 import com.aerofs.daemon.rest.util.AccessChecker;
+import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.HttpStatus;
 import com.aerofs.daemon.rest.util.MimeTypeDetector;
 import com.aerofs.daemon.rest.util.Ranges;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
-import com.sun.jersey.core.header.MatchingEntityTag;
 
-import javax.annotation.Nullable;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -40,17 +35,17 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
     private final AccessChecker _access;
-    private final NativeVersionControl _nvc;
+    private final EntityTagUtil _etags;
     private final MimeTypeDetector _detector;
 
     @Inject
     public HdFileContent(AccessChecker access, DirectoryService ds, IPhysicalStorage ps,
-            NativeVersionControl nvc, MimeTypeDetector detector)
+            MimeTypeDetector detector, EntityTagUtil etags)
     {
         _ds = ds;
         _ps = ps;
+        _etags = etags;
         _access = access;
-        _nvc = nvc;
         _detector = detector;
     }
 
@@ -67,16 +62,16 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         if (!oa.isFile()) throw new ExNotFound();
 
         final CA ca = oa.caMasterThrows();
-        final EntityTag etag = etag(oa.soid());
+        final EntityTag etag = _etags.etagForFile(oa.soid());
 
         // conditional request: 304 Not Modified on ETAG match
-        if (ev._ifNoneMatch != null && match(ev._ifNoneMatch, etag)) {
+        if (ev._ifNoneMatch != null && EntityTagUtil.match(ev._ifNoneMatch, etag)) {
             ev.setResult_(Response.notModified(etag));
             return;
         }
 
         // build range list for partial request, honoring If-Range header
-        RangeSet<Long> ranges = parseRanges(ev._rangeset, ev._ifRange, etag, ca.length());
+        RangeSet<Long> ranges = Ranges.parseRanges(ev._rangeset, ev._ifRange, etag, ca.length());
 
         // base response template
         ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(ca.mtime()));
@@ -124,33 +119,5 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
                     .type("multipart/byteranges; boundary=" + stream._boundary)
                     .entity(stream);
         }
-    }
-
-    private static boolean match(Set<? extends EntityTag> matching, EntityTag etag)
-    {
-        return matching == MatchingEntityTag.ANY_MATCH || matching.contains(etag);
-    }
-
-    private static @Nullable RangeSet<Long> parseRanges(@Nullable String rangeset,
-            @Nullable EntityTag ifRange, EntityTag etag, long length)
-    {
-        if (rangeset != null && (ifRange == null || etag.equals(ifRange))) {
-            try {
-                return Ranges.parse(rangeset, length);
-            } catch (ExBadArgs e) {
-                // RFC 2616: MUST ignore Range header if any range spec is syntactically invalid
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @return HTTP Entity tag for a given SOID
-     *
-     * We use version hashes as entity tags for simplicity
-     */
-    private EntityTag etag(SOID soid) throws SQLException
-    {
-        return new EntityTag(BaseUtil.hexEncode(_nvc.getVersionHash_(soid)));
     }
 }

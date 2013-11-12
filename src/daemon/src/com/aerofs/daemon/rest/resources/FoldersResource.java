@@ -12,8 +12,9 @@ import com.aerofs.daemon.rest.event.EIFolderInfo;
 import com.aerofs.daemon.rest.jersey.RestObjectParam;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.restless.Auth;
+import com.aerofs.restless.Since;
+import com.google.inject.Inject;
 
-import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -33,6 +34,7 @@ public class FoldersResource
         _imce = imce.imce();
     }
 
+    @Since("0.9")
     @GET
     public Response metadata(@Auth AuthenticatedPrincipal principal,
             @PathParam("object") RestObjectParam object)

@@ -27,6 +27,6 @@ public class NotFoundMapper implements ExceptionMapper<NotFoundException>
     @Override
     public Response toResponse(NotFoundException exception)
     {
-        return _config.URINotFound(exception.getNotFoundUri());
+        return _config.resourceNotFound(exception.getNotFoundUri().getPath());
     }
 }

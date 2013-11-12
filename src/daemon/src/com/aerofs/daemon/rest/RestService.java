@@ -26,7 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class RestService extends Service
 {
-    public static final Version HIGHEST_SUPPORTED_VERSION = new Version(0, 9);
+    public static final Version HIGHEST_SUPPORTED_VERSION = new Version(0, 10);
 
     // For now accept any version,
     public static final String VERSION = "/v{version: [0-9]+\\.[0-9]+}";
@@ -39,6 +39,8 @@ public class RestService extends Service
     RestService(Injector injector, CfgKeyManagersProvider kmgr)
     {
         super("rest", new InetSocketAddress(PORT), kmgr, injector);
+
+        enableVersioning();
 
         checkNotNull(kmgr.getCert());
         checkNotNull(kmgr.getPrivateKey());
