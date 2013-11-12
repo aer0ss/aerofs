@@ -1,6 +1,7 @@
 package com.aerofs.havre.proxy;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.Version;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.havre.Authenticator;
@@ -137,11 +138,12 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         }
 
         DID did = getLastServer(cookies);
+        Version version = Version.fromRequestPath(req.getUri());
         boolean strictConsistency = shouldEnforceStrictConsistency(req) && did != null;
 
-        l.info("{} {}", did, strictConsistency);
+        l.info("{} {} {}", did, strictConsistency, version);
 
-        return _endpoints.connect(_principal, did, strictConsistency,
+        return _endpoints.connect(_principal, did, strictConsistency, version,
                 Channels.pipeline(
                         new HttpClientCodec(),
                         new HttpResponseProxyHandler()

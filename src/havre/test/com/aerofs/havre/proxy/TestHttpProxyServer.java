@@ -4,6 +4,7 @@
 
 package com.aerofs.havre.proxy;
 
+import com.aerofs.base.Version;
 import com.aerofs.base.id.DID;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
@@ -85,9 +86,11 @@ public class TestHttpProxyServer extends AbstractBaseTest
 
         when(auth.authenticate(any(HttpRequest.class))).thenReturn(user);
 
-        when(connector.connect(eq(user), any(DID.class), eq(false), any(ChannelPipeline.class)))
+        when(connector.connect(eq(user), any(DID.class), eq(false), any(Version.class),
+                any(ChannelPipeline.class)))
                 .thenReturn(mock(Channel.class));
-        when(connector.connect(eq(user), eq(did), eq(true), any(ChannelPipeline.class)))
+        when(connector.connect(eq(user), eq(did), eq(true), any(Version.class),
+                any(ChannelPipeline.class)))
                 .thenReturn(null);
 
         given()

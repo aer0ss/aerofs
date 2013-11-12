@@ -60,6 +60,14 @@ public class UniqueID extends LeanByteString implements Comparable<UniqueID>, IB
 
     public static final UniqueID ZERO = new UniqueID(new byte[LENGTH]);
 
+    // compareTo is signed...
+    public static final UniqueID LOWEST = new UniqueID(new byte[] {
+            Byte.MIN_VALUE, Byte.MIN_VALUE, Byte.MIN_VALUE, Byte.MIN_VALUE,
+            Byte.MIN_VALUE, Byte.MIN_VALUE, Byte.MIN_VALUE, Byte.MIN_VALUE,
+            Byte.MIN_VALUE, Byte.MIN_VALUE, Byte.MIN_VALUE, Byte.MIN_VALUE,
+            Byte.MIN_VALUE, Byte.MIN_VALUE, Byte.MIN_VALUE, Byte.MIN_VALUE,
+    });
+
     private static byte[] hexDecodeID(String str, int start, int end) throws ExFormatError
     {
         byte[] bs = BaseUtil.hexDecode(str, start, end);

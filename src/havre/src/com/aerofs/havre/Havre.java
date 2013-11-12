@@ -11,6 +11,7 @@ import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.havre.auth.OAuthAuthenticator;
 import com.aerofs.havre.proxy.HttpProxyServer;
+import com.aerofs.havre.tunnel.EndpointVersionDetector;
 import com.aerofs.havre.tunnel.TunnelEndpointConnector;
 import com.aerofs.tunnel.TunnelServer;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -63,11 +64,11 @@ public class Havre
     public Havre(final UserID user, DID did, @Nullable IPrivateKeyProvider proxyKey,
             IPrivateKeyProvider tunnelKey, ICertificateProvider cacert)
     {
-        TunnelEndpointConnector connector = new TunnelEndpointConnector();
+        TunnelEndpointConnector c = new TunnelEndpointConnector(new EndpointVersionDetector());
         _tunnel = new TunnelServer(new InetSocketAddress(TUNNEL_HOST, TUNNEL_PORT),
-                tunnelKey, cacert, user, did, new HashedWheelTimer(), connector);
+                tunnelKey, cacert, user, did, new HashedWheelTimer(), c);
         _proxy = new HttpProxyServer(new InetSocketAddress(PROXY_HOST, PROXY_PORT),
-                proxyKey, new OAuthAuthenticator(cacert), connector);
+                proxyKey, new OAuthAuthenticator(cacert), c);
     }
 
     public void start()

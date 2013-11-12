@@ -4,10 +4,12 @@
 
 package com.aerofs.daemon.rest;
 
+import com.aerofs.base.Version;
 import com.aerofs.daemon.rest.providers.OAuthProvider;
 import com.aerofs.daemon.rest.resources.ChildrenResource;
 import com.aerofs.daemon.rest.resources.FilesResource;
 import com.aerofs.daemon.rest.resources.FoldersResource;
+import com.aerofs.daemon.rest.resources.VersionResource;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.restless.Service;
@@ -24,7 +26,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class RestService extends Service
 {
-    public static final String VERSION = "/v0.9";
+    public static final Version HIGHEST_SUPPORTED_VERSION = new Version(0, 9);
+
+    // For now accept any version,
+    public static final String VERSION = "/v{version: [0-9]+\\.[0-9]+}";
 
     // Port for the service. 0 to use any available port (default)
     // configurable for firewall-friendliness
@@ -51,6 +56,7 @@ public class RestService extends Service
         // specify all providers and resources explictly instead of using a package scanner
         // because we flatten packages in the proguard step
         return ImmutableSet.of(
+                VersionResource.class,
                 ChildrenResource.class,
                 FoldersResource.class,
                 FilesResource.class,

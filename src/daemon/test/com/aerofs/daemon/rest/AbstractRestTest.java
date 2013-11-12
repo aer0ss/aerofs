@@ -110,7 +110,7 @@ public class AbstractRestTest extends AbstractTest
     protected static final UserID user = UserID.fromInternal("foo@bar.baz");
     protected static final DID did = DID.generate();
 
-    private final boolean useProxy;
+    protected final boolean useProxy;
 
     public AbstractRestTest(boolean useProxy)
     {

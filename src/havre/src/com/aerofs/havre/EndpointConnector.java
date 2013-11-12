@@ -4,6 +4,7 @@
 
 package com.aerofs.havre;
 
+import com.aerofs.base.Version;
 import com.aerofs.base.id.DID;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import org.jboss.netty.channel.Channel;
@@ -21,11 +22,12 @@ public interface EndpointConnector
      * @param principal authenticated user for which the endpoint should be suitable
      * @param did prefered endpoint, if not null
      * @param strictMatch whether to fail if the prefered endpoint is not available
+     * @param minVersion minimum endpoint version required to service incoming request
      * @param pipeline pipeline to place on top of the channel
      * @return a Netty channel connected to a suitable endpoint, null if none is found
      */
     public @Nullable Channel connect(AuthenticatedPrincipal principal, @Nullable DID did,
-            boolean strictMatch, ChannelPipeline pipeline);
+            boolean strictMatch, @Nullable Version minVersion, ChannelPipeline pipeline);
 
     /**
      * NB: MUST be threadsafe
