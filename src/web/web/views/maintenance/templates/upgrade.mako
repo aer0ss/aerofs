@@ -23,8 +23,8 @@
     </li>
 </ol>
 
-<p>During the backup process, some system services will be unavailable until
-    the next time this appliance restarts.</p>
+<p>Once you initiate the Backup process, some system services will
+become unavailable until the next time this appliance is restarted.</p>
 
 <hr/>
 

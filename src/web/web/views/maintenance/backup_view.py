@@ -38,7 +38,7 @@ def download_backup_file(request):
     Also see http://docs.pylonsproject.org/projects/pyramid_cookbook/en/latest/static_assets/files.html for alternatives to send file content as responses.
     """
     # The browser will use this name as the name for the downloaded file
-    name = 'aerofs-backup_{}.dat'.format(datetime.today().strftime('%Y%m%d-%H%M%S'))
+    name = 'aerofs-backup_{}'.format(datetime.today().strftime('%Y%m%d-%H%M%S'))
     f = open(BACKUP_FILE_PATH)
     return Response(content_type='application/x-compressed', app_iter=f,
                     content_disposition='attachment; filename={}'.format(name))
