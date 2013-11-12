@@ -105,14 +105,16 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
     /**
      * Resolve the DID into either username or device name depending on if the owner
      *   is the local user. It will make SP calls to update local database if necessary,
-     *   and it will return the proper unknown label if it's unable to resolve the DID.
+     *   and it will return an user friends default label if it's unable to resolve the DID
+     *   to a name.
      *
      * N.B. S.LBL_UNKNOWN_USER and S.LBL_UNKNOWN_DEVICE should have already included
      *   custom prefix/suffix so we should not format them again.
      *
-     * @return the username of the owner of the device if it's not the local user
-     *   or the device name of the device if it is the local user
-     *   or the proper error label if we are unable to resolve the DID.
+     * @return an user-friendly display name based on:
+     *   - the device name if the owner of the device is the local user.
+     *   - the username of the owner if the owner of the device is not hte local user.
+     *   - a default display name if we are unable to resolve the owner or the device.
      */
     private String formatDisplayName_(DID did)
     {
@@ -144,9 +146,8 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
                     }
                 }
 
-                return username == null
-                        ? S.LBL_UNKNOWN_USER
-                        : username.getString() + "'s computer";
+                return (username == null ? owner.getString() : username.getString())
+                        + "'s computer";
             }
         } catch (Exception ex) {
             l.warn("Failed to lookup display name for {}", did, ex);
