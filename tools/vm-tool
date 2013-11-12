@@ -86,6 +86,11 @@ function _package()
     do_in $AEROFS_ROOT/packaging make packagelist
 }
 
+function _package_clients()
+{
+    do_in $AEROFS_ROOT ant package_clients_for_test -Dmode=PRIVATE
+}
+
 # -----------------------------------------------------------
 # Deploys
 # -----------------------------------------------------------
@@ -123,6 +128,7 @@ function _vm-create()
     repo=$(_lowercase_repo)
 
     _package
+    _package_clients
     _local-prod-cmd vm-make "$repo" ${@:-}
 }
 
