@@ -40,24 +40,26 @@ public class CompRootAnchorUpdater extends Composite
 {
     private final static Logger l = Loggers.getLogger(CompRootAnchorUpdater.class);
 
+    private final String NEW_LOCATION_TEXT = "Select New Location...";
+    // N.B. UNLINK_TEXT is expected to end with a period, see errorLabel's text
+    private final String UNLINK_TEXT = S.UNLINK_THIS_COMPUTER;
+    private final String QUIT_BUTTON_TEXT = "Quit";
+
     public CompRootAnchorUpdater(Composite parent, final String oldAbsPath, final @Nullable SID sid)
     {
         super(parent, SWT.NONE);
         GridLayout gridLayout = new GridLayout(2, false);
         gridLayout.marginWidth = GUIParam.MARGIN;
         gridLayout.marginHeight = OSUtil.isOSX() ? 20 : 26;
-        gridLayout.verticalSpacing = 3;
+        gridLayout.verticalSpacing = GUIParam.MAJOR_SPACING;
         this.setLayout(gridLayout);
 
         CLabel errorIcon = new CLabel(this, SWT.NONE);
         errorIcon.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1));
         errorIcon.setImage(getShell().getDisplay().getSystemImage(SWT.ICON_ERROR));
 
-        final String NEW_LOCATION_TEXT = "Select New Location...";
-        final String QUIT_BUTTON_TEXT = "Quit";
-
         Label errorLabel = new Label(this, SWT.WRAP);
-        GridData gdErrorLabel = new GridData(SWT.FILL, SWT.TOP, true, true, 1, 1);
+        GridData gdErrorLabel = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
         gdErrorLabel.widthHint = 360;
         errorLabel.setLayoutData(gdErrorLabel);
         // TODO: fix this fugly dialog by splitting this label into a nicer multi-component layout
@@ -72,16 +74,20 @@ public class CompRootAnchorUpdater extends Composite
                 oldAbsPath + "\n\n" +
                 "If you moved the folder, click \"" + NEW_LOCATION_TEXT + "\" " +
                 "below, and specify the new location.\n\n" +
-                "If you deleted the folder, or want to start over, click " +
-                "\"" + S.UNLINK_THIS_COMPUTER + "\". You will be asked to setup " +
-                L.product() + " the next time you launch.\n\n" +
-                "If you want to move the folder back to its original location, " +
-                "click \"" + QUIT_BUTTON_TEXT + "\", move it back to its location, and launch " +
-                L.product() + " again.");
+                "If you deleted the " + L.product() + " folder, or want to start over, click \"" +
+                UNLINK_TEXT + "\" You will be asked to setup " +
+                L.product() + " the next time " + L.product() + " launches.\n\n" +
+                "If you want to move the missing folder back to its original location, " +
+                "click \"" + QUIT_BUTTON_TEXT + ",\" move the folder back to its original " +
+                "location, and launch " + L.product() + " again.");
 
         Composite composite = new Composite(this, SWT.NONE);
-        composite.setLayout(new FillLayout(SWT.HORIZONTAL));
-        composite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1));
+        FillLayout layout = new FillLayout(SWT.HORIZONTAL);
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        layout.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
+        composite.setLayout(layout);
+        composite.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false, 2, 1));
 
         Button newLocationBtn = GUIUtil.createButton(composite, SWT.NONE);
         newLocationBtn.setText(NEW_LOCATION_TEXT);
@@ -94,7 +100,7 @@ public class CompRootAnchorUpdater extends Composite
         });
 
         Button unlinkBtn = GUIUtil.createButton(composite, SWT.NONE);
-        unlinkBtn.setText(S.UNLINK_THIS_COMPUTER);
+        unlinkBtn.setText(UNLINK_TEXT);
         unlinkBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -116,7 +122,6 @@ public class CompRootAnchorUpdater extends Composite
 
         getShell().setDefaultButton(newLocationBtn);
     }
-
 
     /**
      * @return True if a new root anchor path was selected and applied to the CfgDatabase,

@@ -30,10 +30,11 @@ public class CLIRootAnchorUpdater
     // This string must be consistent with the string in CompRootAnchorUpdater
     // TODO (WW) define the string in S.java?
     private final String _unlinkOrQuitMsg = "If you want to move the missing folder " +
-            "back to its original location, choose \"Quit\", move it back to its original" +
-            " location, and launch " + L.product() + " again.\n" +
+            "back to its original location, choose \"Quit,\" move the folder back to its " +
+            "original location, and launch " + L.product() + " again.\n" +
             "If you deleted the " + L.product() + " folder, or want to start over, " +
-            "choose \"Unlink\". You will be asked to setup AeroFS the next time you launch.";
+            "choose \"Unlink.\" You will be asked to setup " + L.product() + " the next time " +
+            L.product() + " launches.";
 
     public CLIRootAnchorUpdater(CLI cli, String oldAbsPath, @Nullable SID sid)
     {
