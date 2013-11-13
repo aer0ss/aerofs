@@ -13,7 +13,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.common.UserFilter;
 import com.aerofs.ui.IUI.MessageType;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
@@ -42,8 +41,6 @@ public abstract class SignInActor
      */
     public static class CredentialActor extends SignInActor
     {
-        public CredentialActor() { _filter = new UserFilter(); }
-
         @Override
         public void signInUser(Setup setup, SetupModel model) throws Exception {
             SPBlockingClient sp = new SPBlockingClient.Factory()
@@ -61,8 +58,6 @@ public abstract class SignInActor
             }
             model.setClient(sp);
         }
-
-        private UserFilter _filter;
     }
 
     /**

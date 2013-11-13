@@ -19,9 +19,8 @@ import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.SecUtilHelper;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
-import com.aerofs.sp.authentication.IAuthenticator;
-import com.aerofs.sp.authentication.LocalAuthenticator;
-import com.aerofs.sp.common.UserFilter;
+import com.aerofs.sp.authentication.Authenticator;
+import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.AbstractTestWithDatabase;
 import com.aerofs.sp.server.IdentitySessionManager;
 import com.aerofs.sp.server.PasswordManagement;
@@ -134,25 +133,24 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected CertificateAuthenticator certificateAuthenticator =
             mock(CertificateAuthenticator.class);
-    @Spy protected UserFilter userFilter = mock(UserFilter.class);
 
     @Mock protected InvitationEmailer.Factory factEmailer;
 
     // To simulate service.signIn(USER, PASSWORD), subclasses can call setSessionUser(UserID)
     @Spy protected MockSessionUser sessionUser;
 
+    @Spy protected Authenticator authenticator = AuthenticatorFactory.create();
     @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
-            mock(PasswordResetEmailer.class), userFilter);
+            mock(PasswordResetEmailer.class), authenticator);
     @Spy DeviceRegistrationEmailer _deviceRegistrationEmailer = mock(DeviceRegistrationEmailer.class);
     @Spy RequestToSignUpEmailer requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
+
     @Mock SharedFolderNotificationEmailer sharedFolderNotificationEmailer;
 
     @Mock Analytics analytics;
-
     @Spy protected IdentitySessionManager identitySessionManager = new IdentitySessionManager();
-    @Spy protected IAuthenticator authenticator = new LocalAuthenticator();
-    @Spy protected ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(userFilter,
-            factUser, sharedFolderNotificationEmailer);
+    @Spy protected ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(
+            authenticator, factUser, sharedFolderNotificationEmailer);
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,

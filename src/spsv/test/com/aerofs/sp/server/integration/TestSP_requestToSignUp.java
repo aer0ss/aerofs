@@ -74,7 +74,7 @@ public class TestSP_requestToSignUp extends AbstractSPTest
     @Test
     public void shouldRejectAutoProsivionedUsers() throws Exception
     {
-        when(authenticator.isAutoProvisioned(any(User.class))).thenReturn(true);
+        when(authenticator.isLocallyManaged(any(UserID.class))).thenReturn(false);
 
         try {
             // It should fail because AbstractSPTest already created a bunch of users

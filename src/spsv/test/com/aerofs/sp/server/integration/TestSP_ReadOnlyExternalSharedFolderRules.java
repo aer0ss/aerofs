@@ -12,7 +12,7 @@ import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
-import com.aerofs.sp.common.UserFilter;
+import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -55,11 +55,9 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         // Ask SharedFolderRulesFactory to create ReadOnlyExternalFolderRules
         setProperties(true, INTERNAL_ADDRESSES);
 
-        // UserFilter's constructor reads and caches property values so we have to construct a new
-        // one.
-        userFilter = new UserFilter();
-        ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(userFilter, factUser,
-                sharedFolderNotificationEmailer);
+        // Authentiator factory reads and caches property values so we have to construct a new one
+        ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(
+                AuthenticatorFactory.create(), factUser, sharedFolderNotificationEmailer);
 
         // reconstruct SP using the new shared folder rules
         service = new SPService(db, sqlTrans, jedisTrans, sessionUser, passwordManagement,

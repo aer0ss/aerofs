@@ -8,7 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.sp.authentication.ExLdapConfigurationError;
-import com.aerofs.sp.authentication.LdapAuthenticator;
+import com.aerofs.sp.authentication.LdapAuthority;
 import com.aerofs.sp.authentication.LdapConfiguration;
 import org.slf4j.Logger;
 
@@ -70,7 +70,7 @@ public class LdapVerificationServlet extends HttpServlet
             lcfg.USER_OBJECTCLASS  = getParameter(req, "ldap_server_schema_user_class");
             lcfg.SERVER_CA_CERT    = getParameter(req, "ldap_server_ca_certificate");
 
-            LdapAuthenticator lauth = new LdapAuthenticator(lcfg);
+            LdapAuthority lauth = new LdapAuthority(lcfg);
 
             try {
                 lauth.testConnection();

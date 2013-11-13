@@ -5,7 +5,9 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
+import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
@@ -15,36 +17,32 @@ import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 
 /**
- * Authenticator type that compares an scrypt'ed credential against the local user database.
- * If the credential matches our stored value for this user, continue; otherwise throw an
- * exception (ExBadCredential).
+ * Authentication authority that compares a credential value against the local user database.
+ * If the hashed credential matches our stored hash for this user, continue;
+ * otherwise throw ExBadCredential.
  */
-public class LocalAuthenticator implements IAuthenticator
+class LocalAuthority implements IAuthority
 {
-    private static Logger l = LoggerFactory.getLogger(LocalAuthenticator.class);
+    private static Logger l = LoggerFactory.getLogger(LocalAuthority.class);
 
     /**
      * Authenticate a user with an AeroFS-managed password.
+     *
      * @param user User object, must have id()
      * @param credential Credential value - expects scrypt'ed if format==LEGACY
      * @param trans A transaction class that can be begin'ed and commit'ed.
      * @param format If LEGACY, then no server-side SCrypt will be performed.
      */
     @Override
-    public void authenticateUser(
-            User user, byte[] credential,
-            IThreadLocalTransaction<SQLException> trans,
-            CredentialFormat format)
+    public void authenticateUser(User user, byte[] credential,
+            IThreadLocalTransaction<SQLException> trans, CredentialFormat format)
             throws SQLException, ExBadCredential, GeneralSecurityException
     {
         byte[] credValue;
-        if (format == CredentialFormat.TEXT)
-        {
+        if (format == Authenticator.CredentialFormat.TEXT) {
             credValue = LocalCredential.deriveKeyForUser(user.id(), credential);
-        }
-        else
-        {
-            Preconditions.checkState(format == CredentialFormat.LEGACY);
+        } else {
+            Preconditions.checkState(format == Authenticator.CredentialFormat.LEGACY);
             l.info("checking legacy-formatted cred");
             credValue = credential;
         }
@@ -55,9 +53,16 @@ public class LocalAuthenticator implements IAuthenticator
     }
 
     @Override
-    public boolean isAutoProvisioned(User user)
+    public boolean isInternalUser(UserID userID)
     {
-        // All users must go through standard signup workflow -- they are manually provisioned.
-        return false;
+        return _internalAddressPattern.isInternalUser(userID);
     }
+
+    @Override
+    public boolean managesLocalCredential() { return true; }
+
+    @Override
+    public boolean canAuthenticate(UserID userID) { return true; }
+
+    private AddressPattern _internalAddressPattern = new AddressPattern();
 }

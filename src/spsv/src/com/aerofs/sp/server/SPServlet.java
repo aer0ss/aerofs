@@ -15,8 +15,8 @@ import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
+import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
-import com.aerofs.sp.common.UserFilter;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
@@ -111,32 +111,32 @@ public class SPServlet extends AeroServlet
 
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
 
-    private final UserFilter _userFilter = new UserFilter();
+    private final Authenticator _authenticator = AuthenticatorFactory.create();
     private final PasswordManagement _passwordManagement =
-            new PasswordManagement(_db, _factUser, new PasswordResetEmailer(), _userFilter);
+            new PasswordManagement(_db, _factUser, new PasswordResetEmailer(), _authenticator);
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer = new DeviceRegistrationEmailer();
-    private final RequestToSignUpEmailer _requestToSignUpEmailer = new RequestToSignUpEmailer();
 
+    private final RequestToSignUpEmailer _requestToSignUpEmailer = new RequestToSignUpEmailer();
     private final PooledJedisConnectionProvider _jedisConProvider =
             new PooledJedisConnectionProvider();
     private final JedisThreadLocalTransaction _jedisTrans =
             new JedisThreadLocalTransaction(_jedisConProvider);
+
     private final JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
 
     private final Analytics _analytics =
             new Analytics(new SPAnalyticsProperties(_sessionUser));
-
     private final InvitationReminderEmailer _invitationReminderEmailer = new InvitationReminderEmailer();
-    private final SharedFolderNotificationEmailer _sfnEmailer = new SharedFolderNotificationEmailer();
 
+    private final SharedFolderNotificationEmailer _sfnEmailer = new SharedFolderNotificationEmailer();
     private final ISharedFolderRules _sfRules = SharedFolderRulesFactory
-            .create(_userFilter, _factUser, _sfnEmailer);
+            .create(_authenticator, _factUser, _sfnEmailer);
 
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
             _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
             _requestToSignUpEmailer, _commandQueue, _analytics, new IdentitySessionManager(),
-            AuthenticatorFactory.create(), _sfRules, _sfnEmailer);
+            _authenticator, _sfRules, _sfnEmailer);
 
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 

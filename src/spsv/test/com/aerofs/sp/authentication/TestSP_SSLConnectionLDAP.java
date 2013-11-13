@@ -85,8 +85,7 @@ public class TestSP_SSLConnectionLDAP extends AbstractSPTest
     }
 
     LdapConfiguration _cfg = new LdapConfiguration();
-    // this supplies an instance of type IAuthenticator; when the InjectMocks-annotated
-    // SPService instance asks for an IAuthenticator field, it will get this object.
-    @Spy IAuthenticator _authenticator = new LdapAuthenticator(_cfg);
+    @Spy Authenticator _authenticator = new Authenticator(
+            new IAuthority[] { new LdapAuthority(_cfg) });
     private static InMemoryServer _server;
 }

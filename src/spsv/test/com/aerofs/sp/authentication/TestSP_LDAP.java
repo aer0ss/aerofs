@@ -24,7 +24,8 @@ public class TestSP_LDAP extends AbstractSPTest
 {
     private static InMemoryServer _server;
     LdapConfiguration _cfg = new LdapConfiguration();
-    @Spy IAuthenticator _authenticator = new LdapAuthenticator(_cfg);
+    @Spy Authenticator _authenticator = new Authenticator(
+            new IAuthority[] { new LdapAuthority(_cfg) });
 
     @BeforeClass
     public static void beforeClass() throws Exception { _server = new LdapSchema(false, false); }
@@ -81,14 +82,21 @@ public class TestSP_LDAP extends AbstractSPTest
     {
         User user = newUser();
         createTestUser(user.id().getString(), "dontcare");
-        assertTrue(new LdapAuthenticator(_cfg).canAuthenticate(user));
+        assertTrue(new LdapAuthority(_cfg).canAuthenticate(user.id()));
     }
 
     @Test
     public void shouldNotClaimExternalUser() throws Exception
     {
         User user = factUser.create(UserID.fromExternal("this@does.not.exist.in.ldap"));
-        assertFalse(new LdapAuthenticator(_cfg).canAuthenticate(user));
+        assertFalse(new LdapAuthority(_cfg).canAuthenticate(user.id()));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void shouldNotAuthUnknownUser() throws Exception
+    {
+        service.credentialSignIn(
+                "random@users.example.org", ByteString.copyFrom("hithere".getBytes()));
     }
 
     private String createTestUser(String email, String credentialString) throws Exception
@@ -107,6 +115,8 @@ public class TestSP_LDAP extends AbstractSPTest
     }
 
     // ---- Tests for LDAP credentials in legacy signin methods ----
+    // Legacy format for LDAP is still cleartext...
+    @Test
     public void legacyShouldSimpleSignIn() throws Exception
     {
         service.signInUser(createTestUser("l_ldap1@example.com", "l_ldap1"),
@@ -130,12 +140,20 @@ public class TestSP_LDAP extends AbstractSPTest
     @Test(expected = ExBadCredential.class)
     public void legacyShouldDisallowBadCred() throws Exception
     {
-        service.signInUser("random@users.example.org", ByteString.copyFrom("badpw".getBytes()));
+        service.signInUser(createTestUser("badpw@users.example.org", "goodpw"),
+                ByteString.copyFrom("badpw".getBytes()));
     }
 
     @Test(expected = ExBadCredential.class)
     public void legacyShouldDisallowEmptyPw() throws Exception
     {
-        service.signInUser("random@users.example.org", ByteString.copyFrom(new byte[0]));
+        service.signInUser(createTestUser("emptypw@users.example.org", "himom"),
+                ByteString.copyFrom(new byte[0]));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void legacyShouldNotAuthUnknownUser() throws Exception
+    {
+        service.signInUser("random@users.example.org", ByteString.copyFrom("hithere".getBytes()));
     }
 }

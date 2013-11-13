@@ -6,6 +6,7 @@ package com.aerofs.sp.server.shared_folder_rules;
 
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
@@ -13,10 +14,11 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
-import com.aerofs.sp.common.UserFilter;
+import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sp.server.lib.user.User.Factory;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -50,15 +52,15 @@ import java.util.List;
 public class ReadOnlyExternalFolderRules implements ISharedFolderRules
 {
     private final User.Factory _factUser;
-    private final UserFilter _filter;
     private final SharedFolderNotificationEmailer _sfnEmailer;
+    private final Authenticator _authenticator;
 
-    public ReadOnlyExternalFolderRules(UserFilter filter, User.Factory factUser,
+    public ReadOnlyExternalFolderRules(Authenticator authenticator, Factory factUser,
             SharedFolderNotificationEmailer sfnEmailer)
     {
-        _filter = filter;
         _factUser = factUser;
         _sfnEmailer = sfnEmailer;
+        _authenticator = authenticator;
     }
 
     @Override
@@ -83,7 +85,7 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
         if (wasExternal || convertToExternal) throwIfInvitingEditors(srps, allExternal);
 
         // show warning messages only if the sharer is an internal user
-        if ((!suppressAllWarnings) && _filter.isInternalUser(sharer.id())) {
+        if ((!suppressAllWarnings) && _authenticator.isInternalUser(sharer.id())) {
             showWarningsForExternalFolders(wasExternal, srps, newExternal, allExternal);
         }
 
@@ -95,10 +97,11 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
     }
 
     private ImmutableCollection<UserID> getExternalUsers(List<SubjectRolePair> srps)
+            throws ExExternalServiceUnavailable
     {
         ImmutableSet.Builder<UserID> builder = ImmutableSet.builder();
         for (SubjectRolePair srp : srps) {
-            if (!_filter.isInternalUser(srp._subject)) builder.add(srp._subject);
+            if (!_authenticator.isInternalUser(srp._subject)) builder.add(srp._subject);
         }
         return builder.build();
     }
@@ -189,12 +192,12 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
      * @return an empty collection if the folder is not shared externally.
      */
     private ImmutableCollection<UserID> getExternalUsers(SharedFolder sf)
-            throws SQLException
+            throws SQLException, ExExternalServiceUnavailable
     {
         ImmutableList.Builder<UserID> builder = ImmutableList.builder();
         for (User user : sf.getAllUsers()) {
             UserID id = user.id();
-            if (!_filter.isInternalUser(id)) builder.add(id);
+            if (!_authenticator.isInternalUser(id)) builder.add(id);
         }
         return builder.build();
     }
