@@ -11,7 +11,7 @@
         if not val: val = 'share.'
     %>
     ## current_config is a template parameter
-    <input class="input-block-level" id="base-host-unified" name="base.host.unified" type="text" value=${val}>
+    <input class="input-block-level" id="base-host-unified" name="base.host.unified" type="text" value="${val}" />
 
     <p>This is your AeroFS Appliance's hostname. We recommend using <code>share.*</code> as the
         hostname. For example, ACME Corporation may choose <code>share.acme.com</code>.</p>

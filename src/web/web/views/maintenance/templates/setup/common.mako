@@ -7,6 +7,8 @@
     <button
         onclick="if (!$(this).hasClass('disabled')) gotoPrevPage(); return false"
         id='${_prev_button_id()}'
+        ## The default type is 'submit'
+        type='button'
         class='btn'
         ## make it the last element in tab order (max allowed value is 32767)
         tabindex='10000'>Previous</button>
