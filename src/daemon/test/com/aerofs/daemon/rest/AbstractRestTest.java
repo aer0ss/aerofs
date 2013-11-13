@@ -41,6 +41,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -291,6 +292,6 @@ public class AbstractRestTest extends AbstractTest
     protected RequestSpecification givenAcces()
     {
         return given()
-                .queryParam("access_token", BifrostTest.TOKEN);
+                .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.TOKEN);
     }
 }

@@ -163,6 +163,9 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             response.setHeader(Names.CONTENT_LENGTH, 0);
             response.setHeader(Names.CACHE_CONTROL, Values.NO_CACHE + "," + Values.NO_TRANSFORM);
             response.setHeader(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+            if (status == HttpResponseStatus.UNAUTHORIZED) {
+                response.setHeader(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"");
+            }
             // reset server id cookie
             addCookie(response, COOKIE_SERVER, "");
             downstream.write(response);

@@ -1,6 +1,7 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.bifrost.server.BifrostTest;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 
 import static com.jayway.restassured.RestAssured.expect;
@@ -18,6 +19,7 @@ public class TestAuth extends AbstractRestTest
     {
         expect()
                 .statusCode(401)
+                .header(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"")
         .when().get("/v0.9/children");
     }
 
@@ -25,9 +27,10 @@ public class TestAuth extends AbstractRestTest
     public void shouldReturn401WhenAccessTokenInvalid() throws Exception
     {
         given()
-                .queryParam("access_token", "totallynotavalidtoken")
+                .header(Names.AUTHORIZATION, "Bearer totallynotavalidtoken")
         .expect()
                 .statusCode(401)
+                .header(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"")
         .when().get("/v0.9/children");
     }
 
@@ -35,9 +38,10 @@ public class TestAuth extends AbstractRestTest
     public void shouldReturn401WhenAccessTokenExpired() throws Exception
     {
         given()
-                .queryParam("access_token", BifrostTest.EXPIRED)
+                .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.EXPIRED)
         .expect()
                 .statusCode(401)
+                .header(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"")
         .when().get("/v0.9/children");
     }
 }

@@ -8,9 +8,12 @@ import com.google.common.cache.LoadingCache;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Synchronous verification of OAuth tokens with an in-memory cache.
@@ -52,6 +55,22 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
         _auth = TokenVerificationClient.makeAuth(clientId, clientSecret);
         _client = client;
         _cache = ((CacheBuilder<String, VerifyTokenResponse>)builder).build(this);
+    }
+
+    public @Nullable AuthenticatedPrincipal getPrincipal(String authorizationHeader) throws Exception
+    {
+        String token = accessToken(authorizationHeader);
+        return token == null ? null : verify(token).principal;
+    }
+
+    private final static Pattern BEARER_PATTERN = Pattern.compile("Bearer +([0-9a-zA-Z-._~+/]+=*)");
+    private static @Nullable String accessToken(@Nullable String authorizationHeader)
+    {
+        if (authorizationHeader != null) {
+            Matcher m = BEARER_PATTERN.matcher(authorizationHeader);
+            if (m.matches()) return m.group(1);
+        }
+        return null;
     }
 
     public VerifyTokenResponse verify(String accessToken) throws Exception
