@@ -15,9 +15,11 @@ import com.sun.jersey.core.spi.component.ComponentScope;
 import com.sun.jersey.server.impl.inject.AbstractHttpContextInjectable;
 import com.sun.jersey.spi.inject.Injectable;
 import com.sun.jersey.spi.inject.InjectableProvider;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.nio.channels.ClosedChannelException;
@@ -47,19 +49,18 @@ public class OAuthProvider
     @Override
     public AuthenticatedPrincipal getValue(HttpContext context)
     {
-        String accessToken = context.getRequest().getQueryParameters().getFirst("access_token");
+        String auth = context.getRequest().getHeaderValue(HttpHeaders.AUTHORIZATION);
         try {
-            if (accessToken != null) {
-                AuthenticatedPrincipal principal = _verifier.verify(accessToken).principal;
-                if (principal != null) return principal;
-            }
+            AuthenticatedPrincipal principal = _verifier.getPrincipal(auth);
+            if (principal != null) return principal;
         } catch (Exception e) {
             l.error("failed to verify token", BaseLogUtil.suppress(e,
                     ClosedChannelException.class));
         }
         throw new WebApplicationException(Response
                 .status(Status.UNAUTHORIZED)
-                .entity(new Error(Type.UNAUTHORIZED, "Missing or invalid access_token"))
+                .header(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"")
+                .entity(new Error(Type.UNAUTHORIZED, "Missing or invalid access token"))
                 .build());
     }
 
