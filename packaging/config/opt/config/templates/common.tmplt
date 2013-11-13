@@ -33,3 +33,9 @@ sp.payment.enabled=false
 internal_email_pattern={{ internal_email_pattern }}
 
 identity_service_identifier={{ identity_service_identifier }}
+
+openid.service.url={{ openid_service_url }}
+openid.service.timeout={{ openid_service_timeout }}
+openid.service.session.timeout={{ openid_service_session_timeout }}
+openid.service.session.interval={{ openid_service_session_interval }}
+openid.service.realm={{ openid_service_realm }}

@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 /**
  * Helper class to hold common functions for dealing with Properties objects.
  */
@@ -82,7 +84,7 @@ public class PropertiesHelper
             Integer defaultValue)
     {
         String val = properties.getProperty(key);
-        return (val == null) ? defaultValue : Integer.valueOf(val);
+        return isNullOrEmpty(val) ? defaultValue : Integer.valueOf(val);
     }
 
     /**
@@ -93,7 +95,7 @@ public class PropertiesHelper
             Long defaultValue)
     {
         String val = properties.getProperty(key);
-        return (val == null) ? defaultValue : Long.valueOf(val);
+        return isNullOrEmpty(val) ? defaultValue : Long.valueOf(val);
     }
 
     /**
