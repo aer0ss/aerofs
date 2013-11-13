@@ -94,10 +94,6 @@ service RitualService {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // ACL
 
-    // Get the list of users and their roles for a shared folder. The local user is always included
-    // in the list.
-    rpc GetACL(GetACLCall) returns(GetACLReply);
-
     // Set users and their roles for a shared folder.
     // Throw NOT_SHARED if called on a unshared folder
     rpc UpdateACL(UpdateACLCall) returns(Void);
@@ -416,14 +412,6 @@ message ExportConflictReply {
 message DeleteConflictCall {
     required PBPath path = 1;
     required int32 kidx = 2;
-}
-
-message GetACLCall {
-    required PBPath path = 1;
-}
-
-message GetACLReply {
-    repeated PBSubjectRolePair subject_role = 1;
 }
 
 message UpdateACLCall {

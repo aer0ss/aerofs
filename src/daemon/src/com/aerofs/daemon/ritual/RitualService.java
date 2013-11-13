@@ -22,7 +22,6 @@ import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.daemon.event.admin.EIExportFile;
 import com.aerofs.daemon.event.admin.EIExportRevision;
-import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.admin.EIGetTransferStat;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
@@ -73,7 +72,6 @@ import com.aerofs.proto.Ritual.DumpStatsReply;
 import com.aerofs.proto.Ritual.ExportConflictReply;
 import com.aerofs.proto.Ritual.ExportFileReply;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
-import com.aerofs.proto.Ritual.GetACLReply;
 import com.aerofs.proto.Ritual.GetActivitiesReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.GetObjectAttributesReply;
@@ -437,24 +435,6 @@ public class RitualService implements IRitualService
     {
         assert false;   // unimplemented
         return null;
-    }
-
-    @Override
-    public ListenableFuture<GetACLReply> getACL(PBPath path) throws Exception
-    {
-        EIGetACL ev = new EIGetACL(Path.fromPB(path), Core.imce());
-        ev.execute(PRIO);
-
-        // we only get here if the event suceeded properly
-
-        GetACLReply.Builder replyBuilder = GetACLReply.newBuilder();
-        for (Entry<UserID, Role> en : ev._subject2role.entrySet()) {
-            replyBuilder.addSubjectRole(PBSubjectRolePair.newBuilder()
-                    .setSubject(en.getKey().getString())
-                    .setRole(en.getValue().toPB()));
-        }
-
-        return createReply(replyBuilder.build());
     }
 
     @Override

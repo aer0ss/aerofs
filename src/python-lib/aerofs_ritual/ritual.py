@@ -238,31 +238,6 @@ class _RitualServiceWrapper(object):
         pbpath = self.wait_path(path)
         self._service.delete_acl(pbpath, subject)
 
-    def get_acl(self, path):
-        """
-        Returns a dict {subject:role} for a shared folder path
-
-        Args:
-            path: shared folder path
-
-        Returns:
-            dict consisting of subject:role pairs. subject (string) is a
-            username for which a permission exists. role is an int whose
-            value corresponds to the value of the PBRole enum
-
-        Raises:
-            PBException with type = NOT_SHARED if the path is not a shared
-            folder path
-        """
-        pbpath = self.wait_path(path)
-        reply = self._service.get_acl(pbpath)
-
-        acl = {}
-        for pair in reply.subject_role:
-            acl[pair.subject] = pair.role # role is an int
-
-        return acl
-
     def list_rev_children(self, path):
         pbpath = convert.absolute_to_pbpath(path)
         return self._service.list_rev_children(pbpath).child

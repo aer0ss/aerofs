@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.admin.HdDumpStat;
 import com.aerofs.daemon.core.admin.HdExportConflict;
 import com.aerofs.daemon.core.admin.HdExportFile;
 import com.aerofs.daemon.core.admin.HdExportRevision;
-import com.aerofs.daemon.core.admin.HdGetACL;
 import com.aerofs.daemon.core.admin.HdGetActivities;
 import com.aerofs.daemon.core.admin.HdHeartbeat;
 import com.aerofs.daemon.core.admin.HdInvalidateDeviceNameCache;
@@ -58,7 +57,6 @@ import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.daemon.event.admin.EIExportFile;
 import com.aerofs.daemon.event.admin.EIExportRevision;
-import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.admin.EIGetTransferStat;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
@@ -127,7 +125,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdTransportDiagnostics _hdTransportDiagnostics;
     private final HdReloadConfig _hdReloadConfig;
     private final HdPauseOrResumeSyncing _hdPauseOrResumeSyncing;
-    private final HdGetACL _hdGetACL;
     private final HdUpdateACL _hdUpdateACL;
     private final HdDeleteACL _hdDeleteACL;
     private final HdSetAttr _hdSetAttr;
@@ -162,7 +159,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdPresence hdPresence, HdListConflicts hdListConflicts,
             HdExportConflict hdExportConflict, HdDumpStat hdDumpStat,
             HdTransportDiagnostics hdTransportDiagnostics, HdReloadConfig hdReloadConfig,
-            HdPauseOrResumeSyncing hdPauseOrResumeSyncing, HdGetACL hdGetACL,
+            HdPauseOrResumeSyncing hdPauseOrResumeSyncing,
             HdUpdateACL hdUpdateACL, HdDeleteACL hdDeleteACL, HdSetAttr hdSetAttr,
             HdGetChildrenAttr hdGetChildrenAttr, HdGetAttr hdGetAttr, HdShareFolder hdShareFolder,
             HdImportFile hdImportFile, HdExportFile hdExportFile,
@@ -201,7 +198,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hdTransportDiagnostics = hdTransportDiagnostics;
         _hdReloadConfig = hdReloadConfig;
         _hdPauseOrResumeSyncing = hdPauseOrResumeSyncing;
-        _hdGetACL = hdGetACL;
         _hdUpdateACL = hdUpdateACL;
         _hdDeleteACL = hdDeleteACL;
         _hdSetAttr = hdSetAttr;
@@ -239,7 +235,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIDeleteBranch.class, _hddb)
                 .setHandler_(EIGetAttr.class, _hdGetAttr)
                 .setHandler_(EIGetChildrenAttr.class, _hdGetChildrenAttr)
-                .setHandler_(EIGetACL.class, _hdGetACL)
                 .setHandler_(EIUpdateACL.class, _hdUpdateACL)
                 .setHandler_(EIDeleteACL.class, _hdDeleteACL)
                 .setHandler_(EISetAttr.class, _hdSetAttr)
