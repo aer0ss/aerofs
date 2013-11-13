@@ -4,10 +4,9 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.acl.Role;
-import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.sp.common.SharedFolderState;
 import org.junit.Test;
