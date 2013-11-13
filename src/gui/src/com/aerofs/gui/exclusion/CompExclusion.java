@@ -1,11 +1,12 @@
 package com.aerofs.gui.exclusion;
 
-import com.aerofs.base.Loggers;
+import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
+import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
@@ -13,100 +14,176 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
-import org.slf4j.Logger;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class CompExclusion extends Composite
 {
-    private final static Logger l = Loggers.getLogger(CompExclusion.class);
-    private final Button _btnCancel;
-    private final Button _btnAdvancedView;
-    private final Composite _composite;
-    private final CompExclusionList _compList;
-    private final Composite composite;
+    private Label               _lblHeader;
+    private Composite           _compBody;
+    private CompExclusionList   _lstExclusion;
+    private Composite           _buttonBar;
+    private CompSpin            _spinner;
+
+    // the enabled state of this button is used for signalling and to prevent multiple concurrent
+    // tasks.
+    private Button              _btnOK;
+    private Button              _btnCancel;
+
+    private final String _strMessage = "Only checked folders will sync to this computer.";
+    private final String _strWarning = "Unchecked folders will be deleted from this computer. " +
+            "They will not be deleted from other computers. Do you want to continue?";
 
     public CompExclusion(Composite parent)
     {
         super(parent, SWT.NONE);
 
-        GridLayout glShell = new GridLayout(1, false);
-        glShell.marginHeight = GUIParam.MARGIN;
-        glShell.marginWidth = GUIParam.MARGIN;
-        setLayout(glShell);
+        _lblHeader = new Label(this, SWT.NONE);
+        _lblHeader.setText(_strMessage);
 
-        Label lblNewLabel = new Label(this, SWT.NONE);
-        GridData gd_lblNewLabel = new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 1);
-        gd_lblNewLabel.heightHint = 26;
-        lblNewLabel.setLayoutData(gd_lblNewLabel);
-        lblNewLabel.setText("Only checked folders will sync to this computer.");
+        _compBody = new Composite(this, SWT.NONE);
 
-        _compList = new CompExclusionList(this);
-        GridData gd__compList = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-        gd__compList.widthHint = 390;
-        gd__compList.heightHint = 194;
-        _compList.setLayoutData(gd__compList);
+        _lstExclusion = new CompExclusionList(_compBody);
 
-        _composite = new Composite(this, SWT.NONE);
-        GridLayout glComposite = new GridLayout(2, false);
-        glComposite.marginWidth = 0;
-        glComposite.marginHeight = 0;
-        _composite.setLayout(glComposite);
-        _composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
-        _btnAdvancedView = GUIUtil.createButton(_composite, SWT.NONE);
-        _btnAdvancedView.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-        _btnAdvancedView.setText("Advanced View");
-        _btnAdvancedView.setVisible(false);
+        _buttonBar = GUIUtil.newPackedButtonContainer(_compBody);
 
-        composite = new Composite(_composite, SWT.NONE);
-        FillLayout fl = new FillLayout(SWT.HORIZONTAL);
-        fl.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
-        composite.setLayout(fl);
+        _spinner = new CompSpin(_buttonBar, SWT.NONE);
 
-        Button btnOk = GUIUtil.createButton(composite, SWT.NONE);
-        btnOk.setText(IDialogConstants.OK_LABEL);
-        btnOk.addSelectionListener(new SelectionAdapter() {
+        _btnOK = GUIUtil.createButton(_buttonBar, SWT.PUSH);
+        _btnOK.setText(IDialogConstants.OK_LABEL);
+        _btnOK.addSelectionListener(new SelectionAdapter()
+        {
             @Override
-            public void widgetSelected(SelectionEvent ev)
+            public void widgetSelected(SelectionEvent e)
             {
-                Operations ops = _compList.getOperations();
+                Operations ops = _lstExclusion.getOperations();
 
-                if (!ops._exclude.isEmpty()) {
-                    if (!GUI.get().ask(getShell(), MessageType.WARN, "Unchecked folders will be" +
-                            " deleted from this computer. They will not be deleted from other" +
-                            " computers. Do you want to continue?")) return;
-                }
+                // Find reasons to exit early so we don't set busy state nor spawn a new thread to
+                // do no works. Reasons to exit early include no changes, or the user cancels
+                // after we show a warning.
 
-                try {
-                    for (Path path : ops._exclude) {
-                        UIGlobals.ritual().excludeFolder(path.toPB());
-                    }
-                    for (Path path : ops._include) {
-                        UIGlobals.ritual().includeFolder(path.toPB());
-                    }
-
+                // no changes
+                if (ops._include.isEmpty() && ops._exclude.isEmpty()) {
                     getShell().close();
-
-                } catch (Exception e) {
-                    l.warn("exclude folders: " + Util.e(e));
-                    GUI.get().show(getShell(), MessageType.ERROR, "Couldn't complete the request " +
-                            ErrorMessages.e2msgDeprecated(e));
+                    return;
                 }
+
+                // warn user before we exclude folders, and exits if the user cancels
+                if (!ops._exclude.isEmpty() &&
+                        !GUI.get().ask(getShell(), MessageType.WARN, _strWarning)) return;
+
+                setBusyState(true);
+                GUI.get().safeWork(_lstExclusion,
+                        new SetExclusionTask(UIGlobals.ritualClientProvider(), ops));
             }
         });
 
-        _btnCancel = GUIUtil.createButton(composite, SWT.NONE);
+        _btnCancel = GUIUtil.createButton(_buttonBar, SWT.PUSH);
         _btnCancel.setText(IDialogConstants.CANCEL_LABEL);
-        _btnCancel.addSelectionListener(new SelectionAdapter() {
+        _btnCancel.addSelectionListener(new SelectionAdapter()
+        {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
                 getShell().close();
             }
         });
+
+        // composite layout section
+        GridLayout layout = new GridLayout();
+        layout.marginWidth = GUIParam.MARGIN;
+        layout.marginHeight = GUIParam.MARGIN;
+        layout.verticalSpacing = GUIParam.MAJOR_SPACING;
+        setLayout(layout);
+
+        _lblHeader.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false));
+        _compBody.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+        GridLayout bodyLayout = new GridLayout();
+        bodyLayout.marginWidth = 0;
+        bodyLayout.marginHeight = 0;
+        bodyLayout.verticalSpacing = GUIParam.VERTICAL_SPACING;
+        _compBody.setLayout(bodyLayout);
+
+        GridData listLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        listLayoutData.widthHint = 400;
+        listLayoutData.heightHint = 200;
+        _lstExclusion.setLayoutData(listLayoutData);
+
+        _buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
+        _btnOK.setLayoutData(new RowData(GUIParam.AEROFS_MIN_BUTTON_WIDTH, SWT.DEFAULT));
+        _btnCancel.setLayoutData(new RowData(GUIParam.AEROFS_MIN_BUTTON_WIDTH, SWT.DEFAULT));
+    }
+
+    /**
+     * @pre called from UI thread
+     *
+     * this is used as a signalling mechanism to prevent the user from running multiple tasks
+     * simultaneiously.
+     */
+    private void setBusyState(boolean isBusy)
+    {
+        checkState(GUI.get().isUIThread());
+
+        if (isBusy) {
+            _lstExclusion.setEnabled(false);
+            _btnOK.setEnabled(false);
+            _btnCancel.setEnabled(false);
+            _spinner.start();
+        } else {
+            _lstExclusion.setEnabled(true);
+            _btnOK.setEnabled(true);
+            _btnCancel.setEnabled(true);
+            _spinner.stop();
+        }
+    }
+
+    // N.B. chaining channel futures could work, but it's a lot simpler to make blocking calls
+    // on a separate thread
+    private class SetExclusionTask implements ISWTWorker
+    {
+        // N.B. it's important to have a client provider because the ritual channel may connect
+        // or disconnect in between calls, and if the channel is not disconnected, we'll just
+        // get the cached client anyway.
+        private final IRitualClientProvider _ritual;
+        private final Operations _ops;
+
+        public SetExclusionTask(IRitualClientProvider ritual, Operations ops)
+        {
+            _ritual = ritual;
+            _ops = ops;
+        }
+
+        @Override
+        public void run()
+                throws Exception
+        {
+            // N.B. per GUI.safeWork()'s contract, this method is called on a new task thread
+            for (Path path : _ops._exclude) _ritual.getBlockingClient().excludeFolder(path.toPB());
+            for (Path path : _ops._include) _ritual.getBlockingClient().includeFolder(path.toPB());
+        }
+
+        @Override
+        public void okay()
+        {
+            // N.B. per GUI.safeWork()'s contract, this method is called on the UI thread
+            setBusyState(false);
+            getShell().close();
+        }
+
+        @Override
+        public void error(Exception e)
+        {
+            // N.B. per GUI.safeWork()'s contract, this method is called on the UI thread
+            String message = "An error has occurred while updating your sync folders.";
+            ErrorMessages.show(getShell(), e, message);
+            setBusyState(false);
+        }
     }
 }
