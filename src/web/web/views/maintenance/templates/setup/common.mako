@@ -1,23 +1,22 @@
 <%namespace name="spinner" file="../spinner.mako"/>
 
-## N.B. the content of next_button_id() must be consistent with the 'next-btn'
-## string in license_page.mako.
-<%def name="next_button_id()">next-btn</%def>
-<%def name="prev_button_id()">prev-btn</%def>
+<%def name="_next_button_id()">next-btn</%def>
+<%def name="_prev_button_id()">prev-btn</%def>
 
-<%def name="render_previous_button(page)">
+<%def name="render_previous_button()">
     <button
         onclick="if (!$(this).hasClass('disabled')) gotoPrevPage(); return false"
-        id='${prev_button_id()}'
+        id='${_prev_button_id()}'
         class='btn'
         ## make it the last element in tab order (max allowed value is 32767)
         tabindex='10000'>Previous</button>
 </%def>
 
-<%def name="render_next_button(javascriptCallback)">
+## It's suggested to include this next button in a form.
+<%def name="render_next_button()">
     <button
-        onclick="if (!$(this).hasClass('disabled')) ${javascriptCallback}; return false;"
-        id='${next_button_id()}'
+        type="submit"
+        id='${_next_button_id()}'
         class='btn btn-primary pull-right'>
         Next ></button>
 </%def>
@@ -26,11 +25,6 @@
     <script>
         function hideAllModals() {
             $('div.modal').modal('hide');
-        }
-
-        function verifyAbsence(elementID) {
-            var v = document.getElementById(elementID).value;
-            return v == null || v == "";
         }
 
         function verifyPresence(elementID, message) {
@@ -69,13 +63,13 @@
         }
 
         function disableNavButtons() {
-            setEnabled($("#${next_button_id()}"), false);
-            setEnabled($("#${prev_button_id()}"), false);
+            setEnabled($("#${_next_button_id()}"), false);
+            setEnabled($("#${_prev_button_id()}"), false);
         }
 
         function enableNavButtons() {
-            setEnabled($("#${next_button_id()}"), true);
-            setEnabled($("#${prev_button_id()}"), true);
+            setEnabled($("#${_next_button_id()}"), true);
+            setEnabled($("#${_prev_button_id()}"), true);
         }
 
         function displayError(error) {

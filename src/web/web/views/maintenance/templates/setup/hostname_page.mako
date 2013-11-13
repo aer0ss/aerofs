@@ -2,7 +2,7 @@
 <%namespace name="modal" file="../modal.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<form id="hostnameForm" method="POST">
+<form method="POST" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
 
     <h4>Hostname:</h4>
@@ -19,8 +19,8 @@
         If you're using VirtualBox, get the the IP from the appliance's console. If you're using
         OpenStack, configure a floating IP for this instance.</p>
     <hr />
-    ${common.render_previous_button(page)}
-    ${common.render_next_button("submitHostnameForm()")}
+    ${common.render_previous_button()}
+    ${common.render_next_button()}
 </form>
 
 <%modal:modal>
@@ -34,7 +34,7 @@
     </%def>
     Are you sure you want to change the hostname? Depending on your DNS setup,
     it might require users to reinstall AeroFS desktop apps and logout mobile apps.
-    <a href="#" target="_blank">More information</a>.
+    <a href="https://support.aerofs.com/entries/22711364" target="_blank">Read more</a>.
 </%modal:modal>
 
 <script>
@@ -43,7 +43,7 @@
         disableEsapingFromModal($('div.modal'));
     });
 
-    function submitHostnameForm() {
+    function submitForm() {
         disableNavButtons();
 
         if (verifyPresence("base-host-unified", "Please specify a hostname.")) {
@@ -69,7 +69,7 @@
     }
 
     function doSubmit() {
-        var serializedData = $('#hostnameForm').serialize();
+        var serializedData = $('form').serialize();
         doPost("${request.route_path('json_setup_hostname')}",
                 serializedData, gotoNextPage, enableNavButtons);
     }

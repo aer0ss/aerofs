@@ -14,7 +14,7 @@
 ## their corresponding external properties (as oppose to template properties).
 ############################################
 
-<form id="id-form" method="POST">
+<form method="POST" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
 
     <h4>Managing accounts:</h4>
@@ -55,8 +55,8 @@
     </div>
 
     <hr />
-    ${common.render_previous_button(page)}
-    ${common.render_next_button("submitForm()")}
+    ${common.render_previous_button()}
+    ${common.render_next_button()}
 </form>
 
 <%def name="ldap_options()">
@@ -264,6 +264,12 @@
     $(document).ready(function() {
         initializeProgressModal();
 
+        %if local_auth:
+            localSelected();
+        %else:
+            ldapSelected();
+        %endif
+
         ## Listen to any changes to LDAP options.
         $('.ldap-opt').change(function () {
             ldapOptionChanged = true;
@@ -271,10 +277,17 @@
     });
 
     function localSelected() {
+        ## Remove 'required' attribute otherwise Chrome would complain when
+        ## submitting the form since required fields are invisible. See:
+        ## http://stackoverflow.com/questions/7168645/invalid-form-control-only-in-google-chrome
+        ## Adding the ldap-required class is for ldapSelected() to restore the
+        ## attribute.
+        $('.ldap-opt[required]').removeAttr('required').addClass('ldap-required');
         $('#ldap-options').hide();
     }
 
     function ldapSelected() {
+        $('.ldap-required').attr('required', 'required');
         $('#ldap-options').show();
     }
 
@@ -322,7 +335,7 @@
             };
 
             $.post('${request.route_path('json_verify_ldap')}',
-                    $('#id-form').serialize())
+                    $('form').serialize())
             .done(function (response) {
                 post(done, onError);
             })
@@ -343,7 +356,7 @@
         $cert.val($.trim($cert.val()));
 
         $.post('${request.route_path('json_setup_identity')}',
-                $('#id-form').serialize())
+                $('form').serialize())
         .done(done)
         .error(function (xhr) {
             showErrorMessageFromResponse(xhr);

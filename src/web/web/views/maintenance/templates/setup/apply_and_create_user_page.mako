@@ -11,10 +11,9 @@
     This might take a short while.</p>
 <hr />
 
-${common.render_previous_button(page)}
+${common.render_previous_button()}
 <button
-    onclick='submitForm(); return false;'
-    id='nextButton'
+    onclick='apply(); return false;'
     class='btn btn-primary pull-right'>Apply and Finish</button>
 
 <%progress_modal:html>
@@ -82,7 +81,7 @@ ${common.render_previous_button(page)}
         <p>Enter the email of the first user below. This user will become an
             administrator of your AeroFS Private Cloud.</p>
         <form id="create-user-form" method="get" class="form-inline">
-            <label for="${url_param_email}">Email address:</label>
+            <label for="create-user-email">Email address:</label>
             <input id="create-user-email" name="${url_param_email}" type="text">
         </form>
     </div>
@@ -198,7 +197,7 @@ ${common.render_previous_button(page)}
     ########
     ## Step 1: kick off the configuration process.
 
-    function submitForm() {
+    function apply() {
         ## Show the progress modal
         $('#${progress_modal.id()}').modal('show');
 

@@ -18,7 +18,7 @@
     </div>
 </%def>
 
-<%def name="scripts(input_id, next_btn_id)">
+<%def name="scripts(input_id, submit_btn_id)">
     <script>
         $(document).ready(function() {
             updateLicenseFileUI();
@@ -35,12 +35,12 @@
                 $('#license-btn').removeClass('btn-primary').addClass('btn-success');
                 ## "C:\\fakepath\\" is a weirdo from the browser standard.
                 $('#license-filename').text(filename.replace("C:\\fakepath\\", ''));
-                $('#${next_btn_id}').removeClass('disabled')
+                setEnabled($('#${submit_btn_id}'), true)
                     .addClass('btn-primary').focus();
             } else {
                 $('#license-btn').removeClass('btn-success').addClass('btn-primary');
-                $('#${next_btn_id}').removeClass('btn-primary')
-                    .addClass('disabled');
+                setEnabled($('#${submit_btn_id}'), false)
+                    .removeClass('btn-primary');
             }
         }
     </script>

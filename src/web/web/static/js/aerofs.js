@@ -90,11 +90,14 @@ function getAeroFSErrorData(xhr) {
 function setVisible($elem, visible) {
     if (visible) $elem.removeClass("hidden");
     else $elem.addClass("hidden");
+    return $elem;
 }
 
 function setEnabled($elem, enabled) {
-    if (enabled) $elem.removeAttr("disabled");
-    else $elem.attr("disabled", "disabled");
+    // attribute 'disabled' is for form buttons.
+    if (enabled) $elem.removeAttr("disabled").removeClass('disabled');
+    else $elem.attr("disabled", "disabled").addClass('disabled');
+    return $elem;
 }
 
 function disableEsapingFromModal($modal) {

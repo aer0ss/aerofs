@@ -6,7 +6,7 @@
 <%namespace name="common" file="common.mako"/>
 <%namespace name="license_page" file="license_page.mako"/>
 
-<form method="post" id="license-form">
+<form method="post" onsubmit="submitForm(); return false;">
     <h3>Set up AeroFS Appliance</h3>
 
     <p>This page will guide you through setting up the appliance.
@@ -24,6 +24,8 @@
 
     <h4>Upload new license file:</h4>
     <input id="license-file" type="file">
+    <hr />
+    ${common.render_next_button()}
 </form>
 
 <%def name='render_license_field(key)'>
@@ -33,8 +35,5 @@
         -
     %endif
 </%def>
-
-<hr />
-${common.render_next_button("submitForm()")}
 
 ${license_page.submit_scripts('license-file')}

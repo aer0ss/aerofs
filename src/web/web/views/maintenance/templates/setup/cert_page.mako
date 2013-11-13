@@ -3,7 +3,7 @@
 
 <h4>Browser certificate:</h4>
 
-<form id="certificateForm" method="POST">
+<form method="POST" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
 
     <label class="radio">
@@ -35,12 +35,13 @@
 
     <p style="margin-top: 10px">Provide publicly signed certificate and key to eliminate certification error messages when browsing the AeroFS Web interface. We require valid x509 SSL certificate and private key files in PEM format.</p>
     <hr />
-    ${common.render_previous_button(page)}
-    ${common.render_next_button("submitCertificateForm()")}
+    ${common.render_previous_button()}
+    ${common.render_next_button()}
 </form>
 
 <script type="text/javascript">
     function useInstalledCertSelected() {
+        ## disable the file upload and remove set files
         $('input:file').attr("disabled", "disabled").val("");
     }
 
@@ -48,17 +49,12 @@
         $('input:file').removeAttr("disabled");
     }
 
-    function submitCertificateForm() {
+    function submitForm() {
         disableNavButtons();
 
         var choice = $(':input[name=cert.option]:checked').val();
         if (choice == 'existing') {
-            if (verifyAbsence("server.browser.certificate") && verifyAbsence("server.browser.key")) {
-                gotoNextPage();
-            } else {
-                document.getElementById("certificateForm").reset();
-                displayError("Do not specify an upload file if using existing the certificate.");
-            }
+            gotoNextPage();
         } else if (choice == 'new') {
             if (verifyPresence("server.browser.certificate", "Please specify a certificate file.") &&
                     verifyPresence("server.browser.key", "Please specify a key file.")) {
@@ -84,7 +80,7 @@
     var certificateData = null;
     var keyData = null;
 
-    ## TOOD (WW) use builtin JS methods to format the data.
+    ## TOOD (WW) use multipart data upload
     function formatPostData(data) {
         return data.replace(/\+/g, '%2B');
     }
@@ -106,8 +102,7 @@
     }
 
     function postCertificateData() {
-        var $form = $('#certificateForm');
-        var serializedData = $form.serialize();
+        var serializedData = $('form').serialize();
 
         doPost("${request.route_path('json_setup_certificate')}",
             serializedData + "&server.browser.certificate=" + certificateData + "&server.browser.key=" + keyData,

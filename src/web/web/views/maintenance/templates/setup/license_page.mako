@@ -10,8 +10,10 @@
 <%namespace name="upload_license_button" file="../upload_license_button.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<form method="post" id="license-form">
-    %if is_license_present:
+## The license exists but expired
+%if is_license_present:
+    <form method="post" onsubmit="submitForm(); return false;">
+        ${csrf.token_input()}
         <h3>Sorry, your license has expired</h3>
 
         <p class="text-error"><strong>
@@ -26,36 +28,41 @@
             In order for the new license to take effect, please click through<br>
             to the last step, and click 'Apply and Finish'.
         </p>
-    %else:
-        ## The license doesn't exist (i.e. initial setup)
+
+        <hr />
+        ${continue_button()}
+    </form>
+
+## The license doesn't exist (i.e. initial setup)
+%else:
+    <form method="post" onsubmit="submitForm(restore); return false;">
+        ${csrf.token_input()}
         <h3>Welcome!</h3>
 
         <p>To setup this AeroFS Appliance, please upload your license to begin.</p>
 
         ${upload_license_button.button('license-file', '')}
-    %endif
-</form>
 
+        <hr />
 
-<hr />
+        ## It is a brand new install. Allow restoration from backup.
+        <div class="form-inline">
+            <input id="backup-file" name="backup-file" type="file" style="display: none">
 
-%if not is_license_present:
-    ## It is a brand new install. Allow restoration from backup.
-    <form method="post" id="backup-file-form" class="form-inline">
-        ${csrf.token_input()}
-        <input id="backup-file" name="backup-file" type="file" style="display: none">
-
-        <label class="checkbox">
-            <input type="checkbox" id="backup-file-check"> Restore
-                <span id="backup-file-name"></span>
-        </label>
-        <button class="btn" id="backup-file-change"
-                onclick="$('#backup-file').click(); return false;">Change</button>
-        ${common.render_next_button("submitForm(restore)")}
+            <label class="checkbox">
+                <input type="checkbox" id="backup-file-check"> Restore
+                    <span id="backup-file-name"></span>
+            </label>
+            <button class="btn" id="backup-file-change"
+                    onclick="$('#backup-file').click(); return false;">Change</button>
+            ${continue_button()}
+        </div>
     </form>
-%else:
-    ${common.render_next_button("submitForm()")}
 %endif
+
+<%def name="continue_button()">
+    <button class="btn pull-right" id="continue-btn" type="submit">Continue</button>
+</%def>
 
 <%progress_modal:html>
     <p>Please wait while the system restores from the backup file...</p>
@@ -76,86 +83,86 @@
 <%progress_modal:scripts/>
 <%spinner:scripts/>
 <%bootstrap:scripts/>
-## N.B. 'next-btn' must be consistent with common.next_button_id().
-## Due to limitation of mako we can't use common.next_button_id() directly here.
-${upload_license_button.scripts('license-file', 'next-btn')}
+${upload_license_button.scripts('license-file', 'continue-btn')}
 ${submit_scripts('license-file')}
 
-<script>
-    $(document).ready(function() {
-        disableEsapingFromModal($('div.modal'));
+%if not is_license_present:
+    <script>
+        $(document).ready(function() {
+            disableEsapingFromModal($('div.modal'));
 
-        initializeProgressModal();
+            initializeProgressModal();
 
-        updateBackupFileUI();
+            updateBackupFileUI();
+            $('#backup-file').change(updateBackupFileUI);
 
-        $('#backup-file-check').click(function() {
-            if ($(this).is(':checked')) {
-                $('#backup-file').click();
-                ## prevent default behavior. Don't change the checked state
-                ## until the user chooses a file.
-                return false;
-            } else {
-                $('#backup-file').val('');
-                updateBackupFileUI();
-                return true;
-            }
+            $('#backup-file-check').click(function() {
+                if ($(this).is(':checked')) {
+                    $('#backup-file').click();
+                    ## prevent default behavior. Don't change the checked state
+                    ## until the user chooses a file.
+                    return false;
+                } else {
+                    $('#backup-file').val('');
+                    updateBackupFileUI();
+                    return true;
+                }
+            });
         });
 
-        $('#backup-file').change(updateBackupFileUI);
-    });
+        function updateBackupFileUI() {
+            var filename = $('#backup-file').val();
+            var hasFile = filename != "";
 
-    function updateBackupFileUI() {
-        var filename = $('#backup-file').val();
-        var hasFile = filename != "";
-
-        var $checkbox = $('#backup-file-check');
-        if (hasFile) $checkbox.attr("checked", "checked");
-        else $checkbox.removeAttr("checked");
-        $('#backup-file-change').toggle(hasFile);
-        $('#backup-file-name').text(hasFile ?
-                ## "C:\\fakepath\\" is a weirdo from the browser standard.
-                'from ' + filename.replace("C:\\fakepath\\", '') :
-                'an appliance from backup');
-    }
-
-    function restore(onSuccess, onFailure) {
-        ## Skip the step if the backup file is not specified
-        if (!$('#backup-file').val()) {
-            onSuccess();
-            return;
+            var $checkbox = $('#backup-file-check');
+            if (hasFile) $checkbox.attr("checked", "checked");
+            else $checkbox.removeAttr("checked");
+            $('#backup-file-change').toggle(hasFile);
+            $('#backup-file-name').text(hasFile ?
+                    ## "C:\\fakepath\\" is a weirdo from the browser standard.
+                    'from ' + filename.replace("C:\\fakepath\\", '') :
+                    'an appliance from backup');
         }
 
-        var $progress = $('#${progress_modal.id()}');
-        $progress.modal('show');
+        function restore(onSuccess, onFailure) {
+            ## Skip the step if the backup control is not present or the file is not
+            ## specified
+            if (!$('#backup-file').val()) {
+                onSuccess();
+                return;
+            }
 
-        ## See http://digipiph.com/blog/submitting-multipartform-data-using-jquery-and-ajax
-        var formData = new FormData($('#backup-file-form')[0]);
-        $.ajax({
-            url: "${request.route_path('json_upload_backup')}",
-            type: "POST",
-            data: formData,
-            contentType: false,
-            processData: false
-        }).done(function() {
-            runBootstrapTask('db-restore', function() {
-                $progress.modal('hide');
-                $('#backup-success-modal').modal('show');
-                $('#backup-success-ok').click(function() {
-                    onSuccess();
-                    return false;
+            var $progress = $('#${progress_modal.id()}');
+            $progress.modal('show');
+
+            ## See http://digipiph.com/blog/submitting-multipartform-data-using-jquery-and-ajax
+            var formData = new FormData($('form')[0]);
+            $.ajax({
+                url: "${request.route_path('json_upload_backup')}",
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false
+            }).done(function() {
+                runBootstrapTask('db-restore', function() {
+                    $progress.modal('hide');
+                    $('#backup-success-modal').modal('show');
+                    $('#backup-success-ok').click(function() {
+                        onSuccess();
+                        return false;
+                    });
+                }, function() {
+                    $progress.modal('hide');
+                    onFailure();
                 });
-            }, function() {
+            }).fail(function(xhr) {
+                showErrorMessageFromResponse(xhr);
                 $progress.modal('hide');
                 onFailure();
             });
-        }).fail(function(xhr) {
-            showErrorMessageFromResponse(xhr);
-            $progress.modal('hide');
-            onFailure();
-        });
-    }
-</script>
+        }
+    </script>
+%endif
 
 <%def name="submit_scripts(license_file_input_id)">
     <script>

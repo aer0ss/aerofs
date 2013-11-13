@@ -10,7 +10,7 @@
 
 <h4>Email server:</h4>
 
-<form id="emailForm" method="POST">
+<form method="POST" onsubmit="submitForm(); return false;">
     <div class="page_block">
         ${csrf.token_input()}
         <label class="radio">
@@ -96,8 +96,8 @@
             "from" field for emails sent out by the system.</p>
     </div>
     <hr />
-    ${common.render_previous_button(page)}
-    ${common.render_next_button("submitEmailForm()")}
+    ${common.render_previous_button()}
+    ${common.render_next_button()}
 </form>
 
 <div id="verify-modal-email-input" class="modal hide small-modal" tabindex="-1" role="dialog">
@@ -159,7 +159,7 @@
     </div>
 </div>
 
-<script type="text/javascript">
+<script>
     $(document).ready(function() {
         $('#verify-modal-email-input').on('shown', function() {
             $('#verification-to-email').focus();
@@ -181,13 +181,13 @@
     }
 
     var serializedData;
-    function submitEmailForm() {
-        serializedData = $('#emailForm').serialize();
+    function submitForm() {
+        serializedData = $('form').serialize();
 
         if (!verifyPresence("base-www-support-email-address",
                     "Please specify a support email address.")) return;
 
-        var remote = $(":input[name=email-server]:checked", '#emailForm').val() == 'remote';
+        var remote = $(":input[name=email-server]:checked").val() == 'remote';
         if (remote && (
                 !verifyPresence("email-sender-public-host", "Please specify SMTP host.") ||
                 !verifyPresence("email-sender-public-port", "Please specify SMTP port."))) {
