@@ -28,9 +28,9 @@ def my_devices(request):
     devices = sp.list_user_devices(user).device
 
     if len(devices) == 0:
-        raise HTTPFound(request.route_path('download') + "?msg_type=no_device")
+        raise HTTPFound(request.route_path('download', _query={'msg_type':'no_device'}))
 
-    return _devices(devices, user, _("My Devices"), False)
+    return _devices(devices, user, _("My Devices"), False, True)
 
 @view_config(
     route_name = 'user_devices',
@@ -46,7 +46,7 @@ def user_devices(request):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    return _devices(devices, user, _("${name}'s Devices", {'name': full_name}), False)
+    return _devices(devices, user, _("${name}'s Devices", {'name': full_name}), False, False)
 
 @view_config(
     route_name = 'team_server_devices',
@@ -61,11 +61,15 @@ def team_server_devices(request):
     devices = sp.list_user_devices(ts_user).device
 
     if len(devices) == 0:
-        raise HTTPFound(request.route_path('download_team_server') + "?msg_type=no_device")
+        raise HTTPFound(request.route_path('download_team_server', _query={'msg_type':'no_device'}))
 
-    return _devices(devices, ts_user, _("Team Servers"), True)
+    return _devices(devices, ts_user, _("Team Servers"), True, False)
 
-def _devices(devices, user, page_heading, are_team_servers):
+def _devices(devices, user, page_heading, are_team_servers, show_add_device):
+
+    # `Add device` is only for us now
+    show_add_device = show_add_device and user.endswith('@aerofs.com')
+
     return {
         'url_param_user': URL_PARAM_USER,
         'url_param_device_id': _URL_PARAM_DEVICE_ID,
@@ -75,7 +79,8 @@ def _devices(devices, user, page_heading, are_team_servers):
         'page_heading': page_heading,
         'user': user,
         'devices': devices,
-        'are_team_servers': are_team_servers
+        'are_team_servers': are_team_servers,
+        'show_add_device': show_add_device,
     }
 
 @view_config(

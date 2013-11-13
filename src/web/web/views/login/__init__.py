@@ -4,3 +4,4 @@ def includeme(config):
     config.add_route('login_openid_complete', 'login_openid_complete')
     config.add_route('login', 'login')
     config.add_route('logout', 'logout')
+    config.add_route('login_for_tests.json', 'login_for_tests.json')

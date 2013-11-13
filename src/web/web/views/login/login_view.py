@@ -98,6 +98,36 @@ def login_view(request):
         'next': next_url,
     }
 
+
+@view_config(
+    route_name='login_for_tests.json',
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='json'
+)
+def login_for_tests_json_view(request):
+    """
+    Login over JSON for system tests that need it. (Like the mobile apps)
+    This method always return a valid JSON document (both for success and errors)
+    """
+    try:
+        login = request.params[URL_PARAM_EMAIL]
+        password = request.params[URL_PARAM_PASSWORD].encode("utf-8")
+        try:
+            headers = _log_in_user(request, login, password, False)
+            request.response.headerlist.extend(headers)
+            return {'ok': True}
+        except ExceptionReply as e:
+            if e.get_type() == PBException.BAD_CREDENTIAL:
+                request.response.status = 401
+                return {'error': '401', 'message': 'unauthorized'}
+            else:
+                raise
+    except Exception as e:
+        log.exception(e)
+        request.response.status = 500
+        return {'error': '500', 'message': 'internal server error'}
+
+
 def _log_in_user(request, login, creds, stay_signed_in):
     """
     Logs in the given user with the given credentials and returns a

@@ -8,3 +8,5 @@ def includeme(config):
     config.add_route('json.rename_device', 'devices/rename_device')
     config.add_route('json.unlink_device', 'devices/unlink_device')
     config.add_route('json.erase_device', 'devices/erase_device')
+    config.add_route('add_mobile_device', '/devices/add_mobile_device')
+    config.add_route('get_mobile_access_code', '/devices/get_mobile_access_code')
