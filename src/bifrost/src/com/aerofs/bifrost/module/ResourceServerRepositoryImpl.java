@@ -16,7 +16,7 @@ public class ResourceServerRepositoryImpl implements ResourceServerRepository
     public ResourceServer findByKey(String key) { return _dao.getByServerKey(key); }
 
     @Override
-    public <S extends ResourceServer> S save(S s) { return _dao.save(s); }
+    public ResourceServer save(ResourceServer s) { return _dao.save(s); }
 
     @Inject
     private ResourceServerDAO _dao;

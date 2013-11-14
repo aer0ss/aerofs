@@ -40,7 +40,6 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.google.common.collect.ImmutableMap;
 import com.sun.jersey.api.core.HttpContext;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

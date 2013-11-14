@@ -40,7 +40,6 @@ import org.hibernate.validator.constraints.Email;
  * Representation of the server hosting the protected resources, capable of
  * accepting and responding to protected resource requests using access tokens.
  */
-@SuppressWarnings("serial")
 @Entity
 @Table(name="resourceserver", uniqueConstraints =
     @UniqueConstraint(columnNames = {"owner", "resourceServerName"})
@@ -49,6 +48,7 @@ import org.hibernate.validator.constraints.Email;
 public class ResourceServer extends AbstractEntity {
 
   public static final String SCOPE_PATTERN = "^[^,]+$"; // anything but a comma
+  private static final long serialVersionUID = 1;
 
   @Column(name = "resourceServerName")
   @NotNull
@@ -73,7 +73,7 @@ public class ResourceServer extends AbstractEntity {
   @Column(nullable = false, updatable = false)
   @NotNull
   private String contactName;
-  
+
   @Column
   private String owner;
 
@@ -194,7 +194,7 @@ public class ResourceServer extends AbstractEntity {
   }
 
   /**
-   * 
+   *
    * @param client the Client
    * @return if the Client is part of this ResourceServer
    */

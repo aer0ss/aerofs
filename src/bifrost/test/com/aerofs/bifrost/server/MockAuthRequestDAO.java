@@ -27,7 +27,7 @@ public class MockAuthRequestDAO extends AuthorizationRequestDAO
     }
 
     @Override
-    public <S extends AuthorizationRequest> S save(S s)
+    public AuthorizationRequest save(AuthorizationRequest s)
     {
         m_state.put(s.getAuthState(), s);
         m_code.put(s.getAuthorizationCode(), s);

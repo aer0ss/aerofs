@@ -29,10 +29,9 @@ public class MockClientDAO extends ClientDAO
         return m_map.get(clientId);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <S extends Client> S save(S s)
+    public Client save(Client s)
     {
-        return (S)m_map.put(s.getClientId(), s);
+        return m_map.put(s.getClientId(), s);
     }
 }

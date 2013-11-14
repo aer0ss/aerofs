@@ -176,7 +176,7 @@ public class OSUtilWindows implements IOSUtil
     private final static Pattern INVALID_FILENAME_CHARS = Pattern.compile(
             "[/\\\\:*?\"<>|\0-\\x1f]");
 
-    private final static ImmutableList FORBIDDEN_TRAILERS = ImmutableList.of('.', ' ');
+    private final static ImmutableList<Character> FORBIDDEN_TRAILERS = ImmutableList.of('.', ' ');
 
     /**
      * Check if this filename has a chance at being valid on Windows.

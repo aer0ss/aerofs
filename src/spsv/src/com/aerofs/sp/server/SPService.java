@@ -15,7 +15,6 @@ import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExInviteeListEmpty;
-import com.aerofs.base.ex.ExLicenseLimit;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.Exceptions;

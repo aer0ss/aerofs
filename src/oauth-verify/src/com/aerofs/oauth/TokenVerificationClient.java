@@ -3,7 +3,6 @@ package com.aerofs.oauth;
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
-import com.aerofs.base.Loggers;
 import com.aerofs.base.net.NettyUtil;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -22,7 +21,6 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
-import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -33,8 +31,6 @@ import java.net.URISyntaxException;
  */
 public class TokenVerificationClient
 {
-    private final static Logger l = Loggers.getLogger(TokenVerificationClient.class);
-
     private final URI _endpoint;
     private final ClientBootstrap _bootstrap;
 

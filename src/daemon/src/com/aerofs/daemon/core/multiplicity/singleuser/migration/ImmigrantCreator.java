@@ -1,7 +1,9 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
-import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
@@ -16,15 +18,10 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
-import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -41,8 +38,6 @@ import static com.aerofs.daemon.core.ds.OA.FLAG_EXPELLED_ORG_OR_INH;
  */
 public class ImmigrantCreator
 {
-    private final static Logger l = Loggers.getLogger(ImmigrantCreator.class);
-
     private DirectoryService _ds;
     private IPhysicalStorage _ps;
     private ObjectCreator _oc;

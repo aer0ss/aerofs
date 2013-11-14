@@ -16,17 +16,16 @@
 
 package com.aerofs.bifrost.oaaas.auth;
 
+import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
+import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
+import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.restless.jersey.ServletFilter;
+import com.sun.jersey.spi.container.ContainerRequest;
+import org.apache.commons.lang.StringUtils;
+
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-
-import com.aerofs.restless.jersey.ServletFilter;
-import com.sun.jersey.spi.container.ContainerRequest;
-import com.sun.jersey.spi.container.ContainerRequestFilter;
-import org.apache.commons.lang.StringUtils;
-import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
-import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 
 /**
  *

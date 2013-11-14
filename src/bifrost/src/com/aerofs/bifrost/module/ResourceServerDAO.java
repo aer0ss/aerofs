@@ -23,6 +23,5 @@ public class ResourceServerDAO extends AbstractDAO<ResourceServer>
                 .add(Restrictions.eq("key", resourceServerKey)));
     }
 
-    @SuppressWarnings("unchecked")
-    public <S extends ResourceServer> S save(ResourceServer srv) { return (S)persist(srv); }
+    public ResourceServer save(ResourceServer srv) { return persist(srv); }
 }

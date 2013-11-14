@@ -17,7 +17,7 @@ public class AccessTokenRepositoryImpl implements AccessTokenRepository
     public AccessToken findByToken(String token) { return _dao.findByToken(token); }
 
     @Override
-    public <S extends AccessToken> S save(S s) { return _dao.save(s); }
+    public AccessToken save(AccessToken s) { return _dao.save(s); }
 
     @Override
     public void delete(AccessToken accessToken)

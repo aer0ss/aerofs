@@ -284,7 +284,7 @@ public class IdentitySessionManager
             Map<String, Object> hashMap = new HashMap<String, Object>();
             hashMap.put("a", user.getClaimedId());
             hashMap.put("c", Constants.Assoc.ASSOC_HANDLE);
-            hashMap.put("d", new HashMap());
+            hashMap.put("d", new HashMap<Object, Object>());
             hashMap.put("e", user.getOpenIdServer());
 
             user.fromJSON(hashMap);

@@ -18,13 +18,13 @@ package com.aerofs.bifrost.oaaas.repository;
 
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 
-public interface AccessTokenRepository {
+public interface AccessTokenRepository
+{
+    AccessToken findByToken(String token);
 
-  AccessToken findByToken(String token);
+    AccessToken findByRefreshToken(String refreshToken);
 
-  AccessToken findByRefreshToken(String refreshToken);
-
-    <S extends AccessToken> S save(S token);
+    AccessToken save(AccessToken token);
 
     void delete(AccessToken accessToken);
 }

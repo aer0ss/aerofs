@@ -28,9 +28,8 @@ public class MockAccessTokenDAO extends AccessTokenDAO
     @Override
     public AccessToken findByToken(String tokenId) { return m_map.get(tokenId); }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <S extends AccessToken> S save(S s)
+    public AccessToken save(AccessToken s)
     {
         m_map.put(s.getToken(), s);
         return s;

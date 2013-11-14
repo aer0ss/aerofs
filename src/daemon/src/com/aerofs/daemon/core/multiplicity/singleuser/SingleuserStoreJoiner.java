@@ -26,7 +26,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.inject.Inject;
 import org.slf4j.Logger;

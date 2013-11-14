@@ -17,12 +17,11 @@ public class AuthorizationRequestDAO extends AbstractDAO<AuthorizationRequest>
     @Inject
     public AuthorizationRequestDAO(SessionFactory sessionFactory) { super(sessionFactory); }
 
-    @SuppressWarnings("unchecked")
-    public <S extends AuthorizationRequest> S save(S s)
+    public AuthorizationRequest save(AuthorizationRequest s)
     {
         s.encodePrincipal();
         s.updateTimeStamps();
-        return (S)persist(s);
+        return persist(s);
     }
 
     public AuthorizationRequest findByAuthState(String authState)

@@ -26,12 +26,11 @@ public class MockResourceServerDAO extends ResourceServerDAO
         return m_byServerKey.get(resourceServerKey);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <S extends ResourceServer> S save(ResourceServer srv)
+    public ResourceServer save(ResourceServer srv)
     {
         m_byServerKey.put(srv.getKey(), srv);
-        return (S)srv;
+        return srv;
     }
 
     private Map<String, ResourceServer> m_byServerKey = new HashMap<String, ResourceServer>();

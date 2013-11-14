@@ -36,12 +36,12 @@ import com.aerofs.oauth.AuthenticatedPrincipal;
  * >AuthorizationRequest</a>.
  *
  */
-@SuppressWarnings("serial")
 @Entity
 @Table(name = "authorizationrequest")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public class AuthorizationRequest extends AbstractEntity {
-
+public class AuthorizationRequest extends AbstractEntity
+{
+  private static final long serialVersionUID = 1;
   @Column
   @NotNull
   private String responseType;

@@ -18,10 +18,9 @@ package com.aerofs.bifrost.oaaas.repository;
 
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
 
-public interface ResourceServerRepository {
+public interface ResourceServerRepository
+{
+    ResourceServer findByKey(String key);
 
-  ResourceServer findByKey(String key);
-
-  <S extends ResourceServer> S save(S resourceServer);
-
+    ResourceServer save(ResourceServer resourceServer);
 }

@@ -26,7 +26,7 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
     private final TokenVerificationClient _client;
     private final LoadingCache<String, VerifyTokenResponse> _cache;
 
-    private static CacheBuilder defaultSettings() {
+    private static CacheBuilder<Object, Object> defaultSettings() {
         return CacheBuilder
             .newBuilder()
             .expireAfterWrite(1, TimeUnit.MINUTES)
@@ -39,22 +39,20 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
         this(clientId, clientSecret, defaultSettings(), endpoint, cacert, clientChannelFactory);
     }
 
-    @SuppressWarnings("unchecked")
-    public TokenVerifier(String clientId, String clientSecret, CacheBuilder builder,
+    public TokenVerifier(String clientId, String clientSecret, CacheBuilder<Object, Object> builder,
             URI endpoint, ICertificateProvider cacert, ClientSocketChannelFactory clientChannelFactory)
     {
         _auth = TokenVerificationClient.makeAuth(clientId, clientSecret);
         _client = new TokenVerificationClient(endpoint, cacert,clientChannelFactory);
-        _cache = ((CacheBuilder<String, VerifyTokenResponse>)builder).build(this);
+        _cache = builder.build(this);
     }
 
-    @SuppressWarnings("unchecked")
     public TokenVerifier(String clientId, String clientSecret, TokenVerificationClient client,
-            CacheBuilder builder)
+            CacheBuilder<Object, Object> builder)
     {
         _auth = TokenVerificationClient.makeAuth(clientId, clientSecret);
         _client = client;
-        _cache = ((CacheBuilder<String, VerifyTokenResponse>)builder).build(this);
+        _cache = builder.build(this);
     }
 
     public @Nullable AuthenticatedPrincipal getPrincipal(String authorizationHeader) throws Exception

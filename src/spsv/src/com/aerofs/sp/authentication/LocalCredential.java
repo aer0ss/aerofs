@@ -6,7 +6,6 @@ package com.aerofs.sp.authentication;
 
 import com.aerofs.base.BaseSecUtil.KeyDerivation;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.sp.server.lib.SPParam;
 import com.lambdaworks.crypto.SCrypt;
 

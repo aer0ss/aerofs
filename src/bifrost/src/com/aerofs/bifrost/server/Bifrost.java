@@ -41,7 +41,6 @@ import com.google.inject.Module;
 import com.google.inject.internal.Scoping;
 import org.hibernate.SessionFactory;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.slf4j.Logger;
 
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
@@ -58,8 +57,6 @@ public class Bifrost extends Service
         Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
         Loggers.init();
     }
-
-    private static final Logger l = Loggers.getLogger(Bifrost.class);
 
     private final TransactionalWrapper _trans;
 

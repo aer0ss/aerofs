@@ -9,8 +9,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.lib.user.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 
@@ -29,8 +27,6 @@ import java.sql.SQLException;
  */
 class OpenIdAuthority implements IAuthority
 {
-    private static Logger l = LoggerFactory.getLogger(OpenIdAuthority.class);
-
     /**
      * This class cannot perform credential authentication. Use SP.openIdSignIn mechanics.
      */

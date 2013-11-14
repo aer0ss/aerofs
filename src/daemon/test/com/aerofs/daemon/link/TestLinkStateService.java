@@ -109,18 +109,17 @@ public class TestLinkStateService
         // to work around this I will pull the links up (which will force
         // an interface check), and then pull it down, to see if something happened
 
-        doAnswer(new Answer()
+        doAnswer(new Answer<Object>()
         {
             @Override
             public Object answer(InvocationOnMock invocation)
                     throws Throwable
             {
-                // noinspection unchecked
                 calls.add(new LinkStateNotificationParameters(
-                        (ImmutableSet<NetworkInterface>)invocation.getArguments()[0],
-                        (ImmutableSet<NetworkInterface>)invocation.getArguments()[1],
-                        (ImmutableSet<NetworkInterface>)invocation.getArguments()[2],
-                        (ImmutableSet<NetworkInterface>)invocation.getArguments()[3],
+                        getArgument(invocation, 0),
+                        getArgument(invocation, 1),
+                        getArgument(invocation, 2),
+                        getArgument(invocation, 3),
                         Thread.currentThread()));
 
                 _notificationSemaphore.release();
@@ -177,18 +176,17 @@ public class TestLinkStateService
         // to work around this I will pull the links up (which will force
         // an interface check), and then pull it down, to see if something happened
 
-        doAnswer(new Answer()
+        doAnswer(new Answer<Object>()
         {
             @Override
             public Object answer(InvocationOnMock invocation)
                     throws Throwable
             {
-                // noinspection unchecked
                 calls.add(new LinkStateNotificationParameters(
-                        (ImmutableSet<NetworkInterface>)invocation.getArguments()[0],
-                        (ImmutableSet<NetworkInterface>)invocation.getArguments()[1],
-                        (ImmutableSet<NetworkInterface>)invocation.getArguments()[2],
-                        (ImmutableSet<NetworkInterface>)invocation.getArguments()[3],
+                        getArgument(invocation, 0),
+                        getArgument(invocation, 1),
+                        getArgument(invocation, 2),
+                        getArgument(invocation, 3),
                         Thread.currentThread()));
 
                 _notificationSemaphore.release();
@@ -244,5 +242,10 @@ public class TestLinkStateService
         assertThat(call._added.size(), equalTo(call._current.size()));
         assertThat(call._removed.size(), equalTo(0));
         assertThat(call._notificationThread, theInstance(_executorThread));
+    }
+
+    private static ImmutableSet<NetworkInterface> getArgument(InvocationOnMock invocation, int index)
+    {
+        return (ImmutableSet<NetworkInterface>)invocation.getArguments()[index];
     }
 }

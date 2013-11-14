@@ -20,11 +20,13 @@ package com.aerofs.bifrost.oaaas.auth;
 
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse;
 
-@SuppressWarnings("serial")
-public class ValidationResponseException extends RuntimeException {
-  public final ValidationResponse v;
+public class ValidationResponseException extends RuntimeException
+{
+    private static final long serialVersionUID = 1;
+    public final ValidationResponse v;
 
-  public ValidationResponseException(ValidationResponse v) {
-    this.v = v;
-  }
+    public ValidationResponseException(ValidationResponse v)
+    {
+        this.v = v;
+    }
 }

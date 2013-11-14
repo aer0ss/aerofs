@@ -18,12 +18,11 @@ public class AccessTokenDAO extends AbstractDAO<AccessToken>
     @Inject
     public AccessTokenDAO(SessionFactory sessionFactory) { super(sessionFactory); }
 
-    @SuppressWarnings("unchecked")
-    public <S extends AccessToken> S save(S s)
+    public AccessToken save(AccessToken s)
     {
         s.encodePrincipal();
         s.updateTimeStamps();
-        return (S)persist(s);
+        return persist(s);
     }
 
     public AccessToken findByToken(String tokenId)

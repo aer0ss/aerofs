@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class AbstractDAO<E> {
     private final SessionFactory sessionFactory;
-    private final Class<?> entityClass;
+    private final Class<E> entityClass;
 
     /**
      * Creates a new DAO with a given session provider.
@@ -74,9 +74,8 @@ public class AbstractDAO<E> {
      *
      * @return the entity class managed by this DAO
      */
-    @SuppressWarnings("unchecked")
     public Class<E> getEntityClass() {
-        return (Class<E>) entityClass;
+        return entityClass;
     }
 
     /**
@@ -104,7 +103,7 @@ public class AbstractDAO<E> {
      */
     @SuppressWarnings("unchecked")
     protected E uniqueResult(Query query) throws HibernateException {
-        return (E) checkNotNull(query).uniqueResult();
+        return (E)checkNotNull(query).uniqueResult();
     }
 
     /**

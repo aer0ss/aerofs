@@ -23,6 +23,5 @@ public class ClientDAO extends AbstractDAO<Client>
                 .add(Restrictions.eq("clientId", clientId)));
     }
 
-    @SuppressWarnings("unchecked")
-    public <S extends Client> S save(S s) { return (S)persist(s); }
+    public Client save(Client s) { return persist(s); }
 }

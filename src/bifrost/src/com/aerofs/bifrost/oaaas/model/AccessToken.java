@@ -36,11 +36,12 @@ import com.aerofs.oauth.AuthenticatedPrincipal;
  * >AccessToken</a>
  *
  */
-@SuppressWarnings("serial")
 @Entity
 @Table(name = "accesstoken")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public class AccessToken extends AbstractEntity {
+public class AccessToken extends AbstractEntity
+{
+  private static final long serialVersionUID = 1;
 
   @Column(unique = true)
   @NotNull

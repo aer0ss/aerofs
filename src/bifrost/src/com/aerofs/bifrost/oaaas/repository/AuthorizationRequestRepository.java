@@ -18,14 +18,13 @@ package com.aerofs.bifrost.oaaas.repository;
 
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 
-public interface AuthorizationRequestRepository {
-  
-  AuthorizationRequest findByAuthState(String authState);
-  
-  AuthorizationRequest findByAuthorizationCode(String authorizationCode);
+public interface AuthorizationRequestRepository
+{
+    AuthorizationRequest findByAuthState(String authState);
 
+    AuthorizationRequest findByAuthorizationCode(String authorizationCode);
 
-    <S extends AuthorizationRequest> S save(S authReq);
+    AuthorizationRequest save(AuthorizationRequest authReq);
 
     void delete(AuthorizationRequest authReq);
 }

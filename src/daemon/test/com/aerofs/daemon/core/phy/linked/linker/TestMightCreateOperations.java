@@ -16,7 +16,6 @@ import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -37,18 +36,22 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import static com.aerofs.daemon.core.ds.OA.Type.*;
-import static com.aerofs.daemon.core.phy.PhysicalOp.*;
-import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
-import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.*;
+import java.util.Arrays;
+import java.util.EnumSet;
+
+import static com.aerofs.daemon.core.ds.OA.Type.DIR;
+import static com.aerofs.daemon.core.ds.OA.Type.FILE;
+import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.Create;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.RandomizeSourceFID;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.RenameTarget;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.Replace;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.Update;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-
-import java.util.Arrays;
-import java.util.EnumSet;
-
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -103,7 +106,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
                 }
         );
 
-        doAnswer(new Answer() {
+        doAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable
             {

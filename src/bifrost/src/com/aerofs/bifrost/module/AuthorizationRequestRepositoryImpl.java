@@ -25,7 +25,7 @@ public class AuthorizationRequestRepositoryImpl implements AuthorizationRequestR
     }
 
     @Override
-    public <S extends AuthorizationRequest> S save(S s) { return _dao.save(s); }
+    public AuthorizationRequest save(AuthorizationRequest s) { return _dao.save(s); }
 
     @Override
     public void delete(AuthorizationRequest authReq) { _dao.delete(authReq); }

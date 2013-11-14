@@ -40,11 +40,12 @@ import com.google.common.collect.Maps;
  * </pre>
  */
 
-@SuppressWarnings("serial")
 @Entity
 @Table(name = "client")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public class Client extends AbstractEntity {
+public class Client extends AbstractEntity
+{
+  private static final long serialVersionUID = 1;
 
   @Column(name = "clientName")
   @NotNull

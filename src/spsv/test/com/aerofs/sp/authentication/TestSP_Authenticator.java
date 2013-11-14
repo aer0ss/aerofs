@@ -6,7 +6,6 @@ package com.aerofs.sp.authentication;
 
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.sp.server.lib.user.User;
@@ -17,11 +16,8 @@ import org.mockito.Mock;
 import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -34,11 +30,6 @@ public class TestSP_Authenticator extends AbstractSPTest
     @Mock LocalAuthority _localAuth;
     @Mock IThreadLocalTransaction<SQLException> _trans;
     User _user = newUser();
-
-    private Authenticator getAuthenticator(Identity.Authenticator authType)
-    {
-        return new Authenticator(new IAuthority[] {_remoteAuth, _localAuth });
-    }
 
     @Test
     public void authenticateUser_shouldFallThrough() throws Exception
