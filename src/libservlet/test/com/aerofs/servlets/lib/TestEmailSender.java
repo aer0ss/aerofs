@@ -57,7 +57,7 @@ public class TestEmailSender extends AbstractTest
         properties.setProperty("email.sender.timeout", String.valueOf(2 * C.SEC));
         ConfigurationProperties.setProperties(properties);
 
-        _emailSender = new AsyncEmailSender();
+        _emailSender = AsyncEmailSender.create();
     }
 
     @AfterClass

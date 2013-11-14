@@ -68,7 +68,8 @@ public class SVReactor
     private final SVDatabase _db;
     private final IThreadLocalTransaction<SQLException> _transaction;
 
-    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+    private static final AsyncEmailSender _emailSender = AsyncEmailSender.create();
+    private static final AsyncEmailSender _logEmailSender = AsyncEmailSender.createDeprecatedForLogEmails();
 
     private String _pathDefect;
     private String _pathArchive;
@@ -154,8 +155,8 @@ public class SVReactor
     public static void emailSVNotification(final String subject, final String body)
     {
         try {
-            _emailSender.sendNotificationEmail(SV_NOTIFICATION_SENDER, SV_NOTIFICATION_SENDER,
-                    SV_NOTIFICATION_RECEIVER, null, subject, body, null);
+            _logEmailSender.sendDeprecatedNotificationEmail(SV_NOTIFICATION_SENDER,
+                    SV_NOTIFICATION_SENDER, SV_NOTIFICATION_RECEIVER, null, subject, body, null);
         } catch (Exception e) {
             l.error("cannot email notification: ", e);
         }

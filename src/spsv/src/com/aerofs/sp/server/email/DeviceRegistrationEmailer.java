@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public class DeviceRegistrationEmailer
 {
-    private static AsyncEmailSender _emailSender = new AsyncEmailSender();
+    private static AsyncEmailSender _emailSender = AsyncEmailSender.create();
 
     public void sendTeamServerDeviceCertifiedEmail(String emailAddress, String firstName,
             String osFamily, String deviceName, DID did)

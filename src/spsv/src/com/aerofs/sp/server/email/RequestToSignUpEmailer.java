@@ -20,7 +20,7 @@ public class RequestToSignUpEmailer
     static String DASHBOARD_HOME = WWW.DASHBOARD_HOST_URL +
             (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ? "/" : "/home");
 
-    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+    private static final AsyncEmailSender _emailSender = AsyncEmailSender.create();
 
     static String getSignUpLink(String signUpCode)
     {

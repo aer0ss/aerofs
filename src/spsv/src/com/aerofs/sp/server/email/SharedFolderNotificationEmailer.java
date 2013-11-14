@@ -22,7 +22,7 @@ import java.sql.SQLException;
 
 public class SharedFolderNotificationEmailer
 {
-    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+    private static final AsyncEmailSender _emailSender = AsyncEmailSender.create();
 
     /**
      * Notify the inviter of a shared folder when the person he/she invited accepts the invitation

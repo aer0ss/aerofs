@@ -35,7 +35,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 /**
  * This class allows you to send emails (either through local or remote SMTP).
  *
- * TODO (MP) Need to move the sendgrid creds out of here and into hiera...
  * TODO (MP) This class needs some general refactoring love...
  */
 public abstract class AbstractEmailSender
@@ -51,7 +50,8 @@ public abstract class AbstractEmailSender
     /**
      * @param host when using local mail relay, set this to localhost.
      */
-    public AbstractEmailSender(String host, String port, String username, String password, boolean enable_tls)
+    public AbstractEmailSender(String host, String port, String username, String password,
+            boolean enable_tls)
     {
         _host = host;
         _port = port;
@@ -67,16 +67,12 @@ public abstract class AbstractEmailSender
     private static String CONNECTION_TIMEOUT =
             getStringProperty("email.sender.connection_timeout", String.valueOf(60 * C.SEC));
 
-    private static final String INTERNAL_HOST = "svmail.aerofs.com";
-    private static final String INTERNAL_USERNAME = "noreply";
-    private static final String INTERNAL_PASSWORD = "qEphE2uzuBr5";
-
     private static final String CHARSET = "UTF-8";
 
     public static final Boolean ENABLED =
             getBooleanProperty("lib.notifications.enabled", true);
 
-    public boolean relayIsLocalhost() {
+    private boolean relayIsLocalhost() {
         return _host.equals("localhost");
     }
 
@@ -115,7 +111,10 @@ public abstract class AbstractEmailSender
         return Session.getInstance(props);
     }
 
-    public Future<Void> sendNotificationEmail(String from, @Nullable String fromName,
+    /**
+     *  Deprecated.  Identical to sendEmail(), but will noop if notifications are disabled.
+     */
+    public Future<Void> sendDeprecatedNotificationEmail(String from, @Nullable String fromName,
             String to, @Nullable String replyTo, String subject, String textBody,
             @Nullable String htmlBody)
             throws MessagingException, UnsupportedEncodingException
@@ -125,7 +124,7 @@ public abstract class AbstractEmailSender
             return UncancellableFuture.createSucceeded(Void.getDefaultInstance());
         }
 
-        return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, false, null);
+        return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, null);
     }
 
     /**
@@ -138,7 +137,7 @@ public abstract class AbstractEmailSender
             throws MessagingException, UnsupportedEncodingException
     {
         return sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, fromName, to, replyTo, subject, textBody,
-                htmlBody, true, category);
+                htmlBody, category);
     }
 
     public Future<Void> sendPublicEmail(String from,
@@ -146,16 +145,14 @@ public abstract class AbstractEmailSender
             String textBody, @Nullable String htmlBody, @Nonnull EmailCategory category)
             throws MessagingException, UnsupportedEncodingException
     {
-        return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, true, category);
+        return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, category);
     }
 
     private Future<Void> sendEmail(String from, @Nullable String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
-            boolean usingSendGrid, @Nullable EmailCategory category)
+            @Nullable EmailCategory category)
             throws MessagingException, UnsupportedEncodingException
     {
-        assert !usingSendGrid || category != null;
-
         MimeMessage msg;
         MimeMultipart multiPart = createMultipartEmail(textBody, htmlBody);
         Session session = getMailSession();
@@ -172,7 +169,7 @@ public abstract class AbstractEmailSender
         }
 
         try {
-            return sendMessage(msg, usingSendGrid, session);
+            return sendMessage(msg, session);
         } catch (RejectedExecutionException e) {
             throw new MessagingException(e.getCause().getMessage());
         }
@@ -214,29 +211,20 @@ public abstract class AbstractEmailSender
         return multiPart;
     }
 
-    protected abstract Future<Void> sendMessage(final Message msg, final boolean publicFacingEmail,
-            final Session session)
+    protected abstract Future<Void> sendMessage(final Message msg, final Session session)
         throws RejectedExecutionException, MessagingException;
 
-    protected void sendMessageImpl(Session session, boolean publicFacingEmail, Message msg)
+    protected void sendMessageImpl(Session session, Message msg)
             throws MessagingException
     {
         try {
             Transport t = session.getTransport("smtp");
-            // We use SendGrid for any publically facing emails (like signup codes, device
-            // certification notifications, etc.), and our own mail servers for internal
-            // emails (for notifying us that a user has signed up, shared a folder, etc.)
             try {
-                if (publicFacingEmail) {
-                    if (session.getProperty("mail.smtp.auth").equals("true")) {
-                        t.connect(_username, _password);
-                    } else {
-                        t.connect();
-                    }
+                if (session.getProperty("mail.smtp.auth").equals("true")) {
+                    t.connect(_username, _password);
                 } else {
-                    t.connect(INTERNAL_HOST, INTERNAL_USERNAME, INTERNAL_PASSWORD);
+                    t.connect();
                 }
-
                 l.info("{} emailing {}", msg.getFrom(), msg.getAllRecipients());
                 t.sendMessage(msg, msg.getAllRecipients());
             } finally {

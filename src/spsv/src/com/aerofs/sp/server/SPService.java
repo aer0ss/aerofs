@@ -217,7 +217,7 @@ public class SPService implements ISPService
     private final Boolean OPEN_SIGNUP =
             getBooleanProperty("open_signup", true);
 
-    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+    private static final AsyncEmailSender _emailSender = AsyncEmailSender.create();
 
     public SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
