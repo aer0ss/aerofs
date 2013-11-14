@@ -18,9 +18,9 @@ import org.subethamail.smtp.server.SessionIdFactory;
 import org.subethamail.smtp.server.TimeBasedSessionIdFactory;
 import org.subethamail.wiser.Wiser;
 import org.subethamail.wiser.WiserMessage;
-
+import javax.mail.Session;
 import java.util.Properties;
-
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -38,7 +38,20 @@ public class TestEmailSender extends AbstractTest
     static Wiser _wiser;
     static int _port;
     static TimeoutFactory _idFactory;
-    static AbstractEmailSender _emailSender;
+
+    private Properties getProperties(String host, Integer port, String username, String password,
+            boolean enable_tls)
+    {
+        Properties properties = new Properties();
+        // N.B. 127.0.0.1 is not "localhost", so the server will be considered "external"
+        properties.setProperty("email.sender.public_host", host);
+        properties.setProperty("email.sender.public_port", Integer.toString(port));
+        properties.setProperty("email.sender.public_username", username);
+        properties.setProperty("email.sender.public_password", password);
+        properties.setProperty("email.sender.public_enable_tls", Boolean.toString(enable_tls));
+        properties.setProperty("email.sender.timeout", String.valueOf(2 * C.SEC));
+        return properties;
+    }
 
     // create one Wiser server for all the test cases in this class...
     // We use a 2-second command timeout for all tests in this class.
@@ -50,14 +63,6 @@ public class TestEmailSender extends AbstractTest
         _port = _wiser.getServer().getPort();
         _idFactory = new TimeoutFactory();
         _wiser.getServer().setSessionIdFactory(_idFactory);
-
-        Properties properties = new Properties();
-        properties.setProperty("email.sender.public_host", "localhost");
-        properties.setProperty("email.sender.public_port", String.valueOf(_port));
-        properties.setProperty("email.sender.timeout", String.valueOf(2 * C.SEC));
-        ConfigurationProperties.setProperties(properties);
-
-        _emailSender = AsyncEmailSender.create();
     }
 
     @AfterClass
@@ -70,7 +75,9 @@ public class TestEmailSender extends AbstractTest
     @Test
     public void testSendPublicEmail() throws Exception
     {
-        _emailSender.sendPublicEmail(
+        Properties properties = getProperties("localhost", _port, "", "", false);
+        ConfigurationProperties.setProperties(properties);
+        AsyncEmailSender.create().sendPublicEmail(
                 "f1@example.com", null, "to1@example.com", "r1@example.com",
                 "Subject subject", "Body body", null, EmailCategory.PASSWORD_RESET);
         waitForMessages(1);
@@ -85,7 +92,9 @@ public class TestEmailSender extends AbstractTest
     public void testSendPublicEmailFromSupport()
             throws Exception
     {
-        _emailSender.sendPublicEmailFromSupport(null, "to2@example.com", "r2@example.com",
+        Properties properties = getProperties("localhost", _port, "", "", false);
+        ConfigurationProperties.setProperties(properties);
+        AsyncEmailSender.create().sendPublicEmailFromSupport(null, "to2@example.com", "r2@example.com",
                 "Subject2 subject2", "Body body", null, EmailCategory.PASSWORD_RESET);
         waitForMessages(1);
 
@@ -104,6 +113,10 @@ public class TestEmailSender extends AbstractTest
     @Test
     public void testTimeout() throws Exception
     {
+        Properties properties = getProperties("localhost", _port, "", "", false);
+        ConfigurationProperties.setProperties(properties);
+        AbstractEmailSender _emailSender = AsyncEmailSender.create();
+
         _idFactory.delayMsec = 180000;
         _emailSender.sendPublicEmailFromSupport(null, "die@bart.die", "I@said.die",
                 "It's German", "For 'the bart, the'", null, EmailCategory.DEVICE_CERTIFIED);
@@ -120,6 +133,52 @@ public class TestEmailSender extends AbstractTest
         }
         // this way JUnit will not hang around waiting for a spawned thread to complete:
         _idFactory.isRunning = false;
+    }
+
+    @Test
+    public void testShouldSendEmailToExternalServer() throws Exception
+    {
+        // N.B. 127.0.0.1 is not "localhost", so it is treated like an external mail server
+        Properties properties = getProperties("127.0.0.1", _port, "", "", false);
+        ConfigurationProperties.setProperties(properties);
+
+        AsyncEmailSender.create().sendPublicEmail(
+                "f1@example.com", null, "to1@example.com", "r1@example.com",
+                "Subject subject", "Body body", null, EmailCategory.PASSWORD_RESET);
+        waitForMessages(1);
+
+        for (WiserMessage msg : _wiser.getMessages()) {
+            Assert.assertEquals("f1@example.com", msg.getEnvelopeSender());
+            Assert.assertEquals("to1@example.com", msg.getEnvelopeReceiver());
+        }
+    }
+
+    @Test
+    public void testMailSessionShouldUseTLS() throws Exception
+    {
+        // N.B. 127.0.0.1 is not "localhost", so it is treated like an external mail server
+        Properties properties = getProperties("127.0.0.1", _port, "", "", true);
+        ConfigurationProperties.setProperties(properties);
+        AsyncEmailSender mailer = AsyncEmailSender.create();
+        Session session = mailer.getMailSession();
+
+        assertEquals("false", session.getProperty("mail.smtp.auth"));
+        assertEquals("true", session.getProperty("mail.smtp.starttls.enable"));
+        assertEquals("true", session.getProperty("mail.smtp.starttls.required"));
+    }
+
+    @Test
+    public void testMailSessionShouldUseTLSAndAuth() throws Exception
+    {
+        // N.B. 127.0.0.1 is not "localhost", so it is treated like an external mail server
+        Properties properties = getProperties("127.0.0.1", _port, "userid", "hunter2", true);
+        ConfigurationProperties.setProperties(properties);
+        AsyncEmailSender mailer = AsyncEmailSender.create();
+        Session session = mailer.getMailSession();
+
+        assertEquals("true", session.getProperty("mail.smtp.auth"));
+        assertEquals("true", session.getProperty("mail.smtp.starttls.enable"));
+        assertEquals("true", session.getProperty("mail.smtp.starttls.required"));
     }
 
     private static class TimeoutFactory implements SessionIdFactory
