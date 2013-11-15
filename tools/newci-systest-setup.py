@@ -6,7 +6,7 @@ required characteristics for the actors that will be put in the yaml file.
 These conf files have the following form:
 
 actors:
-    - os: [wl] # can be any word whose first character is w or l
+    - os: [wlo] # can be any word whose first character is w or l or o
       vm: [fF]alse, [tT]rue, [yY]es, [nN]o
       isolated: [fF]alse, [tT]rue, [yY]es, [nN]o
       teamserver: [sS]3, [lL]inked, [lL]ocal
@@ -124,10 +124,10 @@ def get_addresses_from_pool_service(actor_data):
         d = {}
         os = actor.get('os')
         if os is not None:
-            if os[0] in 'lLwW':
+            if os[0] in 'lLwWoO':
                 d['os'] = os[0].lower()
             else:
-                raise ValueError('"os" must be windows or linux')
+                raise ValueError('"os" must be windows or linux or osx')
         vm = actor.get('vm')
         if vm is not None:
             if vm in [True, 'true', 'True', 'yes', 'Yes']:
