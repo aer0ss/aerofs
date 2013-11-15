@@ -17,7 +17,12 @@ public class BaseLogUtil
      */
     public static <T extends Throwable> T suppress(T throwable)
     {
-        throwable.setStackTrace(new StackTraceElement[0]);
+        Throwable t = throwable;
+        do {
+            t.setStackTrace(new StackTraceElement[0]);
+            t = t.getCause();
+        } while (t != null);
+
         return throwable;
     }
 
