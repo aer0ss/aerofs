@@ -338,8 +338,10 @@ ${common.render_previous_button()}
                     console.log("uwsgi still reloading");
                     ## TODO (WW) add timeout?
                 }
-            }).fail(function(xhr) {
-                console.log("status: " + xhr.status + " statusText: " + xhr.statusText);
+            }).fail(function(xhr, textStatus, errorThrown) {
+                console.log("error from is_uwsgi_reloding(): " + xhr.status +
+                        " " + xhr.readyState + " " + xhr.statusText +
+                        " " + textStatus + " " + errorThrown);
 
                 ## Ignore 403 and 0's. We'll see this when uwsgi is reloading.
                 ## For more details see bootstrap.mako.
