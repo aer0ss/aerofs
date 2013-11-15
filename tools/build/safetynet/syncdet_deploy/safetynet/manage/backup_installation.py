@@ -3,13 +3,14 @@ import sys
 import shutil
 
 from syncdet import case
-from lib import app
+from lib.app.cfg import get_cfg
 from safetynet import param
 
 def backup_installation():
     user_data_path = case.user_data_folder_path()
-    app_root = app.app_root_path()
-    rt_root = app.rt_root_path()
+    cfg = get_cfg()
+    app_root = cfg.get_approot()
+    rt_root = cfg.get_rtroot()
 
     # Build the destination paths
     dst_app_root = os.path.join(user_data_path, param.APP_ROOT_BACKUP_DIR)
