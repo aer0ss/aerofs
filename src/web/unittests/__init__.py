@@ -1,5 +1,6 @@
 import unittest
 
+
 def test_suite():
     # import all test modules
     import unittests.accept
@@ -10,6 +11,7 @@ def test_suite():
     import unittests.shared_folders
     import unittests.team_members
     import unittests.team_settings
+    import unittests.password_reset
 
     suite = unittest.TestSuite()
 
@@ -17,6 +19,7 @@ def test_suite():
     suite.addTest(unittests.accept.test_suite())
     suite.addTest(unittests.login.test_suite())
     suite.addTest(unittests.misc.test_suite())
+    suite.addTest(unittests.password_reset.test_suite())
     suite.addTest(unittests.payment.test_suite())
     suite.addTest(unittests.setup.test_suite())
     suite.addTest(unittests.shared_folders.test_suite())

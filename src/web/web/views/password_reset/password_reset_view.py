@@ -48,8 +48,8 @@ def request_password_reset(request):
         flash_error(request, error)
 
     return {
-        'success' : success,
-        'error' : error
+        'success': success,
+        'error': error
     }
 
 @view_config(
@@ -60,7 +60,7 @@ def request_password_reset(request):
 def password_reset(request):
     token = request.params.get("token")
     user_id = request.params.get("user_id")
-    password = request.params.get("password").encode("utf-8")
+    password = request.params.get("password", "").encode("utf-8")
 
     error = None
     valid_password = True

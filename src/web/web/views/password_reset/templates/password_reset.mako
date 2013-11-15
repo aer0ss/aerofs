@@ -3,14 +3,15 @@
 
 <div class="row">
     <div class="span6 offset3">
-        <h2>Reset Password</h2>
-
         %if success:
+            <h2>Password Updated</h2>
             <div id="success_msg">
-                <p>Your password has been changed.</p>
+                <p>Your password has been updated successfully.</p>
                 <p>Click <a href="${request.route_path('login')}">here</a> to sign in with the new password.</p>
             </div>
         %else:
+            <h2>Reset Password</h2>
+
             %if error is None or not valid_password:
                 <div>Hi <strong>${user_id}</strong>, please enter your new password.</div>
                 <form class="form-inline" action="${request.route_path('password_reset')}" method="post">
@@ -20,7 +21,7 @@
                     ${self.csrf.token_input()}
                     <input type="hidden" name="token" value="${token}"/>
                     <input type="hidden" name="user_id" value="${user_id}"/>
-                    <div class="input_container">
+                    <div class="input_container" style="margin-top: 20px">
                         <label for="password">New Password:</label>
                         <input type="password" id="password" name="password" value=""/>
                         <input class="btn" type="submit" name="form.submitted" value="Update"/>

@@ -1,8 +1,5 @@
 import unittest
-import base64
-from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from ..test_base import TestBase
-import aerofs_sp.gen.common_pb2 as common
 
 class JsonSharedFolderPermTest(TestBase):
     def setUp(self):
