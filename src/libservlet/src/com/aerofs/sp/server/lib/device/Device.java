@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.lib.device;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -16,6 +17,7 @@ import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.RDN;
@@ -169,14 +171,33 @@ public class Device
         return this;
     }
 
-    public void delete()
-            throws SQLException, ExNotFound
+    /**
+     * @return serial number(s) of revoked certificate(s), if any
+     */
+    public ImmutableSet<Long> delete()
+            throws SQLException, ExNotFound, ExFormatError
     {
         if (!exists()) {
             throw new ExNotFound();
         }
 
+        ImmutableSet.Builder<Long> serials = ImmutableSet.builder();
+
+        Certificate cert = certificate();
+
+        // Do not try to revoke certs that do not exist. This will only effect devices created
+        // before the certificate tracking code was rolled out.
+        boolean certExists = cert.exists();
+        if (certExists) {
+            cert.revoke();
+            serials.add(cert.serial());
+        } else {
+            l.warn(id() + " no cert exists. unlink anyway.");
+        }
+
         _f._db.markUnlinked(_id);
+
+        return serials.build();
     }
 
     /**

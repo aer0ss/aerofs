@@ -245,6 +245,31 @@ public class SharedFolder
     public ImmutableCollection<UserID> removeUser(User user)
             throws SQLException, ExNotFound, ExNoAdminOrOwner
     {
+        return removeUserAndTransferOwnership(user, null);
+    }
+
+    public ImmutableCollection<UserID> removeUserAndTransferOwnership(User user, @Nullable User newOwner)
+            throws SQLException, ExNotFound, ExNoAdminOrOwner
+    {
+        ImmutableCollection<UserID> affected = removeUserAllowNoOwner(user);
+        if (exists() && !hasOwnerLeft()) {
+            if (newOwner == null) throwIfNoOwnerLeft();
+            try {
+                addJoinedUser(newOwner, Role.OWNER);
+            } catch (ExAlreadyExist e) {
+                // in general exception-driven control flow is bad but here we need the
+                // try-catch block anyway (if only to fill it with an assertion) and the
+                // likelihood of the new owner already being a member but not and OWNER
+                // is very low...
+                setRole(newOwner, Role.OWNER);
+            }
+        }
+        return affected;
+    }
+
+    private ImmutableCollection<UserID> removeUserAllowNoOwner(User user)
+            throws SQLException, ExNotFound
+    {
         boolean isJoined = getStateNullable(user) == JOINED;
 
         // retrieve the list of affected users _before_ performing the deletion, so that all the
@@ -258,7 +283,10 @@ public class SharedFolder
         // remove the team server only if the user has joined the folder
         if (isJoined) removeTeamServerForUserImpl(user);
 
-        throwIfNoOwnerLeft();
+        // auto-destroy folder if empty
+        if (getJoinedUserIDs().isEmpty()) {
+            destroy();
+        }
 
         return affectedUsers;
     }
@@ -376,10 +404,15 @@ public class SharedFolder
         return _f._db.getRoleNullable(_sid, user.id());
     }
 
+    public boolean hasOwnerLeft() throws SQLException
+    {
+        return _f._db.hasOwner(_sid);
+    }
+
     private void throwIfNoOwnerLeft()
             throws ExNoAdminOrOwner, SQLException
     {
-        if (!_f._db.hasOwner(_sid)) {
+        if (!hasOwnerLeft()) {
             throw new ExNoAdminOrOwner("there must be at least one owner");
         }
     }

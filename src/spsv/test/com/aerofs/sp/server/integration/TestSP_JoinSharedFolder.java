@@ -99,23 +99,6 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     }
 
     @Test
-    public void shouldThrowWhenLastAdminTriesToIgnoreInvitation() throws Exception
-    {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
-
-        setSessionUser(USER_1);
-
-        sqlTrans.begin();
-        factSharedFolder.create(SID_1).setState(USER_1, SharedFolderState.PENDING);
-        sqlTrans.commit();
-
-        try {
-            service.ignoreSharedFolderInvitation(SID_1.toPB());
-            fail();
-        } catch (ExNoAdminOrOwner e) {}
-    }
-
-    @Test
     public void shouldThrowWhenTryingToIgnoreInvitationToNonExistingFolder() throws Exception
     {
         setSessionUser(USER_1);

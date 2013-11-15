@@ -4,11 +4,17 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.base.C;
 import com.aerofs.base.acl.Role;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.sp.common.SharedFolderState;
+import com.aerofs.sp.server.integration.AbstractSPCertificateBasedTest;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -34,6 +40,7 @@ import org.mockito.Spy;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -152,5 +159,26 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     {
         assertEquals(sf.getRoleNullable(user), role);
         assertEquals(sf.getStateNullable(user), SharedFolderState.JOINED);
+    }
+
+    Device saveDevice(User user) throws SQLException, ExDeviceIDAlreadyExists
+    {
+        Device d = factDevice.create(DID.generate());
+        d.save(user, "foo", "bar", "baz");
+        return d;
+    }
+
+    protected static final String RETURNED_CERT = "returned_cert";
+    protected static long _lastSerialNumber = 564645L;
+
+    Certificate addCert(Device device) throws Exception
+    {
+        CertificationResult cert = mock(CertificationResult.class);
+        when(cert.toString()).thenReturn(RETURNED_CERT);
+        when(cert.getSerial()).thenReturn(++_lastSerialNumber);
+        when(cert.getExpiry()).thenReturn(new Timestamp(System.currentTimeMillis() + C.DAY * 365L));
+
+        device.addCertificate(cert);
+        return device.certificate();
     }
 }

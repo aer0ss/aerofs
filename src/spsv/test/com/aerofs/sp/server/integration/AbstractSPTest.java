@@ -55,6 +55,8 @@ import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.shared_folder_rules.SharedFolderRulesFactory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
@@ -69,6 +71,7 @@ import org.mockito.stubbing.Answer;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
@@ -168,6 +171,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     protected static final byte[] CRED = "CREDENTIALS".getBytes();
 
     private int nextUserID;
+    private int nextOrgID;
 
     // Use a method name that is unlikely to conflict with setup methods in subclasses
     @Before
@@ -228,7 +232,12 @@ public class AbstractSPTest extends AbstractTestWithDatabase
      */
     protected User newUser()
     {
-        return factUser.create(UserID.fromInternal("u" + Integer.toString(nextUserID++) + "@email"));
+        return factUser.create(UserID.fromInternal("u" + Integer.toString(++nextUserID) + "@email"));
+    }
+
+    protected Organization newOrganization()
+    {
+        return factOrg.create(++nextOrgID);
     }
 
     /**
@@ -267,6 +276,11 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     {
         DID did = DID.generate();
         return factDevice.create(did).save(owner, "", "", owner.toString() + "'s device " + did);
+    }
+
+    protected Organization saveOrganization() throws SQLException
+    {
+        return factOrg.save();
     }
 
     // TODO (WW) remove this method as it doesn't do much
@@ -353,6 +367,24 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 });
 
         return payloads;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected List<ImmutableCollection<Long>> mockAndCaptureVerkehrUpdateCRL()
+    {
+        final List<ImmutableCollection<Long>> crls = Lists.newArrayList();
+
+        when(verkehrAdmin.updateCRL((ImmutableCollection<Long>)any(ImmutableCollection.class)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable
+                    {
+                        crls.add((ImmutableCollection<Long>)invocation.getArguments()[0]);
+                        return UncancellableFuture.createSucceeded(null);
+                    }
+                });
+
+        return crls;
     }
 
     protected void assertVerkehrPublishContains(User ... users)

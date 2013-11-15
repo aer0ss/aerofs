@@ -30,6 +30,7 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -38,6 +39,7 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -223,6 +225,11 @@ public class User
         return getOrganization().equals(org);
     }
 
+    public boolean isAdminOf(User user) throws SQLException, ExNotFound
+    {
+        return isAdmin() && user.belongsTo(getOrganization());
+    }
+
     /**
      * Peer devices are all devices that you sync with, including your own devices.
      */
@@ -376,6 +383,39 @@ public class User
         _f._udb.insertUser(_id, fullName, shaedSP, org.id(), level);
 
         addRootStoreAndCheckForCollision();
+    }
+
+    /**
+     * Deactivate a user
+     *
+     * All ACLs for this user are deleted.
+     * All devices for this user are marked as unlinked and their certificates revoked.
+     *
+     * If the user being deactivated is the only remaining owner of a shared folder with remaining
+     * members:
+     *      * if {@paramref newOwner} is non-null then takes ownership of the folder
+     *      * if {@paramref newOwner} is null then throw ExNoAdminOrOwner
+     *
+     */
+    public ImmutableSet<UserID> deactivate(ImmutableSet.Builder<Long> revokedSerials,
+            @Nullable User newOwner)
+            throws SQLException, ExNotFound, ExFormatError, ExNoAdminOrOwner
+    {
+        Preconditions.checkArgument(newOwner == null || !_id.equals(newOwner.id()));
+
+        // revoke certs and mark devices as unlinked
+        for (Device device : getDevices()) {
+            revokedSerials.addAll(device.delete());
+        }
+
+        // delete ACLs
+        ImmutableSet.Builder<UserID> affected = ImmutableSet.builder();
+        for (SharedFolder sf : getSharedFolders()) {
+            affected.addAll(sf.removeUserAndTransferOwnership(this, newOwner));
+        }
+
+        _f._udb.deactivate(id());
+        return ImmutableSet.copyOf(affected.build());
     }
 
     /**

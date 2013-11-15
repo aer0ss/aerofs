@@ -1,0 +1,165 @@
+package com.aerofs.sp.server.integration;
+
+import com.aerofs.base.C;
+import com.aerofs.base.acl.Role;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.SID;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
+import com.aerofs.proto.Cmd.Command;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
+import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableCollection;
+import com.google.protobuf.ByteString;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.sql.Timestamp;
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+public class TestSP_DeactivateUser extends AbstractSPACLTest
+{
+    User u0;
+    User u1;
+
+    Device u0d0;
+    Device u0d1;
+    Device u1d0;
+
+    List<Command> cmds;
+    List<ImmutableCollection<Long>> crls;
+
+    @Override
+    protected Device saveDevice(User user) throws Exception
+    {
+        CertificationResult cert = mock(CertificationResult.class);
+        when(cert.toString()).thenReturn(AbstractSPCertificateBasedTest.RETURNED_CERT);
+        when(cert.getSerial()).thenReturn(++AbstractSPCertificateBasedTest._lastSerialNumber);
+        when(cert.getExpiry()).thenReturn(
+                new Timestamp(System.currentTimeMillis() + C.DAY * 365L));
+
+        Device d = super.saveDevice(user);
+        d.addCertificate(cert);
+        return d;
+    }
+
+
+    @Before
+    public void setUp() throws Exception
+    {
+        cmds = mockAndCaptureVerkehrDeliverPayload();
+        crls = mockAndCaptureVerkehrUpdateCRL();
+
+        sqlTrans.begin();
+
+        u0 = saveUser();
+        u1 = saveUser();
+
+        u0d0 = saveDevice(u0);
+        u0d1 = saveDevice(u0);
+        u1d0 = saveDevice(u1);
+
+        sqlTrans.commit();
+
+        shareFolder(u0, SID.generate(), u1, Role.EDITOR);
+        shareAndJoinFolder(u0, SID.generate(), u1, Role.OWNER);
+        SID sid = SID.generate();
+        shareAndJoinFolder(u0, sid, u1, Role.VIEWER);
+        leaveSharedFolder(u1, sid);
+    }
+
+    @Test(expected = ExNotFound.class)
+    public void shouldThowIfUserNotFound() throws Exception
+    {
+        setSessionUser(u0);
+        service.deactivateUser("totallynotauser", false);
+    }
+
+    @Test(expected = ExNoPerm.class)
+    public void shouldnotAllowUserToDeactivateOther() throws Exception
+    {
+        setSessionUser(u1);
+        service.deactivateUser(u0.id().getString(), false);
+    }
+
+    @Test
+    public void shouldNotAllowAdminToDeactivateUserOfDifferentOrg() throws Exception
+    {
+        sqlTrans.begin();
+        u1.setOrganization(saveOrganization(), AuthorizationLevel.ADMIN);
+        sqlTrans.commit();
+
+        setSessionUser(u1);
+        try {
+            service.deactivateUser(u0.id().getString(), false);
+            fail();
+        } catch (ExNoPerm e) {}
+    }
+
+    @Test
+    public void shouldAllowUserToDeactivateSelf() throws Exception
+    {
+        setSessionUser(u0);
+        service.deactivateUser(u0.id().getString(), false);
+
+        sqlTrans.begin();
+        assertFalse(u0.exists());
+        sqlTrans.commit();
+
+        // TODO: verify crls and cmds
+    }
+
+    @Test
+    public void shouldNotAllowUserToDeactivateSelfIfLastAdmin() throws Exception
+    {
+        shareAndJoinFolder(u0, SID.generate(), u1, Role.EDITOR);
+
+        setSessionUser(u0);
+        try {
+            service.deactivateUser(u0.id().getString(), false);
+            fail();
+        } catch (ExNoAdminOrOwner e) {}
+    }
+
+    @Test
+    public void shouldAllowAdminToDeactivateUserOfSameOrg() throws Exception
+    {
+        sqlTrans.begin();
+        u1.setOrganization(u0.getOrganization(), AuthorizationLevel.ADMIN);
+        sqlTrans.commit();
+
+        setSessionUser(u1);
+        service.deactivateUser(u0.id().getString(), false);
+
+        sqlTrans.begin();
+        assertFalse(u0.exists());
+        sqlTrans.commit();
+
+        // TODO: verify crls and cmds
+    }
+
+    @Test
+    public void shouldAllowDeactivateAndReactivate() throws Exception
+    {
+        setSessionUser(u0);
+        service.deactivateUser(u0.id().getString(), false);
+
+        sqlTrans.begin();
+        String code = u0.addSignUpCode();
+        sqlTrans.commit();
+
+        service.signUpWithCode(code, ByteString.copyFromUtf8("password"), "NewFirst", "NewLast");
+
+        sqlTrans.begin();
+        assertTrue(u0.exists());
+        sqlTrans.commit();
+    }
+}

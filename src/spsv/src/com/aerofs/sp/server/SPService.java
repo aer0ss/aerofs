@@ -106,7 +106,6 @@ import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
 import com.aerofs.sp.server.lib.SharedFolder.UserRoleAndState;
-import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
@@ -127,6 +126,7 @@ import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -2359,54 +2359,55 @@ public class SPService implements ISPService
     }
 
     /**
-     * Perform certificate revocation and update the persistent command queue. Should be called with
-     * a SQL transaction.
+     * Perform certificate revocation and update the persistent command queue.
+     * Should be called with a SQL transaction.
      * @param device the device to unlink.
      */
     private void unlinkDeviceImplementation(Device device, boolean erase)
             throws Exception
     {
+        DID did = device.id();
         User owner = device.getOwner();
-        device.delete();
 
-        Certificate cert = device.certificate();
+        ImmutableSet<Long> serials = device.delete();
+        if (!serials.isEmpty()) updateVerkehrCRL(serials);
 
-        // Do not try to revoke certs that do not exist. This will only effect devices created
-        // before the certificate tracking code was rolled out.
-        boolean certExists = cert.exists();
-        if (certExists) {
-            cert.revoke();
+        notifyPeerDevicesOfUnlink(owner, !serials.isEmpty());
+        sendUnlinkCommand(did, erase);
+    }
 
-            ImmutableList.Builder<Long> builder = ImmutableList.builder();
-            builder.add(cert.serial());
-            updateVerkehrCRL(builder.build());
-        } else {
-            l.warn(device.id() + " no cert exists. unlink anyway.");
-        }
-
+    /**
+     * Notify the appropriate subset of peer devices when a device is unlinked.
+     * Should be called with a SQL transaction.
+     * @param owner user owning the unlinked device(s)
+     */
+    private void notifyPeerDevicesOfUnlink(User owner, boolean crlUpdated) throws Exception
+    {
         Collection<Device> peerDevices = owner.getPeerDevices();
 
         // Tell peer devices to clean their sss database and refresh their certificate revocation
         // list.
         for (Device peer : peerDevices) {
             // Only need to refresh the CRL if we actually deleted a cert.
-            if (certExists) {
+            if (crlUpdated) {
                 addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
             }
 
             // Clean the sync status database regardless, since we deleted a device.
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.CLEAN_SSS_DATABASE);
         }
+    }
 
+    private void sendUnlinkCommand(DID did, boolean erase) throws Exception
+    {
         // Tell the actual device to perform the required local actions. Remember to flush the queue
         // first so that this is the only command left in the queue. The ensures that if the user
         // changes their password the unlink/wipe command can still be executed.
         if (erase) {
-            addToCommandQueueAndSendVerkehrMessage(device.id(),
+            addToCommandQueueAndSendVerkehrMessage(did,
                     CommandType.UNLINK_AND_WIPE_SELF, true);
         } else {
-            addToCommandQueueAndSendVerkehrMessage(device.id(),
-                    CommandType.UNLINK_SELF, true);
+            addToCommandQueueAndSendVerkehrMessage(did, CommandType.UNLINK_SELF, true);
         }
     }
 
@@ -2570,6 +2571,44 @@ public class SPService implements ISPService
                 .build());
     }
 
+    @Override
+    public ListenableFuture<Void> deactivateUser(String userId, Boolean eraseDevices)
+            throws Exception
+    {
+        User caller = _sessionUser.getUser();
+        User user = _factUser.createFromExternalID(userId);
+
+        _sqlTrans.begin();
+
+        user.throwIfNotFound();
+
+        if (!(caller.equals(user) || caller.isAdminOf(user))) throw new ExNoPerm("");
+
+        // fetch device list before deactivation
+        Collection<Device> devices = user.getDevices();
+
+        ImmutableSet.Builder<Long> bd = ImmutableSet.builder();
+        Collection<UserID> affectedUsers = user.deactivate(bd, caller.equals(user) ? null : caller);
+        ImmutableCollection<Long> revokedSerials = bd.build();
+
+        // IMPORTANT: no DB writes beyond this point
+
+        // TODO: long term we need to ensure atomic sending of all vk messages in a transaction...
+        for (Device device : devices) {
+            sendUnlinkCommand(device.id(), eraseDevices);
+        }
+
+        updateVerkehrCRL(revokedSerials);
+
+        notifyPeerDevicesOfUnlink(user, !revokedSerials.isEmpty());
+
+        publishACLs_(affectedUsers);
+
+        _sqlTrans.commit();
+
+        return signOut();
+    }
+
     /**
      * Convenience method to set the reply an exception into the reply
      */
@@ -2622,7 +2661,7 @@ public class SPService implements ISPService
         _verkehrAdmin.deliverPayload_(did.toStringFormal(), command.toByteArray()).get();
     }
 
-    private void updateVerkehrCRL(ImmutableList<Long> serials)
+    private void updateVerkehrCRL(ImmutableCollection<Long> serials)
             throws Exception
     {
         l.info("command verkehr, #serials: " + serials.size());

@@ -645,6 +645,17 @@ service SPService {
     //   ExEmptyEmailAddress if the user id is empty
     //   ExBadCredential if username/password combination is incorrect
     rpc CredentialSignIn(SignInUserCall) returns (Void);
+
+    /**
+     * Deactivate a user, delete all its ACLs and unlink all its devices.
+     *
+     * If the user to be deleted is the only remaining owner of a shared folder:
+     *      - if the caller is an org admin it will take ownership of this folder
+     *      - if the caller is the user itself ExNoAdminOrOwner is thrown
+     *
+     * Required Auth Level: User to delete self, Admin to delete others
+     */
+    rpc DeactivateUser(DeactivateUserCall) returns(Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1202,4 +1213,9 @@ enum PBSharedFolderState {
     PENDING = 0;
     JOINED = 1;
     LEFT = 2;
+}
+
+message DeactivateUserCall {
+    required string user_id = 1;
+    required bool erase_devices = 2;
 }

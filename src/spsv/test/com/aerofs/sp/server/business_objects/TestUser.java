@@ -17,6 +17,7 @@ import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableSet;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,6 +25,12 @@ import org.junit.Test;
 import java.sql.SQLException;
 import java.util.Collection;
 
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TestUser extends AbstractBusinessObjectTest
@@ -145,5 +152,124 @@ public class TestUser extends AbstractBusinessObjectTest
 
         Assert.assertEquals(2, userDevices.size());
         Assert.assertEquals(2, peerDevices.size());
+    }
+
+    @Test
+    public void deactivate_shouldMakeAllMethodsBehaveAsIfUserNeverExisted() throws Exception
+    {
+        User user = saveUser();
+        saveSharedFolder(user);
+        addCert(saveDevice(user));
+
+        user.deactivate(ImmutableSet.<Long>builder(), null);
+
+        assertFalse(user.exists());
+
+        try {
+            user.getFullName();
+            fail();
+        } catch (ExNotFound e) {}
+
+        try {
+            user.getOrganization();
+            fail();
+        } catch (ExNotFound e) {}
+
+        try {
+            user.getLevel();
+            fail();
+        } catch (ExNotFound e) {}
+
+        try {
+            user.getSignupDate();
+            fail();
+        } catch (ExNotFound e) {}
+
+        try {
+            user.isAdmin();
+            fail();
+        } catch (ExNotFound e) {}
+
+        try {
+            user.belongsTo(factOrg.create(42));
+            fail();
+        } catch (ExNotFound e) {}
+
+        assertThat(user.getDevices(), empty());
+        assertThat(user.getPeerDevices(), empty());
+        assertThat(user.getSharedFolders(), empty());
+        assertThat(user.getPendingSharedFolders(), empty());
+
+        try {
+            user.getACLEpoch();
+            fail();
+        } catch (AssertionError e) {}
+    }
+
+
+    @Test
+    public void deactivate_shouldDeleteSharedFolderWithNoJoinedUsers() throws Exception
+    {
+        User user = saveUser();
+
+        SharedFolder sf = saveSharedFolder(user);
+        sf.addPendingUser(saveUser(), Role.EDITOR, user);
+        User left = saveUser();
+        sf.addJoinedUser(left, Role.VIEWER);
+        sf.setState(left, SharedFolderState.LEFT);
+
+        User admin = saveUser();
+
+        user.deactivate(ImmutableSet.<Long>builder(), admin);
+
+        assertFalse(sf.exists());
+    }
+
+    @Test
+    public void deactivate_shouldTransferOwnershipOnDeactivationOfLastOwner() throws Exception
+    {
+        User user = saveUser();
+
+        SharedFolder sf = saveSharedFolder(user);
+        sf.addJoinedUser(saveUser(), Role.EDITOR);
+
+        User admin = saveUser();
+
+        user.deactivate(ImmutableSet.<Long>builder(), admin);
+
+        assertTrue(sf.exists());
+        assertTrue(sf.hasOwnerLeft());
+        assertThat(sf.getJoinedUsers(), hasItem(admin));
+    }
+
+    @Test
+    public void deactivate_shouldNotTransferOwnershipOnWhenOtherOwnersLeft() throws Exception
+    {
+        User user = saveUser();
+
+        SharedFolder sf = saveSharedFolder(user);
+        sf.addJoinedUser(saveUser(), Role.OWNER);
+
+        User admin = saveUser();
+
+        user.deactivate(ImmutableSet.<Long>builder(), admin);
+
+        assertTrue(sf.exists());
+        assertTrue(sf.hasOwnerLeft());
+        assertThat(sf.getJoinedUsers(), not(hasItem(admin)));
+    }
+
+    @Test
+    public void deactivate_shouldFailWhenCannotTransferOwnership() throws Exception
+    {
+        User user = saveUser();
+
+        SharedFolder sf = saveSharedFolder(user);
+        sf.addJoinedUser(saveUser(), Role.EDITOR);
+
+        try {
+            user.deactivate(ImmutableSet.<Long>builder(), null);
+            fail();
+        } catch (ExNoAdminOrOwner e) {}
     }
 }
