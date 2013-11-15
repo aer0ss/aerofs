@@ -6,6 +6,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.daemon.transport.exception.ExSendFailed;
 import com.aerofs.daemon.transport.netty.handlers.IOStatsHandler;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.zephyr.client.IZephyrSignallingClient;
 import com.aerofs.zephyr.client.exceptions.ExBadZephyrMessage;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
@@ -243,7 +244,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
     {
         checkValid();
 
-        l.warn("{} caught err:", this, e.getCause());
+        l.warn("{} caught err:", this, LogUtil.suppress(e.getCause(), ExHandshakeFailed.class));
 
         disconnect(e.getCause());
     }
