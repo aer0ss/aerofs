@@ -539,6 +539,10 @@ def json_setup_finalize(request):
     #   initial setup wouldn't be able to call json_setup_poll or finalize after
     #   calling apply.
     #
+    # N.B. we use uwsgi reload (insted of uwsgi restart, or stop/start) because
+    # uwsgi stop and restart notoriously suck, and I (MP) have observed uwsgi
+    # reload to be more reliable.
+    #
     global _UWSGI_RELOADING
     _UWSGI_RELOADING = True
     aerofs_common.bootstrap.enqueue_task_set("web-reload")
