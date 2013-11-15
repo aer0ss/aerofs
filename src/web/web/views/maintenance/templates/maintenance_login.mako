@@ -3,6 +3,9 @@
 
 <%namespace name="csrf" file="csrf.mako"/>
 <%namespace name="upload_license_button" file="upload_license_button.mako"/>
+<%namespace name="no_ie" file="no_ie.mako"/>
+
+<%no_ie:scripts/>
 
 <div class="span8 offset2">
     <div class="text-center">

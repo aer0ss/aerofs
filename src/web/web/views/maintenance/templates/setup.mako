@@ -1,6 +1,8 @@
 <%inherit file="base_layout.mako"/>
 <%! page_title = "Setup" %>
 
+<%namespace name="no_ie" file="no_ie.mako"/>
+
 <%block name="home_url">
     ${request.route_path('dashboard_home')}
 </%block>
@@ -25,6 +27,8 @@
         }
     </style>
 </%block>
+
+<%no_ie:scripts/>
 
 ## TODO (WW) This is a hack to get around the fact that JS in individual setup
 ## pages can't be included *after* base_layout.mako includes jQuery. A proper

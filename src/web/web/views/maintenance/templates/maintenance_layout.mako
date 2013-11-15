@@ -1,5 +1,8 @@
 <%inherit file="marketing_layout.mako"/>
 <%namespace name="navigation" file="navigation.mako"/>
+<%namespace name="no_ie" file="no_ie.mako"/>
+
+<%no_ie:scripts/>
 
 ## N.B. dashboard_layout.mako uses the same layout
 <div class="row">
