@@ -54,9 +54,9 @@ DEFAULT_USERID_FMT = getpass.getuser() + '+syncdet+{}@aerofs.com'
 ARCHIVE_DIR = '~/archive'
 
 # CI Server Connection Settings
-CODE_URL = "http://newci.arrowfs.org:21337/get_code"  # this is forwarded to the unified box on newci
+CODE_URL = "http://unified.syncfs.com:21337/get_code"
 POOL_URL = "http://newci.arrowfs.org:8040"
-CI_SP_URL = "https://newci.arrowfs.org:4433/sp"  # this is forwarded to the unified box on newci
+CI_SP_URL = "https://unified.syncfs.com:4433/sp"
 CI_SP_VERSION = 20
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
