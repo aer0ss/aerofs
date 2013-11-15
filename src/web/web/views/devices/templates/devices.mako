@@ -82,6 +82,12 @@
     </tbody>
 </table>
 
+%if are_team_servers:
+    <a href="${request.route_path('download_team_server')}">Download Team Server installers</a>
+%else:
+    <a href="${request.route_path('download')}">Download desktop client installers</a>
+%endif
+
 <%def name="device_icon(os_family, os_name)">
     <%
         tooltip = os_name

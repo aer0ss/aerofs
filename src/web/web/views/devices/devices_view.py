@@ -30,7 +30,7 @@ def my_devices(request):
     if len(devices) == 0:
         raise HTTPFound(request.route_path('download') + "?msg_type=no_device")
 
-    return _devices(devices, user, _("My Devices"))
+    return _devices(devices, user, _("My Devices"), False)
 
 @view_config(
     route_name = 'user_devices',
@@ -46,7 +46,7 @@ def user_devices(request):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    return _devices(devices, user, _("${name}'s Devices", {'name': full_name}))
+    return _devices(devices, user, _("${name}'s Devices", {'name': full_name}), False)
 
 @view_config(
     route_name = 'team_server_devices',
@@ -63,9 +63,9 @@ def team_server_devices(request):
     if len(devices) == 0:
         raise HTTPFound(request.route_path('download_team_server') + "?msg_type=no_device")
 
-    return _devices(devices, ts_user, _("Team Servers"))
+    return _devices(devices, ts_user, _("Team Servers"), True)
 
-def _devices(devices, user, page_heading):
+def _devices(devices, user, page_heading, are_team_servers):
     return {
         'url_param_user': URL_PARAM_USER,
         'url_param_device_id': _URL_PARAM_DEVICE_ID,
@@ -74,7 +74,8 @@ def _devices(devices, user, page_heading):
         # defines a global variable using the same name.
         'page_heading': page_heading,
         'user': user,
-        'devices': devices
+        'devices': devices,
+        'are_team_servers': are_team_servers
     }
 
 @view_config(
