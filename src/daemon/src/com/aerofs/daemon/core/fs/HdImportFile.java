@@ -14,9 +14,9 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIImportFile;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
@@ -42,7 +42,7 @@ import java.io.OutputStream;
 
 public class HdImportFile  extends AbstractHdIMC<EIImportFile>
 {
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final TransManager _tm;
     private final DirectoryService _ds;
     private final VersionUpdater _vu;
@@ -50,10 +50,10 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
     private final IPhysicalStorage _ps;
 
     @Inject
-    public HdImportFile(TC tc, TransManager tm, DirectoryService ds, ObjectCreator oc,
-            IPhysicalStorage ps, VersionUpdater vu)
+    public HdImportFile(TokenManager tokenManager, TransManager tm, DirectoryService ds,
+            ObjectCreator oc, IPhysicalStorage ps, VersionUpdater vu)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
         _tm = tm;
         _ds = ds;
         _vu = vu;
@@ -109,7 +109,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         IPhysicalPrefix pp = _ps.newPrefix_(sockid);
 
         ContentHash h;
-        Token tk = _tc.acquire_(Cat.UNLIMITED, "import-file");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "import-file");
         try {
             // copy source file to prefix (with core lock released)
             TCB tcb = tk.pseudoPause_("import to prefix");

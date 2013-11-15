@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import javax.inject.Inject;
 
 import com.aerofs.daemon.lib.db.ITransListener;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 /* usage:
@@ -53,7 +54,7 @@ public class TransManager
 
     public void assertNoOngoingTransaction_()
     {
-        assert _ongoing == null || _ongoing.ended_();
+        Preconditions.checkState(_ongoing == null || _ongoing.ended_());
     }
 
     void committing_(Trans t) throws SQLException

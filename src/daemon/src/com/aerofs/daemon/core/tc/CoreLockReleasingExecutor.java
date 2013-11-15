@@ -11,12 +11,12 @@ import java.util.concurrent.Callable;
 
 public class CoreLockReleasingExecutor
 {
-    private final TC _tc;
+    private final TokenManager _tokenManager;
 
     @Inject
-    public CoreLockReleasingExecutor(TC tc)
+    public CoreLockReleasingExecutor(TokenManager tokenManager)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
     }
 
     public <V> V execute_(Callable<V> c) throws Exception
@@ -26,7 +26,7 @@ public class CoreLockReleasingExecutor
 
     public <V> V execute_(Callable<V> c, String reason) throws Exception
     {
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, reason);
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, reason);
         try {
             TCB tcb = tk.pseudoPause_(reason);
             try {

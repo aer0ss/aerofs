@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -13,6 +12,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.lib.DaemonParam;

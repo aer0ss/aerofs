@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
+import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.transfers.BaseTransferState;
 
 /**
@@ -11,4 +12,8 @@ import com.aerofs.daemon.core.transfers.BaseTransferState;
  */
 public class DownloadState extends BaseTransferState
 {
+    public DownloadState()
+    {
+        Dumpables.add("dls", this);
+    }
 }

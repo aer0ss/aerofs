@@ -6,7 +6,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.*;
+import com.aerofs.daemon.core.CoreUtil;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -37,14 +38,14 @@ public class DID2User
 
     private final Map<DID, Set<TCB>> _d2waiters = Maps.newHashMap();
     private final NSL _nsl;
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final IDID2UserDatabase _db;
     private final TransManager _tm;
 
     @Inject
-    public DID2User(TC tc, NSL nsl, IDID2UserDatabase db, TransManager tm)
+    public DID2User(TokenManager tokenManager, NSL nsl, IDID2UserDatabase db, TransManager tm)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
         _nsl = nsl;
         _db = db;
         _tm = tm;
@@ -98,7 +99,7 @@ public class DID2User
 
         _nsl.sendUnicast_(did, CoreUtil.newCall(Type.NOP).build());
 
-        Token tk = _tc.acquireThrows_(Cat.DID2USER, did.toString());
+        Token tk = _tokenManager.acquireThrows_(Cat.DID2USER, did.toString());
         try {
             Set<TCB> waiters = _d2waiters.get(did);
             if (waiters == null) {

@@ -1,33 +1,33 @@
 package com.aerofs.daemon.core.tc;
 
-import java.util.HashSet;
+import java.util.Set;
 
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.base.ex.ExTimeout;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 
 public class Token
 {
     private final TokenManager _tokenManager;
-    private final TC _tc;
     private final Cat _cat;
     private final Prio _prio;
 
     // this _tcb1 is to optimize for the typical case where only one thread is
     // using the token
     private TCB _tcb1;
-    private HashSet<TCB> _tcbs;
+    private Set<TCB> _tcbs;
 
     private boolean _reclaimed;
     private final String _reason;
 
-    Token(TokenManager tokenManager, TC tc, Cat cat, Prio prio, String reason)
+    Token(TokenManager tokenManager, Cat cat, Prio prio, String reason)
     {
-        assert reason != null && !reason.isEmpty();
+        Preconditions.checkArgument(reason != null && !reason.isEmpty());
         _tokenManager = tokenManager;
-        _tc = tc;
         _cat = cat;
         _prio = prio;
         _reason = reason;
@@ -38,7 +38,7 @@ public class Token
         if (_tcb1 == null) {
             _tcb1 = tcb;
         } else {
-            if (_tcbs == null) _tcbs = new HashSet<TCB>();
+            if (_tcbs == null) _tcbs = Sets.newHashSet();
             Util.verify(_tcbs.add(tcb));
         }
     }
@@ -129,12 +129,12 @@ public class Token
      */
     public TCB pseudoPause_(String reason) throws ExAborted
     {
-        return _tc.pseudoPauseImpl_(this, reason);
+        return _tokenManager.pseudoPauseImpl_(this, reason);
     }
 
     public void pause_(String reason) throws ExAborted
     {
-        _tc.pauseImpl_(this, reason);
+        _tokenManager.pauseImpl_(this, reason);
     }
 
     /**
@@ -143,11 +143,12 @@ public class Token
      */
     public void pause_(long timeout, String reason) throws ExTimeout, ExAborted
     {
-        _tc.pauseImpl_(this, timeout, reason);
+        _tokenManager.pauseImpl_(this, timeout, reason);
     }
 
     public void sleep_(long timeout, String reason) throws ExAborted
     {
-        _tc.sleepImpl_(this, timeout, reason);
+        _tokenManager.sleepImpl_(this, timeout, reason);
     }
+
 }

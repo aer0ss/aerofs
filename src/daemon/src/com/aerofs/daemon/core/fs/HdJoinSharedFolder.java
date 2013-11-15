@@ -3,9 +3,9 @@ package com.aerofs.daemon.core.fs;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sp.client.SPBlockingClient;
 import org.slf4j.Logger;
@@ -19,13 +19,13 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
 {
     private static final Logger l = Loggers.getLogger(HdJoinSharedFolder.class);
 
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final ACLSynchronizer _aclsync;
 
     @Inject
-    public HdJoinSharedFolder(TC tc, ACLSynchronizer aclsync)
+    public HdJoinSharedFolder(TokenManager tokenManager, ACLSynchronizer aclsync)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
         _aclsync = aclsync;
     }
 
@@ -34,7 +34,7 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
     {
         l.info("join: " + ev._sid);
 
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "sp-join");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-join");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-join");

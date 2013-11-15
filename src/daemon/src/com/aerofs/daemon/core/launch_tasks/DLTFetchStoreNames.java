@@ -9,9 +9,9 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -37,17 +37,17 @@ class DLTFetchStoreNames extends DaemonLaunchTask
 {
     private static final Logger l = Loggers.getLogger(DLTFetchStoreNames.class);
 
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final TransManager _tm;
     private final IStoreDatabase _sdb;
     private final IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public DLTFetchStoreNames(TC tc, TransManager tm, CoreScheduler sched, IStoreDatabase sdb,
-            IMapSID2SIndex sid2sidx)
+    public DLTFetchStoreNames(TokenManager tokenManager, TransManager tm, CoreScheduler sched,
+            IStoreDatabase sdb, IMapSID2SIndex sid2sidx)
     {
         super(sched);
-        _tc = tc;
+        _tokenManager = tokenManager;
         _tm = tm;
         _sdb = sdb;
         _sid2sidx = sid2sidx;
@@ -70,7 +70,7 @@ class DLTFetchStoreNames extends DaemonLaunchTask
 
     private GetACLReply getACL() throws Exception
     {
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl4foldername");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl4foldername");
         try {
             TCB tcb = tk.pseudoPause_("spacl4foldername");
             try {

@@ -8,7 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
-import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ConfigurationPropertiesResource;
 import com.aerofs.daemon.transport.ITransport;
@@ -23,6 +23,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.rocklog.RockLog;
+import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.junit.Before;
@@ -30,6 +31,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mock;
 
 import java.util.Collection;
 
@@ -41,27 +43,27 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class TestCoreTransports
+public class TestCoreTransports extends AbstractTest
 {
     static
     {
         TransportLoggerSetup.init();
     }
 
-    private final CfgAbsRTRoot _absRTRoot = mock(CfgAbsRTRoot.class);
-    private final CfgLocalUser _localUser = mock(CfgLocalUser.class);
-    private final CfgLocalDID _localDID = mock(CfgLocalDID.class);
-    private final CfgScrypted _scrypted = mock(CfgScrypted.class);
-    private final CfgLolol _cfgLolol = mock(CfgLolol.class);
-    private final CoreQueue _coreQueue = mock(CoreQueue.class);
-    private final TC _tc = mock(TC.class);
-    private final MaxcastFilterReceiver _maxcastFilterReceiver = mock(MaxcastFilterReceiver.class);
-    private final LinkStateService _linkStateService = mock(LinkStateService.class);
-    private final RockLog _rockLog = mock(RockLog.class);
-    private final ClientSSLEngineFactory _clientSslEngineFactory = mock(ClientSSLEngineFactory.class);
-    private final ServerSSLEngineFactory _serverSSLEngineFactory = mock(ServerSSLEngineFactory.class);
-    private final ClientSocketChannelFactory _clientSocketChannelFactory = mock(ClientSocketChannelFactory.class);
-    private final ServerSocketChannelFactory _serverSocketChannelFactory = mock(ServerSocketChannelFactory.class);
+    private @Mock CfgAbsRTRoot _absRTRoot;
+    private @Mock CfgLocalUser _localUser;
+    private @Mock CfgLocalDID _localDID;
+    private @Mock CfgScrypted _scrypted;
+    private @Mock CfgLolol _cfgLolol;
+    private @Mock CoreQueue _coreQueue;
+    private @Mock TokenManager _tokenManager;
+    private @Mock MaxcastFilterReceiver _maxcastFilterReceiver;
+    private @Mock LinkStateService _linkStateService;
+    private @Mock RockLog _rockLog;
+    private @Mock ClientSSLEngineFactory _clientSslEngineFactory;
+    private @Mock ServerSSLEngineFactory _serverSSLEngineFactory;
+    private @Mock ClientSocketChannelFactory _clientSocketChannelFactory;
+    private @Mock ServerSocketChannelFactory _serverSocketChannelFactory;
 
     @ClassRule
     public static ConfigurationPropertiesResource _configurationPropertiesResource = new ConfigurationPropertiesResource();
@@ -97,7 +99,7 @@ public class TestCoreTransports
                 _cfgLolol,
                 enabledTransports,
                 _coreQueue,
-                _tc,
+                _tokenManager,
                 _maxcastFilterReceiver,
                 _linkStateService,
                 null,
@@ -136,7 +138,7 @@ public class TestCoreTransports
                 _cfgLolol,
                 enabledTransports,
                 _coreQueue,
-                _tc,
+                _tokenManager,
                 _maxcastFilterReceiver,
                 _linkStateService,
                 null,

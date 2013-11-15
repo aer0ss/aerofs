@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -15,5 +16,6 @@ public class CoreQueue extends BlockingPrioQueue<IEvent>
     public CoreQueue()
     {
         super(DaemonParam.QUEUE_LENGTH_CORE);
+        Dumpables.add("q", this);
     }
 }

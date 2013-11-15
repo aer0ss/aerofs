@@ -65,17 +65,15 @@ public class Hasher
     private final BranchDeleter _bd;
     private final TransManager _tm;
     private final IPhysicalStorage _ps;
-    private final TC _tc;
 
     @Inject
-    public Hasher(TransManager tm, BranchDeleter bd, TC tc, DirectoryService ds,
+    public Hasher(TransManager tm, BranchDeleter bd, DirectoryService ds,
             NativeVersionControl nvc, IPhysicalStorage ps)
     {
         _tm = tm;
         _bd = bd;
         _nvc = nvc;
         _ds = ds;
-        _tc = tc;
         _ps = ps;
     }
 
@@ -164,8 +162,6 @@ public class Hasher
     {
         ContentHash h = _ds.getCAHash_(sokid);
         if (h != null) return h;
-
-        assert _tc.isCoreThread();
 
         Set<TCB> waitingThreads = _map.get(sokid);
         if (waitingThreads == null) {

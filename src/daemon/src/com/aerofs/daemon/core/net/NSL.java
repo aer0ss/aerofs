@@ -39,14 +39,12 @@ public class NSL
     private UnicastInputOutputStack _stack;
     private DevicePresence _dp;
     private Transports _tps;
-    private TC _tc;
 
 
     @Inject
-    public void inject_(TC tc, Transports tps, DevicePresence dp, UnicastInputOutputStack stack,
+    public void inject_(Transports tps, DevicePresence dp, UnicastInputOutputStack stack,
             Metrics m)
     {
-        _tc = tc;
         _tps = tps;
         _dp = dp;
         _stack = stack;
@@ -104,7 +102,7 @@ public class NSL
         for (ITransport tp : _tps.getAll_()) {
             if (!tp.supportsMulticast()) continue;
 
-            tp.q().enqueueThrows(ev, _tc.prio());
+            tp.q().enqueueThrows(ev, TC.currentThreadPrio());
         }
     }
 

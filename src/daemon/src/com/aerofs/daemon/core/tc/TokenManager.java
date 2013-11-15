@@ -2,18 +2,26 @@ package com.aerofs.daemon.core.tc;
 
 import java.io.PrintStream;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.admin.Dumpables;
+import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.StrictLock;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.event.Prio;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import com.aerofs.lib.Util;
@@ -27,9 +35,17 @@ import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
  */
 public class TokenManager implements IDumpStatMisc
 {
+    private static final Logger l = Loggers.getLogger(TokenManager.class);
+
     static {
         // otherwise we have to change Category's implementation
-        assert Prio.values().length == 2;
+        Preconditions.checkState(Prio.values().length == 2);
+    }
+
+    static interface ITokenUseListener
+    {
+        void prePause_(TCB tcb, Token tk, String reason) throws ExAborted;
+        void postPause_(TCB tcb) throws ExAborted;
     }
 
     private static class CatInfo
@@ -37,9 +53,9 @@ public class TokenManager implements IDumpStatMisc
         private final Cat _cat;
         private final int _quota;
         private int _total;
-        private final Set<Token> _lo = new LinkedHashSet<Token>();
+        private final Set<Token> _lo = Sets.newLinkedHashSet();
         // for dumping only
-        private final Set<Token> _hi = new HashSet<Token>();
+        private final Set<Token> _hi = Sets.newHashSet();
 
         private final EnumMap<Prio, Set<Token>> _tokenSetMap = new EnumMap<Prio, Set<Token>>(
             Prio.class);
@@ -48,8 +64,8 @@ public class TokenManager implements IDumpStatMisc
             _tokenSetMap.put(Prio.HI, _hi);
         }
 
-        private final ConcurrentlyModifiableListeners<ITokenReclamationListener> _ls = ConcurrentlyModifiableListeners
-                .create();
+        private final ConcurrentlyModifiableListeners<ITokenReclamationListener> _ls =
+                ConcurrentlyModifiableListeners.create();
 
         private CatInfo(Cat cat, int quota)
         {
@@ -58,17 +74,25 @@ public class TokenManager implements IDumpStatMisc
         }
     }
 
-    private static final Logger l = Loggers.getLogger(TokenManager.class);
+    private final StrictLock _l;
 
-    private TC _tc;
-    private final EnumMap<Cat, CatInfo> _cat2info = new EnumMap<Cat, CatInfo>(Cat.class);
+    private ITokenUseListener _listener;
+    private final EnumMap<Cat, CatInfo> _cat2info = Maps.newEnumMap(Cat.class);
 
     @Inject
-    public void inject_(TC tc)
+    public TokenManager(CoreQueue q)
     {
-        _tc = tc;
+        _l = q.getLock();
 
         for (Cat cat : Cat.values()) _cat2info.put(cat, new CatInfo(cat, getQuota(cat)));
+
+        Dumpables.add("cat", this);
+    }
+
+    void setListener_(ITokenUseListener listener)
+    {
+        Preconditions.checkState(_listener == null);
+        _listener = Preconditions.checkNotNull(listener);
     }
 
     private static int getQuota(@Nonnull Cat cat)
@@ -97,8 +121,7 @@ public class TokenManager implements IDumpStatMisc
     {
         Token tk = acquire_(cat, reason);
         if (tk == null) {
-            CatInfo catInfo = _cat2info.get(cat);
-            assert catInfo != null;
+            CatInfo catInfo = Preconditions.checkNotNull(_cat2info.get(cat));
 
             throw new ExNoResource(cat + " full: toks:" + dumpCatInfo(catInfo, ""));
         }
@@ -112,27 +135,26 @@ public class TokenManager implements IDumpStatMisc
     public @Nullable Token acquire_(Cat cat, String reason)
     {
         CatInfo info = _cat2info.get(cat);
-        Prio prio = _tc.prio();
+        Prio prio = TC.currentThreadPrio();
 
-        if (info._total != info._quota) {
-            if (info._total > info._quota) throw new IllegalStateException();
-        } else {
+        if (info._total == info._quota) {
             if (prio == Prio.LO) {
                 return null;
             } else {
-                assert prio == Prio.HI;
+                Preconditions.checkState(prio == Prio.HI);
                 if (info._lo.isEmpty()) return null;
                 Iterator<Token> iter = info._lo.iterator();
                 if (!iter.hasNext()) return null;
                 Token preempt = iter.next();
-                l.debug(info._cat + " preempts " + preempt);
+                l.debug("{} preempts {}", info._cat, preempt);
                 preempt.reclaim_(false);
             }
         }
 
+        Preconditions.checkState(info._total < info._quota);
         info._total++;
 
-        Token tk = new Token(this, _tc, info._cat, prio, reason);
+        Token tk = new Token(this, info._cat, prio, reason);
         Util.verify(info._tokenSetMap.get(prio).add(tk));
         return tk;
     }
@@ -140,7 +162,7 @@ public class TokenManager implements IDumpStatMisc
     void reclaim_(Token tk, Prio prio, boolean notifyReclaimListener)
     {
         CatInfo info = _cat2info.get(tk.getCat());
-        assert info._total > 0;
+        Preconditions.checkState(info._total > 0);
         info._total--;
 
         Util.verify(info._tokenSetMap.get(prio).remove(tk));
@@ -177,5 +199,56 @@ public class TokenManager implements IDumpStatMisc
         }
 
         return sb.toString();
+    }
+
+
+    void pauseImpl_(Token tk, String reason) throws ExAborted
+    {
+        TCB tcb = TC.tcb();
+        _listener.prePause_(tcb, tk, reason);
+        try {
+            boolean taskCompleted = tcb.park_(tk.getCat(), TC.FOREVER);
+            Preconditions.checkState(taskCompleted, tcb + " " + tk.getCat());
+        } finally {
+            _listener.postPause_(tcb);
+        }
+    }
+
+    void pauseImpl_(Token tk, long timeout, String reason) throws ExAborted, ExTimeout
+    {
+        TCB tcb = TC.tcb();
+        _listener.prePause_(tcb, tk, reason);
+        boolean taskCompleted;
+        try {
+            taskCompleted = tcb.park_(tk.getCat(), timeout);
+        } finally {
+            // abortion checking must precede timeout checking, since in some use
+            // cases the application depends on the fact that abort signals can be
+            // reliably delivered to the receiving thread (cf. Download)
+            _listener.postPause_(tcb);
+        }
+
+        if (!taskCompleted) {
+            l.debug("timed out");
+            throw new ExTimeout();
+        }
+    }
+
+    TCB pseudoPauseImpl_(Token tk, String reason) throws ExAborted
+    {
+        TCB tcb = TC.tcb();
+        _listener.prePause_(tcb, tk, reason);
+        _l.unlock();
+        return tcb;
+    }
+
+    void sleepImpl_(Token tk, long timeout, String reason) throws ExAborted
+    {
+        TCB tcb = tk.pseudoPause_("sleep: " + reason);
+        try {
+            ThreadUtil.sleepUninterruptable(timeout);
+        } finally {
+            tcb.pseudoResumed_();
+        }
     }
 }

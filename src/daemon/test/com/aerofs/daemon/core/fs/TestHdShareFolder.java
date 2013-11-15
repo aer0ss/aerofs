@@ -25,9 +25,9 @@ import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -68,7 +68,7 @@ public class TestHdShareFolder extends AbstractTest
     @Mock SPBlockingClient sp;
 
     @Mock LocalACL acl;
-    @Mock TC tc;
+    @Mock TokenManager tokenManager;
     @Mock TransManager tm;
     @Mock ObjectCreator oc;
     @Mock DirectoryService ds;
@@ -99,7 +99,8 @@ public class TestHdShareFolder extends AbstractTest
 
         when(cfgLocalUser.get()).thenReturn(localUser);
         when(tm.begin_()).thenReturn(t);
-        when(tc.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(factSP.create_(localUser)).thenReturn(sp);
 

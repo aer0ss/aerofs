@@ -23,9 +23,9 @@ import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.BlockStorageSchema.BlockState;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
@@ -71,7 +71,7 @@ class BlockStorage implements IPhysicalStorage
 {
     private static final Logger l = Loggers.getLogger(BlockStorage.class);
 
-    private TC _tc;
+    private TokenManager _tokenManager;
     private TransManager _tm;
     private CoreScheduler _sched;
     private InjectableFile.Factory _fileFactory;
@@ -95,11 +95,11 @@ class BlockStorage implements IPhysicalStorage
 
     @Inject
     public void inject_(CfgAbsDefaultAuxRoot absDefaultAuxRoot, CfgStoragePolicy storagePolicy,
-            TC tc, TransManager tm, CoreScheduler sched, InjectableFile.Factory fileFactory,
-            IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
+            TokenManager tokenManager, TransManager tm, CoreScheduler sched,
+            InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
             Set<IBlockStorageInitable> initables)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
         _tm = tm;
         _sched = sched;
         _fileFactory = fileFactory;
@@ -721,7 +721,7 @@ class BlockStorage implements IPhysicalStorage
 
         DeadBlocksIterator()
         {
-            _tk = _tc.acquire_(Cat.UNLIMITED, "bs-rmd");
+            _tk = Preconditions.checkNotNull(_tokenManager.acquire_(Cat.UNLIMITED, "bs-rmd"));
         }
 
         @Override

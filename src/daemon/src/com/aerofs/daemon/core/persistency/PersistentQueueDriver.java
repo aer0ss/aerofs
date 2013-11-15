@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.persistency;
 
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -36,10 +36,8 @@ import java.util.concurrent.Callable;
  */
 public class PersistentQueueDriver<I, O>
 {
-    private final TC _tc;
-    private final TransManager _tm;
+    private final Factory _f;
     private final ExponentialRetry _er;
-    private final CoreScheduler _sched;
 
     private final IPersistentQueue<I, O> _q;
 
@@ -49,31 +47,28 @@ public class PersistentQueueDriver<I, O>
 
     public static class Factory
     {
-        private final TC _tc;
+        private final TokenManager _tokenManager;
         private final TransManager _tm;
         private final CoreScheduler _sched;
 
         @Inject
-        public Factory(TC tc, TransManager tm, CoreScheduler sched)
+        public Factory(TokenManager tokenManager, TransManager tm, CoreScheduler sched)
         {
-            _tc = tc;
+            _tokenManager = tokenManager;
             _tm = tm;
             _sched = sched;
         }
 
         public <I, O> PersistentQueueDriver<I, O> create(IPersistentQueue<I, O> q)
         {
-            return new PersistentQueueDriver<I, O>(_tc, _tm, _sched, q);
+            return new PersistentQueueDriver<I, O>(this, q);
         }
     }
 
-    private PersistentQueueDriver(TC tc, TransManager tm, CoreScheduler sched,
-            IPersistentQueue<I, O> q)
+    private PersistentQueueDriver(Factory f, IPersistentQueue<I, O> q)
     {
-        _tc = tc;
-        _tm = tm;
-        _sched = sched;
-        _er = new ExponentialRetry(sched);
+        _f = f;
+        _er = new ExponentialRetry(f._sched);
         _q = q;
     }
 
@@ -117,7 +112,7 @@ public class PersistentQueueDriver<I, O>
     public void scheduleScan_(final Class<?>... excludes)
     {
         if (_scanInProgress) return;
-        _sched.schedule(new AbstractEBSelfHandling() {
+        _f._sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
@@ -148,7 +143,7 @@ public class PersistentQueueDriver<I, O>
                 boolean ok = false;
 
                 // pass down a Token to allow implementation to release and re-acquire core lock
-                Token tk = _tc.acquire_(Cat.UNLIMITED, "pq-out");
+                Token tk = _f._tokenManager.acquireThrows_(Cat.UNLIMITED, "pq-out");
                 try {
                     ok = _q.process_(payload, tk);
                 } finally {
@@ -158,7 +153,7 @@ public class PersistentQueueDriver<I, O>
                 if (_retryScan || !ok) continue;
 
                 // remove successfully processed payload from persistent queue
-                Trans t = _tm.begin_();
+                Trans t = _f._tm.begin_();
                 try {
                     _q.dequeue_(payload, t);
                     t.commit_();
