@@ -10,7 +10,10 @@ import subprocess
 import urllib2
 import re
 
-from lib import app
+from lib.app.cfg import get_cfg
+
+def get_approot():
+    return get_cfg().get_approot()
 
 class _PackagedAeroFSClient(object):
     def __init__(self, get_gui_pids_command, get_daemon_pids_command):
@@ -88,7 +91,7 @@ class _PackagedAeroFSClient(object):
         approot directory.
 
         """
-        return app.app_root_path()
+        return get_approot()
 
     def version_file_path(self):
         """Returns the path to the version file located in the AeroFS
@@ -122,7 +125,7 @@ class _LinuxClient(_NixClient):
 
     def start_aerofs(self):
         with open(os.devnull, 'w') as dev_null:
-            aerofs_gui_path = os.path.join(app.app_root_path(), "aerofs-gui")
+            aerofs_gui_path = os.path.join(get_approot(), "aerofs-gui")
 
             # The linux client needs a DISPLAY set in order to launch with a GUI
             env = {}
@@ -146,7 +149,7 @@ class _OSXClient(_NixClient):
             # background. This means we need to point 'open' at the AeroFS app
             # folder, which is not specified in any path, but is derived from
             # app_root.
-            aerofs_gui_path = os.path.join(app.app_root_path(), "../../../.")
+            aerofs_gui_path = os.path.join(get_approot(), "../../../.")
             aerofs_gui_path = os.path.normpath(aerofs_gui_path)
             subprocess.check_call(['open', aerofs_gui_path],
                     stderr=subprocess.STDOUT, stdout=dev_null)
@@ -160,7 +163,7 @@ class _WindowsClient(_PackagedAeroFSClient):
         super(_WindowsClient, self).__init__(get_gui_command, get_daemon_command)
 
     def start_aerofs(self):
-        aerofs_gui_path = os.path.join(app.app_root_path(), "aerofs.exe")
+        aerofs_gui_path = os.path.join(get_approot(), "aerofs.exe")
 
         # The remote Windows actor requires a small server running on the
         # same machine to launch AeroFS. The reason for this is that starting
@@ -194,7 +197,7 @@ class _WindowsClient(_PackagedAeroFSClient):
     def versioned_approot_path(self):
         # Windows uses a versioned install directory, so we need to read in the
         # version directory from the version file
-        version = os.path.join(app.app_root_path(), "version")
+        version = os.path.join(get_approot(), "version")
 
         with open(version, 'r') as f:
             # Search for the version directory string
@@ -202,7 +205,7 @@ class _WindowsClient(_PackagedAeroFSClient):
             folder_name = 'v_' + v_num
             if v_num:
                 # If it exists, create the path to the directory
-                return os.path.join(app.app_root_path(), folder_name)
+                return os.path.join(get_approot(), folder_name)
             else:
                 # This string may not exist if the installed AeroFS version
                 # is from before the versioned installation directories
