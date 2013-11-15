@@ -58,19 +58,17 @@ public class AsyncEmailSender extends AbstractEmailSender
         Properties p = loadPropsFromDisk();
         // Note that the config server overrides local credentials, and that at
         // least one of (config server, local creds) must be present.
+        // We wish there was no default value here, so we could fail loudly if no production
+        // config is found; however this breaks the development environment.
         String host = getStringProperty("email.sender.public_host",
-                                        p.getProperty("host", null));
+                                        p.getProperty("host", "localhost"));
         String port = getStringProperty("email.sender.public_port",
                                         p.getProperty("port", "25"));
         String username = getStringProperty("email.sender.public_username",
-                                        p.getProperty("username", null));
+                                        p.getProperty("username", ""));
         String password = getStringProperty("email.sender.public_password",
-                                        p.getProperty("password", null));
+                                        p.getProperty("password", ""));
         boolean useTls = getBooleanProperty("email.sender.public_enable_tls", true);
-        checkMailProperty("host", host);
-        checkMailProperty("port", port);
-        checkMailProperty("username", username);
-        checkMailProperty("password", password);
         return new AsyncEmailSender(host, port, username, password, useTls);
     }
 
@@ -86,19 +84,7 @@ public class AsyncEmailSender extends AbstractEmailSender
         String username = p.getProperty("internal_username", "");
         String password = p.getProperty("internal_password", "");
         boolean useTls  = true;
-        checkMailProperty("internal_host", host);
-        checkMailProperty("internal_port", port);
-        checkMailProperty("internal_username", username);
-        checkMailProperty("internal_password", password);
         return new AsyncEmailSender(host, port, username, password, useTls);
-    }
-
-    private static void checkMailProperty(String name, Object o)
-    {
-        // Note that we don't want to disallow empty strings for o because
-        // username and password may be empty string
-        Preconditions.checkNotNull(o, "email " + name + " absent from config service and "
-                + EMAIL_PROPERTIES_FILE);
     }
 
     /**
