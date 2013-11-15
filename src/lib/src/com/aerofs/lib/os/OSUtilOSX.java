@@ -307,10 +307,11 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     }
 
     /**
-     * The colon is allowed at the filesystem layer in HFS+ but not HFS and it is problematic at the
-     * Carbon layer anyway so we treat it as an invalid character.
+     * The colon is problematic at the Carbon layer (for instance is iconverted to a slash when
+     * displaying filenames in Finder) but is allowed at the filesystem layer in HFS+ so we should
+     * not treat it as invalid.
      */
-    final static private Pattern INVALID_FILENAME_CHARS = Pattern.compile("[/:]");
+    final static private Pattern INVALID_FILENAME_CHARS = Pattern.compile("[/]");
 
     @Override
     public String cleanFileName(String name)
