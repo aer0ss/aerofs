@@ -20,6 +20,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.injectable.InjectableFile.Factory;
+import com.aerofs.lib.os.OSUtil.Icon;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.inject.Inject;
@@ -27,9 +30,9 @@ import com.google.inject.Inject;
 public class OSUtilOSX extends AbstractOSUtilLinuxOSX
 {
     @Inject
-    public OSUtilOSX(InjectableFile.Factory factFile)
+    public OSUtilOSX()
     {
-        super(factFile);
+        super();
     }
 
     @Override
@@ -328,5 +331,18 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         return name.length() > 255
                 || INVALID_FILENAME_CHARS.matcher(name).find()
                 || !Normalizer.isNormalized(name, Form.NFD);
+    }
+
+    @Override
+    public String getIconPath(Icon icon)
+    {
+        // This logic seems weird, but I'm just refactoring, not rewriting
+        InjectableFile.Factory factFile = new InjectableFile.Factory();
+        InjectableFile result = factFile.create(AppRoot.abs());
+        result = result.newChild("icons").newChild(icon.name + ".icns");
+        if (!result.exists()) {
+            SVClient.logSendDefectAsync(true, "icon not found: " + result.getAbsolutePath());
+        }
+        return result.getAbsolutePath();
     }
 }

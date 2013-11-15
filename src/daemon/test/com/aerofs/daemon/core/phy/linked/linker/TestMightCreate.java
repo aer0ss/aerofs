@@ -44,7 +44,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     @Mock Trans t;
     @Mock IDeletionBuffer delBuffer;
 
-    @Spy IOSUtil os = new OSUtilLinux(new Factory());
+    @Spy IOSUtil os = new OSUtilLinux();
     @Mock IgnoreList il;
     @Mock SharedFolderTagFileAndIcon sfti;
     @Mock MightCreateOperations mcop;

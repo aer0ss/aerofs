@@ -339,7 +339,7 @@ public class Setup
 
         // TODO use real dependency injection
         InjectableDriver dr = new InjectableDriver();
-        dr.setFolderIcon(rootAnchorPath, OSUtil.getIconPath(Icon.RootAnchor));
+        dr.setFolderIcon(rootAnchorPath, OSUtil.get().getIconPath(Icon.RootAnchor));
     }
 
     /**

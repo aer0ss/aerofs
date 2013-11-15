@@ -59,15 +59,13 @@ public abstract class OSUtil
 
     static {
         String os = getOSName();
-        // TODO use real dependency-injection
-        InjectableFile.Factory factFile = new InjectableFile.Factory();
 
         if (os.startsWith("Windows")) {
             _os = new OSUtilWindows();
             // Execution on Windows is limited to a 32-bit JVM.
             _arch = System.getProperty("os.arch").equals("x86") ? OSArch.X86 : null;
         } else if (os.startsWith("Linux")) {
-            _os = new OSUtilLinux(factFile);
+            _os = new OSUtilLinux();
             OSArch arch;
             try {
                 OutArg<String> commandOutput = new OutArg<String>();
@@ -99,7 +97,7 @@ public abstract class OSUtil
             _arch = arch;
 
         } else if (os.startsWith("Mac OS X")) {
-            _os = new OSUtilOSX(factFile);
+            _os = new OSUtilOSX();
             _arch = System.getProperty("os.arch").equals("x86_64") ? OSArch.X86_64 : null;
 
         } else {
@@ -159,32 +157,5 @@ public abstract class OSUtil
     public static boolean isWindowsXP()
     {
         return isWindows() && getOSName().equals("Windows XP");
-    }
-
-    /**
-     * Return the path to an OS-specific icon resource
-     * We need this method because those icons are not necessarily stored under approot like other
-     * image resources. On Windows, they are at the top-level folder so that their path stays
-     * constant across versions.
-     */
-    public static String getIconPath(Icon icon)
-    {
-        // TODO use real dependency-injection
-        InjectableFile.Factory factFile = new InjectableFile.Factory();
-
-        InjectableFile result = factFile.create(AppRoot.abs());
-        if (OSUtil.isOSX())  {
-            result = result.newChild("icons").newChild(icon.name + ".icns");
-        } else if (OSUtil.isWindows()) {
-            String suffix = icon.hasXPStyle ? (OSUtil.isWindowsXP() ? "XP" : "Vista") : "";
-            result = result.getParentFile().newChild("icons").newChild(icon.name + suffix + ".ico");
-        } else {
-            assert false;
-        }
-
-        if (!result.exists()) {
-            SVClient.logSendDefectAsync(true, "icon not found: " + result.getAbsolutePath());
-        }
-        return result.getAbsolutePath();
     }
 }
