@@ -324,15 +324,18 @@ class ScanSession
             // on first launch, report indexing progress
             _f._spr.folderScanned_(potentialUpdates - lastNotification);
 
-            // if a new trans was started we need to inform the caller
-            if (split != null) throw new ExSplitTrans(split, potentialUpdates, null);
         } catch (Exception e) {
-            // if a new trans was started before the exception was thrown we need to inform
-            // the caller to avoid trying to rollback the wrong transaction which would cause
-            // an assertion error.
-            if (split != null) throw new ExSplitTrans(split, potentialUpdates, e);
-            throw e;
+            if (split != null) {
+                // if an exception is thrown after a new trans was started we need to make
+                // sure the caller is aware of it otherwise it will try to rollback an already
+                // committed transaction and will trigger an assertion error.
+                throw new ExSplitTrans(split, potentialUpdates, e);
+            } else {
+                throw e;
+            }
         }
+        // if a new trans was started we need to inform the caller
+        if (split != null) throw new ExSplitTrans(split, potentialUpdates, null);
         return potentialUpdates;
     }
 
