@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Base64;
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.PathType;
@@ -48,7 +49,8 @@ public class DPUTMigrateHistoryToHex implements IDaemonPostUpdateTask
         byte[] decoded;
         try {
             decoded = Base64.decode(suffix, Base64.URL_SAFE);
-        } catch (IOException e) {
+        } catch (Throwable e) {
+            l.warn("unable to decode {}", suffix, BaseLogUtil.suppress(e));
             return null;
         }
         if (decoded.length != RevisionInfo.DECODED_LENGTH) return null;
