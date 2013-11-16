@@ -1,3 +1,5 @@
+## I prefer to use this simple alert() dialog rather than more complicated
+## bootstrap modals. God knows if all IEs work well with bootstrap.
 <%def name="scripts()">
     <!--[if IE]>
         <script type="text/javascript">
