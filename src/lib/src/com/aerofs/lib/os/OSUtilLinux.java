@@ -18,16 +18,18 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.OSUtil.Icon;
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
 
 public class OSUtilLinux extends AbstractOSUtilLinuxOSX
 {
     private String _fullOSName;
 
-    public OSUtilLinux(InjectableFile.Factory factFile)
+    public OSUtilLinux()
     {
-        super(factFile);
+        super();
     }
 
     @Override
@@ -167,8 +169,9 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     @Override
     public void removeFromFavorite(String path) throws IOException
     {
-        InjectableFile f = _factFile.create(Util.join(System.getenv("HOME"), ".gtk-bookmarks"));
-        InjectableFile tmpFile = _factFile.createTempFile(".gtk-bookmarks","$$$");
+        InjectableFile.Factory factFile = new InjectableFile.Factory();
+        InjectableFile f = factFile.create(Util.join(System.getenv("HOME"), ".gtk-bookmarks"));
+        InjectableFile tmpFile = factFile.createTempFile(".gtk-bookmarks","$$$");
 
         String currentLine;
         BufferedReader reader = new BufferedReader(new FileReader(f.getImplementation()));
@@ -297,5 +300,13 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     public boolean isInvalidFileName(String name)
     {
         return name.length() > 255 || INVALID_FILENAME_CHARS.matcher(name).find();
+    }
+
+    @Override
+    public String getIconPath(Icon icon)
+    {
+        // No icon path on Linux??? :(
+        Preconditions.checkState(false);
+        return "";
     }
 }

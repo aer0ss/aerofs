@@ -26,6 +26,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 
 import com.google.common.collect.ImmutableList;
@@ -65,6 +67,8 @@ public abstract class AbstractTestMightCreate extends AbstractTest
     @Mock MightCreateOperations mcop;
     @Mock DirectoryService ds;
     @Mock LinkerRootMap lrm;
+    @Mock IOSUtil osutil;
+    @Mock RockLog rocklog;
 
     MightCreate mc;
 
@@ -128,8 +132,9 @@ public abstract class AbstractTestMightCreate extends AbstractTest
             }
         });
 
+        when(osutil.isInvalidFileName(anyString())).thenReturn(false);
         mc = new MightCreate(il, ds, dr, sfti, mcop, lrm, new AcceptAll(),
-                mock(RepresentabilityHelper.class));
+                mock(RepresentabilityHelper.class), osutil, rocklog);
 
         osRoot.mock(factFile, dr);
         logicRoot.mock(rootSID, ds, null, null);

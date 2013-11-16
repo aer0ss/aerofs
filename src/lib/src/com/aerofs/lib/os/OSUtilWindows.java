@@ -15,6 +15,7 @@ import com.aerofs.lib.*;
 import com.aerofs.lib.LibParam.RootAnchor;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -147,7 +148,7 @@ public class OSUtilWindows implements IOSUtil
                     "/F:" + getUserHomeDir() + File.separator + "Links"
                             + File.separator + "AeroFS.lnk",
                     "/A:C",
-                    "/I:" + OSUtil.getIconPath(Icon.WinLibraryFolder),
+                    "/I:" + getIconPath(Icon.WinLibraryFolder),
                     "/T:" + path);
         }
     }
@@ -231,6 +232,19 @@ public class OSUtilWindows implements IOSUtil
     public boolean isInvalidFileName(String path)
     {
         return isInvalidWin32FileName(path);
+    }
+
+    @Override
+    public String getIconPath(Icon icon)
+    {
+        InjectableFile.Factory factFile = new InjectableFile.Factory();
+        InjectableFile result = factFile.create(AppRoot.abs());
+        String suffix = icon.hasXPStyle ? (OSUtil.isWindowsXP() ? "XP" : "Vista") : "";
+        result = result.getParentFile().newChild("icons").newChild(icon.name + suffix + ".ico");
+        if (!result.exists()) {
+            SVClient.logSendDefectAsync(true, "icon not found: " + result.getAbsolutePath());
+        }
+        return result.getAbsolutePath();
     }
 
     @Override

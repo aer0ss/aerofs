@@ -14,8 +14,12 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
+import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.rocklog.Defect;
+import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -62,11 +66,13 @@ public class MightCreate
     private final LinkerRootMap _lrm;
     private final ILinkerFilter _filter;
     private final RepresentabilityHelper _rh;
+    private final IOSUtil _osutil;
+    private final RockLog _rocklog;
 
     @Inject
     public MightCreate(IgnoreList ignoreList, DirectoryService ds, InjectableDriver driver,
             SharedFolderTagFileAndIcon sfti, MightCreateOperations mcop, LinkerRootMap lrm,
-            ILinkerFilter filter, RepresentabilityHelper rh)
+            ILinkerFilter filter, RepresentabilityHelper rh, IOSUtil osutil, RockLog rocklog)
     {
         _il = ignoreList;
         _ds = ds;
@@ -76,6 +82,8 @@ public class MightCreate
         _lrm = lrm;
         _filter = filter;
         _rh = rh;
+        _osutil = osutil;
+        _rocklog = rocklog;
     }
 
     public static enum Result {
@@ -113,6 +121,14 @@ public class MightCreate
             Trans t) throws Exception
     {
         if (deleteIfInvalidTagFile(pcPhysical) || _il.isIgnored(pcPhysical._path.last())) {
+            return Result.IGNORED;
+        }
+
+        if (_osutil.isInvalidFileName(pcPhysical._path.last())) {
+            l.error("inconsistent encoding validity: {}", pcPhysical._path.last());
+            _rocklog.newDefect("mc.invalid")
+                    .addData("path", pcPhysical._path.last())
+                    .send();
             return Result.IGNORED;
         }
 

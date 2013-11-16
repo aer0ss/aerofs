@@ -12,12 +12,18 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ProgressIndicators;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.os.OSUtil.OSFamily;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 /**
@@ -29,11 +35,13 @@ public class InjectableFile
     public static class Factory
     {
         private final ProgressIndicators _pi;
+        private final IOSUtil _osutil;
 
         @Inject
         public Factory()
         {
-            _pi = ProgressIndicators.get();  // sigh, this should be injected
+            _pi = ProgressIndicators.get(); // should be injected
+            _osutil = OSUtil.get(); // could be injected
         }
 
         public InjectableFile create(String path)
@@ -204,13 +212,17 @@ public class InjectableFile
      */
     public @Nullable InjectableFile[] listFiles(@Nullable FilenameFilter filter)
     {
-        File[] children = _f.listFiles(filter);
+        // Important: don't use _f.listFiles() here, but use InjectableFile.list() to handle OSX
+        // NFC/NFD clusterfuck properly.
+        String[] children = list();
         if (children == null) return null;
-        InjectableFile[] ret = new InjectableFile[children.length];
-        for (int i = 0; i < children.length; i++) {
-            ret[i] = _factory.create(children[i].getPath());
+        List<InjectableFile> v = Lists.newArrayList();
+        for (String child : children) {
+            if (filter == null || filter.accept(_f, child)) {
+                v.add(_factory.create(this, child));
+            }
         }
-        return ret;
+        return v.toArray(new InjectableFile[v.size()]);
     }
 
     /**
@@ -226,7 +238,17 @@ public class InjectableFile
      */
     public @Nullable String[] list()
     {
-        return _f.list();
+        String[] l = _f.list();
+        // Since OSX automatically converts files to NFD, but the rest of the world uses NFC,
+        // Java on OSX automatically converts file paths to NFC, but we care about the actual
+        // representation.  Ideally we'd write our own path handling, but for now, it's safe to
+        // just convert all paths to NFD on OSX.
+        if (l != null && _factory._osutil.getOSFamily() == OSFamily.OSX) {
+            for (int i = 0; i < l.length ; i++) {
+                l[i] = Normalizer.normalize(l[i], Form.NFD);
+            }
+        }
+        return l;
     }
 
     public String getName()

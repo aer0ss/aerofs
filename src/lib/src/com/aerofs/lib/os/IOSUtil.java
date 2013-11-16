@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.lib.os.OSUtil.OSFamily;
 
 public interface IOSUtil
@@ -114,4 +115,12 @@ public interface IOSUtil
      * whether a filename is invalid (i.e. inherently non-representable) on this OS
      */
     boolean isInvalidFileName(String name);
+
+    /**
+     * Return the path to an OS-specific icon resource
+     * We need this method because those icons are not necessarily stored under approot like other
+     * image resources. On Windows, they are at the top-level folder so that their path stays
+     * constant across versions.
+     */
+    String getIconPath(Icon icon);
 }

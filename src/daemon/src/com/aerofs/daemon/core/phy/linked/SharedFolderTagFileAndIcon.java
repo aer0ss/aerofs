@@ -25,6 +25,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.Icon;
 import org.slf4j.Logger;
@@ -44,15 +45,17 @@ public class SharedFolderTagFileAndIcon
     private final IMapSID2SIndex _sid2sidx;
     private final InjectableFile.Factory _factFile;
     private final AccessibleStores _accessibleStoresOnFirstLaunch;
+    private final IOSUtil _osutil;
 
     @Inject
     public SharedFolderTagFileAndIcon(InjectableDriver dr, InjectableFile.Factory factFile,
-            IMapSID2SIndex sid2sidx, AccessibleStores accessibleStoresOnFirstLaunch)
+            IMapSID2SIndex sid2sidx, AccessibleStores accessibleStoresOnFirstLaunch, IOSUtil osutil)
     {
         _dr = dr;
         _sid2sidx = sid2sidx;
         _factFile = factFile;
         _accessibleStoresOnFirstLaunch = accessibleStoresOnFirstLaunch;
+        _osutil = osutil;
     }
 
     /**
@@ -104,7 +107,7 @@ public class SharedFolderTagFileAndIcon
         l.info("add sf tag for {} in {}", sid, absPath);
 
         if (!OSUtil.isLinux()) {
-            _dr.setFolderIcon(absPath, OSUtil.getIconPath(Icon.SharedFolder));
+            _dr.setFolderIcon(absPath, _osutil.getIconPath(Icon.SharedFolder));
         }
 
         String absPathTagFile = Util.join(absPath, LibParam.SHARED_FOLDER_TAG);

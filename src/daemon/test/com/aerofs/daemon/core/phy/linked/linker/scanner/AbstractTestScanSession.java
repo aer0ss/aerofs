@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 
 public abstract class AbstractTestScanSession extends AbstractTest
 {
-    @Spy IOSUtil os = new OSUtilLinux(new Factory());
+    @Spy IOSUtil os = new OSUtilLinux();
     @Mock NRODatabase nro;
     @Mock DirectoryService ds;
     @Mock MightCreate mc;

@@ -18,13 +18,11 @@ import java.util.Arrays;
 abstract class AbstractOSUtilLinuxOSX implements IOSUtil
 {
     protected static final Logger l = Loggers.getLogger(AbstractOSUtilLinuxOSX.class);
-    protected final InjectableFile.Factory _factFile;
     protected final ProgressIndicators _pi;
 
-    protected AbstractOSUtilLinuxOSX(InjectableFile.Factory factFile)
+    protected AbstractOSUtilLinuxOSX()
     {
         loadLibrary("aerofsd");
-        _factFile = factFile;
         _pi = ProgressIndicators.get();  // sigh, this should be injected
     }
 
