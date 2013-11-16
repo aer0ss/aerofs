@@ -1,3 +1,3 @@
 #!/bin/bash -e
 /opt/sanity/probes/tools/port.sh localhost 8080
-/opt/sanity/probes/tools/url.sh [TODO_BASE_SP_URL]
+/opt/sanity/probes/tools/url.sh https://localhost:4433/sp

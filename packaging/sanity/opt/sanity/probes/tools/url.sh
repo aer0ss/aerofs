@@ -7,13 +7,6 @@ then
 fi
 
 url="$1"
-
-if [[ "$url" == *TODO* ]]
-then
-    echo "Invalid URL provided."
-    exit 1
-fi
-
 code=$(curl -k -o /dev/null --silent --head --write-out '%{http_code}\n' "$url")
 
 if [ "$code" != "200" ]
