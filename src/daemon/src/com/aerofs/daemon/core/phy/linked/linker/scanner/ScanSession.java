@@ -23,6 +23,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -156,8 +157,9 @@ class ScanSession
         final Trans _t;
         final int _updates;
 
-        ExSplitTrans(Trans t, int updates)
+        ExSplitTrans(Trans t, int updates, Exception cause)
         {
+            super(cause);
             _t = t;
             _updates = updates;
         }
@@ -203,6 +205,9 @@ class ScanSession
                     } catch (ExSplitTrans e) {
                         potentialUpdates += e._updates;
                         t = e._t;
+                        if (e.getCause() != null) {
+                            Throwables.propagateIfPossible(e.getCause(), Exception.class);
+                        }
                     }
 
                     if (potentialUpdates > CONTINUATION_UPDATES_THRESHOLD) {
@@ -289,6 +294,75 @@ class ScanSession
      */
     private int scan_(PathCombo pcParent, Trans t) throws Exception
     {
+        if (!addLogicalChildrenToDeletionBufferIfScanNeeded_(pcParent)) return 0;
+
+        // compose the list of physical children
+        String[] nameChildren = _f._factFile.create(pcParent._absPath).list();
+        if (nameChildren == null) throw new ExNotDir("Not a dir", new File(pcParent._absPath));
+
+        // might create physical children
+        int potentialUpdates = 0;
+        int scannedChildren = 0;
+        int lastNotification = 0;
+        Trans split = null;
+        try {
+            for (String nameChild : nameChildren) {
+                if (mightCreate_(pcParent.append(nameChild), t)) ++potentialUpdates;
+
+                // commit current trans and start a new one when reaching update threshold
+                if (++scannedChildren == CONTINUATION_UPDATES_THRESHOLD) {
+                    t.commit_();
+                    t.end_();
+                    t = split = _f._tm.begin_();
+                    // on first launch, report indexing progress
+                    _f._spr.filesScanned_(potentialUpdates - lastNotification);
+                    lastNotification = potentialUpdates;
+                    scannedChildren = 0;
+                }
+            }
+
+            // on first launch, report indexing progress
+            _f._spr.folderScanned_(potentialUpdates - lastNotification);
+
+            // if a new trans was started we need to inform the caller
+            if (split != null) throw new ExSplitTrans(split, potentialUpdates, null);
+        } catch (Exception e) {
+            // if a new trans was started before the exception was thrown we need to inform
+            // the caller to avoid trying to rollback the wrong transaction which would cause
+            // an assertion error.
+            if (split != null) throw new ExSplitTrans(split, potentialUpdates, e);
+            throw e;
+        }
+        return potentialUpdates;
+    }
+
+    /**
+     * @return true if the given path was "maybe updated"
+     */
+    private boolean mightCreate_(PathCombo pc, Trans t) throws Exception
+    {
+        MightCreate.Result res = _f._mc.mightCreate_(pc, _f._delBuffer, _root.OIDGenerator(), t);
+
+        if ((res == NEW_OR_REPLACED_FOLDER || (_recursive && res == EXISTING_FOLDER))
+                && isScannableDir(pc._absPath)) {
+            // recurse down if it's a newly created folder, or it's an existing folder and the
+            // recursive bit is set
+            _stack.push(pc);
+
+            // remove the child node in the traversal from the list of _sortedPCRoots
+            // _sortedPCRoots will eventually contain all the paths that were modified but not
+            // touched by the DFS hence we will add those into the stack and continue the scan.
+            _sortedPCRoots.remove(pc);
+        }
+        _f._pi.incrementMonotonicProgress();
+        return res != IGNORED;
+    }
+
+    /**
+     * @return whether the given path needs to be scanned
+     */
+    private boolean addLogicalChildrenToDeletionBufferIfScanNeeded_(PathCombo pcParent) throws Exception
+    {
         // Locate the logical object corresponding to the physical object. If the logical object is
         // not found, move one folder level up and update pcParent's value and repeat. This is
         // needed because when adding a multi-level folder structure on OSX, the OS may include
@@ -305,62 +379,10 @@ class ScanSession
         if (l.isInfoEnabled()) l.info("on " + soidParent + ":" + pcParent);
 
         OA oaParent = _f._ds.getOA_(soidParent);
-        if (_f._filter.shouldIgnoreChilren_(pcParent, oaParent)) return 0;
+        if (_f._filter.shouldIgnoreChilren_(pcParent, oaParent)) return false;
 
         addLogicalChildrenToDeletionBuffer_(oaParent);
-
-        // compose the list of physical children
-        String[] nameChildren = _f._factFile.create(pcParent._absPath).list();
-        if (nameChildren == null) throw new ExNotDir("Not a dir", new File(pcParent._absPath));
-
-        // might create physical children
-        int potentialUpdates = 0;
-        int scannedChildren = 0;
-        int lastNotification = 0;
-        Trans split = null;
-        for (String nameChild : nameChildren) {
-            PathCombo pcChild = pcParent.append(nameChild);
-            MightCreate.Result res = _f._mc.mightCreate_(pcChild, _f._delBuffer,
-                    _root.OIDGenerator(), t);
-
-            if ((res == NEW_OR_REPLACED_FOLDER || (_recursive && res == EXISTING_FOLDER))
-                && isScannableDir(pcChild._absPath)) {
-                // recurse down if it's a newly created folder, or it's an existing folder and the
-                // recursive bit is set
-                _stack.push(pcChild);
-
-                // remove the child node in the traversal from the list of _sortedPCRoots
-                // _sortedPCRoots will eventually contain all the paths that were modified but not
-                // touched by the DFS hence we will add those into the stack and continue the scan.
-                _sortedPCRoots.remove(pcChild);
-            }
-
-            // TODO count only objects that are actually updated.
-            if (res != IGNORED) {
-                assert res == FILE || res == EXISTING_FOLDER || res == NEW_OR_REPLACED_FOLDER;
-                potentialUpdates++;
-            }
-            _f._pi.incrementMonotonicProgress();
-
-            // commit current trans and start a new one when reaching update threshold
-            if (++scannedChildren == CONTINUATION_UPDATES_THRESHOLD) {
-                t.commit_();
-                t.end_();
-                // on first launch, report indexing progress
-                _f._spr.filesScanned_(potentialUpdates - lastNotification);
-                lastNotification = potentialUpdates;
-                t = split = _f._tm.begin_();
-                scannedChildren = 0;
-            }
-        }
-
-        // on first launch, report indexing progress
-        _f._spr.folderScanned_(potentialUpdates - lastNotification);
-
-        // if a new trans was started we need to inform the caller
-        if (split != null) throw new ExSplitTrans(split, potentialUpdates);
-
-        return potentialUpdates;
+        return true;
     }
 
     private void addLogicalChildrenToDeletionBuffer_(OA oaParent)
