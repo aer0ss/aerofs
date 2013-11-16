@@ -25,6 +25,7 @@ import com.sun.jersey.spi.container.WebApplicationFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
+import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -32,7 +33,18 @@ import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
+/**
+ * Base class for Restless service
+ *
+ * Restless is small library that aims to make it easy to build RESTful services and is designed
+ * to be easy to integrate into existing codebases (something that is pretty much impossible with
+ * Dropwizard).
+ *
+ * It is basically a layer of glue between Netty, Jersey and Gson with some helpers for versioning,
+ * authentication and content streaming (both input and output).
+ */
 public class Service extends AbstractNettyServer
 {
     static {
@@ -95,6 +107,8 @@ public class Service extends AbstractNettyServer
                 new HttpServerCodec(),
                 new ChunkedWriteHandler());
 
+        // name the last handler to allow subclasses to insert handlers before it
+        // e.g. an ExecutionHandler or some transaction logic
         p.addLast("jersey", new JerseyHandler(_application, _config));
         return p;
     }

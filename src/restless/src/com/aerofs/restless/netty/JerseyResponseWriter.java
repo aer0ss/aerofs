@@ -53,12 +53,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
             {
                 if (cf.isSuccess()) {
                     cf = cf.getChannel().write(EMPTY);
-                    if (!_keepAlive) {
-                        cf.addListener(CLOSE);
-                    } else {
-                        // resume processing of incoming messages
-                        cf.getChannel().setReadable(true);
-                    }
+                    if (!_keepAlive) cf.addListener(CLOSE);
                 } else {
                     cf.getChannel().close();
                 }
@@ -67,7 +62,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
     }
 
     @Override
-    public OutputStream writeStatusAndHeaders(final long contentLength, final ContainerResponse response)
+    public OutputStream writeStatusAndHeaders(long contentLength, ContainerResponse response)
             throws IOException
     {
         HttpResponse r = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
@@ -110,8 +105,6 @@ class JerseyResponseWriter implements ContainerResponseWriter
     @Override
     public void finish() throws IOException
     {
-        if (_buffer != null) {
-            _channel.write(new DefaultHttpChunk(_buffer)).addListener(_trailer);
-        }
+        if (_buffer != null) _channel.write(new DefaultHttpChunk(_buffer)).addListener(_trailer);
     }
 }
