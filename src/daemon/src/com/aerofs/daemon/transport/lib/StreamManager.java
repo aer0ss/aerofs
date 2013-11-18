@@ -141,6 +141,7 @@ public class StreamManager
         else return strms.keySet();
     }
 
+    // FIXME (AG): This is the worst 14 lines of code ever. Like Ever. Like Ever Ever.
     /**
      * @return  Whether the stream has already begun. If it has not already begun, then it is marked
      *          as begun from now on.

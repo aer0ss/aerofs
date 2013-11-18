@@ -4,15 +4,11 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EIPresence;
-import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.transport.lib.IDevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IStores;
-import com.aerofs.daemon.transport.tcp.ARP.ARPChange;
-import com.aerofs.daemon.transport.tcp.ARP.IARPChangeListener;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Transport.PBTCPPong;
 import com.aerofs.proto.Transport.PBTCPStoresFilter;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -23,6 +19,8 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,7 +31,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * FIXME (AG): We equate interest with availability here (i.e. interested in store means we have it)
  */
-class Stores implements IARPChangeListener, IStores
+class Stores implements IStores, IDevicePresenceListener
 {
     private static final int FILTER_SEQ_INVALID = -1;
 
@@ -59,7 +57,6 @@ class Stores implements IARPChangeListener, IStores
 
     private final DID _did;
     private final TCP _tcp;
-    private final Scheduler _scheduler;
     private final ARP _arp;
     private final Multicast _multicast;
     private final Map<SID, int[]> _sid2filterIndex = Maps.newTreeMap();
@@ -68,14 +65,12 @@ class Stores implements IARPChangeListener, IStores
     private BFSID _filter = new BFSID(); // _filter contains all the stores the local device cares about (immutable)
     private int _filterSeq = FILTER_SEQ_INVALID;
 
-    Stores(DID did, TCP tcp, Scheduler scheduler, ARP arp, Multicast multicast)
+    Stores(DID did, TCP tcp, ARP arp, Multicast multicast)
     {
         _did = did;
         _tcp = tcp;
-        _scheduler = scheduler;
         _arp = arp;
         _multicast = multicast;
-        _arp.addARPChangeListener(this); // FIXME (AG): not safe to leak this during construction
     }
 
     /**
@@ -112,7 +107,7 @@ class Stores implements IARPChangeListener, IStores
         PerDeviceStoreMembership oldMembership = _memberships.get(did);
         if (oldMembership != null && oldMembership._filterSeqnum == filterInfo.getSequence()) return;
 
-        l.debug("fs from d:" + did);
+        l.trace("fs from d:" + did);
 
         BFSID filter = new BFSID(filterInfo.getFilter());
         filter.finalize_();
@@ -175,9 +170,7 @@ class Stores implements IARPChangeListener, IStores
 
     private void sendPresence_(DID did, boolean online, Set<SID> sids)
     {
-        if (l.isDebugEnabled()) {
-            l.debug("notify prs:" + (online ? "online" : "offline") + " sids:" + sids);
-        }
+        l.debug("notify:{} sids:{}", (online ? "online" : "offline"), sids);
 
         // enqueue must not fail because if it does the core will not receive this presence update
 
@@ -204,9 +197,7 @@ class Stores implements IARPChangeListener, IStores
     @Override
     public synchronized void updateStores(SID[] addedSids, SID[] removedSids)
     {
-        if (l.isDebugEnabled()) {
-            l.debug("upst add:{} rem:{}", Arrays.toString(addedSids), Arrays.toString(removedSids));
-        }
+        l.debug("update stores add:{} rem:{}", Arrays.toString(addedSids), Arrays.toString(removedSids));
 
         Map<SID, int[]> added = updateFilter_(addedSids, removedSids);
 
@@ -294,6 +285,7 @@ class Stores implements IARPChangeListener, IStores
         return bd.build();
     }
 
+    // FIXME (AG): avoid calling multicast directly
     /**
      * Notify peers over multicast that the local device's filter has changed
      */
@@ -302,25 +294,7 @@ class Stores implements IARPChangeListener, IStores
         if (_filterSeq != FILTER_SEQ_INVALID) {
             do { _filterSeq++; } while (_filterSeq == FILTER_SEQ_INVALID);
         } else {
-            // FIXME (AG): pull this out of Stores and into TCP
-
             _filterSeq = (int) (Math.random() * Integer.MAX_VALUE);
-            // because EOUpdateStores is issued each time the daemon
-            // launches, we kick off periodical pong messages here
-            _scheduler.schedule(new AbstractEBSelfHandling() {
-                @Override
-                public void handle_()
-                {
-                    try {
-                        l.debug("arp sender: sched pong");
-                        PBTPHeader pong = newPongMessage(true);
-                        if (pong != null) _multicast.sendControlMessage(pong);
-                    } catch (Exception e) {
-                        l.error("mc pong: " + Util.e(e));
-                    }
-                    _scheduler.schedule(this, DaemonParam.TCP.HEARTBEAT_INTERVAL);
-                }
-            }, DaemonParam.TCP.HEARTBEAT_INTERVAL);
         }
 
         try {
@@ -330,14 +304,54 @@ class Stores implements IARPChangeListener, IStores
         }
     }
 
+    /**
+     * Process an incoming {@link PBTPHeader} of type <code>TCP_PING</code>
+     *
+     * @param multicast whether the message was received on a multicast channel
+     * @return null in some cases, a {@link PBTPHeader} with a response to a
+     * <code>TCP_PING</code>
+     */
+    @Nullable PBTPHeader processPing(boolean multicast)
+    {
+        return newPongMessage(multicast);
+    }
+
+    /**
+     * Process an incoming {@link PBTCPPong}
+     *
+     * @param rem remote address from which the <code>TCP_PONG</code> was received
+     * @param did {@link DID} of the remote peer from whom the <code>TCP_PONG</code>
+     * was received
+     * @param pong the <code>TCP_PONG</code> itself
+     */
+    void processPong(InetAddress rem, DID did, PBTCPPong pong)
+    {
+        InetSocketAddress isa = new InetSocketAddress(rem, pong.getUnicastListeningPort());
+
+        _arp.put(did, isa);
+        storesFilterReceived(did, pong.getFilter());
+    }
+
+    /**
+     * Process an incoming {@link PBTPHeader} of type <code>TCP_GO_OFFLINE</code>
+     *
+     * @param did {@link DID} of the remote peer from whom the message was received
+     */
+    void processGoOffline(DID did)
+    {
+        // noop. do nothing
+    }
+
     //
-    // IARPChangeListener methods
+    // IDevicePresenceListener methods
     //
 
     @Override
-    public synchronized void onArpChange_(DID did, ARPChange chg)
+    public synchronized void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
     {
-        if (chg != ARPChange.REM) return;
+        if (isPotentiallyAvailable) {
+            return;
+        }
 
         PerDeviceStoreMembership membership = _memberships.remove(did);
         if (membership == null || (membership._onlineSids.isEmpty())) return;

@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.BaseParam;
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
@@ -13,10 +14,8 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
-import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IStartable;
-import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
@@ -25,25 +24,23 @@ import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.ITransferStat;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgEnabledTransports;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.PBDumpStat.Builder;
 import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.rocklog.RockLog;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
 
 import java.io.PrintStream;
-import java.net.NetworkInterface;
 import java.net.Proxy;
 import java.util.Collection;
 import java.util.Comparator;
@@ -55,7 +52,6 @@ import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
 import static com.aerofs.daemon.core.tc.Cat.UNLIMITED;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Maps.newHashMap;
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
  * The clients of this class may assume the list of transports never changes during run time.
@@ -114,10 +110,15 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
                 DaemonParam.Jingle.STUN_SERVER_ADDRESS,
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),
+                5 * C.SEC,
+                3,
+                LibParam.EXP_RETRY_MIN_DEFAULT,
+                LibParam.EXP_RETRY_MAX_DEFAULT,
                 BaseParam.Zephyr.SERVER_ADDRESS,
                 Proxy.NO_PROXY,
                 coreQueue,
                 rocklog,
+                linkStateService,
                 maxcastFilterReceiver,
                 mobileServerZephyrConnector,
                 clientSocketChannelFactory,
@@ -126,10 +127,10 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
                 serverSslEngineFactory);
 
         if (enabledTransports.isTcpEnabled()) {
-            addTransport(transportFactory.newTransport(LANTCP), linkStateService);
+            addTransport(transportFactory.newTransport(LANTCP));
         }
         if (enabledTransports.isJingleEnabled()) {
-            addTransport(transportFactory.newTransport(JINGLE), linkStateService);
+            addTransport(transportFactory.newTransport(JINGLE));
         }
         if (enabledTransports.isZephyrEnabled()) {
             Zephyr zephyr = (Zephyr) transportFactory.newTransport(ZEPHYR);
@@ -140,14 +141,13 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             // if both zephyr and jingle are enabled, then we use jingle's channel,
             // otherwise, we enable multicast for zephyr
             if (!enabledTransports.isJingleEnabled()) zephyr.enableMulticast();
-            addTransport(zephyr, linkStateService);
+            addTransport(zephyr);
         }
     }
 
-    private void addTransport(ITransport transport, LinkStateService linkStateService)
+    private void addTransport(ITransport transport)
     {
         IIMCExecutor imce = new QueueBasedIMCExecutor(transport.q());
-        addLinkStateListener(transport, imce, linkStateService);
         availableTransports.put(transport, imce);
     }
 
@@ -159,27 +159,6 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
     public IIMCExecutor getIMCE_(ITransport tp)
     {
         return availableTransports.get(tp);
-    }
-
-    private void addLinkStateListener(final ITransport transport, final IIMCExecutor transportImce, LinkStateService linkStateService)
-    {
-        linkStateService.addListener_(new ILinkStateListener()
-        {
-            @Override
-            public void onLinkStateChanged_(
-                    ImmutableSet<NetworkInterface> previous,
-                    ImmutableSet<NetworkInterface> current,
-                    ImmutableSet<NetworkInterface> added,
-                    ImmutableSet<NetworkInterface> removed)
-            {
-                try {
-                    l.info("notify lsc {}", transport.id());
-                    transport.q().enqueueBlocking(new EOLinkStateChanged(transportImce, previous, current, added, removed), Prio.HI);
-                } catch (Exception e) {
-                    l.error("fail notify lsc {}", transport.id());
-                }
-            }
-        }, sameThreadExecutor()); // enqueueing into the transport queue can be done on any thread
     }
 
     public void init_()

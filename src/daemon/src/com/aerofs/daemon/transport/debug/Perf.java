@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 /**
  * Simple class to measure the time psent doing work vs not doing work
  */
-public class Perf
+public final class Perf
 {
     private static final Logger l = Loggers.getLogger(Perf.class);
     private static final int SAMPLE_SIZE = 1000;

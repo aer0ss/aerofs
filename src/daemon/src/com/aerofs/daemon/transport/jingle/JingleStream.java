@@ -8,9 +8,9 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.exception.ExDeviceDisconnected;
-import com.aerofs.daemon.transport.exception.ExReceiveFailed;
-import com.aerofs.daemon.transport.exception.ExSendFailed;
+import com.aerofs.daemon.transport.ExDeviceDisconnected;
+import com.aerofs.daemon.transport.ExReceiveFailed;
+import com.aerofs.daemon.transport.ExSendFailed;
 import com.aerofs.j.StreamEvent;
 import com.aerofs.j.StreamInterface;
 import com.aerofs.j.StreamInterface_EventSlot;
@@ -287,7 +287,6 @@ class JingleStream
         _slotEvent.delete();
     }
 
-    @SuppressWarnings("FinalizeDoesntCallSuperFinalize")
     @Override
     public void finalize()
     {

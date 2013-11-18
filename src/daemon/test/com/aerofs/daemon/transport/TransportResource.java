@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -16,20 +17,15 @@ import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
-import com.aerofs.daemon.event.net.EIPresence;
-import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.event.net.EOUpdateStores;
-import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.link.ILinkStateListener;
+import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.rocklog.RockLog;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -39,58 +35,50 @@ import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.Proxy;
-import java.security.KeyPair;
 import java.security.SecureRandom;
-import java.util.Collection;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 public final class TransportResource extends ExternalResource
 {
     private static final Logger l = Loggers.getLogger(TransportResource.class);
 
-    private static final int TEST_SEED = 72;
-    private static final int SINK_CAPACITY = 100;
     private static final Prio PRIO = Prio.LO;
 
-    private final Random _random = new Random(TEST_SEED);
-    private final SecureRandom _secureRandom = new SecureRandom();
-    private final BlockingPrioQueue<IEvent> _eventSink = new BlockingPrioQueue<IEvent>(SINK_CAPACITY);
-    private final TransportType _transportType;
-    private final String _transportId;
-    private final String _caName;
-    private final LinkStateService _linkStateService;
-    private final RockLog _rockLog;
-    private final KeyPair _caKeyPair;
-    private final AtomicBoolean _running = new AtomicBoolean(false);
+    private final long seed = System.nanoTime();
+    private final Random random = new Random(seed);
+    private final SecureRandom secureRandom = new SecureRandom();
+    private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(DaemonParam.QUEUE_LENGTH_DEFAULT);
+    private final TransportType transportType;
+    private final String transportId;
+    private final LinkStateService linkStateService;
+    private final MockCA mockCA;
+    private final MockRockLog mockRockLog;
+    private final AtomicBoolean running = new AtomicBoolean(false);
 
-    private TransportListener _transportListener;
-    private UserID _userID;
-    private DID _did;
-    private byte[] _scrypted;
-    private ITransport _transport;
-    private File _logFilePath;
-    private Thread _eventQueueReader;
+    private DID did;
+    private ITransport transport;
+    private File logFilePath;
+    private TransportReader transportReader;
+    private boolean readerSet;
 
-    public TransportResource(TransportType transportType, LinkStateService linkStateService, RockLog rockLog, KeyPair caKeyPair)
+    public TransportResource(TransportType transportType, LinkStateService linkStateService, MockCA mockCA, MockRockLog mockRockLog)
     {
-        _secureRandom.setSeed(_random.nextLong());
+        l.info("seed:{}", seed);
 
-        _transportType = transportType;
-        _transportId = String.format("%s-%d", _transportType.getId(), Math.abs(_random.nextInt()));
-        _caName = String.format("testca-%d@arrowfs.org", Math.abs(_random.nextInt()));
-        _linkStateService = linkStateService;
-        _rockLog = rockLog;
-        _caKeyPair = caKeyPair;
+        secureRandom.setSeed(random.nextLong());
+
+        this.transportType = transportType;
+        this.transportId = String.format("%s-%d", this.transportType.getId(), Math.abs(random.nextInt()));
+        this.linkStateService = linkStateService;
+        this.mockCA = mockCA;
+        this.mockRockLog = mockRockLog;
     }
 
     @Override
@@ -99,45 +87,48 @@ public final class TransportResource extends ExternalResource
     {
         super.before();
 
-        _logFilePath = Files.createTempDir();
-        checkState(_logFilePath.exists());
+        logFilePath = Files.createTempDir();
+        checkState(logFilePath.exists());
 
-        l.info("transport test log directory:{}", _logFilePath.getAbsolutePath());
+        l.info("transport test log directory:{}", logFilePath.getAbsolutePath());
 
-        _userID = UserID.fromExternal(String.format("testuser-%d@arrowfs.org", _random.nextInt()));
-        checkNotNull(_userID);
+        UserID userID = UserID.fromExternal(String.format("testuser-%d@arrowfs.org", random.nextInt()));
+        checkNotNull(userID);
 
-        _did = DID.generate();
-        checkNotNull(_did);
+        did = DID.generate();
+        checkNotNull(did);
 
-        _scrypted = new byte[]{0};
-        checkNotNull(_scrypted);
+        byte[] scrypted = new byte[]{0};
+        checkNotNull(scrypted);
 
         ClientSocketChannelFactory clientSocketChannelFactory = new NioClientSocketChannelFactory();
         ServerSocketChannelFactory serverSocketChannelFactory = new NioServerSocketChannelFactory();
 
-        ICertificateProvider caCertificateProvider = new CACertificateProvider(_secureRandom, _caName, _caKeyPair);
-        IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(_secureRandom, BaseSecUtil.getCertificateCName(_userID, _did), _caName, caCertificateProvider.getCert(), _caKeyPair.getPrivate());
-
-        SSLEngineFactory clientSSLEngineFactory = newClientSSLEngineFactory(privateKeyProvider, caCertificateProvider);
-        SSLEngineFactory serverSSLEngineFactory = newServerSSLEngineFactory(privateKeyProvider, caCertificateProvider);
+        IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
+        SSLEngineFactory clientSSLEngineFactory = newClientSSLEngineFactory(privateKeyProvider, mockCA.getCACertificateProvider());
+        SSLEngineFactory serverSSLEngineFactory = newServerSSLEngineFactory(privateKeyProvider, mockCA.getCACertificateProvider());
 
         // [sigh] It's stupid to have to create this every time. I think it should be injected in
         // too bad JUnit doesn't allow nested @Rule definitions
         TransportFactory transportFactory = new TransportFactory(
-                _logFilePath.getAbsolutePath(),
-                _userID,
-                _did,
-                _scrypted,
+                logFilePath.getAbsolutePath(),
+                userID,
+                did,
+                scrypted,
                 true,
                 true,
                 InetSocketAddress.createUnresolved("localhost", 3478),
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",
+                2 * C.SEC,
+                2,
+                1 * C.SEC,
+                5 * C.SEC,
                 InetSocketAddress.createUnresolved("relay.aerofs.com", 443),
                 Proxy.NO_PROXY,
-                _eventSink,
-                _rockLog,
+                outgoingEventSink,
+                mockRockLog.getRockLog(),
+                linkStateService,
                 new MaxcastFilterReceiver(),
                 null,
                 clientSocketChannelFactory,
@@ -146,27 +137,15 @@ public final class TransportResource extends ExternalResource
                 serverSSLEngineFactory
         );
 
-        _transport = transportFactory.newTransport(_transportType);
-        checkNotNull(_transport, _transportId, 1);
+        transport = transportFactory.newTransport(transportType, transportId, 1);
+        checkNotNull(transport, transportId, 1);
 
-        _linkStateService.addListener_(new ILinkStateListener()
-        {
-            @Override
-            public void onLinkStateChanged_(ImmutableSet<NetworkInterface> previous, ImmutableSet<NetworkInterface> current, ImmutableSet<NetworkInterface> added, ImmutableSet<NetworkInterface> removed)
-            {
-                _transport.q().enqueueBlocking(new EOLinkStateChanged(new FakeIMCExecutor(), previous, current, added, removed), PRIO);
-            }
-        }, sameThreadExecutor()); // enqueueing into the transport queue can happen on any thread
+        transport.init_();
 
-        _transport.init_();
+        transport.start_();
 
-        _transport.start_();
-
-        _running.set(true);
-
-        createAndStartIncomingTransportEventReader(); // doesn't matter if this is started after transport - events don't disappear :)
+        running.set(true);
     }
-
 
     private SSLEngineFactory newServerSSLEngineFactory(IPrivateKeyProvider privateKeyProvider, ICertificateProvider caCertificateProvider)
     {
@@ -179,19 +158,15 @@ public final class TransportResource extends ExternalResource
     }
 
     @Override
-    protected void after()
+    protected synchronized void after()
     {
-        try {
-            _running.set(false);
+        if (readerSet) {
+            transportReader.stop();
+        }
 
-            if (_logFilePath != null) {
-                // noinspection ResultOfMethodCallIgnored
-                _logFilePath.delete();
-            }
-
-            _eventQueueReader.join();
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(e);
+        if (logFilePath != null) {
+            // noinspection ResultOfMethodCallIgnored
+            logFilePath.delete();
         }
     }
 
@@ -199,9 +174,16 @@ public final class TransportResource extends ExternalResource
     // listeners to be notified on incoming events
     //
 
-    public void setTransportListener(TransportListener transportListener)
+    public synchronized void setTransportListener(TransportListener transportListener)
     {
-        _transportListener = transportListener;
+        if (readerSet) {
+            return;
+        }
+
+        // doesn't matter if this is started after transport - events don't disappear :)
+        transportReader = new TransportReader(transportId + "-q-reader", outgoingEventSink, transportListener);
+        transportReader.start();
+        readerSet = true;
     }
 
     //
@@ -210,12 +192,26 @@ public final class TransportResource extends ExternalResource
 
     public DID getDID()
     {
-        return checkNotNull(_did);
+        return checkNotNull(did);
+    }
+
+    public TransportType getTransportType()
+    {
+        return transportType;
     }
 
     public ITransport getTransport()
     {
-        return checkNotNull(_transport);
+        return checkNotNull(transport);
+    }
+
+    public byte[] getRandomBytes(int numBytes)
+    {
+        synchronized (random) {
+            byte[] randomBytes = new byte[numBytes];
+            random.nextBytes(randomBytes);
+            return randomBytes;
+        }
     }
 
     //
@@ -227,9 +223,11 @@ public final class TransportResource extends ExternalResource
         getTransport().q().enqueueBlocking(new EOUpdateStores(new FakeIMCExecutor(), new SID[]{sid}, new SID[]{}), PRIO);
     }
 
+    @SuppressWarnings("unused")
     public void leaveStore(SID sid)
     {
-        getTransport().q().enqueueBlocking(new EOUpdateStores(new FakeIMCExecutor(), new SID[]{}, new SID[]{sid}), PRIO);
+        getTransport().q().enqueueBlocking(
+                new EOUpdateStores(new FakeIMCExecutor(), new SID[]{}, new SID[]{sid}), PRIO);
     }
 
     public void send(DID remoteDID, byte[] payload, Prio prio)
@@ -237,69 +235,13 @@ public final class TransportResource extends ExternalResource
         getTransport().q().enqueueBlocking(new EOUnicastMessage(remoteDID, payload), prio);
     }
 
-    //
-    // internal calls
-    //
-
-    private void createAndStartIncomingTransportEventReader()
+    public OutputStream newOutgoingStream(DID did)
     {
-        _eventQueueReader = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                while (_running.get()) {
-                    try {
-                        OutArg<Prio> outArg = new OutArg<Prio>(null);
-                        IEvent event = _eventSink.tryDequeue(outArg);
-
-                        if (event == null) {
-                            Thread.sleep(100);
-                            continue;
-                        }
-
-                        l.info("handling event type:{}", event.getClass().getSimpleName());
-
-                        if (event instanceof EIPresence) {
-                            handlePresence((EIPresence) event);
-                        } else if (event instanceof EIUnicastMessage) {
-                            handleUnicastMessage((EIUnicastMessage)event);
-                        } else {
-                            l.warn("ignore transport event of type:{}", event.getClass().getSimpleName());
-                        }
-                    } catch (InterruptedException e) {
-                        // ignore - loop and see if we were interrupted for a reason
-                    } catch (Throwable t) {
-                        throw new IllegalStateException("incoming transport event reader caught err", t);
-                    }
-                }
-            }
-        });
-
-        _eventQueueReader.setName(_transportId + "-q-reader");
-        _eventQueueReader.start();
-    }
-
-    private void handlePresence(EIPresence presence)
-    {
-        for (Map.Entry<DID, Collection<SID>> entry : presence._did2sids.entrySet()) {
-            if (presence._online) {
-                _transportListener.onDeviceAvailable(entry.getKey(), entry.getValue());
-            } else {
-                _transportListener.onDeviceUnavailable(entry.getKey(), entry.getValue());
-            }
+        StreamID streamID;
+        synchronized (random) {
+            streamID = new StreamID(random.nextInt());
         }
-    }
 
-    private void handleUnicastMessage(EIUnicastMessage event)
-            throws IOException
-    {
-        int numBytes = event.is().available();
-        byte[] packet = new byte[numBytes];
-
-        // noinspection ResultOfMethodCallIgnored
-        event.is().read(packet);
-
-        _transportListener.onIncomingPacket(event._ep.did(), event._userID, packet);
+        return new TransportOutputStream(did, streamID, transport.q(), new FakeIMCExecutor());
     }
 }

@@ -58,10 +58,13 @@ public class RPC
         _dp = dp;
         _nsl = nsl;
 
-        lss.addListener_(new ILinkStateListener() {
+        lss.addListener(new ILinkStateListener()
+        {
             @Override
-            public void onLinkStateChanged_(ImmutableSet<NetworkInterface> previous,
-                    ImmutableSet<NetworkInterface> current, ImmutableSet<NetworkInterface> added,
+            public void onLinkStateChanged(
+                    ImmutableSet<NetworkInterface> previous,
+                    ImmutableSet<NetworkInterface> current,
+                    ImmutableSet<NetworkInterface> added,
                     ImmutableSet<NetworkInterface> removed)
             {
                 if (current.isEmpty()) linkDown_();

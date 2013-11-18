@@ -16,7 +16,6 @@ import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
@@ -26,6 +25,7 @@ import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.ex.ExUpdating;
+import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
 import com.aerofs.lib.os.OSUtil;
@@ -617,7 +617,7 @@ public abstract class Util
     }
 
     /**
-     * the method runs ITry in a new thread
+     * runs a retryable Callable in a new thread
      */
     public static void exponentialRetryNewThread(final String name, final Callable<Void> call, final Class<?> ... excludes)
     {
@@ -632,11 +632,42 @@ public abstract class Util
     }
 
     /**
+     * runs a retryable Callable in a new thread (allows you to specify all parameters)
+     */
+    public static void exponentialRetryNewThread(
+            final String name,
+            final long initialRetryInterval,
+            final long maxRetryInterval,
+            final Callable<Void> call,
+            final Class<?> ... excludes)
+    {
+        ThreadUtil.startDaemonThread("expo.retry." + name, new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                exponentialRetry(name, initialRetryInterval, maxRetryInterval, call, excludes);
+            }
+        });
+    }
+
+    public static void exponentialRetry(String name, Callable<Void> call, Class<?>... excludes)
+    {
+        exponentialRetry(name, LibParam.EXP_RETRY_MIN_DEFAULT, LibParam.EXP_RETRY_MAX_DEFAULT, call, excludes);
+    }
+
+    /**
      * @param excludes exceptions for which stacktraces should not be printed
      */
-    public static void exponentialRetry(String name, Callable<Void> call, Class<?> ... excludes)
+    public static void exponentialRetry(
+            String name,
+            long initialRetryInterval,
+            long maxRetryInterval,
+            Callable<Void> call,
+            Class<?> ... excludes)
     {
-        long interval = LibParam.EXP_RETRY_MIN_DEFAULT;
+        long retryInterval = initialRetryInterval;
+
         while (true) {
             try {
                 call.call();
@@ -647,9 +678,9 @@ public abstract class Util
                 throw e;
 
             } catch (Exception e) {
-                l.warn("{} expo wait:{} cause:{}", name, interval, e(e, excludes));
-                ThreadUtil.sleepUninterruptable(interval);
-                interval = Math.min(interval * 2, LibParam.EXP_RETRY_MAX_DEFAULT);
+                l.warn("{} expo wait:{} cause:{}", name, retryInterval, e(e, excludes));
+                ThreadUtil.sleepUninterruptable(retryInterval);
+                retryInterval = Math.min(retryInterval * 2, maxRetryInterval);
             }
         }
     }

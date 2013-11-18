@@ -5,11 +5,14 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
-import com.aerofs.daemon.transport.netty.handlers.ConnectTunnelHandler;
-import com.aerofs.daemon.transport.netty.handlers.DiagnosticsHandler;
-import com.aerofs.daemon.transport.netty.handlers.IOStatsHandler;
-import com.aerofs.daemon.transport.netty.handlers.ProxiedConnectionHandler;
+import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
+import com.aerofs.daemon.transport.lib.handlers.ConnectTunnelHandler;
+import com.aerofs.daemon.transport.lib.handlers.DiagnosticsHandler;
+import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
+import com.aerofs.daemon.transport.lib.handlers.ProxiedConnectionHandler;
+import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
 import com.aerofs.zephyr.client.handlers.ZephyrProtocolHandler;
@@ -37,9 +40,11 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     private final RockLog rockLog;
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
+    private final TransportProtocolHandler transportProtocolHandler;
+    private final ChannelTeardownHandler channelTeardownHandler;
     private final TransportStats transportStats;
     private final IZephyrSignallingService zephyrSignallingService;
-    private final IConnectionServiceListener connectionServiceListener;
+    private final IUnicastListener unicastListener;
     private final AddressResolverHandler resolver;
     private final CoreFrameEncoder coreFrameEncoder;
     private final Proxy proxy;
@@ -55,9 +60,11 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
             RockLog rockLog,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
+            TransportProtocolHandler transportProtocolHandler,
+            ChannelTeardownHandler channelTeardownHandler,
             TransportStats transportStats,
             IZephyrSignallingService zephyrSignallingService,
-            IConnectionServiceListener connectionServiceListener,
+            IUnicastListener unicastListener,
             Proxy proxy,
             long zephyrHandshakeTimeout)
     {
@@ -69,9 +76,11 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         this.rockLog = rockLog;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
+        this.transportProtocolHandler = transportProtocolHandler;
+        this.channelTeardownHandler = channelTeardownHandler;
         this.transportStats = transportStats;
         this.zephyrSignallingService = zephyrSignallingService;
-        this.connectionServiceListener = connectionServiceListener;
+        this.unicastListener = unicastListener;
         this.resolver = new AddressResolverHandler(null);
         this.coreFrameEncoder = new CoreFrameEncoder();
         this.proxy = proxy;
@@ -113,6 +122,12 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 
         // set up the cname listener
         cNameVerificationHandler.setListener(zephyrClientHandler);
+
+        // setup the actual transport protocol handler
+        pipeline.addLast("tpprotocol", transportProtocolHandler);
+
+        // set up the handler to teardown sessions on disconnect
+        pipeline.addLast("teardown", channelTeardownHandler);
 
         return pipeline;
     }
@@ -156,7 +171,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 
     private ZephyrClientHandler newZephyrClientHandler(ZephyrProtocolHandler zephyrProtocolHandler)
     {
-        return new ZephyrClientHandler(localdid, connectionServiceListener, zephyrProtocolHandler);
+        return new ZephyrClientHandler(localdid, unicastListener, zephyrProtocolHandler);
     }
 
     /**

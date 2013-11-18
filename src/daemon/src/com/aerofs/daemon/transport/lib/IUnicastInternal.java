@@ -8,6 +8,7 @@ import com.aerofs.base.id.DID;
 
 /**
  * This interface is for internal use within the transport only
+ * FIXME (AG): this interface is deprecated, and should not be used in new classes
  */
 public interface IUnicastInternal extends IUnicast
 {

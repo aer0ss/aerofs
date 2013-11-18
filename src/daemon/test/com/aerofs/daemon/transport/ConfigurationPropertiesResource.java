@@ -14,7 +14,7 @@ import java.util.Properties;
  * the AeroFS properties subsystem to use the default (i.e hardcoded) propertis.
  * This should be enabled as a {@link org.junit.ClassRule} within tests.
  */
-public class ConfigurationPropertiesResource extends ExternalResource
+public final class ConfigurationPropertiesResource extends ExternalResource
 {
     public ConfigurationPropertiesResource()
     {

@@ -26,14 +26,11 @@ import static com.aerofs.daemon.lib.DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
 
 public abstract class XMPPUtilities
 {
+    static final int MAXCAST_UNFILTERED = -1;
+
     private static final Logger l = Loggers.getLogger(XMPPUtilities.class);
 
-    //
-    // constants
-    //
-
-    private final static int HEADER_LEN = 2 * C.INTEGER_SIZE + 1;
-    private final static int MAXCAST_UNFILTERED = -1;
+    private static final int HEADER_LEN = 2 * C.INTEGER_SIZE + 1;
 
     private XMPPUtilities()
     {
@@ -61,7 +58,7 @@ public abstract class XMPPUtilities
         return encodeBody(outLen, MAXCAST_UNFILTERED, bss);
     }
 
-    public static String encodeBody(OutArg<Integer> outLen, int mcastid, byte[] ... bss)
+    public static String encodeBody(OutArg<Integer> serializedLength, int mcastid, byte[] ... bss)
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
@@ -88,7 +85,7 @@ public abstract class XMPPUtilities
             os.close();
 
             // add the size of headers and footers
-            outLen.set(len + HEADER_LEN);
+            serializedLength.set(len + HEADER_LEN);
 
         } catch (IOException e) {
             SystemUtil.fatal(e);
@@ -97,7 +94,7 @@ public abstract class XMPPUtilities
         return bos.toString();
     }
 
-    public static @Nullable byte[] decodeBody(DID did, OutArg<Integer> wirelen, String body, MaxcastFilterReceiver maxcastFilterReceiver)
+    public static @Nullable byte[] decodeBody(DID did, OutArg<Integer> wireLength, String body, @Nullable MaxcastFilterReceiver maxcastFilterReceiver)
             throws IOException
     {
         ByteArrayInputStream bos = new ByteArrayInputStream(body.getBytes());
@@ -111,10 +108,11 @@ public abstract class XMPPUtilities
                 return null;
             }
 
+            // Parse the maxcast id.
+            int mcastid = is.readInt();
+
             if (maxcastFilterReceiver != null) {
-                // Parse the maxcast id.
                 // Do not attempt to filter away if it is an UNFILTERED packet
-                int mcastid = is.readInt();
                 if (MAXCAST_UNFILTERED != mcastid && maxcastFilterReceiver.isRedundant(did, mcastid)) {
                     return null;
                 }
@@ -144,7 +142,7 @@ public abstract class XMPPUtilities
                 throw new IOException("msg len " + len + " < avail by " + bos.available());
             }
 
-            wirelen.set(len + HEADER_LEN);
+            wireLength.set(len + HEADER_LEN);
             return bs;
         } finally {
             if (is != null) is.close();

@@ -96,7 +96,7 @@ public class TestLinkStateService
         Preconditions.checkState(_executorThread != null);
 
         _linkStateService = spy(new LinkStateService());
-        _linkStateService.addListener_(_listener, _notificationExecutor); // want to be notified on single-thread-executor
+        _linkStateService.addListener(_listener, _notificationExecutor); // want to be notified on single-thread-executor
     }
 
     @Test
@@ -126,18 +126,17 @@ public class TestLinkStateService
 
                 return null;
             }
-        }).when(_listener).onLinkStateChanged_(
+        }).when(_listener).onLinkStateChanged(
                 org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any(),
                 org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any(),
                 org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any(),
-                org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any()
-                );
+                org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any());
 
         // switch links up to setup state
-        _linkStateService.markLinksUp_();
+        _linkStateService.markLinksUp();
 
         // take links down (this is the method under test)
-        _linkStateService.markLinksDown_();
+        _linkStateService.markLinksDown();
 
         // wait until both calls have completed
         _notificationSemaphore.acquire();
@@ -193,19 +192,18 @@ public class TestLinkStateService
 
                 return null;
             }
-        }).when(_listener).onLinkStateChanged_(
+        }).when(_listener).onLinkStateChanged(
                 org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any(),
                 org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any(),
                 org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any(),
-                org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any()
-                );
+                org.mockito.Matchers.<ImmutableSet<NetworkInterface>>any());
 
         // switch links up/down to setup state
-        _linkStateService.markLinksUp_();
-        _linkStateService.markLinksDown_();
+        _linkStateService.markLinksUp();
+        _linkStateService.markLinksDown();
 
         // this is the call under test
-        _linkStateService.markLinksUp_();
+        _linkStateService.markLinksUp();
 
         // wait until all calls have completed
         _notificationSemaphore.acquire();

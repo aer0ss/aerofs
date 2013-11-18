@@ -6,13 +6,18 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.transport.exception.ExDeviceDisconnected;
-import com.aerofs.daemon.transport.exception.ExDeviceUnreachable;
-import com.aerofs.daemon.transport.exception.ExSendFailed;
+import com.aerofs.daemon.link.ILinkStateListener;
+import com.aerofs.daemon.link.LinkStateService;
+import com.aerofs.daemon.transport.ExDeviceDisconnected;
+import com.aerofs.daemon.transport.ExDeviceUnreachable;
+import com.aerofs.daemon.transport.ExSendFailed;
 import com.aerofs.daemon.transport.lib.IUnicastInternal;
+import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
-import com.aerofs.daemon.transport.xmpp.ISignallingService;
-import com.aerofs.daemon.transport.xmpp.ISignallingServiceListener;
+import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
+import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
+import com.aerofs.daemon.transport.xmpp.signalling.ISignallingService;
+import com.aerofs.daemon.transport.xmpp.signalling.ISignallingServiceListener;
 import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.event.Prio;
@@ -25,6 +30,8 @@ import com.aerofs.zephyr.client.exceptions.ExHandshakeRenegotiation;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -47,6 +54,7 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
@@ -60,12 +68,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 /**
  * Creates and manages connections to a Zephyr relay server
  */
-final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener, IDumpStat, IDumpStatMisc
+final class ZephyrConnectionService implements ILinkStateListener, IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener, IDumpStat, IDumpStatMisc
 {
     private static final Predicate<Entry<DID,Channel>> TRUE_FILTER = new Predicate<Entry<DID, Channel>>()
     {
@@ -80,14 +89,16 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
 
     private final TransportStats transportStats;
     private final RockLog rockLog;
+    private final LinkStateService linkStateService;
     private final ISignallingService signallingService;
+    private final IUnicastListener unicastListener;
 
     private final InetSocketAddress zephyrAddress;
     private final ClientBootstrap bootstrap;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    private final Map<DID, Channel> channels = newHashMap();
+    private final ConcurrentMap<DID, Channel> channels = Maps.newConcurrentMap();
 
     ZephyrConnectionService(
             String id,
@@ -95,8 +106,11 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
             DID localdid,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
-            IConnectionServiceListener connectionServiceListener,
+            IUnicastListener unicastListener,
+            LinkStateService linkStateService,
             ISignallingService signallingService,
+            TransportProtocolHandler transportProtocolHandler,
+            ChannelTeardownHandler channelTeardownHandler,
             TransportStats transportStats,
             RockLog rockLog,
             ChannelFactory channelFactory,
@@ -105,12 +119,28 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
     {
         this.zephyrAddress = zephyrAddress;
         this.bootstrap = new ClientBootstrap(channelFactory);
-        this.bootstrap.setPipelineFactory(new ZephyrClientPipelineFactory(id, localid, localdid, rockLog, clientSslEngineFactory, serverSslEngineFactory, transportStats, this, connectionServiceListener, proxy, HANDSHAKE_TIMEOUT));
+        this.bootstrap.setPipelineFactory(
+                new ZephyrClientPipelineFactory(
+                        id,
+                        localid,
+                        localdid,
+                        rockLog,
+                        clientSslEngineFactory,
+                        serverSslEngineFactory,
+                        transportProtocolHandler,
+                        channelTeardownHandler,
+                        transportStats,
+                        this,
+                        unicastListener,
+                        proxy,
+                        HANDSHAKE_TIMEOUT));
 
         this.transportStats = transportStats;
         this.rockLog = rockLog;
 
+        this.linkStateService = linkStateService;
         this.signallingService = signallingService;
+        this.unicastListener = unicastListener;
     }
 
     //
@@ -119,7 +149,9 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
 
     void init()
     {
+        //unicastListener.onUnicastReady(); // zephyr is always available
         signallingService.registerSignallingClient(this);
+        linkStateService.addListener(this, sameThreadExecutor()); // our callback implementation is thread-safe and can be called on the notifier thread
     }
 
     void start()
@@ -130,6 +162,7 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
         l.info("start");
     }
 
+    @SuppressWarnings("unused")
     void stop()
     {
         boolean alreadyRunning = running.getAndSet(false);
@@ -142,13 +175,21 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
         }
     }
 
-    //
-    // IConnectionService methods
-    //
-
-    void linkStateChanged(final Set<NetworkInterface> removed)
+    @Override
+    public void onLinkStateChanged(
+            ImmutableSet<NetworkInterface> previous,
+            ImmutableSet<NetworkInterface> current,
+            ImmutableSet<NetworkInterface> added,
+            ImmutableSet<NetworkInterface> removed)
     {
-        l.info("lsc");
+        // FIXME (AG): this is not foolproof
+        // Notably, if one has a ton of virtual devices that do not ever
+        // go down, then we will never switch from 'ready' -> 'unavailable'
+        if (previous.isEmpty() && !current.isEmpty()) {
+            unicastListener.onUnicastReady();
+        } else if (!previous.isEmpty() && current.isEmpty()) {
+            unicastListener.onUnicastUnavailable();
+        }
 
         final Set<InetAddress> removedAddresses = newHashSet();
         for (NetworkInterface networkInterface : removed) {
@@ -158,12 +199,15 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
             }
         }
 
+        l.trace("removed addresses:{}", removedAddresses);
+
         Predicate<Entry<DID, Channel>> allChannelsFilter = new Predicate<Entry<DID, Channel>>()
         {
             @Override
             public boolean apply(@Nullable Entry<DID, Channel> entry)
             {
                 InetAddress address = ((InetSocketAddress) checkNotNull(entry).getValue().getLocalAddress()).getAddress();
+                l.info("local address:{}", address);
                 return removedAddresses.contains(address);
             }
         };
@@ -248,16 +292,26 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
             {
                 l.debug("d:{} close future triggered", did);
 
-                synchronized (ZephyrConnectionService.this) {
-                    Channel activeChannel = getChannel(did);
-                    if (activeChannel == null) {
-                        l.warn("d:{} no channel", did);
-                    } else if (activeChannel != future.getChannel()) {
-                        l.warn("d:{} channel replaced exp:{} act:{}", did, getZephyrClient(future.getChannel()).debugString(), getZephyrClient(activeChannel).debugString());
-                    } else {
-                        l.info("d:{} remove zc:{}", did, getZephyrClient(future.getChannel()).debugString());
-                        removeChannel(did);
-                    }
+                // IMPORTANT: I remove the channel _without_ holding a lock
+                // on ZephyrConnectionService to prevent a deadlock.
+                //
+                // All operations in ZephyrConnectionService hold a lock
+                // on 'this' before modifying state. When close() is called on
+                // a channel, it is generally an _IO thread_ that handles the
+                // close and trips the close future. This can trigger a
+                // deadlock if the close future attempts to grab a lock on
+                // 'this' as well.
+                //
+                // Our close future simply has to remove a reference to the
+                // closed channel, so we can get away with doing an unprotected (key, value)
+                // remove
+
+                Channel closedChannel = future.getChannel();
+                boolean removed = channels.remove(did, closedChannel);
+                if (removed) {
+                    l.info("d:{} remove zc:{}", did, getZephyrClient(closedChannel).debugString());
+                } else {
+                    l.warn("d:{} already removed zc:{} ", did, getZephyrClient(closedChannel).debugString());
                 }
             }
         });
@@ -298,7 +352,7 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
     {
         ChannelBuffer data = wrappedBuffer(bss);
 
-        l.debug("d:{} send len:{} cke:{}", did, data.readableBytes(), cke);
+        l.trace("d:{} send len:{} cke:{}", did, data.readableBytes(), cke);
 
         Channel channel;
         synchronized (this) { // FIXME (AG): move all of this logic into connect
@@ -395,7 +449,7 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
     }
 
     @Override
-    public void processIncomingSignallingMessage(DID did, byte[] msg)
+    public void processIncomingSignallingMessage(DID did, byte[] message)
     {
         if (!running.get()) {
             l.warn("d:{} <-sig drop - service not running");
@@ -405,7 +459,7 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
         final ZephyrHandshake handshake;
 
         try {
-            ZephyrControlMessage control = ZephyrControlMessage.parseFrom(msg);
+            ZephyrControlMessage control = ZephyrControlMessage.parseFrom(message);
 
             checkArgument(control.getType() == HANDSHAKE, "recv signalling msg with unexpected type exp:HANDSHAKE act:{}", control.getType());
             checkArgument(control.hasHandshake());
@@ -468,7 +522,7 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
     @Override
     public void sendZephyrSignallingMessage(Channel sender, byte[] bytes)
     {
-        DID did = getZephyrClient(sender).getRemote();
+        DID did = getZephyrClient(sender).getRemoteDID();
 
         // outgoing signalling messages are only sent when we're still in connecting.
         // as a result, the upper layer won't be told of this disconnection

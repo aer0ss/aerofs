@@ -23,6 +23,7 @@ import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 import static com.google.common.collect.ImmutableSet.copyOf;
@@ -34,14 +35,15 @@ public class LinkStateService
 {
     protected static final Logger l = Loggers.getLogger(LinkStateService.class);
 
+    private final AtomicBoolean _started = new AtomicBoolean(false);
     private final Notifier<ILinkStateListener> _notifier = Notifier.create();
     private volatile ImmutableSet<NetworkInterface> _ifaces = ImmutableSet.of();
     private volatile boolean _markedDown; // whether we should act as if all links are down
 
-    // getActiveInterfaces_ can be slooooooooooooow so we execute while _NOT_ holding
+    // getActiveInterfaces can be slooooooooooooow so we execute while _NOT_ holding
     // the core lock to prevent CoreProgressWatcher from killing the daemon because of
     // it (and to avoid preventing the daemon from making progress during that time...)
-    private ImmutableSet<NetworkInterface> getActiveInterfaces_()
+    private ImmutableSet<NetworkInterface> getActiveInterfaces()
             throws SocketException
     {
         ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
@@ -147,17 +149,17 @@ public class LinkStateService
         return isActive;
     }
 
-    private void checkLinkState_()
+    private void checkLinkState()
     {
         try {
             l.debug("check link state");
-            notifyLinkStateChange_(getActiveInterfaces_());
+            notifyLinkStateChange(getActiveInterfaces());
         } catch (SocketException e) {
             SVClient.logSendDefectAsync(true, "can't check link state", e);
         }
     }
 
-    private void notifyLinkStateChange_(final ImmutableSet<NetworkInterface> current)
+    private void notifyLinkStateChange(final ImmutableSet<NetworkInterface> current)
     {
         final ImmutableSet<NetworkInterface> previous = _ifaces;
 
@@ -175,15 +177,19 @@ public class LinkStateService
             @Override
             public void visit(ILinkStateListener listener)
             {
-                listener.onLinkStateChanged_(previous, current, copyOf(added), copyOf(removed));
+                listener.onLinkStateChanged(previous, current, copyOf(added), copyOf(removed));
             }
         });
 
         _ifaces = current;
     }
 
-    public final void start_()
+    public final void start()
     {
+        if (!_started.compareAndSet(false, true)) {
+            return;
+        }
+
         l.info("start lss thd");
 
         startDaemonThread("lss", new Runnable()
@@ -200,13 +206,13 @@ public class LinkStateService
                 // forward (see libjingle-binding implementation).
                 //
                 // We didn't implement Driver.waitForNetworkInterfaceChange for UNIX OSes, assuming
-                // getActiveInterfaces_ doesn't take too long or too much CPU on these OSes.
+                // getActiveInterfaces doesn't take too long or too much CPU on these OSes.
                 // Otherwise, we should implement this method.
                 //
                 // noinspection InfiniteLoopStatement
                 while (true) {
                     if (!_markedDown) {
-                        checkLinkState_();
+                        checkLinkState();
                     }
 
                     // Only Windows has a proper implementation of waitForNetworkInterfaceChange.
@@ -218,24 +224,24 @@ public class LinkStateService
         });
     }
 
-    public void addListener_(ILinkStateListener listener, Executor callbackExecutor)
+    public void addListener(ILinkStateListener listener, Executor callbackExecutor)
     {
         _notifier.addListener(listener, callbackExecutor);
     }
 
     // IMPORTANT: the method is _not final_ because I want it to be mockable
-    public void markLinksDown_()
+    public void markLinksDown()
     {
         l.warn("mark down");
         _markedDown = true;
-        notifyLinkStateChange_(ImmutableSet.<NetworkInterface>of());
+        notifyLinkStateChange(ImmutableSet.<NetworkInterface>of());
     }
 
     // IMPORTANT: the method is _not final_ because I want it to be mockable
-    public void markLinksUp_()
+    public void markLinksUp()
     {
         l.warn("mark up");
         _markedDown = false;
-        checkLinkState_();
+        checkLinkState();
     }
 }

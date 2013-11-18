@@ -8,15 +8,7 @@ import com.aerofs.lib.ex.ExDeviceOffline;
 import javax.annotation.Nullable;
 
 /**
- * Implemented by classes that provide packet-transmission services
- * <br/>
- * <br/>
- * <strong>IMPORTANT:</strong>Callers <em>MUST NOT</em> assume that a packet
- * sent via this interface will be transmitted via a specific implementation.
- * Even if the caller has a reference to a specific implementation of {@link IUnicast},
- * it is <em>perfectly acceptable</em> for that implementation to switch the
- * underlying pipe used at any time.
- * <br/>
+ * Provides packet transmission services to a single remote deivce.
  * <br/>
  * <strong>IMPORTANT IMPLEMENTATION NOTES:</strong>
  * <ul>
@@ -45,7 +37,6 @@ public interface IUnicast
     /**
      * Send a packet to a peer
      * <br/>
-     * <br/>
      * Implementers: see implementation notes at head of {@link IUnicast}
      *
      * @param did {@link DID} of the peer packet should be sent to
@@ -63,9 +54,8 @@ public interface IUnicast
      * <strong>MUST</strong> use this return value as <code>cke</code> for
      * <em>all</em>subsequent chunks in the same stream
      */
-    // FIXME: add a parameter to indicate if packet must be sent via reliable channels (some messages without stream ids - transport flood, sent by <code>sendPayload</code>) need reliability
-    // FIXME: split this into at least two calls: one for individual packets, another for streams
-    // FIXME: separate stream/datagram reliable/unreliable payload/control dimensions
+    // FIXME (AG): split this into at least two calls: one for individual packets, another for streams
+    // FIXME (AG): this API is confusing. It's unclear that bss already has to be a packet with a PBTPHeader. I would expect this header to be added by Unicast
     Object send(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
         throws ExDeviceOffline;
 }

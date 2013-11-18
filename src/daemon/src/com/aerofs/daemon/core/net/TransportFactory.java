@@ -8,6 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
+import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.jingle.Jingle;
@@ -70,11 +71,16 @@ public final class TransportFactory
     private final InetSocketAddress stunServerAddress;
     private final InetSocketAddress xmppServerAddress;
     private final String xmppServerDomain;
+    private final long xmppServerConnectionLinkStateChangePingInterval;
+    private final int numPingsBeforeDisconnectingXmppServerConnection;
+    private final long xmppServerConnectionInitialReconnectInterval;
+    private final long xmppServerConnectionMaxReconnectInterval;
     private final InetSocketAddress zephyrServerAddress;
     private final Proxy proxy;
     private final BlockingPrioQueue<IEvent> transportEventSink;
     private final @Nullable MobileServerZephyrConnector mobileServerZephyrConnector;
     private final RockLog rockLog;
+    private final LinkStateService linkStateService;
     private final ServerSocketChannelFactory serverSocketChannelFactory;
     private final ClientSocketChannelFactory clientSocketChannelFactory;
     private final MaxcastFilterReceiver maxcastFilterReceiver;
@@ -91,10 +97,15 @@ public final class TransportFactory
             InetSocketAddress stunServerAddress,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
+            long xmppServerConnectionLinkStateChangePingInterval,
+            int numPingsBeforeDisconnectingXmppServerConnection,
+            long xmppServerConnectionInitialReconnectInterval,
+            long xmppServerConnectionMaxReconnectInterval,
             InetSocketAddress zephyrServerAddress,
             Proxy proxy,
             BlockingPrioQueue<IEvent> transportEventSink,
             RockLog rockLog,
+            LinkStateService linkStateService,
             MaxcastFilterReceiver maxcastFilterReceiver,
             @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
             ClientSocketChannelFactory clientSocketChannelFactory,
@@ -111,10 +122,15 @@ public final class TransportFactory
         this.stunServerAddress = stunServerAddress;
         this.xmppServerAddress = xmppServerAddress;
         this.xmppServerDomain = xmppServerDomain;
+        this.xmppServerConnectionLinkStateChangePingInterval = xmppServerConnectionLinkStateChangePingInterval;
+        this.numPingsBeforeDisconnectingXmppServerConnection = numPingsBeforeDisconnectingXmppServerConnection;
+        this.xmppServerConnectionInitialReconnectInterval = xmppServerConnectionInitialReconnectInterval;
+        this.xmppServerConnectionMaxReconnectInterval = xmppServerConnectionMaxReconnectInterval;
         this.zephyrServerAddress = zephyrServerAddress;
         this.proxy = proxy;
         this.transportEventSink = transportEventSink;
         this.rockLog = rockLog;
+        this.linkStateService = linkStateService;
         this.maxcastFilterReceiver = maxcastFilterReceiver;
         this.clientSocketChannelFactory = clientSocketChannelFactory;
         this.serverSocketChannelFactory = serverSocketChannelFactory;
@@ -152,6 +168,7 @@ public final class TransportFactory
                 transportId,
                 transportRank,
                 transportEventSink,
+                linkStateService,
                 listenToMulticastOnLoopback,
                 maxcastFilterReceiver,
                 clientSslEngineFactory,
@@ -170,6 +187,7 @@ public final class TransportFactory
                 transportId,
                 transportRank,
                 transportEventSink,
+                linkStateService,
                 maxcastFilterReceiver,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
@@ -178,6 +196,10 @@ public final class TransportFactory
                 rockLog,
                 xmppServerAddress,
                 xmppServerDomain,
+                xmppServerConnectionLinkStateChangePingInterval,
+                numPingsBeforeDisconnectingXmppServerConnection,
+                xmppServerConnectionInitialReconnectInterval,
+                xmppServerConnectionMaxReconnectInterval,
                 zephyrServerAddress,
                 proxy);
     }
@@ -190,12 +212,17 @@ public final class TransportFactory
                 stunServerAddress,
                 xmppServerAddress,
                 xmppServerDomain,
+                xmppServerConnectionLinkStateChangePingInterval,
+                numPingsBeforeDisconnectingXmppServerConnection,
+                xmppServerConnectionInitialReconnectInterval,
+                xmppServerConnectionMaxReconnectInterval,
                 scrypted,
                 absRtRoot,
                 enableJingleLibraryLogging,
                 transportId,
                 transportRank,
                 transportEventSink,
+                linkStateService,
                 maxcastFilterReceiver,
                 rockLog,
                 clientSslEngineFactory,

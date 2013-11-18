@@ -5,7 +5,6 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.EventDispatcher;
-import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
@@ -24,6 +23,7 @@ import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -50,6 +50,32 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 public class TPUtil
 {
     private static final Logger l = Loggers.getLogger(TPUtil.class);
+
+    public static byte[][] newDatagramPayload(byte[] data)
+    {
+        PBTPHeader header = PBTPHeader.newBuilder().setType(DATAGRAM).build();
+        return new byte[][] {
+            Util.writeDelimited(header).toByteArray(),
+            data
+        };
+    }
+
+    public static byte[][] newStreamPayload(StreamID streamId, int seqNum, byte[] data)
+    {
+        PBTPHeader header = PBTPHeader
+                .newBuilder()
+                .setType(STREAM)
+                .setStream(PBStream.newBuilder()
+                        .setType(Type.PAYLOAD)
+                        .setStreamId(streamId.getInt())
+                        .setSeqNum(seqNum))
+                .build();
+
+        return new byte[][] {
+            Util.writeDelimited(header).toByteArray(),
+            data
+        };
+    }
 
     /*
      * @param streamId null for non-stream messages
@@ -233,15 +259,16 @@ public class TPUtil
         return null;
     }
 
-    public static void registerCommonHandlers(
+    public static void setupCommonHandlersAndListeners(
+            ITransport transport,
             EventDispatcher dispatcher,
             IScheduler scheduler,
-            ILinkStateListener transport,
+            IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
             IStores stores,
             StreamManager streamManager,
             PulseManager pulseManager,
             IUnicastInternal unicast,
-            IPresenceManager presenceManager)
+            IDevicePresenceService presenceManager)
     {
         dispatcher
             .setHandler_(EOUnicastMessage.class, new HdUnicastMessage(unicast))
@@ -251,14 +278,15 @@ public class TPUtil
             .setHandler_(EORxEndStream.class, new HdRxEndStream(streamManager))
             .setHandler_(EOTxAbortStream.class, new HdTxAbortStream(streamManager, unicast))
             .setHandler_(EOUpdateStores.class, new HdUpdateStores(stores))
-            .setHandler_(EOLinkStateChanged.class, new HdLinkStateChanged(transport))
             .setHandler_(EOStartPulse.class, new HdStartPulse(scheduler))
             .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(pulseManager, unicast, new SubsequentPulse(scheduler, pulseManager, unicast)))
             .setHandler_(EOTpStartPulse.class, new HdPulse<EOTpStartPulse>(pulseManager, unicast, new StartPulse(scheduler, pulseManager, presenceManager)))
             .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(pulseManager, unicast, new SubsequentPulse(scheduler, pulseManager, unicast)));
+
+        pulseManager.addGenericPulseDeletionWatcher(transport, outgoingEventSink);
     }
 
-    public static void registerMulticastHandler(EventDispatcher dispatcher, IMaxcast maxcast)
+    public static void setupMulticastHandler(EventDispatcher dispatcher, IMaxcast maxcast)
     {
         dispatcher.setHandler_(EOMaxcastMessage.class, new HdMaxcastMessage(maxcast));
     }
