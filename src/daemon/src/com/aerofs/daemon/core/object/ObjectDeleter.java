@@ -18,10 +18,10 @@ import java.sql.SQLException;
 
 public class ObjectDeleter
 {
-    private ObjectMover _om;
+    private final ObjectMover _om;
 
     @Inject
-    public void inject_(ObjectMover om)
+    public ObjectDeleter(ObjectMover om)
     {
         _om = om;
     }

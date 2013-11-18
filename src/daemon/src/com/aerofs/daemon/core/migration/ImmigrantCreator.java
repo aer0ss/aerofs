@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.multiplicity.singleuser.migration;
+package com.aerofs.daemon.core.migration;
 
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
@@ -34,19 +34,18 @@ import static com.aerofs.daemon.core.ds.OA.FLAG_EXPELLED_ORG_OR_INH;
  * a higher level than ImmigrantDetector. That is, they have the dependency of:
  *
  * ImmigrantCreator -> ObjectMover/Deleter/Creator -> ImmigrantDetector
- *
  */
 public class ImmigrantCreator
 {
-    private DirectoryService _ds;
-    private IPhysicalStorage _ps;
-    private ObjectCreator _oc;
-    private ObjectMover _om;
-    private ObjectDeleter _od;
-    private IMapSIndex2SID _sidx2sid;
+    private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
+    private final ObjectCreator _oc;
+    private final ObjectMover _om;
+    private final ObjectDeleter _od;
+    private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public void inject_(DirectoryService ds, IPhysicalStorage ps, IMapSIndex2SID sidx2sid,
+    public ImmigrantCreator(DirectoryService ds, IPhysicalStorage ps, IMapSIndex2SID sidx2sid,
             ObjectMover om, ObjectDeleter od, ObjectCreator oc)
     {
         _ds = ds;
@@ -79,6 +78,30 @@ public class ImmigrantCreator
     private static OID migratedOID(OID oid)
     {
         return oid.isAnchor() ? new OID(UniqueID.generate()) : oid;
+    }
+
+    /**
+     * This method either moves objects within the same store, or across stores via migration,
+     * depending on whether the old sidx is the same as the new one.
+     *
+     * @return the SOID of the object after the move. This new SOID may be different from
+     * the parameter {@code soid} if migration occurs.
+     *
+     * Note: This is a method operate at the topmost level. Putting it in ObjectMover would
+     * introduce a circular dependency, which is why it lives in ImmigrantCreator instead.
+     * This area of the code would benefit from a good helping of refactoring but now is not
+     * the time...
+     */
+    public SOID move_(SOID soid, SOID soidToParent, String toName, PhysicalOp op, Trans t)
+            throws Exception
+    {
+        if (soidToParent.sidx().equals(soid.sidx())) {
+            _om.moveInSameStore_(soid, soidToParent.oid(), toName, op, false, true, t);
+            return soid;
+        } else {
+            return createImmigrantRecursively_(_ds.resolve_(soid).parent(), soid, soidToParent,
+                    toName, op, t);
+        }
     }
 
     static class MigratedPath

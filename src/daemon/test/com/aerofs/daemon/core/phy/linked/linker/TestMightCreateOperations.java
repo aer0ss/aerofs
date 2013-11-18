@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
+import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -62,6 +63,7 @@ import static org.mockito.Mockito.when;
 public class TestMightCreateOperations extends AbstractMightCreateTest
 {
     @Mock ObjectMover om;
+    @Mock ImmigrantCreator imc;
     @Mock ObjectCreator oc;
     @Mock VersionUpdater vu;
     @Mock InjectableFile.Factory factFile;
@@ -91,7 +93,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         // need to react to object moves
-        when(om.move_(any(SOID.class), any(SOID.class), anyString(), eq(MAP), eq(t)))
+        when(imc.move_(any(SOID.class), any(SOID.class), anyString(), eq(MAP), eq(t)))
                 .thenAnswer( new Answer<SOID>() {
                     @Override
                     public SOID answer(InvocationOnMock invocation) throws Throwable
@@ -237,7 +239,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         op("foo/hello2", fnt, Update);
 
-        verify(om).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
+        verify(imc).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
         verifyZeroInteractions(oc, vu, sfti);
     }
@@ -253,7 +255,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         op("foo/hello2", fnt, Update);
 
-        verify(om).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
+        verify(imc).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
         verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
         verify(delBuffer).remove_(soid);
         verifyZeroInteractions(oc, sfti);
@@ -268,7 +270,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         op("qux", fnt, Update);
 
-        verify(om).move_(eq(soid), soidAt(""), eq("qux"), eq(MAP), eq(t));
+        verify(imc).move_(eq(soid), soidAt(""), eq("qux"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
         verifyZeroInteractions(oc, vu, sfti);
     }
@@ -425,7 +427,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         op("quux", fnt, Update);
 
-        verify(om).move_(eq(soid), soidAt(""), eq("quux"), eq(MAP), eq(t));
+        verify(imc).move_(eq(soid), soidAt(""), eq("quux"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
         verify(sched).schedule(any(IEvent.class), anyLong());
         verify(sfti, times(2)).isSharedFolderRoot(absPath, sid);

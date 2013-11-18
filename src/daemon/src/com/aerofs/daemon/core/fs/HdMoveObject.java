@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.object.ObjectMover;
+import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -16,12 +16,12 @@ public class HdMoveObject extends AbstractHdIMC<EIMoveObject>
 {
     private final DirectoryService _ds;
     private final TransManager _tm;
-    private final ObjectMover _om;
+    private final ImmigrantCreator _imc;
 
     @Inject
-    public HdMoveObject(ObjectMover om, TransManager tm, DirectoryService ds)
+    public HdMoveObject(ImmigrantCreator imc, TransManager tm, DirectoryService ds)
     {
-        _om = om;
+        _imc = imc;
         _tm = tm;
         _ds = ds;
     }
@@ -39,7 +39,7 @@ public class HdMoveObject extends AbstractHdIMC<EIMoveObject>
 
         Trans t = _tm.begin_();
         try {
-            _om.move_(soid, soidToParent, ev._toName, PhysicalOp.APPLY, t);
+            _imc.move_(soid, soidToParent, ev._toName, PhysicalOp.APPLY, t);
             t.commit_();
         } finally {
             t.end_();

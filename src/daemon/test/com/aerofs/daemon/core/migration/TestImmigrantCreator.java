@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.multiplicity.singleuser.migration;
+package com.aerofs.daemon.core.migration;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -7,6 +7,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.object.ObjectCreator;

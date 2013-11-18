@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.mock.logical.MockDS;
-import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
+import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;

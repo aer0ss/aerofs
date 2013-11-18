@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.ds.OA;
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
 
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
+import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;

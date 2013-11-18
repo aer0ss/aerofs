@@ -5,7 +5,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.expel.Expulsion;
-import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -24,18 +23,15 @@ import java.sql.SQLException;
 
 public class ObjectMover
 {
-    private DirectoryService _ds;
-    private VersionUpdater _vu;
-    private Expulsion _expulsion;
-    private ImmigrantCreator _imc;
+    private final DirectoryService _ds;
+    private final VersionUpdater _vu;
+    private final Expulsion _expulsion;
 
     @Inject
-    public void inject_(VersionUpdater vu, DirectoryService ds, Expulsion expulsion,
-            ImmigrantCreator imc)
+    public ObjectMover(VersionUpdater vu, DirectoryService ds, Expulsion expulsion)
     {
         _vu = vu;
         _ds = ds;
-        _imc = imc;
         _expulsion = expulsion;
     }
 
@@ -61,29 +57,5 @@ public class ObjectMover
         }
 
         _expulsion.objectMoved_(emigrate, op, soid, pOld, t);
-    }
-
-    /**
-     * This method either moves objects within the same store, or across stores via migration,
-     * depending on whether the old sidx is the same as the new one.
-     *
-     * @return the SOID of the object after the move. This new SOID may be different from
-     * the parameter {@code soid} if migration occurs.
-     *
-     * Note: This is a method operate at the top most level, while ObjectMover and ImmigrantCreator
-     * operate at lower levels. That's why we didn't put the method to ObjectMover. Also because
-     * ObjectMover operates at a level even lower than ImmigrantCreator, having the method in
-     * ObjectMover would require this class to refer to ImmigrantCreator, which is inappropriate.
-     */
-    public SOID move_(SOID soid, SOID soidToParent, String toName, PhysicalOp op, Trans t)
-            throws Exception
-    {
-        if (soidToParent.sidx().equals(soid.sidx())) {
-            moveInSameStore_(soid, soidToParent.oid(), toName, op, false, true, t);
-            return soid;
-        } else {
-            return _imc.createImmigrantRecursively_(
-                    _ds.resolve_(soid).parent(), soid, soidToParent, toName, op, t);
-        }
     }
 }

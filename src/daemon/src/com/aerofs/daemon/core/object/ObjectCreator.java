@@ -28,15 +28,15 @@ import static com.aerofs.daemon.core.ds.OA.*;
 
 public class ObjectCreator
 {
-    private DirectoryService _ds;
-    private IPhysicalStorage _ps;
-    private VersionUpdater _vu;
-    private ImmigrantDetector _imd;
-    private Expulsion _ex;
-    private StoreCreator _sc;
+    private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
+    private final VersionUpdater _vu;
+    private final ImmigrantDetector _imd;
+    private final Expulsion _ex;
+    private final StoreCreator _sc;
 
     @Inject
-    public void inject_(DirectoryService ds, VersionUpdater vu, ImmigrantDetector imd, Expulsion ex,
+    public ObjectCreator(DirectoryService ds, VersionUpdater vu, ImmigrantDetector imd, Expulsion ex,
             StoreCreator sc, IPhysicalStorage ps)
     {
         _ds = ds;

@@ -20,6 +20,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
+import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -72,8 +73,8 @@ class MightCreateOperations
     private static Logger l = Loggers.getLogger(MightCreateOperations.class);
 
     private final DirectoryService _ds;
-    private final ObjectMover _om;
     private final ObjectCreator _oc;
+    private final ObjectMover _om;
     private final VersionUpdater _vu;
     private final InjectableFile.Factory _factFile;
     private final SharedFolderTagFileAndIcon _sfti;
@@ -81,6 +82,7 @@ class MightCreateOperations
     private final AnalyticsEventCounter _saveCounter;
     private final CoreScheduler _sched;
     private final IMapSID2SIndex _sid2sidx;
+    private final ImmigrantCreator _imc;
 
     static enum Operation
     {
@@ -110,12 +112,13 @@ class MightCreateOperations
     public MightCreateOperations(DirectoryService ds, ObjectMover om, ObjectCreator oc,
             InjectableDriver driver, VersionUpdater vu, InjectableFile.Factory factFile,
             SharedFolderTagFileAndIcon sfti, Analytics analytics, CoreScheduler sched,
-            IMapSID2SIndex sid2sidx)
+            IMapSID2SIndex sid2sidx, ImmigrantCreator imc)
     {
         _ds = ds;
         _oc = oc;
         _om = om;
         _vu = vu;
+        _imc = imc;
         _factFile = factFile;
         _sfti = sfti;
         _dr = driver;
@@ -349,7 +352,7 @@ class MightCreateOperations
             SOID soidToParent = _ds.resolveThrows_(pathToParent);
             OA oaToParent = _ds.getOA_(soidToParent);
             if (oaToParent.isAnchor()) soidToParent = _ds.followAnchorThrows_(oaToParent);
-            soid = _om.move_(soid, soidToParent, pPhysical.last(), MAP, t);
+            soid = _imc.move_(soid, soidToParent, pPhysical.last(), MAP, t);
         }
 
         // update content if needed
