@@ -79,90 +79,92 @@
     </%def>
 </%modal:modal>
 
-## spinner support is required by progress_modal
-<%progress_modal:scripts/>
-<%spinner:scripts/>
-<%bootstrap:scripts/>
-${upload_license_button.scripts('license-file', 'continue-btn')}
-${submit_scripts('license-file')}
+<%def name="scripts()">
+    ## spinner support is required by progress_modal
+    <%progress_modal:scripts/>
+    <%spinner:scripts/>
+    <%bootstrap:scripts/>
+    ${upload_license_button.scripts('license-file', 'continue-btn')}
+    ${submit_scripts('license-file')}
 
-%if not is_license_present:
-    <script>
-        $(document).ready(function() {
-            disableEsapingFromModal($('div.modal'));
+    %if not is_license_present:
+        <script>
+            $(document).ready(function() {
+                disableEsapingFromModal($('div.modal'));
 
-            initializeProgressModal();
+                initializeProgressModal();
 
-            updateBackupFileUI();
-            $('#backup-file').change(updateBackupFileUI);
+                updateBackupFileUI();
+                $('#backup-file').change(updateBackupFileUI);
 
-            $('#backup-file-check').click(function() {
-                if ($(this).is(':checked')) {
-                    $('#backup-file').click();
-                    ## prevent default behavior. Don't change the checked state
-                    ## until the user chooses a file.
-                    return false;
-                } else {
-                    $('#backup-file').val('');
-                    updateBackupFileUI();
-                    return true;
-                }
+                $('#backup-file-check').click(function() {
+                    if ($(this).is(':checked')) {
+                        $('#backup-file').click();
+                        ## prevent default behavior. Don't change the checked state
+                        ## until the user chooses a file.
+                        return false;
+                    } else {
+                        $('#backup-file').val('');
+                        updateBackupFileUI();
+                        return true;
+                    }
+                });
             });
-        });
 
-        function updateBackupFileUI() {
-            var filename = $('#backup-file').val();
-            var hasFile = filename != "";
+            function updateBackupFileUI() {
+                var filename = $('#backup-file').val();
+                var hasFile = filename != "";
 
-            var $checkbox = $('#backup-file-check');
-            if (hasFile) $checkbox.attr("checked", "checked");
-            else $checkbox.removeAttr("checked");
-            $('#backup-file-change').toggle(hasFile);
-            $('#backup-file-name').text(hasFile ?
-                    ## "C:\\fakepath\\" is a weirdo from the browser standard.
-                    'from ' + filename.replace("C:\\fakepath\\", '') :
-                    'an appliance from backup');
-        }
-
-        function restore(onSuccess, onFailure) {
-            ## Skip the step if the backup control is not present or the file is not
-            ## specified
-            if (!$('#backup-file').val()) {
-                onSuccess();
-                return;
+                var $checkbox = $('#backup-file-check');
+                if (hasFile) $checkbox.attr("checked", "checked");
+                else $checkbox.removeAttr("checked");
+                $('#backup-file-change').toggle(hasFile);
+                $('#backup-file-name').text(hasFile ?
+                        ## "C:\\fakepath\\" is a weirdo from the browser standard.
+                        'from ' + filename.replace("C:\\fakepath\\", '') :
+                        'an appliance from backup');
             }
 
-            var $progress = $('#${progress_modal.id()}');
-            $progress.modal('show');
+            function restore(onSuccess, onFailure) {
+                ## Skip the step if the backup control is not present or the file is not
+                ## specified
+                if (!$('#backup-file').val()) {
+                    onSuccess();
+                    return;
+                }
 
-            ## See http://digipiph.com/blog/submitting-multipartform-data-using-jquery-and-ajax
-            var formData = new FormData($('form')[0]);
-            $.ajax({
-                url: "${request.route_path('json_upload_backup')}",
-                type: "POST",
-                data: formData,
-                contentType: false,
-                processData: false
-            }).done(function() {
-                runBootstrapTask('db-restore', function() {
-                    $progress.modal('hide');
-                    $('#backup-success-modal').modal('show');
-                    $('#backup-success-ok').click(function() {
-                        onSuccess();
-                        return false;
+                var $progress = $('#${progress_modal.id()}');
+                $progress.modal('show');
+
+                ## See http://digipiph.com/blog/submitting-multipartform-data-using-jquery-and-ajax
+                var formData = new FormData($('form')[0]);
+                $.ajax({
+                    url: "${request.route_path('json_upload_backup')}",
+                    type: "POST",
+                    data: formData,
+                    contentType: false,
+                    processData: false
+                }).done(function() {
+                    runBootstrapTask('db-restore', function() {
+                        $progress.modal('hide');
+                        $('#backup-success-modal').modal('show');
+                        $('#backup-success-ok').click(function() {
+                            onSuccess();
+                            return false;
+                        });
+                    }, function() {
+                        $progress.modal('hide');
+                        onFailure();
                     });
-                }, function() {
+                }).fail(function(xhr) {
+                    showErrorMessageFromResponse(xhr);
                     $progress.modal('hide');
                     onFailure();
                 });
-            }).fail(function(xhr) {
-                showErrorMessageFromResponse(xhr);
-                $progress.modal('hide');
-                onFailure();
-            });
-        }
-    </script>
-%endif
+            }
+        </script>
+    %endif
+</%def>
 
 <%def name="submit_scripts(license_file_input_id)">
     <script>

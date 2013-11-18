@@ -36,4 +36,6 @@
     %endif
 </%def>
 
-${license_page.submit_scripts('license-file')}
+<%def name="scripts()">
+    ${license_page.submit_scripts('license-file')}
+</%def>

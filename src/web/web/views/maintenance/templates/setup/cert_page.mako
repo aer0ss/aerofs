@@ -39,73 +39,75 @@
     ${common.render_next_button()}
 </form>
 
-<script type="text/javascript">
-    function useInstalledCertSelected() {
-        ## disable the file upload and remove set files
-        $('input:file').attr("disabled", "disabled").val("");
-    }
+<%def name="scripts()">
+    <script>
+        function useInstalledCertSelected() {
+            ## disable the file upload and remove set files
+            $('input:file').attr("disabled", "disabled").val("");
+        }
 
-    function useNewCertSelected() {
-        $('input:file').removeAttr("disabled");
-    }
+        function useNewCertSelected() {
+            $('input:file').removeAttr("disabled");
+        }
 
-    function submitForm() {
-        disableNavButtons();
+        function submitForm() {
+            disableNavButtons();
 
-        var choice = $(':input[name=cert.option]:checked').val();
-        if (choice == 'existing') {
-            gotoNextPage();
-        } else if (choice == 'new') {
-            if (verifyPresence("server.browser.certificate", "Please specify a certificate file.") &&
-                    verifyPresence("server.browser.key", "Please specify a key file.")) {
-                ## Certificate.
-                var certificateFile = document.getElementById("server.browser.certificate").files[0];
-                var certificateReader = new FileReader();
-                certificateReader.onload = function() {
-                    setCertificateData(this.result);
-                };
-                certificateReader.readAsBinaryString(certificateFile);
+            var choice = $(':input[name=cert.option]:checked').val();
+            if (choice == 'existing') {
+                gotoNextPage();
+            } else if (choice == 'new') {
+                if (verifyPresence("server.browser.certificate", "Please specify a certificate file.") &&
+                        verifyPresence("server.browser.key", "Please specify a key file.")) {
+                    ## Certificate.
+                    var certificateFile = document.getElementById("server.browser.certificate").files[0];
+                    var certificateReader = new FileReader();
+                    certificateReader.onload = function() {
+                        setCertificateData(this.result);
+                    };
+                    certificateReader.readAsBinaryString(certificateFile);
 
-                ## Key.
-                var keyFile = document.getElementById("server.browser.key").files[0];
-                var keyReader = new FileReader();
-                keyReader.onload = function() {
-                    setKeyData(this.result);
-                };
-                keyReader.readAsBinaryString(keyFile);
+                    ## Key.
+                    var keyFile = document.getElementById("server.browser.key").files[0];
+                    var keyReader = new FileReader();
+                    keyReader.onload = function() {
+                        setKeyData(this.result);
+                    };
+                    keyReader.readAsBinaryString(keyFile);
+                }
             }
         }
-    }
 
-    var certificateData = null;
-    var keyData = null;
+        var certificateData = null;
+        var keyData = null;
 
-    ## TOOD (WW) use multipart data upload
-    function formatPostData(data) {
-        return data.replace(/\+/g, '%2B');
-    }
-
-    function setCertificateData(data) {
-        certificateData = formatPostData(data);
-
-        if (keyData != null) {
-            postCertificateData();
+        ## TOOD (WW) use multipart data upload
+        function formatPostData(data) {
+            return data.replace(/\+/g, '%2B');
         }
-    }
 
-    function setKeyData(data) {
-        keyData = formatPostData(data);
+        function setCertificateData(data) {
+            certificateData = formatPostData(data);
 
-        if (certificateData != null) {
-            postCertificateData();
+            if (keyData != null) {
+                postCertificateData();
+            }
         }
-    }
 
-    function postCertificateData() {
-        var serializedData = $('form').serialize();
+        function setKeyData(data) {
+            keyData = formatPostData(data);
 
-        doPost("${request.route_path('json_setup_certificate')}",
-            serializedData + "&server.browser.certificate=" + certificateData + "&server.browser.key=" + keyData,
-            gotoNextPage, enableNavButtons);
-    }
-</script>
+            if (certificateData != null) {
+                postCertificateData();
+            }
+        }
+
+        function postCertificateData() {
+            var serializedData = $('form').serialize();
+
+            doPost("${request.route_path('json_setup_certificate')}",
+                serializedData + "&server.browser.certificate=" + certificateData + "&server.browser.key=" + keyData,
+                gotoNextPage, enableNavButtons);
+        }
+    </script>
+</%def>

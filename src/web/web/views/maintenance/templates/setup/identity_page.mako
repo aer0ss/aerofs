@@ -6,7 +6,8 @@
 <%
     authenticator = current_config['lib.authenticator']
     # default is local credential if the system is uninitialized
-    local_auth = authenticator == '' or authenticator == 'local_credential'
+    # Use the local namespace so the method scripts() can access it
+    local.local_auth = authenticator == '' or authenticator == 'local_credential'
 %>
 
 ############################################
@@ -22,7 +23,7 @@
     <label class="radio">
         <input type='radio' name='authenticator' value='local_credential'
                onchange="localSelected()"
-           %if local_auth:
+           %if local.local_auth:
                checked
            %endif
         >
@@ -38,7 +39,7 @@
     <label class="radio">
         <input type='radio' name='authenticator' value='external_credential'
                onchange="ldapSelected()"
-            %if not local_auth:
+            %if not local.local_auth:
                checked
             %endif
         >
@@ -47,7 +48,7 @@
 
     ## The slide down options
     <div id="ldap-options"
-        %if local_auth:
+        %if local.local_auth:
             class="hide"
         %endif
     >
@@ -255,127 +256,129 @@
     Please wait while we are testing the LDAP server...
 </%progress_modal:html>
 
-<%progress_modal:scripts/>
-## spinner support is required by progress_modal
-<%spinner:scripts/>
+<%def name="scripts()">
+    <%progress_modal:scripts/>
+    ## spinner support is required by progress_modal
+    <%spinner:scripts/>
 
-<script>
-    var ldapOptionChanged = false;
-    $(document).ready(function() {
-        initializeProgressModal();
+    <script>
+        var ldapOptionChanged = false;
+        $(document).ready(function() {
+            initializeProgressModal();
 
-        %if local_auth:
-            localSelected();
-        %else:
-            ldapSelected();
-        %endif
+            %if local.local_auth:
+                localSelected();
+            %else:
+                ldapSelected();
+            %endif
 
-        ## Listen to any changes to LDAP options.
-        $('.ldap-opt').change(function () {
-            ldapOptionChanged = true;
-        })
-    });
-
-    function localSelected() {
-        ## Remove 'required' attribute otherwise Chrome would complain when
-        ## submitting the form since required fields are invisible. See:
-        ## http://stackoverflow.com/questions/7168645/invalid-form-control-only-in-google-chrome
-        ## Adding the ldap-required class is for ldapSelected() to restore the
-        ## attribute.
-        $('.ldap-opt[required]').removeAttr('required').addClass('ldap-required');
-        $('#ldap-options').hide();
-    }
-
-    function ldapSelected() {
-        $('.ldap-required').attr('required', 'required');
-        $('#ldap-options').show();
-    }
-
-    function showAdvancedLDAPOptions() {
-        $('#advanced-ldap-options').show();
-        $('#show-advanced-ldap-options').hide();
-        $('#hide-advanced-ldap-options').show();
-    }
-
-    function hideAdvancedLDAPOptions() {
-        $('#advanced-ldap-options').hide();
-        $('#show-advanced-ldap-options').show();
-        $('#hide-advanced-ldap-options').hide();
-    }
-
-    function submitForm() {
-        disableNavButtons();
-        var authenticator = $(':input[name=lib.authenticator]:checked').val();
-        if (authenticator == 'local_credential') {
-            post(gotoNextPage, enableNavButtons);
-        } else {
-            validateAndSubmitLDAPForm(gotoNextPage, enableNavButtons);
-        }
-    }
-
-    function validateAndSubmitLDAPForm(done, error) {
-        if (!validateLDAPForm()) {
-            error();
-            return;
-        }
-
-        ## Verify LDAP if any LDAP options have changed or the user switches
-        ## from local auth to LDAP.
-        ## The logic needs to make sure the verification is performed on
-        ## initial setups.
-        if (ldapOptionChanged || ${str(local_auth).lower()}) {
-            console.log("ldap opt changed. test new opts");
-
-            ## Show the progress dialog for testing LDAP
-            var $progressModal = $('#${progress_modal.id()}');
-            $progressModal.modal('show');
-            var onError = function() {
-                $progressModal.modal('hide');
-                error();
-            };
-
-            $.post('${request.route_path('json_verify_ldap')}',
-                    $('form').serialize())
-            .done(function (response) {
-                post(done, onError);
+            ## Listen to any changes to LDAP options.
+            $('.ldap-opt').change(function () {
+                ldapOptionChanged = true;
             })
+        });
+
+        function localSelected() {
+            ## Remove 'required' attribute otherwise Chrome would complain when
+            ## submitting the form since required fields are invisible. See:
+            ## http://stackoverflow.com/questions/7168645/invalid-form-control-only-in-google-chrome
+            ## Adding the ldap-required class is for ldapSelected() to restore the
+            ## attribute.
+            $('.ldap-opt[required]').removeAttr('required').addClass('ldap-required');
+            $('#ldap-options').hide();
+        }
+
+        function ldapSelected() {
+            $('.ldap-required').attr('required', 'required');
+            $('#ldap-options').show();
+        }
+
+        function showAdvancedLDAPOptions() {
+            $('#advanced-ldap-options').show();
+            $('#show-advanced-ldap-options').hide();
+            $('#hide-advanced-ldap-options').show();
+        }
+
+        function hideAdvancedLDAPOptions() {
+            $('#advanced-ldap-options').hide();
+            $('#show-advanced-ldap-options').show();
+            $('#hide-advanced-ldap-options').hide();
+        }
+
+        function submitForm() {
+            disableNavButtons();
+            var authenticator = $(':input[name=lib.authenticator]:checked').val();
+            if (authenticator == 'local_credential') {
+                post(gotoNextPage, enableNavButtons);
+            } else {
+                validateAndSubmitLDAPForm(gotoNextPage, enableNavButtons);
+            }
+        }
+
+        function validateAndSubmitLDAPForm(done, error) {
+            if (!validateLDAPForm()) {
+                error();
+                return;
+            }
+
+            ## Verify LDAP if any LDAP options have changed or the user switches
+            ## from local auth to LDAP.
+            ## The logic needs to make sure the verification is performed on
+            ## initial setups.
+            if (ldapOptionChanged || ${str(local.local_auth).lower()}) {
+                console.log("ldap opt changed. test new opts");
+
+                ## Show the progress dialog for testing LDAP
+                var $progressModal = $('#${progress_modal.id()}');
+                $progressModal.modal('show');
+                var onError = function() {
+                    $progressModal.modal('hide');
+                    error();
+                };
+
+                $.post('${request.route_path('json_verify_ldap')}',
+                        $('form').serialize())
+                .done(function (response) {
+                    post(done, onError);
+                })
+                .error(function (xhr) {
+                    showErrorMessageFromResponse(xhr);
+                    onError();
+                });
+            } else {
+                ## This post is required to write changes in _other_ option values,
+                ## even if ldap-specific options are not changed.
+                post(done, error);
+            }
+        }
+
+        function post(done, error) {
+            ## Trim the cert
+            var $cert = $('#ldap-server-ca_certificate');
+            $cert.val($.trim($cert.val()));
+
+            $.post('${request.route_path('json_setup_identity')}',
+                    $('form').serialize())
+            .done(done)
             .error(function (xhr) {
                 showErrorMessageFromResponse(xhr);
-                onError();
+                error();
             });
-        } else {
-            ## This post is required to write changes in _other_ option values,
-            ## even if ldap-specific options are not changed.
-            post(done, error);
-        }
-    }
-
-    function post(done, error) {
-        ## Trim the cert
-        var $cert = $('#ldap-server-ca_certificate');
-        $cert.val($.trim($cert.val()));
-
-        $.post('${request.route_path('json_setup_identity')}',
-                $('form').serialize())
-        .done(done)
-        .error(function (xhr) {
-            showErrorMessageFromResponse(xhr);
-            error();
-        });
-    }
-
-    ## return false if the form is valid, and the error message has been displayed.
-    function validateLDAPForm() {
-        var hasEmptyRequiredField = false;
-        $('.ldap-opt[required]').each(function() {
-            if (!$(this).val()) hasEmptyRequiredField = true;
-        });
-
-        if (hasEmptyRequiredField) {
-            showErrorMessage("Please fill all the fields before proceeding.");
-            return false;
         }
 
-        return true;
-    }
-</script>
+        ## return false if the form is valid, and the error message has been displayed.
+        function validateLDAPForm() {
+            var hasEmptyRequiredField = false;
+            $('.ldap-opt[required]').each(function() {
+                if (!$(this).val()) hasEmptyRequiredField = true;
+            });
+
+            if (hasEmptyRequiredField) {
+                showErrorMessage("Please fill all the fields before proceeding.");
+                return false;
+            }
+
+            return true;
+        }
+    </script>
+</%def>

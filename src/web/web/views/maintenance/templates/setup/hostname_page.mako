@@ -37,40 +37,42 @@
     <a href="https://support.aerofs.com/entries/22711364" target="_blank">Read more</a>.
 </%modal:modal>
 
-<script>
-    $(document).ready(function() {
-        $('#base-host-unified').focus();
-        disableEsapingFromModal($('div.modal'));
-    });
+<%def name="scripts()">
+    <script>
+        $(document).ready(function() {
+            $('#base-host-unified').focus();
+            disableEsapingFromModal($('div.modal'));
+        });
 
-    function submitForm() {
-        disableNavButtons();
+        function submitForm() {
+            disableNavButtons();
 
-        if (verifyPresence("base-host-unified", "Please specify a hostname.")) {
-            var val = $('#base-host-unified').val();
-            if (${1 if is_configuration_initialized else 0} &&
-                    val != "${current_config['base.host.unified']}") {
-                $('#confirm-modal').modal('show');
-            } else {
-                doSubmit();
+            if (verifyPresence("base-host-unified", "Please specify a hostname.")) {
+                var val = $('#base-host-unified').val();
+                if (${1 if is_configuration_initialized else 0} &&
+                        val != "${current_config['base.host.unified']}") {
+                    $('#confirm-modal').modal('show');
+                } else {
+                    doSubmit();
+                }
             }
         }
-    }
 
-    function restoreHostname() {
-        hideAllModals();
-        enableNavButtons();
-        $('#base-host-unified').val("${current_config['base.host.unified']}");
-    }
+        function restoreHostname() {
+            hideAllModals();
+            enableNavButtons();
+            $('#base-host-unified').val("${current_config['base.host.unified']}");
+        }
 
-    function confirmHostnameChange() {
-        hideAllModals();
-        doSubmit();
-    }
+        function confirmHostnameChange() {
+            hideAllModals();
+            doSubmit();
+        }
 
-    function doSubmit() {
-        var serializedData = $('form').serialize();
-        doPost("${request.route_path('json_setup_hostname')}",
-                serializedData, gotoNextPage, enableNavButtons);
-    }
-</script>
+        function doSubmit() {
+            var serializedData = $('form').serialize();
+            doPost("${request.route_path('json_setup_hostname')}",
+                    serializedData, gotoNextPage, enableNavButtons);
+        }
+    </script>
+</%def>
