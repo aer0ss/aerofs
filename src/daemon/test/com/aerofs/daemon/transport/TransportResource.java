@@ -40,13 +40,18 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.SecureRandom;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public final class TransportResource extends ExternalResource
 {
+    static
+    {
+        System.loadLibrary("aerofsd");
+    }
+
     private static final Logger l = Loggers.getLogger(TransportResource.class);
 
     private static final Prio PRIO = Prio.LO;
@@ -55,12 +60,13 @@ public final class TransportResource extends ExternalResource
     private final Random random = new Random(seed);
     private final SecureRandom secureRandom = new SecureRandom();
     private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(DaemonParam.QUEUE_LENGTH_DEFAULT);
+    private final ClientSocketChannelFactory clientSocketChannelFactory = new NioClientSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2, 2);
+    private final ServerSocketChannelFactory serverSocketChannelFactory = new NioServerSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2);
     private final TransportType transportType;
     private final String transportId;
     private final LinkStateService linkStateService;
     private final MockCA mockCA;
     private final MockRockLog mockRockLog;
-    private final AtomicBoolean running = new AtomicBoolean(false);
 
     private DID did;
     private ITransport transport;
@@ -92,7 +98,7 @@ public final class TransportResource extends ExternalResource
 
         l.info("transport test log directory:{}", logFilePath.getAbsolutePath());
 
-        UserID userID = UserID.fromExternal(String.format("testuser-%d@arrowfs.org", random.nextInt()));
+        UserID userID = UserID.fromExternal(String.format("testuser+%d@arrowfs.org", Math.abs(random.nextInt())));
         checkNotNull(userID);
 
         did = DID.generate();
@@ -100,9 +106,6 @@ public final class TransportResource extends ExternalResource
 
         byte[] scrypted = new byte[]{0};
         checkNotNull(scrypted);
-
-        ClientSocketChannelFactory clientSocketChannelFactory = new NioClientSocketChannelFactory();
-        ServerSocketChannelFactory serverSocketChannelFactory = new NioServerSocketChannelFactory();
 
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = newClientSSLEngineFactory(privateKeyProvider, mockCA.getCACertificateProvider());
@@ -124,27 +127,20 @@ public final class TransportResource extends ExternalResource
                 2,
                 1 * C.SEC,
                 5 * C.SEC,
-                InetSocketAddress.createUnresolved("relay.aerofs.com", 443),
+                InetSocketAddress.createUnresolved("zephyr.aerofs.com", 443),
                 Proxy.NO_PROXY,
                 outgoingEventSink,
                 mockRockLog.getRockLog(),
                 linkStateService,
                 new MaxcastFilterReceiver(),
-                null,
-                clientSocketChannelFactory,
-                serverSocketChannelFactory,
+                null, clientSocketChannelFactory, serverSocketChannelFactory,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory
         );
 
         transport = transportFactory.newTransport(transportType, transportId, 1);
-        checkNotNull(transport, transportId, 1);
-
-        transport.init_();
-
-        transport.start_();
-
-        running.set(true);
+        transport.init();
+        transport.start();
     }
 
     private SSLEngineFactory newServerSSLEngineFactory(IPrivateKeyProvider privateKeyProvider, ICertificateProvider caCertificateProvider)
@@ -160,6 +156,8 @@ public final class TransportResource extends ExternalResource
     @Override
     protected synchronized void after()
     {
+        transport.stop();
+
         if (readerSet) {
             transportReader.stop();
         }
@@ -168,6 +166,12 @@ public final class TransportResource extends ExternalResource
             // noinspection ResultOfMethodCallIgnored
             logFilePath.delete();
         }
+
+        clientSocketChannelFactory.shutdown();
+        clientSocketChannelFactory.releaseExternalResources();
+
+        serverSocketChannelFactory.shutdown();
+        serverSocketChannelFactory.releaseExternalResources();
     }
 
     //
@@ -195,11 +199,6 @@ public final class TransportResource extends ExternalResource
         return checkNotNull(did);
     }
 
-    public TransportType getTransportType()
-    {
-        return transportType;
-    }
-
     public ITransport getTransport()
     {
         return checkNotNull(transport);
@@ -223,13 +222,6 @@ public final class TransportResource extends ExternalResource
         getTransport().q().enqueueBlocking(new EOUpdateStores(new FakeIMCExecutor(), new SID[]{sid}, new SID[]{}), PRIO);
     }
 
-    @SuppressWarnings("unused")
-    public void leaveStore(SID sid)
-    {
-        getTransport().q().enqueueBlocking(
-                new EOUpdateStores(new FakeIMCExecutor(), new SID[]{}, new SID[]{sid}), PRIO);
-    }
-
     public void send(DID remoteDID, byte[] payload, Prio prio)
     {
         getTransport().q().enqueueBlocking(new EOUnicastMessage(remoteDID, payload), prio);
@@ -238,6 +230,7 @@ public final class TransportResource extends ExternalResource
     public OutputStream newOutgoingStream(DID did)
     {
         StreamID streamID;
+
         synchronized (random) {
             streamID = new StreamID(random.nextInt());
         }

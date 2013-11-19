@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.transport.jingle;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.base.net.NettyUtil;
 import org.jboss.netty.channel.AbstractChannelSink;
 import org.jboss.netty.channel.Channel;
@@ -13,21 +12,27 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.MessageEvent;
-import org.slf4j.Logger;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.jboss.netty.channel.Channels.fireChannelBound;
-import static org.jboss.netty.channel.Channels.fireExceptionCaught;
+import static org.jboss.netty.channel.Channels.fireChannelClosedLater;
+import static org.jboss.netty.channel.Channels.fireChannelUnboundLater;
+import static org.jboss.netty.channel.Channels.fireExceptionCaughtLater;
+import static org.jboss.netty.channel.Channels.future;
 
-
+/**
+ * {@link org.jboss.netty.channel.ChannelSink} implementation
+ * that handles downstream events for <strong>both</strong>
+ * {@link JingleServerChannel} and accepted {@link JingleClientChannel}
+ * instances.
+ */
 class JingleServerChannelSink extends AbstractChannelSink
 {
-    private static final Logger l = Loggers.getLogger(JingleServerChannelSink.class);
+    private final JingleChannelWorker channelWorker;
 
-    private final SignalThread _signalThread;
-
-    public JingleServerChannelSink(SignalThread signalThread)
+    JingleServerChannelSink(JingleChannelWorker channelWorker)
     {
-        _signalThread = signalThread;
+        this.channelWorker = channelWorker;
     }
 
     @Override
@@ -40,6 +45,30 @@ class JingleServerChannelSink extends AbstractChannelSink
         } else if (channel instanceof JingleClientChannel) {
             handleAcceptedSocket(e);
         }
+    }
+
+    @Override
+    public ChannelFuture execute(ChannelPipeline pipeline, final Runnable task)
+    {
+        Channel channel = pipeline.getChannel();
+        checkArgument(channel instanceof JingleServerChannel, "channel:%s", channel.getClass().getSimpleName());
+
+        final ChannelFuture executeFuture = future(channel);
+        channelWorker.submitChannelTask(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try {
+                    task.run();
+                    executeFuture.setSuccess();
+                } catch (Exception e) {
+                    executeFuture.setFailure(e);
+                }
+            }
+        });
+
+        return executeFuture;
     }
 
     @SuppressWarnings("fallthrough")
@@ -61,9 +90,7 @@ class JingleServerChannelSink extends AbstractChannelSink
             unbind(channel, future);
             break;
         default:
-            String msg = "j srv sink: unsupported event: " + event.getState() + "v: " + value;
-            l.warn(msg);
-            future.setFailure(new UnsupportedOperationException(msg));
+            future.setFailure(new UnsupportedOperationException("unsupported event:" + event.getState() + " value: " + value));
             break;
         }
     }
@@ -76,14 +103,32 @@ class JingleServerChannelSink extends AbstractChannelSink
             fireChannelBound(channel, localAddress);
         } catch (Throwable t) {
             future.setFailure(t);
-            fireExceptionCaught(channel, t);
+            fireExceptionCaughtLater(channel, t);
         }
     }
 
+    // server channel closing loginc copied from:
+    // https://github.com/netty/netty/blob/3.6/src/main/java/org/jboss/netty/channel/socket/nio/NioServerBoss.java
     private static void unbind(JingleServerChannel channel, ChannelFuture future)
     {
-        // TODO (GS): Should we do something?
-        future.setSuccess();
+        boolean bound = channel.isBound();
+
+        try {
+            if (channel.setClosed()) {
+                future.setSuccess();
+
+                if (bound) {
+                    fireChannelUnboundLater(channel);
+                }
+
+                fireChannelClosedLater(channel);
+            } else {
+                future.setSuccess();
+            }
+        } catch (Throwable t) {
+            future.setFailure(t);
+            fireExceptionCaughtLater(channel, t);
+        }
     }
 
     @SuppressWarnings("fallthrough")
@@ -99,21 +144,16 @@ class JingleServerChannelSink extends AbstractChannelSink
             case CLOSE:
             case UNBIND:
             case DISCONNECT:
-                channel.onCloseEventReceived(future, _signalThread);
-                break;
-            case INTEREST_OPS:
-                future.setSuccess();  // Unsupported - discard silently.
+                channel.onCloseEventReceived(future);
                 break;
             default:
-                String msg = "j acc sink: unsupported event: " + event.getState() + "v: " + value;
-                l.warn(msg);
-                future.setFailure(new UnsupportedOperationException(msg));
+                future.setFailure(new UnsupportedOperationException("unsupported event:" + event.getState() + " value: " + value));
                 break;
             }
         } else if (e instanceof MessageEvent) {
             MessageEvent event = (MessageEvent) e;
             JingleClientChannel channel = (JingleClientChannel) event.getChannel();
-            channel.onWriteEventReceived(event, _signalThread);
+            channel.onWriteEventReceived(event);
         }
     }
 }

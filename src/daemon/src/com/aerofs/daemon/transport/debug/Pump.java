@@ -99,8 +99,8 @@ public final class Pump implements IProgram
         final IIMCExecutor transportImce = new QueueBasedIMCExecutor(transport.q());
 
         // start transport
-        transport.init_();
-        transport.start_();
+        transport.init();
+        transport.start();
         linkStateService.start();
 
         // join the root store, so that I can actually receive presence info

@@ -168,7 +168,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             throws Exception
     {
         for (ITransport tp : availableTransports.keySet()) {
-            tp.init_();
+            tp.init();
         }
     }
 
@@ -178,7 +178,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         l.info("start tps");
 
         for (ITransport tp : availableTransports.keySet()) {
-            tp.start_();
+            tp.start();
         }
 
         started = true;

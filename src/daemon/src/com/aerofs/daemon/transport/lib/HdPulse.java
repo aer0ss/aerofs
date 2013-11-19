@@ -10,7 +10,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.IPulseEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import org.slf4j.Logger;
 
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.MakePulseResult;
@@ -64,8 +63,6 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
 
         l.info("d:" + did + " hd pulse");
 
-        // basic pre-pulse checks
-
         if (!ph.prepulsechecks_(ev)) return;
 
         // send a pulse
@@ -83,15 +80,9 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
             l.info("d:" + did + " prevtok:" + printtok(prevtok) + " tok:" + ret.tok() + " send pulse");
 
             uc.send(did, null, Prio.HI, newControl(ret.hdr()), null);
-        } catch (ExDeviceOffline e) {
-            pm.delInProgressPulse(did);
-            l.info("d:" + did + " offline - term pulse");
-            return;
         } catch (Exception e) {
             l.info("d:" + did + " err:" + e + " pulse resched");
         }
-
-        // schedule the next pulse
 
         ph.schednextpulse_(ev);
     }

@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.ExDeviceUnreachable;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.rocklog.RockLog;
 
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_PULSE_SURVIVED_PRESENCE_TRANSITION;
@@ -43,7 +43,7 @@ public final class DevicePresenceListener implements IDevicePresenceListener
             }
         } else {
             pulseManager.stopPulse(did, false);
-            unicast.disconnect(did, new ExDeviceUnreachable("remote offline"));
+            unicast.disconnect(did, new ExDeviceUnavailable("remote offline"));
         }
     }
 }

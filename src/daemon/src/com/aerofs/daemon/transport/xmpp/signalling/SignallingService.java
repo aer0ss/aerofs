@@ -122,7 +122,7 @@ public final class SignallingService implements ISignallingService, IXMPPConnect
                     throws ExFormatError
             {
                 try {
-                    DID did = JabberID.jid2did(m.getFrom());
+                    DID did = JabberID.jid2did(m.getFrom(), xmppServerDomain);
                     OutArg<Integer> wirelen = new OutArg<Integer>(0);
                     byte[] decoded = decodeBody(did, wirelen, m.getBody(), null);
                     if (decoded == null) return;

@@ -45,19 +45,15 @@ public class DaemonParam
     public static class XMPP
     {
         public static final long CONNECT_TIMEOUT        = 30 * C.SEC;
-        public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
     }
 
     public static class Zephyr
     {
-        public static final int QUEUE_LENGTH = QUEUE_LENGTH_DEFAULT;
         public static final long HANDSHAKE_TIMEOUT = 10 * C.SEC;
     }
 
     public static class Jingle
     {
-        public static final long RECV_QUEUE_BLOCKING_TIMEOUT      = 250;
-        public static final int QUEUE_LENGTH                      = QUEUE_LENGTH_DEFAULT;
         public static final long CALL_TIMEOUT                     = 30 * C.SEC;
         public static final InetSocketAddress STUN_SERVER_ADDRESS = getAddressProperty(
                 "daemon.stun.address",

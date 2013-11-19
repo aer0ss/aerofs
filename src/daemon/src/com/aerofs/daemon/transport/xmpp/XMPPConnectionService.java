@@ -165,6 +165,8 @@ public final class XMPPConnectionService implements ILinkStateListener, IDumpSta
         if (connectionToClose != null && connectionToClose.isConnected()) {
             safeDisconnect(connection);
         }
+
+        timer.cancel();
     }
 
     public void addListener(IXMPPConnectionServiceListener listener)

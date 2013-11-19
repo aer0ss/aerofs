@@ -68,7 +68,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
          */
         public boolean resume_()
         {
-            l.debug("resume " + _thd.getName());
+            l.trace("resume " + _thd.getName());
             return unblockWithThrowable_(null);
         }
 

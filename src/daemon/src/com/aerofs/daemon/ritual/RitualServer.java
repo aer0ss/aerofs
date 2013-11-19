@@ -123,11 +123,11 @@ public class RitualServer
                         com.aerofs.proto.RpcService.Payload p = com.aerofs.proto.RpcService.Payload.parseFrom(message);
                         callType = p.getType();
                         ServiceRpcTypes t = ServiceRpcTypes.values()[callType];
-                        l.debug("ritual msg rcv: {}", t);
+                        l.trace("ritual msg rcv: {}", t);
                     } catch (Exception x) {
                         // if there are issues parsing the message, they will be caught and handled properly
                         // in the reactor
-                        l.debug("ritual msg rcv: could not get type");
+                        l.warn("ritual msg rcv: could not get type");
                     }
                 }
 

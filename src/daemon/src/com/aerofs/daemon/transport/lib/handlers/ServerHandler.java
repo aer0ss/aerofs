@@ -116,6 +116,9 @@ public final class ServerHandler extends SimpleChannelHandler implements CNameLi
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
     {
+        // NOTE: the use of fire* and not fire*Later is perfectly OK
+        // here because these events are being fired on the assigned
+        // incoming network I/O thread.
         try {
             TransportMessage message = new TransportMessage((ChannelBuffer)e.getMessage(), _did, _userID);
             fireMessageReceived(ctx, message);

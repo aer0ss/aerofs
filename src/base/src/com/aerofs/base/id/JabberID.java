@@ -101,30 +101,29 @@ public abstract class JabberID
     /**
      * convert either form A or form B jid to did
      */
-    public static DID jid2did(String jid) throws ExFormatError
+    public static DID jid2did(String jid, String xmppServerDomain) throws ExFormatError
     {
-        return jid2did(tokenize(jid));
+        return jid2did(tokenize(jid), xmppServerDomain);
     }
 
-    public static DID jid2did(String[] tokens)
+    public static DID jid2did(String[] tokens, String xmppServerDomain)
         throws ExFormatError
     {
-        if (isMUCAddress(tokens)) {
-            // format B
+        if (isMUCAddress(tokens, xmppServerDomain)) {
+            // form B
             return new DID(tokens[1]);
-
         } else {
-            // format A
+            // form A
             int at = tokens[0].indexOf('@');
             if (at < 0) throw new ExFormatError("@ not found");
             return new DID(tokens[0], 0, at);
         }
     }
 
-    public static boolean isMUCAddress(String[] tokens)
+    public static boolean isMUCAddress(String[] tokens, String xmppServerDomain)
     {
-        checkArgument(tokens.length >= 2, "insufficient tokens len:" + tokens.length);
-        return tokens[1].length() != 1;
+        checkArgument(tokens.length >= 1);
+        return tokens[0].contains(getConferenceAddress(xmppServerDomain));
     }
 
     public static SID muc2sid(String muc) throws ExFormatError
@@ -138,13 +137,17 @@ public abstract class JabberID
         try {
             return new SID(muc, 0, at);
         } catch (ExInvalidID e) {
-            // TODO: propagate ExInvalidID upwards for special handling?
-            throw new ExFormatError("invalid SID");
+            throw new ExFormatError("invalid SID muc:" + muc);
         }
     }
 
     public static String sid2muc(SID sid, String xmppServerDomain)
     {
-        return String.format("%s@c.%s", sid.toStringFormal(), xmppServerDomain);
+        return String.format("%s@%s", sid.toStringFormal(), getConferenceAddress(xmppServerDomain));
+    }
+
+    private static String getConferenceAddress(String xmppServerDomain)
+    {
+        return String.format("c.%s", xmppServerDomain);
     }
 }

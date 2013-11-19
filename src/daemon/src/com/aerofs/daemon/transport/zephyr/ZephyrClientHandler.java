@@ -4,7 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
-import com.aerofs.daemon.transport.ExSendFailed;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelDIDProvider;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
@@ -128,7 +128,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
     private Throwable getDisconnectCause()
     {
         // noinspection ThrowableResultOfMethodCallIgnored
-        return disconnectCause.get() == null ? new ExSendFailed("peer unreachable") : disconnectCause.get();
+        return disconnectCause.get() == null ? new ExDeviceUnavailable("unreachable") : disconnectCause.get();
     }
 
     void disconnect(Throwable cause)

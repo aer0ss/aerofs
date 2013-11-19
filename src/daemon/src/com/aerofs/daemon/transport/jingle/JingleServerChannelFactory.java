@@ -10,23 +10,31 @@ import org.jboss.netty.channel.ServerChannel;
 import org.jboss.netty.channel.ServerChannelFactory;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 
+import static com.google.common.base.Preconditions.checkState;
+
 class JingleServerChannelFactory implements ServerChannelFactory
 {
-    private final DefaultChannelGroup _group = new DefaultChannelGroup();
-    private final ChannelSink _sink;
-    private final SignalThread _signalThread;
+    private final DefaultChannelGroup serverChannelGroup = new DefaultChannelGroup();
+    private final JingleChannelWorker channelWorker;
+    private final SignalThread signalThread;
+    private final ChannelSink serverChannelSink;
 
-    public JingleServerChannelFactory(SignalThread signalThread)
+    private volatile boolean stopped;
+
+    public JingleServerChannelFactory(SignalThread signalThread, JingleChannelWorker channelWorker)
     {
-        _signalThread = signalThread;
-        _sink = new JingleServerChannelSink(signalThread);
+        this.signalThread = signalThread;
+        this.channelWorker = channelWorker;
+        this.serverChannelSink = new JingleServerChannelSink(channelWorker);
     }
 
     @Override
     public ServerChannel newChannel(ChannelPipeline pipeline)
     {
-        JingleServerChannel channel = new JingleServerChannel(this, pipeline, _sink, _signalThread);
-        _group.add(channel);
+        checkState(!stopped);
+
+        JingleServerChannel channel = new JingleServerChannel(signalThread, channelWorker, this, pipeline, serverChannelSink);
+        serverChannelGroup.add(channel);
 
         return channel;
     }
@@ -34,7 +42,8 @@ class JingleServerChannelFactory implements ServerChannelFactory
     @Override
     public void shutdown()
     {
-        _group.close().awaitUninterruptibly();
+        stopped = true;
+        serverChannelGroup.close().awaitUninterruptibly();
     }
 
     @Override

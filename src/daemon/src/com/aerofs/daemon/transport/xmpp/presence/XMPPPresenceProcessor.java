@@ -44,6 +44,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
 
     private final Multimap<DID, SID> multicastReachableDevices = TreeMultimap.create(); // TODO (AG): should be SID => DID*
     private final DID localdid;
+    private final String xmppServerDomain;
     private final IMulticastListener multicastListener;
     private final String transportId;
     private final ITransport transport;
@@ -51,12 +52,11 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
 
     /**
      * Constructor
-     *
-     * @param outgoingEventSink queue into which notifications to the core will be placed
      */
-    public XMPPPresenceProcessor(DID localdid, ITransport transport, IBlockingPrioritizedEventSink<IEvent> outgoingEventSink, IMulticastListener multicastListener)
+    public XMPPPresenceProcessor(DID localdid, String xmppServerDomain, ITransport transport, IBlockingPrioritizedEventSink<IEvent> outgoingEventSink, IMulticastListener multicastListener)
     {
         this.localdid = localdid;
+        this.xmppServerDomain = xmppServerDomain;
         this.transportId = transport.id();
         this.transport = transport;
         this.outgoingEventSink = outgoingEventSink;
@@ -87,7 +87,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     }
 
     @Override
-    public synchronized void xmppServerDisconnected()
+    public void xmppServerDisconnected()
     {
         multicastListener.onMulticastUnavailable();
     }
@@ -114,26 +114,22 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     private boolean processPresence(Presence presence)
             throws ExFormatError
     {
+        l.trace("receive presence p:{}", presence.toXML());
+
         String[] jidComponents = JabberID.tokenize(presence.getFrom());
 
-        // if the presence is not from a store
-        // or, from a mobile user,
-        // or, it's presence from another XMPP-based transport
-        // then, ignore it
-        if (!JabberID.isMUCAddress(jidComponents)
-                || JabberID.isMobileUser(jidComponents[1])
-                || (jidComponents.length == 3 && (jidComponents[2].compareToIgnoreCase(transportId) != 0))) {
-            return false;
-        }
+        if (JabberID.isMobileUser(jidComponents[1])) return false;
+        if (!JabberID.isMUCAddress(jidComponents, xmppServerDomain)) return false;
+        if (jidComponents.length == 3 && (jidComponents[2].compareToIgnoreCase(transportId) != 0)) return false;
 
         SID sid = muc2sid(jidComponents[0]);
         DID did = user2did(jidComponents[1]);
 
-        l.debug("process presence d:{} s:{}", did, sid);
-
         if (did.equals(localdid)) {
             return false;
         }
+
+        l.debug("process presence d:{} s:{}", did, sid);
 
         if (presence.isAvailable()) {
             if (!multicastReachableDevices.containsKey(did)) {

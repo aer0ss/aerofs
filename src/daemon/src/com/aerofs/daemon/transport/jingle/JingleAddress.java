@@ -13,43 +13,44 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * of DIDs (and Jingle thinks in terms of JIDs). See org.jboss.netty.channel.local.LocalAddress
  * for a similar implementation that uses strings for ids.
  */
-class JingleAddress extends SocketAddress
+final class JingleAddress extends SocketAddress
 {
     private static final long serialVersionUID = 1;
-    private final DID _did;
-    private final Jid _jid;
 
-    public JingleAddress(DID did, Jid jid)
+    private final DID did;
+    private final Jid jid;
+
+    JingleAddress(DID did, Jid jid)
     {
-        _did = checkNotNull(did);
-        _jid = checkNotNull(jid);
+        this.did = checkNotNull(did);
+        this.jid = checkNotNull(jid);
     }
 
-    public DID getDid()
+    DID getDid()
     {
-        return _did;
+        return did;
+    }
+
+    Jid getJid()
+    {
+        return jid;
     }
 
     @Override
     public int hashCode()
     {
-        return _did.hashCode();
+        return did.hashCode();
     }
 
     @Override
     public boolean equals(Object o)
     {
-        return _did.equals(o);
+        return did.equals(o);
     }
 
     @Override
     public String toString()
     {
-        return _did.toString();
-    }
-
-    public Jid getJid()
-    {
-        return _jid;
+        return did.toString();
     }
 }

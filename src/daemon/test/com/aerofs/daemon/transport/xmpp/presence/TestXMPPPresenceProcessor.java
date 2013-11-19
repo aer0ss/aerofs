@@ -59,7 +59,8 @@ public final class TestXMPPPresenceProcessor
 
     private static final DID DID_0 = DID.generate();
     private static final DID DID_1 = DID.generate();
-    public static final String OTHER_TRANSPORT_ID = "j";
+    private static final String OTHER_TRANSPORT_ID = "j";
+    private static final String XMPP_SERVER_DOMAIN = "arrowfs.org";
 
     private final ITransport transport = mock(ITransport.class);
     private final XMPPConnection xmppConnection = mock(XMPPConnection.class);
@@ -72,12 +73,12 @@ public final class TestXMPPPresenceProcessor
     public void setup()
     {
         when(transport.id()).thenReturn(TRANSPORT_ID);
-        presenceProcessor = new XMPPPresenceProcessor(LOCAL_DID, transport, outgoingEventSink, multicastListener);
+        presenceProcessor = new XMPPPresenceProcessor(LOCAL_DID, XMPP_SERVER_DOMAIN, transport, outgoingEventSink, multicastListener);
     }
 
     private String getFrom(SID sid, String transportId, DID remotedid)
     {
-        return String.format("%s/%s-%s", sid2muc(sid, "ITDOESNTMATTER"), did2user(remotedid), transportId);
+        return String.format("%s/%s-%s", sid2muc(sid, XMPP_SERVER_DOMAIN), did2user(remotedid), transportId);
     }
 
     private Presence getPresence(DID remotedid, SID sid, String transportId, boolean isAvailable)

@@ -90,7 +90,7 @@ public final class ConnectTunnelHandler extends SimpleChannelHandler
         HttpResponse response = (HttpResponse) e.getMessage();
         if (response.getStatus().equals(HttpResponseStatus.OK)) { // tunnel established
             originalConnectFuture.setSuccess();
-            fireChannelConnected(ctx, addressToConnectTo);
+            fireChannelConnected(ctx, addressToConnectTo); // ok to use 'fire' here, because we're already inbound
         } else { // error in establishing the tunnel
             Throwable cause = new IOException("proxy failed to connect: " + response.getStatus());
             notifyCallerOfConnectFailure(cause); // notify the original caller

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport;
 
-public class ExTransport extends Exception
+public abstract class ExTransport extends Exception
 {
     private static final long serialVersionUID = 1L;
 

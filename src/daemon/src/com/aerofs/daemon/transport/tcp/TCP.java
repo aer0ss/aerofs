@@ -11,10 +11,10 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.EventDispatcher;
-import com.aerofs.daemon.lib.BlockingPrioQueue;
+import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IUnicastCallbacks;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -22,6 +22,7 @@ import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportEventQueue;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.Unicast;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
@@ -31,11 +32,9 @@ import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.tcp.ARP.ARPEntry;
 import com.aerofs.daemon.transport.tcp.ARP.IARPListener;
 import com.aerofs.daemon.transport.tcp.ARP.IARPVisitor;
-import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
@@ -47,6 +46,7 @@ import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.rocklog.RockLog;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -56,12 +56,12 @@ import org.slf4j.Logger;
 
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.util.List;
 
 import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.HEARTBEAT_INTERVAL;
-import static com.aerofs.daemon.lib.DaemonParam.TCP.QUEUE_LENGTH;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupCommonHandlersAndListeners;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupMulticastHandler;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -75,28 +75,28 @@ public class TCP implements ITransport, IUnicastCallbacks
 
     private static final int PORT_ANY = 0;
 
-    private final DID _localdid;
-    private final String _id;
-    private final int _pref;
-    private final ARP _arp;
-    private final TransportStats _transportStats;
-    private final Stores _stores;
-    private final Unicast _unicast;
-    private final Multicast _multicast;
-    private final IBlockingPrioritizedEventSink<IEvent> _sink;
-    private final BlockingPrioQueue<IEvent> _q = new BlockingPrioQueue<IEvent>(QUEUE_LENGTH);
-    private final Scheduler _sched;
-    private final EventDispatcher _disp = new EventDispatcher();
-    private final StreamManager _streamManager = new StreamManager();
-    private final PulseManager _pulseManager = new PulseManager();
-    private final PresenceService _presenceService = new PresenceService();
+    private final TransportEventQueue transportEventQueue;
+    private final EventDispatcher dispatcher;
+    private final Scheduler scheduler;
+    private final DID localdid;
+    private final String id;
+    private final int pref;
+    private final ARP arp;
+    private final TransportStats transportStats;
+    private final Stores stores;
+    private final Unicast unicast;
+    private final Multicast multicast;
+    private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
+    private final StreamManager streamManager = new StreamManager();
+    private final PulseManager pulseManager = new PulseManager();
+    private final PresenceService presenceService = new PresenceService();
 
     public TCP(
             UserID localUser,
             DID localdid,
             String id,
             int pref,
-            IBlockingPrioritizedEventSink<IEvent> sink,
+            IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
             LinkStateService linkStateService,
             boolean listenToMulticastOnLoopback,
             MaxcastFilterReceiver maxcastFilterReceiver,
@@ -106,74 +106,116 @@ public class TCP implements ITransport, IUnicastCallbacks
             ClientSocketChannelFactory clientChannelFactory,
             ServerSocketChannelFactory serverChannelFactory)
     {
-        _localdid = localdid;
-        _id = id;
-        _pref = pref;
-        _arp = new ARP();
-        _transportStats = new TransportStats();
-        _sched = new Scheduler(_q, id + "-sched");
-        _sink = sink;
+        this.dispatcher = new EventDispatcher();
+        this.transportEventQueue = new TransportEventQueue(id, this.dispatcher);
+        this.scheduler = new Scheduler(this.transportEventQueue, id + "-sched");
 
-        _multicast = new Multicast(localdid, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
-        linkStateService.addListener(_multicast, sameThreadExecutor()); // can notify on the link-state thread because Multicast is thread-safe
+        this.localdid = localdid;
+        this.id = id;
+        this.pref = pref;
+        this.arp = new ARP();
+        this.transportStats = new TransportStats();
+        this.outgoingEventSink = outgoingEventSink;
 
-        _stores = new Stores(_localdid, this, _arp, _multicast);
-        _multicast.setStores(_stores);
+        this.multicast = new Multicast(localdid, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
+        linkStateService.addListener(multicast, sameThreadExecutor()); // can notify on the link-state thread because Multicast is thread-safe
 
-        // Unicast
-        _unicast = new Unicast(this, _transportStats);
-        ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, _sink, _streamManager, ChannelMode.SERVER);
-        ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, _sink, _streamManager, ChannelMode.CLIENT);
-        TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(_stores, _unicast);
-        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _streamManager, _pulseManager, _unicast);
-        TCPBootstrapFactory bsFact = new TCPBootstrapFactory(_id, localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, _presenceService, rockLog, _transportStats);
-        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, _unicast, tcpProtocolHandler, protocolHandler, serverChannelTeardownHandler);
+        this.stores = new Stores(this.localdid, this, arp, multicast);
+        multicast.setStores(stores);
+
+        // unicast
+        this.unicast = new Unicast(this, transportStats);
+        ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
+        ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
+        TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
+        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager, unicast);
+        TCPBootstrapFactory bsFact = new TCPBootstrapFactory(this.id, localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, rockLog, transportStats);
+        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, unicast, tcpProtocolHandler, protocolHandler, serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bsFact.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);
-        _unicast.setBootstraps(serverBootstrap, clientBootstrap);
+        unicast.setBootstraps(serverBootstrap, clientBootstrap);
+        linkStateService.addListener(unicast, sameThreadExecutor());
 
-        // Presence Service
-        _unicast.setUnicastListener(_presenceService);
-        _multicast.setListener(_presenceService);
-        _presenceService.addListener(new DevicePresenceListener(id, _unicast, _pulseManager, rockLog));
-        _arp.addListener(new IARPListener()
+        // presence hookups
+        unicast.setUnicastListener(presenceService);
+        multicast.setListener(presenceService);
+        presenceService.addListener(new DevicePresenceListener(id, unicast, pulseManager, rockLog));
+        presenceService.addListener(stores);
+        arp.addListener(new IARPListener()
         {
             @Override
             public void onARPEntryChange(DID did, boolean added)
             {
                 if (added) {
-                    _presenceService.onDeviceReachable(did);
+                    presenceService.onDeviceReachable(did);
                 } else {
-                    _presenceService.onDeviceUnreachable(did);
+                    presenceService.onDeviceUnreachable(did);
                 }
             }
         });
+
+        // flush all the arp entries immediately when the link-state changes
+        linkStateService.addListener(new ILinkStateListener()
+        {
+            @Override
+            public void onLinkStateChanged(
+                    ImmutableSet<NetworkInterface> previous,
+                    ImmutableSet<NetworkInterface> current,
+                    ImmutableSet<NetworkInterface> added,
+                    ImmutableSet<NetworkInterface> removed)
+            {
+
+                if (!previous.isEmpty() && current.isEmpty()) {
+                    evictAllArpEntries();
+                }
+            }
+
+            private void evictAllArpEntries()
+            {
+                final List<DID> evicted = Lists.newArrayList();
+
+                arp.visitARPEntries(new ARP.IARPVisitor()
+                {
+                    @Override
+                    public void visit(DID did, ARPEntry arp)
+                    {
+                        evicted.add(did);
+                    }
+                });
+
+                // Call remove() out of the visitor to avoid holding the ARP lock
+                for (DID did : evicted) {
+                    arp.remove(did);
+                }
+
+            }
+        }, sameThreadExecutor());
     }
 
     @Override
-    public void init_() throws Exception
+    public void init() throws Exception
     {
         // must be called *after* the Unicast object is initialized.
 
-        setupCommonHandlersAndListeners(this, _disp, _sched, _sink, _stores, _streamManager, _pulseManager, _unicast, _presenceService);
-        setupMulticastHandler(_disp, _multicast);
+        setupCommonHandlersAndListeners(this, dispatcher, scheduler, outgoingEventSink, stores, streamManager, pulseManager, unicast, presenceService);
+        setupMulticastHandler(dispatcher, multicast);
 
-        _multicast.init();
+        multicast.init();
 
-        _sched.schedule(new AbstractEBSelfHandling()
+        scheduler.schedule(new AbstractEBSelfHandling()
         {
             @Override
             public void handle_()
             {
                 arpGC();
 
-                _sched.schedule(this, ARP_GC_INTERVAL);
+                scheduler.schedule(this, ARP_GC_INTERVAL);
             }
 
             private void arpGC()
             {
                 final List<DID> evicted = Lists.newArrayList();
 
-                _arp.visitARPEntries(new ARP.IARPVisitor()
+                arp.visitARPEntries(new ARP.IARPVisitor()
                 {
                     @Override
                     public void visit(DID did, ARPEntry arp)
@@ -186,28 +228,28 @@ public class TCP implements ITransport, IUnicastCallbacks
 
                 // Call remove() out of the visitor to avoid holding the ARP lock
                 for (DID did : evicted) {
-                    _arp.remove(did);
+                    arp.remove(did);
                 }
             }
 
         }, ARP_GC_INTERVAL);
 
-        _sched.schedule(new AbstractEBSelfHandling() {
+        scheduler.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
                 try {
                     l.debug("arp sender: sched pong");
 
-                    PBTPHeader pong = _stores.newPongMessage(true);
+                    PBTPHeader pong = stores.newPongMessage(true);
                     if (pong != null) {
-                        _multicast.sendControlMessage(pong);
+                        multicast.sendControlMessage(pong);
                     }
                 } catch (Exception e) {
                     l.warn("fail mc pong", e);
                 }
 
-                _sched.schedule(this, HEARTBEAT_INTERVAL);
+                scheduler.schedule(this, HEARTBEAT_INTERVAL);
             }
         }, HEARTBEAT_INTERVAL);
     }
@@ -219,30 +261,28 @@ public class TCP implements ITransport, IUnicastCallbacks
     }
 
     @Override
-    public void start_()
+    public void start()
     {
-        _unicast.start(new InetSocketAddress(PORT_ANY));
-        l.info("listening to {}", getListeningPort());
-        _multicast.start();
+        transportEventQueue.start();
+        unicast.start(new InetSocketAddress(PORT_ANY));
+        multicast.start();
 
-        new Thread(TransportThreadGroup.get(), new Runnable() {
-            @Override
-            public void run()
-            {
-                OutArg<Prio> outPrio = new OutArg<Prio>();
-                //noinspection InfiniteLoopStatement
-                while (true) {
-                    IEvent ev = _q.dequeue(outPrio);
-                    _disp.dispatch_(ev, outPrio.get());
-                }
-            }
-        }, id() + "-eq").start();
+        l.info("listening to {}", getListeningPort());
+    }
+
+    @Override
+    public void stop()
+    {
+        // multicast.stop(); FIXME (AG): have a stop method!
+        unicast.stop();
+        scheduler.shutdown();
+        transportEventQueue.stop();
     }
 
     @Override
     public String id()
     {
-        return _id;
+        return id;
     }
 
     @Override
@@ -254,18 +294,18 @@ public class TCP implements ITransport, IUnicastCallbacks
     @Override
     public int rank()
     {
-        return _pref;
+        return pref;
     }
 
     @Override
     public IBlockingPrioritizedEventSink<IEvent> q()
     {
-        return _q;
+        return transportEventQueue;
     }
 
     IBlockingPrioritizedEventSink<IEvent> sink()
     {
-        return _sink;
+        return outgoingEventSink;
     }
 
     /**
@@ -273,14 +313,14 @@ public class TCP implements ITransport, IUnicastCallbacks
      */
     int getListeningPort()
     {
-        return ((InetSocketAddress)_unicast.getListeningAddress()).getPort();
+        return ((InetSocketAddress)unicast.getListeningAddress()).getPort();
     }
 
     @Override
     public SocketAddress resolve(DID did)
-            throws ExDeviceOffline
+            throws ExDeviceUnavailable
     {
-        return _arp.getThrows(did).remoteAddress;
+        return arp.getThrows(did).remoteAddress;
     }
 
     // FIXME (AG): remove this by creating a TCP-specific pong handler for the outgoing connection
@@ -290,7 +330,7 @@ public class TCP implements ITransport, IUnicastCallbacks
     public void onClientCreated(ClientHandler client)
     {
         // Send a TCP_PONG so that the peer knows our listening port and our stores
-        PBTPHeader pong = _stores.newPongMessage(false);
+        PBTPHeader pong = stores.newPongMessage(false);
         if (pong != null) client.send(TPUtil.newControl(pong));
     }
 
@@ -306,8 +346,8 @@ public class TCP implements ITransport, IUnicastCallbacks
         dsbuilder.addTransport(tpbuilder);
 
         try {
-            _unicast.dumpStat(dstemplate, dsbuilder);
-            if (tp.hasDiagnosis()) tpbuilder.setDiagnosis("arp:\n" + _arp);
+            unicast.dumpStat(dstemplate, dsbuilder);
+            if (tp.hasDiagnosis()) tpbuilder.setDiagnosis("arp:\n" + arp);
         } catch (Exception e) {
             l.warn("fail dump stat", e);
         }
@@ -318,7 +358,7 @@ public class TCP implements ITransport, IUnicastCallbacks
     {
         String indent2 = indent + indentUnit;
         ps.println(indent + "q");
-        _q.dumpStatMisc(indent2, indentUnit, ps);
+        transportEventQueue.dumpStatMisc(indent2, indentUnit, ps);
     }
 
     @Override
@@ -333,7 +373,7 @@ public class TCP implements ITransport, IUnicastCallbacks
 
         // listening port
 
-        int listeningPort = ((InetSocketAddress) _unicast.getListeningAddress()).getPort();
+        int listeningPort = ((InetSocketAddress) unicast.getListeningAddress()).getPort();
         PBInetSocketAddress.Builder ourAddress = PBInetSocketAddress.newBuilder();
         if (listeningPort > 0) {
             ourAddress.setHost("*").setPort(listeningPort);
@@ -343,17 +383,17 @@ public class TCP implements ITransport, IUnicastCallbacks
         // reachable_devices
 
         final List<TCPDevice> reachableDevices = newLinkedList();
-        _arp.visitARPEntries(new IARPVisitor()
+        arp.visitARPEntries(new IARPVisitor()
         {
             @Override
             public void visit(DID did, ARPEntry arp)
             {
-                TCPDevice device = TCPDevice
-                        .newBuilder()
+                TCPDevice device = TCPDevice.newBuilder()
                         .setDid(did.toPB())
-                        .setDeviceAddress(PBInetSocketAddress
-                                .newBuilder()
-                                .setHost(arp.remoteAddress.getAddress().getHostAddress()) // always numeric
+                        .setDeviceAddress(PBInetSocketAddress.newBuilder()
+                                .setHost(arp.remoteAddress
+                                        .getAddress()
+                                        .getHostAddress()) // always numeric
                                 .setPort(arp.remoteAddress.getPort()))
                         .build();
 
@@ -368,20 +408,20 @@ public class TCP implements ITransport, IUnicastCallbacks
     @Override
     public long bytesIn()
     {
-        return _transportStats.getBytesReceived();
+        return transportStats.getBytesReceived();
     }
 
     @Override
     public long bytesOut()
     {
-        return _transportStats.getBytesSent();
+        return transportStats.getBytesSent();
     }
 
     PBTPHeader newGoOfflineMessage()
     {
         return PBTPHeader.newBuilder()
                 .setType(Type.TCP_GO_OFFLINE)
-                .setTcpMulticastDeviceId(_localdid.toPB())
+                .setTcpMulticastDeviceId(localdid.toPB())
                 .build();
     }
 }
