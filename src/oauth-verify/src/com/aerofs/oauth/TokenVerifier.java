@@ -6,6 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -33,17 +34,18 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
             .maximumSize(1000L);
     }
 
-    public TokenVerifier(String clientId, String clientSecret, URI endpoint,
+    public TokenVerifier(String clientId, String clientSecret, URI endpoint, Timer timer,
             ICertificateProvider cacert, ClientSocketChannelFactory clientChannelFactory)
     {
-        this(clientId, clientSecret, defaultSettings(), endpoint, cacert, clientChannelFactory);
+        this(clientId, clientSecret, defaultSettings(), endpoint, timer, cacert, clientChannelFactory);
     }
 
     public TokenVerifier(String clientId, String clientSecret, CacheBuilder<Object, Object> builder,
-            URI endpoint, ICertificateProvider cacert, ClientSocketChannelFactory clientChannelFactory)
+            URI endpoint, Timer timer, ICertificateProvider cacert,
+            ClientSocketChannelFactory clientChannelFactory)
     {
         _auth = TokenVerificationClient.makeAuth(clientId, clientSecret);
-        _client = new TokenVerificationClient(endpoint, cacert,clientChannelFactory);
+        _client = new TokenVerificationClient(endpoint, cacert,clientChannelFactory, timer);
         _cache = builder.build(this);
     }
 

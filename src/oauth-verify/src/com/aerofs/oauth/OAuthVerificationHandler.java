@@ -1,5 +1,6 @@
 package com.aerofs.oauth;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.google.common.base.Preconditions;
@@ -8,11 +9,14 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.DownstreamMessageEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpMethod;
@@ -20,6 +24,8 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
+import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
+import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 
 import java.net.URI;
@@ -31,10 +37,8 @@ import java.util.Queue;
  *
  * Sits on top of an HttpClientCodec, sends appropriate HTTP request for each VerifyTokenRequest,
  * decodes the response body using Gson and forwards the decoded repsonse to a future.
- *
- * TODO: auto-close connection when idle
  */
-public class OAuthVerificationHandler<T> extends SimpleChannelHandler
+public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
 {
     private final static Logger l = Loggers.getLogger(OAuthVerificationHandler.class);
 
@@ -79,11 +83,29 @@ public class OAuthVerificationHandler<T> extends SimpleChannelHandler
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
-        l.warn("ex ", e.getCause());
+        l.warn("ex ", BaseLogUtil.suppress(e.getCause(), ClosedChannelException.class));
+        ctx.getChannel().close();
+    }
+
+    @Override
+    public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
+    {
+        l.info("timeout");
+        ctx.getChannel().close();
+    }
+
+    @Override
+    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
+    {
+        l.info("closed");
+        failRequests();
+    }
+
+    private void failRequests()
+    {
         while (!_requests.isEmpty()) {
             _requests.remove().future.setException(new ClosedChannelException());
         }
-        ctx.getChannel().close();
     }
 
     @Override
@@ -92,10 +114,16 @@ public class OAuthVerificationHandler<T> extends SimpleChannelHandler
         HttpResponse msg = (HttpResponse)me.getMessage();
         String content = BaseUtil.utf2string(msg.getContent().array());
 
-        l.debug("response {}", content);
+        l.info("response {}", content);
 
         VerifyTokenRequest<T> req = Preconditions.checkNotNull(_requests.peek());
-        T response = _gson.fromJson(content, _class);
+        T response;
+        try {
+            response = _gson.fromJson(content, _class);
+        } catch (JsonParseException e) {
+            l.warn("invalid JSON");
+            response = null;
+        }
         if (response != null) {
             req.future.set(response);
         } else {
@@ -120,10 +148,19 @@ public class OAuthVerificationHandler<T> extends SimpleChannelHandler
         http.setHeader(Names.HOST, _host);
         http.setHeader(Names.AUTHORIZATION, req.auth);
 
-        l.debug("request {}", http);
+        l.info("request {}", http);
 
         _requests.add(req);
-        ctx.sendDownstream(
-                new DownstreamMessageEvent(ctx.getChannel(), me.getFuture(), http, null));
+        me.getFuture().addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture cf) throws Exception
+            {
+                if (!cf.isSuccess()) {
+                    l.warn("failed to write ", BaseLogUtil.suppress(cf.getCause()));
+                    failRequests();
+                }
+            }
+        });
+        ctx.sendDownstream(new DownstreamMessageEvent(ctx.getChannel(), me.getFuture(), http, null));
     }
 }

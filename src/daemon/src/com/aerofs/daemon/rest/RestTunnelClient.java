@@ -40,7 +40,7 @@ public class RestTunnelClient extends TunnelClient
     private static final int MIN_RETRY_DELAY = 1;
     private static final int MAX_RETRY_DELAY = 60;
 
-    private static final Timer _timer = new HashedWheelTimer();
+    private final Timer _timer;
 
     private volatile Channel _channel;
     private volatile boolean _running;
@@ -73,7 +73,7 @@ public class RestTunnelClient extends TunnelClient
     };
 
     @Inject
-    public RestTunnelClient(CfgLocalUser user, CfgLocalDID did,
+    public RestTunnelClient(CfgLocalUser user, CfgLocalDID did, Timer timer,
             ClientSSLEngineFactory sslEngineFactory, final RestService service)
     {
         super(user.get(), did.get(), getClientChannelFactory(), sslEngineFactory,
@@ -83,7 +83,8 @@ public class RestTunnelClient extends TunnelClient
                     {
                         return service.getSpecializedPipeline();
                     }
-                }, _timer);
+                }, timer);
+        _timer = timer;
     }
 
     public ChannelFuture start()

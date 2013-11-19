@@ -42,6 +42,8 @@ import org.hibernate.SessionFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -194,7 +196,8 @@ public class AbstractRestTest extends AbstractTest
         ConfigurationProperties.setProperties(prop);
 
         // start REST service
-        service = new RestService(coreInjector(), kmgr) {
+        Injector inj = coreInjector();
+        service = new RestService(inj, kmgr) {
             @Override
             protected ServerSocketChannelFactory getServerSocketFactory()
             {
@@ -217,7 +220,8 @@ public class AbstractRestTest extends AbstractTest
             l.info("REST gateway at {}", RestAssured.port);
 
             // open tunnel between gateway and rest service
-            tunnel = new RestTunnelClient(localUser, localDID, clientSslEngineFactory, service);
+            tunnel = new RestTunnelClient(localUser, localDID, inj.getInstance(Timer.class),
+                    clientSslEngineFactory, service);
             tunnel.start().awaitUninterruptibly();
         }
     }

@@ -4,6 +4,7 @@ import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.oauth.OAuthVerificationHandler.UnexpectedResponse;
 import com.google.common.collect.ImmutableSet;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +26,8 @@ public class TestTokenVerificationClient extends BifrostTest
                 new TokenVerificationClient(
                         URI.create("http://localhost:" + _port + "/tokeninfo"),
                         null,
-                        new NioClientSocketChannelFactory());
+                        new NioClientSocketChannelFactory(),
+                        new HashedWheelTimer());
     }
 
     private VerifyTokenResponse verify(String token, String id, String secret) throws Exception
