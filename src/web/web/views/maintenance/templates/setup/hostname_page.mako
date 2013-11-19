@@ -19,8 +19,8 @@
         If you're using VirtualBox, get the the IP from the appliance's console. If you're using
         OpenStack, configure a floating IP for this instance.</p>
     <hr />
-    ${common.render_previous_button()}
     ${common.render_next_button()}
+    ${common.render_previous_button()}
 </form>
 
 <%modal:modal>

@@ -35,8 +35,8 @@
 
     <p style="margin-top: 10px">Provide publicly signed certificate and key to eliminate certification error messages when browsing the AeroFS Web interface. We require valid x509 SSL certificate and private key files in PEM format.</p>
     <hr />
-    ${common.render_previous_button()}
     ${common.render_next_button()}
+    ${common.render_previous_button()}
 </form>
 
 <%def name="scripts()">

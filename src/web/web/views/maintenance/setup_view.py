@@ -5,7 +5,6 @@ import shutil
 import tempfile
 import os
 import socket
-import random
 import re
 from subprocess import call, Popen, PIPE
 from pyramid.security import NO_PERMISSION_REQUIRED
@@ -54,8 +53,6 @@ _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
 # ------------------------------------------------------------------------
 # Other
 # ------------------------------------------------------------------------
-
-_SESSION_KEY_EMAIL_VERIFICATION_CODE = 'email_verification_code'
 
 # Bit used to indicate whether or not UWSGI is reloading. Used by the front end to reliably detect
 # UWSGI reload completion.
@@ -108,14 +105,6 @@ def _setup_common(request, conf, license_page_only):
     if not is_private_deployment(conf):
         raise HTTPBadRequest("the page is not available")
 
-    # Generate email verification code. Keep the code constant across the
-    # session so if the user sends multiple verification emails the user can use
-    # the code from any email.
-    code = request.session.get(_SESSION_KEY_EMAIL_VERIFICATION_CODE)
-    if not code:
-        code = random.randint(100000, 999999)
-        request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE] = code
-
     if license_page_only:
         # We assume page 0 is the license page.
         page = 0
@@ -132,8 +121,7 @@ def _setup_common(request, conf, license_page_only):
         'is_license_present_and_valid': is_license_present_and_valid(conf),
         # This parameter is used by apply_and_create_user_page.mako
         'url_param_email': URL_PARAM_EMAIL,
-        # The following two parameters are used by email_page.mako
-        'email_verification_code': code,
+        # The following parameter is used by email_page.mako
         'default_support_email': _get_default_support_email(conf['base.host.unified']),
         ## This parameter is used by finalize
         'url_param_license_shasum': URL_PARAM_KEY_LICENSE_SHASUM
@@ -281,8 +269,10 @@ def _send_verification_email(from_email, to_email, code, host, port,
 def json_verify_smtp(request):
     host, port, username, password, enable_tls, support_address = _parse_email_request(request)
 
+    verification_code = request.params['verification-code']
+
     r = _send_verification_email(support_address, request.params['verification-to-email'],
-                                 request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE], host, port,
+                                 verification_code, host, port,
                                  username, password, enable_tls)
 
     if r.status_code != 200:

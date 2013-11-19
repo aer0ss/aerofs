@@ -56,8 +56,8 @@
     </div>
 
     <hr />
-    ${common.render_previous_button()}
     ${common.render_next_button()}
+    ${common.render_previous_button()}
 </form>
 
 <%def name="ldap_options()">

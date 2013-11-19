@@ -14,7 +14,10 @@
         tabindex='10000'>Previous</button>
 </%def>
 
-## It's suggested to include this next button in a form.
+## Include this next button in a form.
+##
+## N.B. always place this line _before_ the previous button to prevent the
+## browser from placing the next button on a different row than the previous button.
 <%def name="render_next_button()">
     <button
         type="submit"

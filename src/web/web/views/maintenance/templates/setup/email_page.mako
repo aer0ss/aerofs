@@ -7,6 +7,11 @@
     public_host_name = current_config['email.sender.public_host']
     # Use the local namespace so the method scripts() can access it
     local.is_remote_host = public_host_name != "" and public_host_name != "localhost"
+
+    # TODO (WW) generate the string in the Python view after splitting
+    # _setup_common() page specific views.
+    import random
+    local.verification_code = str(random.randint(100000, 999999))
 %>
 
 <h4>Email server:</h4>
@@ -97,8 +102,8 @@
             "from" field for emails sent out by the system.</p>
     </div>
     <hr />
-    ${common.render_previous_button()}
     ${common.render_next_button()}
+    ${common.render_previous_button()}
 </form>
 
 <div id="verify-modal-email-input" class="modal hide small-modal" tabindex="-1" role="dialog">
@@ -112,7 +117,7 @@
         <form id="verify-modal-email-input-form" method="post" class="form-inline"
                 onsubmit="sendVerificationCodeAndShowCodeInputModal(); return false;">
             ${csrf.token_input()}
-
+            <input type="hidden" name="verification-code" value="${local.verification_code}"/>
             <label for="verification-to-email">Email address:</label>
             <input id="verification-to-email" name="verification-to-email" type="text">
         </form>
@@ -161,6 +166,8 @@
 </div>
 
 <%def name="scripts()">
+    <script src="${request.static_path('web:static/js/purl.js')}"></script>
+
     <script>
         $(document).ready(function() {
             $('#verify-modal-email-input').on('shown', function() {
@@ -207,30 +214,29 @@
             var current_username = "${current_config['email.sender.public_username']}";
             var current_password = "${current_config['email.sender.public_password']}";
             var current_enable_tls = ${str(str2bool(current_config['email.sender.public_enable_tls'])).lower()};
+            var remoteOptsChanged = remote && (
+                    host != current_host ||
+                    port != current_port ||
+                    username != current_username ||
+                    password != current_password ||
+                    enable_tls != current_enable_tls);
 
             ## Only enable smtp verification modal if something has changed.
             var initial = ${str(not is_configuration_initialized).lower()};
             var toggled = remote != ${str(local.is_remote_host).lower()};
-            if (initial || toggled || (remote &&
-                    (host != current_host ||
-                    port != current_port ||
-                    username != current_username ||
-                    password != current_password ||
-                    enable_tls != current_enable_tls))) {
+
+            ## This is used by CI to skip verification during automated testing
+            var skipEmailVerification = $.url().param('skip_email_verification');
+
+            if (!skipEmailVerification && (initial || toggled || remoteOptsChanged)) {
                 ## As we are showing modals, do not disable nav buttons
                 showVerifyEmailInputModal();
 
             } else {
                 disableNavButtons();
-                var support_email = $("#base-www-support-email-address").val();
-                var current_support_email = "${current_config['base.www.support_email_address']}";
 
-                if (support_email != current_support_email) {
-                    doPost("${request.route_path('json_setup_email')}",
-                        serializedData, gotoNextPage, enableNavButtons);
-                } else {
-                    gotoNextPage();
-                }
+                doPost("${request.route_path('json_setup_email')}",
+                    serializedData, gotoNextPage, enableNavButtons);
             }
         }
 
@@ -238,12 +244,12 @@
             if (!verifyPresence("verification-to-email",
                         "Please specify an email address.")) return;
 
-            serializedData = serializedData + "&" + $('#verify-modal-email-input-form').serialize();
-
             var $btn = $('#send-verification-code-button');
             setEnabled($btn, false);
 
-            doPost("${request.route_path('json_verify_smtp')}", serializedData,
+            var data = serializedData +
+                    '&' + $('#verify-modal-email-input-form').serialize();
+            doPost("${request.route_path('json_verify_smtp')}", data,
                     showVerifyCodeInputModal, function() {
                         setEnabled($btn, true);
                     });
@@ -261,9 +267,8 @@
 
         function checkVerificationCodeAndSetConfiguration() {
             var inputtedCode = $("#verification-code").val();
-            var actualCode = parseInt("${email_verification_code}");
 
-            if (inputtedCode == actualCode) {
+            if (inputtedCode == '${local.verification_code}') {
                 ## The button will be enabled next time the dialog shows.
                 ## (The dialog is always dismissed after the doPost() call.)
                 setEnabled($('#continue-button'), false);
