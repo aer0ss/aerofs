@@ -55,7 +55,7 @@
     <%def name="id()">shutdown-done-modal</%def>
     <%def name="title()">Shutting down</%def>
     <%def name="no_close()"/>
-    <p>The system is being shutting down. Please close this page and boot up a
+    <p>The system is shutting down. Please close this page and boot up a
         new appliance.</p>
 
     <p class="footnote">If the system doesn't power off on its own, you may turn
