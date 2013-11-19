@@ -8,9 +8,9 @@
 <p>Backing up your AeroFS Appliance is easy. Simply click the button below to
     download the appliance's user and configuration data as a single file.</p>
 
-<p>The backup preparation process may take a while, and during this time
-    some system services may be unavailable. At the end of the backup
-    process, your browser will automatically download the backup file.</p>
+<p>The backup process may take a while, and during this time
+    the system will enter maintenance mode. At the end of the process your
+    browser will automatically download the backup file.</p>
 
 <p>To restore an AeroFS Appliance from backup, boot up a new appliance
     and select the restore option during the first step.</p>

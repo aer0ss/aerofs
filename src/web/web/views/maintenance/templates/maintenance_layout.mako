@@ -1,9 +1,15 @@
 <%inherit file="marketing_layout.mako"/>
+
+<%namespace name="maintenance_mode" file="maintenance_mode.mako"/>
 <%namespace name="navigation" file="navigation.mako"/>
 <%namespace name="version" file="version.mako"/>
 <%namespace name="no_ie" file="no_ie.mako"/>
 
 <%no_ie:scripts/>
+
+<%block name="home_url">
+    ${request.route_path('manage')}
+</%block>
 
 <%block name="top_navigation_bar">
     <%version:version_top_nav_item/>
@@ -18,8 +24,9 @@
             <%
                 links = [
                     ('status', _("Service Status")),
-                    ('backup_appliance', _("Backup")),
+                    ('toggle_maintenance_mode', _("Maintenance")),
                     ('upgrade_appliance', _("Upgrade")),
+                    ('backup_appliance', _("Backup")),
                     ('setup', _("Setup")),
                 ]
             %>
@@ -34,6 +41,7 @@
 
     ## Main body
     <div class="span8">
+        <%maintenance_mode:alert/>
         ${next.body()}
     </div>
 </div>

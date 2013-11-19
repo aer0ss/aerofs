@@ -6,7 +6,7 @@
 
 <h2>Upgrade your AeroFS Appliance</h2>
 
-<p>This appliance runs version <strong>${current_version}</strong>.
+<p>This appliance is running version <strong>${current_version}</strong>.
     You may check the latest release notes
     <a href="https://support.aerofs.com/entries/23864878" target="_blank">here</a>.
 
@@ -14,7 +14,7 @@
 
 <ol>
     <li>
-        Click the button below to create and download a backup file.
+        Click "Create Backup File" below to create and download a backup file.
     </li>
     <li>
         Shut down this appliance and bring up a new appliance.
@@ -43,7 +43,7 @@
     <%def name="footer()">
         <a href="#" class="btn btn-danger"
                 onclick="shutdown(); return false;">
-            Download Completes. Shutdown System</a>
+            Download Completed. Shutdown Appliance</a>
     </%def>
 
     <p>This appliance is now in maintenance mode to prevent further modifications
@@ -53,7 +53,7 @@
 
 <%modal:modal>
     <%def name="id()">shutdown-done-modal</%def>
-    <%def name="title()">Bye-bye</%def>
+    <%def name="title()">Shutting down</%def>
     <%def name="no_close()"/>
     <p>The system is being shutting down. Please close this page and boot up a
         new appliance.</p>

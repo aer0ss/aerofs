@@ -7,8 +7,11 @@
 ##          Please wait while blah...
 ##      </%progress_modal:html>
 ##
-##      ## spinner support is required by progress_modal
 ##      <%progress_modal:scripts/>
+##
+##      ########
+##      ## N.B. spinner support is required by progress_modal
+##      ########
 ##      <%spinner:scripts/>
 ##
 ##      <script>
@@ -19,8 +22,6 @@
 ##              $('#${progress_modal.id()}').modal('show');
 ##          }
 ##      </script>
-##
-## The client of this file must include spinner.mako's script.
 ##
 ## If the modal contains multiple lines, don't use <p> for the last line:
 ##

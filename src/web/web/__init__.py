@@ -1,4 +1,3 @@
-import logging
 from aerofs_common.configuration import Configuration
 from pyramid.config import Configurator
 from pyramid.authentication import SessionAuthenticationPolicy
@@ -8,52 +7,9 @@ from root_factory import RootFactory
 from auth import get_principals
 from license import is_license_present_and_valid
 from util import is_private_deployment, is_configuration_initialized
-from pyramid.request import Request
 import views
+from web.redirect import RedirectMiddleware
 
-class RedirectMiddleware(object):
-    """
-    This class exists to redirect the application to the setup page when the
-    configuration system has not been initialized.
-    """
-    log = logging.getLogger(__name__)
-
-    def __init__(self, application, settings):
-        self.app = application
-        self.settings = settings
-
-    def noop(self, *args):
-        self.app.complete = True
-
-    def _should_redirect(self, environ):
-        # Redirect all the pages to setup if:
-        #  1. Private deployment, and
-        #  2. Configuration has not been initialized (first run), or the license
-        #     has expired, and
-        #  3. The page is not a setup page.
-        # See docs/design/pyramid_auth.md for more info.
-        #
-        # Note that static assets are served directly by nginx. We don't need to
-        # consider them here.
-        return is_private_deployment(self.settings) and \
-                not self._is_config_inited_and_license_valid() and \
-                not self._is_setup_page(environ)
-
-    def _is_config_inited_and_license_valid(self):
-        return is_configuration_initialized(self.settings) and \
-               is_license_present_and_valid(self.settings)
-
-    def _is_setup_page(self, environ):
-        # [1:] is to remove the leading slash
-        return environ['PATH_INFO'][1:] in views.maintenance.routes
-
-    def __call__(self, environ, start_response):
-        if self._should_redirect(environ):
-            self.log.info("redirect {} to setup page".format(environ['PATH_INFO']))
-            response = self.app.invoke_subrequest(Request.blank('/setup'))
-            return response(environ, start_response)
-
-        return self.app(environ, start_response)
 
 def main(global_config, **settings):
     """

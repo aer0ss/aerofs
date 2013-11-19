@@ -1,12 +1,13 @@
 <%inherit file="base_layout.mako"/>
 <%! page_title = "Setup" %>
 
+<%namespace name="maintenance_mode" file="maintenance_mode.mako"/>
 <%namespace name="common" file="setup/common.mako"/>
 <%namespace name="version" file="version.mako"/>
 <%namespace name="no_ie" file="no_ie.mako"/>
 
 <%block name="home_url">
-    ${request.route_path('dashboard_home')}
+    ${request.route_path('manage')}
 </%block>
 
 <%block name="top_navigation_bar">
@@ -35,6 +36,9 @@
 </%block>
 
 <div class="span8 offset2">
+
+    <%maintenance_mode:alert/>
+
     %if page == 0:
         ## Page 0 must be the license page. See setup_view.py:_setup_common()
         <%namespace name="license_page" file="setup/license_page.mako"/>

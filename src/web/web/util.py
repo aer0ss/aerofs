@@ -1,6 +1,7 @@
 """
 Helper functions for AeroFS website
 """
+import os
 
 import re
 import logging
@@ -179,6 +180,11 @@ def is_configuration_initialized(settings):
     """
     return not is_private_deployment(settings) or \
            str2bool(settings.get('base.configuration.initialized', False))
+
+def is_maintenance_mode():
+    # bootstrap tasks maintenance-enter & maintenance-exit create and delete
+    # this file
+    return os.path.exists('/var/aerofs/maintenance-mode')
 
 def add_routes(config, routes):
     """

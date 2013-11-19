@@ -4,6 +4,7 @@ from web.util import add_routes
 # structure (including RedirectMiddleware and the forbidden view).
 routes = {
     # Setup
+    # N.B. setup's resolved route path is referred to by RedirectMiddleware
     'setup',
     'setup_authorized',
     'json_set_license',
@@ -30,6 +31,9 @@ routes = {
     'upgrade_appliance',
     'download_backup_file',
     'status',
+    # N.B. its resolved route path is referred to by RedirectMiddleware
+    'maintenance_mode',
+    'toggle_maintenance_mode',
 
     # This is an alias of 'status', so that users can use the URL '<host>/manage'
     # to access maintenance tools directly.
