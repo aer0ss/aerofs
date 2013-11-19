@@ -9,6 +9,7 @@ import com.aerofs.oauth.TokenVerifier;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.net.URI;
@@ -25,12 +26,13 @@ public class OAuthAuthenticator implements Authenticator
 
     private final TokenVerifier _verifier;
 
-    public OAuthAuthenticator(ICertificateProvider cacert)
+    public OAuthAuthenticator(Timer timer, ICertificateProvider cacert)
     {
         _verifier = new TokenVerifier(
                 getStringProperty("havre.oauth.id", ""),
                 getStringProperty("havre.oauth.secret", ""),
                 URI.create(getStringProperty("havre.oauth.url", "http://localhost:8700/tokeninfo")),
+                timer,
                 cacert,
                 new NioClientSocketChannelFactory());
     }

@@ -15,6 +15,7 @@ import com.aerofs.havre.tunnel.EndpointVersionDetector;
 import com.aerofs.havre.tunnel.TunnelEndpointConnector;
 import com.aerofs.tunnel.TunnelServer;
 import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -64,11 +65,12 @@ public class Havre
     public Havre(final UserID user, DID did, @Nullable IPrivateKeyProvider proxyKey,
             IPrivateKeyProvider tunnelKey, ICertificateProvider cacert)
     {
+        Timer timer = new HashedWheelTimer();
         TunnelEndpointConnector c = new TunnelEndpointConnector(new EndpointVersionDetector());
         _tunnel = new TunnelServer(new InetSocketAddress(TUNNEL_HOST, TUNNEL_PORT),
-                tunnelKey, cacert, user, did, new HashedWheelTimer(), c);
+                tunnelKey, cacert, user, did, timer, c);
         _proxy = new HttpProxyServer(new InetSocketAddress(PROXY_HOST, PROXY_PORT),
-                proxyKey, new OAuthAuthenticator(cacert), c);
+                proxyKey, new OAuthAuthenticator(timer, cacert), c);
     }
 
     public void start()
