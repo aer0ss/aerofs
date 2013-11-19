@@ -18,8 +18,8 @@
             <%
                 links = [
                     ('status', _("Service Status")),
-                    ('upgrade_appliance', _("Upgrade")),
                     ('backup_appliance', _("Backup")),
+                    ('upgrade_appliance', _("Upgrade")),
                     ('setup', _("Setup")),
                 ]
             %>

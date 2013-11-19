@@ -10,3 +10,5 @@ o Disable buttons on form submission:
                 setEnabled($("#submit-foo-button"), false);
                 return true;
             });
+
+o Only capitalize the first letter for dialog titles. Do not use CamelCase.

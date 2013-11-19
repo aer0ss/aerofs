@@ -15,7 +15,11 @@
     </%progress_modal:html>
 </%def>
 
-<%def name="scripts(exitMaintenanceWhenDone)">
+## @param onBackupDone: a callback when backup succeeds. Expected signature:
+##          function onBackupDone(onSuccess, onFailure);
+## where onSuccess and onFailure are the methods to be called when onBackupDone
+## secceeds or fails.
+<%def name="scripts(onBackupDone)">
     <%bootstrap:scripts/>
     <%progress_modal:scripts/>
     ## spinner support is required by progress_modal
@@ -31,13 +35,9 @@
         function backup() {
             $('#${progress_modal.id()}').modal('show');
 
-            var next = ${'maintenanceExit' if exitMaintenanceWhenDone else 'download'};
-            runBootstrapTask('db-backup', next, hideProgressModal);
-        }
-
-        ## Maintenance exit. Call download() once it's done.
-        function maintenanceExit() {
-            runBootstrapTask('maintenance-exit', download, hideProgressModal);
+            runBootstrapTask('db-backup', function() {
+                ${onBackupDone}(download, hideProgressModal);
+            }, hideProgressModal);
         }
 
         ## Direct the browser to download the file

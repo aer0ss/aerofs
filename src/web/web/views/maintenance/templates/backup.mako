@@ -27,5 +27,11 @@
 <%common:html/>
 
 <%block name="scripts">
-    ${common.scripts(True)}
+    ${common.scripts('maintenanceExit')}
+
+    <script>
+        function maintenanceExit(onSuccess, onFailure) {
+            runBootstrapTask('maintenance-exit', onSuccess, onFailure);
+        }
+    </script>
 </%block>

@@ -2,6 +2,7 @@
 <%! page_title = "Backup" %>
 
 <%namespace name="common" file="backup_common.mako"/>
+<%namespace file="modal.mako" name="modal"/>
 
 <h2>Upgrade your AeroFS Appliance</h2>
 
@@ -26,9 +27,6 @@
     </li>
 </ol>
 
-<p>Once you initiate the Backup process, some system services will
-become unavailable until the next time this appliance is restarted.</p>
-
 <hr/>
 
 <p>
@@ -38,8 +36,54 @@ become unavailable until the next time this appliance is restarted.</p>
     </button>
 </p>
 
+<%modal:modal>
+    <%def name="id()">shutdown-modal</%def>
+    <%def name="title()">Shutdown appliance</%def>
+    <%def name="no_close()"/>
+    <%def name="footer()">
+        <a href="#" class="btn btn-danger"
+                onclick="shutdown(); return false;">
+            Download Completes. Shutdown System</a>
+    </%def>
+
+    <p>This appliance is now in maintenance mode to prevent further modifications
+        to the system's state. After the download completes, click the button
+        below to shutdown the system.</p>
+</%modal:modal>
+
+<%modal:modal>
+    <%def name="id()">shutdown-done-modal</%def>
+    <%def name="title()">Bye-bye</%def>
+    <%def name="no_close()"/>
+    <p>The system is being shutting down. Please close this page and boot up a
+        new appliance.</p>
+
+    <p class="footnote">If the system doesn't power off on its own, you may turn
+        it off manually.</p>
+</%modal:modal>
+
 <%common:html/>
 
 <%block name="scripts">
-    ${common.scripts(False)}
+    ${common.scripts('promptShutdown')}
+
+    <script>
+        $(document).ready(function() {
+            disableEsapingFromModal($('div.modal'));
+        });
+
+        function promptShutdown(onSuccess) {
+            onSuccess();
+            $('#shutdown-modal').modal('show');
+        }
+
+        function shutdown() {
+            enqueueBootstrapTask('shutdown-system', showShutdownDone);
+        }
+
+        function showShutdownDone() {
+            $('#shutdown-modal').modal('hide');
+            $('#shutdown-done-modal').modal('show');
+        }
+    </script>
 </%block>

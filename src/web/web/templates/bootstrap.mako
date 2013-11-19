@@ -28,7 +28,7 @@
             }).done(function(resp) {
                 var eid = resp['execution_id'];
                 console.log("bootstrap task " + eid + " enqueued: " + task);
-                onComplete(eid);
+                if (onComplete) onComplete(eid);
             }).fail(function(xhr, textStatus, errorThrown) {
                 if (!retry && xhr.readyState == 0 && xhr.status == 0) {
                     ## See comments in pollBootstrapTask() for detail
@@ -43,7 +43,7 @@
                     console.log("enqueue bootstrap task failed: " +
                         xhr.status + " " + textStatus + " " + errorThrown);
                     showErrorMessageFromResponse(xhr);
-                    onFailure();
+                    if (onFailure) onFailure();
                 }
             });
         }
@@ -59,7 +59,7 @@
                     if (status == 'success') {
                         console.log("bootstrap task " + eid + " complete");
                         window.clearInterval(interval);
-                        onComplete();
+                        if (onComplete) onComplete();
                     } else {
                         console.log("bootstrap task " + eid + " in progress. status: " +
                             status);
@@ -83,7 +83,7 @@
                                 xhr.status + " " + textStatus + " " + errorThrown);
                         window.clearInterval(interval);
                         showErrorMessageFromResponse(xhr);
-                        onFailure();
+                        if (onFailure) onFailure();
                     }
                 });
             }, 1000);
