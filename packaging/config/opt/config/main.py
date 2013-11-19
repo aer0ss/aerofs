@@ -196,6 +196,12 @@ def set_license_file():
         old_license_info = license_file.verify_and_load(old_license_file)
         if old_license_info["customer_id"] != new_license_info["customer_id"]:
             return Response("New license file customer_id differs from that of existing license.\n", status=400)
+        # We refuse to accept licenses that were issued before the current
+        # license file was issued to prevent accidental or malicious license
+        # rollback by an uncoordinated set of administrators.
+        if old_license_info.issue_date() > new_license_info.issue_date():
+            return Response("New license file was issued before the current license file.\n" +
+                            "Cowardly refusing to downgrade license.\n", status=400)
 
     # Verify that if the license has an expiry date, that that date is
     # currently in the future (that is, that the new license is currently valid)

@@ -90,6 +90,50 @@ class LicenseFileTestCase(LicenseTestCase):
             """)
         license = license_file.verify_and_load(buf, gpg_homedir=self.gpg_dir())
         self.assertTrue(license.is_currently_valid())
+        epoch = datetime.datetime.utcfromtimestamp(0)
+        self.assertTrue(license.issue_date() == epoch)
+
+    def test_license_file_issue_date(self):
+        # license_company=Unit Tests
+        # license_seats=0
+        # license_valid_until=2013-11-20
+        # license_issue_date=2013-11-19T22:45:20Z
+        # license_type=normal
+        # customer_id=1
+        buf = to_bytesio("""
+            a3019bc0cbccc0c4e83fa75ec8e544453fe3e9b749ccba6a1641ddaf18723293
+            53f38a537533f3d2f21968040c80c0ccc0004c1b60d2064646260c8640c2c8dc
+            cc142c6e680c64322818d0ca41c8a0b4b824b1484181a1283fbf049f3a42f2e8
+            9e1b22001afff1c9f9b905897995b6a17999250a21a9c525c55c30a9e2d4c492
+            625b0338bf2c31273325be34af2433c7d6081857ba8686ba4608e9cce2e2d2d4
+            f894c49254b8aca1658891919589a9959141145c5d496541aa6d5e7e516e620e
+            57323016f273538be233536c0db9063a4c46c1281805a360148c8251300a46c1
+            281805a360148c8251300a46c1281805a360148c8251300a46c1281805a36008
+            81d703ed8051300a46c1281805a36014d01f70c2599d4c322c0c8c4c0c6cac4c
+            41ddaf1818b83805fce7d40bb99ca8e8ff719fff9fd2dcf08de99bcdff4d0d6b
+            2ad815afbc4bf7fec9fd2aaa69924acbaff8fdebbbf4b9aebf55fcfefcb33df9
+            57267e55c9164f4e36d9de71a2a554f5f19fdf533af65f7bc5d7773dbb7e6a91
+            64727c9c9a484f7ee79de30aad8f837c4e4f64d0e09cf7695af6f4d35b9b25a6
+            67ad77f863ffcebce7fde75d9e1a11df67fa89f1993e9f587cf577a17bd8f6e5
+            8b6b2faef4f348d79a28f4795dd5311b7d652bb385b33f7f4b91be7365e1a355
+            1e77d3231bec999f4c099359ea14e77defded1628ecbff9bf8a6303eea5ce061
+            b02ac46c65fb8bd989db527e6e666c72f0786950e11491dfb6e2e1ee4766cbd5
+            17bde5d4adcdd6587cc670fe87de4085c29fdb1e296df8b841dbefb040fea577
+            c76f56ae6b7abe2bfc39c389e8789f7f1726ceb8ba4e6ee7ba8d724b9b764826
+            b6e8b575ac597172e307c985b7a61eb15963bc65eb0fab6b8e162f67d414efb1
+            f58838d8b045e46f618bcc6991b7952a0bb78b7ee24db451d733175d576e77ae
+            5cadd4d6a9fae9efdb4a13f4cb7ec6ce6b7cb037d3666106b3249fbbd4e7dfda
+            1af6cbebd27735327bed0dbcb15bb6ec70fddb1d9cac3f1399e2765ffcd9b66d
+            d5812bef6e9e7b527dd1e68485cfbb77d71f799d7c937c62d592a2c8934c8642
+            222e4df546bfd9e6dd1164fdd1c3f9af795ad296e6f5137ad67f11edf914d8f8
+            b03599f3b0c346d7c579723b59dfcc313a94e6bf9cad7b9550f6c6af696a53df
+            65f1fc51bed375832bea82cbd530a586f2a500
+            """)
+        license = license_file.verify_and_load(buf, gpg_homedir=self.gpg_dir())
+        expected_issue_time = datetime.datetime(year=2013, month=11, day=19,
+                                                hour=22, minute=45, second=20)
+        self.assertTrue(license.issue_date() == expected_issue_time)
+
 
     def test_nonsense_file_fails_to_load(self):
         buf = to_bytesio("")
@@ -102,6 +146,7 @@ class LicenseFileTestCase(LicenseTestCase):
                 "customer_id":"1",
                 "license_valid_until":tomorrow,
                 "license_seats":"3",
+                "license_issue_date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
             }
         f = BytesIO()
         license_file.generate(d, f, gpg_homedir=self.gpg_dir(), password_cb=make_passphrase_cb("temp123"))

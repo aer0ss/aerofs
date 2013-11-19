@@ -24,6 +24,10 @@ class LicenseInfo(dict):
     def is_unlimited_seating(self):
         return self.get("license_unlimited_seating") == "true"
 
+    def issue_date(self):
+        issue_datestring = self.get("license_issue_date", "1970-01-01T00:00:00Z")
+        return datetime.datetime.strptime(issue_datestring, "%Y-%m-%dT%H:%M:%SZ")
+
     def seats(self):
         """Returns the seat limit for this license file.  If unlimited, returns -1."""
         return int(self.get("license_seats", "-1"))
@@ -111,6 +115,8 @@ def generate(license_info, output_file_handle, gpg_homedir=None, password_cb=Non
         raise ValueError("No license_type found in license_info dictionary")
     if "customer_id" not in license_info:
         raise ValueError("No customer_id found in license_info dictionary")
+    if "license_issue_date" not in license_info:
+        raise ValueError("No license_issue_date found in license_info dictionary")
 
     # verify license_info contains at least license_type and customer_id
     for key, value in license_info.iteritems():

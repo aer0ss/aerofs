@@ -54,6 +54,7 @@ def build_tool(args):
     license_seats_s = prompt_for("Enter number of seats license should provide: ")
     license_seats = int(license_seats_s)
     d["license_seats"] = str(license_seats)
+    d["license_issue_date"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     print "Will create license with the following license-info:"
     print "\n".join(["{}={}".format(k, v) for k,v in d.iteritems()])
     with open(output_filename, "wb") as f:
