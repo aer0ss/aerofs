@@ -6,7 +6,6 @@ import cmd
 import os
 import re
 import sys
-import commands
 import subprocess
 
 CHOSEN_CONF_FILE = "/etc/network/selected-network-type"
@@ -30,12 +29,15 @@ DEFAULT_WIDTH = 80
 
 def get_current_version():
     """
-    Return the current AeroFS version as a string (Note that enterprise-greeter
-    duplicates this function)
+    Return the current AeroFS version as a string.
     """
     # The command finds the line "Version=0.1.2" and return the string after '='
-    status, output = commands.getstatusoutput('grep Version /opt/repackaging/installers/original/current.ver | cut -d = -f 2')
-    return output if status == 0 else ''
+    try:
+        with open("/opt/repackaging/installers/original/current.ver") as f:
+            version_line = f.readline().rstrip()
+            return version_line.split("=", 1)[1]
+    except:
+        return ""
 
 def centered(s, width=DEFAULT_WIDTH):
     return s.center(width)
