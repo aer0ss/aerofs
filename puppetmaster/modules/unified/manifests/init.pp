@@ -86,8 +86,8 @@ class unified {
     # Admin Panel
     # --------------
 
-    file {"/opt/web/production.ini":
-        source => "puppet:///modules/unified/production.ini",
+    file {"/opt/web/production.ini.template":
+        source => "puppet:///modules/unified/production.ini.template",
         require => Package["aerofs-web"],
         notify => Service["uwsgi"],
     }

@@ -31,8 +31,8 @@ session.secure = True
 session.httponly = True
 # 1 year. Session timeouts are handled by SP.
 session.timeout = 31536000
-session.validate_key = qzURyMrymsdNZpJk7z9NgwKtBm4THek6p7vszZPF9qQ8RSnk
-session.encrypt_key = EBN8pu3FBTeD2Qgb3DUMGPfP4ZJJnspTkbkBfA96hwdUrDfL
+session.validate_key = {{ validate_key }}
+session.encrypt_key = {{ encrypt_key }}
 
 # API key for Mixpanel project "AeroFS"
 mixpanel.api_key = be2b9a3bb410c5183c66523483cb27de
