@@ -28,8 +28,19 @@ CYAN = "\033[01;36m"
 NORMAL = "\033[0m"
 DEFAULT_WIDTH = 80
 
+def get_current_version():
+    """
+    Return the current AeroFS version as a string (Note that enterprise-greeter
+    duplicates this function)
+    """
+    # The command finds the line "Version=0.1.2" and return the string after '='
+    status, output = commands.getstatusoutput('grep Version /opt/repackaging/installers/original/current.ver | cut -d = -f 2')
+    return output if status == 0 else ''
+
 def centered(s, width=DEFAULT_WIDTH):
     return s.center(width)
+
+version = get_current_version()
 
 # Use this URL to generate the ASCII art:
 #   http://patorjk.com/software/taag/#p=display&f=Standard&t=aerofs%20%20appliance
@@ -45,6 +56,8 @@ BANNER = CYAN + "\n".join([
         centered(r" | (_| |  __/ | | (_) |  _\__ \  | (_| | |_) | |_) | | | (_| | | | | (_|  __/ "),
         centered(r"  \__,_|\___|_|  \___/|_| |___/   \__,_| .__/| .__/|_|_|\__,_|_| |_|\___\___| "),
         centered(r"                                       |_|   |_|                              "),
+        # right align the version string
+        centered((77 - len(version)) * ' ' + version + ' '),
         "",
 ]) + NORMAL
 
@@ -206,10 +219,8 @@ def get_current_network_state():
     return address, netmask, broadcast, mac_address, gateway, nameservers
 
 def print_network_state_and_next_instructions():
-    version = get_current_version()
     address, netmask, broadcast, mac_address, gateway, nameservers = get_current_network_state()
     csv_nameservers = ', '.join(nameservers) if nameservers else None
-    print "                            Version: {}".format(version)
     print "                        MAC Address: {}".format(mac_address)
     print "                         IP Address: {}".format(address)
     print "                            Netmask: {}".format(netmask)
@@ -225,15 +236,6 @@ def print_network_state_and_next_instructions():
     else:
         print centered("Please provide this machine with network configuration below:")
     print
-
-def get_current_version():
-    """
-    Return the current AeroFS version as a string (Note that enterprise-greeter
-    duplicates this function)
-    """
-    # The command finds the line "Version=0.1.2" and return the string after '='
-    status, output = commands.getstatusoutput('grep Version /opt/repackaging/installers/original/current.ver | cut -d = -f 2')
-    return output if status == 0 else '(unknown)'
 
 def read_resolvconf():
     nameservers = []
