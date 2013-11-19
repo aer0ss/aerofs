@@ -14,6 +14,8 @@
 
     <h4>Your license:</h4>
     <dl class="dl-horizontal">
+        <dt>Licensed to:</dt>
+        <dd>${render_license_field('license_company')}</dd>
         <dt>Type:</dt>
         <dd>${render_license_field('license_type')}</dd>
         <dt>Valid until:</dt>

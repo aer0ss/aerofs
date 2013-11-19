@@ -2,10 +2,15 @@
 <%! page_title = "Setup" %>
 
 <%namespace name="common" file="setup/common.mako"/>
+<%namespace name="version" file="version.mako"/>
 <%namespace name="no_ie" file="no_ie.mako"/>
 
 <%block name="home_url">
     ${request.route_path('dashboard_home')}
+</%block>
+
+<%block name="top_navigation_bar">
+    <%version:version_top_nav_item/>
 </%block>
 
 <%block name="css">

@@ -6,6 +6,7 @@ import cmd
 import os
 import re
 import sys
+import commands
 import subprocess
 
 CHOSEN_CONF_FILE = "/etc/network/selected-network-type"
@@ -205,8 +206,10 @@ def get_current_network_state():
     return address, netmask, broadcast, mac_address, gateway, nameservers
 
 def print_network_state_and_next_instructions():
+    version = get_current_version()
     address, netmask, broadcast, mac_address, gateway, nameservers = get_current_network_state()
     csv_nameservers = ', '.join(nameservers) if nameservers else None
+    print "                            Version: {}".format(version)
     print "                        MAC Address: {}".format(mac_address)
     print "                         IP Address: {}".format(address)
     print "                            Netmask: {}".format(netmask)
@@ -222,6 +225,15 @@ def print_network_state_and_next_instructions():
     else:
         print centered("Please provide this machine with network configuration below:")
     print
+
+def get_current_version():
+    """
+    Return the current AeroFS version as a string (Note that enterprise-greeter
+    duplicates this function)
+    """
+    # The command finds the line "Version=0.1.2" and return the string after '='
+    status, output = commands.getstatusoutput('grep Version /opt/repackaging/installers/original/current.ver | cut -d = -f 2')
+    return output if status == 0 else '(unknown)'
 
 def read_resolvconf():
     nameservers = []
@@ -311,7 +323,6 @@ def shutdown():
 def main():
     print BANNER
     print_network_state_and_next_instructions()
-    print ""
     menu = Menu("Or select an option below:")
     menu.add_choice(MenuOption(dhcp_menu_text(), select_dhcp))
     menu.add_choice(MenuOption(static_menu_text(), show_static_menu))

@@ -3,6 +3,7 @@ import logging
 from pyramid.response import Response
 
 from pyramid.view import view_config
+from web.version import get_current_version
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +24,9 @@ def backup_appliance(request):
     renderer='upgrade.mako'
 )
 def upgrade_appliance(request):
-    return {}
+    return {
+        'current_version': get_current_version()
+    }
 
 @view_config(
     route_name = 'download_backup_file',

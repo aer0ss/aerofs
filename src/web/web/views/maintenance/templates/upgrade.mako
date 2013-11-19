@@ -5,8 +5,11 @@
 
 <h2>Upgrade your AeroFS Appliance</h2>
 
-<p>You may upgrade your AeroFS Appliance to a new version by following
-    these steps:</p>
+<p>This appliance runs version <strong>${current_version}</strong>.
+    You may check the latest release notes
+    <a href="https://support.aerofs.com/entries/23864878" target="_blank">here</a>.
+
+    <p>To upgrade the appliance to a new version, please follow these steps:</p>
 
 <ol>
     <li>

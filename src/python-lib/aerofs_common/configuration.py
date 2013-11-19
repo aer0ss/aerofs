@@ -2,7 +2,7 @@ import requests
 import properties
 from cStringIO import StringIO
 
-ROOT_URL="http://localhost:5434"
+ROOT_URL = "http://localhost:5434"
 
 SERVER_URL = ROOT_URL + "/server"
 SET_URL = ROOT_URL + "/set"
