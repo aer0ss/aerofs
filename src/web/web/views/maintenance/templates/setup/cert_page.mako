@@ -7,8 +7,8 @@
     ${csrf.token_input()}
 
     <label class="radio">
-        <input type='radio' name='cert.option' value='existing' checked
-                onchange="useInstalledCertSelected()">
+        <input type='radio' id="cert-option-existing" name='cert.option'
+                value='existing' checked onchange="useInstalledCertSelected()">
         %if is_configuration_initialized:
             Use installed certificate and key
         %else:
@@ -17,7 +17,7 @@
         <p class="main-option-footnote">Use your Web browser to check certificate details</p>
     </label>
     <label class="radio">
-        <input type='radio' name='cert.option' value='new'
+        <input type='radio' id="cert-option-new" name='cert.option' value='new'
                 onchange="useNewCertSelected()">
         Upload new certificate and key
 
