@@ -25,7 +25,6 @@ import com.sun.jersey.spi.container.WebApplicationFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
-import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -33,7 +32,6 @@ import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 /**
  * Base class for Restless service

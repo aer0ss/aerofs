@@ -43,7 +43,8 @@ public class CompManageUsers extends Composite
         setLayout(glShell);
 
         _compUserList = new CompUserList(this);
-        _compUserList.load(_path, ll);
+        _compUserList.setLoadListener(ll);
+        _compUserList.load(_path);
 
         GridData gd__compAddresses = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
         gd__compAddresses.heightHint = 60;

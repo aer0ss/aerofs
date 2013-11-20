@@ -1,10 +1,7 @@
 package com.aerofs.lib.os;
 
-import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.sv.client.SVClient;
 
 import java.io.IOException;
 

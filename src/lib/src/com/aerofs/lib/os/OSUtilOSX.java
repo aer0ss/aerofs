@@ -20,7 +20,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;

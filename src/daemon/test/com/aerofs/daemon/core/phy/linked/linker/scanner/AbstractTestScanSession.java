@@ -18,7 +18,6 @@ import com.aerofs.daemon.core.mock.logical.MockRoot;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalDir;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtilLinux;
 import com.aerofs.testlib.AbstractTest;

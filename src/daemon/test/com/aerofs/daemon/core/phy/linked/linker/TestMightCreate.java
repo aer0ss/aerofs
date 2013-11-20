@@ -16,7 +16,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
-import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtilLinux;
 import com.google.common.collect.Sets;

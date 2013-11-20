@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
-import java.util.concurrent.Executor;
 
 public class JerseyHandler extends SimpleChannelUpstreamHandler
 {

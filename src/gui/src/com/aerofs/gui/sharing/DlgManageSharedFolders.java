@@ -477,7 +477,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
             setVisible(_btnBar, valid);
             _btnPlus.setGrayed(true);
             if (valid) {
-                _userList.load(path, new ILoadListener() {
+                _userList.setLoadListener(new ILoadListener() {
                     @Override
                     public void loaded(int membersCount, Role localUserRole)
                     {
@@ -494,6 +494,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
                         }
                     }
                 });
+                _userList.load(path);
             }
 
             layout(true, true);

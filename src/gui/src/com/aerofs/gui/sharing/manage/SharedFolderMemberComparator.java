@@ -7,17 +7,46 @@ package com.aerofs.gui.sharing.manage;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.Viewer;
 
-// used to sort shared folder member entries in the members table
-public class SharedFolderMemberComparator extends ViewerComparator
+/**
+ * comparators provided in this class are used to sort shared folder member entries in the
+ * shared folder members table.
+ *
+ * N.B. if the objects are not _both_ SharedFolderMembers, they are considered equivalent.
+ */
+public class SharedFolderMemberComparator
 {
-    @Override
-    public int compare(Viewer v, Object e1, Object e2)
+    private SharedFolderMemberComparator()
     {
-        if (e1 instanceof SharedFolderMember && e2 instanceof SharedFolderMember) {
-            return ((SharedFolderMember)e1).compareTo((SharedFolderMember)e2);
-        } else {
-            // don't try to sort unless both entries are PBSharedFolderMembers
-            return 0;
-        }
+        // private to prevent instantiation
+    }
+
+    public static ViewerComparator bySubject()
+    {
+        return new ViewerComparator() {
+            @Override
+            public int compare(Viewer viewer, Object o1, Object o2)
+            {
+                if (o1 instanceof SharedFolderMember && o2 instanceof SharedFolderMember) {
+                    return ((SharedFolderMember)o1).compareToBySubject((SharedFolderMember)o2);
+                } else {
+                    return 0;
+                }
+            }
+        };
+    }
+
+    public static ViewerComparator byRole()
+    {
+        return new ViewerComparator() {
+            @Override
+            public int compare(Viewer viewer, Object o1, Object o2)
+            {
+                if (o1 instanceof SharedFolderMember && o2 instanceof SharedFolderMember) {
+                    return ((SharedFolderMember)o1).compareToByRole((SharedFolderMember)o2);
+                } else {
+                    return 0;
+                }
+            }
+        };
     }
 }
