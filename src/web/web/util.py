@@ -184,7 +184,7 @@ def is_configuration_initialized(settings):
 def is_maintenance_mode():
     # bootstrap tasks maintenance-enter & maintenance-exit create and delete
     # this file
-    return os.path.exists('/var/aerofs/maintenance-mode')
+    return os.path.exists('/var/aerofs/maintenance-flag')
 
 def add_routes(config, routes):
     """

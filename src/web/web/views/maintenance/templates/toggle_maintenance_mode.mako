@@ -23,7 +23,7 @@
     <code>${request.route_url('manage')}</code>
 </p>
 
-<p>The appliance senters maintenance mode automatically during
+<p>The appliance enters maintenance mode automatically during
     <a href="${request.route_path('backup_appliance')}">backup</a> and
     <a href="${request.route_path('upgrade_appliance')}">upgrade</a>.</p>
 
