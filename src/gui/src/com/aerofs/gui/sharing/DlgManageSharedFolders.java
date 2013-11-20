@@ -25,6 +25,7 @@ import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.PBSharedFolder;
+import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
@@ -139,8 +140,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
             public void onFailure(Throwable t)
             {
                 _folderList.setLoading(false);
-                GUI.get().show(getShell(), MessageType.ERROR,
-                        "Failed to retrieve shared folders: " + t);
+                ErrorMessages.show(getShell(), t, "Failed to retrieve shared folders.");
             }
         });
     }
@@ -164,13 +164,10 @@ public class DlgManageSharedFolders extends AeroFSDialog
                 {
                     try {
                         UIGlobals.ritual().linkRoot(path);
-                    } catch (ExChildAlreadyShared e) {
-                        GUI.get().show(getShell(), MessageType.ERROR, S.CHILD_ALREADY_SHARED);
-                    } catch (ExParentAlreadyShared e) {
-                        GUI.get().show(getShell(), MessageType.ERROR, S.PARENT_ALREADY_SHARED);
                     } catch (Exception e) {
-                        GUI.get().show(getShell(), MessageType.ERROR, "Could not share folder " + ErrorMessages
-                                .e2msgDeprecated(e));
+                        ErrorMessages.show(getShell(), e, "Could not share folder.",
+                                new ErrorMessage(ExChildAlreadyShared.class, S.CHILD_ALREADY_SHARED),
+                                new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED));
                     }
                 }
 

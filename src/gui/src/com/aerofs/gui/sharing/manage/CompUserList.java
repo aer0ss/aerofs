@@ -347,9 +347,11 @@ public class CompUserList extends Composite
             {
                 setState(new Object[0], null, null);
 
-                ErrorMessages.show(getShell(), e, "Failed to retrieve user list: " + e,
-                        new ErrorMessage(ExNoPerm.class, "You are no longer a member of this shared folder."),
-                        new ErrorMessage(ExBadArgs.class, "The application has received invalid data: " + e)
+                ErrorMessages.show(getShell(), e, "Failed to retrieve user list.",
+                        new ErrorMessage(ExNoPerm.class,
+                                "You are no longer a member of this shared folder."),
+                        new ErrorMessage(ExBadArgs.class,
+                                "The application has received invalid data from the server.")
                 );
             }
         });
@@ -422,11 +424,11 @@ public class CompUserList extends Composite
                         setRole(path, subject, role, true);
                     }
                 } else {
-                    String message = "Couldn't edit the user. " + S.TRY_AGAIN_LATER + "\n\n" +
-                            "Error message: " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e);
-
-                    ErrorMessages.show(getShell(), e, "Unused default.",
-                            new ErrorMessage(e.getClass(), message));
+                    String message = role == null ? "Failed to remove the user." :
+                            "Failed to update the user's role.";
+                    ErrorMessages.show(getShell(), e, message,
+                            new ErrorMessage(ExNoPerm.class,
+                                    "You do not have the permission to do so."));
                 }
             }
 
