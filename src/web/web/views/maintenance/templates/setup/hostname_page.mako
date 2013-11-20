@@ -33,7 +33,7 @@
            onclick="confirmHostnameChange(); return false;">Proceed</a>
     </%def>
     Are you sure you want to change the hostname? Depending on your DNS setup,
-    it might require users to reinstall AeroFS desktop apps and logout mobile apps.
+    it might require users to reinstall AeroFS desktop apps and logout of mobile apps.
     <a href="https://support.aerofs.com/entries/22711364" target="_blank">Read more</a>.
 </%modal:modal>
 
