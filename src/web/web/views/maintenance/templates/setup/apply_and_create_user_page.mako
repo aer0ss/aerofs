@@ -13,7 +13,7 @@
 
 ${common.render_previous_button()}
 <button
-    onclick='apply(); return false;'
+    onclick='apply(); return false;' id="finish-btn"
     class='btn btn-primary pull-right'>Apply and Finish</button>
 
 <%progress_modal:html>
@@ -61,7 +61,7 @@ ${common.render_previous_button()}
         %if is_configuration_initialized:
             <a href="${request.route_path('dashboard_home')}" class="btn btn-primary">Close</a>
         %elif current_config['lib.authenticator'] == 'local_credential':
-            <a href="#" class="btn btn-primary"
+            <a href="#" class="btn btn-primary" id="start-create-user-btn"
                 onclick="hideAllModals(); $('#create-user-modal').modal('show'); return false;">
                 Create First User</a>
         %else:

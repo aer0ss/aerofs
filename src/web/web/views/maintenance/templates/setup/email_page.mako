@@ -153,7 +153,7 @@
         <p>Great! Your email server works. Let's move on to the next page.</p>
     </div>
     <div class="modal-footer">
-        <a href="#" class="btn btn-primary"
+        <a href="#" class="btn btn-primary" id="continue-btn"
             onclick="gotoNextPage(); return false;">
             Continue</a>
     </div>
