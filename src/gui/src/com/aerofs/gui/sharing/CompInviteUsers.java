@@ -1,6 +1,5 @@
 package com.aerofs.gui.sharing;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
@@ -19,14 +18,11 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
-import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -290,9 +286,6 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                             e)) {
                         workImpl(subjects, note, role, true);
                     }
-                } else if (e instanceof ExNoStripeCustomerID) {
-                    // TODO (WW) do the same for CLI
-                    showPaymentDialog();
                 } else {
                     ErrorMessages.show(getShell(), e, L.brand() + " couldn't invite users.",
                             new ErrorMessage(ExAlreadyExist.class, "One or more invited people are already members of this folder."),
@@ -321,57 +314,6 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                         suppressSharedFolderRulesWarnings);
 
                 UIGlobals.analytics().track(new FolderInviteSentEvent(subjects.size()));
-            }
-
-            void showPaymentDialog()
-            {
-                if (isAdmin()) {
-                    // Note: the following messages should be consistent with the messages in
-                    // shared_folder.mako:credit_card_modal:html
-                    if (GUI.get().ask(getShell(), MessageType.INFO,
-                            "The free plan allows one external collaborator per shared" +
-                            " folder. If you'd like to invite unlimited external" +
-                            " collaborators, please upgrade to the paid plan" +
-                            " ($10/team member/month).\n\n" +
-                            "Do you want to upgrade now?",
-                            "Upgrade Now", "Cancel")) {
-                        GUIUtil.launch(WWW.UPGRADE_URL);
-                    }
-                } else {
-                    // Note: the following messages should be consistent with the messages in
-                    // shared_folder_modals.mako.
-                    if (GUI.get().ask(getShell(), MessageType.INFO,
-                            "To add more collaborators to this folder, a paid plan is" +
-                            " required for your team. Please contact your team administrator to" +
-                            " upgrade the plan.",
-                            "Email Admin with Instructions...", "Close")) {
-                        String subject =
-                                "Upgrade our AeroFS plan";
-                        String body =
-                                "Hi,\n\nI would like to invite more external collaborators to a shared" +
-                                " folder, which requires a paid AeroFS plan. Could we upgrade" +
-                                " the plan for our team?" +
-                                " We can upgrade through this link:\n\n" +
-                                WWW.UPGRADE_URL +
-                                "\n\nThank you!";
-                        String url = "mailto:?subject=" + Util.urlEncode(subject) + "&body=" +
-                                Util.urlEncode(body);
-                        GUIUtil.launch(url);
-                    }
-                }
-            }
-
-            boolean isAdmin()
-            {
-                SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-                SPBlockingClient sp = fact.create_(Cfg.user());
-                try {
-                    sp.signInRemote();
-                    return sp.getAuthorizationLevel().getLevel() == PBAuthorizationLevel.ADMIN;
-                } catch (Exception e) {
-                    // In most common cases the user is an admin of his own team.
-                    return true;
-                }
             }
         });
     }

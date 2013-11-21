@@ -223,7 +223,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
         service.setSessionInvalidator(sessionInvalidator);
         service.setUserTracker(userSessionTracker);
-        service.setMaxFreeUserCounts(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        service.setMaxFreeMembers(Integer.MAX_VALUE);
     }
 
     /**
@@ -232,11 +232,6 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     protected User newUser()
     {
         return factUser.create(UserID.fromInternal("u" + Integer.toString(++nextUserID) + "@email"));
-    }
-
-    protected Organization newOrganization()
-    {
-        return factOrg.create(++nextOrgID);
     }
 
     /**

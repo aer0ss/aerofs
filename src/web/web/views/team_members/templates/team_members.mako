@@ -30,8 +30,8 @@
     </div>
     <div class="modal-body">
         <p>Are you sure that you want to remove <strong class="user_email"></strong> from your team?</p>
-        <p>This user will become an external collaborator and will still have access to all folders currently shared
-            with them, but their data will no longer be backed up on the AeroFS Team Server.</p>
+        <p>This user will still have access to all folders currently shared with them, but their
+            data will no longer be backed up on the AeroFS Team Server.</p>
         <p>If you would like to unlink or erase this user's devices, you may do so by visiting the
             <a href="#" class="device_link">devices</a> page before removing the user from your team.</p>
     </div>

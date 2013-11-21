@@ -112,7 +112,7 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
     private void inviteMaximumFreeUsers()
             throws Exception
     {
-        service.setMaxFreeUserCounts(3, Integer.MAX_VALUE);
+        service.setMaxFreeMembers(3);
         // Current we allow at most three members for free
         service.inviteToOrganization("free@rider1.com");
         service.inviteToOrganization("free@rider2.com");

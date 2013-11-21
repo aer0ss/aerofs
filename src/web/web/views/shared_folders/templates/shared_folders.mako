@@ -46,35 +46,6 @@
 
 <%shared_folder_modals:main_modals/>
 
-%if is_admin:
-    ## Admins can input credit card on their own
-    <%credit_card_modal:html>
-        <%def name="title()">
-            <%credit_card_modal:default_title/>
-        </%def>
-        <%def name="description()">
-            <p>
-                ## Note: the following text should be consistent with the text
-                ## in CompInviteUsers.java.
-                The free plan allows <strong>one</strong> external collaborator
-                per shared folder. If you'd like to invite unlimited external
-                collaborators, please upgrade to the paid plan
-                ($10/team member/month).
-                <a href="${request.route_path('pricing')}" target="_blank">Compare plans</a>.
-            </p>
-
-            <%credit_card_modal:default_description/>
-        </%def>
-        <%def name="okay_button_text()">
-            <%credit_card_modal:default_okay_button_text/>
-        </%def>
-    </%credit_card_modal:html>
-
-%else:
-    ## Non-admins must admins to input credit card
-    <%shared_folder_modals:ask_admin_modal/>
-%endif
-
 <%block name="scripts">
 
     ## Only admins can input credit card

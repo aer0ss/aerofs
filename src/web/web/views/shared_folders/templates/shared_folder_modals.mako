@@ -113,31 +113,3 @@
     </%modal:modal>
 </%def>
 
-<%def name="ask_admin_modal()">
-    <%modal:modal>
-        <%def name="id()">ask-admin-modal</%def>
-        <%def name="title()">Please contact your administrator</%def>
-        <%def name="footer()">
-            <a href="#" class="btn" data-dismiss="modal">Close</a>
-            <%
-                # Note: the following text should be consistent with the text in
-                # CompInviteUsers.java.
-                subject = 'Upgrade our AeroFS plan'
-                body = "Hi,\n\nI would like to invite more external collaborators to a shared" \
-                    " folder, which requires a paid AeroFS plan. Could we upgrade" \
-                    " the plan for our team?" \
-                    " We can upgrade through this link:\n\n{}\n\nThank you!"\
-                    .format(request.route_url('start_subscription'))
-            %>
-            <a target="_blank" href="mailto:?subject=${subject | u}&body=${body | u}"
-               class="btn btn-primary">Email Admin with Instructions...</a>
-        </%def>
-
-        ## Note: the following text should be consistent with the text in
-        ## CompInviteUsers.java.
-        <p>To add more collaborators to this folder, a paid AeroFS plan is
-            required for your team. Please contact your team administrator to
-            upgrade the plan.
-        </p>
-    </%modal:modal>
-</%def>

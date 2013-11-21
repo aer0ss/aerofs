@@ -378,8 +378,6 @@ def json_add_shared_folder_perm(request):
             _("The user is already a member of the folder."),
         PBException.EMPTY_EMAIL_ADDRESS:
             _("The email address can't be empty"),
-        PBException.NO_STRIPE_CUSTOMER_ID:
-            _("Payment is required to invite more collaborators"),
         PBException.NO_PERM:
             _("You don't have permission to invite people to this folder"),
     }))

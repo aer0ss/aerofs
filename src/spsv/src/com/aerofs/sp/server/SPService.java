@@ -204,10 +204,6 @@ public class SPService implements ISPService
     // changing this number.
     private int _maxFreeMembersPerTeam = 3;
 
-    // Remember to udpate text in shared_foler.mako, shared_folder_modals.mako, team_settings.mako,
-    // and pricing.mako when changing this number.
-    private int _maxFreeCollaboratorsPerFolder = 1;
-
     // Whether to enforce payment checks
     private final Boolean ENABLE_PAYMENT =
             getBooleanProperty("sp.payment.enabled", true);
@@ -266,10 +262,9 @@ public class SPService implements ISPService
      * For testing only. Don't use in production.
      * TODO (WW) use configuration service.
      */
-    public void setMaxFreeUserCounts(int maxFreeMembersPerTeam, int maxFreeCollaboratorsPerFolder)
+    public void setMaxFreeMembers(int maxFreeMembersPerTeam)
     {
         _maxFreeMembersPerTeam = maxFreeMembersPerTeam;
-        _maxFreeCollaboratorsPerFolder = maxFreeCollaboratorsPerFolder;
     }
 
     public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
@@ -1063,8 +1058,6 @@ public class SPService implements ISPService
         List<InvitationEmailer> emailers = createFolderInvitationAndEmailer(folderName, note, sf,
                 sharer, srps);
 
-        throwIfPaymentRequiredAndNoCustomerID(sharer.getOrganization(), sf, srps2users(srps));
-
         // send verkehr notification as the last step of the transaction
         publishACLs_(users);
 
@@ -1073,13 +1066,6 @@ public class SPService implements ISPService
         for (InvitationEmailer emailer : emailers) emailer.send();
 
         return createVoidReply();
-    }
-
-    ImmutableCollection<User> srps2users(Collection<SubjectRolePair> srps)
-    {
-        ImmutableCollection.Builder<User> builder = ImmutableList.builder();
-        for (SubjectRolePair srp : srps) builder.add(_factUser.create(srp._subject));
-        return builder.build();
     }
 
     private Collection<UserID> saveSharedFolderIfNecessary(String folderName, SharedFolder sf,
@@ -1622,7 +1608,7 @@ public class SPService implements ISPService
     }
 
     /**
-     * Return a StripeData object for the specified org based on its team size and # collaborators.
+     * Return a StripeData object for the specified org based on its team size
      */
     private PBStripeData getStripeData(Organization org)
             throws SQLException, ExNotFound
@@ -1647,49 +1633,6 @@ public class SPService implements ISPService
         if (sd.getQuantity() > _maxFreeMembersPerTeam && !sd.hasCustomerId()) {
             throw new ExNoStripeCustomerID();
         }
-    }
-
-    /**
-     * Throw if the shared folder exceeds maximum # collaborators, there are collaborators in the
-     * invitees list, and the org doesn't have a Stripe
-     * customer ID.
-     */
-    private void throwIfPaymentRequiredAndNoCustomerID(Organization org, SharedFolder sf,
-            Collection<User> invitees)
-            throws ExNoStripeCustomerID, SQLException, ExNotFound
-    {
-        if (!ENABLE_PAYMENT) return;
-
-        // Okay if the customer is paying
-        if (org.getStripeCustomerIDNullable() != null) return;
-
-        // Okay if no collaborators are invited
-        boolean collaboratorInvited = false;
-        for (User invitee : invitees) {
-            if (isCollaborator(org, invitee)) {
-                collaboratorInvited = true;
-                break;
-            }
-        }
-        if (!collaboratorInvited) return;
-
-        int collaborators = 0;
-        for (User user : sf.getAllUsers()) {
-            if (isCollaborator(org, user) && ++collaborators > _maxFreeCollaboratorsPerFolder) {
-                throw new ExNoStripeCustomerID();
-            }
-        }
-    }
-
-    /**
-     * Return whether the user is an external collaborator of the org
-     */
-    private boolean isCollaborator(Organization org, User user)
-            throws SQLException, ExNotFound
-    {
-        // !user.exists() is needed for users who are pending user of a shared folder and haven't
-        // signed up yet.
-        return !user.id().isTeamServerID() && (!user.exists() || !user.belongsTo(org));
     }
 
     @Override

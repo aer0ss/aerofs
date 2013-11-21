@@ -40,8 +40,7 @@
         <p>Your team is currently on the free AeroFS plan.
             For $10/team member/month, you will enjoy:</p>
         <ul>
-            <li>Up to <strong>50</strong> team members</li>
-            <li><strong>Unlimited</strong> external collaborators</li>
+            <li><strong>Unlimited</strong> team members</li>
             <li>Priority email support</li>
         </ul>
         <p>

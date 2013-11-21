@@ -100,9 +100,7 @@
     <div class="modal-body">
         <p>
             Are you sure you want to cancel the subscription?
-            <strong>All</strong> your team members will be removed from your
-            team, and you will no longer be able to add more than one external
-            collaborators to a shared folder.
+            <strong>All</strong> your team members will be removed from your team.
         </p>
 
     </div>
