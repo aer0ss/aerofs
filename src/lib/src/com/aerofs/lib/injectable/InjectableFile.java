@@ -73,6 +73,44 @@ public class InjectableFile
     private final Factory _factory;
     private final File _f;
 
+    /**
+     * Oh My Goodness this is such a terrible clusterfuck...
+     *
+     * Windows API enforces plenty of restrictions on what can be a valid filename, except all
+     * those restrictions can actually be bypassed by writing directly to the FS from another OS
+     * or using a special prefix to force path to be passed as-is to the FS. For instance all
+     * traditional UNIX tools provided by Cygwin can manipulate "invalid" filenames without any
+     * problem.
+     *
+     * As a result we may actually run into "invalid" files during a scan. This is a problem because
+     * our system expect to be able to do full lossless round-trips for any files it scans. Breaking
+     * that assumption would open a nasty can of worms. For this reason the Scanner will actually
+     * ignore any "invalid" file, even when presented with material evidence that it can actually
+     * exists. This keeps the behavior predictable but can lead to confusion for users so we aim
+     * to support anything the underlying FS does.
+     *
+     * Unfortunately Java does not by default bypass these restrictions, hence the need to do it
+     * ourselves. For some obscure reason, adding the magic prefix to filenames from Java-land is
+     * not enough to bypass all restrictions. Ideally we'd either fix the JDK (since we ship our
+     * own build on Windows) or add more methods to InjectableDriver to ensure we can gracefully
+     * handle anything the underlying system supports. In the meantime however this is good enough
+     * to support trailing spaces and periods, which have been observed in the wild.
+     *
+     * NB: not all code may be able to deal with the magic prefix so we need to use a separate
+     * File object for all interactions with the FS instead of modifiying the original one.
+     */
+    private File _prefixed;
+    private File winSafe()
+    {
+        if (_prefixed == null) {
+            _prefixed = _factory._osutil.getOSFamily() == OSFamily.WINDOWS
+                    && !_f.getAbsolutePath().startsWith("\\")
+                    ?  new File("\\\\?\\" + _f.getAbsolutePath())
+                    : _f;
+        }
+        return _prefixed;
+    }
+
     private InjectableFile(Factory factory, File f)
     {
         _factory = factory;
@@ -117,47 +155,47 @@ public class InjectableFile
      */
     public long lastModified() throws IOException
     {
-        return FileUtil.lastModified(_f);
+        return FileUtil.lastModified(winSafe());
     }
 
     public boolean isFile()
     {
-        return _f.isFile();
+        return winSafe().isFile();
     }
 
     public boolean isDirectory()
     {
-        return _f.isDirectory();
+        return winSafe().isDirectory();
     }
 
     public boolean exists()
     {
-        return _f.exists();
+        return winSafe().exists();
     }
 
     public long getLength() throws IOException
     {
-        return FileUtil.getLength(_f);
+        return FileUtil.getLength(winSafe());
     }
 
     public long getLengthOrZeroIfNotFile()
     {
-        return FileUtil.getLengthOrZeroIfNotFile(_f);
+        return FileUtil.getLengthOrZeroIfNotFile(winSafe());
     }
 
     public boolean wasModifiedSince(long mtime, long len) throws IOException
     {
-        return FileUtil.wasModifiedSince(_f, mtime, len);
+        return FileUtil.wasModifiedSince(winSafe(), mtime, len);
     }
 
     public void createNewFile() throws IOException
     {
-        FileUtil.createNewFile(_f);
+        FileUtil.createNewFile(winSafe());
     }
 
     public boolean createNewFileIgnoreError() throws IOException
     {
-        return _f.createNewFile();
+        return winSafe().createNewFile();
     }
 
     public String getAbsolutePath()
@@ -172,7 +210,7 @@ public class InjectableFile
 
     public void moveInSameFileSystem(InjectableFile to) throws IOException
     {
-        FileUtil.moveInSameFileSystem(_f, to._f);
+        FileUtil.moveInSameFileSystem(winSafe(), to.winSafe());
     }
 
     /**
@@ -181,7 +219,7 @@ public class InjectableFile
      */
     public boolean moveInSameFileSystemIgnoreError(InjectableFile to)
     {
-        return _f.renameTo(to._f);
+        return winSafe().renameTo(to.winSafe());
     }
 
     /**
@@ -189,22 +227,22 @@ public class InjectableFile
      */
     public File getImplementation()
     {
-        return _f;
+        return winSafe();
     }
 
     public void setLastModified(long mtime) throws IOException
     {
-        FileUtil.setLastModified(_f, mtime);
+        FileUtil.setLastModified(winSafe(), mtime);
     }
 
     public void mkdir() throws IOException
     {
-        FileUtil.mkdir(_f);
+        FileUtil.mkdir(winSafe());
     }
 
     public boolean mkdirIgnoreError()
     {
-        return _f.mkdir();
+        return winSafe().mkdir();
     }
 
     /**
@@ -238,7 +276,7 @@ public class InjectableFile
      */
     public @Nullable String[] list()
     {
-        String[] l = _f.list();
+        String[] l = winSafe().list();
         // Since OSX automatically converts files to NFD, but the rest of the world uses NFC,
         // Java on OSX automatically converts file paths to NFC, but we care about the actual
         // representation.  Ideally we'd write our own path handling, but for now, it's safe to
@@ -263,7 +301,7 @@ public class InjectableFile
 
     public void delete() throws IOException
     {
-        FileUtil.delete(_f);
+        FileUtil.delete(winSafe());
     }
 
     /**
@@ -271,38 +309,38 @@ public class InjectableFile
      */
     public boolean deleteIgnoreError()
     {
-        return _f.delete();
+        return winSafe().delete();
     }
 
     public void deleteOrThrowIfExist() throws IOException
     {
-        FileUtil.deleteOrThrowIfExist(_f);
+        FileUtil.deleteOrThrowIfExist(winSafe());
     }
 
     public void deleteOrThrowIfExistRecursively() throws IOException
     {
-        FileUtil.deleteOrThrowIfExistRecursively(_f, _factory._pi);
+        FileUtil.deleteOrThrowIfExistRecursively(winSafe(), _factory._pi);
     }
 
     public void copy(InjectableFile to, boolean exclusive, boolean keepMTime) throws IOException
     {
-        FileUtil.copy(_f, to._f, exclusive, keepMTime, _factory._pi);
+        FileUtil.copy(winSafe(), to.winSafe(), exclusive, keepMTime, _factory._pi);
     }
 
     public void copyRecursively(InjectableFile to, boolean exclusive, boolean keepMTime)
             throws IOException
     {
-        FileUtil.copyRecursively(_f, to._f, exclusive, keepMTime, _factory._pi);
+        FileUtil.copyRecursively(winSafe(), to.winSafe(), exclusive, keepMTime, _factory._pi);
     }
 
     public boolean deleteIgnoreErrorRecursively()
     {
-        return FileUtil.deleteIgnoreErrorRecursively(_f, _factory._pi);
+        return FileUtil.deleteIgnoreErrorRecursively(winSafe(), _factory._pi);
     }
 
     public void deleteOnExit()
     {
-        FileUtil.deleteOnExit(_f);
+        FileUtil.deleteOnExit(winSafe());
     }
 
     /**
@@ -310,7 +348,7 @@ public class InjectableFile
      */
     public void deleteOrOnExit()
     {
-        FileUtil.deleteOrOnExit(_f);
+        FileUtil.deleteOrOnExit(winSafe());
     }
 
     public InjectableFile getParentFile()
@@ -325,12 +363,12 @@ public class InjectableFile
 
     public void mkdirs() throws IOException
     {
-        FileUtil.mkdirs(_f);
+        FileUtil.mkdirs(winSafe());
     }
 
     public void ensureDirExists() throws IOException
     {
-        FileUtil.ensureDirExists(_f);
+        FileUtil.ensureDirExists(winSafe());
     }
 
     /**
@@ -351,33 +389,33 @@ public class InjectableFile
          * Another way to look at this: if dir.list() returns null, then we don't care WHY,
          * it always means that this directory is unreadable to us.
          */
-        return _f.canRead() &&
-                !(_f.isDirectory() && OSUtil.isWindows() && _f.list() == null);
+        return winSafe().canRead() &&
+                !(isDirectory() && OSUtil.isWindows() && list() == null);
     }
 
     public boolean canWrite()
     {
-        return _f.canWrite();
+        return winSafe().canWrite();
     }
 
     public long getTotalSpace()
     {
-        return _f.getTotalSpace();
+        return winSafe().getTotalSpace();
     }
 
     public long getUsableSpace()
     {
-        return _f.getUsableSpace();
+        return winSafe().getUsableSpace();
     }
 
     public InputStream newInputStream() throws FileNotFoundException
     {
-        return new FileInputStream(_f);
+        return new FileInputStream(winSafe());
     }
 
     public OutputStream newOutputStream() throws FileNotFoundException
     {
-        return new FileOutputStream(_f);
+        return new FileOutputStream(winSafe());
     }
 
 }
