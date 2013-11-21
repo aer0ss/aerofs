@@ -58,6 +58,11 @@ _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
 # UWSGI reload completion.
 _UWSGI_RELOADING = False
 
+# The value of this session key indicates whether the current setup session is a
+# restore from a backup file.
+_SESSION_KEY_RESTORED = 'restored'
+
+
 # ------------------------------------------------------------------------
 # Settings utilities
 # ------------------------------------------------------------------------
@@ -123,8 +128,10 @@ def _setup_common(request, conf, license_page_only):
         'url_param_email': URL_PARAM_EMAIL,
         # The following parameter is used by email_page.mako
         'default_support_email': _get_default_support_email(conf['base.host.unified']),
-        ## This parameter is used by finalize
-        'url_param_license_shasum': URL_PARAM_KEY_LICENSE_SHASUM
+        # This parameter is used by finalize
+        'url_param_license_shasum': URL_PARAM_KEY_LICENSE_SHASUM,
+        # This parameter is used by SMTP & LDAP verification code
+        'restored_from_backup': request.session.get(_SESSION_KEY_RESTORED, True)
     }
 
 
@@ -154,6 +161,8 @@ def _get_default_support_email(hostname):
 def json_set_license(request):
     log.info("set license")
 
+    # TODO (WW) share code with maintenance_view.py:maintenance_login_submit()?
+
     # Due to the way we use JS to upload this file, the request parameter on
     # the wire is urlencoded utf8 of a unicode string.
     # request.params['license'] is that unicode string.
@@ -162,6 +171,10 @@ def json_set_license(request):
 
     if not set_license_file_and_attach_shasum_to_session(request, license_bytes):
         error("The provided license file is invalid.")
+
+    # Since this method is the first step in a setup session, reset the
+    # "restored" flag here, assuming the restore code will set this flag later.
+    del request.session[_SESSION_KEY_RESTORED]
 
     headers = remember_license_based_login(request)
     return HTTPOk(headers=headers)
@@ -493,7 +506,7 @@ def _get_ldap_specific_parameters(request_params):
     renderer='json',
     request_method='POST'
 )
-def json_restore(request):
+def json_upload_backup(request):
     log.info("uploading backup file...")
     # Clean up old file
     if os.path.exists(BACKUP_FILE_PATH):
@@ -505,6 +518,8 @@ def json_restore(request):
 
     with open(BACKUP_FILE_PATH, 'wb') as output_file:
         shutil.copyfileobj(input_file, output_file)
+
+    request.session[_SESSION_KEY_RESTORED] = True
 
     return HTTPOk()
 

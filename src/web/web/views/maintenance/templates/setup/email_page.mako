@@ -223,13 +223,14 @@
                     enable_tls != current_enable_tls);
 
             ## Only enable smtp verification modal if something has changed.
+            var restored = ${str(restored_from_backup).lower()};
             var initial = ${str(not is_configuration_initialized).lower()};
             var toggled = remote != ${str(local.is_remote_host).lower()};
 
             ## This is used by CI to skip verification during automated testing
             var skipEmailVerification = $.url().param('skip_email_verification');
 
-            if (!skipEmailVerification && (initial || toggled || remoteOptsChanged)) {
+            if (!skipEmailVerification && (restored || initial || toggled || remoteOptsChanged)) {
                 ## As we are showing modals, do not disable nav buttons
                 showVerifyEmailInputModal();
 

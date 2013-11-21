@@ -35,6 +35,8 @@ def maintenance_login_submit(request):
     log.info("attempt to login with license. auth'ed userid: {}"
         .format(authenticated_userid(request)))
 
+    # TODO (WW) share code with setup_view.py:json_set_license()?
+
     license_bytes = ''
     while True:
         buf = request.POST[URL_PARAM_LICENSE].file.read(4096)

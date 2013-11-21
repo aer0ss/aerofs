@@ -324,8 +324,10 @@
             ## Verify LDAP if any LDAP options have changed or the user switches
             ## from local auth to LDAP.
             ## The logic needs to make sure the verification is performed on
-            ## initial setups.
-            if (ldapOptionChanged || ${str(local.local_auth).lower()}) {
+            ## initial setups and restores.
+            var wasLocalAuth = ${str(local.local_auth).lower()};
+            var restored = ${str(restored_from_backup).lower()};
+            if (ldapOptionChanged || wasLocalAuth || restored) {
                 console.log("ldap opt changed. test new opts");
 
                 ## Show the progress dialog for testing LDAP
