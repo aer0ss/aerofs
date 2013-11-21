@@ -168,24 +168,13 @@ public class OSUtilWindows implements IOSUtil
         return System.getenv("USERPROFILE");
     }
 
-    // The ? on the final group makes the suffix optional (zero or one of these)
-    private final static Pattern RESERVED_FILENAME_PATTERN = Pattern.compile(
-            "(CON|CLOCK\\$|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*)?",
-            Pattern.CASE_INSENSITIVE);
-
-    // This regex is simpler, just checking for certain characters that are forbidden.
-    private final static Pattern INVALID_FILENAME_CHARS = Pattern.compile(
-            "[/\\\\:*?\"<>|\0-\\x1f]");
-
-    private final static ImmutableList<Character> FORBIDDEN_TRAILERS = ImmutableList.of('.', ' ');
+    private final static Pattern INVALID_FILENAME_CHARS = Pattern.compile("[/\\\\:*?\"<>|\0-\\x1f]");
 
     /**
      * Check if this filename has a chance at being valid on Windows.
      * Specific failures checked for are:
      *   - length <= 255
      *   - illegal characters
-     *   - trailing space or dot
-     *   - reserved filenames: COM1, NUL, PRN... (with optional suffix)
      *
      * See
      * docs/design/filesystem_restrictions.md
@@ -196,21 +185,25 @@ public class OSUtilWindows implements IOSUtil
     public static boolean isInvalidWin32FileName(String name)
     {
         Preconditions.checkState(!name.isEmpty());
-        return name.length() > 255
-                || FORBIDDEN_TRAILERS.contains(name.charAt(name.length() - 1))
-                || INVALID_FILENAME_CHARS.matcher(name).find()
-                || RESERVED_FILENAME_PATTERN.matcher(name).matches();
+        return name.length() > 255 || INVALID_FILENAME_CHARS.matcher(name).find();
     }
 
+    private final static Pattern RESERVED_FILENAME_PATTERN = Pattern.compile(
+            "(CON|CLOCK\\$|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*)?",
+            Pattern.CASE_INSENSITIVE);
+    private final static ImmutableList<Character> FORBIDDEN_TRAILERS = ImmutableList.of('.', ' ');
     private final static String RESERVED_SUFFIX = " - reserved name";
 
     /**
-     * If the input name is not a valid file name, return a valid name derived from it
+     * If the input name is not a valid file name, return a valid name derived from it.
+     *
+     * NB: contrary to the {#isInvalidFileName} method, this one cannot assume that the resulting
+     * filename will be used with the magic prefix and must therefore be 100% idiot-proof
      *
      * 1. replace any invalid characters by an underscore
      * 2. append a " - reserved" suffix to reserved names (old MSDOS relics)
-     * 3. remove trailing spaces and periods
-     * 4. return "empty" if input is empty after trimming
+     * 3. remove trailing spaces and periods (and ensure not empty as a result)
+     * 4. truncate if longer than 255 characters
      */
     @Override
     public String cleanFileName(String name)
