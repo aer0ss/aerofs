@@ -153,7 +153,14 @@ def _get_default_support_email(hostname):
 )
 def json_set_license(request):
     log.info("set license")
-    if not set_license_file_and_attach_shasum_to_session(request, request.params['license']):
+
+    # Due to the way we use JS to upload this file, the request parameter on
+    # the wire is urlencoded utf8 of a unicode string.
+    # request.params['license'] is that unicode string.
+    # We want raw bytes, not the Unicode string, so we encode to latin1
+    license_bytes = request.params['license'].encode('latin1')
+
+    if not set_license_file_and_attach_shasum_to_session(request, license_bytes):
         error("The provided license file is invalid.")
 
     headers = remember_license_based_login(request)

@@ -178,8 +178,8 @@
             if (!$('#${license_file_input_id}').val()) gotoNextPage();
 
             disableNavButtons();
-            ## TODO (WW) is there a clean way to submit the file data?
-            ## Note: FileReader is supported in IE9.
+
+            ## TODO (WW) use multipart/form-data as in maintenance_login.mako
             var file = document.getElementById('${license_file_input_id}').files[0];
             var reader = new FileReader();
             reader.onload = function() {

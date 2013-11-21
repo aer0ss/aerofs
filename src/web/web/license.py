@@ -51,22 +51,13 @@ def is_license_present_and_valid(conf):
     # N.B. keep the comparison consistent with License.java:isValid()
     return now <= expiry_date
 
-def set_license_file_and_attach_shasum_to_session(request, license_data):
+def set_license_file_and_attach_shasum_to_session(request, license_bytes):
     """
     Set the license file by calling the config server, and attach the shasum to
     the session. Call error() if the request failed.
 
-    @param license_data: content of a license file as received in HTTP requests
-
-    TODO (WW) read the file the same way as verify_license_file*()
+    @param license_bytes: content of a license file
     """
-
-    # Due to the way we use JS to upload this file, the request parameter on
-    # the wire is urlencoded utf8 of a unicode string.
-    # request.params['license'] is that unicode string.
-    # We want raw bytes, not the Unicode string, so we encode to latin1
-    license_bytes = license_data.encode('latin1')
-
     r = requests.post(_URL_SET_LICENSE_FILE, data = {
         'license_file': base64.urlsafe_b64encode(license_bytes)
     })
@@ -77,25 +68,6 @@ def set_license_file_and_attach_shasum_to_session(request, license_data):
         return True
     else:
         log.error("set license file failed: {} {}".format(r.status_code, r.text))
-        return False
-
-def verify_license_file_and_attach_shasum_to_session(request, license_file):
-    """
-    Verify the shasum of the provided file with the config server, and attach
-    the checksum to the session if verification is successful.
-    @return whether verification succeeds
-    """
-    digest = hashlib.sha1()
-    while True:
-        buf = license_file.read(4096)
-        if not buf: break
-        digest.update(buf)
-    shasum = digest.hexdigest()
-
-    if is_license_shasum_valid(shasum):
-        _attach_checksum_to_session(request, shasum)
-        return True
-    else:
         return False
 
 def verify_license_shasum_and_attach_to_session(request, shasum):

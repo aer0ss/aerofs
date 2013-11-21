@@ -2,7 +2,7 @@ import logging
 from pyramid.httpexceptions import HTTPFound
 from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid
 from pyramid.view import view_config
-from web.license import verify_license_file_and_attach_shasum_to_session
+from web.license import set_license_file_and_attach_shasum_to_session
 from web.login_util import URL_PARAM_NEXT, get_next_url, redirect_to_next_page, remember_license_based_login
 from web.util import flash_error, is_maintenance_mode
 
@@ -35,8 +35,21 @@ def maintenance_login_submit(request):
     log.info("attempt to login with license. auth'ed userid: {}"
         .format(authenticated_userid(request)))
 
-    if not verify_license_file_and_attach_shasum_to_session(request,
-            request.POST[URL_PARAM_LICENSE].file):
+    license_bytes = ''
+    while True:
+        buf = request.POST[URL_PARAM_LICENSE].file.read(4096)
+        if not buf: break
+        license_bytes += buf
+
+    ########
+    # N.B. & TODO (WW)
+    #
+    # We don't restart services here. That means if the admin logs in with a new
+    # license file, it will not take effect until the next time the system
+    # restarts or reconfigures. It is okay for now but we need to revisit it
+    # later.
+
+    if not set_license_file_and_attach_shasum_to_session(request, license_bytes):
         flash_error(request, "The license is incorrect.")
         return HTTPFound(location=request.route_path('maintenance_login'))
 
