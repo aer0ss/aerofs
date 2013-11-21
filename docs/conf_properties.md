@@ -51,8 +51,6 @@ http://localhost:5436/
     updater.server.url=https://aerofs.com:8080/
     ca.server.url=http://aerofs.com:1029/
 
-**Note**: "Extra" templates are provied in /opt/config/template/extras/*. In the case where you need to add a site specific property that will NEVER be common and included in the default package (this should rarely happen) you can use the extra templates. They will not be overwritten on update.
-
 # external.properties
 
 All externally configurable properties (described above).

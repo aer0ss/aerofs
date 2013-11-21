@@ -1,5 +1,4 @@
 {% include "common.tmplt" %}
-{% include "extras/server.tmplt" %}
 
 base.configuration.initialized={{ configuration_initialized }}
 bootstrap.tasks.configuration_service_url=https://localhost:5436/
