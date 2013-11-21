@@ -27,9 +27,4 @@ ldap_server_security
     The default vale for the LDAP server security type enum.
         TODO (MP) make the web code render the default.
 
-browser_cert & browser_key
-    The x509 certificate and key used by the browser.
-        TODO (MP) make bootstrap generate a self-signed certificate if none is
-        provided and remove this default.
-
 Add other variable descriptions here...
