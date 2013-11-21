@@ -1,5 +1,4 @@
 {% include "common.tmplt" %}
-{% include "extras/client.tmplt" %}
 
 updater.version.url=https://{{ base_host }}:4433/static/installers/current.ver
 updater.installer.url=https://{{ base_host }}:4433/static/installers
