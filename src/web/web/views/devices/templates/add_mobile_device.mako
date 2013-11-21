@@ -11,8 +11,8 @@
 </ol>
 <p>
 
-<a href="#" onclick="getQRCode();   return false;" class="btn btn-primary btn-lg" role="button" style="margin:0 16px 16px 0;">Get QR code</a>
-<a href="#" onclick="getTextCode(); return false;" class="btn btn-primary btn-lg" role="button" style="margin:0 16px 16px 0;">Get text Code</a>
+<a href="#" onclick="getQRCode();   return false;" class="btn btn-primary btn-lg" role="button" style="margin:0 16px 16px 0;">Get QR Code</a>
+<a href="#" onclick="getTextCode(); return false;" class="btn btn-primary btn-lg" role="button" style="margin:0 16px 16px 0;">Get Text Code</a>
 
 <div id="result"></div>
 
