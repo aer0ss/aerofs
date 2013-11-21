@@ -29,15 +29,13 @@ public class IgnoreList
         // The Java File API transparently converts filenames as bytestrings into
         // Strings using the platform encoding.  If the filename's bytestring
         // is invalid under that encoding (usually UTF-8), then String replaces
-        // that byte with a Unicode replacement character.
+        // that byte with a Unicode replacement character (U+FFFD).
         //
         // When this path is passed to Scanner will fail to find the file when that
         // String is passed to getFID, which causes a full rescan.  This causes an
         // infinite rescan loop which makes no forward progress syncing.
         //
-        // This workaround ignores such files and folders so that syncing can
-        // progress.
-        // Addresses aerofs-590.
+        // This workaround ignores such files and folders so that syncing can progress.
         if (name.indexOf('\ufffd') != -1) return true;
 
         /**

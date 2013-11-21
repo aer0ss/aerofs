@@ -32,15 +32,8 @@ public class TestOSUtilWindows
     public void shouldDisallowInvalidFiles()
     {
         String[] IllegalNames = {
-                "con", "CON", "PRN", "AUX",
-                "NUL", "COM1", "COM9", "LPT1",
-                "LPT9", "foo<", "foo>",
-                "CLOCK$",
-                "foo:", "foo\"", "foo/",
+                "foo<", "foo>", "foo:", "foo\"", "foo/",
                 "foo\\", "foo|", "foo?", "foo*",
-                "a.", "...", "....", ".....",
-                "a ", "   ", "    ", "     ",
-                "LPT1.txt", "CON.whatever", "nul.something",
                 LARGER_THAN_MAXPATH
         };
 
@@ -53,6 +46,13 @@ public class TestOSUtilWindows
     public void shouldAllowValidFiles()
     {
         String[] LegalNames = {
+                "con", "CON", "PRN", "AUX",
+                "NUL", "COM1", "COM9", "LPT1",
+                "LPT9",
+                "CLOCK$",
+                "a.", "...", "....", ".....",
+                "a ", "   ", "    ", "     ",
+                "LPT1.txt", "CON.whatever", "nul.something",
                 "_con", ".con", " con",
                 "...con.txt",
                 "foo,", "lpt0",

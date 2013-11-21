@@ -54,7 +54,7 @@ import javax.annotation.Nullable;
  */
 public class MightCreate
 {
-    private static Logger l = Loggers.getLogger(MightCreate.class);
+    private final static Logger l = Loggers.getLogger(MightCreate.class);
 
     private final IgnoreList _il;
     private final DirectoryService _ds;
