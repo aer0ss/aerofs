@@ -98,8 +98,8 @@ ${common.render_previous_button()}
     <div class="modal-body">
         <p>A confirmation email has been sent to:</p>
         <p class="text-center"><strong id="email-sent-address"></strong></p>
-        <p>Follow the instructions in the email to finish signing up the user.
-            Once finished, you can invite more users with this user account.</p>
+        <p>Follow the instructions in the email to finish signing up the account.
+            Once finished, you can add more users with this account.</p>
     </div>
     <div class="modal-footer">
         <a href="#" class="btn"
@@ -107,13 +107,13 @@ ${common.render_previous_button()}
             Resend Email</a>
         <a href="#" class="btn btn-primary"
             onclick="hideAllModals(); $('#confirm-add-user-modal').modal('show'); return false;">
-            Add More Users</a>
+            Finish Setup</a>
     </div>
 </div>
 
 <div id="confirm-add-user-modal" class="modal hide small-modal" tabindex="-1" role="dialog">
     <div class="modal-header">
-        <h4>Have you finished signing up the first user?</h4>
+        <h4>Did you finish signing up the first user?</h4>
     </div>
     <div class="modal-body">
         <p>Please make sure the first user is fully signed up before proceeding.
