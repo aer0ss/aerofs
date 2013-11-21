@@ -265,6 +265,8 @@ def select_dhcp():
     ifdown()
     set_current_netconfig("dhcp")
     ifup()
+    print
+    raw_input("DHCP configured. Press Enter to continue...")
 
 def show_static_menu():
     # read static values from user
@@ -296,6 +298,8 @@ def show_static_menu():
     set_current_netconfig("static")
     # bring new network configuration up
     ifup()
+    print
+    raw_input("Static networking configured. Press Enter to continue...")
 
 def request_nameservers():
     old_nameservers, additional_lines = read_resolvconf()
