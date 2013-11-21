@@ -30,9 +30,9 @@
                     ('setup', _("Setup")),
                 ]
             %>
-            % for link in links:
+            %for link in links:
                 ${navigation.link(link)}
-            % endfor
+            %endfor
 
             <li class="nav-header">My AeroFS</li>
             ${navigation.link(('dashboard_home', 'Home'))}

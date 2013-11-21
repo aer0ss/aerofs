@@ -188,6 +188,12 @@ The file server.properties contains properties used only by AeroFS servers. Ther
 be sensitive information stored in this file such as service credentials,
 AeroFS clients should not be able to access this file.
 
+    last_smtp_verification_email=
+
+Internal use only. This property remembers the last email address the user used to send SMTP
+verification email.
+
+
     shared_folder_rules.readonly_external_folders=false
 
 Whether to enable read-only external folder rules. The system uses `internal_email_pattern`

@@ -276,10 +276,14 @@ def _send_verification_email(from_email, to_email, code, host, port,
 def json_verify_smtp(request):
     host, port, username, password, enable_tls, support_address = _parse_email_request(request)
 
-    verification_code = request.params['verification-code']
+    verify_code = request.params['verification-code']
+    verify_email = request.params['verification-to-email']
 
-    r = _send_verification_email(support_address, request.params['verification-to-email'],
-                                 verification_code, host, port,
+    # Save the email for the frontend to use next time
+    Configuration().set_external_property('last_smtp_verification_email', verify_email)
+
+    r = _send_verification_email(support_address, verify_email,
+                                 verify_code, host, port,
                                  username, password, enable_tls)
 
     if r.status_code != 200:

@@ -119,7 +119,8 @@
             ${csrf.token_input()}
             <input type="hidden" name="verification-code" value="${local.verification_code}"/>
             <label for="verification-to-email">Email address:</label>
-            <input id="verification-to-email" name="verification-to-email" type="text">
+            <input id="verification-to-email" name="verification-to-email" type="text"
+                   value="${current_config['last_smtp_verification_email']}">
         </form>
     </div>
     <div class="modal-footer">
