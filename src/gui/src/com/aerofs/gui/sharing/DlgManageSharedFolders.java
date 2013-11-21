@@ -27,7 +27,6 @@ import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.google.common.util.concurrent.FutureCallback;

@@ -4,7 +4,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.CompSpin;
@@ -24,9 +23,8 @@ import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
@@ -47,13 +45,16 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import java.util.Collection;
+import java.util.Map;
 
 import static com.aerofs.gui.sharing.SharedFolderRulesExceptionHandlers.canHandle;
 import static com.aerofs.gui.sharing.SharedFolderRulesExceptionHandlers.promptUserToSuppressWarning;
 import static com.aerofs.gui.sharing.manage.SharedFolderMember.Factory;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -89,8 +90,17 @@ public class CompUserList extends Composite
 
     private CompSpin _compSpin;
 
+    /**
+     * In general, these 3 states need to stay in sync and should all be updated at the same time
+     * on the UI thread via one of the setState() methods.
+     *
+     * The content of _members can be accessed and updated directly, but it should be done on the
+     * UI thread to avoid a race against the UI thread.
+     */
+    // _members is cached because we want to look up a member by user ID in setRole().
+    private @Nonnull Map<UserID, SharedFolderMember> _members = Maps.newHashMap();
+    private Role _localUserRole;
     private Path _path;
-    private Role _rSelf;
 
     public CompUserList(Composite parent)
     {
@@ -98,7 +108,7 @@ public class CompUserList extends Composite
 
         _tv = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
         _tv.setContentProvider(new ArrayContentProvider());
-        _tv.setComparator(SharedFolderMemberComparator.bySubject());
+        _tv.setComparator(SharedFolderMemberComparators.bySubject());
         ColumnViewerToolTipSupport.enableFor(_tv);
 
         final Table table = _tv.getTable();
@@ -117,7 +127,7 @@ public class CompUserList extends Composite
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                _tv.setComparator(SharedFolderMemberComparator.bySubject());
+                _tv.setComparator(SharedFolderMemberComparators.bySubject());
             }
         });
 
@@ -131,7 +141,7 @@ public class CompUserList extends Composite
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                _tv.setComparator(SharedFolderMemberComparator.byRole());
+                _tv.setComparator(SharedFolderMemberComparators.byRole());
             }
         });
 
@@ -162,7 +172,7 @@ public class CompUserList extends Composite
                 SharedFolderMember member = (SharedFolderMember)elem;
                 if (!RoleMenu.hasContextMenu(member)) return;
 
-                RoleMenu menu = new RoleMenu(_tv.getTable(), _rSelf, member);
+                RoleMenu menu = new RoleMenu(_tv.getTable(), _localUserRole, member);
                 menu.setRoleChangeListener(new RoleChangeListener()
                 {
                     @Override
@@ -195,21 +205,38 @@ public class CompUserList extends Composite
         layout.setColumnData(_tcSubject, new ColumnWeightData(618));
         layout.setColumnData(_tcRole, new ColumnWeightData(382));
         layout.setColumnData(_tcArrow, new ColumnWeightData(0, _tcArrow.getWidth()));
-        layout(new Control[]{ _tv.getTable() });
+        layout(new Control[]{_tv.getTable()});
     }
 
     /**
-     * In general, these 3 states need to stay in sync and should all be updated at the same time
-     *
-     * @pre must be called from UI thread so we can serialize the write access to these 3 states.
+     * @pre must be called from UI thread and members must not be null.
      */
-    private void setState(Object input, Role selfRole, Path path)
+    private void setState(@Nonnull Map<UserID, SharedFolderMember> members, Role localUserRole, Path path)
+    {
+        checkState(UI.isGUI());
+        checkNotNull(members);
+
+        _members = members;
+        _localUserRole = localUserRole;
+        _path = path;
+
+        // N.B. this establishes a tight binding; if the data in _members is updated, the changes
+        // will be visible after _tv refreshes.
+        _tv.setInput(_members.values());
+    }
+
+    /**
+     * @pre must be called from UI thread.
+     */
+    private void setState(String errorMessage)
     {
         checkState(UI.isGUI());
 
-        _tv.setInput(input);
-        _rSelf = selfRole;
-        _path = path;
+        _members.clear();
+        _localUserRole = null;
+        _path = null;
+
+        _tv.setInput(new String[] { errorMessage } );
     }
 
     public void setLoadListener(@Nullable ILoadListener listener)
@@ -218,29 +245,12 @@ public class CompUserList extends Composite
     }
 
     /**
-     * N.B. the value will be fetched from the table's data
-     *
-     * @pre must be invoked from the UI thread and the table must contain valid data.
+     * N.B. the value will be fetched from the current state
+     * @pre must be invoked from the UI thread and the current state must have members
      */
     private void notifyLoadListener()
     {
-        throwIfNoTableData();
-        if (_listener != null) _listener.loaded(getTableData().size(), _rSelf);
-    }
-
-    /**
-     * @pre must be invoked from the UI thread and the table must have data
-     */
-    @SuppressWarnings("unchecked")
-    private Collection<SharedFolderMember> getTableData()
-    {
-        throwIfNoTableData();
-        return (Collection<SharedFolderMember>)_tv.getInput();
-    }
-
-    private void throwIfNoTableData()
-    {
-        checkState(GUI.get().isUIThread() && _tv.getInput() instanceof Collection);
+        if (_listener != null) _listener.loaded(_members.size(), _localUserRole);
     }
 
     /**
@@ -252,12 +262,12 @@ public class CompUserList extends Composite
     {
         checkState(GUI.get().isUIThread());
 
-        setState(new Object[]{S.GUI_LOADING}, null, null);
+        setState(S.GUI_LOADING);
 
         GUI.get().safeWork(_tv.getTable(), new ISWTWorker()
         {
-            Collection<SharedFolderMember> _members;
-            Role _localUserRole;
+            Map<UserID, SharedFolderMember> _newMembers;
+            Role _newLocalUserRole;
 
             @Override
             public void run()
@@ -266,10 +276,12 @@ public class CompUserList extends Composite
                 CfgLocalUser localUser = new CfgLocalUser();
                 SID sid = getStoreID(path);
                 Sp.PBSharedFolder pbFolder = getSharedFolderWithSID(localUser, sid);
-                Factory factory = new Factory(localUser);
 
-                _members = createMembers(factory, pbFolder);
-                _localUserRole = findLocalUserRoleNullable(_members);
+                _newMembers = filterLeftMembersAndCreateMapFromPB(new Factory(localUser), pbFolder);
+
+                // N.B. the local user may not be a member, e.g. Team Server
+                SharedFolderMember localUserAsMember = _newMembers.get(localUser.get());
+                if (localUserAsMember != null) _newLocalUserRole = localUserAsMember._role;
             }
 
             // makes a ritual call to retrieve the list of shared folders and their sids and
@@ -284,7 +296,7 @@ public class CompUserList extends Composite
                     }
                 }
 
-                throw new ExBadArgs("Invalid shared folder path.");
+                throw new ExBadArgs("Invalid shared folder.");
             }
 
             // make a SP call to retrieve the shared folder associated with the store ID
@@ -298,54 +310,41 @@ public class CompUserList extends Composite
                 Sp.ListSharedFoldersReply reply =
                         sp.listSharedFolders(ImmutableList.of(sid.toPB()));
                 // assert the contract of the sp call
-                Preconditions.checkArgument(reply.getSharedFolderCount() == 1);
+                checkArgument(reply.getSharedFolderCount() == 1);
 
                 return reply.getSharedFolder(0);
             }
 
-            // filters out the members of PBSharedFolder that have left and then map the remaining
-            // members to SharedFolderMembers;
-            private Collection<SharedFolderMember> createMembers(Factory factory,
-                    Sp.PBSharedFolder pbFolder) throws ExBadArgs
+            private Map<UserID, SharedFolderMember> filterLeftMembersAndCreateMapFromPB(
+                    Factory factory, Sp.PBSharedFolder pbFolder) throws ExBadArgs
             {
-                // using a set here to remove duplicates
-                Collection<SharedFolderMember> members =
-                        Sets.newHashSetWithExpectedSize(pbFolder.getUserRoleAndStateCount());
+                Map<UserID, SharedFolderMember> members =
+                        Maps.newHashMapWithExpectedSize(pbFolder.getUserRoleAndStateCount());
 
                 for (PBUserRoleAndState urs : pbFolder.getUserRoleAndStateList()) {
                     if (urs.getState() != PBSharedFolderState.LEFT) {
-                        members.add(factory.fromPB(urs));
+                        SharedFolderMember member = factory.fromPB(urs);
+                        members.put(member._userID, member);
                     }
                 }
 
                 return members;
             }
 
-            // returns null if the local user is not found (not a member / team server)
-            @Nullable
-            private Role findLocalUserRoleNullable(Collection<SharedFolderMember> members)
-            {
-                for (SharedFolderMember member : members) {
-                    if (member.isLocalUser()) return member._role;
-                }
-
-                return null;
-            }
-
             @Override
             public void okay()
             {
-                setState(_members, _localUserRole, path);
+                setState(_newMembers, _newLocalUserRole, path);
+                notifyLoadListener();
 
                 layoutTableColumns();
-
-                notifyLoadListener();
             }
 
             @Override
             public void error(Exception e)
             {
-                setState(new Object[0], null, null);
+                setState("");
+                notifyLoadListener();
 
                 ErrorMessages.show(getShell(), e, "Failed to retrieve user list.",
                         new ErrorMessage(ExNoPerm.class,
@@ -389,22 +388,17 @@ public class CompUserList extends Composite
 
                 if (!table.isDisposed()) {
                     table.setEnabled(true);
+                    table.setFocus();
 
-                    try {
-                        updateRoleInLocalCache(subject, role);
-                    } catch (Exception e) {
-                        // this is unexpected; we should log and fallback to loading from SP
-                        String message = e instanceof ExNotFound ?
-                                "Failed to locally update the shared folder member's role: " +
-                                        "cannot find the user " + subject :
-                                "Failed to locally update the shared folder member's role.";
-                        l.error(message, e);
+                    SharedFolderMember member = _members.get(subject);
 
-                        load(path);
-                        return; // early exit because load will refresh and notify listeners.
+                    if (role == null) {
+                        _members.remove(subject);
+                    } else {
+                        member._role = role;
                     }
 
-                    _tv.refresh();
+                    _tv.refresh(member, true, true);
 
                     notifyLoadListener();
                 }
@@ -430,46 +424,6 @@ public class CompUserList extends Composite
                             new ErrorMessage(ExNoPerm.class,
                                     "You do not have the permission to do so."));
                 }
-            }
-
-            /**
-             * Update the user's role to the local cache without making a round trip to SP.
-             *
-             * @param role - the new role for the user. if null, the user will be removed.
-             *
-             * @pre must be called from the UI thread and the table must have data
-             * @throws ExNotFound if the user cannot be found
-             */
-            private void updateRoleInLocalCache(UserID userID, Role role) throws ExNotFound
-            {
-                throwIfNoTableData();
-
-                Collection<SharedFolderMember> members = getTableData();
-                SharedFolderMember member = findMemberWithUserIDThrows(members, userID);
-
-                members.remove(member);
-
-                if (role != null) {
-                    Factory factory = new Factory(new CfgLocalUser());
-                    SharedFolderMember newMember = factory.create(member._userID,
-                            member._firstname, member._lastname, role, member._state);
-                    members.add(newMember);
-                }
-            }
-
-            /**
-             * @return the shared folder member with the given user ID.
-             * @throws ExNotFound if the user cannot be found
-             */
-            private SharedFolderMember findMemberWithUserIDThrows(
-                    Collection<SharedFolderMember> members, UserID userID)
-                    throws ExNotFound
-            {
-                for (SharedFolderMember member : members) {
-                    if (member._userID.equals(userID)) return member;
-                }
-
-                throw new ExNotFound();
             }
         });
     }

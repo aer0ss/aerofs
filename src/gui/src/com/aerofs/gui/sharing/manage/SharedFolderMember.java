@@ -11,7 +11,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserRoleAndState;
 import com.aerofs.sp.common.SharedFolderState;
-import com.google.common.base.Preconditions;
 
 import javax.annotation.Nonnull;
 
@@ -29,11 +28,11 @@ public class SharedFolderMember
     // local user
     private final Factory _factory;
 
-    @Nonnull public final UserID _userID;
-    @Nonnull public final String _firstname;
-    @Nonnull public final String _lastname;
-    @Nonnull public final Role _role;
-    @Nonnull public final SharedFolderState _state;
+    @Nonnull public final UserID _userID; // used as a key, do not mutate
+    @Nonnull public String _firstname;
+    @Nonnull public String _lastname;
+    @Nonnull public Role _role;
+    @Nonnull public SharedFolderState _state;
 
     SharedFolderMember(Factory factory, @Nonnull UserID userID, @Nonnull String firstname,
             @Nonnull String lastname, @Nonnull Role role, @Nonnull SharedFolderState state)
@@ -151,6 +150,19 @@ public class SharedFolderMember
         if (a && !b) return -1;
         else if (b && !a) return 1;
         else return 0;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        return this == o ||
+                (o instanceof SharedFolderMember && _userID.equals(((SharedFolderMember)o)._userID));
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _userID.hashCode();
     }
 
     // the only reason to have a factory is so we can inject a CfgLocalUser and check if a shared

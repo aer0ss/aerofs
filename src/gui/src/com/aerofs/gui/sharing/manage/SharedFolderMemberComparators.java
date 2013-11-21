@@ -13,9 +13,9 @@ import org.eclipse.jface.viewers.Viewer;
  *
  * N.B. if the objects are not _both_ SharedFolderMembers, they are considered equivalent.
  */
-public class SharedFolderMemberComparator
+public class SharedFolderMemberComparators
 {
-    private SharedFolderMemberComparator()
+    private SharedFolderMemberComparators()
     {
         // private to prevent instantiation
     }
