@@ -148,6 +148,15 @@ function _vm-kill()
 }
 
 # -----------------------------------------------------------
+# Configuration
+# -----------------------------------------------------------
+
+function _vm-bootstrap()
+{
+    _local-prod-cmd vm-ctrl bootstrap
+}
+
+# -----------------------------------------------------------
 # SSH
 # -----------------------------------------------------------
 
@@ -240,6 +249,10 @@ function main()
         "ssh")
             check_no_args ${@:-}
             _vm-ssh
+            ;;
+        "bootstrap")
+            check_no_args ${@:-}
+            _vm-bootstrap
             ;;
         *)
             echo "Error: invalid command name \"$command\"." >&2
