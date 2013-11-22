@@ -11,6 +11,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelFutureNotifier;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -277,15 +278,30 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
         return _channel.write(message);
     }
 
-    void onInterestChanged(VirtualChannel virtualChannel, int ops, ChannelFuture future)
+    void onInterestChanged(final VirtualChannel virtualChannel, final int ops, final ChannelFuture future)
     {
         try {
             writeMsg((ops & Channel.OP_READ) == 0 ? MSG_SUSPEND : MSG_RESUME,
                     virtualChannel.getConnectionId())
-                    .addListener(new ChannelFutureNotifier(future));
-
-            // TODO: fire on ack?
-            virtualChannel.fireInterestChanged(ops);
+                    .addListener(new ChannelFutureListener() {
+                        @Override
+                        public void operationComplete(ChannelFuture cf) throws Exception
+                        {
+                            if (cf.isSuccess()) {
+                                // execute in I/O thread to respect Netty's threading model
+                                virtualChannel.getPipeline().execute(new Runnable() {
+                                    @Override
+                                    public void run()
+                                    {
+                                        // TODO: fire on ack?
+                                        virtualChannel.fireInterestChanged(ops);
+                                    }
+                                }).addListener(new ChannelFutureNotifier(future));
+                            } else {
+                                future.setFailure(cf.getCause());
+                            }
+                        }
+                    });
         } catch (ClosedChannelException e) {
             l.warn("ignore write {} -> {}", virtualChannel, _channel);
             future.setFailure(e);
@@ -298,9 +314,8 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     void onDisconnect(VirtualChannel virtualChannel, ChannelFuture future)
     {
         try {
-            writeMsg(MSG_CLOSE,
-                    virtualChannel.getConnectionId())
-                    .addListener(new ChannelFutureNotifier(future));
+            writeMsg(MSG_CLOSE, virtualChannel.getConnectionId());
+            virtualChannel.getCloseFuture().addListener(new ChannelFutureNotifier(future));
 
             // fire when receiving ack (MSG_CLOSED)
             // tunnelChannel.fireDisconnected();
@@ -317,10 +332,17 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
      */
     public Channel newVirtualChannel(ChannelPipeline pipeline)
     {
-        VirtualChannel c = new VirtualChannel(this, pipeline);
+        final VirtualChannel c = new VirtualChannel(this, pipeline);
         _provider.put(c);
         Channels.fireChannelOpen(c);
-        Channels.fireChannelConnected(c, _addr);
+        // execute in I/O thread to respect Netty's threading model
+        c.getPipeline().execute(new Runnable() {
+            @Override
+            public void run()
+            {
+                Channels.fireChannelConnected(c, _addr);
+            }
+        });
         return c;
     }
 
