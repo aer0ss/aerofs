@@ -58,7 +58,7 @@
             ('Overview', 'product_overview'),
             (sub_item('Low-cost Scalability'), 'product_low_cost_scalability'),
             (sub_item('Security & Control'), 'product_security_and_control'),
-            (sub_item('Simple User Experience'), 'product_simple_experience'),
+            (sub_item('Simple Experience'), 'product_simple_experience'),
             (sub_item('Flexible Storage'), 'product_flexible_storage'),
             ('Deployment Options', 'product_deployment_options'),
             (sub_item('Private Cloud'), 'product_deployment_private_cloud'),
@@ -72,7 +72,7 @@
         items = [
             ('Overview', 'solutions_overview'),
             (sub_item('Transfer Large Files'), 'solutions_transfer_large_files'),
-            (sub_item('Share Sensitive Data'), 'solutions_secure_file_sharing'),
+            (sub_item('Share Securely'), 'solutions_secure_file_sharing'),
             (sub_item('Server Replacement'), 'solutions_server_replacement'),
             (sub_item('Data Recovery'), 'solutions_data_recovery'),
             ('Compliance', 'solutions_data_protection_policy')
@@ -94,8 +94,7 @@
 ## @items a list of tuples of (title, route).
 <%def name="_render_items(items, highlight_current_item)">
     %for item in items:
-        ## Without nowrap the arrow may be wrapped to the next line for long items
-        <li style="white-space: nowrap">
+        <li>
             <% item_url = request.route_url(item[1]) %>
             %if highlight_current_item and request.url == item_url:
                 <a href="${item_url}">${item[0] | n} &#x25B8;</a>

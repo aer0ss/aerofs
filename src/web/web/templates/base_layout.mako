@@ -31,7 +31,7 @@
     ## locally as opposed to on 3rd-party servers.
     <link href="${request.static_path('web:static/css/google-open-sans.css')}" rel='stylesheet'>
     <link href="${request.static_path('web:static/css/bootstrap.css')}" rel="stylesheet">
-    <link href="${request.static_path('web:static/css/unresponsive.css')}" rel="stylesheet">
+    <link href="${request.static_path('web:static/css/responsive.css')}" rel="stylesheet">
     <link href="${request.static_path('web:static/css/aerofs.css')}" rel="stylesheet">
 
     <%block name="css"/>
