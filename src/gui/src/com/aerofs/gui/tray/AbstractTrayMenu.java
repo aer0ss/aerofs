@@ -16,7 +16,6 @@ import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.activitylog.DlgActivityLog;
 import com.aerofs.gui.history.DlgHistory;
-import com.aerofs.gui.sharing.DlgManageSharedFolders;
 import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
@@ -57,7 +56,8 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
             = new ClickEvent(Action.OPEN_AEROFS_FOLDER, Source.TASKBAR);
     private static final ClickEvent PREFERENCES
             = new ClickEvent(Action.PREFERENCES, Source.TASKBAR);
-    private static final ClickEvent MANAGE_SHARED_FOLDER
+    // this event is used by both subclasses
+    protected static final ClickEvent MANAGE_SHARED_FOLDER
             = new ClickEvent(Action.MANAGE_SHARED_FOLDER, Source.TASKBAR);
 
     protected final TrayIcon _icon;
@@ -236,18 +236,6 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
             protected void handleEventImpl(Event event)
             {
                 GUIUtil.launch(Cfg.absDefaultRootAnchor());
-            }
-        });
-    }
-
-    protected void createSharedFoldersMenu(TrayMenuPopulator trayMenuPopulator)
-    {
-        trayMenuPopulator.addMenuItem("Manage Shared Folders...",
-                new AbstractListener(MANAGE_SHARED_FOLDER) {
-            @Override
-            protected void handleEventImpl(Event event)
-            {
-                new DlgManageSharedFolders(GUI.get().sh()).openDialog();
             }
         });
     }

@@ -26,7 +26,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
-import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
@@ -46,6 +45,8 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 
+import java.util.Map.Entry;
+
 public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotificationListener, ITrayMenu
 {
     private static final ClickEvent RESOLVE_CONFLICTS
@@ -56,8 +57,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             = new ClickEvent(Action.RESUME_SYNCING, Source.TASKBAR);
     private static final ClickEvent SHARE_FOLDER
             = new ClickEvent(Action.SHARE_FOLDER, Source.TASKBAR);
-    private static final ClickEvent MANAGE_SHARED_FOLDER
-            = new ClickEvent(Action.MANAGE_SHARED_FOLDER, Source.TASKBAR);
     private static final ClickEvent WHY_NOT_SYNCED
             = new ClickEvent(Action.WHY_NOT_SYNCED, Source.TASKBAR);
 
@@ -279,8 +278,9 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                     public void onSuccess(ListSharedFoldersReply reply)
                     {
                         loading.dispose();
-                        for (PBSharedFolder sf : reply.getSharedFolderList()) {
-                            addSharedFolderEntry(Path.fromPB(sf.getPath()), sf.getName());
+                        for (Entry<String, Path> entry :
+                                UIUtil.getPathsSortedByName(reply.getSharedFolderList())) {
+                            addSharedFolderEntry(entry.getValue(), entry.getKey());
                         }
                         if (reply.getSharedFolderCount() == 0) {
                             sharedTrayMenuPopulator.addMenuItem("No shared folder", null)
@@ -290,7 +290,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
 
                     private void addSharedFolderEntry(final Path path, String name)
                     {
-                        sharedTrayMenuPopulator.addMenuItem(UIUtil.sharedFolderName(path, name),
+                        sharedTrayMenuPopulator.addMenuItem(name,
                                 new GUIUtil.AbstractListener(MANAGE_SHARED_FOLDER)
                                 {
                                     @Override

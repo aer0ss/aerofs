@@ -24,6 +24,7 @@ import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sv.client.SVClient;
@@ -33,6 +34,8 @@ import com.aerofs.ui.launch_tasks.ULTRtrootMigration;
 import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToMigrate;
 import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToReloadCfg;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
@@ -40,6 +43,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -394,6 +398,29 @@ public class UIUtil
             l.error("ignored exception", e);
         }
         return absRootPath != null ? new File(absRootPath).getName() : defaultName;
+    }
+
+    /**
+     * Maps a collection of PBSharedFolders to Paths, resolves the shared folder names, and sorts
+     * the Paths by shared folder names.
+     *
+     * TODO (AT): there's no good reason why these shared folder specific utility methods are here.
+     * We should pull these out of UIUtil and into a different util/helper class.
+     */
+    public static Collection<Entry<String, Path>> getPathsSortedByName(
+            Collection<PBSharedFolder> folders)
+    {
+        // use a tree multimap because the names may conflicts and we want the entries sorted.
+        Multimap<String, Path> multimap = TreeMultimap.create();
+
+        for (PBSharedFolder folder : folders) {
+            Path path = Path.fromPB(folder.getPath());
+            String name = sharedFolderName(path, folder.getName());
+
+            multimap.put(name, path);
+        }
+
+        return multimap.entries();
     }
 
     /**

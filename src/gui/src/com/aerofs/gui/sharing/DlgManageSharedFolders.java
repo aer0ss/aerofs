@@ -29,8 +29,6 @@ import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import org.eclipse.swt.SWT;
@@ -58,7 +56,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -347,26 +344,11 @@ public class DlgManageSharedFolders extends AeroFSDialog
             }
         }
 
-        private Collection<Entry<String, Path>> getPathsSortedByName(List<PBSharedFolder> folders)
-        {
-            // use a tree multimap because the names may conflicts and we want the entries sorted.
-            Multimap<String, Path> multimap = TreeMultimap.create();
-
-            for (PBSharedFolder folder : folders) {
-                Path path = Path.fromPB(folder.getPath());
-                String key = UIUtil.sharedFolderName(path, folder.getName());
-
-                multimap.put(key, path);
-            }
-
-            return multimap.entries();
-        }
-
         void fill(List<PBSharedFolder> sharedFolders)
         {
             _d.setItemCount(sharedFolders.size());
             int i = 0;
-            for (Entry<String, Path> entry : getPathsSortedByName(sharedFolders)) {
+            for (Entry<String, Path> entry : UIUtil.getPathsSortedByName(sharedFolders)) {
                 String name = entry.getKey();
                 Path path = entry.getValue();
 

@@ -13,6 +13,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.multiuser.preferences.MultiuserDlgPreferences;
+import com.aerofs.gui.sharing.DlgManageSharedFolders;
 import com.aerofs.gui.tray.AbstractTrayMenu;
 import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.ITrayMenuComponentListener;
@@ -122,5 +123,17 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
                 GUIUtil.launch(WWW.TEAM_MEMBERS_URL);
             }
         });
+    }
+
+    protected void createSharedFoldersMenu(TrayMenuPopulator trayMenuPopulator)
+    {
+        trayMenuPopulator.addMenuItem("Manage Shared Folders...",
+                new AbstractListener(MANAGE_SHARED_FOLDER) {
+                    @Override
+                    protected void handleEventImpl(Event event)
+                    {
+                        new DlgManageSharedFolders(GUI.get().sh()).openDialog();
+                    }
+                });
     }
 }
