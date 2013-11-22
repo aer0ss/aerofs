@@ -18,6 +18,12 @@ class LicenseInfo(dict):
                 return False
         return True
 
+    def allows_audit(self):
+        return self.get("license_allow_auditing", "") == "true"
+
+    def is_trial(self):
+        return self.get("license_is_trial", "") != "false"
+
     def is_perpetual(self):
         return self.get("license_perpetual") == "true"
 

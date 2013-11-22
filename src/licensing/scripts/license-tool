@@ -1,10 +1,37 @@
 #!/usr/bin/env python
+import argparse
+import csv
+import datetime
+import getpass
+from io import BytesIO
+import os
+import random
+import shutil
+import sys
+import tarfile
+import time
+import uuid
+
 from aerofs_licensing.crypto import sign, verify
 from aerofs_licensing import license_file
-import argparse
-import datetime
-import sys
-import random
+
+# Column order of the data_dir's log CSV
+_LOG_COLUMN_ORDER = ["ID","License Type","Issue Date","Company","Seats","Expiry Date","Trial","Allow Audit"]
+# Columns expected to be present in license request CSVs
+_LICENSE_REQUEST_FIELDS = [ "ID", "Seats", "Expiry Date", "Trial", "Allow Audit", "Company" ]
+# Columns expected to be present in a license bundle's manifest CSV
+_LICENSE_BUNDLE_FIELDS = [ "ID", "Seats", "Expiry Date", "Trial", "Allow Audit", "Issue Date", "Filename" ]
+
+cached_password = None
+def caching_password_cb(uid_hint, passphrase_info, prev_was_bad, fd):
+    global cached_password
+    if prev_was_bad:
+        print "Passphrase was rejected."
+        cached_password = None
+    print "Enter passphrase for {}".format(uid_hint)
+    if not cached_password:
+        cached_password = getpass.getpass() + "\n"
+    os.write(fd, cached_password)
 
 def check_arg_present(args, name):
     if not getattr(args, name):
@@ -53,8 +80,10 @@ def build_tool(args):
     d["license_valid_until"] = license_expiry_date
     license_seats_s = prompt_for("Enter number of seats license should provide: ")
     license_seats = int(license_seats_s)
+
     d["license_seats"] = str(license_seats)
-    d["license_allow_auditing"] = prompt_for("Allow auditing (True/False): ")
+    d["license_allow_auditing"] = prompt_for("Allow auditing (true/false): ")
+    d["license_is_trial"] = prompt_for("Should this license be a trial (true/false): ").lower()
     d["license_issue_date"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
     print "Will create license with the following license-info:"
@@ -62,17 +91,208 @@ def build_tool(args):
     with open(output_filename, "wb") as f:
         license_file.generate(d, f, gpg_homedir=args.gpg_dir)
 
-def signcsv_tool(args):
-    # TODO: implement the rest of this
+def _add_bytesio_to_tarball(tarball, path, fileobj):
+    fileinfo = tarfile.TarInfo(name=path)
+    fileinfo.uid = fileinfo.gid = 0
+    fileinfo.uname = fileinfo.gname = "root"
+    fileinfo.size = len(fileobj.getvalue())
+    fileinfo.mode = 0644
+    fileinfo.mtime = int(time.time())
+    # rewind fileobj
+    fileobj.seek(0)
+    # add to tarball
+    tarball.addfile(fileinfo, fileobj)
+
+
+def _sign(row, data_dir, gpg_dir):
+    # ensure row contains values for all the required fields
+    def check_key_present(key):
+        if key not in row:
+            raise ValueError("Expected key '{}' in row".format(key))
+    for key in _LICENSE_REQUEST_FIELDS:
+        check_key_present(key)
+
+    # ensure customer id and Seats are valid integers
+    customer_id = str(int(row["ID"]))
+    seats = str(int(row["Seats"]))
+
+    # ensure Expiry Date is a valid date in the future (sanity check)
+    def load_expiry_date(s):
+        try:
+            retval = datetime.datetime.strptime(s, "%Y-%m-%d")
+        except:
+            # If it's not %Y-%m-%d, try %m/%d/%Y, which non-software engineers like to use
+            # If it's not that format either, throw.
+            retval = datetime.datetime.strptime(s, "%m/%d/%Y")
+        return retval
+    expiry_date = load_expiry_date(row["Expiry Date"])
+    if expiry_date < datetime.datetime.today():
+        raise ValueError("Expected 'Expiry Date' to be a date in the future, but {} is in the past".format(row["Expiry Date"]))
+
+    def _parse_key_boolean(key):
+        if row[key].lower() == "true":
+            return True
+        if row[key].lower() == "false":
+            return False
+        raise ValueError("Expected 'true' or 'false' for field {} but got '{}'".format(key, row[key]))
+    trial = _parse_key_boolean("Trial")
+    allow_audit = _parse_key_boolean("Allow Audit")
+
+    # Security-sensitive kinda-tricky line here:
+    # \n is a special character that indicates the end of a value (and the
+    # beginning of a new key) in our license-info file inside the license file
+    # (which is itself a GPG-signed tarball).
+    # Company is the only arbitrary-string user-provided field in the
+    # license-info file (and, in fact, all of the config service).
+    # If someone gave us the company name 'aerofs\ncustomer_id=1337', they
+    # could fool other system logic into overriding our internal license
+    # values, so we drop any characters after the first newline, if one exists.
+    sanitized_company = row["Company"].split('\n')[0]
+
+    # Compute issue date timestamp
+    issue_date = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Construct license metadata.
+    license_metadata = {
+            "License Type": "normal",
+            "ID":           customer_id,
+            "Company":      sanitized_company,
+            "Seats":        seats,
+            "Expiry Date":  expiry_date.strftime("%Y-%m-%d"),
+            "Trial" :       str(trial).lower(),
+            "Allow Audit":  str(allow_audit).lower(),
+            "Issue Date":   issue_date,
+        }
+    # ensure customer id folder exists
+    customer_folder = os.path.join(data_dir, "issued_licenses", customer_id)
+    if not os.path.exists(customer_folder):
+        os.makedirs(customer_folder)
+
+    # generate license file in data_dir
+    d = {}
+    d["license_type"]           = license_metadata["License Type"]
+    d["customer_id"]            = license_metadata["ID"]
+    d["license_company"]        = license_metadata["Company"]
+    d["license_valid_until"]    = license_metadata["Expiry Date"]
+    d["license_seats"]          = license_metadata["Seats"]
+    d["license_issue_date"]     = license_metadata["Issue Date"]
+    d["license_is_trial"]       = license_metadata["Trial"]
+    d["license_allow_auditing"] = license_metadata["Allow Audit"]
+    new_license_file = os.path.join(customer_folder, "{}.license".format(issue_date))
+    with open(new_license_file, "wb") as output_f:
+        license_file.generate(d, output_f, gpg_homedir=gpg_dir, password_cb=caching_password_cb)
+    print "generated license for", row["Company"]
+
+    # return metadata.  Caller is responsible for writing it to the log.
+    return license_metadata
+
+def _load_issued_licenses(data_dir):
+    issued_licenses_logfile = os.path.join(data_dir, "index.csv")
+    if not os.path.exists(issued_licenses_logfile):
+        # ensure header present
+        with open(issued_licenses_logfile, "w") as log:
+            log.write(",".join(_LOG_COLUMN_ORDER) + "\n")
+    issued_licenses = []
+    with open(issued_licenses_logfile) as log:
+        log_reader = csv.DictReader(log, delimiter=",", quotechar='"')
+        for row in log_reader:
+            issued_licenses.append(row)
+    return issued_licenses
+
+def signbundle_tool(args):
     check_arg_present(args, "infile")
-    f = args.infile
-    # for each line in f:
-    #     generate new license
+    check_arg_present(args, "data_dir")
+    check_arg_present(args, "outfile")
+    csv_file = args.infile
+
+    # Verify data dir is in a good state.
+    data_dir = args.data_dir
+    issued_licenses_dir = os.path.join(data_dir, "issued_licenses")
+    if not os.path.exists(issued_licenses_dir):
+        os.makedirs(issued_licenses_dir)
+
+    # The tarball we're building
+    tarbytes = BytesIO()
+    with tarfile.open(mode="w", fileobj=tarbytes) as tarball:
+
+        # The index of licenses in this tarball we're building
+        license_index_bytesio = BytesIO()
+        license_bundle_index = csv.DictWriter(license_index_bytesio,
+                fieldnames=_LICENSE_BUNDLE_FIELDS, extrasaction='ignore')
+        license_bundle_index.writeheader()
+
+        # Load all previously-issued licenses into memory.
+        # We want to avoid generating duplicate licenses, but still be able to
+        # put the requested ones in the license bundle.
+        issued_licenses = _load_issued_licenses(data_dir)
+
+        # if we specify fieldnames, they have to be in the right order, so omit them here
+        # and verify that the reader has
+        request_index = csv.DictReader(csv_file)
+
+        # Double-check that the CSV has all the expected fields
+        index_fieldnames = request_index.fieldnames
+        for field in _LICENSE_REQUEST_FIELDS:
+            if field not in index_fieldnames:
+                raise ValueError("CSV is missing expected field {}".format(field))
+
+        # for each request in the input CSV:
+        for row in request_index:
+            print "Read row from license request CSV:", row
+            # search for a matching issued license in the log
+            matches = [ x for x in issued_licenses if
+                    x["ID"] == row["ID"] and
+                    x["Seats"] == row["Seats"] and
+                    x["Expiry Date"] == row["Expiry Date"] and
+                    x["Trial"].lower() == row["Trial"].lower() and
+                    x["Allow Audit"].lower() == row["Allow Audit"].lower()
+                    ]
+            # if none found:
+            match = None
+            if len(matches) == 0:
+                # generate new license, add metadata to log
+                license_metadata = _sign(row, data_dir, args.gpg_dir)
+                # append new issued license to the in-memory copy
+                issued_licenses.append(license_metadata)
+                # also append it to the log
+                with open(os.path.join(data_dir, "index.csv"), 'a') as log:
+                    c = csv.DictWriter(log, fieldnames=_LOG_COLUMN_ORDER, extrasaction='ignore')
+                    c.writerow(license_metadata)
+                match = license_metadata
+            elif len(matches) > 1:
+                # More than one license issued for that request?  That's not cool!
+                print "Somehow we have issued two licenses with the same parameters:"
+                for x in matches:
+                    print x
+                raise Exception("Duplicate licenses issued, log inconsistent")
+            else:
+                # We found an exact match in our log.  No need to issue another
+                # license, just reuse that one.
+                match = matches[0]
+
+            # read license file into memory
+            license_file_path = os.path.join(data_dir, "issued_licenses", match["ID"], "{}.license".format(match["Issue Date"]))
+            with open(license_file_path) as license_file_handle:
+                license_bytes = license_file_handle.read()
+            license_bytesio = BytesIO(license_bytes)
+            # add license file to bundle tarball with unique name
+            filename = uuid.uuid4().hex
+            match["Filename"] = filename
+            _add_bytesio_to_tarball(tarball, filename, license_bytesio)
+            # append line to bundle's csv in memory
+            license_bundle_index.writerow(match)
+
+        # add license-index to tarball, now that we've added all the license
+        # files themselves and listed each in license-index
+        _add_bytesio_to_tarball(tarball, "license-index", license_index_bytesio)
+
+    # write tarball to disk
+    with open(args.outfile, "wb") as bundle_file:
+        bundle_file.write(tarbytes.getvalue())
 
 def load_tool(args):
     check_arg_present(args, "infile")
     f = args.infile
-    print args.gpg_dir
     d  = license_file.verify_and_load(f, gpg_homedir=args.gpg_dir)
     print d
 
@@ -81,7 +301,7 @@ actions = {
         "verify": verify_tool,
         "extract": extract_tool,
         "build": build_tool,
-        "signcsv": signcsv_tool,
+        "signbundle": signbundle_tool,
         "load": load_tool,
         }
 
@@ -89,6 +309,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--gpg-dir", help="use a specific gpg homedir")
     parser.add_argument("--outfile", help="output file or folder path")
+    parser.add_argument("--data-dir", help="path to data archive")
     parser.add_argument("action", help="one of {}".format(", ".join(actions.keys())))
     parser.add_argument("infile", nargs="?", type=argparse.FileType('r'))
     args = parser.parse_args()

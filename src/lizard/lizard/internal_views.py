@@ -71,16 +71,16 @@ def all_customers():
 def download_license_request_csv():
     to_add = models.License.query.filter_by(state=models.License.states.PENDING).all()
     s = StringIO()
-    c = csv.DictWriter(s, ["ID", "Company", "Seats", "Expiration", "Trial", "Audit"])
+    c = csv.DictWriter(s, ["ID", "Company", "Seats", "Expiry Date", "Trial", "Allow Audit"])
     c.writeheader()
     for row in to_add:
         c.writerow({
             "ID":row.customer_id,
             "Company":row.customer.name,
             "Seats":row.seats,
-            "Expiration": row.expiry_date.strftime("%Y-%m-%d"),
+            "Expiry Date": row.expiry_date.strftime("%Y-%m-%d"),
             "Trial":row.is_trial,
-            "Audit":row.allow_audit,
+            "Allow Audit":row.allow_audit,
             })
     return Response(s.getvalue(),
                 mimetype='text/csv; charset=utf-8',
@@ -98,6 +98,7 @@ def upload_bundle():
         tarball.list()
         license_index_flo = tarball.extractfile("license-index")
         index_csv = csv.DictReader(license_index_flo)
+        just_imported = []
         # The construction here gives safe incremental progress.  You can just
         # keep uploading the same license bundle and it'll ignore the files
         # that are already in the DB.
@@ -106,10 +107,10 @@ def upload_bundle():
             # extract ID, seats, trial, audit, expiry date, issue date, filename
             customer_id = row["ID"]
             seats = row["Seats"]
-            expiry_date = datetime.datetime.strptime(row["Expiration"], "%Y-%m-%d")
+            expiry_date = datetime.datetime.strptime(row["Expiry Date"], "%Y-%m-%d")
             issue_date = row["Issue Date"]
-            is_trial = row["Trial"] == "True"
-            allow_audit = row["Allow Audit"] == "True"
+            is_trial = row["Trial"].lower() == "true"
+            allow_audit = row["Allow Audit"].lower() == "true"
             filename = row["Filename"]
             # Look for a matching License in state PENDING
             license_request = models.License.query.filter_by(customer_id=customer_id,
@@ -129,10 +130,13 @@ def upload_bundle():
                 # commit
                 db.session.add(license_request)
                 db.session.commit()
+                just_imported.append(row)
                 # email all admins in org
                 for admin in license_request.customer.admins:
                     print "emailing", admin, "about new license"
                     emails.send_license_available_email(admin.email, license_request.customer)
             else:
                 print "Got a license descriptor without no outstanding license request. Discarding."
+        flash(u"Imported {} new licenses.".format(len(just_imported)), "success")
+        return redirect(url_for(".queues"))
     return render_template('upload_bundle.html', form=form)
