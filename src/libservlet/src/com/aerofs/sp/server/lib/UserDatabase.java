@@ -330,6 +330,20 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.executeUpdate();
     }
 
+    /**
+     * N.B. We don't currently have an index on C_SIGNUP_CODE_TO since sign-up code deletion is not
+     * expected to be a frequent operation. Add the index in the future if needed.
+     */
+    public void deleteAllSignUpCodes(UserID userID)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                DBUtil.deleteWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_TO + "=?"));
+
+        ps.setString(1, userID.getString());
+        ps.executeUpdate();
+    }
+
     public Collection<SID> getSharedFolders(UserID userId) throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,

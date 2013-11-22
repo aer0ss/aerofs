@@ -743,6 +743,11 @@ message InviteToOrganizationReply {
     // (get customer id, get current member count, and get invited users count) to update the
     // subscription. See PBStripeData for more info.
     required PBStripeData stripe_data = 1;
+
+    // Whether the invited user is locally managed (see Authenticator#isLocallyManaged). Used by the
+    // frontend to determine if to add the user to the pending invitation list.
+    // optional is for backward compatibility. can be convert to required after Dec 1, 2013
+    optional bool locally_managed = 2 [default = true];
 }
 
 message AcceptOrganizationInvitationCall {

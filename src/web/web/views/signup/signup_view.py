@@ -4,7 +4,7 @@ Basic unit tests for each view so that we can catch stupid errors such as
 missing import statements.
 """
 import logging
-from pyramid.httpexceptions import HTTPBadRequest
+from pyramid.httpexceptions import HTTPBadRequest, HTTPFound
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
@@ -48,29 +48,42 @@ def signup(request):
 
     try:
         sp = get_rpc_stub(request)
-        return {
-            'url_param_signup_code': URL_PARAM_SIGNUP_CODE,
-            'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
-            'url_param_email': URL_PARAM_EMAIL,
-            'url_param_first_name': URL_PARAM_FIRST_NAME,
-            'url_param_last_name': URL_PARAM_LAST_NAME,
-            'url_param_title': URL_PARAM_TITLE,
-            'url_param_company': URL_PARAM_COMPANY,
-            'url_param_company_size': URL_PARAM_COMPANY_SIZE,
-            'url_param_phone': URL_PARAM_PHONE,
-            'url_param_country': URL_PARAM_COUNTRY,
-            'url_param_password': URL_PARAM_PASSWORD,
-            'url_param_remember_me': URL_PARAM_REMEMBER_ME,
-            'url_param_next': URL_PARAM_NEXT,
-            'is_private_deployment': is_private_deployment(request.registry.settings),
-            'email_address': sp.resolve_sign_up_code(code).email_address,
-            'code': code
-        }
-    except ExceptionReply:
-        # I can use HTTPServerError. But the error will be commonly caused by
-        # wrong invitation code. and I don't want people to think they
-        # successfully find a server-side bug by trying arbitrary codes :)
-        raise HTTPBadRequest()
+        email = sp.resolve_sign_up_code(code).email_address
+    except ExceptionReply as e:
+        if e.get_type() == common.PBException.NOT_FOUND:
+            return HTTPFound(location=request.route_path('signup_code_not_found'))
+        else:
+            raise e
+
+    return {
+        'url_param_signup_code': URL_PARAM_SIGNUP_CODE,
+        'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
+        'url_param_email': URL_PARAM_EMAIL,
+        'url_param_first_name': URL_PARAM_FIRST_NAME,
+        'url_param_last_name': URL_PARAM_LAST_NAME,
+        'url_param_title': URL_PARAM_TITLE,
+        'url_param_company': URL_PARAM_COMPANY,
+        'url_param_company_size': URL_PARAM_COMPANY_SIZE,
+        'url_param_phone': URL_PARAM_PHONE,
+        'url_param_country': URL_PARAM_COUNTRY,
+        'url_param_password': URL_PARAM_PASSWORD,
+        'url_param_remember_me': URL_PARAM_REMEMBER_ME,
+        'url_param_next': URL_PARAM_NEXT,
+        'is_private_deployment': is_private_deployment(request.registry.settings),
+        'email_address': email,
+        'code': code
+    }
+
+
+@view_config(
+    route_name='signup_code_not_found',
+    renderer='signup_code_not_found.mako',
+    permission=NO_PERMISSION_REQUIRED,
+)
+def signup_code_not_found(request):
+    return {
+        'support_email': request.registry.settings['base.www.support_email_address']
+    }
 
 @view_config(
     # Eric says: If we are returning a JSON document it would be more appropriate to

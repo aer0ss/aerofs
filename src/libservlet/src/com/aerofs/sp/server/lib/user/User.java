@@ -414,6 +414,9 @@ public class User
             affected.addAll(sf.removeUserAndTransferOwnership(this, newOwner));
         }
 
+        // to prevent the user from signing up again using old codes
+        deleteAllSignUpCodes();
+
         _f._udb.deactivate(id());
         return ImmutableSet.copyOf(affected.build());
     }
@@ -630,5 +633,11 @@ public class User
         String code = Base62CodeGenerator.generate();
         _f._udb.insertSignupCode(code, _id);
         return code;
+    }
+
+    public void deleteAllSignUpCodes()
+            throws SQLException
+    {
+        _f._udb.deleteAllSignUpCodes(_id);
     }
 }

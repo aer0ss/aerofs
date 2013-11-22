@@ -74,7 +74,7 @@ def get_error(exception):
     Returns an error message for the given protobuf exception. Expects the
     exception to be of type 'ExceptionReply'.
     """
-    return str(exception.reply.message)
+    return str(exception.reply.message_deprecated)
 
 def parse_rpc_error_exception(request, e):
     """

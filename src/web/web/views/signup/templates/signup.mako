@@ -2,18 +2,16 @@
 <%! page_title = "Create Account" %>
 
 <div class="row">
-    <div class="span12">
-        <h1 style="text-align: center">Create an AeroFS account</h1>
+    <div class="span12 text-center">
+        <h1>Create an AeroFS account</h1>
     </div>
 </div>
 
 <div class="row">
     <div class="span4 offset4">
-        <div class="well well-small" style="margin: 0 auto;">
-            <div style="text-align: center;">
-                You will sign up using this email:<br>
-                <strong>${email_address}</strong>
-            </div>
+        <div class="well well-small text-center" style="margin: 0 auto;">
+            You will sign up using this email:<br>
+            <strong>${email_address}</strong>
         </div>
         <br>
     </div>

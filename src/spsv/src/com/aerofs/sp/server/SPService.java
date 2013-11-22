@@ -521,7 +521,13 @@ public class SPService implements ISPService
         ListOrganizationInvitedUsersReply.Builder builder =
                 ListOrganizationInvitedUsersReply.newBuilder();
         for (OrganizationInvitation oi : user.getOrganization().getOrganizationInvitations()) {
-            builder.addUserId(oi.getInvitee().id().getString());
+            User invitee = oi.getInvitee();
+            // Return the user as a pending invitation only if the user is locally managed.
+            //
+            // See also team_members.mako:inviteUser()
+            if (_authenticator.isLocallyManaged(invitee.id())) {
+                builder.addUserId(invitee.id().getString());
+            }
         }
 
         _sqlTrans.commit();
@@ -1413,12 +1419,17 @@ public class SPService implements ISPService
         PBStripeData sd = getStripeData(org);
         throwIfPaymentRequiredAndNoCustomerID(sd);
 
+        boolean locallyManaged = _authenticator.isLocallyManaged(invitee.id());
+
         _sqlTrans.commit();
 
         // send the email after transaction since it may take some time and it's okay to fail
         emailer.send();
 
-        return createReply(InviteToOrganizationReply.newBuilder().setStripeData(sd).build());
+        return createReply(InviteToOrganizationReply.newBuilder()
+                .setStripeData(sd)
+                .setLocallyManaged(locallyManaged)
+                .build());
     }
 
     /**
@@ -1493,8 +1504,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<DeleteOrganizationInvitationForUserReply> deleteOrganizationInvitationForUser(
-            String userID)
-            throws SQLException, ExNoPerm, ExNotFound, ExEmptyEmailAddress, ExNotAuthenticated
+            String userID) throws Exception
     {
         _sqlTrans.begin();
 
@@ -1503,7 +1513,23 @@ public class SPService implements ISPService
 
         Organization org = user.getOrganization();
 
-        _factOrgInvite.create(_factUser.createFromExternalID(userID), org).delete();
+        User invitee = _factUser.createFromExternalID(userID);
+        _factOrgInvite.create(invitee, org).delete();
+
+        // Remove the user's sign-up code as well as reminder emails so she will no longer be sign
+        // up to the system at all. See also sign_up_workflow.md. Strictly, this is necessary only
+        // for locally managed users (see Authenticator.isLocallyManaged(), but doing so for
+        // externally managed users doesn't have side effects (no sign-up codes are ever generated
+        // for these users).
+        //
+        // Don't do it for public deployment; otherwise the sign-up codes create by the user herself
+        // or admins of other organizations would be lost, too.
+        //
+        // See also docs/design/sign_up_workflow.md.
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
+            invitee.deleteAllSignUpCodes();
+            _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+        }
 
         PBStripeData sd = getStripeData(org);
 
@@ -1994,7 +2020,7 @@ public class SPService implements ISPService
      * == Remove this; review after January 2014. ==
      *
      * @throws ExEmptyEmailAddress if the user id is empty
-     * @throws ExLicenseLimit if a seat limit prevents this new user from signing in
+     * @throws com.aerofs.base.ex.ExLicenseLimit if a seat limit prevents this new user from signing in
      * @throws ExBadCredential if username/password combination is incorrect
      */
     @Override
@@ -2198,8 +2224,8 @@ public class SPService implements ISPService
      * return the user attributes and then delete the pending auth record to avoid a replay.
      *
      * @throws ExBadCredential indicates the session is unknown or already returned once.
-     * @throws ExLicenseLimit indicates that the user did not exist and adding the user would
-     *                        exceed the organization's seat limit.
+     * @throws com.aerofs.base.ex.ExLicenseLimit indicates that the user did not exist and adding
+     *                         the user would exceed the organization's seat limit.
      */
     @Override
     public ListenableFuture<OpenIdSessionAttributes> openIdGetSessionAttributes(String session)

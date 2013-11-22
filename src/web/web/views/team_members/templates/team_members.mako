@@ -128,8 +128,13 @@
                 ${self.csrf.token_param()}
                 "${url_param_user}": email
             }).done(function(data) {
-                showSuccessMessage("The user has been invited.");
-                addInvitedUserRow(email);
+                showSuccessMessage("The invitation has been sent.");
+                ## List the user as a pending invitation only if the user is
+                ## locally managed. Since externally managed users can always
+                ## sign up on their own, listing and being able to remove them
+                ## from the invitation list doesn't make sense.
+                ## See also SPService.listOrganizationInvitedUsers()
+                if (data['locally_managed']) addInvitedUserRow(email);
                 $('#invite_user_email').val('');
                 if (done) done();
 

@@ -35,7 +35,7 @@ def team_members(request):
         'url_param_stripe_card_token': stripe_util.URL_PARAM_STRIPE_CARD_TOKEN,
         'invited_users': invited_users.user_id,
         'admin_level': ADMIN,
-        'user_level':USER
+        'user_level': USER
     }
 
 @view_config(
@@ -91,7 +91,7 @@ def _render_user_options_link(request, user_and_level, session_user):
                                         'email': user.user_email,
                                         'is_admin': (user_and_level.level == ADMIN),
                                         'is_private': is_private_deployment(request.registry.settings),
-        },request=request)
+        }, request=request)
 
 
 def _render_full_name(user, session_user):
@@ -129,7 +129,9 @@ def json_invite_user(request):
 
     stripe_util.update_stripe_subscription(reply.stripe_data)
 
-    return HTTPOk()
+    return {
+        "locally_managed": reply.locally_managed
+    }
 
 @view_config(
     route_name = 'json.delete_team_invitation',

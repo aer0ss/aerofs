@@ -156,16 +156,14 @@ public class SPDatabase extends AbstractSQLDatabase
         return result;
     }
 
-    /**
-     * @param tsc the invitation code
-     */
-    public @Nonnull UserID getSignUpCode(String tsc)
+    // TODO (WW) move to UserDatabase?
+    public @Nonnull UserID getSignUpCode(String code)
         throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_CODE + "=?",
                 C_SIGNUP_CODE_TO));
 
-        ps.setString(1, tsc);
+        ps.setString(1, code);
         ResultSet rs = ps.executeQuery();
         try {
             if (rs.next()) {
