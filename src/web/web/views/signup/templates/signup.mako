@@ -34,7 +34,11 @@
                     <label for="inputLastName">Last name: *</label>
                     <input class="span6" id="inputLastName" type="text" name="${url_param_last_name}">
 
-                    %if not is_private_deployment:
+                    <div
+                    %if is_private_deployment:
+                        class="hidden"
+                    %endif
+                    >
                         <label for="inputTitle">Title:</label>
                         <input class="span6" id="inputTitle" type="text" name="${url_param_title}">
                         <label for="inputCompany">Company:</label>
@@ -45,7 +49,7 @@
                         <input class="span6" id="inputCountry" type="text" name="${url_param_country}">
                         <label for="inputPhone">Phone:</label>
                         <input class="span6" id="inputPhone" type="text" name="${url_param_phone}">
-                    %endif
+                    </div>
 
                     <label for="inputPasswd">Create password: *</label>
                     <input class="span6" id="inputPasswd" type="password" name="${url_param_password}">
