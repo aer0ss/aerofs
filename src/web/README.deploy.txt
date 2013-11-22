@@ -7,7 +7,7 @@ The steps are as follows:
     cd ~/repos/aerofs
     ant clean package_web -Dmode=PUBLIC -Dproduct=CLIENT
     cd packaging
-    BIN=PROD make upload
+    BIN=PUBLIC make upload
     cd ~/repos/aerofs
     ./tools/puppet/kick puppet.arrowfs.org webadmin.aerofs.com
 

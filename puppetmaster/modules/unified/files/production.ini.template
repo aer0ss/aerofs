@@ -34,9 +34,6 @@ session.timeout = 31536000
 session.validate_key = {{ validate_key }}
 session.encrypt_key = {{ encrypt_key }}
 
-# API key for Mixpanel project "AeroFS"
-mixpanel.api_key = be2b9a3bb410c5183c66523483cb27de
-
 [server:main]
 use = egg:waitress#main
 host = 0.0.0.0
