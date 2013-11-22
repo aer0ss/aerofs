@@ -174,7 +174,8 @@ def json_set_license(request):
 
     # Since this method is the first step in a setup session, reset the
     # "restored" flag here, assuming the restore code will set this flag later.
-    del request.session[_SESSION_KEY_RESTORED]
+    if _SESSION_KEY_RESTORED in request.session:
+        del request.session[_SESSION_KEY_RESTORED]
 
     headers = remember_license_based_login(request)
     return HTTPOk(headers=headers)
