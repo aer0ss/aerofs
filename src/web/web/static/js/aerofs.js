@@ -57,9 +57,9 @@ function showErrorMessageFromResponse(xhr) {
         showErrorMessage(getAeroFSErrorMessage(xhr));
     } else if (xhr.status == 403) {
         // See error_view.py:_force_login on generation of 403
-        window.location.href = "/login?next=" +
+        window.location.assign("/login?next=" +
             encodeURIComponent(window.location.pathname +
-                window.location.search + window.location.hash);
+                window.location.search + window.location.hash));
     } else {
         showErrorMessage(getInternalErrorText());
         console.log("status: " + xhr.status +

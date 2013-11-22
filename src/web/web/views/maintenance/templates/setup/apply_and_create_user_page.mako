@@ -297,12 +297,13 @@ ${common.render_previous_button()}
         ## to perform license-shasum-based login.
         function reloadToFinalize(licenseShasum) {
             ## N.B. We expect a non-empty window.location.search here (i.e. '?page=X')
-            window.location.href = 'https://${current_config['base.host.unified']}' +
+            ## Don't use "location.href =". It's not supported by old Firefox.
+            window.location.assign('https://${current_config['base.host.unified']}' +
                     ## N.B. Can't use the 'setup' route here since it requires no
                     ## permission and thus bypasses license-based login in the
                     ## forbidden view.
                     '${request.route_path('setup_authorized')}' + window.location.search +
-                    andFinalizeParam + "&${url_param_license_shasum}=" + licenseShasum;
+                    andFinalizeParam + "&${url_param_license_shasum}=" + licenseShasum);
         }
 
         ########

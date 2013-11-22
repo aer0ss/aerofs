@@ -171,10 +171,11 @@
                     ## Since the user's auth level may have changed resulting in
                     ## changes in the navigation menu, refresh the entire page
                     ## instead of only removing the invitation row.
-                    window.location.href =
-                            "${request.route_path('accept_team_invitation_done')}?" +
-                            "${url_param_joined_team_name}=" +
-                            encodeURIComponent($acceptTeamInviteButton.data('org-name'));
+                    ## Don't use "location.href =". It's not supported by old Firefox.
+                    window.location.assign(
+                        "${request.route_path('accept_team_invitation_done')}?" +
+                        "${url_param_joined_team_name}=" +
+                        encodeURIComponent($acceptTeamInviteButton.data('org-name')));
                 })
                 .fail(function(xhr) {
                     $("#join-team-modal").modal("hide");

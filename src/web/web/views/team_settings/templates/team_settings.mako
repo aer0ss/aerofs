@@ -95,7 +95,8 @@
 
         function upgrade() {
             inputCreditCardInfoAndCreateStripeCustomer(function() {
-                window.location.href = "${request.route_path('start_subscription_done')}";
+                ## Don't use "location.href =". It's not supported by old Firefox.
+                window.location.assign("${request.route_path('start_subscription_done')}");
             });
         }
     </script>

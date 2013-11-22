@@ -201,7 +201,8 @@
                 ## the page is fully reloaded.
                 ##
                 ## TODO (WW) also show a successful message?
-                window.location.href = '${request.url}';
+                ## Don't use "location.href =". It's not supported by old Firefox.
+                window.location.assign('${request.url}');
             }).fail(function(xhr) {
                 showErrorMessageFromResponse(xhr);
             }).always(always);

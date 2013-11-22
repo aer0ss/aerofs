@@ -46,7 +46,8 @@
             hideProgressModal();
             ## Since the link serves non-HTML content, the brower will
             ## start downloading without navigating away from the current page.
-            window.location.href = '${request.route_path('download_backup_file')}';
+            ## Don't use "location.href =". It's not supported by old Firefox.
+            window.location.assign('${request.route_path('download_backup_file')}');
         }
 
         function hideProgressModal() {
