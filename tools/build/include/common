@@ -27,6 +27,7 @@ readonly ERRBADMODE=18
 readonly ERRBADPASS=19
 readonly ERRS3=20
 readonly ERRBADPRODUCT=21
+readonly ERRBADVERSION=22
 
 ###############################################################################
 #
@@ -196,14 +197,15 @@ readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
 # Cloudfront/S3 constants
 #
 ###############################################################################
-if [ "$MODE" == "PUBLIC" ]; then
-    readonly RELEASE_DOMAIN="nocache.client.aerofs.com"
-elif [ "$MODE" == "PRIVATE" ]; then
-    # N.B. no need to create a cache/nocache variant for this since the
-    # installers are packaged into openstack images anyway.
-    # TODO (MP) rename the release domain.
-    readonly RELEASE_DOMAIN="nocache.client.enterprise.aerofs.com"
-fi
+# N.B. no need to create a cache/nocache variant for PRIVATE since the
+# installers are packaged into openstack images anyway.
+# TODO (MP) rename the release domain.
+readonly RELEASE_DOMAIN_PRIVATE="nocache.client.enterprise.aerofs.com"
+readonly RELEASE_DOMAIN_PUBLIC="nocache.client.aerofs.com"
+case "$MODE" in
+    "PUBLIC") readonly RELEASE_DOMAIN=$RELEASE_DOMAIN_PUBLIC ;;
+    "PRIVATE") readonly RELEASE_DOMAIN=$RELEASE_DOMAIN_PRIVATE ;;
+esac
 readonly INSTALLER_DOWNLOAD_BUCKET="s3://${RELEASE_DOMAIN}"
 readonly RELEASE_VERSION_URL="https://${RELEASE_DOMAIN}/${RELEASE_SERVER_VERSION_FILE}"
 readonly UNSECURED_PASSPHRASE=temp123
@@ -284,10 +286,22 @@ function is_ci() {
 #
 # Gets the current active version on S3, like "0.4.98"
 #
+# Return the larger of the PUBLIC and PRIVATE version numbers
+#
 ###############################################################################
 function current_release_version() {
-    local local_CURRENT_RELEASE_VERSION_STRING="$( wget --no-check-certificate --no-cache -q -O- $RELEASE_VERSION_URL )"
-    echo "$( echo $local_CURRENT_RELEASE_VERSION_STRING | sed -e 's/.*=//' )"
+    local local_PUBLIC_RELEASE_VERSION_STRING="$( wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PUBLIC}/${RELEASE_SERVER_VERSION_FILE} )"
+    local local_PRIVATE_RELEASE_VERSION_STRING="$( wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PRIVATE}/${RELEASE_SERVER_VERSION_FILE} )"
+    local local_PUBLIC_VERSION="$( echo $local_PUBLIC_RELEASE_VERSION_STRING | sed -e 's/.*=//' )"
+    local local_PRIVATE_VERSION="$( echo $local_PRIVATE_RELEASE_VERSION_STRING | sed -e 's/.*=//' )"
+    if [[ ! $local_PUBLIC_VERSION =~ [0-9]+\.[0-9]+\.[0-9]+ ||
+          ! $local_PRIVATE_VERSION =~ [0-9]+\.[0-9]+\.[0-9]+ ]];
+    then
+        echo ""
+        exit $ERRBADVERSION
+    fi
+    python -c "import sys; print '.'.join(max(sys.argv[1].split('.'), sys.argv[2].split('.')))" \
+        $local_PUBLIC_VERSION $local_PRIVATE_VERSION
 }
 
 ###############################################################################
@@ -297,11 +311,7 @@ function current_release_version() {
 ###############################################################################
 function compute_next_release_version() {
     local local_CURRENT_RELEASE_VERSION="$( current_release_version $RELEASE_VERSION_URL )"
-    if [ "$local_CURRENT_RELEASE_VERSION" == "" ]; then
-        echo "error: can't get current release version" >&2
-        exit $ERRNOINTERNET
-    fi
-
+    [[ $local_CURRENT_RELEASE_VERSION != "" ]] || exit $ERRBADVERSION
     local local_CURRENT_RELEASE_VERSION_MAJOR_MINOR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/\.[0-9]*$//' )"
     local local_CURRENT_RELEASE_VERSION_BUILD_NUMBR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/.*\.//' )"
     local local_LOCAL_VERSION_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
