@@ -147,6 +147,13 @@ def ifdown():
 def ifup():
     subprocess.call("ifup eth0", shell=True)
 
+def set_resolvconf_state(updates_enabled):
+    if updates_enabled:
+        arg="--enable-updates"
+    else:
+        arg="--disable-updates"
+    subprocess.call("resolvconf " + arg, shell=True)
+
 def dhcp_menu_text():
     return "Use DHCP" + (" [selected]" if current_netconfig() == "dhcp" else "")
 
@@ -264,6 +271,7 @@ def select_dhcp():
     print "Configuring network for DHCP"
     ifdown()
     set_current_netconfig("dhcp")
+    set_resolvconf_state(True)
     ifup()
     print
     raw_input("DHCP configured. Press Enter to continue...")
@@ -298,6 +306,7 @@ def show_static_menu():
     set_current_netconfig("static")
     # bring new network configuration up
     ifup()
+    set_resolvconf_state(False)
     print
     raw_input("Static networking configured. Press Enter to continue...")
 
