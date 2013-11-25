@@ -11,10 +11,10 @@ class rocklog {
 
     # requirements for the rocklog python app
     package { [
-        "gunicorn",
         "flask",
         "pyelasticsearch",
         "requests",
+        "tornado",
         ]:
         provider => "pip"
     }
@@ -134,18 +134,18 @@ class rocklog {
     file{ "/opt/rocklog/rocklog.cfg":
         content => template("rocklog/rocklog.cfg.erb"),
         require => Package["aerofs-rocklog"],
-        notify  => Service["gunicorn"]
+        notify  => Service["tornado"]
     }
 
-    file{ "/etc/init/gunicorn.conf":
-        source => "puppet:///modules/rocklog/gunicorn.conf",
+    file{ "/etc/init/tornado.conf":
+        source => "puppet:///modules/rocklog/tornado.conf",
         require => Package["aerofs-rocklog"],
-        notify => Service["gunicorn"]
+        notify => Service["tornado"]
     }
 
-    service{ "gunicorn":
+    service{ "tornado":
         ensure => running,
-        require => Package["gunicorn"],
+        require => Package["tornado"],
         provider => "upstart"
     }
 
