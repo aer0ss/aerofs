@@ -11,9 +11,9 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -44,7 +44,7 @@ public class ACLSynchronizer
 {
     private static final Logger l = Loggers.getLogger(ACLSynchronizer.class);
 
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final TransManager _tm;
     private final IACLDatabase _adb;
     private final LocalACL _lacl;
@@ -82,11 +82,11 @@ public class ACLSynchronizer
     }
 
     @Inject
-    public ACLSynchronizer(TC tc, TransManager tm, IACLDatabase adb, LocalACL lacl,
+    public ACLSynchronizer(TokenManager tokenManager, TransManager tm, IACLDatabase adb, LocalACL lacl,
             IStoreJoiner storeJoiner, IMapSIndex2SID sIndex2SID, IMapSID2SIndex sid2SIndex,
             CfgLocalUser cfgLocalUser, SPBlockingClient.Factory factSP)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
         _tm = tm;
         _adb = adb;
         _lacl = lacl;
@@ -249,7 +249,7 @@ public class ACLSynchronizer
         GetACLReply aclReply;
         SPBlockingClient sp;
 
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl");
         try {
             TCB tcb = tk.pseudoPause_("spacl");
             try {
@@ -293,7 +293,7 @@ public class ACLSynchronizer
 
         // make the SP call (done before adding entries to the local database to avoid changing the
         // local database if the SP call fails)
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("spacl");
@@ -320,7 +320,7 @@ public class ACLSynchronizer
         SID sid = _sidx2sid.get_(sidx); // first, resolve the sid
 
         // make the SP call
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("spacl");

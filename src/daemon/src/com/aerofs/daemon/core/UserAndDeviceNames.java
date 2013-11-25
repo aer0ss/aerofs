@@ -10,9 +10,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -79,7 +79,7 @@ public class UserAndDeviceNames
     }
 
     private final CfgLocalUser _localUser;
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final TransManager _tm;
     private final DID2User _d2u;
     private final IUserAndDeviceNameDatabase _udndb;
@@ -90,11 +90,11 @@ public class UserAndDeviceNames
     protected long _spSignInDelay = 30 * C.MIN;
 
     @Inject
-    public UserAndDeviceNames(CfgLocalUser localUser, TC tc, TransManager tm, DID2User d2u,
-            IUserAndDeviceNameDatabase udndb, SPBlockingClient.Factory factSP)
+    public UserAndDeviceNames(CfgLocalUser localUser, TokenManager tokenManager, TransManager tm,
+            DID2User d2u, IUserAndDeviceNameDatabase udndb, SPBlockingClient.Factory factSP)
     {
         _localUser = localUser;
-        _tc = tc;
+        _tokenManager = tokenManager;
         _tm = tm;
         _d2u = d2u;
         _udndb = udndb;
@@ -197,7 +197,7 @@ public class UserAndDeviceNames
 
     private GetDeviceInfoReply getDevicesInfoFromSP_(List<DID> dids) throws Exception
     {
-        Token tk = _tc.acquire_(Cat.UNLIMITED, "sp-devinfo");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-devinfo");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-devinfo");

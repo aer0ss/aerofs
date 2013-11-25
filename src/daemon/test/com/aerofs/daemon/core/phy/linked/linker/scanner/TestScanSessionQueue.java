@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.injectable.InjectableSystem;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
@@ -13,7 +12,6 @@ import static org.mockito.Mockito.when;
 
 public class TestScanSessionQueue extends AbstractTest
 {
-    @Mock TC tc;
     @Mock CoreScheduler sched;
     @Mock ScanSession.Factory factSS;
     @Mock InjectableSystem sys;
@@ -25,7 +23,6 @@ public class TestScanSessionQueue extends AbstractTest
     @Before
     public void setup() throws Exception
     {
-        when(tc.isCoreThread()).thenReturn(true);
         when(sys.currentTimeMillis()).thenReturn(START);
     }
 

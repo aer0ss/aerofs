@@ -13,9 +13,9 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EILinkRoot;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -61,7 +61,7 @@ public class TestHdLinkRoot extends AbstractTest
     @Mock TCB tcb;
     @Mock SPBlockingClient sp;
 
-    @Mock TC tc;
+    @Mock TokenManager tokenManager;
     @Mock StoreCreator sc;
     @Mock StoreDeleter sd;
     @Mock TransManager tm;
@@ -91,7 +91,7 @@ public class TestHdLinkRoot extends AbstractTest
 
         when(cfgLocalUser.get()).thenReturn(localUser);
         when(tm.begin_()).thenReturn(t);
-        when(tc.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(factSP.create_(localUser)).thenReturn(sp);
         when(cfgAbsRTRoot.get()).thenReturn("");

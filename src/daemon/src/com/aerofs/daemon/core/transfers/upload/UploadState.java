@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.transfers.upload;
 
 // see ITransferListener for valid state transitions
 
+import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.transfers.BaseTransferState;
 
 /**
@@ -9,5 +10,8 @@ import com.aerofs.daemon.core.transfers.BaseTransferState;
  */
 public class UploadState extends BaseTransferState
 {
-
+    public UploadState()
+    {
+        Dumpables.add("uls", this);
+    }
 }

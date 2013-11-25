@@ -10,9 +10,9 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.ACLDatabase;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
 @RunWith(value = Parameterized.class)
 public class TestACLSynchronizer extends AbstractTest
 {
-    @Mock TC tc;
+    @Mock TokenManager tokenManager;
     @Mock Token tk;
     @Mock TCB tcb;
     @Mock Trans t;
@@ -117,13 +117,13 @@ public class TestACLSynchronizer extends AbstractTest
         when(factSP.create_(any(UserID.class))).thenReturn(spClient);
 
         when(tm.begin_()).thenReturn(t);
-        when(tc.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
 
         lacl = new LocalACL(cfgLocalUser, tm, stores, adb, ds);
 
-        aclsync = new ACLSynchronizer(tc, tm, adb, lacl, storeJoiner,
+        aclsync = new ACLSynchronizer(tokenManager, tm, adb, lacl, storeJoiner,
                 sidx2sid, sid2sidx, cfgLocalUser, factSP);
     }
 

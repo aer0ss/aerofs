@@ -23,10 +23,10 @@ import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.UserAndDeviceNames;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.ImmutableSet;
@@ -74,7 +74,7 @@ public class TestHdGetActivities extends AbstractTest
     @Mock CfgLocalDID cfgLocalDID;
     @Mock DirectoryService ds;
     @Mock DID2User d2u;
-    @Mock TC tc;
+    @Mock TokenManager tokenManager;
     @Mock Token tk;
     @Mock TCB tcb;
     @Mock TransManager tm;
@@ -132,13 +132,14 @@ public class TestHdGetActivities extends AbstractTest
         addActivity(MOVEMENT_VALUE, mkpath("a"), mkpath("b"), did1, did2, did3);
 
         al = new ActivityLog(ds, nvc, aldb);
-        UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tc,  tm, d2u, udndb, factSP);
+        UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tokenManager,  tm, d2u, udndb, factSP);
 
         hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID);
 
         when(cfgLocalUser.get()).thenReturn(me);
 
-        when(tc.acquire_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
         when(tm.begin_()).thenReturn(t);

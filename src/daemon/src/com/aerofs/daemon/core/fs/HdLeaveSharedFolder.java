@@ -10,9 +10,9 @@ import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -27,17 +27,17 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
 {
     private static final Logger l = Loggers.getLogger(HdLeaveSharedFolder.class);
 
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final DirectoryService _ds;
     private final ACLSynchronizer _aclsync;
     private final SPBlockingClient.Factory _factSP;
     private final CfgLocalUser _localUser;
 
     @Inject
-    public HdLeaveSharedFolder(TC tc, DirectoryService ds, ACLSynchronizer aclsync,
+    public HdLeaveSharedFolder(TokenManager tokenManager, DirectoryService ds, ACLSynchronizer aclsync,
             SPBlockingClient.Factory factSP, CfgLocalUser localUser)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
         _ds = ds;
         _aclsync = aclsync;
         _factSP = factSP;
@@ -61,7 +61,7 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
 
         l.info("leave: " + sid + " " + ev._path);
 
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "sp-leave");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-leave");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-leave");

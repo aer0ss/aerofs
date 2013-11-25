@@ -8,10 +8,11 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -72,7 +73,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
     private static final Logger l = Loggers.getLogger(Transports.class);
 
     private final Map<ITransport, IIMCExecutor> availableTransports = newHashMap();
-    private final TC tc;
+    private final TokenManager _tokenManager;
 
     private volatile boolean started = false;
 
@@ -87,7 +88,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             CfgLolol lolol,
             CfgEnabledTransports enabledTransports,
             CoreQueue coreQueue,
-            TC tc,
+            TokenManager tokenManager,
             MaxcastFilterReceiver maxcastFilterReceiver,
             LinkStateService linkStateService,
             MobileServerZephyrConnector mobileServerZephyrConnector,
@@ -98,7 +99,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             ServerSocketChannelFactory serverSocketChannelFactory)
             throws ExUnsupportedTransport
     {
-        this.tc = tc;
+        _tokenManager = tokenManager;
 
         TransportFactory transportFactory = new TransportFactory(
                 absRTRoot.get(),
@@ -143,6 +144,8 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             if (!enabledTransports.isJingleEnabled()) zephyr.enableMulticast();
             addTransport(zephyr);
         }
+
+        Dumpables.add("tps", this);
     }
 
     private void addTransport(ITransport transport)
@@ -190,7 +193,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
             throws Exception
     {
-        Token tk = tc.acquireThrows_(UNLIMITED, "dumpStatMisc"); // because dumpStat on transports may block, we use pseudo pause
+        Token tk = _tokenManager.acquireThrows_(UNLIMITED, "dumpStatMisc"); // because dumpStat on transports may block, we use pseudo pause
         try {
             TCB tcb = tk.pseudoPause_("dumpStatMisc");
             try {
@@ -210,7 +213,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
     public void dumpStat(PBDumpStat template, Builder bd)
             throws Exception
     {
-        Token tk = tc.acquireThrows_(UNLIMITED, "dumpStat"); // because dumpStat on transports may block, we use pseudo pause
+        Token tk = _tokenManager.acquireThrows_(UNLIMITED, "dumpStat"); // because dumpStat on transports may block, we use pseudo pause
         try {
             TCB tcb = tk.pseudoPause_("dumpStat"); // according to ITransport's contract dumpStat() may block
             try {

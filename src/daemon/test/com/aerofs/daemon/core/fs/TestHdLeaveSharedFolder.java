@@ -13,9 +13,9 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Path;
@@ -42,7 +42,7 @@ public class TestHdLeaveSharedFolder extends AbstractTest
     @Mock TCB tcb;
     @Mock SPBlockingClient sp;
 
-    @Mock TC tc;
+    @Mock TokenManager tokenManager;
     @Mock DirectoryService ds;
     @Mock SIDMap sm;
     @Mock LocalACL lacl;
@@ -63,13 +63,13 @@ public class TestHdLeaveSharedFolder extends AbstractTest
         AppRoot.set("dummy");
 
         when(cfgLocalUser.get()).thenReturn(localUser);
-        when(tc.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(factSP.create_(localUser)).thenReturn(sp);
 
         when(lacl.check_(any(UserID.class), any(SIndex.class), any(Role.class))).thenReturn(true);
 
-        hd = new HdLeaveSharedFolder(tc, ds, aclsync, factSP, cfgLocalUser);
+        hd = new HdLeaveSharedFolder(tokenManager, ds, aclsync, factSP, cfgLocalUser);
 
         MockDS mds = new MockDS(rootSID, ds, sm, sm);
         mds.root()

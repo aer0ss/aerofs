@@ -11,8 +11,8 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -39,12 +39,12 @@ import static org.mockito.Mockito.*;
 public class TestUserAndDeviceNames extends AbstractTest
 {
     @Mock CfgLocalUser user;
-    @Mock TC tc;
+    @Mock TokenManager tokenManager;
     @Mock TransManager tm;
     @Mock DID2User d2u;
     @Mock IUserAndDeviceNameDatabase udndb;
     @Mock SPBlockingClient.Factory factSP;
-    @Spy UserAndDeviceNames _udn = new UserAndDeviceNames(user, tc, tm, d2u, udndb, factSP);
+    @Spy UserAndDeviceNames _udn = new UserAndDeviceNames(user, tokenManager, tm, d2u, udndb, factSP);
     @Mock Token tk;
     @Mock SPBlockingClient spClient;
 
@@ -59,7 +59,7 @@ public class TestUserAndDeviceNames extends AbstractTest
         //            that way we no longer depend on how many times nanoTime() gets called (ewww)
 
         when(user.get()).thenReturn(UserID.fromInternal("test@aerofs.com"));
-        when(tc.acquire_(any(Cat.class), any(String.class))).thenReturn(tk);
+        when(tokenManager.acquireThrows_(any(Cat.class), any(String.class))).thenReturn(tk);
         doThrow(new ExBadCredential()).when(spClient).signInRemote();
         when(factSP.create_(any(UserID.class))).thenReturn(spClient);
 

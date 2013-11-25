@@ -6,10 +6,10 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
-import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
@@ -32,15 +32,16 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     public static class Factory
     {
         private final CoreDeviceLRU _dlru;
-        private final TC _tc;
+        private final TokenManager _tokenManager;
         private final Transports _tps;
         private final OutgoingStreams _outgoingStreams;
 
         @Inject
-        public Factory(Transports tps, TC tc, CoreDeviceLRU dlru, OutgoingStreams oss)
+        public Factory(Transports tps, TokenManager tokenManager, CoreDeviceLRU dlru,
+                OutgoingStreams oss)
         {
             _tps = tps;
-            _tc = tc;
+            _tokenManager = tokenManager;
             _dlru = dlru;
             _outgoingStreams = oss;
         }
@@ -64,7 +65,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     {
         _f._dlru.addDevice_(ep.did());
 
-        ep.tp().q().enqueueThrows(new EOUnicastMessage(ep.did(), bs), _f._tc.prio());
+        ep.tp().q().enqueueThrows(new EOUnicastMessage(ep.did(), bs), TC.currentThreadPrio());
     }
 
     @Override
@@ -80,7 +81,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
         EOBeginStream ev = new EOBeginStream(streamId, stream, ep.did(), bs, imce);
         try {
-            CoreIMC.enqueueBlocking_(ev, _f._tc, tk);
+            CoreIMC.enqueueBlocking_(ev, tk);
         } catch (Exception e) {
             l.warn("begin stream failed strmid " + streamId + " " + ep + ": " + e);
             throw e;
@@ -101,7 +102,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
         EOChunk ev = new EOChunk(streamId, stream, seq, ep.did(), bs, imce);
 
-        CoreIMC.enqueueBlocking_(ev, _f._tc, Cat.UNLIMITED);
+        CoreIMC.enqueueBlocking_(ev, _f._tokenManager);
     }
 
     @Override
@@ -117,7 +118,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
 
         EOTxAbortStream ev = new EOTxAbortStream(streamId, reason, imce);
-        CoreIMC.enqueueBlocking_(ev, _f._tc, Cat.UNLIMITED);
+        CoreIMC.enqueueBlocking_(ev, _f._tokenManager);
     }
 
     @Override
@@ -131,7 +132,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
 
         EOTxEndStream ev = new EOTxEndStream(streamId, imce);
-        CoreIMC.enqueueBlocking_(ev, _f._tc, Cat.UNLIMITED);
+        CoreIMC.enqueueBlocking_(ev, _f._tokenManager);
     }
 
     @Override
@@ -141,6 +142,6 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
 
         EORxEndStream ev = new EORxEndStream(ep.did(), streamId, imce);
-        CoreIMC.enqueueBlocking_(ev, _f._tc, Cat.UNLIMITED);
+        CoreIMC.enqueueBlocking_(ev, _f._tokenManager);
     }
 }

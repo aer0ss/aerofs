@@ -8,9 +8,9 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.serverstatus.AbstractConnectionStatusNotifier;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.aerofs.syncstat.client.SyncStatusBlockingClient;
@@ -33,7 +33,7 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
  */
 public class SyncStatusConnection extends AbstractConnectionStatusNotifier
 {
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final CfgLocalUser _user;
     private final SyncStatusBlockingClient.Factory _ssf;
 
@@ -65,9 +65,10 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
             getStringProperty("lib.sss.url", "https://sss.aerofs.com/syncstat");
 
     @Inject
-    SyncStatusConnection(CfgLocalUser user, TC tc, SyncStatusBlockingClient.Factory ssf)
+    SyncStatusConnection(CfgLocalUser user, TokenManager tokenManager,
+            SyncStatusBlockingClient.Factory ssf)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
         _ssf = ssf;
         _user = user;
         _client = null;
@@ -168,7 +169,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
      */
     public GetSyncStatusReply getSyncStatus_(long ssEpoch) throws Exception
     {
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpull");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "syncstatpull");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("syncstatpull");

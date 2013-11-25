@@ -19,6 +19,7 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
@@ -27,6 +28,8 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.inject.Inject;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 
 public class Core implements IModule
@@ -40,6 +43,7 @@ public class Core implements IModule
     private final LinkStateService _lss;
     private final Transports _tps;
     private final TC _tc;
+    private final TokenManager _tokenManager;
     private final VerkehrNotificationSubscriber _vksub;
     private final ACLNotificationSubscriber _aclsub;
     private final SyncStatusNotificationSubscriber _sssub;
@@ -57,6 +61,7 @@ public class Core implements IModule
     public Core(
             FirstLaunch fl,
             TC tc,
+            TokenManager tokenManager,
             CoreIMCExecutor imce,
             Transports tps,
             LinkStateService lss,
@@ -81,6 +86,7 @@ public class Core implements IModule
         _imce2core = imce.imce();
         _fl = fl;
         _tc = tc;
+        _tokenManager = tokenManager;
         _ss = ss;
         _lss = lss;
         _tps = tps;
@@ -179,7 +185,7 @@ public class Core implements IModule
         {
             _tc.suspend_();
 
-            Token tk = _tc.acquire_(Cat.UNLIMITED, "first-launch");
+            Token tk = checkNotNull(_tokenManager.acquire_(Cat.UNLIMITED, "first-launch"));
             try {
                 TCB tcb = null;
                 try {

@@ -26,9 +26,9 @@ import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -58,7 +58,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 {
     private final static Logger l = Loggers.getLogger(HdShareFolder.class);
 
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final TransManager _tm;
     private final ObjectCreator _oc;
     private final DirectoryService _ds;
@@ -75,13 +75,14 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final CfgAbsRoots _absRoots;
 
     @Inject
-    public HdShareFolder(TC tc, TransManager tm, ObjectCreator oc, IPhysicalStorage ps,
-            DirectoryService ds, ImmigrantCreator imc, ObjectMover om, ObjectDeleter od,
-            IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss, ACLSynchronizer aclsync,
-            SPBlockingClient.Factory factSP, CfgLocalUser localUser, CfgAbsRoots cfgAbsRoots)
+    public HdShareFolder(TokenManager tokenManager, TransManager tm, ObjectCreator oc,
+            IPhysicalStorage ps, DirectoryService ds, ImmigrantCreator imc, ObjectMover om,
+            ObjectDeleter od, IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss,
+            ACLSynchronizer aclsync, SPBlockingClient.Factory factSP, CfgLocalUser localUser,
+            CfgAbsRoots cfgAbsRoots)
     {
         _ss = ss;
-        _tc = tc;
+        _tokenManager = tokenManager;
         _tm = tm;
         _oc = oc;
         _ds = ds;
@@ -200,7 +201,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private void callSP_(SID sid, String folderName, List<PBSubjectRolePair> roles,
             String emailNote, boolean suppressSharedFolderRulesWarnings) throws Exception
     {
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "sp-share");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-share");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-share");

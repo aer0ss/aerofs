@@ -1,8 +1,7 @@
 package com.aerofs.daemon.core.tc;
 
 import java.io.PrintStream;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -11,21 +10,23 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.admin.Dumpables;
+import com.aerofs.daemon.core.tc.TokenManager.ITokenUseListener;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.db.DBIteratorMonitor;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.Util;
@@ -34,16 +35,16 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /** Thread Control */
-public class TC implements IDumpStatMisc
+public class TC implements IDumpStatMisc, ITokenUseListener
 {
     private static final Logger l = Loggers.getLogger(TC.class);
 
-    static final long FOREVER = Long.MAX_VALUE;
-
     static {
         //noinspection ConstantConditions
-        assert DaemonParam.TC_RECLAIM_LO_WATERMARK >= 1;
+        Preconditions.checkState(DaemonParam.TC_RECLAIM_LO_WATERMARK >= 1);
     }
+
+    static final long FOREVER = Long.MAX_VALUE;
 
     // thread control block
     public class TCB
@@ -83,7 +84,7 @@ public class TC implements IDumpStatMisc
          */
         private boolean unblockWithThrowable_(@Nullable Throwable cause)
         {
-            assert _l.isHeldByCurrentThread();
+            Preconditions.checkState(_l.isHeldByCurrentThread());
 
             if (_running) {
                 l.debug("already running");
@@ -101,17 +102,35 @@ public class TC implements IDumpStatMisc
          */
         public boolean abort_(@Nonnull Throwable cause)
         {
-            assert cause != null;
+            l.debug("abort {}: {}", _thd.getName(), cause);
 
-            l.debug("abort " + _thd.getName() + ": " + cause);
-
-            return unblockWithThrowable_(cause);
+            return unblockWithThrowable_(Preconditions.checkNotNull(cause));
         }
 
         public void pseudoResumed_() throws ExAborted
         {
             _l.lock();
             postPause_(this);
+        }
+
+        /**
+         * @return false if timeout occurs
+         */
+        boolean park_(Cat cat, long timeout)
+        {
+            l.debug("pause {}@{} {}: {}", _prio, cat,
+                    (timeout == FOREVER ? "forever" : timeout), _pauseReason);
+
+            boolean ret = true;
+            while (!_running && ret) {
+                try {
+                    ret = _cv.await(timeout, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    throw SystemUtil.fatalWithReturn(e);
+                }
+            }
+
+            return ret;
         }
 
         @Override
@@ -132,36 +151,33 @@ public class TC implements IDumpStatMisc
     private boolean _shutdown;
 
     // for debugging/statistics only
-    private final Set<TCB> _paused = new HashSet<TCB>();
+    private final Set<TCB> _paused = Sets.newHashSet();
 
-    private final LinkedList<String> _threadNamePool = new LinkedList<String>();
-    private CoreQueue _q;
-    private StrictLock _l;
-    private CoreEventDispatcher _disp;
-    private TransManager _tm;
-    private CoreScheduler _sched;
-    private TokenManager _tokenManager;
+    private final Queue<String> _threadNamePool = Lists.newLinkedList();
+    private final CoreQueue _q;
+    private final StrictLock _l;
+    private final CoreEventDispatcher _disp;
+    private final CoreScheduler _sched;
+    private final TransManager _tm;
 
-    private Condition _resumed;
+    private final Condition _resumed;
     private final ThreadGroup _threadGroup = new ThreadGroup("core");
 
-
-    /**
-     * N.B. runnable.run() must return occasionally (we call it recursively in
-     * an infinite loop), and must use pause_() before any blocking operations.
-     * The lock l is locked while runnable.run() is executing.
-     */
     @Inject
-    public void inject_(CoreScheduler sched, TransManager tm,
-            CoreEventDispatcher disp, CoreQueue q, TokenManager tokenManager)
+    public TC(CoreScheduler sched, CoreEventDispatcher disp, CoreQueue q, TokenManager tokenManager,
+            TransManager tm)
     {
         _sched = sched;
-        _tm = tm;
         _disp = disp;
         _q = q;
         _l = q.getLock();
+        _tm = tm;
         _resumed = _l.newCondition();
-        _tokenManager = tokenManager;
+
+        // break circular depency w/ listener pattern
+        tokenManager.setListener_(this);
+
+        Dumpables.add("tc", this);
     }
 
     private volatile boolean _suspended = false;
@@ -194,9 +210,9 @@ public class TC implements IDumpStatMisc
     {
         _total++;
         final String name = _threadNamePool.isEmpty() ? THREAD_NAME_PREFIX
-                + _total : _threadNamePool.removeFirst();
+                + _total : _threadNamePool.remove();
 
-        l.debug("new: " + name + " (" + _total + ")");
+        l.debug("new: {} ({})", name, _total);
 
         Thread thd = new Thread(_threadGroup, new Runnable() {
             @Override
@@ -234,8 +250,8 @@ public class TC implements IDumpStatMisc
                         }
                     }
 
-                    l.debug(name + " reclaimed");
-                    _threadNamePool.addLast(name);
+                    l.debug("{} reclaimed", name);
+                    _threadNamePool.offer(name);
                     _total--;
 
                 } finally {
@@ -280,15 +296,10 @@ public class TC implements IDumpStatMisc
         return tl_tcb.get();
     }
 
-    public boolean isCoreThread()
-    {
-        return tl_tcb.get() != null;
-    }
-
     /**
      * @return the priority of the current core thread
      */
-    public Prio prio()
+    public static Prio currentThreadPrio()
     {
         return tcb()._prio;
     }
@@ -303,29 +314,21 @@ public class TC implements IDumpStatMisc
         return old;
     }
 
-    public Token acquireThrows_(Cat cat, String reason) throws ExNoResource
-    {
-        return _tokenManager.acquireThrows_(cat, reason);
-    }
 
-    public Token acquire_(Cat cat, String reason)
+    @Override
+    public void prePause_(TCB tcb, Token tk, String reason) throws ExAborted
     {
-        return _tokenManager.acquire_(cat, reason);
-    }
-
-
-    private void prePause_(TCB tcb, Token tk, @Nonnull String reason) throws ExAborted
-    {
-        assert _l.isHeldByCurrentThread();
-        assert _paused.size() < _total;
-        assert !reason.isEmpty();
+        l.debug("p-pause {} {}", tcb._prio, reason);
+        Preconditions.checkState(_l.isHeldByCurrentThread());
+        Preconditions.checkState(_paused.size() < _total);
+        Preconditions.checkArgument(!reason.isEmpty());
 
         // there mustn't be active transactions or iterators before going to sleep
         _tm.assertNoOngoingTransaction_();
         DBIteratorMonitor.assertNoActiveIterators_();
 
-        assert !_l.hasWaiters(tcb._cv);
-        assert tcb._running;
+        Preconditions.checkState(!_l.hasWaiters(tcb._cv));
+        Preconditions.checkState(tcb._running);
 
         if (tk.isReclaimed_()) throw new ExAborted("token reclaimed");
 
@@ -333,7 +336,6 @@ public class TC implements IDumpStatMisc
         tcb._tk = tk;
 
         // the method must not throw after this point
-
         tcb._running = false;
         tcb._pauseReason = reason;
         tcb._abortCause = null;
@@ -344,44 +346,10 @@ public class TC implements IDumpStatMisc
         }
     }
 
-    /**
-     * @return false if timeout occurs
-     */
-    private boolean park_(TCB tcb, Cat cat, long timeout)
+    @Override
+    public void postPause_(TCB tcb) throws ExAborted
     {
-        l.debug("pause " + tcb._prio + '@' + cat + ' '
-                + (timeout == FOREVER ? "forever" : timeout) + ": "
-                + tcb._pauseReason);
-
-        boolean ret = true;
-        while (!tcb._running && ret) {
-            try {
-                ret = tcb._cv.await(timeout, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                throw SystemUtil.fatalWithReturn(e);
-            }
-        }
-
-        return ret;
-    }
-
-    private void testReclamation_()
-    {
-        assert _pendingQuits >= 0;
-        if (_pendingQuits == 0
-                && _total - _paused.size() >= DaemonParam.TC_RECLAIM_HI_WATERMARK) {
-            _pendingQuits = _total - _paused.size()
-                    - DaemonParam.TC_RECLAIM_LO_WATERMARK;
-            l.debug("time to reclaim. target: " + _pendingQuits);
-            for (int i = 0; i < _pendingQuits; i++) {
-                _sched.schedule(EV_QUIT, DaemonParam.TC_RECLAIM_DELAY);
-            }
-        }
-    }
-
-    private void postPause_(TCB tcb) throws ExAborted
-    {
-        assert tcb == tcb();
+        Preconditions.checkArgument(tcb == tcb());
 
         Util.verify(_paused.remove(tcb));
 
@@ -402,54 +370,17 @@ public class TC implements IDumpStatMisc
         }
     }
 
-    void pauseImpl_(Token tk, String reason) throws ExAborted
+    private void testReclamation_()
     {
-        TCB tcb = tcb();
-        prePause_(tcb, tk, reason);
-        try {
-            boolean taskCompleted = park_(tcb, tk.getCat(), FOREVER);
-            assert taskCompleted : tcb + " " + tk.getCat();
-        } finally {
-            postPause_(tcb);
-        }
-    }
-
-    void pauseImpl_(Token tk, long timeout, String reason) throws ExAborted, ExTimeout
-    {
-        TCB tcb = tcb();
-        prePause_(tcb, tk, reason);
-        boolean taskCompleted;
-        try {
-            taskCompleted = park_(tcb, tk.getCat(), timeout);
-        } finally {
-            // abortion checking must precede timeout checking, since in some use
-            // cases the application depends on the fact that abort signals can be
-            // reliably delivered to the receiving thread (cf. Download)
-            postPause_(tcb);
-        }
-
-        if (!taskCompleted) {
-            l.debug("timed out");
-            throw new ExTimeout();
-        }
-    }
-
-    TCB pseudoPauseImpl_(Token tk, String reason) throws ExAborted
-    {
-        TCB tcb = tcb();
-        l.debug("p-pause " + tcb._prio + ' ' + reason);
-        prePause_(tcb, tk, reason);
-        _l.unlock();
-        return tcb;
-    }
-
-    void sleepImpl_(Token tk, long timeout, String reason) throws ExAborted
-    {
-        TCB tcb = tk.pseudoPause_("sleep: " + reason);
-        try {
-            ThreadUtil.sleepUninterruptable(timeout);
-        } finally {
-            tcb.pseudoResumed_();
+        Preconditions.checkState(_pendingQuits >= 0);
+        if (_pendingQuits == 0
+                && _total - _paused.size() >= DaemonParam.TC_RECLAIM_HI_WATERMARK) {
+            _pendingQuits = _total - _paused.size()
+                    - DaemonParam.TC_RECLAIM_LO_WATERMARK;
+            l.debug("time to reclaim. target: {}", _pendingQuits);
+            for (int i = 0; i < _pendingQuits; i++) {
+                _sched.schedule(EV_QUIT, DaemonParam.TC_RECLAIM_DELAY);
+            }
         }
     }
 

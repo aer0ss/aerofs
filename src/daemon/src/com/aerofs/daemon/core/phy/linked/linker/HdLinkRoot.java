@@ -12,9 +12,9 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EILinkRoot;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -38,7 +38,7 @@ import java.util.Collections;
 
 public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
 {
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final StoreCreator _sc;
     private final StoreDeleter _sd;
     private final TransManager _tm;
@@ -50,11 +50,12 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
     private final CfgAbsRTRoot _cfgAbsRTRoot;
 
     @Inject
-    public HdLinkRoot(TC tc, TransManager tm, StoreCreator sc, StoreDeleter sd, LinkerRootMap lrm,
-            CfgLocalUser localUser, ACLSynchronizer aclsync, InjectableFile.Factory factFile,
-            SPBlockingClient.Factory factSP, CfgAbsRTRoot cfgAbsRTRoot)
+    public HdLinkRoot(TokenManager tokenManager, TransManager tm, StoreCreator sc, StoreDeleter sd,
+            LinkerRootMap lrm, CfgLocalUser localUser, ACLSynchronizer aclsync,
+            InjectableFile.Factory factFile, SPBlockingClient.Factory factSP,
+            CfgAbsRTRoot cfgAbsRTRoot)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
         _tm = tm;
         _sc = sc;
         _sd = sd;
@@ -136,7 +137,7 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
     // call SP to create external shared folder with core lock released
     private void createExternalSharedFolder(String name, SID sid) throws Exception
     {
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "sp-share-ext");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-share-ext");
         try {
             TCB tcb = tk.pseudoPause_("sp-share-ext");
             try {

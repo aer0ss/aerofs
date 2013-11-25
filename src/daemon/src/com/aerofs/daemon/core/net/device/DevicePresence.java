@@ -6,14 +6,14 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
-import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOUpdateStores;
@@ -51,21 +51,23 @@ public class DevicePresence implements IDumpStatMisc
 
     private final Transports _tps;
     private final CoreScheduler _sched;
-    private final TC _tc;
+    private final TokenManager _tokenManager;
     private final ExponentialRetry _cer;
     private final MapSIndex2Store _sidx2s;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public DevicePresence(TC tc, CoreScheduler sched, Transports tps, CoreExponentialRetry cer,
-            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid)
+    public DevicePresence(TokenManager tokenManager, CoreScheduler sched, Transports tps,
+            CoreExponentialRetry cer, MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid)
     {
-        _tc = tc;
+        _tokenManager = tokenManager;
         _sched = sched;
         _tps = tps;
         _cer = cer;
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
+
+        Dumpables.add("dp", this);
     }
 
     public void addListener_(IDevicePresenceListener listener)
@@ -162,7 +164,7 @@ public class DevicePresence implements IDumpStatMisc
             // the pulse stopped event may be triggered from the transport and
             // being processed by another core thread
             AbstractEBIMC ev = new EOStartPulse(_tps.getIMCE_(tp), did);
-            CoreIMC.enqueueBlocking_(ev, _tc, Cat.UNLIMITED);
+            CoreIMC.enqueueBlocking_(ev, _tokenManager);
         } catch (Exception e) {
             l.warn("d:{} t:{} fail start pulse err:{}", did, tp, Util.e(e));
             pulseStopped_(tp, did);
@@ -293,7 +295,7 @@ public class DevicePresence implements IDumpStatMisc
                 {
                     for (ITransport tp : _tps.getAll_()) {
                         EOUpdateStores ev = new EOUpdateStores(_tps.getIMCE_(tp), sidAdded, sidRemoved);
-                        CoreIMC.enqueueBlocking_(ev, _tc, Cat.UNLIMITED);
+                        CoreIMC.enqueueBlocking_(ev, _tokenManager);
                     }
                     return null;
                 }

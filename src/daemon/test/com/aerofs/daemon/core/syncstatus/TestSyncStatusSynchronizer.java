@@ -22,6 +22,7 @@ import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase.ModifiedObject;
@@ -54,7 +55,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.aerofs.daemon.core.store.SIDMap;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.testlib.AbstractTest;
 
@@ -68,7 +68,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
 {
     @Mock Trans t;
     @Mock CoreScheduler sched;
-    @Mock TC tc;
+    @Mock TokenManager tokenManager;
     @Mock TCB tcb;
     @Mock Token tk;
     @Mock TransManager tm;
@@ -103,7 +103,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     {
         // Create synchronizer with mix of mocks and real objects operating on mock DB
         sync = new SyncStatusSynchronizer(tm, sched, ds, ssc, ssdb, sm, sm, sidx2dbm, nvc,
-                new Factory(tc, tm, sched));
+                new Factory(tokenManager, tm, sched));
     }
 
     private SOID resolve(String s) throws Exception
@@ -200,8 +200,8 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         when(tm.begin_()).thenReturn(t);
 
         // Stub thread control
-        when(tc.acquire_(any(Cat.class), any(String.class))).thenReturn(tk);
-        when(tc.acquireThrows_(any(Cat.class), any(String.class))).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), any(String.class))).thenReturn(tk);
+        when(tokenManager.acquireThrows_(any(Cat.class), any(String.class))).thenReturn(tk);
         when(tk.pseudoPause_(any(String.class))).thenReturn(tcb);
 
         // Stub queue will simply execute incoming events upon addition

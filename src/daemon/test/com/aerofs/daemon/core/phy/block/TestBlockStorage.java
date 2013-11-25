@@ -17,9 +17,9 @@ import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
@@ -80,7 +80,7 @@ public class TestBlockStorage extends AbstractBlockTest
 {
     @Mock Trans t;
     @Mock Token tk;
-    @Mock TC tc;
+    @Mock TokenManager tc;
     @Mock TCB tcb;
     @Mock TransManager tm;
     @Mock CoreScheduler sched;

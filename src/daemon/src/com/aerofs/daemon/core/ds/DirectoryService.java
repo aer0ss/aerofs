@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.ds;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
+import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -35,6 +36,11 @@ import java.util.Set;
 
 public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 {
+    public DirectoryService()
+    {
+        Dumpables.add("ds", this);
+    }
+
     public abstract void addListener_(IDirectoryServiceListener listener);
 
     public abstract Set<OID> getChildren_(SOID soid)

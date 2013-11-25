@@ -188,7 +188,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
         l.trace("send datagram {}", ep);
 
         Outgoing o = new Outgoing(_f._tc, bs, ep);
-        process_(o, _f._tc.prio());
+        process_(o, TC.currentThreadPrio());
     }
 
     @Override
@@ -198,7 +198,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
         l.trace("begin outgoing stream:{} {}", streamId.toString(), ep);
 
         Outgoing o = new Outgoing(_f._tc, bs, ep, streamId, 0, tk);
-        process_(o, _f._tc.prio());
+        process_(o, TC.currentThreadPrio());
         o.pauseProcessing();
 
         _lower.beginOutgoingStream_(o.getSid(), o.serialize(), o.getEndpoint(), o.getTok());
@@ -211,7 +211,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
         l.trace("send outgoing chunk stream:{} {} {}", streamId, seq, ep);
 
         Outgoing o = new Outgoing(_f._tc, bs, ep, streamId, seq, tk);
-        process_(o, _f._tc.prio());
+        process_(o, TC.currentThreadPrio());
         o.pauseProcessing();
 
         _lower.sendOutgoingStreamChunk_(o.getSid(), o.getSeq(), o.serialize(), o.getEndpoint(),

@@ -5,9 +5,9 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
+import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.Set;
 
 public class CoreEventDispatcher extends EventDispatcher
