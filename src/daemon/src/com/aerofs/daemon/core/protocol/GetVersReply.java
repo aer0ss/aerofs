@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.Exceptions;
@@ -148,7 +148,7 @@ public class GetVersReply
             }
 
             // see Rule 2 in acl.md
-            if (!_lacl.check_(_user, _sidx, Role.EDITOR)) {
+            if (!_lacl.check_(_user, _sidx, Permissions.EDITOR)) {
                 l.warn("{} on {} has no editor perm for {}", _user, _from, _sidx);
                 // Although we return false to indicate that the store should be ignored, _sidx
                 // needs to set to null otherwise later code doesn't properly ignore blocks form

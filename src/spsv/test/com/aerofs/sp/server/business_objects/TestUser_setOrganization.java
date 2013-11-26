@@ -4,8 +4,9 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.acl.Role;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -128,9 +129,9 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
         sf1.save("haha", user);
         sf2.save("haha", user);
 
-        assertJoinedRole(sfRoot, tsUserOld, Role.EDITOR);
-        assertJoinedRole(sf1, tsUserOld, Role.EDITOR);
-        assertJoinedRole(sf2, tsUserOld, Role.EDITOR);
+        assertJoinedRole(sfRoot, tsUserOld, Permissions.allOf(Permission.WRITE));
+        assertJoinedRole(sf1, tsUserOld, Permissions.allOf(Permission.WRITE));
+        assertJoinedRole(sf2, tsUserOld, Permissions.allOf(Permission.WRITE));
 
         // Create a new org with an admin otherwise setOrganization would fail with ExNoAdmin.
         User admin = saveUser();
@@ -139,11 +140,11 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
 
         user.setOrganization(orgNew, AuthorizationLevel.USER);
 
-        assertNull(sfRoot.getRoleNullable(tsUserOld));
-        assertNull(sf1.getRoleNullable(tsUserOld));
-        assertNull(sf2.getRoleNullable(tsUserOld));
-        assertJoinedRole(sfRoot, tsUserNew, Role.EDITOR);
-        assertJoinedRole(sf1, tsUserNew, Role.EDITOR);
-        assertJoinedRole(sf2, tsUserNew, Role.EDITOR);
+        assertNull(sfRoot.getPermissionsNullable(tsUserOld));
+        assertNull(sf1.getPermissionsNullable(tsUserOld));
+        assertNull(sf2.getPermissionsNullable(tsUserOld));
+        assertJoinedRole(sfRoot, tsUserNew, Permissions.allOf(Permission.WRITE));
+        assertJoinedRole(sf1, tsUserNew, Permissions.allOf(Permission.WRITE));
+        assertJoinedRole(sf2, tsUserNew, Permissions.allOf(Permission.WRITE));
     }
 }

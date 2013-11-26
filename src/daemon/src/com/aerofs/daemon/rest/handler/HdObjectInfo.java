@@ -5,7 +5,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
-import com.aerofs.daemon.rest.util.AccessChecker;
+import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.MetadataBuilder;
 import com.aerofs.lib.event.Prio;
@@ -16,12 +16,12 @@ import java.sql.SQLException;
 
 public class HdObjectInfo extends AbstractHdIMC<EIObjectInfo>
 {
-    private final AccessChecker _access;
+    private final RestObjectResolver _access;
     private final MetadataBuilder _mb;
     private final EntityTagUtil _etags;
 
     @Inject
-    public HdObjectInfo(AccessChecker access, MetadataBuilder mb, EntityTagUtil etags)
+    public HdObjectInfo(RestObjectResolver access, MetadataBuilder mb, EntityTagUtil etags)
     {
         _access = access;
         _mb = mb;
@@ -31,7 +31,7 @@ public class HdObjectInfo extends AbstractHdIMC<EIObjectInfo>
     @Override
     protected void handleThrows_(EIObjectInfo ev, Prio prio) throws ExNotFound, SQLException
     {
-        OA oa = _access.checkObject_(ev._object, ev._user);
+        OA oa = _access.resolve_(ev._object, ev._user);
         if (oa.isDirOrAnchor() != (ev._type == Type.FOLDER)) throw new ExNotFound();
         ev.setResult_(Response.ok()
                 .entity(_mb.metadata(oa))

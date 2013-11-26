@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -101,7 +101,7 @@ public class NewUpdates
             throws Exception
     {
         // see Rule 3 in acl.md
-        if (!_lacl.check_(_cfgLocalUser.get(), sidx, Role.EDITOR)) {
+        if (!_lacl.check_(_cfgLocalUser.get(), sidx, Permissions.EDITOR)) {
             l.info("we have no editor perm for {}", sidx);
             return;
         }
@@ -170,7 +170,7 @@ public class NewUpdates
                 // see Rule 2 in acl.md. Note that the maxcast sender can forge the device id
                 // (unless maxcast messages are signed). therefore this is not a security measure.
                 // see more in acl.md.
-                if (!_lacl.check_(msg.user(), sidx, Role.EDITOR)) {
+                if (!_lacl.check_(msg.user(), sidx, Permissions.EDITOR)) {
                     l.warn("{} on {} has no editor perm for {}", msg.user(), msg.ep(), socid);
                     continue;
                 }

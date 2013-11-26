@@ -5,7 +5,7 @@ use = egg:aerofs-web
 deployment.mode = private
 
 # SP settings
-sp.version = 20
+sp.version = 21
 
 # Pyramid settings
 pyramid.reload_templates = false

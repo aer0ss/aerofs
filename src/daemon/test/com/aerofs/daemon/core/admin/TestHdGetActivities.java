@@ -29,6 +29,7 @@ import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.base.id.UserID;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,7 +70,7 @@ public class TestHdGetActivities extends AbstractTest
 {
     @Mock IDBIterator<ActivityRow> dbiter;
     @Mock SPBlockingClient sp;
-    @Mock SPBlockingClient.Factory factSP;
+    @Mock InjectableSPBlockingClientFactory factSP;
     @Mock CfgLocalUser cfgLocalUser;
     @Mock CfgLocalDID cfgLocalDID;
     @Mock DirectoryService ds;
@@ -144,8 +145,8 @@ public class TestHdGetActivities extends AbstractTest
 
         when(tm.begin_()).thenReturn(t);
 
-        when(factSP.create_(any(UserID.class))).thenReturn(sp);
-        when(factSP.create_(any(UserID.class))).thenReturn(sp);
+        when(factSP.create()).thenReturn(sp);
+        when(sp.signInRemote()).thenReturn(sp);
 
         when(sp.getDeviceInfo(anyCollectionOf(ByteString.class))).thenAnswer(
                 new Answer<GetDeviceInfoReply>()

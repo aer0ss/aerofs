@@ -1,7 +1,7 @@
 package com.aerofs.daemon.lib.db;
 
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.base.acl.Role;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
@@ -20,7 +20,7 @@ public interface IACLDatabase
      * @return a {@link IDBIterator} over the acl for the specified store which returns a pair from
      * subject=>role on each {@link com.aerofs.lib.db.IDBIterator#get_()} call
      */
-    IDBIterator<Map.Entry<UserID, Role>> get_(SIndex sidx) throws SQLException;
+    IDBIterator<Map.Entry<UserID, Permissions>> get_(SIndex sidx) throws SQLException;
 
     /**
      * @return local acl epoch for the user
@@ -36,7 +36,7 @@ public interface IACLDatabase
      * @param t transaction (this method can only be called as part of a transaction)
      * @throws SQLException if there are db errors during the update
      */
-    void set_(SIndex sidx, Map<UserID, Role> subject2role, Trans t) throws SQLException;
+    void set_(SIndex sidx, Map<UserID, Permissions> subject2role, Trans t) throws SQLException;
 
     /**
      * Delete entries from the acl for the specified {@code sid}

@@ -4,7 +4,8 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
@@ -12,7 +13,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.SharedFolder.UserRoleAndState;
+import com.aerofs.sp.server.lib.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -85,7 +86,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(SID.generate(), owner);
-        assertJoinedRole(sf, owner, Role.OWNER);
+        assertJoinedRole(sf, owner, Permissions.allOf(Permission.MANAGE, Permission.WRITE));
         assertNull(sf.getSharerNullable(owner));
     }
 
@@ -97,7 +98,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = saveSharedFolder(owner);
 
         User tsUser = getTeamServerUser(owner);
-        assertJoinedRole(sf, tsUser, Role.EDITOR);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE));
         assertNull(sf.getSharerNullable(tsUser));
     }
 
@@ -132,7 +133,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = saveSharedFolder(owner);
         User user = saveUser();
         // why 4? owner, user, and their Team Servers
-        addJoinedUser(sf, user, Role.EDITOR, owner, 4);
+        addJoinedUser(sf, user, Permissions.allOf(Permission.WRITE), owner, 4);
 
         User ts = user.getOrganization().getTeamServerUser();
         try {
@@ -150,7 +151,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = saveUser();
         User sharer = saveUser();
 
-        sf.addPendingUser(user, Role.EDITOR, sharer);
+        sf.addPendingUser(user, Permissions.allOf(Permission.WRITE), sharer);
         // why 0? no joined user is affected
         assertEquals(sf.setState(user, SharedFolderState.LEFT).size(), 0);
 
@@ -160,14 +161,14 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         sqlTrans.begin();
 
         try {
-            sf.addPendingUser(user, Role.OWNER, sharer);
+            sf.addPendingUser(user, Permissions.allOf(Permission.WRITE, Permission.MANAGE), sharer);
             assertTrue(false);
         } catch (ExAlreadyExist e) {
             sqlTrans.handleException();
             sqlTrans.begin();
         }
 
-        assertEquals(Role.EDITOR, sf.getRoleNullable(user));
+        assertEquals(Permissions.allOf(Permission.WRITE), sf.getPermissionsNullable(user));
         assertEquals(SharedFolderState.LEFT, sf.getStateNullable(user));
     }
 
@@ -179,8 +180,8 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = saveSharedFolder(owner);
         User user = saveUser();
 
-        sf.addPendingUser(user, Role.EDITOR, owner);
-        assertNull(sf.getRoleNullable(getTeamServerUser(user)));
+        sf.addPendingUser(user, Permissions.allOf(Permission.WRITE), owner);
+        assertNull(sf.getPermissionsNullable(getTeamServerUser(user)));
 
         // why 2? owner, owner's Team Server
         assertEquals(sf.getJoinedUsers().size(), 2);
@@ -194,7 +195,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = saveSharedFolder(owner);
         User user = saveUser();
 
-        sf.addPendingUser(user, Role.EDITOR, owner);
+        sf.addPendingUser(user, Permissions.allOf(Permission.WRITE), owner);
         assertEquals(sf.getSharerNullable(user), owner);
     }
 
@@ -220,13 +221,13 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = saveUser();
 
         // why 4? owner, user, and their Team Servers
-        addJoinedUser(sf, user, Role.EDITOR, owner, 4);
+        addJoinedUser(sf, user, Permissions.allOf(Permission.WRITE), owner, 4);
         User tsUser = getTeamServerUser(user);
-        assertEquals(sf.getRoleNullable(tsUser), Role.EDITOR);
+        assertEquals(sf.getPermissionsNullable(tsUser), Permissions.allOf(Permission.WRITE));
 
         // why 4? owner, user, and their team servers
         assertEquals(sf.setState(user, state).size(), 4);
-        assertNull(sf.getRoleNullable(tsUser));
+        assertNull(sf.getPermissionsNullable(tsUser));
     }
 
     @Test
@@ -236,19 +237,19 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = saveUser();
         User tsUser = getTeamServerUser(user);
         SharedFolder sf = saveSharedFolder(tsUser);
-        assertJoinedRole(sf, tsUser, Role.OWNER);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
 
         // make sure TS not downgraded by adding a user
         // why 2? the team server (the owner) and the user
-        addJoinedUser(sf, user, Role.EDITOR, tsUser, 2);
-        assertJoinedRole(sf, tsUser, Role.OWNER);
+        addJoinedUser(sf, user, Permissions.allOf(Permission.WRITE), tsUser, 2);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
 
         // make sure TS not kicked out when last org member leaves
         // why 2? the team server (the owner) and the user
         assertEquals(sf.setState(user, SharedFolderState.LEFT).size(), 2);
         // why 0? because no state changes for joined users
         assertEquals(sf.setState(user, SharedFolderState.PENDING).size(), 0);
-        assertJoinedRole(sf, tsUser, Role.OWNER);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
     }
 
     @Test
@@ -259,14 +260,14 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = saveSharedFolder(owner);
 
         User user = saveUser();
-        sf.addPendingUser(user, Role.EDITOR, owner);
+        sf.addPendingUser(user, Permissions.allOf(Permission.WRITE), owner);
         User tsUser = getTeamServerUser(user);
-        assertNull(sf.getRoleNullable(tsUser));
+        assertNull(sf.getPermissionsNullable(tsUser));
 
         // why 4? owner, user, owner's team server, user's team server
         assertEquals(sf.setState(user, SharedFolderState.JOINED).size(), 4);
 
-        assertJoinedRole(sf, tsUser, Role.EDITOR);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE));
 
         // why 4? owner, user, owner's team server, user's team server id
         assertEquals(sf.getJoinedUsers().size(), 4);
@@ -280,7 +281,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = saveSharedFolder(owner);
 
         User user = saveUser();
-        sf.addPendingUser(user, Role.EDITOR, owner);
+        sf.addPendingUser(user, Permissions.allOf(Permission.WRITE), owner);
 
         // pending => joined
         // why 4? the owner, the user, and their team servers
@@ -338,8 +339,8 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertEquals(sf.addTeamServerForUser(user2).size(), 0);
         assertEquals(users, sf.getJoinedUsers());
 
-        assertJoinedRole(sf, getTeamServerUser(user1), Role.EDITOR);
-        assertJoinedRole(sf, getTeamServerUser(user2), Role.EDITOR);
+        assertJoinedRole(sf, getTeamServerUser(user1), Permissions.allOf(Permission.WRITE));
+        assertJoinedRole(sf, getTeamServerUser(user2), Permissions.allOf(Permission.WRITE));
     }
 
     @Test
@@ -351,8 +352,8 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user1 = saveUser();
         // why 4? owner, user, and their team servers
-        addJoinedUser(sf, user1, Role.OWNER, owner, 4);
-        assertEquals(sf.setRole(owner, Role.EDITOR).size(), 4);
+        addJoinedUser(sf, user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE), owner, 4);
+        assertEquals(sf.setPermissions(owner, Permissions.allOf(Permission.WRITE)).size(), 4);
 
         try {
             sf.removeUser(user1);
@@ -394,27 +395,27 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertEquals(getTeamServerUser(user2), tsUser);
 
         // Why 4? owner, user1, owner's TS, and user1/2's TS
-        addJoinedUser(sf, user1, Role.EDITOR, owner, 4);
-        assertJoinedRole(sf, tsUser, Role.EDITOR);
+        addJoinedUser(sf, user1, Permissions.allOf(Permission.WRITE), owner, 4);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE));
 
         // Why 5? owner, user1, user2, owner's TS, and user1/2's TS
-        addJoinedUser(sf, user2, Role.OWNER, owner, 5);
-        assertJoinedRole(sf, tsUser, Role.EDITOR);
+        addJoinedUser(sf, user2, Permissions.allOf(Permission.WRITE, Permission.MANAGE), owner, 5);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE));
 
         // why 5? owner, user1, user2, owner's team server, user1 & 2's team server id
         assertEquals(sf.removeUser(user1).size(), 5);
 
-        assertNull(sf.getRoleNullable(user1));
+        assertNull(sf.getPermissionsNullable(user1));
 
         // since user1 & 2 share the same org, the team server shouldn't have been removed.
-        assertJoinedRole(sf, tsUser, Role.EDITOR);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE));
 
         // why 4? owner, user2, owner's team server, user2's team server id
         assertEquals(sf.removeUser(user2).size(), 4);
 
-        assertNull(sf.getRoleNullable(user2));
+        assertNull(sf.getPermissionsNullable(user2));
 
-        assertNull(sf.getRoleNullable(tsUser));
+        assertNull(sf.getPermissionsNullable(tsUser));
     }
 
     @Test
@@ -424,17 +425,17 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = saveUser();
         User tsUser = getTeamServerUser(user);
         SharedFolder sf = saveSharedFolder(tsUser);
-        assertJoinedRole(sf, tsUser, Role.OWNER);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
 
         // make sure TS not downgraded by adding a user
         // Why 2? the team server (the owner) and the user
-        addJoinedUser(sf, user, Role.EDITOR, tsUser, 2);
-        assertJoinedRole(sf, tsUser, Role.OWNER);
+        addJoinedUser(sf, user, Permissions.allOf(Permission.WRITE), tsUser, 2);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
 
         // make sure TS not kicked out when last org member leaves
         // why 2? the user and the team server
         assertEquals(sf.removeUser(user).size(), 2);
-        assertJoinedRole(sf, tsUser, Role.OWNER);
+        assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
     }
 
     @Test
@@ -442,7 +443,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         User user = saveUser();
         SharedFolder shared = saveSharedFolder(user);
-        shared.addJoinedUser(saveUser(), Role.OWNER);
+        shared.addJoinedUser(saveUser(), Permissions.allOf(Permission.WRITE, Permission.MANAGE));
 
         shared.removeUser(user);
 
@@ -456,10 +457,10 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder shared = saveSharedFolder(user);
 
         User invited = saveUser();
-        shared.addPendingUser(invited, Role.EDITOR, user);
+        shared.addPendingUser(invited, Permissions.allOf(Permission.WRITE), user);
 
         User left = saveUser();
-        shared.addJoinedUser(left, Role.EDITOR);
+        shared.addJoinedUser(left, Permissions.allOf(Permission.WRITE));
         shared.setState(left, SharedFolderState.LEFT);
 
         shared.removeUser(user);
@@ -500,15 +501,15 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         user2.setOrganization(user1.getOrganization(), AuthorizationLevel.USER);
 
         // Why 4? owner, user1, owner's TS, and user1/2's TS
-        addJoinedUser(sf, user1, Role.OWNER, owner, 4);
+        addJoinedUser(sf, user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE), owner, 4);
         // Why 5? owner, user1, user2, owner's TS, and user1/2's TS
-        addJoinedUser(sf, user2, Role.EDITOR, owner, 5);
+        addJoinedUser(sf, user2, Permissions.allOf(Permission.WRITE), owner, 5);
 
         // remove user1's team server with user2 being in the same org
         assertEquals(sf.removeTeamServerForUser(user1).size(), 0);
 
         // the team server should remain
-        assertJoinedRole(sf, getTeamServerUser(user1), Role.EDITOR);
+        assertJoinedRole(sf, getTeamServerUser(user1), Permissions.allOf(Permission.WRITE));
 
         // now, remove user2
         // why 5? owner, user1, user2, owner's team server, user1 & 2's team server
@@ -518,7 +519,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertEquals(sf.removeTeamServerForUser(user1).size(), 4);
 
         // the team server should go away
-        assertNull(sf.getRoleNullable(getTeamServerUser(user1)));
+        assertNull(sf.getPermissionsNullable(getTeamServerUser(user1)));
     }
 
     @Test
@@ -530,13 +531,13 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user1 = saveUser();
         // Why 4? owner, user, and their TS
-        addJoinedUser(sf, user1, Role.OWNER, owner, 4);
+        addJoinedUser(sf, user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE), owner, 4);
 
         // why 4? owner, user, and their TS
-        assertEquals(sf.setRole(owner, Role.EDITOR).size(), 4);
+        assertEquals(sf.setPermissions(owner, Permissions.allOf(Permission.WRITE)).size(), 4);
 
         try {
-            sf.setRole(user1, Role.EDITOR);
+            sf.setPermissions(user1, Permissions.allOf(Permission.WRITE));
             assertTrue(false);
         } catch (ExNoAdminOrOwner e) {
             sqlTrans.handleException();
@@ -552,7 +553,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = saveUser();
 
         try {
-            sf.setRole(user, Role.EDITOR);
+            sf.setPermissions(user, Permissions.allOf(Permission.WRITE));
             fail();
         } catch (ExNotFound e) {}
     }
@@ -566,20 +567,20 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user1 = saveUser();
         // Why 4? owner, user, and their TS
-        addJoinedUser(sf, user1, Role.EDITOR, owner, 4);
+        addJoinedUser(sf, user1, Permissions.allOf(Permission.WRITE), owner, 4);
 
         User user2 = saveUser();
         // Why 6? owner, user1, user2, and their TS
-        addJoinedUser(sf, user2, Role.OWNER, owner, 6);
+        addJoinedUser(sf, user2, Permissions.allOf(Permission.WRITE, Permission.MANAGE), owner, 6);
 
         // intentionally make a no-op change
         // wh 6? owner, user1, user2, and their perspective team servers
-        assertEquals(sf.setRole(user1, Role.EDITOR).size(), 6);
-        assertJoinedRole(sf, user1, Role.EDITOR);
+        assertEquals(sf.setPermissions(user1, Permissions.allOf(Permission.WRITE)).size(), 6);
+        assertJoinedRole(sf, user1, Permissions.allOf(Permission.WRITE));
 
         // wh 6? owner, user1, user2, and their perspective team servers
-        assertEquals(sf.setRole(user2, Role.EDITOR).size(), 6);
-        assertJoinedRole(sf, user2, Role.EDITOR);
+        assertEquals(sf.setPermissions(user2, Permissions.allOf(Permission.WRITE)).size(), 6);
+        assertJoinedRole(sf, user2, Permissions.allOf(Permission.WRITE));
     }
 
     @Test
@@ -590,13 +591,14 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = saveSharedFolder(owner);
 
         User user = saveUser();
-        sf.addPendingUser(user, Role.EDITOR, owner);
-        assertEquals(sf.setRole(user, Role.OWNER).size(), 0);
+        sf.addPendingUser(user, Permissions.allOf(Permission.WRITE), owner);
+        assertEquals(sf.setPermissions(user,
+                Permissions.allOf(Permission.WRITE, Permission.MANAGE)).size(), 0);
 
         // why 0? no joined users are affected
         assertEquals(sf.setState(user, SharedFolderState.LEFT).size(), 0);
 
-        assertEquals(sf.setRole(user, Role.VIEWER).size(), 0);
+        assertEquals(sf.setPermissions(user, Permissions.allOf()).size(), 0);
     }
 
     @Test
@@ -614,22 +616,25 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         leftMember.setOrganization(org, AuthorizationLevel.USER);
 
         SharedFolder folder = saveSharedFolder(owner);
-        folder.addPendingUser(pendingMember, Role.EDITOR, owner);
-        folder.addPendingUser(joinedMember, Role.EDITOR, owner);
-        folder.addPendingUser(leftMember, Role.EDITOR, owner);
+        folder.addPendingUser(pendingMember, Permissions.allOf(Permission.WRITE), owner);
+        folder.addPendingUser(joinedMember, Permissions.allOf(Permission.WRITE), owner);
+        folder.addPendingUser(leftMember, Permissions.allOf(Permission.WRITE), owner);
 
         folder.setState(joinedMember, SharedFolderState.JOINED);
         folder.setState(leftMember, SharedFolderState.JOINED);
         folder.setState(leftMember, SharedFolderState.LEFT);
 
-        ImmutableList<UserRoleAndState> expected =
+        ImmutableList<UserPermissionsAndState> expected =
                 ImmutableList.of(
-                        new UserRoleAndState(org.getTeamServerUser(),
-                                Role.EDITOR, SharedFolderState.JOINED),
-                        new UserRoleAndState(owner, Role.OWNER, SharedFolderState.JOINED),
-                        new UserRoleAndState(pendingMember, Role.EDITOR, SharedFolderState.PENDING),
-                        new UserRoleAndState(joinedMember, Role.EDITOR, SharedFolderState.JOINED),
-                        new UserRoleAndState(leftMember, Role.EDITOR, SharedFolderState.LEFT)
+                        new UserPermissionsAndState(org.getTeamServerUser(),
+                                Permissions.allOf(Permission.WRITE), SharedFolderState.JOINED),
+                        new UserPermissionsAndState(owner, Permissions.allOf(Permission.WRITE,
+                                Permission.MANAGE), SharedFolderState.JOINED),
+                        new UserPermissionsAndState(pendingMember, Permissions.allOf(
+                                Permission.WRITE), SharedFolderState.PENDING),
+                        new UserPermissionsAndState(joinedMember, Permissions.allOf(
+                                Permission.WRITE), SharedFolderState.JOINED),
+                        new UserPermissionsAndState(leftMember, Permissions.allOf(Permission.WRITE), SharedFolderState.LEFT)
                 );
 
         assertEquals(expected, folder.getAllUsersRolesAndStates());
@@ -643,15 +648,16 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User nonExistingUser = newUser();
 
         SharedFolder folder = saveSharedFolder(owner);
-        folder.addPendingUser(nonExistingUser, Role.EDITOR, owner);
+        folder.addPendingUser(nonExistingUser, Permissions.allOf(Permission.WRITE), owner);
 
-        ImmutableList<UserRoleAndState> expected =
+        ImmutableList<UserPermissionsAndState> expected =
                 ImmutableList.of(
-                        new UserRoleAndState(owner.getOrganization().getTeamServerUser(),
-                                Role.EDITOR, SharedFolderState.JOINED),
-                        new UserRoleAndState(owner, Role.OWNER, SharedFolderState.JOINED),
-                        new UserRoleAndState(nonExistingUser,
-                                Role.EDITOR, SharedFolderState.PENDING)
+                        new UserPermissionsAndState(owner.getOrganization().getTeamServerUser(),
+                                Permissions.allOf(Permission.WRITE), SharedFolderState.JOINED),
+                        new UserPermissionsAndState(owner, Permissions.allOf(Permission.WRITE,
+                                Permission.MANAGE), SharedFolderState.JOINED),
+                        new UserPermissionsAndState(nonExistingUser,
+                                Permissions.allOf(Permission.WRITE), SharedFolderState.PENDING)
                 );
 
         assertFalse(nonExistingUser.exists());
@@ -677,11 +683,11 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         return saveSharedFolder(sid, owner);
     }
 
-    private void addJoinedUser(SharedFolder sf, User user, Role role, User sharer,
+    private void addJoinedUser(SharedFolder sf, User user, Permissions permissions, User sharer,
             int usersExpectedToBeAffected)
             throws SQLException, ExNotFound, ExAlreadyExist
     {
-        sf.addPendingUser(user, role, sharer);
+        sf.addPendingUser(user, permissions, sharer);
         assertEquals(sf.setState(user, SharedFolderState.JOINED).size(), usersExpectedToBeAffected);
     }
 }

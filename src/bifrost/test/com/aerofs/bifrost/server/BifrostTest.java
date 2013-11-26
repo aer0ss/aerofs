@@ -6,7 +6,6 @@ package com.aerofs.bifrost.server;
 
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.bifrost.module.AccessTokenDAO;
 import com.aerofs.bifrost.module.AuthorizationRequestDAO;
 import com.aerofs.bifrost.module.ClientDAO;
@@ -32,7 +31,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.junit.After;
 import org.junit.Before;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 
 import java.util.HashMap;
@@ -211,8 +209,7 @@ public abstract class BifrostTest extends AbstractTest
             {
                 bind(SPBlockingClient.class).toInstance(_spClient);
                 bind(SPBlockingClient.Factory.class).toInstance(_spClientFactory);
-                when(_spClientFactory.create_(Matchers.<IURLConnectionConfigurator>anyObject()))
-                        .thenReturn(_spClient);
+                when(_spClientFactory.create()).thenReturn(_spClient);
             }
         };
     }

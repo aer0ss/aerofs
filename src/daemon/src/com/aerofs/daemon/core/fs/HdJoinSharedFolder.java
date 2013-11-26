@@ -6,14 +6,14 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.sp.client.SPBlockingClient;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
+
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
 {
@@ -39,10 +39,9 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
         try {
             tcb = tk.pseudoPause_("sp-join");
             // join the shared folder through SP
-            SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-            SPBlockingClient sp = fact.create_(Cfg.user());
-            sp.signInRemote();
-            sp.joinSharedFolder(ev._sid.toPB(), false);
+            newMutualAuthClientFactory().create()
+                    .signInRemote()
+                    .joinSharedFolder(ev._sid.toPB(), false);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

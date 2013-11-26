@@ -4,7 +4,8 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Sp.ListSharedFoldersReply;
@@ -28,16 +29,17 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
         User sessionUser = saveUser();
         sqlTrans.commit();
 
-        for (Role role : Role.values()) {
+        for (Permission permission : Permission.values()) {
+            Permissions permissions = Permissions.allOf(permission);
             for (SharedFolderState state : SharedFolderState.values()) {
                 SID sid = SID.generate();
 
                 if (state == SharedFolderState.PENDING) {
-                    shareFolder(sharer, sid, sessionUser, role);
+                    shareFolder(sharer, sid, sessionUser, permissions);
                 } else if (state == SharedFolderState.JOINED) {
-                    shareAndJoinFolder(sharer, sid, sessionUser, role);
+                    shareAndJoinFolder(sharer, sid, sessionUser, permissions);
                 } else if (state == SharedFolderState.LEFT) {
-                    shareAndJoinFolder(sharer, sid, sessionUser, role);
+                    shareAndJoinFolder(sharer, sid, sessionUser, permissions);
                     leaveSharedFolder(sessionUser, sid);
                 } else {
                     fail();
@@ -62,7 +64,7 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
         sqlTrans.commit();
 
         SID sid = SID.generate();
-        shareAndJoinFolder(sharer, sid, sharee, Role.EDITOR);
+        shareAndJoinFolder(sharer, sid, sharee, Permissions.allOf(Permission.WRITE));
 
         setSessionUser(ts);
         ListSharedFoldersReply reply =
@@ -83,10 +85,10 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
         // two stores because we are covering the logic of at least one store with no permission,
         // not all stores.
         SID sid1 = SID.generate();
-        shareFolder(sharer, sid1, sessionUser, Role.EDITOR);
+        shareFolder(sharer, sid1, sessionUser, Permissions.allOf(Permission.WRITE));
 
         SID sid2 = SID.generate();
-        shareFolder(sharer, sid2, otherUser, Role.EDITOR);
+        shareFolder(sharer, sid2, otherUser, Permissions.allOf(Permission.WRITE));
 
         setSessionUser(sessionUser);
 
@@ -119,12 +121,12 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
         // two stores because we are covering the logic of at least one store with no permission,
         // not all stores.
         SID sid = SID.generate();
-        shareAndJoinFolder(sharer, sid, joinedSharee, Role.EDITOR);
+        shareAndJoinFolder(sharer, sid, joinedSharee, Permissions.allOf(Permission.WRITE));
 
         SID sid2 = SID.generate();
-        shareAndJoinFolder(sharer, sid2, otherSharee, Role.EDITOR);
-        shareFolder(sharer, sid2, pendingSharee, Role.EDITOR);
-        shareAndJoinFolder(sharer, sid2, leftSharee, Role.EDITOR);
+        shareAndJoinFolder(sharer, sid2, otherSharee, Permissions.allOf(Permission.WRITE));
+        shareFolder(sharer, sid2, pendingSharee, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(sharer, sid2, leftSharee, Permissions.allOf(Permission.WRITE));
         leaveSharedFolder(leftSharee, sid2);
 
         setSessionUser(ts);

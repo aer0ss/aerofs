@@ -30,6 +30,8 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newOneWayAuthClientFactory;
+
 public class CredentialUtil
 {
     // FIXME: tick tock, buddy. You're next. This method gonna go away.
@@ -39,11 +41,11 @@ public class CredentialUtil
     static public void updateStoredPassword(UserID userId, char[] password)
             throws Exception
     {
-        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-        SPBlockingClient sp = fact.create_(Cfg.user());
         byte[] scrypted = SecUtil.scrypt(password, userId);
 
-        sp.signInUser(Cfg.user().getString(), ByteString.copyFrom(scrypted));
+        newOneWayAuthClientFactory()
+                .create()
+                .signInUser(Cfg.user().getString(), ByteString.copyFrom(scrypted));
 
         CfgDatabase db = Cfg.db();
         writePrivateKey(scrypted, Cfg.privateKey());
@@ -73,7 +75,7 @@ public class CredentialUtil
                     throws Exception
             {
                 IOSUtil osu = OSUtil.get();
-                return sp.registerTeamServerDevice(did, csr, false,
+                return sp.registerTeamServerDevice(did, csr,
                         osu.getOSFamily().getString(), osu.getFullOSName(), deviceName);
             }
         });
@@ -95,7 +97,7 @@ public class CredentialUtil
                     throws Exception
             {
                 IOSUtil osu = OSUtil.get();
-                return sp.registerDevice(did, csr, false, osu.getOSFamily().getString(),
+                return sp.registerDevice(did, csr, osu.getOSFamily().getString(),
                         osu.getFullOSName(), deviceName);
             }
         });

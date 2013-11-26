@@ -15,10 +15,10 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -31,17 +31,15 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
     private final DirectoryService _ds;
     private final ACLSynchronizer _aclsync;
     private final SPBlockingClient.Factory _factSP;
-    private final CfgLocalUser _localUser;
 
     @Inject
-    public HdLeaveSharedFolder(TokenManager tokenManager, DirectoryService ds, ACLSynchronizer aclsync,
-            SPBlockingClient.Factory factSP, CfgLocalUser localUser)
+    public HdLeaveSharedFolder(TokenManager tokenManager, DirectoryService ds,
+            ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP)
     {
         _tokenManager = tokenManager;
         _ds = ds;
         _aclsync = aclsync;
         _factSP = factSP;
-        _localUser = localUser;
     }
 
     @Override
@@ -65,10 +63,9 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-leave");
-            // join the shared folder through SP
-            SPBlockingClient sp = _factSP.create_(_localUser.get());
-            sp.signInRemote();
-            sp.leaveSharedFolder(sid.toPB());
+            _factSP.create()
+                    .signInRemote()
+                    .leaveSharedFolder(sid.toPB());
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

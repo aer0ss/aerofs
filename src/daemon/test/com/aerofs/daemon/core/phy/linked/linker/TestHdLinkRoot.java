@@ -29,7 +29,8 @@ import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBSubjectPermissions;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.protobuf.ByteString;
@@ -69,7 +70,7 @@ public class TestHdLinkRoot extends AbstractTest
     @Mock CfgLocalUser cfgLocalUser;
     @Mock ACLSynchronizer aclsync;
     @Spy InjectableFile.Factory factFile;
-    @Mock SPBlockingClient.Factory factSP;
+    @Mock InjectableSPBlockingClientFactory factSP;
     @Mock CfgAbsRTRoot cfgAbsRTRoot;
 
     @InjectMocks HdLinkRoot hd;
@@ -93,7 +94,8 @@ public class TestHdLinkRoot extends AbstractTest
         when(tm.begin_()).thenReturn(t);
         when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
-        when(factSP.create_(localUser)).thenReturn(sp);
+        when(factSP.create()).thenReturn(sp);
+        when(sp.signInRemote()).thenReturn(sp);
         when(cfgAbsRTRoot.get()).thenReturn("");
     }
 
@@ -167,7 +169,7 @@ public class TestHdLinkRoot extends AbstractTest
 
         verify(sp).signInRemote();
         verify(sp).shareFolder(eq(name), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true), any(Boolean.class));
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(true), any(Boolean.class));
         verify(aclsync).syncToLocal_();
 
         verify(lrm, never()).unlink_(any(SID.class), eq(t));
@@ -181,7 +183,7 @@ public class TestHdLinkRoot extends AbstractTest
         when(lrm.isAnyRootUnder_(path)).thenReturn(false);
         when(lrm.rootForAbsPath_(path)).thenReturn(null);
         when(sp.shareFolder(eq(name), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true), any(Boolean.class)))
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(true), any(Boolean.class)))
                 .thenThrow(new ExArbitrary());
 
         try {
@@ -194,7 +196,7 @@ public class TestHdLinkRoot extends AbstractTest
 
         verify(sp).signInRemote();
         verify(sp).shareFolder(eq(name), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true), any(Boolean.class));
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(true), any(Boolean.class));
 
         verify(lrm).unlink_(any(SID.class), eq(t));
         verify(sd).deleteRootStore_(any(SIndex.class), eq(PhysicalOp.MAP), eq(t));

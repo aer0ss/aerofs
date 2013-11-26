@@ -25,9 +25,8 @@ import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.ex.ExUpdating;
-import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
-import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
-import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
+import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
+import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.swig.driver.Driver;
@@ -104,12 +103,8 @@ public abstract class Util
                         .put(Type.INVITEE_LIST_EMPTY, ExInviteeListEmpty.class)
 
                         // exceptions used by shared folder rules
-                        .put(Type.SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER,
-                                ExSharedFolderRulesWarningAddExternalUser.class)
-                        .put(Type.SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS,
-                                ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers.class)
-                        .put(Type.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER,
-                                ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders.class)
+                        .put(Type.SHARING_RULES_WARNINGS, ExSharingRulesWarning.class)
+                        .put(Type.SHARING_RULES_ERROR, ExSharingRulesError.class)
 
                         // The following exceptions are consumed by Python clients only. No need to
                         // list them here for the time being.

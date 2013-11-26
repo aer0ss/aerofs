@@ -4,8 +4,9 @@
 
 package com.aerofs.sp.server.lib;
 
-import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
+import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
@@ -111,7 +112,7 @@ public class SharedFolder
         _f._db.insert(_sid, folderName);
 
         try {
-            return addJoinedUser(owner, Role.OWNER);
+            return addJoinedUser(owner, Permissions.OWNER);
         } catch (ExAlreadyExist e) {
             throw SystemUtil.fatalWithReturn(e);
         }
@@ -134,20 +135,20 @@ public class SharedFolder
      * @return A set of user IDs for which epoch should be increased and published via verkehr
      * @throws com.aerofs.base.ex.ExAlreadyExist if the user is already added.
      */
-    public ImmutableCollection<UserID> addJoinedUser(User user, Role role)
+    public ImmutableCollection<UserID> addJoinedUser(User user, Permissions permissions)
             throws ExAlreadyExist, SQLException, ExNotFound
     {
-        _f._db.insertUser(_sid, user.id(), role, JOINED, null);
+        _f._db.insertUser(_sid, user.id(), permissions, JOINED, null);
 
         addTeamServerForUserImpl(user);
 
         return getJoinedUserIDs();
     }
 
-    public void addPendingUser(User user, Role role, User sharer)
+    public void addPendingUser(User user, Permissions permissions, User sharer)
             throws SQLException, ExAlreadyExist
     {
-        _f._db.insertUser(_sid, user.id(), role, PENDING, sharer.id());
+        _f._db.insertUser(_sid, user.id(), permissions, PENDING, sharer.id());
     }
 
     public ImmutableCollection<UserID> setState(User user, SharedFolderState newState)
@@ -233,9 +234,9 @@ public class SharedFolder
             throws ExNotFound, SQLException, ExAlreadyExist
     {
         User tsUser = user.getOrganization().getTeamServerUser();
-        if (getRoleNullable(tsUser) == null) {
+        if (getPermissionsNullable(tsUser) == null) {
             // Don't call this.addJoinedUser() here as it would cause recursion
-            _f._db.insertUser(_sid, tsUser.id(), Role.EDITOR, JOINED, null);
+            _f._db.insertUser(_sid, tsUser.id(), Permissions.EDITOR, JOINED, null);
             return true;
         } else {
             return false;
@@ -255,13 +256,13 @@ public class SharedFolder
         if (exists() && !hasOwnerLeft()) {
             if (newOwner == null) throwIfNoOwnerLeft();
             try {
-                addJoinedUser(newOwner, Role.OWNER);
+                addJoinedUser(newOwner, Permissions.OWNER);
             } catch (ExAlreadyExist e) {
                 // in general exception-driven control flow is bad but here we need the
                 // try-catch block anyway (if only to fill it with an assertion) and the
                 // likelihood of the new owner already being a member but not and OWNER
                 // is very low...
-                setRole(newOwner, Role.OWNER);
+                grantPermission(newOwner, Permission.MANAGE);
             }
         }
         return affected;
@@ -320,7 +321,7 @@ public class SharedFolder
         // the TeamServer user can only be an OWNER of a shared folder if the shared folder
         // was created from a TeamServer, in which case we don't want the TeamServer ACL to be
         // affected by the coming and going of users of the organization
-        if (getRoleNullable(org.getTeamServerUser()) == Role.OWNER) return false;
+        if (hasPermission(org.getTeamServerUser(), Permission.MANAGE)) return false;
 
         for (UserID otherUser : getJoinedUserIDs()) {
             if (otherUser.equals(user.id())) continue;
@@ -332,24 +333,30 @@ public class SharedFolder
         return true;
     }
 
+    public boolean hasPermission(User user, Permission permission) throws SQLException
+    {
+        Permissions permissions = getPermissionsNullable(user);
+        return permissions != null && permissions.covers(permission);
+    }
+
     /**
      * N.B the return value include Team Servers
      */
-    public ImmutableMap<User, Role> getJoinedUsersAndRoles()
+    public ImmutableMap<User, Permissions> getJoinedUsersAndRoles()
             throws SQLException
     {
-        ImmutableMap.Builder<User, Role> builder = ImmutableMap.builder();
-        for (SubjectRolePair srp : _f._db.getJoinedUsersAndRoles(_sid)) {
-            builder.put(_f._factUser.create(srp._subject), srp._role);
+        ImmutableMap.Builder<User, Permissions> builder = ImmutableMap.builder();
+        for (SubjectPermissions srp : _f._db.getJoinedUsersAndRoles(_sid)) {
+            builder.put(_f._factUser.create(srp._subject), srp._permissions);
         }
         return builder.build();
     }
 
-    public Iterable<UserRoleAndState> getAllUsersRolesAndStates() throws SQLException
+    public Iterable<UserPermissionsAndState> getAllUsersRolesAndStates() throws SQLException
     {
-        ImmutableList.Builder<UserRoleAndState> builder = ImmutableList.builder();
+        ImmutableList.Builder<UserPermissionsAndState> builder = ImmutableList.builder();
         for (UserIDRoleAndState entry : _f._db.getAllUsersRolesAndStates(_sid)) {
-            builder.add(new UserRoleAndState(_f._factUser.create(entry._userID), entry._role,
+            builder.add(new UserPermissionsAndState(_f._factUser.create(entry._userID), entry._permissions,
                     entry._state));
         }
         return builder.build();
@@ -363,7 +370,7 @@ public class SharedFolder
         return builder.build();
     }
 
-    private ImmutableCollection<UserID> getJoinedUserIDs()
+    public ImmutableCollection<UserID> getJoinedUserIDs()
             throws SQLException
     {
         return _f._db.getJoinedUsers(_sid);
@@ -382,23 +389,49 @@ public class SharedFolder
     }
 
     /**
-     * @return new ACL epochs for each affected user id, to be published via verkehr
-     * @throws com.aerofs.base.ex.ExNotFound if trying to add new users to the store or update a pending user's ACL
+     * Replace current permissions of an existing member with a new set of permissions.
+     * @return List of affected users for which ACL epochs should be bumped
      */
-    public ImmutableCollection<UserID> setRole(User user, Role role)
+    public ImmutableCollection<UserID> setPermissions(User user, Permissions permissions)
             throws ExNoAdminOrOwner, ExNotFound, SQLException
     {
-        _f._db.setRole(_sid, user.id(), role);
+        _f._db.setPermissions(_sid, user.id(), permissions);
+        return usersAffectedByPermissionsChange(user);
+    }
 
+    /**
+     * Grant a specific permisison to an existing user
+     * @return List of affected users for which ACL epochs should be bumped
+     */
+    public ImmutableCollection<UserID> grantPermission(User user, Permission permission)
+            throws ExNoAdminOrOwner, ExNotFound, SQLException
+    {
+        _f._db.grantPermission(_sid, user.id(), permission);
+        return usersAffectedByPermissionsChange(user);
+    }
+
+    /**
+     * Revoke a specific permisison for an existing user
+     * @return List of affected users for which ACL epochs should be bumped
+     */
+    public ImmutableCollection<UserID> revokePermission(User user, Permission permission)
+            throws ExNoAdminOrOwner, ExNotFound, SQLException
+    {
+        _f._db.revokePermission(_sid, user.id(), permission);
+        return usersAffectedByPermissionsChange(user);
+    }
+
+    private ImmutableCollection<UserID> usersAffectedByPermissionsChange(User user)
+            throws ExNoAdminOrOwner, SQLException
+    {
         throwIfNoOwnerLeft();
-
         return getStateNullable(user) == JOINED ? getJoinedUserIDs() : ImmutableList.<UserID>of();
     }
 
     /**
      * @return the role of the given user. Return null iff. the user doesn't exist
      */
-    public @Nullable Role getRoleNullable(User user)
+    public @Nullable Permissions getPermissionsNullable(User user)
             throws SQLException
     {
         return _f._db.getRoleNullable(_sid, user.id());
@@ -432,8 +465,8 @@ public class SharedFolder
         // NB: TeamServer user is treated as an org admin as it can only be setup by an org admin...
         if (user.isAdmin() || user.id().isTeamServerID()) {
             Organization org = user.getOrganization();
-            for (SubjectRolePair srp : _f._db.getJoinedUsersAndRoles(_sid)) {
-                if (srp._role.covers(Role.OWNER)) {
+            for (SubjectPermissions srp : _f._db.getJoinedUsersAndRoles(_sid)) {
+                if (srp._permissions.covers(Permission.MANAGE)) {
                     User member = _f._factUser.create(srp._subject);
                     if (member.belongsTo(org)) return;
                 }
@@ -446,8 +479,8 @@ public class SharedFolder
     private boolean isJoinedOwner(User user)
             throws SQLException
     {
-        Role role = getRoleNullable(user);
-        return role != null && role.covers(Role.OWNER) && getStateNullable(user) == JOINED;
+        Permissions permissions = getPermissionsNullable(user);
+        return permissions != null && permissions.covers(Permission.MANAGE) && getStateNullable(user) == JOINED;
     }
 
     /**
@@ -462,16 +495,16 @@ public class SharedFolder
     }
 
     // the only purpose of this class is to hold the result of getAllUsersRolesAndStates()
-    public static class UserRoleAndState
+    public static class UserPermissionsAndState
     {
         @Nonnull public final User _user;
-        @Nonnull public final Role _role;
+        @Nonnull public final Permissions _permissions;
         @Nonnull public final SharedFolderState _state;
 
-        public UserRoleAndState(User user, Role role, SharedFolderState state)
+        public UserPermissionsAndState(User user, Permissions permissions, SharedFolderState state)
         {
             _user = user;
-            _role = role;
+            _permissions = permissions;
             _state = state;
         }
 
@@ -479,16 +512,16 @@ public class SharedFolder
         public boolean equals(Object that)
         {
             return this == that ||
-                    (that instanceof UserRoleAndState &&
-                            _user.equals(((UserRoleAndState)that)._user) &&
-                            _role.equals(((UserRoleAndState)that)._role) &&
-                            _state.equals(((UserRoleAndState)that)._state));
+                    (that instanceof UserPermissionsAndState &&
+                            _user.equals(((UserPermissionsAndState)that)._user) &&
+                            _permissions.equals(((UserPermissionsAndState)that)._permissions) &&
+                            _state.equals(((UserPermissionsAndState)that)._state));
         }
 
         @Override
         public int hashCode()
         {
-            return _user.hashCode() ^ _role.hashCode() ^ _state.hashCode();
+            return _user.hashCode() ^ _permissions.hashCode() ^ _state.hashCode();
         }
     }
 }

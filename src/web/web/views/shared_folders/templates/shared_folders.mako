@@ -118,8 +118,8 @@
 
             ## N.B. updates to the return value will be propagated back to the
             ## Options link and persists throughout the link's lifecycle.
-            function modalUserAndRoleList() {
-                return $link.data('${link_data_user_role_and_state_list}');
+            function modalUserAndPermissionsList() {
+                return $link.data('${link_data_user_permissions_and_state_list}');
             }
 
             function modalSID() {
@@ -137,19 +137,59 @@
             ########
             ## Functions for the Modal
 
-            function formatRoleMenuText(role, desc) {
-                return '<div style="display: inline-block; width: 65px">' + role +
-                        '</div>' + desc;
-            }
-            ## A map of numeric role id => [ <role name>, <role menu text> ]
-            ## Note that the menu item description contains HTML
-            var role2str = {
-                "${owner_role}":  [ "Owner",  formatRoleMenuText("Owner", "download, upload, and manage")],
-                "${editor_role}": [ "Editor", formatRoleMenuText("Editor", "download and upload")],
-                "${viewer_role}": [ "Viewer", formatRoleMenuText("Viewer", "download only")]
-            };
+            ## TODO: template that out
+            var BASE_PERMISSION = "download";
+            var PERMISSIONS = [
+                {"name": "WRITE",  "description": "upload"},
+                {"name": "MANAGE", "description": "manage"}
+            ];
 
-            var roleDisplayOrder = ["${owner_role}", "${editor_role}", "${viewer_role}"]
+            var DEFAULT_ROLE = 1;
+            var ROLES = [
+                { "name": "Owner",  "permissions": ["MANAGE", "WRITE"] },
+                { "name": "Editor", "permissions": ["WRITE"] },
+                { "name": "Viewer", "permissions": [] }
+            ];
+
+            function roleDescription(permissions) {
+                var desc = BASE_PERMISSION;
+                if (permissions.length == 0) return desc + " only";
+                var n = 0;
+                for (var i = 0; i < PERMISSIONS.length && n < permissions.length; ++i) {
+                    var p = PERMISSIONS[i];
+                    if (permissions.indexOf(p.name) != -1) {
+                        ++n;
+                        desc = desc
+                            + (permissions.length == n ? (n > 1 ? "," : "") + " and " : ", ")
+                            + p.description;
+                    }
+                }
+                return desc;
+            }
+
+            ## compare to array of permissions
+            function samePermissions(a, b) {
+                if (a.length != b.length) return false;
+                a.sort();
+                b.sort();
+                for (var i = 0; i < a.length; i++) if (a[i] != b[i]) return false;
+                return true;
+            }
+
+            function roleName(permissions) {
+                for (var i = 0; i < ROLES.length; ++i) {
+                    var role = ROLES[i];
+                    if (samePermissions(role.permissions, permissions)) return role.name;
+                }
+                ## Fallback
+                return roleDescription(permissions);
+            }
+
+            function roleMenuText(role) {
+                ## TODO: hardcoded width seems like a terrible idea, at the very least make it relative to font-size
+                return '<div style="display: inline-block; width: 65px">' + role.name + "</div>"
+                        + roleDescription(role.permissions);
+            }
 
             ## Refresh the modal based using the current values in $link
             function refreshModal() {
@@ -183,36 +223,36 @@
                 else $inviteUserInputs.addClass("hidden");
 
                 ## Populate the table
-                var urs = modalUserAndRoleList();
-                for (var email in urs) {
-                    var ur = urs[email];
-                    var role = ur.${user_role_and_state_role_key};
-                    var name = ur.${user_role_and_state_first_name_key} + " " +
-                            ur.${user_role_and_state_last_name_key};
+                var urs = modalUserAndPermissionsList();
+
+                $.each(urs, function(email, ur) {
+                    var permissions = ur.permissions;
+                    var name = ur.first_name + " " + ur.last_name;
 
                     var actions, roleStr;
                     if (email === '${session_user}') {
-                        roleStr = role2str[role][0];
+                        roleStr = roleName(permissions);
                         actions = '';
                     } else if (privileged) {
-                        roleStr = renderActionableRole(email, role);
+                        roleStr = renderActionableRole(email, permissions);
                         actions = renderPrivilegedUserActions(email, name);
                     } else {
-                        roleStr = role2str[role][0];
+                        roleStr = roleName(permissions);
                         actions = renderUnprivilegedUserActions(email);
                     }
 
-                    $table.find('> tbody:last').append(
-                        ## TODO (WW) use proper jQuery methods to add elements
-                        '<tr>' +
-                            '<td><span data-toggle="tooltip" class="tooltip_email" title="' + email + '">' +
-                               name +
-                            '</span></td>' +
-                            '<td>' + roleStr + '</td>' +
-                            '<td>' + actions + '</td>' +
-                        '</tr>'
-                    );
-                }
+                    var $row = $("<tr></tr>");
+                    $row.append($("<td></td>").append(
+                            $("<span></span>")
+                                    .addClass("tooltip_email")
+                                    .attr("data-toggle", "tooltip")
+                                    .attr("title", email)
+                                    .text(name)));
+                    $row.append($("<td></td>").append(roleStr));
+                    $row.append($("<td></td>").append(actions));
+
+                    $table.find('> tbody:last').append($row);
+                });
 
                 activateModelTableElements();
             }
@@ -222,68 +262,92 @@
                 var $id = $('#modal-invite-role');
                 var $label = $('#modal-invite-role-label');
 
-                ## Set the default Editor role
-                setRole("${editor_role}");
+                ## Set the default role
+                setPermissions(ROLES[DEFAULT_ROLE].permissions);
 
                 ## Populate the role menu
-                $.each(roleDisplayOrder, function(idx, role) {
-                    var $a = $('<a></a>').html(role2str[role][1]).attr("href", "#")
-                            .on("click", function() { setRole(role); });
+                $.each(ROLES, function(idx, role) {
+                    var $a = $('<a></a>')
+                            .html(roleMenuText(role))
+                            .attr("href", "#")
+                            .on("click", function() { setPermissions(role.permissions); });
                     $menu.append($('<li></li>').append($a));
                 });
 
-                function setRole(role) {
-                    $id.attr("value", role);
-                    $label.text(role2str[role][0]);
+                function setPermissions(permissions) {
+                    $id.data("permissions", permissions);
+                    $label.text(roleName(permissions));
                 }
             }
             initRoleMenuForInviteForm();
 
-            function renderActionableRole(email, currentRole) {
-                var itemsStr = '';
-                $.each(roleDisplayOrder, function(idx, role) {
-                    itemsStr += '<li><a href="#" class="model-set-role" ' +
-                            'data-email="' + email + '" data-role="' + role + '">' +
-                            '<span' +
-                            (currentRole == role ? '' : ' class="invisible"') +
-                            '>&#x2713;&nbsp;</span>' + role2str[role][1] + '</a></li>';
+            function renderActionableRole(email, currentPermissions) {
+                var $roles = $("<ul></ul>")
+                    .attr("class", "dropdown-menu")
+                    .attr("role", "menu");
+
+                $.each(ROLES, function(idx, role) {
+                    var $check = $("<span></span>").html('&#x2713;&nbsp;');
+                    if (!samePermissions(currentPermissions, role.permissions)) $check.addClass("invisible");
+
+                    $roles.append($("<li></li>")
+                            .append($("<a></a>")
+                                    .attr("href", "#")
+                                    .addClass("model-set-role")
+                                    .data("email", email)
+                                    .data("permissions", role.permissions)
+                                    .append($check)
+                                    .append(roleMenuText(role))));
                 });
 
-                return '<div class="dropdown">' +
-                        ## pull-left so that the dropdown menu is vertically aligned with the
-                        ## "Actions" dropdown menu.
-                        '<a class="dropdown-toggle pull-left" data-toggle="dropdown" href="#">' +
-                            role2str[currentRole][0] + '&nbsp;&#x25BE;' +
-                        '</a>' +
-                        '<ul class="dropdown-menu" role="menu">' +
-                            itemsStr +
-                        '</ul>' +
-                    '</div>';
+                return $("<div></div>")
+                        .addClass("dropdown")
+                        .append($("<a></a>")
+                                .addClass("dropdown-toggle")
+                                .addClass("pull-left")
+                                .attr("data-toggle", "dropdown")
+                                .attr("href", "#")
+                                .html(roleName(currentPermissions) + '&nbsp;&#x25BE;'))
+                        .append($roles);
             }
 
             function renderUnprivilegedUserActions(email) {
-                return '<span class="pull-right">' + renderSendEmailLink(email) + '</span>';
+                return $("<span></span>")
+                        .addClass("pull-right")
+                        .append(renderSendEmailLink(email));
             }
 
             function renderPrivilegedUserActions(email, fullName) {
-                return '<div class="dropdown">' +
-                    '<a class="dropdown-toggle pull-right" ' +
-                            'data-toggle="dropdown" href="#">Actions&nbsp;&#x25BE;</a>' +
-                    ## pull-right otherwise the dropdown menu wouldn't be aligned
-                    ## with the right if the dialog is wide.
-                    '<ul class="dropdown-menu pull-right" role="menu">' +
-                        '<li>' + renderSendEmailLink(email) + '</li>' +
-                        '<li><a href="#" data-email="' + email + '" data-full-name="' + fullName +
-                            '" class="modal-remove">Remove</a></li>' +
-                    '</ul>' +
-                '</div>';
+                return $("<div></div>")
+                        .addClass("dropdown")
+                        .append($("<a></a>")
+                                .addClass("dropdown-toggle")
+                                .addClass("pull-right")
+                                .attr("data-toggle", "dropdown")
+                                .attr("href", "#")
+                                .html("Actions&nbsp;&#x25BE;"))
+                        .append($("<ul></ul>")
+                                .attr("class", "dropdown-menu")
+                                .attr("role", "menu")
+                                .append($("<li></li>")
+                                        .append(renderSendEmailLink(email)))
+                                .append($("<li></li>")
+                                        .append($("<a></a>")
+                                                .addClass("modal-remove")
+                                                .attr("data-email", email)
+                                                .attr("data-full-name", fullName)
+                                                .attr("href", "#")
+                                                .text("Remove"))));
             }
 
             function renderSendEmailLink(email) {
-                return '<a href="mailto:' + email + '" target="_blank">Send Email</a>';
+                return $("<a></a>")
+                        .attr("href", 'mailto:"' + email + '"')
+                        .attr("target", "_blank")
+                        .text("Send Email");
             }
 
-            function regiterEmailTooltips() {
+            function registerEmailTooltips() {
                 $('.tooltip_email').tooltip({
                     ## To avoid tooltips being cut off by the modal boundary.
                     ## See https://github.com/twitter/bootstrap/pull/6378
@@ -293,10 +357,10 @@
 
             ## Set event handlers and activities for elements in the table
             function activateModelTableElements() {
-                regiterEmailTooltips();
+                registerEmailTooltips();
 
                 $('.model-set-role').click(function() {
-                    setRole($(this).data('email'), $(this).data('role'), false);
+                    setPermissions($(this).data('email'), $(this).data('permissions'), false);
                 });
 
                 $('.modal-remove').click(function() {
@@ -315,35 +379,29 @@
             });
 
             ## @param suppressSharedFolderRulesWarnings see sp.proto:updateACL()
-            function setRole(email, role, suppressSharedFolderRulesWarnings) {
+            function setPermissions(email, permissions, suppressSharingRulesWarnings) {
                 startModalSpinner();
 
                 var errorHeader = "Couldn't change role: ";
-                $.post(
-                    "${request.route_path('json.set_shared_folder_perm')}", {
-                        ${self.csrf.token_param()}
-                        ## TODO (WW) use variables to abstract parameter key strings
+                $.postJSON(
+                    "${request.route_path('json.set_shared_folder_perm')}",
+                    {
                         user_id: email,
                         store_id: modalSID(),
-                        role: role,
-                        suppress_shared_folders_rules_warnings: suppressSharedFolderRulesWarnings
+                        permissions: permissions,
+                        suppress_sharing_rules_warnings: suppressSharingRulesWarnings
+                    },
+                    {
+                        ${self.csrf.token_header()}
                     }
                 ).done(function() {
-                    modalUserAndRoleList()[email]
-                            .${user_role_and_state_role_key} = role;
+                    modalUserAndPermissionsList()[email].permissions = permissions;
                     refreshModal();
                 })
                 .fail(function(xhr) {
-                    var type = getErrorTypeNullable(xhr);
-                    if (type == "SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS") {
-                        showOwnerCanShareExternallyWarningModal(xhr, function() {
-                            setRole(email, role, true);
-                        });
-                    } else if (type == "SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER") {
-                        showEditorsDisallowedErrorModal(xhr, false);
-                    } else {
-                        showErrorMessageFromResponse(xhr);
-                    }
+                    handleException(xhr, function() {
+                        setPermissions(email, permissions, true);
+                    });
                 })
                 .always(function() {
                     stopModalSpinner();
@@ -366,18 +424,20 @@
                     startModalSpinner();
 
                     var errorHeader = "Couldn't remove: ";
-                    $.post("${request.route_path('json.delete_shared_folder_perm')}",
+                    $.postJSON(
+                        "${request.route_path('json.delete_shared_folder_perm')}",
                         {
-                            ${self.csrf.token_param()}
-                            ## TODO (WW) use variables to abstract parameter key strings
                             user_id: email,
                             store_id: modalSID()
+                        },
+                        {
+                            ${self.csrf.token_header()}
                         }
                     )
                     .done(function(response) {
                         if (handleAjaxReply(response, errorHeader)) {
-                        ## Update modal data
-                        delete modalUserAndRoleList()[email];
+                            ## Update modal data
+                            delete modalUserAndPermissionsList()[email];
                             refreshModal();
                         }
                     })
@@ -397,18 +457,16 @@
             $('#modal-invite-form').submit(function(ev) {
                 ## Since IE doesn't support String.trim(), use $.trim()
                 var email = $.trim($('#modal-invitee-email').val());
-                var role = $('#modal-invite-role').attr("value");
-                inviteToFolder(email, role, false);
+                var permissions = $('#modal-invite-role').data("permissions");
+                inviteToFolder(email, permissions, false);
                 return false;
             });
 
-            ## Initialize auxilary modals
-            var $addExternalUserModal = $('#add-external-user-modal');
-            var $ownerCanShareExternallyModal = $('#owner-can-share-externally-modal');
-            var $editorDisallowedModal = $('#editor-disallowed-modal');
-            setModalTransition($addExternalUserModal);
-            setModalTransition($ownerCanShareExternallyModal);
-            setModalTransition($editorDisallowedModal);
+            ## Initialize auxiliary modals
+            var $sharingWarningModal = $('#sharing-warning-modal');
+            var $sharingErrorModal = $('#sharing-error-modal');
+            setModalTransition($sharingWarningModal);
+            setModalTransition($sharingErrorModal);
 
             function setModalTransition($modal) {
                 $modal.on('show', function() { $mainModal.modal("hide"); })
@@ -423,20 +481,24 @@
             ## @param done and always are callbacks for AJAX success and completion.
             ## They can be None.
             ##
-            ## @param suppressSharedFolderRulesWarnings see sp.proto:ShareFolderCall
+            ## @param suppressSharingRulesWarnings see sp.proto:ShareFolderCall
             ##
-            function inviteToFolder(email, role, suppressSharedFolderRulesWarnings, done, always) {
+            function inviteToFolder(email, permissions, suppressSharingRulesWarnings, done, always) {
                 startModalSpinner();
                 var sid = modalSID();
                 var name = modalFolderName();
 
-                $.post("${request.route_path('json.add_shared_folder_perm')}", {
-                        ${self.csrf.token_param()}
+                $.postJSON(
+                    "${request.route_path('json.add_shared_folder_perm')}",
+                    {
                         user_id: email,
-                        role: role,
+                        permissions: permissions,
                         store_id: sid,
                         folder_name: name,
-                        suppress_shared_folders_rules_warnings: suppressSharedFolderRulesWarnings
+                        suppress_sharing_rules_warnings: suppressSharingRulesWarnings
+                    },
+                    {
+                        ${self.csrf.token_header()}
                     }
                 ).done(function() {
                     showSuccessMessage('Invitation has been sent.');
@@ -445,26 +507,12 @@
                 }).fail(function (xhr) {
                     var type = getErrorTypeNullable(xhr);
                     if (type == "NO_STRIPE_CUSTOMER_ID") {
-                        paymentRequiredToInvite(email, role);
-
-                    } else if (type == "SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER") {
-                        showWarningModal($addExternalUserModal,
-                                $('#add-external-user-confirm'), function() {
-                            ## retry inviting with warnings suppressed
-                            inviteToFolder(email, role, true, done, always);
-                        });
-
-                    } else if (type == "SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS") {
-                        showOwnerCanShareExternallyWarningModal(xhr, function() {
-                            ## retry inviting with warnings suppressed
-                            inviteToFolder(email, role, true, done, always);
-                        });
-
-                    } else if (type == "SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER") {
-                        showEditorsDisallowedErrorModal(xhr, true);
-
+                        paymentRequiredToInvite(email, permissions);
                     } else {
-                        showErrorMessageFromResponse(xhr);
+                        handleException(xhr, function() {
+                            ## retry inviting with warnings suppressed
+                            inviteToFolder(email, permissions, true, done, always);
+                        });
                     }
                 }).always(function() {
                     if (always) always();
@@ -472,43 +520,62 @@
                 });
             }
 
-            function showEditorsDisallowedErrorModal(xhr, showSuggestAddAsViewers) {
-                $editorDisallowedModal.modal('show');
-                populateExternalUserList($('#editor-disallowed-user-list'),
-                    getAeroFSErrorData(xhr));
-                if (!showSuggestAddAsViewers) {
-                    $('#suggest-add-as-viewers').hide();
+            function handleException(xhr, proceed) {
+                var type = getErrorTypeNullable(xhr);
+                if (type == "SHARING_RULES_WARNINGS") {
+                    showSharingWarningsRecursiveModal($.parseJSON(getAeroFSErrorData(xhr)), proceed);
+                } else if (type == "SHARING_RULES_ERROR") {
+                    showSharingModal($sharingErrorModal, $.parseJSON(getAeroFSErrorData(xhr)));
+                } else {
+                    showErrorMessageFromResponse(xhr);
                 }
             }
 
-            ## @param action the callback function to be called when the user clicks Okay
-            function showOwnerCanShareExternallyWarningModal(xhr, action) {
-                showWarningModal($ownerCanShareExternallyModal,
-                    $('#owner-can-share-externally-confirm'), action);
-                populateExternalUserList($('#owner-can-share-externally-user-list'),
-                        getAeroFSErrorData(xhr));
+            function showSharingWarningsRecursiveModal(warnings, action) {
+                if (warnings.length == 0) {
+                    ## all warnings dismissed, proceed
+                    action();
+                } else {
+                    showSharingWarningModal(warnings[0], function() {
+                        ## show next next warning
+                        showSharingWarningsRecursiveModal(warnings.slice(1), action);
+                    })
+                }
             }
 
-            ## @param action the callback function to be called when the user clicks Okay
-            function showWarningModal($warningModal, $confirmBtn, action) {
-                $warningModal.modal('show');
+            ## @param action the callback function to be called when the user clicks Proceed
+            function showSharingWarningModal(warning, action) {
+                showSharingModal($sharingWarningModal, warning);
+
                 ## Call off() to clear previously registered click handlers
-                $confirmBtn.off('click').click(function() {
-                    $warningModal.modal('hide');
+                $('#sharing-warning-confirm').off('click').click(function() {
+                    $sharingWarningModal.modal('hide');
                     action();
                     return false;
-                })
+                });
             }
 
-            ## @param jsonStr a JSON string passed as the error message from the
-            ## server. The string specifies a list of external users. See
-            ## EX_WARNING_* etc in common.proto for detail.
-            ## @list the <ul> element to place the items in
-            ##
-            ## this function is referred to in a Java class named TestAbstractExSharedFolderRules
-            function populateExternalUserList($list, jsonStr) {
-                $list.empty();
-                $.each($.parseJSON(jsonStr), function(email, fullname) {
+            ## See SHARING_RULES_WARNING and SHARING_RULES_ERROR in common.proto for detail
+            ## on the format of the data
+            function showSharingModal($sharingModal, data) {
+                $sharingModal.modal('show');
+                $sharingModal.find('.modal-header>h4').text(data.title);
+                var $content = $sharingModal.find('.modal-body').empty();
+                ## simple html-ification of the description
+                ## TODO: consider handling a subset of markdown (bold and urls would be nice)
+                $.each(data.description.split("\n"), function(index, elem) {
+                    if (elem == "{}") {
+                        populateUserList($content.append($('<ul></ul>')), data.users);
+                    } else {
+                        $content.append($('<p></p>').text(elem));
+                    }
+                });
+            }
+
+            ## @param users list of users
+            ## @param list the <ul> element to place the items in, assumed to be empty
+            function populateUserList($list, users) {
+                $.each(users, function(email, fullname) {
                     ## N.B. the format expected here _must_ be covered in TestAbstractExSharedFolderRules
                     var str = fullname.first_name;
                     str += fullname.first_name && fullname.last_name ? ' ' : '';
@@ -533,11 +600,11 @@
                     $mainModal.modal("show");
                 });
 
-            function paymentRequiredToInvite(email, role) {
+            function paymentRequiredToInvite(email, permissions) {
                 $mainModal.modal("hide");
                 %if is_admin:
                     inputCreditCardInfoAndCreateStripeCustomer(function(done, always) {
-                        inviteToFolder(email, role, false, done, always);
+                        inviteToFolder(email, permissions, false, done, always);
                     });
                 %else:
                     $("#ask-admin-modal").modal("show");

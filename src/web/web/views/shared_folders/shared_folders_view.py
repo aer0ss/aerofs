@@ -42,12 +42,7 @@ _OPEN_MODAL_CLASS = 'open-modal'
 _LINK_DATA_SID = 's'
 _LINK_DATA_NAME = 'n'
 _LINK_DATA_PRIVILEGED = 'p'
-_LINK_DATA_USER_ROLE_AND_STATE_LIST = 'r'
-
-# JSON keys
-_USER_ROLE_AND_STATE_FIRST_NAME_KEY = 'first_name'
-_USER_ROLE_AND_STATE_LAST_NAME_KEY = 'last_name'
-_USER_ROLE_AND_STATE_ROLE_KEY = 'role'
+_LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST = 'r'
 
 class DatatablesPaginate:
     YES, NO = range(2)
@@ -124,15 +119,9 @@ def _shared_folders(datatables_paginate, request,
         'link_data_sid': _LINK_DATA_SID,
         'link_data_name': _LINK_DATA_NAME,
         'link_data_privileged': _LINK_DATA_PRIVILEGED,
-        'link_data_user_role_and_state_list': _LINK_DATA_USER_ROLE_AND_STATE_LIST,
-        'user_role_and_state_first_name_key': _USER_ROLE_AND_STATE_FIRST_NAME_KEY,
-        'user_role_and_state_last_name_key': _USER_ROLE_AND_STATE_LAST_NAME_KEY,
-        'user_role_and_state_role_key': _USER_ROLE_AND_STATE_ROLE_KEY,
+        'link_data_user_permissions_and_state_list': _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST,
         'stripe_publishable_key': STRIPE_PUBLISHABLE_KEY,
         'url_param_stripe_card_token': URL_PARAM_STRIPE_CARD_TOKEN,
-        'owner_role': common.OWNER,
-        'editor_role': common.EDITOR,
-        'viewer_role': common.VIEWER,
 
         # variables
         'session_user': authenticated_userid(request),
@@ -166,12 +155,17 @@ def json_get_my_shared_folders(request):
 
 
 def _session_user_privileger(folder, session_user):
-    return _get_role(folder, session_user) == common.OWNER
+    return _has_permission(folder, session_user, common.MANAGE)
 
-def _get_role(folder, user):
-    for user_role_and_state in folder.user_role_and_state:
-        if user_role_and_state.user.user_email == user:
-            return user_role_and_state.role
+
+def _has_permission(folder, user, permission):
+    for user_permissions_and_state in folder.user_permissions_and_state:
+        if user_permissions_and_state.user.user_email == user:
+            for p in user_permissions_and_state.permissions.permission:
+                if p == permission:
+                    return True
+            break
+    return False
 
 
 @view_config(
@@ -221,16 +215,16 @@ def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
     """
     data = []
     for folder in folders:
-        # a workaround to filter folder.user_role_and_state to leave only joined users
-        # using del & extend because setting folder.user_role_and_state doesn't work
+        # a workaround to filter folder.user_permissions_and_state to leave only joined users
+        # using del & extend because setting folder.user_permissions_and_state doesn't work
         # due to Protobuf magic
-        filtered_urss = filter(lambda urs: urs.state == JOINED, folder.user_role_and_state)
-        del folder.user_role_and_state[:]
-        folder.user_role_and_state.extend(filtered_urss)
+        filtered_urss = filter(lambda urs: urs.state == JOINED, folder.user_permissions_and_state)
+        del folder.user_permissions_and_state[:]
+        folder.user_permissions_and_state.extend(filtered_urss)
 
         data.append({
             'name': escape(folder.name),
-            'users': _render_shared_folder_users(folder.user_role_and_state, session_user),
+            'users': _render_shared_folder_users(folder.user_permissions_and_state, session_user),
             'options': _render_shared_folder_options_link(folder, session_user,
                 privileger(folder, session_user)),
         })
@@ -243,14 +237,14 @@ def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
     }
 
 
-def _render_shared_folder_users(user_role_and_state_list, session_user):
+def _render_shared_folder_users(user_permissions_and_state_list, session_user):
 
     # Place 'me' to the end of the list so that if the list is too long we show
     # "Foo, Bar, and 10 others" instead of "Foo, me, and 10 others"
     #
     # Also, it's polite to place "me" last.
     #
-    reordered_list = list(user_role_and_state_list)
+    reordered_list = list(user_permissions_and_state_list)
     for i in range(len(reordered_list)):
         if reordered_list[i].user.user_email == session_user:
             myself = reordered_list.pop(i)
@@ -289,7 +283,7 @@ def _render_shared_folder_options_link(folder, session_user, privileged):
     @param privileged whether the session user has the privilege to modify ACL
     """
     id = _encode_store_id(folder.store_id)
-    urs = to_json(folder.user_role_and_state, session_user)
+    urs = to_json(folder.user_permissions_and_state, session_user)
     escaped_folder_name = escape(folder.name)
 
     # The data tags must be consistent with the ones in loadModalData() in
@@ -304,40 +298,54 @@ def _render_shared_folder_options_link(folder, session_user, privileged):
             _LINK_DATA_SID, escape(id),
             _LINK_DATA_PRIVILEGED, 1 if privileged else 0,
             _LINK_DATA_NAME, escaped_folder_name,
-            _LINK_DATA_USER_ROLE_AND_STATE_LIST, escape(urs).replace('"', '&#34;'),
+            _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST, escape(urs).replace('"', '&#34;'),
             "Manage Folder" if privileged else "View Members")
 
 
-def to_json(user_role_and_state_list, session_user):
-
+def to_json(user_permissions_and_state_list, session_user):
+    # TODO: REST-ify SP and all this mess will go away...
     # json.dumps() can't convert the object so we have to do it manually.
     urss = {}
-    for urs in user_role_and_state_list:
+    for urs in user_permissions_and_state_list:
         urss[urs.user.user_email] = {
-            _USER_ROLE_AND_STATE_FIRST_NAME_KEY:  _get_first_name(urs, session_user),
-            _USER_ROLE_AND_STATE_LAST_NAME_KEY:   _get_last_name(urs, session_user),
-            _USER_ROLE_AND_STATE_ROLE_KEY:        urs.role
+            "first_name":   _get_first_name(urs, session_user),
+            "last_name":    _get_last_name(urs, session_user),
+            "permissions":  _pb_permissions_to_json(urs.permissions)
         }
 
     # dump to a compact-format JSON string
     return json.dumps(urss, separators=(',',':'))
 
 
-def _get_first_name(user_role_and_state, session_user):
+def _get_first_name(user_permissions_and_state, session_user):
     """
-    @param user_role_and_state a PBUserAndRole object
+    @param user_permissions_and_state a PBUserPermissionsAndState object
     """
-    user = user_role_and_state.user
+    user = user_permissions_and_state.user
     return "me" if user.user_email == session_user else user.first_name
 
 
-def _get_last_name(user_role_and_state, session_user):
+def _get_last_name(user_permissions_and_state, session_user):
     """
     otherwise.
-    @param user_role_and_state a PBUserAndRole object
+    @param user_permissions_and_state a PBUserPermissionsAndState object
     """
-    user = user_role_and_state.user
+    user = user_permissions_and_state.user
     return "" if user.user_email == session_user else user.last_name
+
+
+def _pb_permissions_to_json(pb):
+    permissions = []
+    for p in pb.permission:
+        permissions.append(common.PBPermission.Name(p))
+    return permissions
+
+
+def _pb_permissions_from_json(permission_list):
+    pb = common.PBPermissions()
+    for p in permission_list:
+        pb.permission.append(common.PBPermission.Value(p))
+    return pb
 
 
 @view_config(
@@ -357,19 +365,33 @@ def json_add_shared_folder_perm(request):
     """
     _ = request.translate
 
-    user_id = request.params['user_id']
-    store_id = _decode_store_id(request.params['store_id'])
-    folder_name = request.params['folder_name']
-    role = int(request.params['role'])
-    suppress_warnings = request.params['suppress_shared_folders_rules_warnings'] == 'true'
+    user_id = request.json_body['user_id']
+    store_id = _decode_store_id(request.json_body['store_id'])
+    folder_name = request.json_body['folder_name']
+    permissions = request.json_body['permissions']
+    suppress_warnings = request.json_body['suppress_sharing_rules_warnings']
 
-    role_pair = common.PBSubjectRolePair()
-    role_pair.subject = user_id
-    role_pair.role = role
+    subject_permissions = common.PBSubjectPermissions()
+    subject_permissions.subject = user_id
+
+    # stupid fscking moronic Googlers and their dumb fscking "optimizations"
+    #   1. you can't just set a nested message field, that would be too simple
+    #   2. accessing a nested message is not enough, you need to modify one of its fields
+    #   3. RepeatedScalarFieldContainer.extend is a noop for empty lists
+    #
+    # Hence the need for this redundant insert/remove, otherwise trying to share with an empty
+    # permission list (i.e. VIEWER role) results in the permissions field being missing and
+    # the serializer throws a fit because that's a required field.
+    #
+    # TLDR: the sooner we make SP RESTful the better.
+    subject_permissions.permissions.permission.append(common.WRITE)
+    subject_permissions.permissions.permission.remove(common.WRITE)
+
+    subject_permissions.permissions.permission.extend([common.PBPermission.Value(p) for p in permissions])
 
     sp = get_rpc_stub(request)
 
-    exception2error(sp.share_folder, (folder_name, store_id, [role_pair], None,
+    exception2error(sp.share_folder, (folder_name, store_id, [subject_permissions], None,
                                       None, suppress_warnings),
                                       _add_shared_folder_rules_errors({
         # TODO (WW) change to ALREADY_MEMBER?
@@ -390,9 +412,8 @@ def _add_shared_folder_rules_errors(dict):
     """
     # These exceptions are handled by JavaScript, and the messages are ignored
     dict.update({
-        PBException.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER: "",
-        PBException.SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER: "",
-        PBException.SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS: "",
+        PBException.SHARING_RULES_ERROR: "",
+        PBException.SHARING_RULES_WARNINGS: "",
     })
     return dict
 
@@ -414,14 +435,14 @@ def json_set_shared_folder_perm(request):
     """
     _ = request.translate
 
-    storeid = _decode_store_id(request.params['store_id'])
-    userid = request.params['user_id']
-    role = int(request.params['role'])
-    suppress_warnings = request.params['suppress_shared_folders_rules_warnings'] == 'true'
+    storeid = _decode_store_id(request.json_body['store_id'])
+    userid = request.json_body['user_id']
+    permissions = _pb_permissions_from_json(request.json_body['permissions'])
+    suppress_warnings = request.json_body['suppress_sharing_rules_warnings']
 
     sp = get_rpc_stub(request)
 
-    exception2error(sp.update_acl, (storeid, userid, role, suppress_warnings),
+    exception2error(sp.update_acl, (storeid, userid, permissions, suppress_warnings),
         _add_shared_folder_rules_errors({
             PBException.NO_PERM: _("You don't have permission to change roles"),
         }))
@@ -435,8 +456,8 @@ def json_set_shared_folder_perm(request):
 def json_delete_shared_folder_perm(request):
     _ = request.translate
 
-    storeid = _decode_store_id(request.params['store_id'])
-    userid = request.params['user_id']
+    storeid = _decode_store_id(request.json_body['store_id'])
+    userid = request.json_body['user_id']
 
     sp = get_rpc_stub(request)
     try:

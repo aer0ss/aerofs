@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
@@ -43,7 +44,7 @@ public class TestUserAndDeviceNames extends AbstractTest
     @Mock TransManager tm;
     @Mock DID2User d2u;
     @Mock IUserAndDeviceNameDatabase udndb;
-    @Mock SPBlockingClient.Factory factSP;
+    @Mock InjectableSPBlockingClientFactory factSP;
     @Spy UserAndDeviceNames _udn = new UserAndDeviceNames(user, tokenManager, tm, d2u, udndb, factSP);
     @Mock Token tk;
     @Mock SPBlockingClient spClient;
@@ -61,7 +62,7 @@ public class TestUserAndDeviceNames extends AbstractTest
         when(user.get()).thenReturn(UserID.fromInternal("test@aerofs.com"));
         when(tokenManager.acquireThrows_(any(Cat.class), any(String.class))).thenReturn(tk);
         doThrow(new ExBadCredential()).when(spClient).signInRemote();
-        when(factSP.create_(any(UserID.class))).thenReturn(spClient);
+        when(factSP.create()).thenReturn(spClient);
 
         _udn.setSPLoginDelay(30 * C.MIN);
     }

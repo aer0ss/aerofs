@@ -11,7 +11,7 @@ import com.google.common.base.Preconditions;
 public class UserID extends StringID
 {
     /**
-     * Must be conssitent with src/web/web/util.py:is_team_server_user_id()
+     * Must be consistent with src/web/web/util.py:is_team_server_user_id()
      */
     public final static char TEAM_SERVER_PREFIX = ':';
 

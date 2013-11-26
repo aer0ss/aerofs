@@ -13,6 +13,8 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
+
 abstract class AbstractLinuxUpdater extends Updater
 {
     private static final InjectableFile.Factory s_factFile = new InjectableFile.Factory();
@@ -69,10 +71,9 @@ abstract class AbstractLinuxUpdater extends Updater
                 UI.get().show(MessageType.INFO,
                         "Could not confirm with the user. Send an email instead.");
 
-                SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-                SPBlockingClient sp = fact.create_(Cfg.user());
                 try {
-                    sp.signInRemote();
+                    SPBlockingClient sp = newMutualAuthClientFactory().create()
+                            .signInRemote();
                     String deviceName = sp.getUserPreferences(Cfg.did().toPB()).getDeviceName();
 
                     final String subject = "[Action Required] Update " + L.product() +

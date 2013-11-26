@@ -15,18 +15,18 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
 import java.util.Set;
+
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 /**
  * When an anchor is deleted, the local user should automatically leave the corresponding shared
@@ -36,7 +36,6 @@ class SharedFolderAutoLeaver extends DirectoryServiceAdapter
 {
     private final Logger l = Loggers.getLogger(SharedFolderAutoLeaver.class);
 
-    private final CfgLocalUser _localUser;
     private final DirectoryService _ds;
     private final SharedFolderLeaveQueueDatabase _lqdb;
 
@@ -64,11 +63,10 @@ class SharedFolderAutoLeaver extends DirectoryServiceAdapter
         {
             TCB tcb = tk.pseudoPause_("sp-leave");
             try {
-                SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-                SPBlockingClient sp = fact.create_(_localUser.get());
-                sp.signInRemote();
                 try {
-                    sp.leaveSharedFolder(sid.toPB());
+                    newMutualAuthClientFactory().create()
+                            .signInRemote()
+                            .leaveSharedFolder(sid.toPB());
                 } catch (ExNotFound e) {
                     l.info("Not a member, ignore leave command: " + sid);
                 } catch (ExBadArgs e) {
@@ -92,11 +90,10 @@ class SharedFolderAutoLeaver extends DirectoryServiceAdapter
 
     @Inject
     public SharedFolderAutoLeaver(PersistentQueueDriver.Factory f, DirectoryService ds,
-            CfgLocalUser localUser, SharedFolderLeaveQueueDatabase lqdb)
+            SharedFolderLeaveQueueDatabase lqdb)
     {
         _ds = ds;
         _lqdb = lqdb;
-        _localUser = localUser;
         _pqd = f.create(new LeaveQueue());
 
         _ds.addListener_(this);

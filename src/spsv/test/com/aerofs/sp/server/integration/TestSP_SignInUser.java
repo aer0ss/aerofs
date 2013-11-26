@@ -68,17 +68,6 @@ public class TestSP_SignInUser extends AbstractSPTest
     // ---- ---- ---- ----
 
     @Test
-    public void testLegacySignInRequiresScrypt() throws Exception
-    {
-        sqlTrans.begin();
-        User user = saveUser();
-        sqlTrans.commit();
-
-        service.signIn(user.id().getString(),
-                ByteString.copyFrom(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())));
-    }
-
-    @Test
     public void testLegacySignInUserRequiresScrypt() throws Exception
     {
         sqlTrans.begin();
@@ -97,16 +86,6 @@ public class TestSP_SignInUser extends AbstractSPTest
 
         service.signInUser(user.id().getString(),
                 ByteString.copyFrom(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())));
-    }
-
-    @Test(expected = ExBadCredential.class)
-    public void testLegacySignInFailsWithClearText() throws Exception
-    {
-        sqlTrans.begin();
-        User user = saveUser();
-        sqlTrans.commit();
-
-        service.signIn(user.id().getString(), ByteString.copyFrom(CRED));
     }
 
     @Test(expected = ExBadCredential.class)

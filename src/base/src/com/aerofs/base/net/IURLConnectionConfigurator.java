@@ -12,7 +12,4 @@ import java.net.URLConnection;
 public interface IURLConnectionConfigurator
 {
     public void configure(URLConnection connection) throws Throwable;
-
-    // TODO (MP) remove this once the servers have been updated.
-    public void fallbackToOldImplementation();
 }

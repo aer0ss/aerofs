@@ -357,9 +357,9 @@ message ListPendingRootsReply {
 
 message ShareFolderCall {
     required PBPath path = 1;
-    repeated PBSubjectRolePair subject_role = 2;
+    repeated PBSubjectPermissions subject_permissions = 2;
     required string note = 3;
-    required bool suppress_shared_folder_rules_warnings = 4;
+    required bool suppress_sharing_rules_warnings = 4;
 }
 
 message UnshareFolderCall {
@@ -450,8 +450,8 @@ message DeleteConflictCall {
 message UpdateACLCall {
     required PBPath path = 1;
     required string subject = 2;
-    required PBRole role = 3;
-    required bool suppress_shared_folder_rules_warnings = 4;
+    required PBPermissions permissions = 3;
+    required bool suppress_sharing_rules_warnings = 4;
 }
 
 message DeleteACLCall {

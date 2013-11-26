@@ -4,15 +4,16 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.proto.Cmd.Command;
-import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Cmd.CommandType;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -51,7 +52,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         try {
             setSessionUser(USER_1);
             service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                    Collections.<PBSubjectRolePair>emptyList(), "", false, false).get();
+                    Collections.<PBSubjectPermissions>emptyList(), "", false, false).get();
             fail();
         } catch (ExInviteeListEmpty e) {}
     }
@@ -63,7 +64,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         try {
             setSessionUser(USER_1);
             service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                    Collections.<PBSubjectRolePair>emptyList(), "", true, false).get();
+                    Collections.<PBSubjectPermissions>emptyList(), "", true, false).get();
         } catch (ExInviteeListEmpty e) {
             fail();
         }
@@ -73,7 +74,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldSuccessfullyShareFolderWithOneUser()
             throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         assertVerkehrPublishOnlyContains(USER_1);
         verifyFolderInvitation(USER_1, USER_2, SID_1, 1);
@@ -84,7 +85,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldSuccessfullyShareFolderExternalWithOneUser()
             throws Exception
     {
-        shareFolderExternal(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolderExternal(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         assertVerkehrPublishOnlyContains(USER_1);
         verifyFolderInvitation(USER_1, USER_2, SID_1, 1);
@@ -97,7 +98,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         User user = newUser();
         // the new hasn't actually been added to the db yet so this should trigger an invite to them
-        shareFolder(USER_1, SID_1, user, Role.EDITOR);
+        shareFolder(USER_1, SID_1, user, Permissions.allOf(Permission.WRITE));
 
         assertVerkehrPublishOnlyContains(USER_1);
         verifyFolderInvitation(USER_1, user, SID_1, 0);
@@ -108,7 +109,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldThrowWhenEditorTriesToInviteToFolder()
             throws Exception
     {
-        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         clearVerkehrPublish();
 
         // Set USER_2 as a non-admin
@@ -118,7 +119,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
 
         try {
             // should throw ExNoPerm because user 2 is an editor
-            shareFolder(USER_2, SID_1, USER_3, Role.EDITOR);
+            shareFolder(USER_2, SID_1, USER_3, Permissions.allOf(Permission.WRITE));
             fail();
         } catch (ExNoPerm e) {
             sqlTrans.handleException();
@@ -130,7 +131,8 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldThrowExBadArgsWhenTryingToShareRootStore() throws Exception
     {
         try {
-            shareFolder(USER_1, SID.rootSID(USER_1.id()), USER_2, Role.EDITOR);
+            shareFolder(USER_1, SID.rootSID(USER_1.id()), USER_2, Permissions.allOf(
+                    Permission.WRITE));
             fail();
         } catch (ExBadArgs e) {
             sqlTrans.handleException();
@@ -142,11 +144,11 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldThrowExAlreadyExistWhenInvitingExistingMember()
             throws Exception
     {
-        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         clearVerkehrPublish();
 
         try {
-            shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+            shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
             fail();
         } catch (ExAlreadyExist e) {
             sqlTrans.handleException();
@@ -158,10 +160,10 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldAllowInvitingExistingPendingUsers()
             throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         // the second call should not fail
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
     }
 
     @Test
@@ -176,7 +178,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
 
         sqlTrans.commit();
 
-        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         // 3 refresh CRL commands.
         Assert.assertEquals(3, delivered.size());
@@ -190,12 +192,13 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldAllowToShareIfNoACLExists()
             throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.OWNER);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
 
         GetACLReply reply = service.getACL(0L).get();
 
         assertGetACLReplyIncrementsEpochBy(reply, 1);
-        assertACLOnlyContains(getSingleACL(SID_1, reply), USER_1, Role.OWNER);
+        assertACLOnlyContains(getSingleACL(SID_1, reply), USER_1, Permissions.allOf(
+                Permission.WRITE, Permission.MANAGE));
         assertVerkehrPublishOnlyContains(USER_1);
     }
 
@@ -204,7 +207,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
             throws Exception
     {
         // create shared folder and invite a first user
-        shareFolder(USER_1, SID_1, USER_2, Role.OWNER);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
         assertVerkehrPublishOnlyContains(USER_1);
         clearVerkehrPublish();
 
@@ -218,7 +221,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         User user = saveUser();
         sqlTrans.commit();
 
-        shareAndJoinFolder(USER_2, SID_1, user, Role.EDITOR);
+        shareAndJoinFolder(USER_2, SID_1, user, Permissions.allOf(Permission.WRITE));
         assertVerkehrPublishOnlyContains(USER_1, USER_2, user);
         clearVerkehrPublish();
 
@@ -229,9 +232,9 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         assertGetACLReplyIncrementsEpochBy(reply, 3);
 
         assertACLOnlyContains(getSingleACL(SID_1, reply),
-                new UserAndRole(USER_1, Role.OWNER),
-                new UserAndRole(USER_2, Role.OWNER),
-                new UserAndRole(user, Role.EDITOR));
+                new UserAndRole(USER_1, Permissions.allOf(Permission.WRITE, Permission.MANAGE)),
+                new UserAndRole(USER_2, Permissions.allOf(Permission.WRITE, Permission.MANAGE)),
+                new UserAndRole(user, Permissions.allOf(Permission.WRITE)));
     }
 
     @Test
@@ -239,7 +242,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
             throws Exception
     {
         // share folder and invite a new editor
-        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         sqlTrans.begin();
         // set USER_2 as non-admin
@@ -248,7 +251,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
 
         try {
             // get the editor to try and make some role changes
-            shareAndJoinFolder(USER_2, SID_1, newUser(), Role.EDITOR);
+            shareAndJoinFolder(USER_2, SID_1, newUser(), Permissions.allOf(Permission.WRITE));
             // must not reach here
             org.junit.Assert.fail();
         } catch (ExNoPerm e) {}
@@ -266,11 +269,11 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         SID sid = SID.generate();
         SharedFolder folder = factSharedFolder.create(sid);
 
-        shareAndJoinFolder(owner, sid, leftUser, Role.EDITOR);
+        shareAndJoinFolder(owner, sid, leftUser, Permissions.allOf(Permission.WRITE));
         verifyFolderInvitation(owner, leftUser, sid, 1);
 
         leaveSharedFolder(leftUser, sid);
-        shareFolder(owner, sid, leftUser, Role.VIEWER);
+        shareFolder(owner, sid, leftUser, Permissions.allOf());
 
         sqlTrans.begin();
         SharedFolderState state = folder.getStateNullable(leftUser);
@@ -290,7 +293,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         verify(factEmailer, times(numEmails))
                 .createFolderInvitationEmailer(eq(sharer), eq(sharee), eq(sid.toStringFormal()),
-                        eq(""), any(SID.class), any(Role.class));
+                        eq(""), any(SID.class), any(Permissions.class));
     }
 
     private void verifyNewUserAccountInvitation(User sharer, User sharee, SID sid,
@@ -299,6 +302,6 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         verify(factEmailer, shouldBeInvited ? times(1) : never())
                 .createSignUpInvitationEmailer(eq(sharer), eq(sharee), eq(sid.toStringFormal()),
-                        any(Role.class), eq(""), anyString());
+                        any(Permissions.class), eq(""), anyString());
     }
 }

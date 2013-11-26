@@ -12,7 +12,7 @@ import java.util.Set;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -278,13 +278,13 @@ public class GetVersCall
         }
 
         // see Rule 3 in acl.md
-        if (!_lacl.check_(_cfgLocalUser.get(), sidx, Role.EDITOR)) {
+        if (!_lacl.check_(_cfgLocalUser.get(), sidx, Permissions.EDITOR)) {
             l.info("we have no editor perm for {}", sidx);
             return;
         }
 
         // see Rule 1 in acl.md
-        if (!_lacl.check_(user, sidx, Role.VIEWER)) {
+        if (!_lacl.check_(user, sidx, Permissions.VIEWER)) {
             l.warn("{} on {} has no viewer perm for {}", user, from, sidx);
             return;
         }

@@ -1,7 +1,8 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.C;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
@@ -69,10 +70,11 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
 
         sqlTrans.commit();
 
-        shareFolder(u0, SID.generate(), u1, Role.EDITOR);
-        shareAndJoinFolder(u0, SID.generate(), u1, Role.OWNER);
+        shareFolder(u0, SID.generate(), u1, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(u0, SID.generate(), u1, Permissions.allOf(Permission.WRITE,
+                Permission.MANAGE));
         SID sid = SID.generate();
-        shareAndJoinFolder(u0, sid, u1, Role.VIEWER);
+        shareAndJoinFolder(u0, sid, u1, Permissions.allOf());
         leaveSharedFolder(u1, sid);
     }
 
@@ -120,7 +122,7 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
     @Test
     public void shouldNotAllowUserToDeactivateSelfIfLastAdmin() throws Exception
     {
-        shareAndJoinFolder(u0, SID.generate(), u1, Role.EDITOR);
+        shareAndJoinFolder(u0, SID.generate(), u1, Permissions.allOf(Permission.WRITE));
 
         setSessionUser(u0);
         try {

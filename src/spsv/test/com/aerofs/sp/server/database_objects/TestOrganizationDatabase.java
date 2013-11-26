@@ -4,7 +4,8 @@
 
 package com.aerofs.sp.server.database_objects;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
@@ -77,7 +78,8 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     private void addSharedFolder(SID rootsid) throws Exception
     {
         sfdb.insert(rootsid, "test");
-        sfdb.insertUser(rootsid, orgID.toTeamServerUserID(), Role.EDITOR, SharedFolderState.JOINED,
+        sfdb.insertUser(rootsid, orgID.toTeamServerUserID(),
+                Permissions.allOf(Permission.WRITE), SharedFolderState.JOINED,
                 null);
     }
 }

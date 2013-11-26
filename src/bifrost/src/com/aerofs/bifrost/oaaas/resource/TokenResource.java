@@ -21,7 +21,6 @@ package com.aerofs.bifrost.oaaas.resource;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.bifrost.core.URLConnectionConfigurator;
 import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
 import com.aerofs.bifrost.oaaas.auth.AbstractUserConsentHandler;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
@@ -364,11 +363,8 @@ public class TokenResource
     private AuthenticatedPrincipal getDeviceAuthorization(AccessTokenRequest tokenRequest)
             throws Exception
     {
-        SPBlockingClient client = spFactory.create_(
-                URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
-
-        AuthorizeMobileDeviceReply authReply = client.authorizeMobileDevice(
-                tokenRequest.getDeviceAuthorizationNonce(), "todo");
+        AuthorizeMobileDeviceReply authReply = spFactory.create()
+                .authorizeMobileDevice(tokenRequest.getDeviceAuthorizationNonce(), "todo");
 
         AuthenticatedPrincipal principal = new AuthenticatedPrincipal();
         principal.setName(authReply.getUserId());

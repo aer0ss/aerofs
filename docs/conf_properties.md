@@ -155,8 +155,8 @@ authentication to complete.
 
     identity_service_identifier=OpenID or LDAP
 
-A short, user-visible name for the external identity service. 
-This will be displayed to end-users in the context of "sign in with {}", 
+A short, user-visible name for the external identity service.
+This will be displayed to end-users in the context of "sign in with {}",
 "a user without {} accounts", etc, where {} is replaced with the identifier.
 The default value depends on the authenticator type.
 
@@ -192,9 +192,9 @@ Internal use only. This property remembers the last email address the user used 
 verification email.
 
 
-    shared_folder_rules.readonly_external_folders=false
+    sharing_rules.restricted_external_sharing=false
 
-Whether to enable read-only external folder rules. The system uses `internal_email_pattern`
+Whether to restrict external sharing (Bloomberg-specific rule). The system uses `internal_email_pattern`
 to determine internal vs external users. Therefore, the rules are enabled only if
 `internal_email_pattern` is non-empty _and_ this property is true.
 

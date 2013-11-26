@@ -1,9 +1,10 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePair;
-import com.aerofs.base.acl.SubjectRolePairs;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
+import com.aerofs.base.acl.SubjectPermissions;
+import com.aerofs.base.acl.SubjectPermissionsList;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.analytics.AnalyticsEvents.SignUpEvent;
 import com.aerofs.base.async.UncancellableFuture;
@@ -31,12 +32,14 @@ import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
+import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
+import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBFolderInvitation;
-import com.aerofs.proto.Common.PBRole;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBPermissions;
+import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
@@ -69,13 +72,12 @@ import com.aerofs.proto.Sp.ListSharedFoldersReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
 import com.aerofs.proto.Sp.MobileAccessCode;
-import com.aerofs.proto.Sp.Noop12Reply;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.Builder;
-import com.aerofs.proto.Sp.PBSharedFolder.PBUserRoleAndState;
+import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.proto.Sp.PBStripeData;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.RecertifyDeviceReply;
@@ -107,7 +109,7 @@ import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
-import com.aerofs.sp.server.lib.SharedFolder.UserRoleAndState;
+import com.aerofs.sp.server.lib.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
@@ -121,7 +123,8 @@ import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
-import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
+import com.aerofs.sp.server.sharing_rules.ISharingRules;
+import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -131,7 +134,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import com.unboundid.ldap.sdk.LDAPSearchException;
@@ -166,7 +168,7 @@ public class SPService implements ISPService
     private final EmailSubscriptionDatabase _esdb;
 
     private final SQLThreadLocalTransaction _sqlTrans;
-    private final ISharedFolderRules _sharedFolderRules;
+    private final SharingRulesFactory _sharingRules;
 
     private VerkehrPublisher _verkehrPublisher;
     private VerkehrAdmin _verkehrAdmin;
@@ -227,7 +229,7 @@ public class SPService implements ISPService
             DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
             Analytics analytics, IdentitySessionManager identitySessionManager,
-            Authenticator authenticator, ISharedFolderRules sharedFolderRules,
+            Authenticator authenticator, SharingRulesFactory sharingRules,
             SharedFolderNotificationEmailer sfnEmailer)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
@@ -253,7 +255,7 @@ public class SPService implements ISPService
         _factInvitationEmailer = factInvitationEmailer;
 
         _identitySessionManager = identitySessionManager;
-        _sharedFolderRules = sharedFolderRules;
+        _sharingRules = sharingRules;
 
         _authenticator = authenticator;
 
@@ -317,6 +319,8 @@ public class SPService implements ISPService
                 ExBadCredential.class,
                 ExBadArgs.class,
                 ExAlreadyExist.class,
+                ExSharingRulesError.class,
+                ExSharingRulesWarning.class,
                 ExCannotResetPassword.class,
                 ExNotAuthenticated.class));
 
@@ -636,9 +640,9 @@ public class SPService implements ISPService
                     .setOwnedByTeam(false);
 
             // fill in folder members
-            for (UserRoleAndState entry : sf.getAllUsersRolesAndStates()) {
+            for (UserPermissionsAndState entry : sf.getAllUsersRolesAndStates()) {
                 sharedFolderMember2pb(sessionOrg, user2nameCache, builder,
-                        entry._user, entry._role, entry._state);
+                        entry._user, entry._permissions, entry._state);
             }
 
             pbs.add(builder.build());
@@ -647,7 +651,7 @@ public class SPService implements ISPService
     }
 
     private void sharedFolderMember2pb(Organization sessionOrg, Map<User, FullName> user2nameCache,
-            Builder builder, User user, Role role, SharedFolderState state)
+            Builder builder, User user, Permissions permissions, SharedFolderState state)
             throws ExNotFound, SQLException
     {
         // don't add Team Server to the list.
@@ -655,12 +659,12 @@ public class SPService implements ISPService
 
         // the folder is owned by the session organization if an owner of the folder belongs to
         // the org.
-        if (role.covers(Role.OWNER) && user.exists() && user.belongsTo(sessionOrg)) {
+        if (permissions.covers(Permission.MANAGE) && user.exists() && user.belongsTo(sessionOrg)) {
             builder.setOwnedByTeam(true);
         }
 
-        builder.addUserRoleAndState(PBUserRoleAndState.newBuilder()
-                .setRole(role.toPB())
+        builder.addUserPermissionsAndState(PBUserPermissionsAndState.newBuilder()
+                .setPermissions(permissions.toPB())
                 .setState(state.toPB())
                 .setUser(user2pb(user, getUserFullName(user, user2nameCache))));
     }
@@ -872,7 +876,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<RegisterDeviceReply> registerDevice(ByteString deviceId, ByteString csr,
-            Boolean recertifyDoNotUse, String osFamily, String osName, String deviceName)
+            String osFamily, String osName, String deviceName)
             throws Exception
     {
         // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove nulltoEmpty calls
@@ -965,7 +969,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<RegisterDeviceReply> registerTeamServerDevice(ByteString deviceId,
-            ByteString csr, Boolean recertifyDoNotUse, String osFamily, String osName,
+            ByteString csr, String osFamily, String osName,
             String deviceName)
             throws Exception
     {
@@ -1043,37 +1047,44 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> shareFolder(String folderName, ByteString shareId,
-            List<PBSubjectRolePair> rolePairs, @Nullable String note, @Nullable Boolean external,
-            @Nullable Boolean suppressSharedFolderRulesWarnings)
+            List<PBSubjectPermissions> subjectPermissionsList, @Nullable String note,
+            @Nullable Boolean external, @Nullable Boolean suppressSharingRulesWarnings)
             throws Exception
     {
         external = firstNonNull(external, false);
-        suppressSharedFolderRulesWarnings = firstNonNull(suppressSharedFolderRulesWarnings, false);
+        suppressSharingRulesWarnings = firstNonNull(suppressSharingRulesWarnings, false);
 
         SharedFolder sf = _factSharedFolder.create(shareId);
         if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot share root");
 
         User sharer = _sessionUser.getUser();
-        List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
+        List<SubjectPermissions> srps = SubjectPermissionsList.listFromPB(subjectPermissionsList);
 
         l.info("{} shares {} [{}] with {}", sharer, sf, external, srps);
         // only allow empty invitee list when doing out-of-defaultRoot sharing
         if (srps.isEmpty() && !external) throw new ExInviteeListEmpty();
 
         _sqlTrans.begin();
+        ISharingRules rules = _sharingRules.create(sharer);
 
-        Set<UserID> users = Sets.newHashSet();
+        boolean created = saveSharedFolderIfNecessary(folderName, sf, sharer, external);
+        ImmutableCollection<UserID> users = sf.getJoinedUserIDs();
 
-        users.addAll(saveSharedFolderIfNecessary(folderName, sf, sharer, external));
+        // The sending of invitation emails is deferred to the end of the transaction to ensure
+        // that all business logic checks pass and the changes are sucessfully committed to the DB
+        List<InvitationEmailer> emailers = Lists.newLinkedList();
 
-        users.addAll(_sharedFolderRules.onInvitingUsers(sharer, sf, srps,
-                suppressSharedFolderRulesWarnings));
+        for (SubjectPermissions srp : srps) {
+            User sharee = _factUser.create(srp._subject);
+            Permissions actualPermissions = rules.onUpdatingACL(sf, sharee, srp._permissions);
+            emailers.add(createFolderInvitationAndEmailer(sf, sharer, sharee, actualPermissions, note,
+                    folderName));
+        }
 
-        List<InvitationEmailer> emailers = createFolderInvitationAndEmailer(folderName, note, sf,
-                sharer, srps);
+        if (!suppressSharingRulesWarnings) rules.throwIfAnyWarningTriggered();
 
         // send verkehr notification as the last step of the transaction
-        publishACLs_(users);
+        if (created || rules.shouldBumpEpoch()) publishACLs_(users);
 
         _sqlTrans.commit();
 
@@ -1082,43 +1093,25 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
-    private Collection<UserID> saveSharedFolderIfNecessary(String folderName, SharedFolder sf,
+    /**
+     * @return whether the shared folder was created
+     */
+    private boolean saveSharedFolderIfNecessary(String folderName, SharedFolder sf,
             User sharer, boolean external)
             throws ExNotFound, SQLException, ExNoPerm, IOException, ExAlreadyExist
     {
         if (sf.exists()) {
             sf.throwIfNoPrivilegeToChangeACL(sharer);
-            return Collections.emptySet();
+            return false;
         }
 
-        // The store doesn't exist. Create it and add the user as the owner.
-        Collection<UserID> l =  sf.save(folderName, sharer);
+        sf.save(folderName, sharer);
         sf.setExternal(sharer, external);
-        return l;
-    }
-
-    private List<InvitationEmailer> createFolderInvitationAndEmailer(String folderName, String note,
-            SharedFolder sf, User sharer, List<SubjectRolePair> srps)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist,
-            ExExternalServiceUnavailable, LDAPSearchException
-    {
-        // The sending of invitation emails is deferred to the end of the transaction to ensure
-        // that all business logic checks pass and the changes are sucessfully committed to the DB
-        List<InvitationEmailer> emailers = Lists.newLinkedList();
-
-        // create invitations
-        for (SubjectRolePair srp : srps) {
-            User sharee = _factUser.create(srp._subject);
-
-            emailers.add(createFolderInvitationAndEmailer(sf, sharer, sharee, srp._role, note,
-                    folderName));
-        }
-
-        return emailers;
+        return true;
     }
 
     private InvitationEmailer createFolderInvitationAndEmailer(SharedFolder sf, User sharer,
-            User sharee, Role role, String note, String folderName)
+            User sharee, Permissions permissions, String note, String folderName)
             throws SQLException, IOException, ExNotFound, ExAlreadyExist,
             ExExternalServiceUnavailable, LDAPSearchException
     {
@@ -1131,17 +1124,17 @@ public class SPService implements ISPService
             sf.setState(sharee, SharedFolderState.PENDING);
         } else {
             // Add a pending ACL entry if the user doesn't exist
-            sf.addPendingUser(sharee, role, sharer);
+            sf.addPendingUser(sharee, permissions, sharer);
         }
 
         InvitationEmailer emailer;
         if (sharee.exists()) {
             // send folder invitation email
             emailer = _factInvitationEmailer.createFolderInvitationEmailer(sharer, sharee,
-                    folderName, note, sf.id(), role);
+                    folderName, note, sf.id(), permissions);
         } else {
             // send sign-up email
-            emailer = inviteToSignUp(sharer, sharee, folderName, role, note)._emailer;
+            emailer = inviteToSignUp(sharer, sharee, folderName, permissions, note)._emailer;
         }
         return emailer;
     }
@@ -1162,7 +1155,7 @@ public class SPService implements ISPService
      * Call this method to use an inviter name different from inviter.getFullName()._first
      */
     private InviteToSignUpResult inviteToSignUp(User inviter, User invitee, @Nullable String folderName,
-            @Nullable Role role, @Nullable String note)
+            @Nullable Permissions permissions, @Nullable String note)
             throws SQLException, IOException, ExNotFound, ExExternalServiceUnavailable,
             LDAPSearchException
     {
@@ -1184,7 +1177,7 @@ public class SPService implements ISPService
         }
 
         InvitationEmailer emailer = _factInvitationEmailer.createSignUpInvitationEmailer(inviter,
-                invitee, folderName, role, note, code);
+                invitee, folderName, permissions, note, code);
 
         return new InviteToSignUpResult(emailer, code);
     }
@@ -1707,10 +1700,10 @@ public class SPService implements ISPService
                 aclBuilder.setStoreId(sf.id().toPB());
                 aclBuilder.setExternal(sf.isExternal(user));
                 aclBuilder.setName(sf.getName());
-                for (Entry<User, Role> en : sf.getJoinedUsersAndRoles().entrySet()) {
-                    aclBuilder.addSubjectRole(PBSubjectRolePair.newBuilder()
-                        .setSubject(en.getKey().id().getString())
-                        .setRole(en.getValue().toPB()));
+                for (Entry<User, Permissions> en : sf.getJoinedUsersAndRoles().entrySet()) {
+                    aclBuilder.addSubjectPermissions(PBSubjectPermissions.newBuilder()
+                            .setSubject(en.getKey().id().getString())
+                            .setPermissions(en.getValue().toPB()));
                 }
                 bd.addStoreAcl(aclBuilder);
             }
@@ -1724,14 +1717,14 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> updateACL(final ByteString storeId, String subjectString,
-            PBRole pbRole, @Nullable Boolean supressWarnings)
+            PBPermissions permissions, @Nullable Boolean suppressWarnings)
             throws Exception
     {
-        supressWarnings = firstNonNull(supressWarnings, false);
+        suppressWarnings = firstNonNull(suppressWarnings, false);
 
         User user = _sessionUser.getUser();
         User subject = _factUser.createFromExternalID(subjectString);
-        Role role = Role.fromPB(pbRole);
+        Permissions role = Permissions.fromPB(permissions);
         SharedFolder sf = _factSharedFolder.create(storeId);
 
         // making the modification to the database, and then getting the current acl list should
@@ -1740,18 +1733,20 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        Role oldRole = sf.getRoleNullable(subject);
-        if (oldRole != role) {
+        Permissions oldPermissions = sf.getPermissionsNullable(subject);
+        if (oldPermissions != role) {
             sf.throwIfNoPrivilegeToChangeACL(user);
 
-            _sharedFolderRules.onUpdatingACL(sf, role, supressWarnings);
+            ISharingRules rules = _sharingRules.create(user);
+            role = rules.onUpdatingACL(sf, user, role);
 
-            ImmutableCollection<UserID> users = sf.setRole(subject, role);
+            ImmutableCollection<UserID> affectedUsers = sf.setPermissions(subject, role);
+            if (!suppressWarnings) rules.throwIfAnyWarningTriggered();
 
-            _sfnEmailer.sendRoleChangedNotificationEmail(sf, user, subject, oldRole, role);
+            _sfnEmailer.sendRoleChangedNotificationEmail(sf, user, subject, oldPermissions, role);
 
             // always call publishACLs_() as the last step of the transaction
-            publishACLs_(users);
+            publishACLs_(affectedUsers);
         }
 
         _sqlTrans.commit();
@@ -1829,49 +1824,6 @@ public class SPService implements ISPService
             m.put(u, _factUser.create(u).incrementACLEpoch());
         }
         return m;
-    }
-
-    /* == No new client paths should use this. See credentialSignIn(). ==
-     *
-     * == Remove this; review after January 2014. ==
-     */
-    @Override
-    public ListenableFuture<Void> signIn(String userIdString, ByteString credentials) throws Exception
-    {
-        l.info("SP.proto - legacy signIn");
-
-        User user = _factUser.createFromExternalID(userIdString);
-
-        if (user.id().isTeamServerID()) {
-            // Team Servers use certificates (in this case the passed credentials represent the
-            // device ID).
-            Device device;
-            _sqlTrans.begin();
-            try {
-                device = _factDevice.create(DID.fromExternal(credentials.toByteArray()));
-            } catch (ExFormatError e) {
-                l.error(user + ": did malformed");
-                throw new ExBadCredential();
-            }
-
-            user.throwIfBadCertificate(_certauth, device);
-            _sqlTrans.commit();
-        } else {
-            // Regular users still use username/password credentials.
-            // FIXME: Legacy clients will submit scrypt'ed credential information if the
-            // user is an external user, or if local_credential signin is used, or if
-            // the mode is Hybrid Cloud...
-            // This call needs to go away eventually, review after January 2014.
-            _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans,
-                    Authenticator.CredentialFormat.LEGACY);
-        }
-
-        // Set the session cookie.
-        _sessionUser.setUser(user);
-        // Update the user tracker so we can invalidate sessions if needed.
-        _userTracker.signIn(user.id(), _sessionUser.getSessionID());
-
-        return createVoidReply();
     }
 
     @Override
@@ -2536,7 +2488,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         for (ByteString sid : sids) {
             SharedFolder folder = _factSharedFolder.create(sid);
-            if (folder.getRoleNullable(sessionUser) == null) throw new ExNoPerm();
+            if (folder.getPermissionsNullable(sessionUser) == null) throw new ExNoPerm();
             foldersBuilder.add(folder);
         }
 
@@ -2653,98 +2605,5 @@ public class SPService implements ISPService
         ListenableFuture<Void> succeeded = _verkehrAdmin.updateCRL(serials);
 
         verkehrFutureGet_(succeeded);
-    }
-
-    @Override
-    public ListenableFuture<Void> noop()
-    {
-        return null;
-    }
-
-    @Override
-    public ListenableFuture<Void> noop3()
-    {
-        return null;
-    }
-
-    @Override
-    public ListenableFuture<Void> noop4()
-    {
-        return null;
-    }
-
-    @Override
-    public ListenableFuture<Void> noop5()
-    {
-        return null;
-    }
-
-    @Override
-    public ListenableFuture<Void> noop6()
-    {
-        return null;
-    }
-
-    @Override
-    public ListenableFuture<Void> noop7()
-    {
-        return null;
-    }
-
-    @Override
-    public ListenableFuture<Void> noop8()
-    {
-        return null;
-    }
-
-    @Override
-    public ListenableFuture<Void> noop9()
-    {
-        return null;
-    }
-
-    @Override
-    public ListenableFuture<Void> noop10()
-    {
-        return null;
-    }
-
-    @Override
-    public ListenableFuture<Void> noop11()
-    {
-        // return non-null for backward compatibility with the client
-        return createVoidReply();
-    }
-
-    @Override
-    public ListenableFuture<Void> noop13()
-    {
-        return null;
-    }
-
-    // The method was getSharedFolderNames
-    //
-    // Keep the original logic for backward compatibility. Alternatively, this method can throw
-    // but that would block daemon's ACL sync with SP and thus syncing of shared folders.
-    //
-    // The logic can be removed on the next protocol version bump.
-    @Override
-    public ListenableFuture<Noop12Reply> noop12(List<ByteString> shareIds)
-            throws Exception
-    {
-        _sqlTrans.begin();
-
-        User user = _sessionUser.getUser();
-        List<String> names = Lists.newArrayListWithCapacity(shareIds.size());
-        for (ByteString shareId : shareIds) {
-            SharedFolder sf = _factSharedFolder.create(shareId);
-            // throws ExNoPerm if the user doesn't have permission to view the name
-            if (sf.getRoleNullable(user) == null) throw new ExNoPerm();
-            names.add(sf.getName());
-        }
-
-        _sqlTrans.commit();
-
-        return createReply(Noop12Reply.newBuilder().addAllFolderName(names).build());
     }
 }

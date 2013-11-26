@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
@@ -13,7 +13,6 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.lib.user.User;
-import org.apache.commons.lang.WordUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,12 +39,12 @@ public class InvitationEmailer
          * @param signUpCode null if the user is auto-provisioned.
          */
         public InvitationEmailer createSignUpInvitationEmailer(final User inviter,
-                final User invitee, @Nullable final String folderName, @Nullable Role role,
+                final User invitee, @Nullable final String folderName, @Nullable Permissions permissions,
                 @Nullable String note, @Nullable final String signUpCode)
                 throws IOException, SQLException, ExNotFound
         {
             final InvitationEmailContentStrategy cs = new InvitationEmailContentStrategy(
-                    invitee.id(), folderName, role, note, signUpCode);
+                    invitee.id(), folderName, permissions, note, signUpCode);
 
             final Email email = new Email();
             final NameFormatter nsInviter = new NameFormatter(inviter);
@@ -93,18 +92,17 @@ public class InvitationEmailer
 
         public InvitationEmailer createFolderInvitationEmailer(@Nonnull final User sharer,
                 final User sharee, @Nullable final String folderName,
-                @Nullable final String note, final SID sid, Role role)
+                @Nullable final String note, final SID sid, Permissions permissions)
                 throws IOException, SQLException, ExNotFound
         {
             final Email email = new Email();
             final NameFormatter nsSharer = new NameFormatter(sharer);
             final InvitationEmailContentStrategy cs =
-                    new InvitationEmailContentStrategy(sharee.id(), folderName, role, note, null);
+                    new InvitationEmailContentStrategy(sharee.id(), folderName, permissions, note, null);
 
             String body = "\n" +
                     nsSharer.nameAndEmail() + " has invited you to a shared " + L.brand() +
-                    " folder as " + WordUtils.capitalizeFully(role.getDescription()) +
-                    cs.noteAndEndOfSentence() + "\n" +
+                    " folder as " + permissions.roleName() + cs.noteAndEndOfSentence() + "\n" +
                     "\n" +
                     "Click on this link to view and accept the invitation: " +
                     ACCEPT_INVITATION_LINK;

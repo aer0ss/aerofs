@@ -4,8 +4,9 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.acl.Role;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
@@ -64,7 +65,7 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderTest
         sqlTrans.commit();
 
         // User 1 shares with User 2, but not with User 3
-        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Permissions.allOf(Permission.WRITE));
     }
 
     private Device saveDevice(User owner, String name)

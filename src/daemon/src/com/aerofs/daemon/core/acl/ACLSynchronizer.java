@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.acl;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.SID;
@@ -19,9 +19,10 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -58,10 +59,10 @@ public class ACLSynchronizer
     {
         public final String _name;
         public final boolean _external;
-        public final ImmutableMap<UserID, Role> _roles;
+        public final ImmutableMap<UserID, Permissions> _roles;
 
         // See docs/design/sharing_and_migration.txt for information about the external flag.
-        StoreInfo(String name, boolean external, ImmutableMap<UserID, Role> roles)
+        StoreInfo(String name, boolean external, ImmutableMap<UserID, Permissions> roles)
         {
             _name = name;
             _external = external;
@@ -84,7 +85,7 @@ public class ACLSynchronizer
     @Inject
     public ACLSynchronizer(TokenManager tokenManager, TransManager tm, IACLDatabase adb, LocalACL lacl,
             IStoreJoiner storeJoiner, IMapSIndex2SID sIndex2SID, IMapSID2SIndex sid2SIndex,
-            CfgLocalUser cfgLocalUser, SPBlockingClient.Factory factSP)
+            CfgLocalUser cfgLocalUser, InjectableSPBlockingClientFactory factSP)
     {
         _tokenManager = tokenManager;
         _tm = tm;
@@ -97,12 +98,12 @@ public class ACLSynchronizer
         _factSP = factSP;
     }
 
-    private void commitToLocal_(SIndex sidx, UserID userID, Role role)
+    private void commitToLocal_(SIndex sidx, UserID userID, Permissions permissions)
             throws SQLException, ExNotFound
     {
         Trans t = _tm.begin_();
         try {
-            _lacl.set_(sidx, Collections.singletonMap(userID, role), t);
+            _lacl.set_(sidx, Collections.singletonMap(userID, permissions), t);
             t.commit_();
         } finally {
             t.end_();
@@ -196,7 +197,7 @@ public class ACLSynchronizer
         for (Map.Entry<SID, StoreInfo> entry : serverACLReturn._acl.entrySet()) {
             SID sid = entry.getKey();
             StoreInfo storeInfo = entry.getValue();
-            Map<UserID, Role> roles = storeInfo._roles;
+            Map<UserID, Permissions> roles = storeInfo._roles;
 
             l.debug("processing ACL: {} {} {} {}", sid, storeInfo._external, storeInfo._name, roles);
 
@@ -247,15 +248,14 @@ public class ACLSynchronizer
             throws Exception
     {
         GetACLReply aclReply;
-        SPBlockingClient sp;
 
         Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl");
         try {
             TCB tcb = tk.pseudoPause_("spacl");
             try {
-                sp = _factSP.create_(_cfgLocalUser.get());
-                sp.signInRemote();
-                aclReply = sp.getACL(localEpoch);
+                aclReply = _factSP.create()
+                        .signInRemote()
+                        .getACL(localEpoch);
             } finally {
                 tcb.pseudoResumed_();
             }
@@ -268,10 +268,10 @@ public class ACLSynchronizer
         l.info("server return acl server epoch {} local epoch {}", serverEpoch, localEpoch);
 
         for (PBStoreACL store : aclReply.getStoreAclList()) {
-            ImmutableMap.Builder<UserID, Role> builder = ImmutableMap.builder();
-            for (PBSubjectRolePair pbPair : store.getSubjectRoleList()) {
-                SubjectRolePair srp = new SubjectRolePair(pbPair);
-                builder.put(srp._subject, srp._role);
+            ImmutableMap.Builder<UserID, Permissions> builder = ImmutableMap.builder();
+            for (PBSubjectPermissions pbPair : store.getSubjectPermissionsList()) {
+                SubjectPermissions srp = new SubjectPermissions(pbPair);
+                builder.put(srp._subject, srp._permissions);
             }
 
             StoreInfo si = new StoreInfo(store.getName(), store.getExternal(), builder.build());
@@ -284,8 +284,8 @@ public class ACLSynchronizer
     /**
      * Update ACLs via the SP.updateACL call
      */
-    public void update_(SIndex sidx, UserID subject, Role role,
-            boolean suppressSharedFolderRulesWarnings)
+    public void update_(SIndex sidx, UserID subject, Permissions permissions,
+            boolean suppressSharingRulesWarnings)
             throws Exception
     {
         // first, resolve the sid and prepare data for protobuf
@@ -297,17 +297,17 @@ public class ACLSynchronizer
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("spacl");
-            SPBlockingClient sp = _factSP.create_(_cfgLocalUser.get());
-            sp.signInRemote();
-            sp.updateACL(sid.toPB(), subject.getString(), role.toPB(),
-                    suppressSharedFolderRulesWarnings);
+            _factSP.create()
+                    .signInRemote()
+                    .updateACL(sid.toPB(), subject.getString(), permissions.toPB(),
+                            suppressSharingRulesWarnings);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();
         }
 
         // add new entries to the local database
-        commitToLocal_(sidx, subject, role);
+        commitToLocal_(sidx, subject, permissions);
     }
 
     public void delete_(SIndex sidx, UserID subject)
@@ -324,9 +324,9 @@ public class ACLSynchronizer
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("spacl");
-            SPBlockingClient sp = _factSP.create_(_cfgLocalUser.get());
-            sp.signInRemote();
-            sp.deleteACL(sid.toPB(), subject.getString());
+            _factSP.create()
+                    .signInRemote()
+                    .deleteACL(sid.toPB(), subject.getString());
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

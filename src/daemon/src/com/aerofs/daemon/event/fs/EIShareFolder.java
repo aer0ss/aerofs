@@ -2,8 +2,8 @@ package com.aerofs.daemon.event.fs;
 
 import java.util.Map;
 
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.daemon.core.Core;
-import com.aerofs.base.acl.Role;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.lib.Path;
 import com.aerofs.base.id.UserID;
@@ -11,7 +11,7 @@ import com.aerofs.base.id.UserID;
 public class EIShareFolder extends AbstractEBIMC
 {
     public final Path _path;
-    public final Map<UserID, Role> _subject2role;
+    public final Map<UserID, Permissions> _subject2role;
     public final String _emailNote;
     public final boolean _suppressSharedFolderRulesWarnings;
 
@@ -22,7 +22,7 @@ public class EIShareFolder extends AbstractEBIMC
      * time.
      * @param path the path of the new store
      */
-    public EIShareFolder(Path path, Map<UserID, Role> subject2role, String emailNote,
+    public EIShareFolder(Path path, Map<UserID, Permissions> subject2role, String emailNote,
             boolean suppressSharedFolderRulesWarnings)
     {
         super(Core.imce());

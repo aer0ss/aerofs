@@ -100,27 +100,40 @@ message PBException {
         // #       update exception_reply_test.py to include them.            #
         // ####################################################################
 
-        // SP exceptions used by shared folder rules. Their data field contains a list of external
-        // users as a UTF-8 encoded JSON string. The format is as follows:
-        //
+        // data: UTF-8 JSON, e.g.
         //      {
-        //          "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
-        //          "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
+        //          "type": "FOOBAR",
+        //          "description" : "The foobar is bazed because of the following users:\n %s",
+        //          "users" : {
+        //              "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
+        //              "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
+        //          }
         //      }
-        SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER = 408;
-        SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER = 409;
-        SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS = 410;
+        SHARING_RULES_ERROR = 408;
+
+        // data: UTF-8 JSON list of warnings, e.g.
+        //      [
+        //          {
+        //              "type" : "FOOBAR",
+        //              "description" : "The foobar is bazed because of the following users:\n %s",
+        //              "users" : {
+        //                  "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
+        //                  "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
+        //              }
+        //          }
+        //      ]
+        SHARING_RULES_WARNINGS = 409;
 
         // The user cannot reset their password (because we don't manage it)
-        CANNOT_RESET_PASSWORD = 411;
+        CANNOT_RESET_PASSWORD = 410;
 
         // A secure session nonce was invalid, which indicates that external authentication
         // (OpenId or other...) failed.
-        EXTERNAL_AUTH_FAILURE = 412;
+        EXTERNAL_AUTH_FAILURE = 411;
 
         // An operation failed because the current software license does not
         // permit the action to be taken
-        LICENSE_LIMIT = 413;
+        LICENSE_LIMIT = 412;
     }
 
     required Type type = 1;
@@ -148,15 +161,19 @@ message PBException {
     optional bytes data = 5;
 }
 
-enum PBRole {
-    VIEWER = 1;     // read
-    EDITOR = 2;     // read, write
-    OWNER  = 3;     // read, write, manage users
+// VALUES STORED IN DB, DO NOT CHANGE
+enum PBPermission {
+    WRITE = 0;
+    MANAGE = 1;
 }
 
-message PBSubjectRolePair {
+message PBPermissions {
+    repeated PBPermission permission = 1;
+}
+
+message PBSubjectPermissions {
     required string subject = 1;
-    required PBRole role = 2;
+    required PBPermissions permissions = 2;
 }
 
 message PBFolderInvitation {

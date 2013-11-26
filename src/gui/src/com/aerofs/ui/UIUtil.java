@@ -26,7 +26,6 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.error.ErrorMessages;
@@ -48,6 +47,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class UIUtil
 {
@@ -84,10 +85,9 @@ public class UIUtil
     public static void scheduleUnlinkAndExit()
             throws Exception
     {
-        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-        SPBlockingClient sp = fact.create_(Cfg.user());
-        sp.signInRemote();
-        sp.unlinkDevice(Cfg.did().toPB(), false);
+        newMutualAuthClientFactory().create()
+                .signInRemote()
+                .unlinkDevice(Cfg.did().toPB(), false);
     }
 
     private static String getUserFriendlyID(PBSOCID pbsocid)

@@ -66,7 +66,8 @@ public class DaemonPostUpdateTasks
             new DPUTDeleteLargeLibjingleLog(),
             new DPUTAddTamperingDetectionTable(dbcw),
             new DPUTCaseSensitivityHellYeah(dbcw, dr),
-            new DPUTMigrateHistoryToHex()
+            new DPUTMigrateHistoryToHex(),
+            new DPUTUpdateACLFromDiscreteRolesToFlags(dbcw)
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 

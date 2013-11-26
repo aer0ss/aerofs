@@ -4,7 +4,9 @@
 
 package com.aerofs.bifrost.server;
 
+import com.aerofs.base.BaseParam.Cacert;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.bifrost.common.DefaultUncaughtExceptionHandler;
 import com.aerofs.bifrost.login.FormAuthenticator;
@@ -33,6 +35,7 @@ import com.aerofs.bifrost.oaaas.resource.VerifyResource;
 import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -104,8 +107,22 @@ public class Bifrost extends Service
         Class.forName(getStringProperty("bifrost.db.driverClass", "com.mysql.jdbc.Driver"));
 
         // Note, we expect nginx or similar to provide ssl termination...
-        new Bifrost(Guice.createInjector(databaseModule(), bifrostModule()), null)
+        new Bifrost(Guice.createInjector(databaseModule(), bifrostModule(), spModule()), null)
                 .start();
+    }
+
+    static private Module spModule()
+    {
+        return new AbstractModule() {
+            private final SPBlockingClient.Factory factSP =
+                    new SPBlockingClient.Factory(new FileBasedCertificateProvider(Cacert.FILE));
+
+            @Override
+            protected void configure()
+            {
+                bind(SPBlockingClient.Factory.class).toInstance(factSP);
+            }
+        };
     }
 
     static private Module databaseModule()

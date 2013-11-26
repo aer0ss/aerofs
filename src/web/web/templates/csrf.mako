@@ -24,3 +24,5 @@
 <%def name="token_param()">
     "csrf_token": "${request.session.get_csrf_token()}",
 </%def>
+
+<%def name="token_header()">"X-CSRF-Token": "${request.session.get_csrf_token()}"</%def>

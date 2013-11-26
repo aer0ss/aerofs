@@ -4,12 +4,13 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.proto.Sp.PBSharedFolder;
-import com.aerofs.proto.Sp.PBSharedFolder.PBUserRoleAndState;
+import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;
@@ -80,7 +81,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         createSharedFolders();
 
         for (PBSharedFolder sf : queryCurrentAndOtherUsers()) {
-            for (PBUserRoleAndState urs : sf.getUserRoleAndStateList()) {
+            for (PBUserPermissionsAndState urs : sf.getUserPermissionsAndStateList()) {
                 assertFalse(UserID.fromInternal(urs.getUser().getUserEmail()).isTeamServerID());
             }
         }
@@ -103,8 +104,8 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     {
         SID sid1 = SID.generate();
         SID sid2 = SID.generate();
-        shareAndJoinFolder(USER_1, sid1, USER_2, Role.EDITOR);
-        shareAndJoinFolder(USER_2, sid2, USER_3, Role.EDITOR);
+        shareAndJoinFolder(USER_1, sid1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(USER_2, sid2, USER_3, Permissions.allOf(Permission.WRITE));
 
         // add an admin to USER_2's team
         sqlTrans.begin();
@@ -126,7 +127,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
 
         for (PBSharedFolder sf : sfs) {
             boolean hasUser = false;
-            for (PBUserRoleAndState urs : sf.getUserRoleAndStateList()) {
+            for (PBUserPermissionsAndState urs : sf.getUserPermissionsAndStateList()) {
                 if (UserID.fromInternal(urs.getUser().getUserEmail()).equals(user.id())) {
                     hasUser = true;
                 }
@@ -138,8 +139,8 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     private void createSharedFolders()
             throws Exception
     {
-        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
-        shareAndJoinFolder(USER_2, SID_2, USER_3, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(USER_2, SID_2, USER_3, Permissions.allOf(Permission.WRITE));
 
         setSessionUser(USER_1);
 

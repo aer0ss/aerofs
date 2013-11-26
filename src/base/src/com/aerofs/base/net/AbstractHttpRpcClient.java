@@ -10,7 +10,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 
-import javax.net.ssl.SSLHandshakeException;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,21 +51,7 @@ public abstract class AbstractHttpRpcClient
 
             _connectionConfigurator.configure(connection);
 
-            // TODO (MP) remove fallback mechanism once servers have been updated.
-            try {
-                connection.connect();
-            } catch (SSLHandshakeException e) {
-                // Bad copied code - only temporarary, though.
-                connection = _url.openConnection();
-                connection.setDoInput(true);
-                connection.setDoOutput(true);
-                if (_cookie != null) connection.setRequestProperty("Cookie", _cookie);
-
-                LOGGER.warn("fallback to old implementation");
-                _connectionConfigurator.fallbackToOldImplementation();
-                _connectionConfigurator.configure(connection);
-                connection.connect();
-            }
+            connection.connect();
 
             // Construct data
             final String charSet = "UTF-8";

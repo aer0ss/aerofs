@@ -13,7 +13,6 @@ import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -22,6 +21,8 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
+
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 /**
  * This class is in charge of all logic that needs to be run only once: on the first launch of the
@@ -139,9 +140,8 @@ public class FirstLaunch
     private void fetchAccessibleStores_()
     {
         try {
-            SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-            SPBlockingClient sp = fact.create_(Cfg.user());
-            sp.signInRemote();
+            SPBlockingClient sp = newMutualAuthClientFactory().create()
+                    .signInRemote();
             ImmutableSet.Builder<SID> stores = ImmutableSet.builder();
             for (PBStoreACL sacl : sp.getACL(0L).getStoreAclList()) {
                 // ignore external folders

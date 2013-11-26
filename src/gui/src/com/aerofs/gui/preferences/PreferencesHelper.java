@@ -18,7 +18,6 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.widgets.Link;
@@ -41,6 +40,8 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 
 import javax.annotation.Nullable;
+
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class PreferencesHelper
 {
@@ -206,10 +207,10 @@ public class PreferencesHelper
                 Exception e = null;
                 GetUserPreferencesReply r = null;
                 try {
-                    SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-                    SPBlockingClient sp = fact.create_(Cfg.user());
-                    sp.signInRemote();
-                    r = sp.getUserPreferences(Cfg.did().toPB());
+                    r = newMutualAuthClientFactory()
+                            .create()
+                            .signInRemote()
+                            .getUserPreferences(Cfg.did().toPB());
                 } catch (ExBadCredential ebc) {
                     l.warn("ExBadCredential", LogUtil.suppress(ebc));
                 } catch (Exception e2) {
@@ -263,11 +264,11 @@ public class PreferencesHelper
             {
                 Exception e;
                 try {
-                    SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-                    SPBlockingClient sp = fact.create_(Cfg.user());
-                    sp.signInRemote();
-                    sp.setUserPreferences(Cfg.user().getString(), null, null, Cfg.did().toPB(),
-                            deviceNameToSend);
+                    newMutualAuthClientFactory()
+                            .create()
+                            .signInRemote()
+                            .setUserPreferences(Cfg.user().getString(), null, null, Cfg.did().toPB(),
+                                    deviceNameToSend);
                     e = null;
                 } catch (Exception e2) {
                     e = e2;

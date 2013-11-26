@@ -4,7 +4,8 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBFolderInvitation;
@@ -20,7 +21,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldJoinFolder() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         assertVerkehrPublishOnlyContains(USER_1);
         clearVerkehrPublish();
@@ -33,7 +34,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldSendNotificationEmail() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         joinSharedFolder(USER_2, SID_1);
 
@@ -44,7 +45,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldPassWhenJoinFolderTwice() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         joinSharedFolder(USER_2, SID_1);
 
         sqlTrans.begin();
@@ -72,7 +73,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldThrowWhenTryingToJoinWithoutBeingInvited() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         clearVerkehrPublish();
 
         try {
@@ -87,7 +88,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldIgnoreInvitation() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         setSessionUser(USER_2);
         PBFolderInvitation inv = service.listPendingFolderInvitations().get().getInvitation(0);
@@ -110,7 +111,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldThrowWhenTryingToIgnoreInvitationWithoutBeingInvited() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         setSessionUser(USER_3);
         try {
@@ -122,7 +123,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldThrowWhenTryingToIgnoreAlreadyAcceptedInvitation() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         setSessionUser(USER_1);
         try {

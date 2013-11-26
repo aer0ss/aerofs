@@ -33,6 +33,6 @@ public class HdUpdateACL extends AbstractHdIMC<EIUpdateACL>
 
         if (!soid.oid().isRoot()) throw new ExNotShared();
 
-        _aclsync.update_(soid.sidx(), ev._subject, ev._role, ev._suppressSharedFolderRulesWarnings);
+        _aclsync.update_(soid.sidx(), ev._subject, ev._permissions, ev._suppressSharedFolderRulesWarnings);
     }
 }

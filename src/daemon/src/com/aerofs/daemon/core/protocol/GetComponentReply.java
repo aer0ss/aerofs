@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UserID;
@@ -301,7 +301,7 @@ public class GetComponentReply
             throws SQLException, ExSenderHasNoPerm
     {
         // see Rule 2 in acl.md
-        if (!_lacl.check_(user, socid.sidx(), Role.EDITOR)) {
+        if (!_lacl.check_(user, socid.sidx(), Permissions.EDITOR)) {
             l.warn("{} on {} has no editor perm for {}", user, ep, socid.sidx());
             throw new ExSenderHasNoPerm();
         }

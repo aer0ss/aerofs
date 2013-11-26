@@ -30,6 +30,8 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
+
 public class ShProgram implements IProgram, ICallback
 {
     private static final Logger l = Loggers.getLogger(ShProgram.class);
@@ -94,9 +96,7 @@ public class ShProgram implements IProgram, ICallback
         // renewal is needed as cookies may expire
         if (_sp == null || _spRenewalTimer.elapsed() > 5 * C.MIN) {
             Cfg.init_(Cfg.absRTRoot(), true);
-            SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-            _sp = fact.create_(Cfg.user());
-            _sp.signInRemote();
+            _sp = newMutualAuthClientFactory().create().signInRemote();
             _spRenewalTimer.restart();
         }
         return _sp;

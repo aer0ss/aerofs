@@ -4,8 +4,9 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import org.junit.Test;
@@ -17,7 +18,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldAllowMemberToLeaveShareFolder() throws Exception
     {
-        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         clearVerkehrPublish();
 
         leaveSharedFolder(USER_2, SID_1);
@@ -27,7 +28,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldAllowAdminToLeaveShareFolder() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         leaveSharedFolder(USER_1, SID_1);
     }
@@ -35,7 +36,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldAllowPendingMemberToLeaveShareFolder() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         clearVerkehrPublish();
 
         leaveSharedFolder(USER_2, SID_1);
@@ -57,7 +58,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldThrowExNotFoundWhenNonMemberTriesToLeaveShareFolder() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         clearVerkehrPublish();
 
         try {

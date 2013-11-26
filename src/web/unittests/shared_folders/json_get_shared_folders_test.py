@@ -3,7 +3,7 @@ from mock import Mock
 from pyramid.security import authenticated_userid
 from aerofs_sp.gen.sp_pb2 import \
     ListOrganizationSharedFoldersReply, ListSharedFoldersReply
-from aerofs_common._gen.common_pb2 import EDITOR, OWNER
+from aerofs_common._gen.common_pb2 import WRITE, MANAGE
 from aerofs_sp.gen.sp_pb2 import ADMIN, JOINED
 from ..test_base import TestBase
 from web import auth
@@ -44,15 +44,16 @@ class GetSharedFoldersTest(TestBase):
         folder.store_id = '0'
         folder.name = 'whatever'
 
-        urs = folder.user_role_and_state.add()
-        urs.role = OWNER
+        urs = folder.user_permissions_and_state.add()
+        urs.permissions.permission.append(WRITE)
+        urs.permissions.permission.append(MANAGE)
         urs.state = JOINED
         urs.user.user_email = 'test1@aerofs.com'
         urs.user.first_name = 'first'
         urs.user.last_name = 'last'
 
-        urs = folder.user_role_and_state.add()
-        urs.role = EDITOR
+        urs = folder.user_permissions_and_state.add()
+        urs.permissions.permission.append(WRITE)
         urs.state = JOINED
         urs.user.user_email = 'test2@aerofs.com'
         urs.user.first_name = 'first'

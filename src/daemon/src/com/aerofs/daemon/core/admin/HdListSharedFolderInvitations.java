@@ -11,19 +11,17 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EIListSharedFolderInvitations;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.google.inject.Inject;
+
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class HdListSharedFolderInvitations extends AbstractHdIMC<EIListSharedFolderInvitations>
 {
-    private final CfgLocalUser _localUser;
     private final TokenManager _tokenManager;
 
     @Inject
-    public HdListSharedFolderInvitations(CfgLocalUser localUser, TokenManager tokenManager)
+    public HdListSharedFolderInvitations(TokenManager tokenManager)
     {
-        _localUser = localUser;
         _tokenManager = tokenManager;
     }
 
@@ -34,10 +32,10 @@ public class HdListSharedFolderInvitations extends AbstractHdIMC<EIListSharedFol
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("list-invitations");
-            SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-            SPBlockingClient sp = fact.create_(_localUser.get());
-            sp.signInRemote();
-            ev.setResult_(sp.listPendingFolderInvitations().getInvitationList());
+            ev.setResult_(newMutualAuthClientFactory().create()
+                    .signInRemote()
+                    .listPendingFolderInvitations()
+                    .getInvitationList());
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
         }

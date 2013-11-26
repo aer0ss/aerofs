@@ -115,12 +115,8 @@ public class BaseParam
         public static final String SP_POST_PARAM_PROTOCOL = "protocol_vers";
         public static final String SP_POST_PARAM_DATA = "data";
 
-        // When incrementing SP_PROTOCOL_VERSION, make sure to also update:
-        // 1) src/web/development.ini
-        // 2) src/web/production.ini
-        // 3) syncdet_test/lib/param.py
-        // 4) code with a "WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE" comment
-        public static final int SP_PROTOCOL_VERSION = 20;
+        // See comment in sp.proto
+        public static final int SP_PROTOCOL_VERSION = 21;
 
         public static final URL URL = getUrlProperty("base.sp.url",
                 "https://sp.aerofs.com/sp/");

@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.protocol;
 import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.base.acl.Role;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.base.ex.ExNoPerm;
@@ -204,13 +204,13 @@ public class GetComponentCall
         }
 
         // see Rule 3 in acl.md
-        if (!_lacl.check_(_cfgLocalUser.get(), k.sidx(), Role.EDITOR)) {
+        if (!_lacl.check_(_cfgLocalUser.get(), k.sidx(), Permissions.EDITOR)) {
             l.info("we have no editor perm for {}", k.sidx());
             throw new ExSenderHasNoPerm();
         }
 
         // see Rule 1 in acl.md
-        if (!_lacl.check_(msg.user(), k.sidx(), Role.VIEWER)) {
+        if (!_lacl.check_(msg.user(), k.sidx(), Permissions.VIEWER)) {
             l.warn("{} on {} has no viewer perm for {}", msg.user(), msg.ep(), k.sidx());
             throw new ExNoPerm();
         }

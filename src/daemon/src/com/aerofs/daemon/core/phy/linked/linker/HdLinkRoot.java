@@ -23,14 +23,14 @@ import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBSubjectPermissions;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.inject.Inject;
 
@@ -43,7 +43,6 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
     private final StoreDeleter _sd;
     private final TransManager _tm;
     private final LinkerRootMap _lrm;
-    private final CfgLocalUser _localUser;
     private final ACLSynchronizer _aclsync;
     private final InjectableFile.Factory _factFile;
     private final SPBlockingClient.Factory _factSP;
@@ -51,16 +50,14 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
 
     @Inject
     public HdLinkRoot(TokenManager tokenManager, TransManager tm, StoreCreator sc, StoreDeleter sd,
-            LinkerRootMap lrm, CfgLocalUser localUser, ACLSynchronizer aclsync,
-            InjectableFile.Factory factFile, SPBlockingClient.Factory factSP,
-            CfgAbsRTRoot cfgAbsRTRoot)
+            LinkerRootMap lrm, ACLSynchronizer aclsync, CfgAbsRTRoot cfgAbsRTRoot,
+            InjectableFile.Factory factFile, InjectableSPBlockingClientFactory factSP)
     {
         _tokenManager = tokenManager;
         _tm = tm;
         _sc = sc;
         _sd = sd;
         _lrm = lrm;
-        _localUser = localUser;
         _aclsync = aclsync;
         _factFile = factFile;
         _factSP = factSP;
@@ -141,9 +138,10 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
         try {
             TCB tcb = tk.pseudoPause_("sp-share-ext");
             try {
-                SPBlockingClient sp = _factSP.create_(_localUser.get());
-                sp.signInRemote();
-                sp.shareFolder(name, sid.toPB(), Collections.<PBSubjectRolePair>emptyList(), "", true, false);
+                _factSP.create()
+                        .signInRemote()
+                        .shareFolder(name, sid.toPB(), Collections.<PBSubjectPermissions>emptyList(),
+                                "", true, false);
             } finally {
                 tcb.pseudoResumed_();
             }
@@ -172,7 +170,7 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
     {
         Trans t = _tm.begin_();
         try {
-            // NB: use MAP and not APLLY as we don't want to delete user's files
+            // NB: use MAP and not APPLY as we don't want to delete user's files
             _sd.deleteRootStore_(sidx, PhysicalOp.MAP, t);
             _lrm.unlink_(sid, t);
             t.commit_();

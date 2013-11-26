@@ -44,8 +44,7 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
-import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
-import com.aerofs.sp.server.shared_folder_rules.SharedFolderRulesFactory;
+import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.googlecode.flyway.core.Flyway;
@@ -130,8 +129,8 @@ public class SPServlet extends AeroServlet
     private final InvitationReminderEmailer _invitationReminderEmailer = new InvitationReminderEmailer();
 
     private final SharedFolderNotificationEmailer _sfnEmailer = new SharedFolderNotificationEmailer();
-    private final ISharedFolderRules _sfRules = SharedFolderRulesFactory
-            .create(_authenticator, _factUser, _sfnEmailer);
+    private final SharingRulesFactory _sfRules =
+            new SharingRulesFactory(_authenticator, _factUser, _sfnEmailer);
 
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,

@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
@@ -92,7 +92,7 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
         service.inviteToOrganization(user.id().getString());
 
         verify(factEmailer).createSignUpInvitationEmailer(eq(USER_1), eq(user),
-                eq((String) null), eq((Role) null), eq((String) null), signUpCodeCaptor.capture());
+                eq((String) null), eq((Permissions) null), eq((String) null), signUpCodeCaptor.capture());
 
         assertNotNull(signUpCodeCaptor.getValue());
     }
@@ -106,7 +106,7 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
         service.inviteToOrganization(user.id().getString());
 
         verify(factEmailer).createSignUpInvitationEmailer(eq(USER_1), eq(user),
-                eq((String) null), eq((Role) null), eq((String) null), eq((String) null));
+                eq((String) null), eq((Permissions) null), eq((String) null), eq((String) null));
     }
 
     private void inviteMaximumFreeUsers()

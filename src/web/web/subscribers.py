@@ -12,7 +12,10 @@ def validate_csrf_token(event):
     Validate CSRF tokens for all non-GET requests. See README.security.txt
     """
     request = event.request
-    csrf = request.params.get('csrf_token')
+    csrf = request.headers.get('X-CSRF-Token')
+    if csrf is None:
+        csrf = request.params.get('csrf_token')
+
 
     if request.method != 'GET' and is_authenticated(request) and\
             csrf != unicode(request.session.get_csrf_token()):

@@ -2,11 +2,11 @@
 ##
 ## caller.id(): the id of the modal
 ## caller.title(), body(), footer(): modal title, body, and footer (optional)
-## Optinally define caller.error() to return true for modals that indicate errors.
-## Optinally define caller.success() to return true for modals that indicate success.
-## Optinally define caller.modal_style() to specify CCS styles for the modal.
-## Optinally define caller.body_style() to specify CCS styles for the modal body.
-## Optinally define caller.no_close() to hide the close button in the header (the X).
+## Optionally define caller.error() to return true for modals that indicate errors.
+## Optionally define caller.success() to return true for modals that indicate success.
+## Optionally define caller.modal_style() to specify CCS styles for the modal.
+## Optionally define caller.body_style() to specify CCS styles for the modal body.
+## Optionally define caller.no_close() to hide the close button in the header (the X).
 ##
 ## Style Guide: see README.style.txt
 ##

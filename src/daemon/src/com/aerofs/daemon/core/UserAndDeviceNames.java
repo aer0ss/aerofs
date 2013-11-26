@@ -21,6 +21,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.UserID;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
@@ -91,7 +92,7 @@ public class UserAndDeviceNames
 
     @Inject
     public UserAndDeviceNames(CfgLocalUser localUser, TokenManager tokenManager, TransManager tm,
-            DID2User d2u, IUserAndDeviceNameDatabase udndb, SPBlockingClient.Factory factSP)
+            DID2User d2u, IUserAndDeviceNameDatabase udndb, InjectableSPBlockingClientFactory factSP)
     {
         _localUser = localUser;
         _tokenManager = tokenManager;
@@ -201,11 +202,11 @@ public class UserAndDeviceNames
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-devinfo");
-            SPBlockingClient sp = _factSP.create_(_localUser.get());
-            sp.signInRemote();
             List<ByteString> pb = Lists.newArrayListWithExpectedSize(dids.size());
             for (DID did : dids) pb.add(did.toPB());
-            return sp.getDeviceInfo(pb);
+            return _factSP.create()
+                    .signInRemote()
+                    .getDeviceInfo(pb);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

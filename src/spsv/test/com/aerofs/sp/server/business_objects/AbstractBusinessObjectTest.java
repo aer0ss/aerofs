@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.C;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.sp.common.SharedFolderState;
@@ -152,10 +152,10 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
         return sf;
     }
 
-    void assertJoinedRole(SharedFolder sf, User user, Role role)
+    void assertJoinedRole(SharedFolder sf, User user, Permissions permissions)
             throws SQLException
     {
-        assertEquals(sf.getRoleNullable(user), role);
+        assertEquals(sf.getPermissionsNullable(user), permissions);
         assertEquals(sf.getStateNullable(user), SharedFolderState.JOINED);
     }
 

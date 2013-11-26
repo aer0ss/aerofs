@@ -5,6 +5,7 @@
 package com.aerofs.lib;
 
 import com.aerofs.proto.Sp.PBFullName;
+import com.google.common.base.Objects;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -60,5 +61,19 @@ public class FullName
     public boolean isFirstOrLastNameEmpty()
     {
         return _first.isEmpty() || _last.isEmpty();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        return o == this || (o != null && o instanceof FullName
+                                     && _first.equals(((FullName)o)._first)
+                                     && _last.equals(((FullName)o)._last));
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hashCode(_first, _last);
     }
 }

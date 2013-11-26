@@ -4,10 +4,10 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePairs;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.SubjectPermissionsList;
 import com.aerofs.base.id.SID;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.server.lib.user.User;
 
 import java.util.Collections;
@@ -23,21 +23,21 @@ public class AbstractSPFolderTest extends AbstractSPTest
     /**
      * Makes a protobuf-ready list of subject role pairs containing only the given sharee+role pair
      */
-    protected static List<PBSubjectRolePair> toPB(User sharee, Role role)
+    protected static List<PBSubjectPermissions> toPB(User sharee, Permissions permissions)
     {
-        return SubjectRolePairs.mapToPB(Collections.singletonMap(sharee.id(), role));
+        return SubjectPermissionsList.mapToPB(Collections.singletonMap(sharee.id(), permissions));
     }
 
     /**
      * Shares a folder through service.shareFolder with the given user and verifies that an
      * invitation email would've been sent.
      */
-    protected void shareAndJoinFolder(User sharer, SID sid, User sharee, Role role)
+    protected void shareAndJoinFolder(User sharer, SID sid, User sharee, Permissions permissions)
             throws Exception
     {
         assertFalse(sharer.equals(sharee));
 
-        shareFolder(sharer, sid, sharee, role);
+        shareFolder(sharer, sid, sharee, permissions);
         // for backward compat with existing tests, accept invite immediately to update ACLs
         joinSharedFolder(sharee, sid);
         // backward compat
@@ -50,29 +50,29 @@ public class AbstractSPFolderTest extends AbstractSPTest
      *
      * The folder name is always sid.toStringFormal(). This is required by getSharedFolderCode().
      */
-    protected void shareFolder(User sharer, SID sid, User sharee, Role role) throws Exception
+    protected void shareFolder(User sharer, SID sid, User sharee, Permissions permissions) throws Exception
     {
-        shareFolderImpl(sharer, sid, sharee, role, false, false);
+        shareFolderImpl(sharer, sid, sharee, permissions, false, false);
     }
 
-    protected void shareFolderSuppressWarnings(User sharer, SID sid, User sharee, Role role)
+    protected void shareFolderSuppressWarnings(User sharer, SID sid, User sharee, Permissions permissions)
             throws Exception
     {
-        shareFolderImpl(sharer, sid, sharee, role, false, true);
+        shareFolderImpl(sharer, sid, sharee, permissions, false, true);
     }
 
-    protected void shareFolderExternal(User sharer, SID sid, User sharee, Role role)
+    protected void shareFolderExternal(User sharer, SID sid, User sharee, Permissions permissions)
             throws Exception
     {
-        shareFolderImpl(sharer, sid, sharee, role, true, false);
+        shareFolderImpl(sharer, sid, sharee, permissions, true, false);
     }
 
-    private void shareFolderImpl(User sharer, SID sid, User sharee, Role role, boolean external,
+    private void shareFolderImpl(User sharer, SID sid, User sharee, Permissions permissions, boolean external,
             boolean suppressWarnings)
             throws Exception
     {
         setSessionUser(sharer);
-        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role), "", external,
+        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, permissions), "", external,
                 suppressWarnings);
     }
 

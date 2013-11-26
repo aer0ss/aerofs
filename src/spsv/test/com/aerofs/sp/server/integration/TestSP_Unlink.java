@@ -35,7 +35,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         throws Exception
     {
         String cert = service.registerDevice(device.id().toPB(), newCSR(TEST_1_USER, device),
-                false, "", "", "").get().getCert();
+                "", "", "").get().getCert();
 
         assertTrue(cert.equals(RETURNED_CERT));
 

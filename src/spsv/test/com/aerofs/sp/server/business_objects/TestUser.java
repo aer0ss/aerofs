@@ -4,13 +4,14 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.FullName;
-import com.aerofs.base.acl.Role;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -124,9 +125,9 @@ public class TestUser extends AbstractBusinessObjectTest
         SharedFolder sf = factSharedFolder.create(SID.generate());
 
         sf.save("Test Folder", user1);
-        sf.addPendingUser(user2, Role.EDITOR, user1);
+        sf.addPendingUser(user2, Permissions.allOf(Permission.WRITE), user1);
         sf.setState(user2, SharedFolderState.JOINED);
-        sf.addPendingUser(user3, Role.EDITOR, user1);
+        sf.addPendingUser(user3, Permissions.allOf(Permission.WRITE), user1);
         sf.setState(user3, SharedFolderState.JOINED);
 
         Collection<Device> userDevices = user1.getDevices();
@@ -213,9 +214,9 @@ public class TestUser extends AbstractBusinessObjectTest
         User user = saveUser();
 
         SharedFolder sf = saveSharedFolder(user);
-        sf.addPendingUser(saveUser(), Role.EDITOR, user);
+        sf.addPendingUser(saveUser(), Permissions.allOf(Permission.WRITE), user);
         User left = saveUser();
-        sf.addJoinedUser(left, Role.VIEWER);
+        sf.addJoinedUser(left, Permissions.allOf());
         sf.setState(left, SharedFolderState.LEFT);
 
         User admin = saveUser();
@@ -231,7 +232,7 @@ public class TestUser extends AbstractBusinessObjectTest
         User user = saveUser();
 
         SharedFolder sf = saveSharedFolder(user);
-        sf.addJoinedUser(saveUser(), Role.EDITOR);
+        sf.addJoinedUser(saveUser(), Permissions.allOf(Permission.WRITE));
 
         User admin = saveUser();
 
@@ -248,7 +249,7 @@ public class TestUser extends AbstractBusinessObjectTest
         User user = saveUser();
 
         SharedFolder sf = saveSharedFolder(user);
-        sf.addJoinedUser(saveUser(), Role.OWNER);
+        sf.addJoinedUser(saveUser(), Permissions.allOf(Permission.WRITE, Permission.MANAGE));
 
         User admin = saveUser();
 
@@ -265,7 +266,7 @@ public class TestUser extends AbstractBusinessObjectTest
         User user = saveUser();
 
         SharedFolder sf = saveSharedFolder(user);
-        sf.addJoinedUser(saveUser(), Role.EDITOR);
+        sf.addJoinedUser(saveUser(), Permissions.allOf(Permission.WRITE));
 
         try {
             user.deactivate(ImmutableSet.<Long>builder(), null);

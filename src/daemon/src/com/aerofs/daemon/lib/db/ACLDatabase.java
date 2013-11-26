@@ -14,8 +14,8 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.base.acl.Role;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
@@ -32,7 +32,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         super(dbcw.get());
     }
 
-    private static class DBIterSubjectRole extends AbstractDBIterator<Map.Entry<UserID, Role>>
+    private static class DBIterSubjectRole extends AbstractDBIterator<Map.Entry<UserID, Permissions>>
     {
         DBIterSubjectRole(ResultSet rs)
         {
@@ -40,15 +40,16 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         }
 
         @Override
-        public Map.Entry<UserID, Role> get_() throws SQLException
+        public Map.Entry<UserID, Permissions> get_() throws SQLException
         {
-            return immutableEntry(UserID.fromInternal(_rs.getString(1)), Role.values()[_rs.getInt(2)]);
+            return immutableEntry(UserID.fromInternal(_rs.getString(1)),
+                    Permissions.fromBitmask(_rs.getInt(2)));
         }
     }
 
     private PreparedStatement _psGet;
     @Override
-    public IDBIterator<Map.Entry<UserID, Role>> get_(SIndex sidx) throws SQLException
+    public IDBIterator<Map.Entry<UserID, Permissions>> get_(SIndex sidx) throws SQLException
     {
         try {
             if (_psGet == null) {
@@ -69,7 +70,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
 
     private PreparedStatement _psSet;
     @Override
-    public void set_(SIndex sidx, Map<UserID, Role> subject2role, Trans t) throws SQLException
+    public void set_(SIndex sidx, Map<UserID, Permissions> subject2role, Trans t) throws SQLException
     {
         try {
             if (_psSet == null) {
@@ -79,9 +80,9 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             }
 
             _psSet.setInt(1, sidx.getInt());
-            for (Entry<UserID, Role> en : subject2role.entrySet()) {
+            for (Entry<UserID, Permissions> en : subject2role.entrySet()) {
                 _psSet.setString(2, en.getKey().getString());
-                _psSet.setInt(3, en.getValue().ordinal());
+                _psSet.setInt(3, en.getValue().bitmask());
                 _psSet.addBatch();
             }
             _psSet.executeBatch();

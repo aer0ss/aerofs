@@ -22,7 +22,7 @@ server.browser.key={{ browser_key }}
 
 open_signup=false
 
-shared_folder_rules.readonly_external_folders={{ readonly_external_folders }}
+sharing_rules.restrict_external_sharing={{ readonly_external_folders }}
 last_smtp_verification_email={{ last_smtp_verification_email }}
 
 ldap.server.ca_certificate={{ ldap_server_ca_certificate }}

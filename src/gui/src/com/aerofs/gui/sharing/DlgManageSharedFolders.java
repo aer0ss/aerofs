@@ -5,7 +5,8 @@
 package com.aerofs.gui.sharing;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.gui.AbstractSpinAnimator;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
@@ -478,11 +479,12 @@ public class DlgManageSharedFolders extends AeroFSDialog
             if (valid) {
                 _userList.setLoadListener(new ILoadListener() {
                     @Override
-                    public void loaded(int membersCount, Role localUserRole)
+                    public void loaded(int membersCount, Permissions localUserPermissions)
                     {
                         // gray out invite button when not admin, except on Team Server where
                         // the ACL check is slightly more complicated...
-                        boolean admin = (localUserRole == Role.OWNER)
+                        // FIXME: TS needs effective ACL
+                        boolean admin = (localUserPermissions.covers(Permission.MANAGE))
                                 || L.isMultiuser();
                         _btnPlus.setGrayed(!admin);
                         _btnPlus.setEnabled(admin);

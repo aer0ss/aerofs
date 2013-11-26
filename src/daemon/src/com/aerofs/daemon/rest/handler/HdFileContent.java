@@ -10,7 +10,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.stream.MultipartStream;
 import com.aerofs.daemon.rest.stream.SimpleStream;
-import com.aerofs.daemon.rest.util.AccessChecker;
+import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.HttpStatus;
 import com.aerofs.daemon.rest.util.MimeTypeDetector;
@@ -34,12 +34,12 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
 {
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
-    private final AccessChecker _access;
+    private final RestObjectResolver _access;
     private final EntityTagUtil _etags;
     private final MimeTypeDetector _detector;
 
     @Inject
-    public HdFileContent(AccessChecker access, DirectoryService ds, IPhysicalStorage ps,
+    public HdFileContent(RestObjectResolver access, DirectoryService ds, IPhysicalStorage ps,
             MimeTypeDetector detector, EntityTagUtil etags)
     {
         _ds = ds;
@@ -58,7 +58,7 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
     @Override
     protected void handleThrows_(EIFileContent ev, Prio prio) throws ExNotFound, SQLException
     {
-        final OA oa = _access.checkObject_(ev._object, ev._user);
+        final OA oa = _access.resolve_(ev._object, ev._user);
         if (!oa.isFile()) throw new ExNotFound();
 
         final CA ca = oa.caMasterThrows();

@@ -2,7 +2,7 @@ package com.aerofs.daemon.ritual;
 
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
@@ -64,8 +64,8 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.Common.PBRole;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBPermissions;
+import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Ritual.CreateSeedFileReply;
@@ -187,13 +187,13 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> shareFolder(PBPath path, List<PBSubjectRolePair> srps,
+    public ListenableFuture<Void> shareFolder(PBPath path, List<PBSubjectPermissions> srps,
             String emailNote, Boolean suppressSharedFolderRulesWarnings)
             throws Exception
     {
-        Map<UserID, Role> acl = Maps.newTreeMap();
-        for (PBSubjectRolePair srp : srps) {
-            acl.put(UserID.fromExternal(srp.getSubject()), Role.fromPB(srp.getRole()));
+        Map<UserID, Permissions> acl = Maps.newTreeMap();
+        for (PBSubjectPermissions srp : srps) {
+            acl.put(UserID.fromExternal(srp.getSubject()), Permissions.fromPB(srp.getPermissions()));
         }
         EIShareFolder ev = new EIShareFolder(Path.fromPB(path), acl, emailNote,
                 suppressSharedFolderRulesWarnings);
@@ -463,14 +463,14 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> updateACL(PBPath path, String subject, PBRole role,
-            Boolean suppressSharedFolderRulesWarnings)
+    public ListenableFuture<Void> updateACL(PBPath path, String subject, PBPermissions permissions,
+            Boolean suppressSharingRulesWarnings)
             throws Exception
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
         // Ritual client but it will become a major security issue if/when Ritual becomes open API
         EIUpdateACL ev = new EIUpdateACL(Path.fromPB(path), UserID.fromExternal(subject),
-                Role.fromPB(role), Core.imce(), suppressSharedFolderRulesWarnings);
+                Permissions.fromPB(permissions), Core.imce(), suppressSharingRulesWarnings);
         ev.execute(PRIO);
         return createVoidReply();
     }

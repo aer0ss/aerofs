@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
@@ -23,6 +23,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
@@ -47,7 +48,7 @@ public class TestHdLeaveSharedFolder extends AbstractTest
     @Mock SIDMap sm;
     @Mock LocalACL lacl;
     @Mock ACLSynchronizer aclsync;
-    @Mock SPBlockingClient.Factory factSP;
+    @Mock InjectableSPBlockingClientFactory factSP;
     @Mock CfgLocalUser cfgLocalUser;
 
     HdLeaveSharedFolder hd;
@@ -65,11 +66,13 @@ public class TestHdLeaveSharedFolder extends AbstractTest
         when(cfgLocalUser.get()).thenReturn(localUser);
         when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
-        when(factSP.create_(localUser)).thenReturn(sp);
+        when(factSP.create()).thenReturn(sp);
+        when(sp.signInRemote()).thenReturn(sp);
 
-        when(lacl.check_(any(UserID.class), any(SIndex.class), any(Role.class))).thenReturn(true);
+        when(lacl.check_(any(UserID.class), any(SIndex.class), any(Permissions.class)))
+                .thenReturn(true);
 
-        hd = new HdLeaveSharedFolder(tokenManager, ds, aclsync, factSP, cfgLocalUser);
+        hd = new HdLeaveSharedFolder(tokenManager, ds, aclsync, factSP);
 
         MockDS mds = new MockDS(rootSID, ds, sm, sm);
         mds.root()

@@ -4,13 +4,12 @@
 
 package com.aerofs.sp.server.email;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.Util;
 import com.google.common.base.Strings;
-import org.apache.commons.lang.WordUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,7 +22,7 @@ class InvitationEmailContentStrategy
 {
     @Nonnull private final UserID _invitee;
     @Nullable private final String _folderName;
-    @Nullable private final Role _role;
+    @Nullable private final Permissions _permissions;
     @Nullable private final String _note;
     @Nullable private final String _signUpCode;
 
@@ -31,11 +30,11 @@ class InvitationEmailContentStrategy
      * See InvitationEmailer.createSignUpInvitationEmailer() for semantics of the null parameters.
      */
     InvitationEmailContentStrategy(@Nonnull UserID invitee, @Nullable String folderName,
-            @Nullable Role role, @Nullable String note, @Nullable String signUpCode)
+            @Nullable Permissions permissions, @Nullable String note, @Nullable String signUpCode)
     {
         _invitee = invitee;
         _folderName = folderName;
-        _role = role;
+        _permissions = permissions;
         _note = note;
         _signUpCode = signUpCode;
     }
@@ -52,9 +51,9 @@ class InvitationEmailContentStrategy
     String invitedTo()
     {
         if (isFolderInvite()) {
-            assert _role != null;
-            return "a shared " + L.brand() + " folder " + Util.quote(_folderName) +
-                " as " + WordUtils.capitalizeFully(_role.getDescription());
+            assert _permissions != null;
+            return "a shared " + L.brand() + " folder " + Util.quote(_folderName)
+                    + " as " + _permissions.roleName();
         } else {
             return L.brand();
         }

@@ -53,6 +53,8 @@ import java.util.concurrent.TimeUnit;
 import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.aerofs.lib.LibParam.Verkehr.VERKEHR_RETRY_INTERVAL;
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newOneWayAuthClientFactory;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
@@ -337,23 +339,17 @@ public final class CommandNotificationSubscriber
         }
     }
 
-    private static SPBlockingClient newAuthenticatedSPClient()
-            throws Exception
+    private static SPBlockingClient newAuthenticatedSPClient() throws Exception
     {
-        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-        SPBlockingClient sp = fact.create_(Cfg.user());
-        sp.signInRemote();
-        return sp;
+        return newMutualAuthClientFactory().create().signInRemote();
     }
 
-    private static SPBlockingClient newUnauthenticatedSPClient()
-            throws Exception
+    private static SPBlockingClient newUnauthenticatedSPClient() throws Exception
     {
-        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
         // We would like to avoid making SP do the work of verifying our client cert for this call,
         // since command head is unauthenticated (which is needed to allow the remote wipe command
         // to propagate after credentials are revoked).
-        return fact.create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
+        return newOneWayAuthClientFactory().create();
     }
 
     //

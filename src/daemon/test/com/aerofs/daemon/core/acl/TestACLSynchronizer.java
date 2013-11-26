@@ -4,6 +4,9 @@
 
 package com.aerofs.daemon.core.acl;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
+import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -18,17 +21,16 @@ import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Common.PBRole;
+import com.aerofs.proto.Common.PBPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableMap;
@@ -72,7 +74,7 @@ public class TestACLSynchronizer extends AbstractTest
     @Mock IMapSIndex2SID sidx2sid;
     @Mock CfgLocalUser cfgLocalUser;
     @Mock SPBlockingClient spClient;
-    @Mock SPBlockingClient.Factory factSP;
+    @Mock InjectableSPBlockingClientFactory factSP;
 
     // use in-memory db to store local ACL
     InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
@@ -113,8 +115,8 @@ public class TestACLSynchronizer extends AbstractTest
 
         when(cfgLocalUser.get()).thenReturn(user1);
 
-        when(factSP.create_(any(UserID.class))).thenReturn(spClient);
-        when(factSP.create_(any(UserID.class))).thenReturn(spClient);
+        when(factSP.create()).thenReturn(spClient);
+        when(spClient.signInRemote()).thenReturn(spClient);
 
         when(tm.begin_()).thenReturn(t);
         when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
@@ -133,13 +135,13 @@ public class TestACLSynchronizer extends AbstractTest
         idbcw.fini_();
     }
 
-    private PBStoreACL storeACL(SID sid, SubjectRolePair... roles)
+    private PBStoreACL storeACL(SID sid, SubjectPermissions... roles)
     {
         PBStoreACL.Builder bd = PBStoreACL.newBuilder()
                 .setStoreId(sid.toPB())
                 .setExternal(external)
                 .setName(SHARED_FOLDER_NAME);
-        for (SubjectRolePair r : roles) bd.addSubjectRole(r.toPB());
+        for (SubjectPermissions r : roles) bd.addSubjectPermissions(r.toPB());
         return bd.build();
     }
 
@@ -182,10 +184,10 @@ public class TestACLSynchronizer extends AbstractTest
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
 
-        aclsync.update_(sidx, user1, Role.EDITOR, false);
+        aclsync.update_(sidx, user1, Permissions.allOf(Permission.WRITE), false);
 
-        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBRole.class), any(Boolean.class));
-        assertEquals(ImmutableMap.of(user1, Role.EDITOR), lacl.get_(sidx));
+        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBPermissions.class), any(Boolean.class));
+        assertEquals(ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), lacl.get_(sidx));
     }
 
     @Test
@@ -195,18 +197,18 @@ public class TestACLSynchronizer extends AbstractTest
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
 
-        when(spClient.updateACL(any(ByteString.class), any(String.class), any(PBRole.class), any(Boolean.class)))
+        when(spClient.updateACL(any(ByteString.class), any(String.class), any(PBPermissions.class), any(Boolean.class)))
                 .thenThrow(new ExNoPerm());
 
         boolean ok = false;
         try {
-            aclsync.update_(sidx, user1, Role.EDITOR, false);
+            aclsync.update_(sidx, user1, Permissions.allOf(Permission.WRITE), false);
         } catch (ExNoPerm e) {
             ok = true;
         }
         assertTrue(ok);
 
-        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBRole.class), any(Boolean.class));
+        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBPermissions.class), any(Boolean.class));
         assertTrue(lacl.get_(sidx).isEmpty());
     }
 
@@ -216,7 +218,7 @@ public class TestACLSynchronizer extends AbstractTest
         SIndex sidx = new SIndex(2);
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
-        lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
+        lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
 
         aclsync.delete_(sidx, user1);
 
@@ -230,7 +232,7 @@ public class TestACLSynchronizer extends AbstractTest
         SIndex sidx = new SIndex(2);
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
-        lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
+        lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
 
         when(spClient.deleteACL(any(ByteString.class), any(String.class)))
                 .thenThrow(new ExNoPerm());
@@ -244,7 +246,7 @@ public class TestACLSynchronizer extends AbstractTest
         assertTrue(ok);
 
         verify(spClient).deleteACL(eq(sid1.toPB()), any(String.class));
-        assertEquals(ImmutableMap.of(user1, Role.EDITOR), lacl.get_(sidx));
+        assertEquals(ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), lacl.get_(sidx));
     }
 
     @Test
@@ -255,16 +257,17 @@ public class TestACLSynchronizer extends AbstractTest
         when(sid2sidx.getAbsent_(sid1, t)).thenReturn(sidx);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(null);
 
-        mockGetACL(42L, storeACL(sid1, new SubjectRolePair(user1, Role.OWNER),
-                new SubjectRolePair(user2, Role.EDITOR)));
+        mockGetACL(42L, storeACL(sid1,
+                new SubjectPermissions(user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE)),
+                new SubjectPermissions(user2, Permissions.allOf(Permission.WRITE))));
 
         aclsync.syncToLocal_();
 
         verify(spClient).getACL(anyLong());
 
-        Map<UserID, Role> newRoles = Maps.newHashMap();
-        newRoles.put(user1, Role.OWNER);
-        newRoles.put(user2, Role.EDITOR);
+        Map<UserID, Permissions> newRoles = Maps.newHashMap();
+        newRoles.put(user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
+        newRoles.put(user2, Permissions.allOf(Permission.MANAGE));
 
         verify(storeJoiner).joinStore_(eq(sidx), eq(sid1), eq(SHARED_FOLDER_NAME), eq(external),
                 eq(t));
@@ -279,7 +282,7 @@ public class TestACLSynchronizer extends AbstractTest
         when(sid2sidx.getNullable_(sid1)).thenReturn(sidx);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
 
-        lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
+        lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
         mockGetACL(42L);
 
         aclsync.syncToLocal_();
@@ -295,10 +298,11 @@ public class TestACLSynchronizer extends AbstractTest
         when(sid2sidx.get_(sid1)).thenReturn(sidx);
         when(sid2sidx.getNullable_(sid1)).thenReturn(sidx);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
-        lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
+        lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
 
-        mockGetACL(42L, storeACL(sid1, new SubjectRolePair(user1, Role.OWNER),
-                new SubjectRolePair(user2, Role.EDITOR)));
+        mockGetACL(42L, storeACL(sid1,
+                new SubjectPermissions(user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE)),
+                new SubjectPermissions(user2, Permissions.allOf(Permission.WRITE))));
 
         aclsync.syncToLocal_();
 
@@ -315,7 +319,7 @@ public class TestACLSynchronizer extends AbstractTest
         when(sid2sidx.getNullable_(sid1)).thenReturn(null);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
 
-        lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
+        lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
         mockGetACL(42L);
 
         aclsync.syncToLocal_();

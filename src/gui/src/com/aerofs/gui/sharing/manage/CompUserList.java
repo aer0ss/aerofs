@@ -1,7 +1,7 @@
 package com.aerofs.gui.sharing.manage;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
@@ -16,9 +16,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.Ritual;
 import com.aerofs.proto.Sp;
-import com.aerofs.proto.Sp.PBSharedFolder.PBUserRoleAndState;
+import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.proto.Sp.PBSharedFolderState;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
@@ -50,9 +49,10 @@ import javax.annotation.Nullable;
 
 import java.util.Map;
 
-import static com.aerofs.gui.sharing.SharedFolderRulesExceptionHandlers.canHandle;
-import static com.aerofs.gui.sharing.SharedFolderRulesExceptionHandlers.promptUserToSuppressWarning;
+import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.canHandle;
+import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.promptUserToSuppressWarning;
 import static com.aerofs.gui.sharing.manage.SharedFolderMember.Factory;
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -77,7 +77,7 @@ public class CompUserList extends Composite
     public interface ILoadListener
     {
         // this method is called within the GUI thread
-        void loaded(int memberCount, Role localUserRole);
+        void loaded(int memberCount, Permissions localUserPermissions);
     }
 
     private ILoadListener _listener;
@@ -99,7 +99,7 @@ public class CompUserList extends Composite
      */
     // _members is cached because we want to look up a member by user ID in setRole().
     private @Nonnull Map<UserID, SharedFolderMember> _members = Maps.newHashMap();
-    private Role _localUserRole;
+    private Permissions _localUserPermissions;
     private Path _path;
 
     public CompUserList(Composite parent)
@@ -172,13 +172,13 @@ public class CompUserList extends Composite
                 SharedFolderMember member = (SharedFolderMember)elem;
                 if (!RoleMenu.hasContextMenu(member)) return;
 
-                RoleMenu menu = new RoleMenu(_tv.getTable(), _localUserRole, member);
+                RoleMenu menu = new RoleMenu(_tv.getTable(), _localUserPermissions, member);
                 menu.setRoleChangeListener(new RoleChangeListener()
                 {
                     @Override
-                    public void onRoleChangeSelected(UserID subject, Role role)
+                    public void onRoleChangeSelected(UserID subject, Permissions permissions)
                     {
-                        setRole(_path, subject, role, false);
+                        setRole(_path, subject, permissions, false);
                     }
                 });
                 menu.open();
@@ -211,13 +211,13 @@ public class CompUserList extends Composite
     /**
      * @pre must be called from UI thread and members must not be null.
      */
-    private void setState(@Nonnull Map<UserID, SharedFolderMember> members, Role localUserRole, Path path)
+    private void setState(@Nonnull Map<UserID, SharedFolderMember> members, Permissions localUserPermissions, Path path)
     {
         checkState(UI.isGUI());
         checkNotNull(members);
 
         _members = members;
-        _localUserRole = localUserRole;
+        _localUserPermissions = localUserPermissions;
         _path = path;
 
         // N.B. this establishes a tight binding; if the data in _members is updated, the changes
@@ -233,7 +233,7 @@ public class CompUserList extends Composite
         checkState(UI.isGUI());
 
         _members.clear();
-        _localUserRole = null;
+        _localUserPermissions = null;
         _path = null;
 
         _tv.setInput(new String[] { errorMessage } );
@@ -250,7 +250,7 @@ public class CompUserList extends Composite
      */
     private void notifyLoadListener()
     {
-        if (_listener != null) _listener.loaded(_members.size(), _localUserRole);
+        if (_listener != null) _listener.loaded(_members.size(), _localUserPermissions);
     }
 
     /**
@@ -267,7 +267,7 @@ public class CompUserList extends Composite
         GUI.get().safeWork(_tv.getTable(), new ISWTWorker()
         {
             Map<UserID, SharedFolderMember> _newMembers;
-            Role _newLocalUserRole;
+            Permissions _newLocalUserPermissions;
 
             @Override
             public void run()
@@ -275,13 +275,13 @@ public class CompUserList extends Composite
             {
                 CfgLocalUser localUser = new CfgLocalUser();
                 SID sid = getStoreID(path);
-                Sp.PBSharedFolder pbFolder = getSharedFolderWithSID(localUser, sid);
+                Sp.PBSharedFolder pbFolder = getSharedFolderWithSID(sid);
 
                 _newMembers = filterLeftMembersAndCreateMapFromPB(new Factory(localUser), pbFolder);
 
                 // N.B. the local user may not be a member, e.g. Team Server
                 SharedFolderMember localUserAsMember = _newMembers.get(localUser.get());
-                if (localUserAsMember != null) _newLocalUserRole = localUserAsMember._role;
+                if (localUserAsMember != null) _newLocalUserPermissions = localUserAsMember._permissions;
             }
 
             // makes a ritual call to retrieve the list of shared folders and their sids and
@@ -301,14 +301,12 @@ public class CompUserList extends Composite
 
             // make a SP call to retrieve the shared folder associated with the store ID
             // @param userID - the user ID of the local user
-            private Sp.PBSharedFolder getSharedFolderWithSID(CfgLocalUser localUser, SID sid)
+            private Sp.PBSharedFolder getSharedFolderWithSID(SID sid)
                     throws Exception
             {
-                SPBlockingClient sp = new SPBlockingClient.Factory().create_(localUser.get());
-                sp.signInRemote();
-
-                Sp.ListSharedFoldersReply reply =
-                        sp.listSharedFolders(ImmutableList.of(sid.toPB()));
+                Sp.ListSharedFoldersReply reply = newMutualAuthClientFactory().create()
+                        .signInRemote()
+                        .listSharedFolders(ImmutableList.of(sid.toPB()));
                 // assert the contract of the sp call
                 checkArgument(reply.getSharedFolderCount() == 1);
 
@@ -319,9 +317,9 @@ public class CompUserList extends Composite
                     Factory factory, Sp.PBSharedFolder pbFolder) throws ExBadArgs
             {
                 Map<UserID, SharedFolderMember> members =
-                        Maps.newHashMapWithExpectedSize(pbFolder.getUserRoleAndStateCount());
+                        Maps.newHashMapWithExpectedSize(pbFolder.getUserPermissionsAndStateCount());
 
-                for (PBUserRoleAndState urs : pbFolder.getUserRoleAndStateList()) {
+                for (PBUserPermissionsAndState urs : pbFolder.getUserPermissionsAndStateList()) {
                     if (urs.getState() != PBSharedFolderState.LEFT) {
                         SharedFolderMember member = factory.fromPB(urs);
                         members.put(member._userID, member);
@@ -334,7 +332,7 @@ public class CompUserList extends Composite
             @Override
             public void okay()
             {
-                setState(_newMembers, _newLocalUserRole, path);
+                setState(_newMembers, _newLocalUserPermissions, path);
                 notifyLoadListener();
 
                 layoutTableColumns();
@@ -359,7 +357,7 @@ public class CompUserList extends Composite
     /**
      * {@paramref path} needs to be passed in because _path can change while ISWTWorker does work
      */
-    private void setRole(final Path path, final UserID subject, final Role role,
+    private void setRole(final Path path, final UserID subject, final Permissions permissions,
             final boolean suppressSharedFolderRulesWarnings)
     {
         final Table table = _tv.getTable();
@@ -373,10 +371,10 @@ public class CompUserList extends Composite
             public void run()
                     throws Exception
             {
-                if (role == null) {
+                if (permissions == null) {
                     UIGlobals.ritual().deleteACL(path.toPB(), subject.getString());
                 } else {
-                    UIGlobals.ritual().updateACL(path.toPB(), subject.getString(), role.toPB(),
+                    UIGlobals.ritual().updateACL(path.toPB(), subject.getString(), permissions.toPB(),
                             suppressSharedFolderRulesWarnings);
                 }
             }
@@ -392,10 +390,10 @@ public class CompUserList extends Composite
 
                     SharedFolderMember member = _members.get(subject);
 
-                    if (role == null) {
+                    if (permissions == null) {
                         _members.remove(subject);
                     } else {
-                        member._role = role;
+                        member._permissions = permissions;
                     }
 
                     _tv.refresh();
@@ -415,10 +413,10 @@ public class CompUserList extends Composite
 
                 if (canHandle(e)) {
                     if (promptUserToSuppressWarning(getShell(), e)) {
-                        setRole(path, subject, role, true);
+                        setRole(path, subject, permissions, true);
                     }
                 } else {
-                    String message = role == null ? "Failed to remove the user." :
+                    String message = permissions == null ? "Failed to remove the user." :
                             "Failed to update the user's role.";
                     ErrorMessages.show(getShell(), e, message,
                             new ErrorMessage(ExNoPerm.class,

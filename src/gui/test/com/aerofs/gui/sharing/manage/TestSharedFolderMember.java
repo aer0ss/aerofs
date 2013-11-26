@@ -4,7 +4,7 @@
 
 package com.aerofs.gui.sharing.manage;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.sharing.manage.SharedFolderMember.Factory;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -62,7 +62,7 @@ public class TestSharedFolderMember extends AbstractTest
             @Nonnull String lastName, @Nonnull String email)
     {
         SharedFolderMember member = new SharedFolderMember(_factory, UserID.fromInternal(email),
-                firstName, lastName, Role.EDITOR, SharedFolderState.JOINED);
+                firstName, lastName, Permissions.EDITOR, SharedFolderState.JOINED);
 
         assertEquals(expected, member.getLabel());
     }

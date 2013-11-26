@@ -16,8 +16,6 @@
 
 package com.aerofs.bifrost.oaaas.model;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

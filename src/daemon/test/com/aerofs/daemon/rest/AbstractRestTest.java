@@ -32,6 +32,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
 import com.google.inject.AbstractModule;
@@ -272,10 +273,22 @@ public class AbstractRestTest extends AbstractTest
         return inj;
     }
 
-    private Injector bifrostInjector()
+    private Injector bifrostInjector() throws Exception
     {
+        final SPBlockingClient.Factory factSP = mock(SPBlockingClient.Factory.class);
+        SPBlockingClient sp = mock(SPBlockingClient.class);
+        when(factSP.create()).thenReturn(sp);
+        when(sp.signInRemote()).thenReturn(sp);
+
         Injector inj = Guice.createInjector(Bifrost.bifrostModule(),
-                BifrostTest.mockDatabaseModule(sessionFactory));
+                BifrostTest.mockDatabaseModule(sessionFactory),
+                new AbstractModule() {
+                    @Override
+                    protected void configure()
+                    {
+                        bind(SPBlockingClient.Factory.class).toInstance(factSP);
+                    }
+                });
 
         BifrostTest.createTestEntities(user, inj);
 

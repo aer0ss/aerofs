@@ -4,7 +4,8 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
@@ -85,9 +86,9 @@ public class TestUser_deactivate extends AbstractBusinessObjectTest
 
         SharedFolder sf = saveSharedFolder(user);
         assertTrue(sf.exists());
-        sf.addPendingUser(saveUser(), Role.EDITOR, user);
+        sf.addPendingUser(saveUser(), Permissions.allOf(Permission.WRITE), user);
         User left = saveUser();
-        sf.addJoinedUser(left, Role.VIEWER);
+        sf.addJoinedUser(left, Permissions.allOf());
         sf.setState(left, SharedFolderState.LEFT);
 
         User admin = saveUser();
@@ -103,7 +104,7 @@ public class TestUser_deactivate extends AbstractBusinessObjectTest
         User user = saveUser();
 
         SharedFolder sf = saveSharedFolder(user);
-        sf.addJoinedUser(saveUser(), Role.EDITOR);
+        sf.addJoinedUser(saveUser(), Permissions.allOf(Permission.WRITE));
 
         User admin = saveUser();
 
@@ -120,7 +121,7 @@ public class TestUser_deactivate extends AbstractBusinessObjectTest
         User user = saveUser();
 
         SharedFolder sf = saveSharedFolder(user);
-        sf.addJoinedUser(saveUser(), Role.OWNER);
+        sf.addJoinedUser(saveUser(), Permissions.allOf(Permission.WRITE, Permission.MANAGE));
 
         User admin = saveUser();
 
@@ -137,7 +138,7 @@ public class TestUser_deactivate extends AbstractBusinessObjectTest
         User user = saveUser();
 
         SharedFolder sf = saveSharedFolder(user);
-        sf.addJoinedUser(saveUser(), Role.EDITOR);
+        sf.addJoinedUser(saveUser(), Permissions.allOf(Permission.WRITE));
 
         try {
             user.deactivate(ImmutableSet.<Long>builder(), null);

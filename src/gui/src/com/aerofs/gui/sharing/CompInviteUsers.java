@@ -1,8 +1,8 @@
 package com.aerofs.gui.sharing;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.analytics.AnalyticsEvents.FolderInviteSentEvent;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
@@ -22,8 +22,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
@@ -31,7 +30,6 @@ import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.WordUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -54,6 +52,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class CompInviteUsers extends Composite implements IInputChangeListener
 {
@@ -168,11 +167,12 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             @Override
             public void run()
             {
-                SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-                SPBlockingClient sp = fact.create_(Cfg.user());
                 try {
-                    sp.signInRemote();
-                    _fromPerson = sp.getUserPreferences(Cfg.did().toPB()).getFirstName();
+                    _fromPerson = newMutualAuthClientFactory()
+                            .create()
+                            .signInRemote()
+                            .getUserPreferences(Cfg.did().toPB())
+                            .getFirstName();
                 } catch (Exception e) {
                     l.warn("cannot load user name: " + e);
                     _fromPerson = Cfg.user().getString();
@@ -197,7 +197,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         lblRole.setText("Invite as");
 
         _cmbRole = new ComboRoles(GUIUtil.newButtonContainer(composite, true));
-        _cmbRole.selectRole(Role.EDITOR);
+        _cmbRole.selectRole(Permissions.EDITOR);
 
         RowLayout layout = new RowLayout(SWT.HORIZONTAL);
         layout.center = true;
@@ -260,7 +260,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 _cmbRole.getSelectedRole(), false);
     }
 
-    private void workImpl(final List<UserID> subjects, final String note, final Role role,
+    private void workImpl(final List<UserID> subjects, final String note, final Permissions permissions,
             final boolean suppressSharedFolderRulesWarnings)
     {
         _compSpin.start();
@@ -281,10 +281,9 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 _compSpin.stop();
                 setStatusText("");
 
-                if (SharedFolderRulesExceptionHandlers.canHandle(e)) {
-                    if (SharedFolderRulesExceptionHandlers.promptUserToSuppressWarning(getShell(),
-                            e)) {
-                        workImpl(subjects, note, role, true);
+                if (SharingRulesExceptionHandlers.canHandle(e)) {
+                    if (SharingRulesExceptionHandlers.promptUserToSuppressWarning(getShell(), e)) {
+                        workImpl(subjects, note, permissions, true);
                     }
                 } else {
                     ErrorMessages.show(getShell(), e, L.brand() + " couldn't invite users.",
@@ -306,9 +305,9 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             public void run() throws Exception
             {
                 PBPath pbpath = _path.toPB();
-                List<PBSubjectRolePair> srps = Lists.newArrayList();
+                List<PBSubjectPermissions> srps = Lists.newArrayList();
                 for (UserID subject : subjects) {
-                    srps.add(new SubjectRolePair(subject, role).toPB());
+                    srps.add(new SubjectPermissions(subject, permissions).toPB());
                 }
                 UIGlobals.ritual().shareFolder(pbpath, srps, note,
                         suppressSharedFolderRulesWarnings);
@@ -326,7 +325,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
     private static class ComboRoles extends AeroFSButton
     {
-        private Role _role;
+        private Permissions _permissions;
 
         public ComboRoles(Composite parent)
         {
@@ -339,19 +338,11 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 {
                     Menu menu = new Menu(ComboRoles.this);
 
-                    MenuItem miOwner = new MenuItem(menu, SWT.PUSH);
-                    miOwner.setText("Owner - download, upload, and manage");
-                    miOwner.addSelectionListener(createSelector(Role.OWNER));
-
-                    MenuItem miEditor = new MenuItem(menu, SWT.PUSH);
-                    // N.B. the extra space after Editor is intentional. It's a simple & foolish
-                    // attempt to make the menu look slightly more aligned on default fonts.
-                    miEditor.setText("Editor  - download and upload");
-                    miEditor.addSelectionListener(createSelector(Role.EDITOR));
-
-                    MenuItem miViewer = new MenuItem(menu, SWT.PUSH);
-                    miViewer.setText("Viewer - download only");
-                    miViewer.addSelectionListener(createSelector(Role.VIEWER));
+                    for (Permissions r : Permissions.ROLE_NAMES.keySet()) {
+                        MenuItem mi = new MenuItem(menu, SWT.PUSH);
+                        mi.setText(r.roleName() + " - " + r.roleDescription());
+                        mi.addSelectionListener(createSelector(r));
+                    }
 
                     new MenuItem(menu, SWT.SEPARATOR);
 
@@ -364,28 +355,27 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             });
         }
 
-        public void selectRole(Role role)
+        public void selectRole(Permissions permissions)
         {
-            _role = role;
-            setText(WordUtils.capitalizeFully(_role.getDescription()) + ' '
-                    + GUIUtil.TRIANGLE_DOWNWARD);
+            _permissions = permissions;
+            setText(_permissions.roleName() + ' ' + GUIUtil.TRIANGLE_DOWNWARD);
         }
 
-        private SelectionListener createSelector(final Role role)
+        private SelectionListener createSelector(final Permissions permissions)
         {
             return new SelectionAdapter()
             {
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {
-                    selectRole(role);
+                    selectRole(permissions);
                 }
             };
         }
 
-        public Role getSelectedRole()
+        public Permissions getSelectedRole()
         {
-            return _role;
+            return _permissions;
         }
     }
 }

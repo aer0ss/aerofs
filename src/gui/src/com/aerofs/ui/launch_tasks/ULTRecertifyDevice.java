@@ -25,6 +25,8 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newOneWayAuthClientFactory;
+
 public class ULTRecertifyDevice extends UILaunchTask
 {
     private final SPBlockingClient.Factory _spfact;
@@ -34,7 +36,7 @@ public class ULTRecertifyDevice extends UILaunchTask
     ULTRecertifyDevice(IScheduler sched)
     {
         super(sched);
-        _spfact = new SPBlockingClient.Factory();
+        _spfact = newOneWayAuthClientFactory();
     }
 
     @Override
@@ -44,6 +46,8 @@ public class ULTRecertifyDevice extends UILaunchTask
         // Determine if the certificate is signed by current CA or needs to be reissued.
         // Check if RTROOT/cert is signed by APPROOT/cacert.pem
         // If so, we're done.
+        // TODO: recertify ahead of time (e.g. every 6 month)to avoid service disruption on cert
+        // expiration
         if (SecUtil.signingPathExists(Cfg.cert(), Cfg.cacert())) {
             l.debug("client cert is signed by CA, good");
             return;
@@ -120,11 +124,10 @@ public class ULTRecertifyDevice extends UILaunchTask
         // This is guaranteed by the above code.
         assert ac._userID != null;
         assert ac._password != null;
-        byte[] scrypted = SecUtil.scrypt(ac._password, ac._userID);
 
-        SPBlockingClient sp = _spfact.create_(ac._userID,
-                SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
-        sp.signInUser(ac._userID.getString(), ByteString.copyFrom(scrypted));
+        SPBlockingClient sp = _spfact.create();
+        sp.credentialSignIn(ac._userID.getString(),
+                ByteString.copyFrom(new String(ac._password).getBytes()));
         CredentialUtil.recertifyTeamServerDevice(Cfg.user(), sp);
         l.info("successfully recertified Team Server");
 
@@ -145,8 +148,7 @@ public class ULTRecertifyDevice extends UILaunchTask
     {
         l.info("attempting to recertify client {}", Cfg.did());
         // We have a cert that is not trusted by the current CA.  Try to get a new one.
-        SPBlockingClient sp = _spfact.create_(Cfg.user(),
-                SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
+        SPBlockingClient sp = _spfact.create();
         sp.signInUser(Cfg.user().getString(), Cfg.scryptedPB());
 
         CredentialUtil.recertifyDevice(Cfg.user(), sp);

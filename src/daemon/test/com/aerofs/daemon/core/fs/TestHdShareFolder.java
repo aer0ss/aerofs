@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OID;
@@ -40,7 +40,8 @@ import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBSubjectPermissions;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableMap;
@@ -80,7 +81,7 @@ public class TestHdShareFolder extends AbstractTest
     @Mock IStores ss;
     @Mock DescendantStores dss;
     @Mock ACLSynchronizer aclsync;
-    @Mock SPBlockingClient.Factory factSP;
+    @Mock InjectableSPBlockingClientFactory factSP;
     @Mock CfgLocalUser cfgLocalUser;
     @Mock CfgAbsRoots cfgAbsRoots;
 
@@ -102,7 +103,8 @@ public class TestHdShareFolder extends AbstractTest
         when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
-        when(factSP.create_(localUser)).thenReturn(sp);
+        when(factSP.create()).thenReturn(sp);
+        when(sp.signInRemote()).thenReturn(sp);
 
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn("/AeroFS");
         when(cfgAbsRoots.getNullable(extSID)).thenReturn("/external");
@@ -128,8 +130,8 @@ public class TestHdShareFolder extends AbstractTest
 
     private void handle(Path path, UserID... users) throws Exception
     {
-        ImmutableMap.Builder<UserID, Role> roles = new ImmutableMap.Builder<UserID, Role>();
-        for (UserID u : users) roles.put(u, Role.EDITOR);
+        ImmutableMap.Builder<UserID, Permissions> roles = new ImmutableMap.Builder<UserID, Permissions>();
+        for (UserID u : users) roles.put(u, Permissions.EDITOR);
         hd.handleThrows_(new EIShareFolder(path, roles.build(), "", false), Prio.LO);
     }
 
@@ -217,7 +219,7 @@ public class TestHdShareFolder extends AbstractTest
         handle(path, user1);
 
         verify(sp).shareFolder(eq("d"), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false), any(Boolean.class));
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false), any(Boolean.class));
         verify(pf).updateSOID_(new SOID(soid.sidx(), anchor), t);
     }
 
@@ -227,7 +229,7 @@ public class TestHdShareFolder extends AbstractTest
         handle(Path.fromString(rootSID, "a"), user1);
 
         verify(sp).shareFolder(eq("a"), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false), any(Boolean.class));
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false), any(Boolean.class));
     }
 
     @Test
@@ -236,6 +238,6 @@ public class TestHdShareFolder extends AbstractTest
         handle(Path.root(extSID), user1);
 
         verify(sp).shareFolder(eq("external"), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false), any(Boolean.class));
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false), any(Boolean.class));
     }
 }

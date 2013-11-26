@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
@@ -52,8 +52,7 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
-import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
-import com.aerofs.sp.server.shared_folder_rules.SharedFolderRulesFactory;
+import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.collect.ImmutableCollection;
@@ -153,8 +152,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Mock Analytics analytics;
     @Spy protected IdentitySessionManager identitySessionManager = new IdentitySessionManager();
-    @Spy protected ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(
-            authenticator, factUser, sharedFolderNotificationEmailer);
+    @Spy protected SharingRulesFactory sharingRules = new SharingRulesFactory(authenticator,
+            factUser, sharedFolderNotificationEmailer);
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,
@@ -211,11 +210,11 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             throws Exception
     {
         when(factEmailer.createFolderInvitationEmailer(any(User.class), any(User.class), any(String.class),
-                any(String.class), any(SID.class), any(Role.class))).then(RETURNS_MOCKS);
+                any(String.class), any(SID.class), any(Permissions.class))).then(RETURNS_MOCKS);
         when(factEmailer.createOrganizationInvitationEmailer(any(User.class), any(User.class)))
                 .then(RETURNS_MOCKS);
         when(factEmailer.createSignUpInvitationEmailer(any(User.class), any(User.class),
-                any(String.class), any(Role.class), any(String.class), any(String.class)))
+                any(String.class), any(Permissions.class), any(String.class), any(String.class)))
                 .then(RETURNS_MOCKS);
     }
 

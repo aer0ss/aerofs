@@ -7,7 +7,6 @@ package com.aerofs.bifrost.login;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
-import com.aerofs.bifrost.core.URLConnectionConfigurator;
 import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -134,17 +133,14 @@ public class FormAuthenticator extends AbstractAuthenticator
     private UserID validateCredential(MultivaluedMap<String, String> formParams)
             throws Exception
     {
-        SPBlockingClient client = spFactory.create_(
-                URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
-
         UserID user = UserID.fromExternal(formParams.getFirst("j_username"));
         String cred = formParams.getFirst("j_password");
 
         l.info("Validate user credential {}", user.getString());
 
         // recall that validateCredential uses a throw to indicate bad credentials
-        client.validateCredential(user.getString(), ByteString.copyFromUtf8(cred));
-
+        spFactory.create()
+                .validateCredential(user.getString(), ByteString.copyFromUtf8(cred));
         return user;
     }
 

@@ -1,12 +1,12 @@
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.lib.LibParam;
-import com.aerofs.base.acl.Role;
-import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -45,7 +45,7 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
 
     protected static class UserAndRole {
         User u;
-        Role r;
+        Permissions r;
 
         @Override
         public String toString()
@@ -53,7 +53,7 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
             return u + ": " + r;
         }
 
-        UserAndRole(User u, Role r)
+        UserAndRole(User u, Permissions r)
         {
             this.u = u;
             this.r = r;
@@ -75,20 +75,20 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
         return admin;
     }
 
-    protected List<PBSubjectRolePair> getSingleACL(SID sid, GetACLReply getACLReply)
+    protected List<PBSubjectPermissions> getSingleACL(SID sid, GetACLReply getACLReply)
     {
         assertEquals(1, getACLReply.getStoreAclCount());
         assertEquals(sid.toPB(), getACLReply.getStoreAcl(0).getStoreId());
-        return getACLReply.getStoreAcl(0).getSubjectRoleList();
+        return getACLReply.getStoreAcl(0).getSubjectPermissionsList();
     }
 
-    protected void assertACLOnlyContains(List<PBSubjectRolePair> pairs, User user, Role role)
+    protected void assertACLOnlyContains(List<PBSubjectPermissions> pairs, User user, Permissions permissions)
             throws Exception
     {
-        assertACLOnlyContains(pairs, new UserAndRole(user, role));
+        assertACLOnlyContains(pairs, new UserAndRole(user, permissions));
     }
 
-    protected void assertACLOnlyContains(List<PBSubjectRolePair> pairs, UserAndRole ... urs)
+    protected void assertACLOnlyContains(List<PBSubjectPermissions> pairs, UserAndRole ... urs)
             throws Exception
     {
         Set<User> tsUsers = Sets.newHashSet();
@@ -102,15 +102,15 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
 
         // verify the team server of all the users exist in the ACL
         for (User tsUser : tsUsers) {
-            assertACLContains(pairs, tsUser, Role.EDITOR);
+            assertACLContains(pairs, tsUser, Permissions.allOf(Permission.WRITE));
         }
 
         if (pairs.size() != urs.length + tsUsers.size()) {
             StringBuilder sb = new StringBuilder("[");
-            for (PBSubjectRolePair pair : pairs) {
+            for (PBSubjectPermissions pair : pairs) {
                 sb.append(pair.getSubject())
                         .append(": ")
-                        .append(Role.fromPB(pair.getRole()))
+                        .append(Permissions.fromPB(pair.getPermissions()))
                         .append(", ");
             }
             sb.append("]");
@@ -121,26 +121,23 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
     }
 
     // FIXME: [sigh] think up a more efficient way
-    private void assertACLContains(List<PBSubjectRolePair> pairs, User subject, Role role)
+    private void assertACLContains(List<PBSubjectPermissions> pairs, User subject, Permissions permissions)
             throws ExEmptyEmailAddress
     {
         boolean found = false;
 
-        for (PBSubjectRolePair pair : pairs) {
-            try {
-                UserID currentSubject = UserID.fromExternal(pair.getSubject());
-                Role actualRole = Role.fromPB(pair.getRole());
+        for (PBSubjectPermissions pair : pairs) {
+            UserID currentSubject = UserID.fromExternal(pair.getSubject());
+            Permissions actualPermissions = Permissions.fromPB(pair.getPermissions());
 
-                if (currentSubject.equals(subject.id()) && actualRole.equals(role)) {
-                    found = true;
-                } else if (currentSubject.equals(subject.id())) {
-                    fail(currentSubject + " expect role: " + role + " actual: " + actualRole);
-                }
-            } catch (ExBadArgs exBadArgs) {
-                fail("no role for " + pair.getRole().name());
+            if (currentSubject.equals(subject.id()) && actualPermissions.equals(permissions)) {
+                found = true;
+            } else if (currentSubject.equals(subject.id())) {
+                fail(currentSubject + " expect role: " + permissions + " actual: " +
+                        actualPermissions);
             }
         }
 
-        assertTrue("no entry for " + subject + ": " + role, found);
+        assertTrue("no entry for " + subject + ": " + permissions, found);
     }
 }

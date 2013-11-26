@@ -5,10 +5,32 @@ option optimize_for = LITE_RUNTIME; // remove reflection
 import "common.proto";
 import "cmd.proto";
 
-// NOTE: When modifying the service declaration below, if you are not appending your new RPC
-// calls at the end of the declaration make sure to increment the SP_PROTOCOL_VERSION parameter
-// in C.java and the sp.version parameter in development.ini and production.ini (in src/web/)
-// and syncdet_test/lib/param.py
+// NOTE: The SP protocol uses a single version number that is incremented whenever backward-compat
+// is broken.
+//
+// Backward-compatible changes:
+//      appending RPC at the end of a service declaration
+//      adding new message types
+//      adding new *optional* fields in existing messages
+//
+// Backward-incompatible changes:
+//      changing order of RPCs in a service (corollary: adding RPC anywhere but at the end)
+//      changing field ids in messages
+//      changing field type in messages
+//      changing field qualifier in messages (optional/required)
+//      removing required fields from existing messages
+//      adding required fields in *Call messages
+//
+// When this happens, deal with any comment tagged with WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE and
+// make sure you bump the protocol version everywhere:
+//      SP_PROTOCOL_VERSION in BaseParam.java
+//      SP_PROTO_VERSION in syncdet_test/lib/param.py
+//      sp.version in
+//          src/web/development/modes/local.ini
+//          src/web/development/modes/private.ini
+//          puppetmaster/modules/web/files/production.ini
+//          puppetmaster/modules/unified/files/production.ini.template
+// TODO: consolidate this mess (hopefully RESTfulness will simplify versioning)
 
 service SPService {
 
@@ -38,19 +60,6 @@ service SPService {
     //   ExNotFound if the targeted signup code was not found
     //   ExBadCredential if the user exists and the password doesn't match the existing user
     rpc SignUpWithCode(SignUpWithCodeCall) returns(SignUpWithCodeReply);
-
-    // Sign into the SP server. Return the authorization level of the caller.
-    //
-    // Required Auth Level: none
-    //
-    // Throws:
-    //   ExEmptyEmailAddress if the user id is empty
-    //   ExBadCredential if username/password combination is incorrect
-    //
-    // TODO: Remove this once we feel confident dropping support for Team Servers from
-    // before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
-    // (Remove after Dec.2013)
-    rpc SignIn(SignInCall) returns(Void);
 
     // Finds the email address associated with an signup code.
     //
@@ -96,7 +105,6 @@ service SPService {
     //   ExDeviceIDAlreadyExist if the device ID already exists
     rpc RegisterDevice(RegisterDeviceCall) returns (RegisterDeviceReply);
 
-    rpc Noop11(Void) returns (Void);
 
     // Invite a person to become a member of the caller's organization. An email will be sent to the
     // requested user. When the user clicks on the link the admin panel will accept the organization
@@ -130,6 +138,35 @@ service SPService {
     rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall)
             returns(AcceptOrganizationInvitationReply);
 
+    // Ignore an invitation to a specific organization. This call deletes the entry in the
+    // organization invitation table so that when the user views the pending organization invites
+    // page in the admin panel, that organization will no longer appear in the list.
+    //
+    // This method returns the user counts as well as Stripe customer id of the specific
+    // organization, so the Python Web server may update Stripe subscription plan for that org.
+    // TODO (WW) This design smells badly. Alternatively we can use a separate method to retrieve
+    // the number but it would bring up several security issues. The fundamental problem is that the
+    // Web server shouldn't have handled Stripe calls. Either SP or a service that SP depends on
+    // should do the job.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNotFound if the user does not have a pending invitation for the specified organization.
+    rpc DeleteOrganizationInvitation(DeleteOrganizationInvitationCall) returns(
+            DeleteOrganizationInvitationReply);
+
+    // Remove a user from the caller's organization. The user will be moved to a new empty
+    // organization, and will be seen as an external user on any shared folders that he
+    // may have with the previous organization.
+    //
+    // Required Auth Level: admin
+    //
+    // Throws: ExNoPerm if the current user isn't an admin of the target user, or if an admin tries
+    //         to remove itself from the organization
+    rpc RemoveUserFromOrganization(RemoveUserFromOrganizationCall)
+            returns(RemoveUserFromOrganizationReply);
+
     // Shares a folder with another user.
     //
     // If the user doesn't exist yet, this method invites the user to sign up AeroFS first.
@@ -147,12 +184,7 @@ service SPService {
     //                  customer ID.
     //   ExEmailNotVerified if the user's email hasn't been verified
     //
-    // Exceptions from shared folder rules: (only when the corresponding flag is set on config)
-    //   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if a user is an external
-    //                  user and has Editor role.
-    //   ExSharedFolderRulesWarningAddExternalUser if an external user is being added.
-    //   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if a user is an external user
-    //                  and has Owner role.
+    // Exceptions from shared folder rules.
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
     // Add the user to a shared folder (provided he/she was invited).
@@ -201,9 +233,6 @@ service SPService {
     // Required Auth Level: user
     rpc EmailUser(EmailUserCall) returns (Void);
 
-    //WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this method
-    rpc Noop(Void) returns (Void);
-
     // Get the user's preferences (name, device name, etc)
     //
     // Required Auth Level: user
@@ -224,8 +253,6 @@ service SPService {
     //   ExNoPerm if the user does not have admin privileges
     rpc ListOrganizationMembers(ListOrganizationMembersCall) returns(ListOrganizationMembersReply);
 
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove it
-    rpc noop7(Void) returns(Void);
 
     // Sends an email to a user with instructions to reset his password. The user
     // will be sent an email containing a link with a reset password token. The link
@@ -268,17 +295,36 @@ service SPService {
     //              if the caller does not belong to the same organization as the user email
     rpc SetAuthorizationLevel(SetAuthorizationLevelCall) returns(Void);
 
+    //
+    // Deactivate a user, delete all its ACLs and unlink all its devices.
+    //
+    // If the user to be deleted is the only remaining owner of a shared folder:
+    //      - if the caller is an org admin it will take ownership of this folder
+    //      - if the caller is the user itself ExNoAdminOrOwner is thrown
+    //
+    // Required Auth Level: User to delete self, Admin to delete others
+    rpc DeactivateUser(DeactivateUserCall) returns(DeactivateUserReply);
+
 
     /////////
     // these are internal API calls only (meant to be called by the daemon only)
     // Required Auth Level: user for all of them
 
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove these and move the new UpdateACL/DeleteACL calls
-    // to here.
-    rpc Noop3(Void) returns(Void);
-    rpc Noop13(Void) returns (Void);
-    rpc noop9(Void) returns (Void);
-    rpc noop10(Void) returns (Void);
+    // Update the ACL for an existing member of a shared folder
+    //
+    // Required Auth Level: user
+    //
+    // Throws: ExNotFound if the user is not a member of the specified folder
+    //
+    // Exceptions from shared folder rules.
+    rpc UpdateACL(UpdateACLCall) returns (Void);
+
+    // Delete the ACL for an existing member or an pending user of a shared folder
+    //
+    // Required Auth Level: user
+    //
+    // Throws: ExNotFound if the user is not a member or pending user of the specified folder
+    rpc DeleteACL(DeleteACLCall) returns (Void);
 
     // Get the certificate revocations relevant to a specific user, based on the certificate
     // revocation list epoch number.
@@ -308,25 +354,37 @@ service SPService {
     //   ExNotFound if the user is trying to unlink a device that does not exist.
     rpc UnlinkDevice(UnlinkDeviceCall) returns(Void);
 
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this.
-    rpc Noop4(Void) returns(Void);
-
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this.
-    rpc Noop5(Void) returns(Void);
-
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this.
-    rpc Noop6(Void) returns(Void);
-
     // Get information about a device ID.
     //
     // Required Auth Level: user
     rpc GetDeviceInfo(GetDeviceInfoCall) returns(GetDeviceInfoReply);
+
+    // List all the devices belonging to a specified user. If the specified user is not the
+    // current user, the current user must be the admin of the organization the specified user
+    // belongs to.
+    //
+    // Required Auth Level: user or admin (see above)
+    //
+    // Throws: ExEmptyEmailAddress if the user id is empty
+    rpc ListUserDevices(ListUserDevicesCall) returns(ListUserDevicesReply);
 
     // Get list of folders being shared by users in organization. See also: ListUserSharedFolders
     //
     // Required Auth Level: admin
     rpc ListOrganizationSharedFolders(ListOrganizationSharedFoldersCall)
             returns(ListOrganizationSharedFoldersReply);
+
+    // Get list of folders being shared by a specified user. If the specified user is not the
+    // current user, the current user must be the admin of the organization the specified user
+    // belongs to.
+    //
+    // See also: ListOrganizationSharedFolders
+    //
+    // Required Auth Level: user or admin (see above)
+    //
+    // Throws:
+    //   ExNoPerm       if the user calling this does not have enough privileges (see above)
+    rpc ListUserSharedFolders(ListUserSharedFoldersCall) returns(ListSharedFoldersReply);
 
     // Gets a list of organizations the user has been invited to, excluding their current
     // organization.
@@ -375,29 +433,6 @@ service SPService {
     //   desktop app.
     rpc RegisterTeamServerDevice(RegisterDeviceCall) returns (RegisterDeviceReply);
 
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove this
-    // Keep Noop12Call and Noop12Reply for backward compatibility
-    rpc Noop12(Noop12Call) returns(Noop12Reply);
-
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE move this under AcceptOrganizationInvite
-    //
-    // Ignore an invitation to a specific organization. This call deletes the entry in the
-    // organization invitation table so that when the user views the pending organization invites
-    // page in the admin panel, that organization will no longer appear in the list.
-    //
-    // This method returns the user counts as well as Stripe customer id of the specific
-    // organization, so the Python Web server may update Stripe subscription plan for that org.
-    // TODO (WW) This design smells badly. Alternatively we can use a separate method to retrieve
-    // the number but it would bring up several security issues. The fundamental problem is that the
-    // Web server shouldn't have handled Stripe calls. Either SP or a service that SP depends on
-    // should do the job.
-    //
-    // Required Auth Level: user
-    //
-    // Throws:
-    //   ExNotFound if the user does not have a pending invitation for the specified organization.
-    rpc DeleteOrganizationInvitation(DeleteOrganizationInvitationCall) returns(
-            DeleteOrganizationInvitationReply);
 
     // Extend the tomcat session. Does not throw, since we are guaranteed by tomcat that the session
     // will exist in the tracker.
@@ -405,35 +440,12 @@ service SPService {
     // Required Auth Level: user
     rpc ExtendSession(Void) returns(Void);
 
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under GetDeviceInfo.
-    //
-    // List all the devices belonging to a specified user. If the specified user is not the
-    // current user, the current user must be the admin of the organization the specified user
-    // belongs to.
-    //
-    // Required Auth Level: user or admin (see above)
-    //
-    // Throws: ExEmptyEmailAddress if the user id is empty
-    rpc ListUserDevices(ListUserDevicesCall) returns(ListUserDevicesReply);
 
     // Retrieve Stripe data of the current organization.
     //
     // Required Auth Level: admin
     rpc GetStripeData(Void) returns(GetStripeDataReply);
 
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under ListOrganizationSharedFolders
-    //
-    // Get list of folders being shared by a specified user. If the specified user is not the
-    // current user, the current user must be the admin of the organization the specified user
-    // belongs to.
-    //
-    // See also: ListOrganizationSharedFolders
-    //
-    // Required Auth Level: user or admin (see above)
-    //
-    // Throws:
-    //   ExNoPerm       if the user calling this does not have enough privileges (see above)
-    rpc ListUserSharedFolders(ListUserSharedFoldersCall) returns(ListSharedFoldersReply);
 
     // List all the users who have been invited to the current user's organization.
     //
@@ -479,28 +491,6 @@ service SPService {
     // Required Auth Level: admin
     rpc SetStripeCustomerID(SetStripeCustomerIDCall) returns(Void);
 
-    // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move them to in place of UpdateACL/DeleteACL_Deprecated
-    // Update the ACL for an existing member of a shared folder
-    //
-    // Required Auth Level: user
-    //
-    // Throws: ExNotFound if the user is not a member of the specified folder
-    //
-    // Exceptions from shared folder rules: (only when the corresponding flag is set on config)
-    //   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if this folder is shared
-    //                         with an external user and we are updating the user's role to editor.
-    //   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if this folder is shared with an
-    //                         external user and we are updating the user's role to owner.
-    rpc UpdateACL(UpdateACLCall) returns (Void);
-
-    // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move them to in place of UpdateACL/DeleteACL_Deprecated
-    // Delete the ACL for an existing member or an pending user of a shared folder
-    //
-    // Required Auth Level: user
-    //
-    // Throws: ExNotFound if the user is not a member or pending user of the specified folder
-    rpc DeleteACL(DeleteACLCall) returns (Void);
-
     // Delete the Stripe customer ID of the current organization
     //
     // Required Auth Level: admin
@@ -511,18 +501,6 @@ service SPService {
     //
     // Required Auth Level: user
     rpc GetACL(GetACLCall) returns(GetACLReply);
-
-    // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move this after AcceptOrganizationInvitation
-    // Remove a user from the caller's organization. The user will be moved to a new empty
-    // organization, and will be seen as an external user on any shared folders that he
-    // may have with the previous organization.
-    //
-    // Required Auth Level: admin
-    //
-    // Throws: ExNoPerm if the current user isn't an admin of the target user, or if an admin tries
-    //         to remove itself from the organization
-    rpc RemoveUserFromOrganization(RemoveUserFromOrganizationCall)
-            returns(RemoveUserFromOrganizationReply);
 
     // Issue a new certificate to the requesting user/did.
     //
@@ -546,17 +524,31 @@ service SPService {
     // Required Auth Level: user
     rpc GetOrganizationID(Void) returns(GetOrganizationIDReply);
 
-    // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE remove this
-    rpc Noop8(Void) returns(Void);
-
-    // Sign in a device using an existing device certificate.
+    // Sign in a user using userid/password credentials.
+    //
+    // NOTE: this method expects the user credential information in the clear. Key-derivation
+    // (SCrypt or similar) will be applied on the server side if needed.
     //
     // Required Auth Level: none
     //
     // Throws:
-    //   ExBadCredential if the certificate is not recognized or the DID does not match.
-    rpc SignInDevice(SignInDeviceCall) returns (Void);
+    //   ExEmptyEmailAddress if the user id is empty
+    //   ExBadCredential if username/password combination is incorrect
+    rpc CredentialSignIn(SignInUserCall) returns (Void);
 
+    // Validate the given username/credential pair without signing the user in.
+    //
+    //   ExEmptyEmailAddress if the user id is empty
+    //   ExBadCredential if username/password combination is incorrect, or in the case of the Team
+    //                   Server, if they have not signed in successfully using mutual
+    //                   authentication.
+    rpc ValidateCredential(SignInUserCall) returns (Void);
+
+    // NB: this method is obsolete and should not be used in new code
+    // TODO: remove once automatic ahead-of-time recertification is implemented (i.e. renew cert
+    // every 6 month instead of waiting for expiration and fallback on password request if dev
+    // remains offline for so long that automatic re-cert fails)
+    //
     // Sign in a user using userid/password credentials.
     //
     // Required Auth Level: none
@@ -567,6 +559,14 @@ service SPService {
     //                   Server, if they have not signed in successfully using mutual
     //                   authentication.
     rpc SignInUser(SignInUserCall) returns (Void);
+
+    // Sign in a device using an existing device certificate.
+    //
+    // Required Auth Level: none
+    //
+    // Throws:
+    //   ExBadCredential if the certificate is not recognized or the DID does not match.
+    rpc SignInDevice(SignInDeviceCall) returns (Void);
 
     // Kick off the OpenId authentication flow by generating session keys for the
     // authenticating session, and returning those to the client.
@@ -592,13 +592,6 @@ service SPService {
     //   Something Bad if the server does not have openid enabled.
     rpc OpenIdGetSessionAttributes(OpenIdSessionQuery) returns (OpenIdSessionAttributes);
 
-    // Validate the given username/credential pair without signing the user in.
-    //
-    //   ExEmptyEmailAddress if the user id is empty
-    //   ExBadCredential if username/password combination is incorrect, or in the case of the Team
-    //                   Server, if they have not signed in successfully using mutual
-    //                   authentication.
-    rpc ValidateCredential(SignInUserCall) returns (Void);
 
     // Generate an access code that can be used to request an access token for a mobile device.
     // The access code will be valid for a short time. Each access code can be used
@@ -631,31 +624,6 @@ service SPService {
     // Throws:
     //   ExNoPerm if the caller does not have the required privileges for any store inquired
     rpc ListSharedFolders(ListSharedFoldersCall) returns (ListSharedFoldersReply);
-
-    // Sign in a user using userid/password credentials.
-    //
-    // NOTE: this method expects the user credential information in the clear. Key-derivation
-    // (SCrypt or similar) will be applied on the server side if needed.
-    //
-    // This method should replace all use of SignIn and SignInUser.
-    //
-    // Required Auth Level: none
-    //
-    // Throws:
-    //   ExEmptyEmailAddress if the user id is empty
-    //   ExBadCredential if username/password combination is incorrect
-    rpc CredentialSignIn(SignInUserCall) returns (Void);
-
-    /**
-     * Deactivate a user, delete all its ACLs and unlink all its devices.
-     *
-     * If the user to be deleted is the only remaining owner of a shared folder:
-     *      - if the caller is an org admin it will take ownership of this folder
-     *      - if the caller is the user itself ExNoAdminOrOwner is thrown
-     *
-     * Required Auth Level: User to delete self, Admin to delete others
-     */
-    rpc DeactivateUser(DeactivateUserCall) returns(DeactivateUserReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -710,14 +678,6 @@ message SignUpWithCodeReply {
     required bool existing_team = 2; // is the user joining an existing organization, or a new one?
 }
 
-// TODO: Remove this once we feel confident dropping support for Team Servers from
-// before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
-// (Remove after Dec.2013)
-message SignInCall {
-    required string user_id = 1;
-    optional bytes credentials = 2;
-}
-
 message ResolveSignUpCodeCall {
     required string code = 1;
 }
@@ -760,6 +720,10 @@ message AcceptOrganizationInvitationReply {
     required PBStripeData stripe_data = 1;
 }
 
+message DeleteOrganizationInvitationCall {
+    required int32 organization_id = 1;
+}
+
 message RemoveUserFromOrganizationCall {
     required string user_id = 1;
 }
@@ -774,12 +738,10 @@ message ShareFolderCall {
 
     required bytes share_id = 2;
 
-    // SubjectRolePair of the person with whom we want to share
-    // The client (desktop/admin panel/...) is responsible for choosing the default role of
-    // invited users. This has better transactional properties than inviting then changing
-    // the roles of invited users in a subsequent call.
-    // TODO: repeated field now to ease transition. Switch to single subject_role after
-    repeated PBSubjectRolePair subject_role = 1;
+    // The client (desktop/admin panel/...) is responsible for choosing the default permissisons of
+    // invited users. This has better transactional properties than inviting then changing the
+    // permisisons of invited users in a subsequent call.
+    repeated PBSubjectPermissions subject_permissions = 1;
 
     // Message to the person
     optional string note = 4;
@@ -789,11 +751,11 @@ message ShareFolderCall {
     // See docs/design/sharing_and_migration.txt for more.
     optional bool external = 5;
 
-    // Whether to suppress warning exceptions (i.e. ExSharedFolderRulesWarning*) generated by shared
+    // Whether to suppress warning exceptions (i.e. ExSharingRulesWarning) generated by shared
     // folder rules. These exceptions are used by the UI to ask the user to confirm execution of
     // potentially harmful actions. Once confirmed, the UI will call the same method again with this
     // flag on.
-    optional bool suppress_shared_folder_rules_warnings = 6;
+    optional bool suppress_sharing_rules_warnings = 6;
 }
 
 message JoinSharedFolderCall {
@@ -832,20 +794,17 @@ message GetUserPreferencesReply {
 }
 
 message SetUserPreferencesCall {
-
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE make it required and adjust field numbers.
-    // This field isoptional for backward compatibility.
-    optional string user_id = 5;
+    required string user_id = 1;
 
     // TOOD (WW) use PBFullName
     optional string first_name = 2;
-    optional string last_name = 4;
+    optional string last_name = 3;
 
     // If set, it doesn't change the device id, but it allows setting the device name (below).
-    optional bytes device_id = 1;
+    optional bytes device_id = 4;
 
     // Valid iff device_id is present.
-    optional string device_name = 3;
+    optional string device_name = 5;
 }
 
 message GetACLCall {
@@ -857,7 +816,7 @@ message GetACLCall {
 message GetACLReply {
     message PBStoreACL {
         required bytes store_id = 1;
-        repeated PBSubjectRolePair subject_role = 2;
+        repeated PBSubjectPermissions subject_permissions = 2;
         // See docs/design/sharing_and_migration.txt for information about this flag.
         required bool external = 3;
         required string name = 4;
@@ -873,10 +832,10 @@ message GetACLReply {
 message UpdateACLCall {
     required bytes store_id = 1;
     required string subject = 2;
-    required PBRole role = 3;
+    required PBPermissions permissions = 3;
 
     // See the same parameter in ShareFolderCall
-    optional bool suppress_shared_folder_rules_warnings = 4;
+    optional bool suppress_sharing_rules_warnings = 4;
 }
 
 message DeleteACLCall {
@@ -898,21 +857,15 @@ message RegisterDeviceCall {
     // The Certification Signing Request generated by the client
     required bytes csr = 2;
 
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE recertify code has been removed
-    optional bool recertify_do_not_use = 3;
-
-    // The following optional fields are for backward compatibility
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE change them to required
-
     // Can be 'Windows', 'Mac OS X', 'Linux', 'Android', 'iOS'. See OSUtil.OSFamily.toString().
     // These strings are displayed to end users (DeviceRegistrationEmailer.java) and are used to
     // determine the icons (devices.mako).
-    optional string os_family = 4;
+    required string os_family = 3;
 
     // Detailed OS names, e.g. 'Windows XP SP 1'
-    optional string os_name = 5;
+    required string os_name = 4;
 
-    optional string device_name = 6;
+    required string device_name = 5;
 }
 
 message RegisterDeviceReply {
@@ -1019,6 +972,23 @@ message GetDeviceInfoReply {
     repeated PBDeviceInfo device_info = 1;
 }
 
+message ListUserDevicesCall {
+    required string user_id = 1;
+}
+
+message ListUserDevicesReply {
+
+    // See also GetDeviceInfoReply.PBDeviceInfo
+    message PBDevice {
+        required bytes device_id = 1;
+        required string device_name = 2;
+        required string os_family = 3;
+        required string os_name = 4;
+    }
+
+    repeated PBDevice device = 1;
+}
+
 message ListOrganizationSharedFoldersCall {
     // Maximum number of folders returned.
     required uint32 max_results = 1;
@@ -1040,9 +1010,9 @@ message ListUserSharedFoldersCall {
 
 message PBSharedFolder {
 
-    message PBUserRoleAndState {
+    message PBUserPermissionsAndState {
         required PBUser user = 1;
-        required PBRole role = 2;
+        required PBPermissions permissions = 2;
         required PBSharedFolderState state = 3;
     }
 
@@ -1050,7 +1020,7 @@ message PBSharedFolder {
     required string name = 2;
     // Whether any user of the session user's organization owns the folder
     required bool owned_by_team = 3;
-    repeated PBUserRoleAndState user_role_and_state = 4;
+    repeated PBUserPermissionsAndState user_permissions_and_state = 4;
 }
 
 message GetOrganizationInvitationsReply {
@@ -1065,10 +1035,9 @@ message GetOrganizationInvitationsReply {
     repeated OrganizationInvitation organization_invitations = 2;
 }
 
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE. convert them to required fields
 message GetOrgPreferencesReply {
     required string organization_name = 1;
-    optional string organization_contact_phone = 2;
+    required string organization_contact_phone = 2;
 }
 
 message SetOrgPreferencesCall {
@@ -1084,20 +1053,6 @@ message GetUnsubscribeEmailReply {
     required string email_id = 1;
 }
 
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove these
-message Noop12Call {
-    repeated bytes folder_id = 1;
-}
-
-message Noop12Reply {
-    repeated string folder_name = 1;
-}
-
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under AcceptOrganizationInvitationCall.
-message DeleteOrganizationInvitationCall {
-    required int32 organization_id = 1;
-}
-
 message DeleteOrganizationInvitationReply {
     // As the deletion causes the organization to lose one user, the Web server needs to adjust
     // the organization's subscription plan. However, because the current user doesn't belong to the
@@ -1108,25 +1063,6 @@ message DeleteOrganizationInvitationReply {
     // This design is not great. Ideally, SP should perform all Stripe transactions internally
     // without the Web server's involvement. See PBStripeData for more information.
     required PBStripeData stripe_data = 1;
-}
-
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under the GetDeviceInfo messages.
-message ListUserDevicesCall {
-    required string user_id = 1;
-}
-
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under the GetDeviceInfo messages.
-message ListUserDevicesReply {
-
-    // See also GetDeviceInfoReply.PBDeviceInfo
-    message PBDevice {
-        required bytes device_id = 1;
-        required string device_name = 2;
-        required string os_family = 3;
-        required string os_name = 4;
-    }
-
-    repeated PBDevice device = 1;
 }
 
 message PBFullName {

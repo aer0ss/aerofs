@@ -15,14 +15,13 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
@@ -74,9 +73,9 @@ class DLTFetchStoreNames extends DaemonLaunchTask
         try {
             TCB tcb = tk.pseudoPause_("spacl4foldername");
             try {
-                SPBlockingClient sp = new SPBlockingClient.Factory().create_(Cfg.user());
-                sp.signInRemote();
-                return sp.getACL(0L);
+                return newMutualAuthClientFactory().create()
+                        .signInRemote()
+                        .getACL(0L);
             } finally {
                 tcb.pseudoResumed_();
             }

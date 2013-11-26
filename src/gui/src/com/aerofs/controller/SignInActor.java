@@ -9,7 +9,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -17,6 +16,8 @@ import com.aerofs.ui.IUI.MessageType;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newOneWayAuthClientFactory;
 
 /**
  * Implementation for various sign-in mechanisms.
@@ -43,8 +44,7 @@ public abstract class SignInActor
     {
         @Override
         public void signInUser(Setup setup, SetupModel model) throws Exception {
-            SPBlockingClient sp = new SPBlockingClient.Factory()
-                    .create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
+            SPBlockingClient sp = newOneWayAuthClientFactory().create();
 
             // FIXME: Soon we will remove this if() statement. The client
             // should not bother with scrypt'ing the credential and talking to
@@ -105,8 +105,7 @@ public abstract class SignInActor
         OpenIdHelper(SetupModel model) throws Exception
         {
             _model = model;
-            _spclient = new SPBlockingClient.Factory()
-                    .create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
+            _spclient = newOneWayAuthClientFactory().create();
             _sessionKeys = _spclient.openIdBeginTransaction();
 
             start();

@@ -4,9 +4,10 @@
 
 package com.aerofs.sp.server.lib;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
+import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.lib.Util;
-import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
@@ -86,7 +87,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void insertUser(SID sid, UserID user, Role role, SharedFolderState state,
+    public void insertUser(SID sid, UserID user, Permissions permissions, SharedFolderState state,
             @Nullable UserID sharer)
             throws SQLException, ExAlreadyExist
     {
@@ -95,7 +96,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
         ps.setBytes(1, sid.getBytes());
         ps.setString(2, user.getString());
-        ps.setInt(3, role.ordinal());
+        ps.setInt(3, permissions.bitmask());
         ps.setInt(4, state.ordinal());
         if (sharer != null) {
             ps.setString(5, sharer.getString());
@@ -162,7 +163,8 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public @Nullable Role getRoleNullable(SID sid, UserID userId)
+    public @Nullable
+    Permissions getRoleNullable(SID sid, UserID userId)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
@@ -176,9 +178,9 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             if (!rs.next()) { // there is no entry in the ACL table for this storeid/userid
                 return null;
             } else {
-                Role userRole = Role.fromOrdinal(rs.getInt(1));
+                Permissions userPermissions = Permissions.fromBitmask(rs.getInt(1));
                 assert !rs.next();
-                return userRole;
+                return userPermissions;
             }
         } finally {
             rs.close();
@@ -271,7 +273,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public Iterable<SubjectRolePair> getJoinedUsersAndRoles(SID sid) throws SQLException
+    public Iterable<SubjectPermissions> getJoinedUsersAndRoles(SID sid) throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
                 C_AC_STORE_ID + "=? and " + C_AC_STATE + "=?", C_AC_USER_ID, C_AC_ROLE));
@@ -281,12 +283,12 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
         ResultSet rs = ps.executeQuery();
         try {
-            ImmutableList.Builder<SubjectRolePair> builder = ImmutableList.builder();
+            ImmutableList.Builder<SubjectPermissions> builder = ImmutableList.builder();
             while (rs.next()) {
                 UserID userID = UserID.fromInternal(rs.getString(1));
-                Role role = Role.fromOrdinal(rs.getInt(2));
+                Permissions permissions = Permissions.fromBitmask(rs.getInt(2));
 
-                builder.add(new SubjectRolePair(userID, role));
+                builder.add(new SubjectPermissions(userID, permissions));
             }
             return builder.build();
         } finally {
@@ -309,10 +311,10 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
             while (rs.next()) {
                 UserID userID = UserID.fromInternal(rs.getString(1));
-                Role role = Role.fromOrdinal(rs.getInt(2));
+                Permissions permissions = Permissions.fromBitmask(rs.getInt(2));
                 SharedFolderState state = SharedFolderState.fromOrdinal(rs.getInt(3));
 
-                builder.add(new UserIDRoleAndState(userID, role, state));
+                builder.add(new UserIDRoleAndState(userID, permissions, state));
             }
             return builder.build();
         } finally {
@@ -331,11 +333,16 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 
+    private static String hasPermission(Permission permission)
+    {
+        return "(" + C_AC_ROLE + "&" + permission.flag() + ")!=0";
+    }
+
     public boolean hasOwner(SID sid)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=" + Role.OWNER.ordinal(), "count(*)"));
+                C_AC_STORE_ID + "=? and " + hasPermission(Permission.MANAGE), "count(*)"));
 
         ps.setBytes(1, sid.getBytes());
 
@@ -347,13 +354,41 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void setRole(SID sid, UserID userID, Role role)
+    public void setPermissions(SID sid, UserID userID, Permissions permissions)
             throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_AC,
                 C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_ROLE));
 
-        ps.setInt(1, role.ordinal());
+        ps.setInt(1, permissions.bitmask());
+        ps.setBytes(2, sid.getBytes());
+        ps.setString(3, userID.getString());
+
+        if (ps.executeUpdate() != 1) throw new ExNotFound();
+    }
+
+    public void grantPermission(SID sid, UserID userID, Permission permission)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement("update " + T_AC
+                + " set " + C_AC_ROLE + "=" + C_AC_ROLE + " | ?"
+                + " where " +  C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?");
+
+        ps.setInt(1, permission.flag());
+        ps.setBytes(2, sid.getBytes());
+        ps.setString(3, userID.getString());
+
+        if (ps.executeUpdate() != 1) throw new ExNotFound();
+    }
+
+    public void revokePermission(SID sid, UserID userID, Permission permission)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement("update " + T_AC
+                + " set " + C_AC_ROLE + "=" + C_AC_ROLE + " & ?"
+                + " where " +  C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?");
+
+        ps.setInt(1, ~permission.flag());
         ps.setBytes(2, sid.getBytes());
         ps.setString(3, userID.getString());
 
@@ -405,14 +440,14 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     public static class UserIDRoleAndState
     {
         @Nonnull public final UserID _userID;
-        @Nonnull public final Role _role;
+        @Nonnull public final Permissions _permissions;
         @Nonnull public final SharedFolderState _state;
 
-        public UserIDRoleAndState(@Nonnull UserID userID, @Nonnull Role role,
+        public UserIDRoleAndState(@Nonnull UserID userID, @Nonnull Permissions permissions,
                 @Nonnull SharedFolderState state)
         {
             _userID = userID;
-            _role = role;
+            _permissions = permissions;
             _state = state;
         }
 
@@ -422,14 +457,14 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             return this == that ||
                     (that instanceof UserIDRoleAndState &&
                             _userID.equals(((UserIDRoleAndState)that)._userID) &&
-                            _role.equals(((UserIDRoleAndState)that)._role) &&
+                            _permissions.equals(((UserIDRoleAndState)that)._permissions) &&
                             _state.equals(((UserIDRoleAndState)that)._state));
         }
 
         @Override
         public int hashCode()
         {
-            return _userID.hashCode() ^ _role.hashCode() ^ _state.hashCode();
+            return _userID.hashCode() ^ _permissions.hashCode() ^ _state.hashCode();
         }
     }
 }

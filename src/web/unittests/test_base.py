@@ -24,12 +24,13 @@ class TestBase(unittest.TestCase):
 
         util.get_rpc_stub = Mock(return_value=self.sp_rpc_stub)
 
-    def create_dummy_request(self, params={}):
+    def create_dummy_request(self, params={}, json_body={}):
         """
         @param params a dictionary of HTTP request parameters
         """
         request = testing.DummyRequest()
         request.params = params
+        request.json_body = json_body
         request.translate = Mock()
         return request
 

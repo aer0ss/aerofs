@@ -69,47 +69,21 @@
     </%modal:modal>
 
     <%modal:modal>
-        <%def name="id()">add-external-user-modal</%def>
-        <%def name="title()">Be careful with externally shared folders</%def>
+        <%def name="id()">sharing-warning-modal</%def>
+        <%def name="title()">Error</%def>
         <%def name="footer()">
             <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-            <a href="#" id="add-external-user-confirm" class="btn btn-danger">Proceed</a>
+            <a href="#" id="sharing-warning-confirm" class="btn btn-danger">Proceed</a>
         </%def>
-
-        <p>You are about to share this folder with external users.</p>
-        <p>Editors of this folder will be automatically converted to Viewers.</p>
-        <p>Please ensure that this folder <strong>contains
-            no confidential material</strong> before proceeding.</p>
     </%modal:modal>
 
     <%modal:modal>
-        <%def name="id()">owner-can-share-externally-modal</%def>
-        <%def name="title()">Be careful with externally shared folders</%def>
-        <%def name="footer()">
-            <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-            <a href="#" id="owner-can-share-externally-confirm" class="btn btn-danger">Proceed</a>
-        </%def>
-
-        <p>You are adding a new Owner to this folder, which is shared with the
-            following external users:</p>
-        <ul id="owner-can-share-externally-user-list"></ul>
-        <p>Please advise the Owner to be mindful and <strong>not to place
-            confidential material into this folder</strong>.</p>
-    </%modal:modal>
-
-    <%modal:modal>
-        <%def name="id()">editor-disallowed-modal</%def>
+        <%def name="id()">sharing-error-modal</%def>
+        <%def name="title()">Warning</%def>
         <%def name="error()"></%def>
-        <%def name="title()">Editors are not allowed</%def>
         <%def name="footer()">
             <a href="#" class="btn" data-dismiss="modal">Close</a>
         </%def>
-
-        <p>Editors are not allowed in folders shared with external users.
-            This folder is shared with the following external users:</p>
-        <ul id="editor-disallowed-user-list"></ul>
-        <p id="suggest-add-as-viewers">Please reinvite the new user as
-            <strong>Viewer</strong> instead.</p>
     </%modal:modal>
 </%def>
 

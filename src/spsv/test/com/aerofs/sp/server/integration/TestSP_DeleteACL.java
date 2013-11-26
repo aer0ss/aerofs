@@ -4,9 +4,10 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.acl.Role;
 import com.aerofs.proto.Sp.GetACLReply;
 import org.junit.Test;
 
@@ -21,11 +22,12 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
             throws Exception
     {
         // share a folder and add a second person (as owner)
-        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.OWNER);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE,
+                Permission.MANAGE));
         clearVerkehrPublish();
 
         // add a third person (as editor)
-        shareAndJoinFolder(USER_1, SID_1, USER_3, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.allOf(Permission.WRITE));
         clearVerkehrPublish();
 
         // now have the second guy delete the third
@@ -46,8 +48,8 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
         assertGetACLReplyIncrementsEpochBy(reply, 4);
 
         assertACLOnlyContains(getSingleACL(SID_1, reply),
-                new UserAndRole(USER_1, Role.OWNER),
-                new UserAndRole(USER_2, Role.OWNER));
+                new UserAndRole(USER_1, Permissions.allOf(Permission.WRITE, Permission.MANAGE)),
+                new UserAndRole(USER_2, Permissions.allOf(Permission.WRITE, Permission.MANAGE)));
 
         // now have the deleted guy get his acl
 
@@ -65,7 +67,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
             throws Exception
     {
         // share folder
-        shareFolder(USER_1, SID_1, newUser(), Role.EDITOR);
+        shareFolder(USER_1, SID_1, newUser(), Permissions.allOf(Permission.WRITE));
         clearVerkehrPublish(); // don't care
 
         // now attempt to delete someone for whom the role doesn't exist
@@ -86,7 +88,8 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
         // epoch shouldn't be bumped on a deletion of a person that doesn't exist
         assertGetACLReplyIncrementsEpochBy(reply, 1);
 
-        assertACLOnlyContains(getSingleACL(SID_1, reply), USER_1, Role.OWNER);
+        assertACLOnlyContains(getSingleACL(SID_1, reply), USER_1, Permissions.allOf(
+                Permission.WRITE, Permission.MANAGE));
     }
 
     @Test
@@ -94,7 +97,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
             throws Exception
     {
         // share folder with an editor
-        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         // get the editor to try to delete the owner
         setSessionUser(USER_2);

@@ -13,12 +13,12 @@ import java.util.List;
 import java.util.Set;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.collector.CollectorSeq;
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
-import com.aerofs.base.acl.Role;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
@@ -566,9 +566,9 @@ public class CoreDatabaseDumper
         while (rs.next()) {
             SIndex sidx = new SIndex(rs.getInt(1));
             String subject = rs.getString(2);
-            Role role = Role.values()[rs.getInt(3)];
+            Permissions permissions = Permissions.fromBitmask(rs.getInt(3));
 
-            ps.println(sidx + "\t" + role + "\t" + subject);
+            ps.println(sidx + "\t" + permissions + "\t" + subject);
         }
     }
 

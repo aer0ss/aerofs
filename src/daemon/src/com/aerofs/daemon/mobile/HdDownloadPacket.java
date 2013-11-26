@@ -17,7 +17,6 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.base.acl.Role;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -46,7 +45,7 @@ public class HdDownloadPacket extends AbstractHdIMC<EIDownloadPacket>
     @Override
     protected void handleThrows_(EIDownloadPacket ev, Prio prio) throws Exception
     {
-        SOID soid = _acl.checkThrows_(ev._user, ev._path, Role.VIEWER);
+        SOID soid = _acl.checkThrows_(ev._user, ev._path);
         SOCKID sockid = new SOCKID(soid, CID.CONTENT, KIndex.MASTER);
 
         ev._localVersion = _nvc.getLocalVersion_(sockid);

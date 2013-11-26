@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
-import com.aerofs.daemon.rest.util.AccessChecker;
+import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.daemon.rest.util.MimeTypeDetector;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotDir;
@@ -29,13 +29,13 @@ import java.util.List;
 
 public class HdListChildren extends AbstractHdIMC<EIListChildren>
 {
-    private final AccessChecker _access;
+    private final RestObjectResolver _access;
     private final DirectoryService _ds;
     private final IMapSIndex2SID _sidx2sid;
     private final MimeTypeDetector _detector;
 
     @Inject
-    public HdListChildren(AccessChecker access, DirectoryService ds, IMapSIndex2SID sidx2sid,
+    public HdListChildren(RestObjectResolver access, DirectoryService ds, IMapSIndex2SID sidx2sid,
             MimeTypeDetector detector)
     {
         _access = access;
@@ -47,7 +47,7 @@ public class HdListChildren extends AbstractHdIMC<EIListChildren>
     @Override
     protected void handleThrows_(EIListChildren ev, Prio prio) throws ExNotFound, SQLException
     {
-        OA oa = _access.checkObjectFollowsAnchor_(ev._object, ev._user);
+        OA oa = _access.resolveFollowsAnchor_(ev._object, ev._user);
 
         SIndex sidx = oa.soid().sidx();
         SID sid = _sidx2sid.get_(sidx);

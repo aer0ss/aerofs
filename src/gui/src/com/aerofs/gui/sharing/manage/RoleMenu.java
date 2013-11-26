@@ -1,6 +1,7 @@
 package com.aerofs.gui.sharing.manage;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
@@ -21,51 +22,27 @@ public class RoleMenu
 
     private RoleChangeListener _listener;
 
-    public RoleMenu(Control parent, Role selfRole, SharedFolderMember member)
+    public RoleMenu(Control parent, Permissions selfPermissions, SharedFolderMember member)
     {
         _menu = new Menu(parent);
 
         final UserID subject = member._userID;
-        Role subjectRole = member._role;
+        Permissions subjectPermissions = member._permissions;
 
-        if (shouldShowUpdateACLMenuItems(selfRole)) {
-            if (subjectRole != Role.OWNER) {
-                MenuItem miOwner = new MenuItem(_menu, SWT.PUSH);
-                miOwner.setText("Set as Owner");
-                miOwner.addSelectionListener(new SelectionAdapter() {
-                    @Override
-                    public void widgetSelected(SelectionEvent e)
-                    {
-                        select(subject, Role.OWNER);
-                    }
-                });
+        if (shouldShowUpdateACLMenuItems(selfPermissions)) {
+            for (final Permissions r : Permissions.ROLE_NAMES.keySet()) {
+                if (subjectPermissions != r) {
+                    MenuItem mi = new MenuItem(_menu, SWT.PUSH);
+                    mi.setText("Set as " + r.roleName());
+                    mi.addSelectionListener(new SelectionAdapter() {
+                        @Override
+                        public void widgetSelected(SelectionEvent e)
+                        {
+                            select(subject, r);
+                        }
+                    });
+                }
             }
-
-            if (subjectRole != Role.EDITOR) {
-                MenuItem miEditor = new MenuItem(_menu, SWT.PUSH);
-                miEditor.setText("Set as Editor");
-                miEditor.addSelectionListener(new SelectionAdapter() {
-                    @Override
-                    public void widgetSelected(SelectionEvent e)
-                    {
-                        select(subject, Role.EDITOR);
-                    }
-                });
-            }
-
-            if (subjectRole != Role.VIEWER) {
-                MenuItem miViewer = new MenuItem(_menu, SWT.PUSH);
-                miViewer.setText("Set as Viewer");
-                miViewer.addSelectionListener(new SelectionAdapter()
-                {
-                    @Override
-                    public void widgetSelected(SelectionEvent e)
-                    {
-                        select(subject, Role.VIEWER);
-                    }
-                });
-            }
-
             new MenuItem(_menu, SWT.SEPARATOR);
         }
 
@@ -74,7 +51,7 @@ public class RoleMenu
         miEmail.addSelectionListener(GUIUtil.createUrlLaunchListener(
                 "mailto:" + subject));
 
-        if (shouldShowUpdateACLMenuItems(selfRole)) {
+        if (shouldShowUpdateACLMenuItems(selfPermissions)) {
             MenuItem miKickout = new MenuItem(_menu, SWT.PUSH);
             miKickout.setText("Remove User");
             miKickout.addSelectionListener(new SelectionAdapter()
@@ -106,13 +83,13 @@ public class RoleMenu
     }
 
     /**
-     * @param role set to null to remove the user
+     * @param permissions set to null to remove the user
      */
-    private void select(UserID subject, @Nullable Role role)
+    private void select(UserID subject, @Nullable Permissions permissions)
     {
         _menu.dispose();
 
-        if (_listener != null) _listener.onRoleChangeSelected(subject, role);
+        if (_listener != null) _listener.onRoleChangeSelected(subject, permissions);
     }
 
     public static boolean hasContextMenu(SharedFolderMember member)
@@ -131,10 +108,10 @@ public class RoleMenu
      *
      * TODO: Team Servers should get "effective" ACLs from SP which would neatly solve this mess
      */
-    private boolean shouldShowUpdateACLMenuItems(Role selfRole)
+    private boolean shouldShowUpdateACLMenuItems(Permissions selfPermissions)
     {
-        return L.isMultiuser()              // Team Server only
-                || selfRole == Role.OWNER;  // regular client
+        return L.isMultiuser()                          // Team Server only
+                || selfPermissions.covers(Permission.MANAGE);  // regular client
     }
 
     public void setRoleChangeListener(RoleChangeListener listener)
@@ -144,6 +121,6 @@ public class RoleMenu
 
     public interface RoleChangeListener
     {
-        void onRoleChangeSelected(UserID subject, Role role);
+        void onRoleChangeSelected(UserID subject, Permissions permissions);
     }
 }

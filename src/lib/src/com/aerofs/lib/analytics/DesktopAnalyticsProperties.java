@@ -12,11 +12,11 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPBlockingClient.Factory;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 /**
  * This is the desktop client implementation of our analytics properties
@@ -71,10 +71,9 @@ public class DesktopAnalyticsProperties implements IAnalyticsPlatformProperties
     {
         if (_orgID == null || ((System.currentTimeMillis() - _lastSPOrgIDCheck) >= 1 * C.DAY))
         {
-            SPBlockingClient sp = new Factory().create_(Cfg.user());
-            sp.signInRemote();
-
-            _orgID = sp.getOrganizationID().getOrgId();
+            _orgID = newMutualAuthClientFactory().create()
+                    .signInRemote()
+                    .getOrganizationID().getOrgId();
             _lastSPOrgIDCheck = System.currentTimeMillis();
             l.info("orgID: {}", _orgID);
         }

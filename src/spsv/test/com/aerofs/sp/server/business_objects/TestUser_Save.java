@@ -4,7 +4,8 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.SID;
@@ -52,16 +53,17 @@ public class TestUser_Save extends AbstractBusinessObjectTest
         // insert the colliding root store
         SharedFolder sf = factSharedFolder.create(SID.rootSID(user.id()));
         sf.save("haha", attacker);
-        sf.addJoinedUser(attacker2, Role.EDITOR);
-        assertEquals(sf.getRoleNullable(attacker), Role.OWNER);
-        assertEquals(sf.getRoleNullable(attacker2), Role.EDITOR);
+        sf.addJoinedUser(attacker2, Permissions.allOf(Permission.WRITE));
+        assertEquals(sf.getPermissionsNullable(attacker), Permissions.allOf(Permission.WRITE,
+                Permission.MANAGE));
+        assertEquals(sf.getPermissionsNullable(attacker2), Permissions.allOf(Permission.WRITE));
 
         // create the ligitimate user
         saveUser(user);
 
         // the collision should have been corrected
-        assertNull(sf.getRoleNullable(attacker));
-        assertNull(sf.getRoleNullable(attacker2));
+        assertNull(sf.getPermissionsNullable(attacker));
+        assertNull(sf.getPermissionsNullable(attacker2));
     }
 
     @Test

@@ -1,6 +1,6 @@
 package com.aerofs.gui.sharing;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.widgets.Shell;
 
@@ -56,7 +56,7 @@ public class DlgManageSharedFolder extends AeroFSDialog
 
         _compManageUsers = new CompManageUsers(tabFolder, _path, new ILoadListener() {
             @Override
-            public void loaded(int membersCounts, Role localUserRole)
+            public void loaded(int membersCounts, Permissions localUserPermissions)
             {
                 tbtmManage.setText("Members (" + membersCounts + ")");
             }

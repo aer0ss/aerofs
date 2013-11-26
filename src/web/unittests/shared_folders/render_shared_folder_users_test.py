@@ -1,6 +1,6 @@
 import unittest
 from aerofs_sp.gen.sp_pb2 import PBSharedFolder, JOINED
-from aerofs_common._gen.common_pb2 import OWNER
+from aerofs_common._gen.common_pb2 import WRITE, MANAGE
 
 BASE_USER_ID = 'hahaha@ahaha'
 
@@ -25,17 +25,18 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
             session_user)
 
     def _compose_user_list(self, first_names):
-        user_role_and_state_list = []
+        user_permissions_and_state_list = []
         for i in range(len(first_names)):
-            user_role_and_state = PBSharedFolder.PBUserRoleAndState()
-            user_role_and_state.user.user_email = self._get_user_id(i)
-            user_role_and_state.user.first_name = first_names[i]
-            user_role_and_state.user.last_name = ""
-            user_role_and_state.role = OWNER
-            user_role_and_state.state = JOINED
-            user_role_and_state_list.append(user_role_and_state)
+            user_permissions_and_state = PBSharedFolder.PBUserPermissionsAndState()
+            user_permissions_and_state.user.user_email = self._get_user_id(i)
+            user_permissions_and_state.user.first_name = first_names[i]
+            user_permissions_and_state.user.last_name = ""
+            user_permissions_and_state.permissions.permission.append(WRITE)
+            user_permissions_and_state.permissions.permission.append(MANAGE)
+            user_permissions_and_state.state = JOINED
+            user_permissions_and_state_list.append(user_permissions_and_state)
 
-        return user_role_and_state_list
+        return user_permissions_and_state_list
 
     def _get_user_id(self, index):
         return BASE_USER_ID + str(index)

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.SubjectPermissionsList;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -32,11 +33,9 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.base.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.base.ex.ExNotFound;
@@ -49,8 +48,9 @@ import com.aerofs.lib.Path;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.proto.Common.PBSubjectPermissions;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -71,14 +71,13 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final DescendantStores _dss;
     private final ACLSynchronizer _aclsync;
     private final SPBlockingClient.Factory _factSP;
-    private final CfgLocalUser _localUser;
     private final CfgAbsRoots _absRoots;
 
     @Inject
     public HdShareFolder(TokenManager tokenManager, TransManager tm, ObjectCreator oc,
             IPhysicalStorage ps, DirectoryService ds, ImmigrantCreator imc, ObjectMover om,
             ObjectDeleter od, IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss,
-            ACLSynchronizer aclsync, SPBlockingClient.Factory factSP, CfgLocalUser localUser,
+            ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP,
             CfgAbsRoots cfgAbsRoots)
     {
         _ss = ss;
@@ -94,7 +93,6 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _dss = dss;
         _aclsync = aclsync;
         _factSP = factSP;
-        _localUser = localUser;
         _absRoots = cfgAbsRoots;
     }
 
@@ -160,7 +158,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         //
 
         String name = Util.sharedFolderName(ev._path, _absRoots);
-        callSP_(sid, name, SubjectRolePairs.mapToPB(ev._subject2role), ev._emailNote,
+        callSP_(sid, name, SubjectPermissionsList.mapToPB(ev._subject2role), ev._emailNote,
                 ev._suppressSharedFolderRulesWarnings);
 
         if (!alreadyShared) convertToSharedFolder_(ev._path, oa, sid);
@@ -198,17 +196,18 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     /**
      * Pseudo-pause and make a call to SP to share the folder
      */
-    private void callSP_(SID sid, String folderName, List<PBSubjectRolePair> roles,
-            String emailNote, boolean suppressSharedFolderRulesWarnings) throws Exception
+    private void callSP_(SID sid, String folderName, List<PBSubjectPermissions> roles,
+            String emailNote, boolean suppressSharingRulesWarnings) throws Exception
     {
         Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-share");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-share");
-            SPBlockingClient sp = _factSP.create_(_localUser.get());
-            sp.signInRemote();
-            // external shared folders are create by HdLinkRoot only
-            sp.shareFolder(folderName, sid.toPB(), roles, emailNote, false, suppressSharedFolderRulesWarnings);
+            // NB: external shared folders are create by HdLinkRoot only
+            _factSP.create()
+                    .signInRemote()
+                    .shareFolder(folderName, sid.toPB(), roles, emailNote, false,
+                            suppressSharingRulesWarnings);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

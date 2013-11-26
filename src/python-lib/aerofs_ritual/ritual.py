@@ -22,8 +22,29 @@ from lib import convert, param
 from lib.app.cfg import get_cfg
 from lib.cygpathtools import cygpath_to_winpath
 from aerofs_common import exception
-from gen import common_pb2, ritual_pb2
-from gen.common_pb2 import PBException, PBSubjectRolePair
+from gen import ritual_pb2
+from gen.common_pb2 import WRITE, MANAGE, PBException, PBPermissions, PBSubjectPermissions
+
+
+# to ease transition to new ACL
+EDITOR = [WRITE]
+OWNER = [WRITE, MANAGE]
+
+def _role_to_pb(permissions, role):
+    # sigh @ protobuf "optimizations"
+    permissions.permission.append(WRITE)
+    permissions.permission.remove(WRITE)
+    permissions.permission.extend(role)
+
+
+def _convert_acl(acl):
+    srps = []
+    for key in acl:
+        srp = PBSubjectPermissions()
+        srp.subject = key
+        _role_to_pb(srp.permissions, acl[key])
+        srps.append(srp)
+    return srps
 
 
 # This will try to connect once, and throw an exception if it fails
@@ -111,19 +132,9 @@ class _RitualServiceWrapper(object):
         pbpath = self.wait_path(path)
         # folder sharing requires at least one invitee
         if not acl:
-            acl = {"foo@bar.baz": common_pb2.EDITOR}
-        srps = self._convert_acl(acl)
+            acl = {"foo@bar.baz": EDITOR}
+        srps = _convert_acl(acl)
         return self._service.share_folder(pbpath, srps, note, False)
-
-    @staticmethod
-    def _convert_acl(acl):
-        srps = []
-        for key in acl:
-            srp = PBSubjectRolePair()
-            srp.subject = key
-            srp.role = acl[key]
-            srps.append(srp)
-        return srps
 
     def list_shared_folders(self):
         r = []
@@ -232,7 +243,9 @@ class _RitualServiceWrapper(object):
 
     def update_acl(self, path, subject, role):
         pbpath = self.wait_path(path)
-        self._service.update_acl(pbpath, subject, role, False)
+        permissions = PBPermissions()
+        _role_to_pb(permissions, role)
+        self._service.update_acl(pbpath, subject, permissions, False)
 
     def delete_acl(self, path, subject):
         pbpath = self.wait_path(path)
