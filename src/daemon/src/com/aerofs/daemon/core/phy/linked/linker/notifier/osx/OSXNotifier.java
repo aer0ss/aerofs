@@ -72,7 +72,7 @@ public class OSXNotifier implements INotifier, FSEventListener
     {
         Batch b = _id2batch.get(id);
         Preconditions.checkNotNull(b);
-        Preconditions.checkNotNull(b._batch);
+        Preconditions.checkState(b._batch == null);
 
         // We need to recreate a new linked hash set to avoid race conditions
         // as the thread will try to modify the existing hash set.

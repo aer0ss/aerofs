@@ -33,7 +33,10 @@ public class TestOSXNotifier extends AbstractTest
 
     @Captor ArgumentCaptor<Set<String>> capPaths;
 
+    // A watch ID that we set up
     int id = 123;
+    // A watch ID that we don't set up which should trigger failure conditions
+    int unknownWatchId = 0;
 
     final String root = "foo";
     String curName = "barr";
@@ -66,32 +69,32 @@ public class TestOSXNotifier extends AbstractTest
     ////////
     // enforcement tests
     //
-    // "ID matches" refer to the fact that the ID passed into batchStart/notifyChagne/batchEnd
+    // "ID matches" refer to the fact that the ID passed into batchStart/notifyChange/batchEnd
     // must be the same as what has been returned from macosx_addWatch.
 
-    @Test(expected = AssertionError.class)
-    public void shouldAssertIDMatchesInBatchStart()
+    @Test(expected = NullPointerException.class)
+    public void shouldVerifyIDMatchesInBatchStart()
     {
-        notifier.batchStart(0);
+        notifier.batchStart(unknownWatchId);
     }
 
-    @Test(expected = AssertionError.class)
-    public void shouldAssertIDMatchesInBatchEnd()
+    @Test(expected = NullPointerException.class)
+    public void shouldVerifyIDMatchesInBatchEnd()
     {
         notifier.batchStart(id);
         notifyAChange(id, false);
-        notifier.batchEnd(0);
+        notifier.batchEnd(unknownWatchId);
     }
 
-    @Test(expected = AssertionError.class)
-    public void shouldAssertIDMatchesInNotifyChange()
+    @Test(expected = NullPointerException.class)
+    public void shouldVerifyIDMatchesInNotifyChange()
     {
         notifier.batchStart(id);
-        notifyAChange(0, false);
+        notifyAChange(unknownWatchId, false);
     }
 
-    @Test(expected = AssertionError.class)
-    public void shouldAssertBatchStartBeforeBatchEnd()
+    @Test(expected = NullPointerException.class)
+    public void shouldVerifyBatchStartBeforeBatchEnd()
     {
         notifier.batchStart(id);
         notifyAChange(id, false);
@@ -99,8 +102,8 @@ public class TestOSXNotifier extends AbstractTest
         notifier.batchEnd(id);
     }
 
-    @Test(expected = AssertionError.class)
-    public void shouldAssertNonEmptyBatches()
+    @Test(expected = IllegalStateException.class)
+    public void shouldVerifyNonEmptyBatches()
     {
         notifier.batchStart(id);
         notifier.batchEnd(id);
