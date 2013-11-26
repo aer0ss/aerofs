@@ -4,7 +4,8 @@ node "sp.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    include devman
+    # DF - devman disabled until it stops hogging verkehr's sockets.
+    #include devman
     include redis::aof
     include jeq
 
