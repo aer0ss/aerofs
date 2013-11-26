@@ -60,8 +60,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
  * done)
  */
 
-// TODO (GS): This class should move to the controller package
-
 public abstract class Updater
 {
     public static enum Status
@@ -427,6 +425,8 @@ public abstract class Updater
             boolean shouldVerifyHostnamesFromAWS, boolean shouldUseEnterpriseCert) throws IOException
     {
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+
+        conn.setConnectTimeout((int) Cfg.timeout());
 
         if (shouldVerifyHostnamesFromAWS) {
             conn.setHostnameVerifier(new HostnameVerifier() {
