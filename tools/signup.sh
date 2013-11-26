@@ -13,13 +13,21 @@ WebHost=$WebHostDefault
 DbHostDefault=unified.syncfs.com
 DbHost=$DbHostDefault
 DbUser=vagrant
+UseridDefault=
 Userid=
 Verbose=0
+
+declare -i AutoSignup=0
 
 Usage()
 {
     [ $# -gt 0 ] && echo -e "\n$@\n"
+    echo "$0 [-a] [-w webhost ] [ -d dbhost ] [-p password]"
     echo "$0 [-v] [-w webhost ] [ -d dbhost ] [-f first] [-l last] -u userid -p password"
+    echo ""
+    echo "      -a          Auto-sign-up all invited users in the signup_code table."
+    echo "                  (useful if you have invitation-only set, invite users from web UI,"
+    echo "                   then use auto-signup)"
     echo ""
     echo "      -d <host>   Hostname of the box running the user database (default $DbHostDefault)"
     echo "      -w <host>   Hostname of the box running the website (default $WebHostDefault)"
@@ -38,7 +46,7 @@ Usage()
 
 DieUsage()
 {
-    Usage "ERROR: $@"
+    Usage "$@"
     exit 1
 }
 
@@ -50,9 +58,10 @@ Die()
 
 function DoArgs()
 {
-    while getopts "d:f:l:p:u:vw:" OPTION
+    while getopts "ad:f:l:p:u:vw:" OPTION
     do
         case $OPTION in
+        a)  AutoSignup=1 ;;
         d)  DbHost=$OPTARG ;;
         f)  First=$OPTARG ;;
         l)  Last=$OPTARG ;;
@@ -66,8 +75,23 @@ function DoArgs()
         esac
     done
 
-    [ -n ${Passwd} ] || DieUsage "Hey tough guy, you need a password!"
-    [ -n ${Userid} ] || DieUsage "UserId required! Who do you want me to create?"
+    test -n ${Passwd} || DieUsage "Hey tough guy, you need a password!"
+    test -n "${Userid}" -o $AutoSignup != 0 || DieUsage "Who do you want me to create?"
+}
+
+SignupAll()
+{
+    [ $Verbose -eq 0 ] || set -x
+    QueryStr="select t_code, t_to from sp_signup_code order by t_ts"
+
+    echo "$QueryStr" \
+        | ssh -l ${DbUser} ${DbHost} mysql -N -u root -h localhost aerofs_sp \
+        | while read code user
+        do
+        # Arguably this shouldn't work without a 'sudo' but it sure do. What the what?
+            echo "Found user $user $code"
+            CreateAccount $code $user
+        done
 }
 
 GetCode()
@@ -80,14 +104,15 @@ GetCode()
 }
 
 # $1 : Signup code
+# $2 : User email
 CreateAccount()
 {
     [ $Verbose -eq 0 ] || set -x
     Code=$1
+    User=$2
     curl -s ${CurlOutput} \
-        -d "email=${Userid}" -d "c=${Code}" \
+        -d "email=${User}" -d "c=${Code}" \
         -d "first_name=Jon" -d "last_name=Testo" -d "password=${Passwd}" \
-        -d "title=" -d "company=" -d "company_size=" -d "country=" -d "phone=" \
         https://${WebHost}/json.signup \
              || Die "Curl reported an error creating the account"
 
@@ -107,9 +132,14 @@ function Main()
     DoArgs $@
     [ $Verbose -eq 0 ] || set -x
 
+    if [ $AutoSignup -ne 0 ] ; then
+        SignupAll
+        return $?
+    fi
+
     DoInvite
     Code=$(GetCode)
-    CreateAccount $Code
+    CreateAccount $Code $Userid
 
     echo -e "Created account:\n\t${First} ${Last}\n\t${Userid}\n\t${Passwd}"
 }
