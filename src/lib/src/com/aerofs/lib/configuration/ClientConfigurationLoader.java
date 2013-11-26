@@ -106,8 +106,9 @@ public class ClientConfigurationLoader
         preHttpProperties.putAll(staticProperties);
         preHttpProperties.putAll(siteConfigProperties);
 
+        String url = null;
         try {
-            String url = preHttpProperties.getProperty(PROPERTY_CONFIG_SERVICE_URL);
+            url = preHttpProperties.getProperty(PROPERTY_CONFIG_SERVICE_URL);
             String certificate = preHttpProperties.getProperty(PROPERTY_BASE_CA_CERT, "");
             ICertificateProvider certificateProvider = StringUtils.isBlank(certificate) ? null
                     : new StringBasedCertificateProvider(certificate);
@@ -117,7 +118,7 @@ public class ClientConfigurationLoader
         } catch (Throwable t) {
             // N.B. the best we can do is log the occurrence because if at this stage, none of the
             // services are available and there's no way to report the defect back home.
-            LOGGER.warn("Failed to download http configuration", t);
+            LOGGER.warn("Failed to download http configuration at: {}", url, t);
         }
     }
 
