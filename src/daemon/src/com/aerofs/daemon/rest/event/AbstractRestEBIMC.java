@@ -42,6 +42,9 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
         try {
             execute(Prio.LO);
             bd = response();
+        } catch (RuntimeException e) {
+            // runtime exceptions are rethrown to be handled by jersey ExceptionMapper(s)
+            throw e;
         } catch (Exception e) {
             bd = handleException(e).type(MediaType.APPLICATION_JSON_TYPE);
         }
@@ -57,7 +60,7 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
 
     protected ResponseBuilder handleException(Exception e)
     {
-        if (e instanceof ExNotFound){
+        if (e instanceof ExNotFound) {
             return Response
                     .status(Status.NOT_FOUND)
                     .entity(new Error(Type.NOT_FOUND, e.getMessage()));
@@ -73,8 +76,7 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
             l.error("internal error", e);
             return Response
                     .status(Status.INTERNAL_SERVER_ERROR)
-                    .entity(new Error(Type.INTERNAL_ERROR,
-                            "The server encountered an unexpected error while servicing the request"));
+                    .entity(new Error(Type.INTERNAL_ERROR, "Internal error: " + e.getClass()));
         }
     }
 }

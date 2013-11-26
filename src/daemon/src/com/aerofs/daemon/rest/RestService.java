@@ -6,6 +6,7 @@ package com.aerofs.daemon.rest;
 
 import com.aerofs.base.Version;
 import com.aerofs.daemon.rest.providers.OAuthProvider;
+import com.aerofs.daemon.rest.providers.RuntimeExceptionMapper;
 import com.aerofs.daemon.rest.resources.ChildrenResource;
 import com.aerofs.daemon.rest.resources.FilesResource;
 import com.aerofs.daemon.rest.resources.FoldersResource;
@@ -51,6 +52,11 @@ public class RestService extends Service
 
         checkNotNull(kmgr.getCert());
         checkNotNull(kmgr.getPrivateKey());
+
+        addResource(VersionResource.class);
+        addResource(ChildrenResource.class);
+        addResource(FoldersResource.class);
+        addResource(FilesResource.class);
     }
 
     @Override
@@ -74,11 +80,8 @@ public class RestService extends Service
         // specify all providers and resources explictly instead of using a package scanner
         // because we flatten packages in the proguard step
         return ImmutableSet.of(
-                VersionResource.class,
-                ChildrenResource.class,
-                FoldersResource.class,
-                FilesResource.class,
-                OAuthProvider.class
+                OAuthProvider.class,
+                RuntimeExceptionMapper.class
         );
     }
 }

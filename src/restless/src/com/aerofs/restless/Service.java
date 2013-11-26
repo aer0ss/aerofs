@@ -92,6 +92,12 @@ public class Service extends AbstractNettyServer
                 _requestFilters.toArray(new String[_requestFilters.size()]));
     }
 
+    protected void addResource(Class<?> clazz)
+    {
+        Preconditions.checkNotNull(clazz);
+        _resources.getClasses().add(clazz);
+    }
+
     protected void addResource(Object o)
     {
         Preconditions.checkNotNull(o);
