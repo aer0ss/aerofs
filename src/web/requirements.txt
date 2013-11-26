@@ -6,6 +6,7 @@ MarkupSafe==0.18
 PasteDeploy==1.5.0
 Pygments==1.6
 WebOb==1.2.3
+analytics-python==0.4.4
 qrcode==4.0.4
 six==1.4.1
 mock==1.0.1
@@ -15,6 +16,7 @@ pycrypto==2.6
 pyramid==1.4
 pyramid-beaker==0.7
 pyramid-debugtoolbar==1.0.4
+python-dateutil==2.2
 repoze.lru==0.6
 requests==1.2.0
 stripe==1.9.1

@@ -21,6 +21,9 @@ from web.login_util import URL_PARAM_NEXT
 from urllib import urlencode
 from urllib2 import urlopen
 
+import analytics
+
+
 log = logging.getLogger(__name__)
 
 # N.B. the string 'c' is also used in RequestToSignUpEmailer.java
@@ -112,15 +115,34 @@ def json_signup(request):
         sp = get_rpc_stub(request)
         sp.sign_up_with_code(code, password, first_name, last_name)
 
+        if not is_private_deployment(request.registry.settings):
+            analytics.init(request.registry.settings['segmentio.secret_key'], flush_at=1)
+
+            context = {
+                'providers': {
+                    'Salesforce': 'true'
+                },
+                'Salesforce': {
+                    'object': 'Lead',
+                    'lookup': { 'email': request.params['email'] }
+                }
+            }
+            analytics.identify(request.params[URL_PARAM_EMAIL],
+                {
+                    'email': request.params[URL_PARAM_EMAIL],
+                    'firstName': request.params[URL_PARAM_FIRST_NAME],
+                    'lastName': request.params[URL_PARAM_LAST_NAME],
+                    'company': request.params[URL_PARAM_COMPANY],
+                    'title': request.params[URL_PARAM_TITLE],
+                    'employees': request.params[URL_PARAM_COMPANY_SIZE],
+                    'phone': request.params[URL_PARAM_PHONE],
+                },
+                context=context
+            )
+            analytics.track(request.params[URL_PARAM_EMAIL], "Signed Up For Hybrid Cloud");
+
         return {
             'email_address': email_address,
-            'first_name': first_name,
-            'last_name': last_name,
-            'company': request.params[URL_PARAM_COMPANY],
-            'title': request.params[URL_PARAM_TITLE],
-            'employees': request.params[URL_PARAM_COMPANY_SIZE],
-            'phone': request.params[URL_PARAM_PHONE],
-            'country': request.params[URL_PARAM_COUNTRY]
         }
     except ExceptionReply as e:
         if e.get_type() == common.PBException.BAD_CREDENTIAL:
@@ -150,6 +172,14 @@ def json_request_to_sign_up(request):
     email_address = request.params[URL_PARAM_EMAIL]
     empty_email_message = _("Please enter an email address")
     if not email_address: error(empty_email_message)
+
+    if not is_private_deployment(request.registry.settings):
+        analytics.init(request.registry.settings['segmentio.secret_key'], flush_at=1)
+        analytics.identify(request.params[URL_PARAM_EMAIL],{
+                    'email': request.params[URL_PARAM_EMAIL]
+                })
+
+        analytics.track(request.params[URL_PARAM_EMAIL], "Signup Initiated for Hybrid Cloud");
 
     sp = get_rpc_stub(request)
     exception2error(sp.request_to_sign_up, email_address, {

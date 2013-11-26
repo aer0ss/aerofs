@@ -39,7 +39,7 @@
                         class="hidden"
                     %endif
                     >
-                        <label for="inputTitle">Title:</label>
+                        <label for="inputTitle">Job Title:</label>
                         <input class="span6" id="inputTitle" type="text" name="${url_param_title}">
                         <label for="inputCompany">Company:</label>
                         <input class="span6" id="inputCompany" type="text" name="${url_param_company}">
@@ -99,36 +99,14 @@
                         ## automatically sign in once the AJAX call succeeds
 
                         if (analytics) {
-                            var context = {
-                                providers: {
-                                    'Salesforce': true
-                                },
-                                'Salesforce': {
-                                    object: 'Lead',
-                                    lookup: { email: response['email_address'] }
-                                }
-                            }
-
-                            analytics.identify(
-                                response['email_address'], {
-                                        email: response['email_address'],
-                                        firstName: response['first_name'],
-                                        lastName: response['last_name'],
-                                        company: response['company'],
-                                        title: response['title'],
-                                        employees: response['employees'],
-                                        phone: response['phone'],
-                                        country: response['country']
-                                    }, context);
-
-                            analytics.track("Signed Up For Hybrid Cloud");
+                            analytics.identify(response['email_address']);
 
                             ## Wait 300 ms for the Analytics call to succeed and then proceed to sign in.
                             ## This is the delay they recommend in their track_forms API.
                             ## See: https://mixpanel.com/docs/integration-libraries/javascript-full-api#track_forms
                             setTimeout(sign_in, 300);
                         } else {
-                            ## no mixpanel, proceed to sig-in directly
+                            ## no analytics, proceed to sig-in directly
                             sign_in();
                         }
                     }
