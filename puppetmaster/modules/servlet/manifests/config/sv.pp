@@ -1,8 +1,13 @@
+#
+# N.B. this is only used by public deployment.
+#
 class servlet::config::sv(
     $mysql_password,
     $mysql_endpoint
 ) {
     include servlet::sv
+
+    # N.B. this is needed by context-footer.xml.erb
     $databases = [
         {
             param_name => "sv_database_resource_reference",
@@ -14,23 +19,9 @@ class servlet::config::sv(
         }
     ]
 
-    # Because these config files use multiple templates, tests were written for their
-    # content. See the RSpec tests for more details.
-
-    servlet::config::file{"/usr/share/aerofs-sv/sv/WEB-INF/web.xml":
-        content => template(
-            "servlet/web-header.xml.erb",
-            "servlet/web-common.xml.erb",
-            "servlet/web-sv.xml.erb",
-            "servlet/web-footer.xml.erb"
-        ),
-        require => Package["aerofs-sv"]
-    }
-
     servlet::config::file{"/etc/tomcat6/Catalina/localhost/sv_beta.xml":
         content => template(
             "servlet/context-header-sv.xml.erb",
-            "servlet/context-body.xml.erb",
             "servlet/context-footer.xml.erb"
         ),
         require => Package["aerofs-sv"]

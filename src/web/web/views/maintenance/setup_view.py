@@ -32,7 +32,7 @@ log = logging.getLogger("web")
 # ------------------------------------------------------------------------
 
 # Base URL for all calls to the tomcat verification servlet.
-_VERIFICATION_BASE_URL = "http://localhost:8080/verify/"
+_VERIFICATION_BASE_URL = "http://localhost:8080/verification/"
 
 # This is a tomcat servlet that is part of the SP package.
 _SMTP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "email"

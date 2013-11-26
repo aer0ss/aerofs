@@ -1,3 +1,6 @@
+#
+# N.B. This class is only used by the public deployment.
+#
 class servlet::nginx_config (
         $proxy_read_timeout = "60",
         $proxy_send_timeout = "60",

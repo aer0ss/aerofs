@@ -26,17 +26,15 @@ class transient::services {
     #include devman
 
     # --------------
-    # SP
+    # Servlets
     # --------------
 
     include servlet::base
-    include servlet::sp
-    include jeq
 
-    # Do not include this file, let bootstrap generate it.
-    file{"/etc/tomcat6/Catalina/localhost/ROOT.xml":
-        ensure => absent
-    }
+    include servlet::sp
+    include servlet::syncstat
+    include servlet::verification
+    include servlet::identity
 
     # --------------
     # Verkehr

@@ -8,4 +8,4 @@ CONFIG="$RESOURCES/devman.yml"
 JAVA_ARGS="-XX:+AggressiveOpts -XX:+UseFastAccessorMethods"
 SERVICE_ARGS="devman.yml"
 
-"$SCRIPT_DIR"/generate_service_deb_template.sh devman "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
+"$SCRIPT_DIR"/generators/generate_service_deb_template.sh devman "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"

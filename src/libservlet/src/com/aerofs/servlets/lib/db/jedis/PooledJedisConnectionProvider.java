@@ -22,7 +22,7 @@ public class PooledJedisConnectionProvider
         return _jedisPool.getResource();
     }
 
-    public void init_(String host, short port)
+    public void init_(String host, int port)
     {
         // Cannot call init more than once.
         assert _jedisPool == null;

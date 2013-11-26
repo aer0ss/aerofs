@@ -34,11 +34,4 @@ done
 
 # package-data files
 cp -R "$BASEDIR"/out.ant/artifacts/"$SERVLET_NAME"/exploded/* "$INSTALL"/
-
-CONTEXT_FILENAME="ROOT.xml"
-# Since we can't deploy sv to root (due to alpha and staging systems), we deploy
-# it at sv_beta
-if [ $SERVLET_NAME == "sv" ]
-then
-    CONTEXT_FILENAME="sv_beta.xml"
-fi
+cp -a "$RESOURCES"/web.xml "$INSTALL"/WEB-INF/

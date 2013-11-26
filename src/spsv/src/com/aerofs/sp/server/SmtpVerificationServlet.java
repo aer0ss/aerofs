@@ -74,11 +74,15 @@ public class SmtpVerificationServlet extends HttpServlet
         }
     }
 
-    /** This servlet does not support GET. */
+    /**
+     * This servlet does not support GET.
+     *
+     * Return 200 anyway for the purposes of sanity checking.
+     * */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException
     {
-        resp.sendError(405);
+        resp.setStatus(200);
     }
 }

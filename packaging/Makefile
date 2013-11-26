@@ -26,6 +26,8 @@ PACKAGES= \
 	sanity \
 	servlet-tools \
 	sp \
+	verification \
+	identity \
 	spdb \
 	stun \
 	sv \

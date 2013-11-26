@@ -1,8 +1,13 @@
+#
+# N.B. This is only used by public deployment.
+#
 class servlet::config::sp(
     $mysql_password,
     $mysql_endpoint
 ) {
     include servlet::sp
+
+    # N.B. this is needed by context-footer.xml.erb
     $databases = [
         {
             name => "SPDatabase",
@@ -16,7 +21,6 @@ class servlet::config::sp(
     servlet::config::file{"/etc/tomcat6/Catalina/localhost/ROOT.xml":
         content => template(
             "servlet/context-header-sp.xml.erb",
-            "servlet/context-body.xml.erb",
             "servlet/context-footer.xml.erb"
         ),
         require => Package["aerofs-sp"]

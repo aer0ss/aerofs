@@ -1,3 +1,6 @@
+#
+# N.B. This is only used by public deployment.
+#
 class servlet::config::syncstat(
     $mysql_sp_password,
     $mysql_endpoint,
@@ -5,6 +8,8 @@ class servlet::config::syncstat(
     $cacert_location
 ) {
     include servlet::syncstat
+
+    # N.B. this is needed by context-footer.xml.erb
     $databases = [
         {
             param_name => "sp_database_resource_reference",
@@ -16,24 +21,10 @@ class servlet::config::syncstat(
         }
     ]
 
-    # Because these config files use multiple templates, tests were written for their
-    # content. See the RSpec tests for more details.
-
     servlet::config::file{"/etc/tomcat6/Catalina/localhost/ROOT.xml":
         content => template(
             "servlet/context-header-syncstat.xml.erb",
-            "servlet/context-body.xml.erb",
             "servlet/context-footer.xml.erb"
-        ),
-        require => Package["aerofs-syncstat"]
-    }
-
-    servlet::config::file{"/usr/share/aerofs-syncstat/syncstat/WEB-INF/web.xml":
-        content => template(
-            "servlet/web-header.xml.erb",
-            "servlet/web-common.xml.erb",
-            "servlet/web-syncstat.xml.erb",
-            "servlet/web-footer.xml.erb"
         ),
         require => Package["aerofs-syncstat"]
     }

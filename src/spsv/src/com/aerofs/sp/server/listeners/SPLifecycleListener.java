@@ -1,4 +1,4 @@
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.listeners;
 
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
@@ -63,7 +63,8 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
     {
         // This Stackoverflow answer describes why it is most appropriate to do global/application
         // wide initialization within contextInitialized http://stackoverflow.com/a/2364451/3957
-        // initialize ConfigurationProperties.
+        //
+        // Initialize Configuration Properties.
         try {
             Configuration.Server.initialize();
         } catch (Exception e) {

@@ -8,4 +8,4 @@ CONFIG="$RESOURCES/logback.xml $RESOURCES/bifrost.properties"
 JAVA_ARGS=""
 SERVICE_ARGS="bifrost.properties"
 
-"$SCRIPT_DIR"/generate_service_deb_template.sh bifrost "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
+"$SCRIPT_DIR"/generators/generate_service_deb_template.sh bifrost "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"

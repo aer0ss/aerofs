@@ -20,26 +20,20 @@
   <!-- To enforce serializable sessions. -->
   <distributable/>
 
-  <!-- Verkehr -->
-  <context-param>
-    <param-name>verkehr_cacert</param-name>
-    <param-value>/etc/ssl/certs/AeroFS_CA.pem</param-value>
-  </context-param>
-
   <!-- Initialization listener -->
   <listener>
-    <listener-class>com.aerofs.sp.server.listeners.SPLifecycleListener</listener-class>
+    <listener-class>com.aerofs.sp.server.listeners.ConfigurationLifecycleListener</listener-class>
   </listener>
 
   <!-- Servlets -->
   <servlet>
-    <servlet-name>ServletSP</servlet-name>
-    <servlet-class>com.aerofs.sp.server.SPServlet</servlet-class>
+    <servlet-name>ServletIdentity</servlet-name>
+    <servlet-class>com.aerofs.sp.server.IdentityServlet</servlet-class>
   </servlet>
 
   <!-- URL mapping -->
   <servlet-mapping>
-    <servlet-name>ServletSP</servlet-name>
-    <url-pattern>/</url-pattern>
+    <servlet-name>ServletIdentity</servlet-name>
+    <url-pattern>/*</url-pattern>
   </servlet-mapping>
 </web-app>

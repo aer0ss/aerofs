@@ -13,7 +13,7 @@ CONFIG="$RESOURCES/verkehr.yml"
 JAVA_ARGS="-Xmx1536m"
 SERVICE_ARGS="server verkehr.yml"
 
-"$SCRIPT_DIR"/generate_service_deb_template.sh verkehr "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
+"$SCRIPT_DIR"/generators/generate_service_deb_template.sh verkehr "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
 
 OPT=$OUTPUT_DIR/opt/verkehr
 INIT=$OUTPUT_DIR/etc/init

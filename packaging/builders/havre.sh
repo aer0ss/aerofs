@@ -8,4 +8,4 @@ CONFIG="$RESOURCES/logback.xml $RESOURCES/havre.properties"
 JAVA_ARGS="-Xmx1536m"
 SERVICE_ARGS="havre.properties"
 
-"$SCRIPT_DIR"/generate_service_deb_template.sh havre "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
+"$SCRIPT_DIR"/generators/generate_service_deb_template.sh havre "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"

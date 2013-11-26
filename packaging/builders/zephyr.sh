@@ -9,7 +9,7 @@ CONFIG="$RESOURCES/logback.xml $RESOURCES/banner.txt"
 JAVA_ARGS="-d64 -Xms712m -Xmx1536m"
 SERVICE_ARGS="0.0.0.0 8888"
 
-"$SCRIPT_DIR"/generate_service_deb_template.sh zephyr "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
+"$SCRIPT_DIR"/generators/generate_service_deb_template.sh zephyr "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
 
 INIT=$OUTPUT_DIR/etc/init
 

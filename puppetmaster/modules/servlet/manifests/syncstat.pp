@@ -6,11 +6,10 @@ class servlet::syncstat {
         ]
     }
 
-    package{"aerofs-syncstat-tools":
-        ensure => latest,
-        require => [
-            Apt::Source["aerofs"]
-        ]
+    servlet::log{"syncstat":
+        config_filename => "/usr/share/aerofs-syncstat/syncstat/WEB-INF/classes/logback.xml",
+        log_level       => "INFO",
+        require         => Package["aerofs-syncstat"],
     }
 
     # Java heap space for tomcat.

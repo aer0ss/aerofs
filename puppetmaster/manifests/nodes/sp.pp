@@ -11,7 +11,7 @@ node "sp.aerofs.com" inherits default {
 
     include public-email-creds
 
-    # install sp servlet
+    # Install sp servlet.
     include servlet
     class{"servlet::config::sp":
         mysql_password => hiera("mysql_password"),

@@ -88,8 +88,6 @@ public class BaseParam
 
         public static final String PASSWORD_RESET_URL = DASHBOARD_HOST_URL + "/password_reset";
 
-        public static final String UPGRADE_URL = DASHBOARD_HOST_URL + "/upgrade";
-
         public static final String SHARED_FOLDERS_URL = DASHBOARD_HOST_URL + "/shared_folders";
 
         public static final String TEAM_MEMBERS_URL = DASHBOARD_HOST_URL + "/admin/team_members";
@@ -123,7 +121,7 @@ public class BaseParam
         public static final int SP_PROTOCOL_VERSION = 20;
 
         public static final URL URL = getUrlProperty("base.sp.url",
-                "https://sp.aerofs.com/sp");
+                "https://sp.aerofs.com/sp/");
     }
 
     public static class MobileService
