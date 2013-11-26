@@ -186,7 +186,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             InjectableFile fParent = _fRev.getParentFile();
             // ignore mkdirs() errors. it will be caught when moving the file
             // into the directory
-            if (!fParent.exists()) fParent.mkdirs();
+            fParent.ensureDirExists();
             _fOrg.moveInSameFileSystem(_fRev);
             changeSpace(_fRev.getLength());
         }

@@ -227,18 +227,23 @@ public abstract class FileUtil
 
     public static void mkdirs(File dir) throws IOException
     {
-        if (!dir.mkdirs()) throw new ExFileIO("couldn't make the directories", dir);
+        // sigh Windows / long path / Java...
+        // For some obscure reason the contract of File.mkdirs is not honored on Windows when
+        // using the magic prefix required to work with long pathes and filenames w/ trailing
+        // spaces/periods. Instead it just behaves like File.mkdir() so we have to manually
+        // create the whole missing hierarchy
+        if (dir.getPath().startsWith("\\\\?\\")) {
+            File p = dir.getParentFile();
+            if (p != null && !p.exists()) mkdirs(p);
+        }
+        if (!dir.mkdirs() && !dir.isDirectory()) {
+            throw new ExFileIO("couldn't make the directories", dir);
+        }
     }
 
     public static File ensureDirExists(File dir) throws IOException
     {
-        if (!dir.isDirectory()) {
-            if (!dir.mkdirs()) {
-                if (!dir.isDirectory()) {
-                    throw new ExFileIO("couldn't make the directory", dir);
-                }
-            }
-        }
+        if (!dir.isDirectory()) mkdirs(dir);
         return dir;
     }
 
