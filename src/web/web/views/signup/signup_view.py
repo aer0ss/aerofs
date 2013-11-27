@@ -22,7 +22,7 @@ from urllib import urlencode
 from urllib2 import urlopen
 
 import analytics
-
+import markupsafe
 
 log = logging.getLogger(__name__)
 
@@ -124,22 +124,22 @@ def json_signup(request):
                 },
                 'Salesforce': {
                     'object': 'Lead',
-                    'lookup': { 'email': request.params['email'] }
+                    'lookup': { 'email': markupsafe.escape(request.params['email']) }
                 }
             }
             analytics.identify(request.params[URL_PARAM_EMAIL],
                 {
-                    'email': request.params[URL_PARAM_EMAIL],
-                    'firstName': request.params[URL_PARAM_FIRST_NAME],
-                    'lastName': request.params[URL_PARAM_LAST_NAME],
-                    'company': request.params[URL_PARAM_COMPANY],
-                    'title': request.params[URL_PARAM_TITLE],
-                    'employees': request.params[URL_PARAM_COMPANY_SIZE],
-                    'phone': request.params[URL_PARAM_PHONE],
+                    'email': markupsafe.escape(request.params[URL_PARAM_EMAIL]),
+                    'firstName': markupsafe.escape(request.params[URL_PARAM_FIRST_NAME]),
+                    'lastName': markupsafe.escape(request.params[URL_PARAM_LAST_NAME]),
+                    'company': markupsafe.escape(request.params[URL_PARAM_COMPANY]),
+                    'title': markupsafe.escape(request.params[URL_PARAM_TITLE]),
+                    'employees': markupsafe.escape(request.params[URL_PARAM_COMPANY_SIZE]),
+                    'phone': markupsafe.escape(request.params[URL_PARAM_PHONE]),
                 },
                 context=context
             )
-            analytics.track(request.params[URL_PARAM_EMAIL], "Signed Up For Hybrid Cloud");
+            analytics.track(markupsafe.escape(request.params[URL_PARAM_EMAIL]), "Signed Up For Hybrid Cloud");
 
         return {
             'email_address': email_address,

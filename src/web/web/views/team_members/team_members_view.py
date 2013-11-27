@@ -1,5 +1,5 @@
 import logging
-from cgi import escape
+import markupsafe
 from pyramid.httpexceptions import HTTPOk
 from pyramid.security import authenticated_userid
 from pyramid.view import view_config
@@ -55,7 +55,7 @@ def json_list_team_members(request):
     data = [{
                 'name': _render_full_name(ul.user, session_user),
                 'label': _render_label(ul.level),
-                'email': escape(ul.user.user_email),
+                'email': markupsafe.escape(ul.user.user_email),
                 'options': _render_user_options_link(request, ul, session_user)
             } for ul in reply.user_and_level]
 
