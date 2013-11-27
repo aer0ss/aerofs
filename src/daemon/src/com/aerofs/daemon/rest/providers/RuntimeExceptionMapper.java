@@ -6,7 +6,9 @@ package com.aerofs.daemon.rest.providers;
 
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
+import com.sun.jersey.spi.container.WebApplication;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -23,6 +25,9 @@ public class RuntimeExceptionMapper implements ExceptionMapper<RuntimeException>
     @Override
     public Response toResponse(RuntimeException e)
     {
+        if (e instanceof WebApplicationException) {
+            return ((WebApplicationException)e).getResponse();
+        }
         return Response.status(Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(new Error(Type.INTERNAL_ERROR, "Internal error while servicing request"))
