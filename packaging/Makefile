@@ -18,6 +18,7 @@ PACKAGES= \
 	devman \
 	enterprise-updater \
 	havre \
+	identity \
 	jeq-tools \
 	middleman \
 	pagerduty \
@@ -26,13 +27,12 @@ PACKAGES= \
 	sanity \
 	servlet-tools \
 	sp \
-	verification \
-	identity \
 	spdb \
 	stun \
 	sv \
 	syncstat \
 	syncstat-tools \
+	verification \
 	verkehr \
 	web \
 	zephyr \
