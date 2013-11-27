@@ -50,13 +50,14 @@ PackagesForRequirementsAreAllPresent() {
     for line in $( cat "$arg_requirements_file" ) ; do
         package_underscores="${line/-/_}"
         package_filename_prefix="${package_underscores/==/-}."
+        package_filename_prefix_alt="${line/==/-}."
         # We can't know in advance if a package's archive will be a .zip, a
         # .tar.gz, or something else.  It's annoying that we have to use shell
         # globbing here, but I couldn't think of another way to tersely test
         # "does any file that matches this pattern exist".
         set +e
-        ls "$arg_cache_path/$package_filename_prefix"* > /dev/null 2>&1
-        if [[ $? -ne 0 ]] ; then
+        if ! ( ls "$arg_cache_path/$package_filename_prefix"* > /dev/null 2>&1 ||
+            ls "$arg_cache_path/$package_filename_prefix_alt"* > /dev/null 2>&1 ) ; then
             failures[$failcount]=$line
             failcount=$failcount+1
         fi
