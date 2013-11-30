@@ -63,8 +63,7 @@
                         onclick='confirmUnlinkOrErase("unlink", "${device_id}", "${d.device_name | h}"); return false;'
                         style="margin-right: 15px;"
                    %else:
-                        data-toggle="tooltip" class="coming_soon_tooltip"
-                        style="margin-right: 15px; color: grey;"
+                        class="invisible"
                    %endif
                         >
                     Unlink
@@ -75,8 +74,7 @@
                            onclick='confirmUnlinkOrErase("erase", "${device_id}", "${d.device_name | h}"); return false;'
                            style="margin-right: 15px;"
                     %else:
-                           data-toggle="tooltip" class="coming_soon_tooltip"
-                           style="margin-right: 15px; color: grey;"
+                           class="invisible"
                     %endif
                         >
                     Erase

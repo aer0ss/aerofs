@@ -8,3 +8,4 @@ def includeme(config):
     config.add_route('json.invite_user', 'admin/team_members/invite')
     config.add_route('json.delete_team_invitation', 'admin/team_members/delete_invitation')
     config.add_route('json.remove_from_team', 'admin/team_members/remove')
+    config.add_route('json.deactivate_user', 'admin/deactivate_user')

@@ -655,7 +655,7 @@ service SPService {
      *
      * Required Auth Level: User to delete self, Admin to delete others
      */
-    rpc DeactivateUser(DeactivateUserCall) returns(Void);
+    rpc DeactivateUser(DeactivateUserCall) returns(DeactivateUserReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1223,4 +1223,8 @@ enum PBSharedFolderState {
 message DeactivateUserCall {
     required string user_id = 1;
     required bool erase_devices = 2;
+}
+
+message DeactivateUserReply {
+    required PBStripeData stripe_data = 1;
 }

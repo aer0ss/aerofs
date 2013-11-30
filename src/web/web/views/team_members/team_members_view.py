@@ -7,7 +7,7 @@ from pyramid.renderers import render
 from aerofs_sp.gen.common_pb2 import PBException
 from web import util
 from web.sp_util import exception2error
-from web.util import error_on_invalid_email, get_rpc_stub, is_private_deployment
+from web.util import error_on_invalid_email, get_rpc_stub, is_private_deployment, str2bool
 from web.views.payment import stripe_util
 from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 
@@ -15,6 +15,7 @@ from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 URL_PARAM_USER = 'user'
 URL_PARAM_LEVEL = 'level'
 URL_PARAM_FULL_NAME = 'full_name'
+URL_PARAM_ERASE_DEVICES = 'erase_devices'
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ def team_members(request):
         'url_param_user': URL_PARAM_USER,
         'url_param_level': URL_PARAM_LEVEL,
         'url_param_stripe_card_token': stripe_util.URL_PARAM_STRIPE_CARD_TOKEN,
+        'url_param_erase_devices': URL_PARAM_ERASE_DEVICES,
         'invited_users': invited_users.user_id,
         'admin_level': ADMIN,
         'user_level': USER
@@ -169,5 +171,20 @@ def json_remove_from_team(request):
     user = request.params[URL_PARAM_USER]
     sp = get_rpc_stub(request)
     stripe_data = sp.remove_user_from_organization(user).stripe_data
+    stripe_util.update_stripe_subscription(stripe_data)
+    return HTTPOk()
+
+
+@view_config(
+    route_name = 'json.deactivate_user',
+    renderer = 'json',
+    permission = 'admin',
+    request_method = 'POST'
+)
+def json_deactivate_user(request):
+    user = request.params[URL_PARAM_USER]
+    erase_devices = str2bool(request.params[URL_PARAM_ERASE_DEVICES])
+    sp = get_rpc_stub(request)
+    stripe_data = sp.deactivate_user(user, erase_devices).stripe_data
     stripe_util.update_stripe_subscription(stripe_data)
     return HTTPOk()

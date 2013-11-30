@@ -2,6 +2,7 @@
 <%! page_title = "Team Members" %>
 
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
+<%namespace name="modal" file="modal.mako"/>
 
 <%block name="css">
     <link href="${request.static_path('web:static/css/datatables-bootstrap.css')}" rel="stylesheet">
@@ -37,9 +38,28 @@
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</a>
-        <a href="#" id="confirm_remove_user" class="btn btn-danger">Remove user from team</a>
+        <a href="#" id="confirm_remove_user" class="btn btn-danger">Remove User From Team</a>
     </div>
 </div>
+
+<%modal:modal>
+    <%def name="id()">deactivate_modal</%def>
+    <%def name="title()">Delete user</%def>
+    <%def name="footer()">
+        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+        <a href="#" id="confirm_deactivate" class="btn btn-danger">Delete User</a>
+    </%def>
+
+    <p>Are you sure that you want to delete <strong id="deactivate_email"></strong>?
+        This user will no longer be able to sign in to AeroFS, and
+        all the AeroFS clients owned by this user will be automatically unlinked.</p>
+    <p>
+        <label class="checkbox">
+            <input type="checkbox" id="erase_devices">
+            Also erase AeroFS files from the user's devices.
+        </label>
+    </p>
+</%modal:modal>
 
 <%credit_card_modal:html>
     <%def name="title()">
@@ -184,7 +204,7 @@
         ## becomeAdmin: true to make the user an admin, false to make it a regular user
         ## newLinkText: the new text that should be displayed in the link if the change was successful
         ## link: the jquery object of the calling link
-        function toggleAdmin(user, becomeAdmin, newLinkText, link) {
+        function toggleAdmin(user, becomeAdmin, newLinkText, $link) {
             $.post("${request.route_path('json.set_level')}", {
                     ${self.csrf.token_param()}
                     "${url_param_user}": user,
@@ -195,23 +215,23 @@
                 showSuccessMessage(becomeAdmin ? "The user is now an admin." : "The user is no longer an admin.");
 
                 ## toggle the 'admin' label in the user row
-                link.closest('tr').find('.admin_label').toggleClass('hidden', !becomeAdmin);
+                $link.closest('tr').find('.admin_label').toggleClass('hidden', !becomeAdmin);
 
                 ## replace the onclick handler of the link to do the opposite operation now
                 ## note: trust me, doing link[0].onclick is the best way to do it. Do not use .click() or .on('click'),
                 ## as this will cause the dropdown menu to stay open (as well as other problems)
-                link[0].onclick = function() { toggleAdmin(user, !becomeAdmin, link.html(), link); return false; };
+                $link[0].onclick = function() { toggleAdmin(user, !becomeAdmin, $link.html(), $link); return false; };
 
                 ## update the link text
-                link.html(newLinkText);
+                $link.html(newLinkText);
             })
             .fail(showErrorMessageFromResponse);
         }
 
-        function removeFromTeam(user, viewDevicesUrl, link) {
+        function removeFromTeam(user, viewDevicesUrl, $link) {
             var modal = $("#remove_from_team_modal");
             modal.find(".device_link").prop("href", viewDevicesUrl);
-            modal.find(".user_email").html(user);
+            modal.find(".user_email").text(user);
             modal.find("#confirm_remove_user").off().on('click', function() {
                 modal.modal('hide');
                 $.post("${request.route_path('json.remove_from_team')}", {
@@ -220,14 +240,34 @@
                     }
                 )
                 .done(function() {
-                    showSuccessMessage("The user " + user + " has been removed from your team.")
-                    link.closest('tr').remove();
+                    showSuccessMessage("The user " + user + " has been removed from your team.");
+                    $link.closest('tr').remove();
                 })
                 .fail(showErrorMessageFromResponse);
             });
 
-            modal.modal()
+            modal.modal();
         }
 
+        function deactivate(user, $link) {
+            var modal = $("#deactivate_modal");
+            modal.find("#deactivate_email").text(user);
+            modal.find("#confirm_deactivate").off().on('click', function() {
+                modal.modal('hide');
+                $.post("${request.route_path('json.deactivate_user')}", {
+                        ${self.csrf.token_param()}
+                        "${url_param_user}": user,
+                        "${url_param_erase_devices}": $('#erase_devices').is(':checked')
+                    }
+                )
+                .done(function() {
+                    showSuccessMessage("The user " + user + " has been deleted.");
+                    $link.closest('tr').remove();
+                })
+                .fail(showErrorMessageFromResponse);
+            });
+
+            modal.modal('show');
+        }
     </script>
 </%block>

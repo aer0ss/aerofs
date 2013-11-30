@@ -21,6 +21,8 @@ import java.util.Set;
 public class SPActiveUserSessionTracker
 {
     private static final Logger l = Loggers.getLogger(SPActiveUserSessionTracker.class);
+
+    // TODO (WW) use UserID as the map kep.
     private final Map<String, Set<String>> _userMap = Maps.newHashMap();
 
     public synchronized void signIn(UserID userID, String sessionID)

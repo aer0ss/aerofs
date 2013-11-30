@@ -41,6 +41,7 @@ import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
+import com.aerofs.proto.Sp.DeactivateUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
 import com.aerofs.proto.Sp.GetACLReply;
@@ -2541,7 +2542,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> deactivateUser(String userId, Boolean eraseDevices)
+    public ListenableFuture<DeactivateUserReply> deactivateUser(String userId, Boolean eraseDevices)
             throws Exception
     {
         User caller = _sessionUser.getUser();
@@ -2552,6 +2553,9 @@ public class SPService implements ISPService
         user.throwIfNotFound();
 
         if (!(caller.equals(user) || caller.isAdminOf(user))) throw new ExNoPerm("");
+
+        // fetch organization before deactivation
+        Organization org = user.getOrganization();
 
         // fetch device list before deactivation
         Collection<Device> devices = user.getDevices();
@@ -2573,9 +2577,13 @@ public class SPService implements ISPService
 
         publishACLs_(affectedUsers);
 
+        PBStripeData sd = getStripeData(org);
+
         _sqlTrans.commit();
 
-        return signOut();
+        _userTracker.signOutAll(user.id());
+
+        return createReply(DeactivateUserReply.newBuilder().setStripeData(sd).build());
     }
 
     /**
