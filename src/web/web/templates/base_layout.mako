@@ -69,13 +69,26 @@
         ## Horizontal navigation bar
         <div class="container" style="margin-bottom: 20px;">
             <div class="row">
-                <div class="span10 offset1" id="top-nav-span">
+                <div class="span10 offset1 visible-desktop" id="top-nav-span">
                     <ul class="nav nav-pills top-nav">
-                        <li><a href="<%block name="home_url"/>">
+                        <li><a href="${self.home_url()}">
                             <img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/>
                         </a></li>
-                        <%block name="top_navigation_bar"/>
+                        <%block name="top_navigation_bar_desktop"/>
                     </ul>
+                </div>
+
+                <div class="span10 offset1 hidden-desktop" style="margin-top: 14px">
+                    <a href="${self.home_url()}"><img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/></a>
+                    <div class="btn-group pull-right hidden-desktop">
+                        <a href="#" class="btn dropdown-toggle"
+                                data-toggle="dropdown">
+                            <i class="icon-list"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <%block name="top_navigation_bar_mobile"/>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>

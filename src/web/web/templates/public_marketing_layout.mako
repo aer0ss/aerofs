@@ -19,7 +19,21 @@
     }
 </style>
 
-<%block name="top_navigation_bar">
+<%block name="top_navigation_bar_mobile">
+        <li><a href="${request.route_path('product_overview')}">Product</a></li>
+        <li><a href="${request.route_path('solutions_overview')}">Solutions</a></li>
+        <li><a href="${request.route_path('security_overview')}">Security</a></li>
+        <li><a href="${request.route_path('pricing')}">Pricing</a></li>
+        <li class="divider"></li>
+        <li><a href="${request.route_path('dashboard_home')}">Sign in</a></li>
+        <li><a href="${request.route_path('pricing')}">Sign up</a></li>
+        <li class="divider"></li>
+        <li><a href="mailto:business@aerofs.com">
+            business@aerofs.com</a></li>
+        <li><a style="font-weight: normal; color: #222">1-800-656-AERO</a></li>
+</%block>
+
+<%block name="top_navigation_bar_desktop">
     <%
         if not request.matched_route:
             sign_up_button = True
@@ -70,18 +84,17 @@
     %if sign_in_button:
         <li class="pull-right"><a href="${request.route_path('dashboard_home')}">Sign in</a></li>
     %endif
-    <li class="pull-right top-contact hidden-phone"><a href="http://www.twitter.com/aerofs">
+    <li class="pull-right top-contact"><a href="http://www.twitter.com/aerofs">
         <i class="aerofs-icon-twitter" id="contact-twitter"></i></a></li>
-    <li class="pull-right top-contact hidden-phone"><a href="mailto:business@aerofs.com">
+    <li class="pull-right top-contact"><a href="mailto:business@aerofs.com">
         <i class="icon-envelope" id="contact-email"></i></a></li>
-    <li class="pull-right top-contact hidden-phone"><a href="#" onclick="showEnterpriseContactForm(); return false;">
+    <li class="pull-right top-contact"><a href="#" onclick="showEnterpriseContactForm(); return false;">
         <i class="aerofs-icon-earphone" id="contact-phone"></i></a></li>
-    <li class="pull-right visible-phone"><a style="font-weight: normal; color: #222">1-800-656-AERO</a></li>
 </%block>
 
-<%block name="home_url">
+<%def name="home_url()">
     ${request.route_path('marketing_home')}
-</%block>
+</%def>
 
 <%block name="page_view_tracker">
     ## We only track marketing page views

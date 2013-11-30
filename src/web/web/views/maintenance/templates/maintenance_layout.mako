@@ -7,12 +7,16 @@
 
 <%no_ie:scripts/>
 
-<%block name="home_url">
+<%def name="home_url()">
     ${request.route_path('manage')}
+</%def>
+
+<%block name="top_navigation_bar_mobile">
+    <%version:version_top_nav_item_mobile/>
 </%block>
 
-<%block name="top_navigation_bar">
-    <%version:version_top_nav_item/>
+<%block name="top_navigation_bar_desktop">
+    <%version:version_top_nav_item_desktop/>
 </%block>
 
 ## N.B. dashboard_layout.mako uses the same layout

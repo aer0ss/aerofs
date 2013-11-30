@@ -6,8 +6,12 @@
 <%namespace name="no_ie" file="no_ie.mako"/>
 <%namespace name="csrf" file="csrf.mako"/>
 
-<%block name="top_navigation_bar">
-    <%version:version_top_nav_item/>
+<%block name="top_navigation_bar_mobile">
+    <%version:version_top_nav_item_mobile/>
+</%block>
+
+<%block name="top_navigation_bar_desktop">
+    <%version:version_top_nav_item_desktop/>
 </%block>
 
 <div class="span8 offset2">

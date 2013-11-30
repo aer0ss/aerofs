@@ -6,12 +6,16 @@
 <%namespace name="version" file="version.mako"/>
 <%namespace name="no_ie" file="no_ie.mako"/>
 
-<%block name="home_url">
+<%def name="home_url()">
     ${request.route_path('manage')}
+</%def>
+
+<%block name="top_navigation_bar_mobile">
+    <%version:version_top_nav_item_mobile/>
 </%block>
 
-<%block name="top_navigation_bar">
-    <%version:version_top_nav_item/>
+<%block name="top_navigation_bar_desktop">
+    <%version:version_top_nav_item_desktop/>
 </%block>
 
 <%block name="css">

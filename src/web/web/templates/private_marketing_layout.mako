@@ -3,11 +3,15 @@
 <%inherit file="base_layout.mako"/>
 <%namespace name="navigation" file="navigation.mako"/>
 
-<%block name="home_url">
+<%def name="home_url()">
     ${request.route_path('dashboard_home')}
+</%def>
+
+<%block name="top_navigation_bar_mobile">
+    <%navigation:marketing_links/>
 </%block>
 
-<%block name="top_navigation_bar">
+<%block name="top_navigation_bar_desktop">
     <%navigation:marketing_links/>
 </%block>
 

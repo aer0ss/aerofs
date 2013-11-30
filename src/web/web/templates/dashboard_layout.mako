@@ -27,7 +27,13 @@
     </div>
 </div>
 
-<%block name="top_navigation_bar">
+<%block name="top_navigation_bar_mobile">
+    <%navigation:marketing_links/>
+    <li class="divider"></li>
+    <li><a href="${request.route_path('logout')}">Sign out</a></li>
+</%block>
+
+<%block name="top_navigation_bar_desktop">
     <%navigation:marketing_links/>
     <li class="pull-right"><a href="${request.route_path('logout')}">Sign out</a></li>
     <li class="pull-right disabled"><a href="#">${authenticated_userid(request)}</a></li>
@@ -38,9 +44,9 @@
     % endif
 </%block>
 
-<%block name="home_url">
+<%def name="home_url()">
     ${request.route_path('dashboard_home')}
-</%block>
+</%def>
 
 <%def name="render_download_links(admin)">
     <li class="pull-right dropdown">
