@@ -179,7 +179,7 @@ def is_configuration_initialized(settings):
     public deployment.
     """
     return not is_private_deployment(settings) or \
-           str2bool(settings.get('base.configuration.initialized', False))
+            os.path.exists('/var/aerofs/configuration-initialized-flag')
 
 def is_maintenance_mode():
     # bootstrap tasks maintenance-enter & maintenance-exit create and delete

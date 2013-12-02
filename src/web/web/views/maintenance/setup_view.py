@@ -538,9 +538,7 @@ def json_upload_backup(request):
 )
 def json_setup_finalize(request):
     log.warn("finalizing configuration...")
-
-    configuration = Configuration()
-    configuration.set_external_property('configuration_initialized', 'true')
+    aerofs_common.bootstrap.enqueue_task_set("set-configuration-initialized")
 
     # Finally, ask ourselves to load new configuration values. Doing so in
     # json_setup_apply() (i.e. placing uwsgi-reload in manual.tasks) would be
