@@ -100,4 +100,15 @@ class unified {
         source => "puppet:///modules/unified/probes/nginx.sh",
         require => Package["aerofs-sanity"],
     }
+
+    # --------------
+    # Apt
+    # --------------
+
+    file {"/etc/cron.weekly/apt-xapian-index" :
+        ensure => absent
+    }
+    file {"/etc/cron.daily/apt" :
+        ensure => absent
+    }
 }
