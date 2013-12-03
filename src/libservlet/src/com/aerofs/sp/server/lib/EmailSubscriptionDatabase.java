@@ -30,6 +30,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_ES_TOKEN_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_ES;
 import static com.aerofs.sp.server.lib.SPSchema.T_SIGNUP_CODE;
@@ -241,7 +242,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
                         " from " + T_SIGNUP_CODE +
                         " left join " + T_USER + " on " + C_USER_ID + "=" +
                         C_SIGNUP_CODE_TO +
-                        " where " + C_USER_ID + " is null " +
+                        " where (" + C_USER_ID + " is null or " + C_USER_DEACTIVATED + "=1)" +
                         " and DATEDIFF(CURRENT_DATE(),DATE(" + C_SIGNUP_CODE_TS +")) =?" +
                         " limit ? offset ?");
 

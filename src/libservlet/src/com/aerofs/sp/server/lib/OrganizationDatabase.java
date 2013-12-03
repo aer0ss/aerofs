@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
@@ -191,9 +192,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    private static String andNotTeamServer()
+    private static String andActiveNonTeamServerUser()
     {
-        return " and " + C_USER_ID + " not like ':%' ";
+        return " and " + C_USER_DEACTIVATED + "=0 and " + C_USER_ID + " not like ':%' ";
     }
 
     /**
@@ -218,10 +219,10 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public List<UserID> listUsers(OrganizationID orgId, int offset, int maxResults)
             throws SQLException
     {
-        PreparedStatement psLU = prepareStatement(
-                "select " + C_USER_ID + " from " + T_USER +
-                        " where " + C_USER_ORG_ID + "=? " + andNotTeamServer() + " order by " +
-                        C_USER_ID + " limit ? offset ?");
+        PreparedStatement psLU = prepareStatement(DBUtil.selectWhere(T_USER,
+                C_USER_ORG_ID + "=? " + andActiveNonTeamServerUser(),
+                C_USER_ID)
+                + " order by " + C_USER_ID + " limit ? offset ?");
 
         psLU.setInt(1, orgId.getInt());
         psLU.setInt(2, maxResults);
@@ -243,7 +244,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_USER,
-                C_USER_ORG_ID + "=?" + andNotTeamServer(), "count(*)"));
+                C_USER_ORG_ID + "=?" + andActiveNonTeamServerUser(), "count(*)"));
 
         ps.setInt(1, orgId.getInt());
         ResultSet rs = ps.executeQuery();
@@ -264,7 +265,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         PreparedStatement ps = prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=? and " +
-                C_USER_AUTHORIZATION_LEVEL + "=?" + andNotTeamServer());
+                C_USER_AUTHORIZATION_LEVEL + "=?" + andActiveNonTeamServerUser());
 
         ps.setInt(1, orgId.getInt());
         ps.setInt(2, authlevel.ordinal());
