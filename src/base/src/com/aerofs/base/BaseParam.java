@@ -12,6 +12,7 @@ import java.net.URL;
 import java.security.cert.X509Certificate;
 
 import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getCertificateProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
@@ -155,5 +156,25 @@ public class BaseParam
     {
         public static final String API_ENDPOINT = getStringProperty("base.mixpanel.url",
                 "https://api.mixpanel.com/track/?data=");
+    }
+
+    public static class Audit
+    {
+        /**
+         * Boolean indicating whether or not the license allows us to use the audit feature.
+         */
+        private static boolean AUDIT_ALLOWED =
+                getBooleanProperty("license_allow_auditing", false);
+
+        /**
+         * Boolean indicating whether or not the audit feature has been enabled.
+         *
+         * N.B. audit is enabled when both of the following are true:
+         *
+         *  1. Our license allows us to use the audit feature, AND
+         *  2. The user has enabled auditing during the setup process.
+         */
+        public static boolean AUDIT_ENABLED = AUDIT_ALLOWED &&
+                getBooleanProperty("base.audit.enabled", false);
     }
 }

@@ -173,6 +173,13 @@ def str2bool(v):
 def is_private_deployment(settings):
     return str2bool(settings.get('config.loader.is_private_deployment', False))
 
+def is_audit_allowed(settings):
+    return str2bool(settings.get('license_allow_auditing', False))
+
+def is_audit_enabled(settings):
+    return is_audit_allowed(settings) and \
+           str2bool(settings.get('base.audit.enabled', False))
+
 def is_configuration_initialized(settings):
     """
     Return whether the configuration is initialized. Always return Rrue in

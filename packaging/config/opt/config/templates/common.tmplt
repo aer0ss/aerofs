@@ -39,3 +39,5 @@ openid.service.timeout={{ openid_service_timeout }}
 openid.service.session.timeout={{ openid_service_session_timeout }}
 openid.service.session.interval={{ openid_service_session_interval }}
 openid.service.realm={{ openid_service_realm }}
+
+base.audit.enabled={{ audit_enabled }}
