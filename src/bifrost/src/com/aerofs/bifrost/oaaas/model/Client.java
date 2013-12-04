@@ -362,14 +362,6 @@ public class Client extends AbstractEntity
       isValid = false;
     }
 
-    for (String redirectUri : redirectUris) {
-      try {
-        new URL(redirectUri);
-      } catch (MalformedURLException e) {
-        violation(context, "redirectUri '" + redirectUri + "' is not a valid URI");
-        isValid = false;
-      }
-    }
     return isValid;
   }
 
