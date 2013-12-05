@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -225,6 +227,21 @@ public class OSUtilWindows implements IOSUtil
     public boolean isInvalidFileName(String path)
     {
         return isInvalidWin32FileName(path);
+    }
+
+    @Override
+    public String reasonForInvalidFilename(String name)
+    {
+        if (name.length() > 255) {
+            return S.INVALID_TOO_LONG;
+        } else if (FORBIDDEN_TRAILERS.contains(name.charAt(name.length() - 1))) {
+            return S.INVALID_TRAILING_SPACE_PERIOD;
+        } else if (INVALID_FILENAME_CHARS.matcher(name).find()) {
+            return S.INVALID_FORBIDDEN_CHARACTERS;
+        } else if (RESERVED_FILENAME_PATTERN.matcher(name).matches()) {
+            return S.INVALID_RESERVED_NAME;
+        }
+        return null;
     }
 
     @Override

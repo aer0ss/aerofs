@@ -24,6 +24,11 @@ service RitualService {
     // Throw NOT_DIR if the parent path is not a folder
     rpc GetChildrenAttributes(GetChildrenAttributesCall) returns(GetChildrenAttributesReply);
 
+    // List non-representable objects, aka unsyncable files
+    // NB: representable children of non-representable children are NOT included in
+    // this listing
+    rpc ListNonRepresentableObjects(Void) returns(ListNonRepresentableObjectsReply);
+
     rpc CreateObject(CreateObjectCall) returns(Void);
     rpc DeleteObject(DeleteObjectCall) returns(Void);
     rpc MoveObject(MoveObjectCall) returns(Void);
@@ -267,6 +272,15 @@ message PBBranch {
 
     // last modification of the conflict file
     required uint64 mtime = 3;
+}
+
+message ListNonRepresentableObjectsReply {
+    repeated PBNonRepresentableObject objects = 1;
+
+    message PBNonRepresentableObject {
+        required PBPath path = 1;
+        required string reason = 2;
+    }
 }
 
 message CreateObjectCall {

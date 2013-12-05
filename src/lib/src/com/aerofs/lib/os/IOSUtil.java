@@ -7,6 +7,8 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.lib.os.OSUtil.OSFamily;
 
+import javax.annotation.Nullable;
+
 public interface IOSUtil
 {
     OSFamily getOSFamily();
@@ -115,6 +117,12 @@ public interface IOSUtil
      * whether a filename is invalid (i.e. inherently non-representable) on this OS
      */
     boolean isInvalidFileName(String name);
+
+    /**
+     * @return a user-friendly explanation of the reason why a filename is invalid,
+     * null if the name is valid.
+     */
+    @Nullable String reasonForInvalidFilename(String name);
 
     /**
      * Return the path to an OS-specific icon resource

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
@@ -7,6 +8,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 
 import javax.annotation.Nullable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Helper class to manipulate path within linked storage
@@ -91,5 +94,22 @@ public class LinkedPath
     public static String makeAuxFileName(SOKID sokid)
     {
         return makeAuxFileName(sokid.soid()) + '-' + sokid.kidx();
+    }
+
+    private final static Pattern SOID_FILENAME = Pattern.compile("([0-9]+)-([0-9a-fA-F]{32})");
+    /**
+     * @return the SOID that's parsed from {@paramref name}, null if the parsing failed.
+     */
+    public static SOID soidFromFileNameNullable(String name)
+    {
+        Matcher m = SOID_FILENAME.matcher(name);
+        try {
+            return m.matches()
+                    ? new SOID(new SIndex(Integer.parseInt(m.group(1))), new OID(m.group(2)))
+                    : null;
+        } catch (Exception e) {
+            // the regex should ensure that the above cannot throw...
+            return null;
+        }
     }
 }

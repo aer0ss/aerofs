@@ -3,13 +3,18 @@ package com.aerofs.daemon.core.phy;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
+import com.google.common.collect.ImmutableCollection;
+
+import javax.annotation.Nullable;
 
 /**
  * This interface is the main access point of the physical storage layer. See
@@ -68,4 +73,23 @@ public interface IPhysicalStorage
      * deleted (instead of simply being moved to rev) when the transaction is successfully committed
      */
     void discardRevForTrans_(Trans t);
+
+    public static class NonRepresentableObject
+    {
+        public final SOID soid;
+        public final @Nullable OID conflict;
+
+        public NonRepresentableObject(SOID soid, @Nullable OID conflict)
+        {
+            this.soid = soid;
+            this.conflict = conflict;
+        }
+    }
+
+    /**
+     * List NROs, if the underlying storage has limitations (only applies to LinkedStorage at
+     * this time and in the foreseeable future)
+     */
+    ImmutableCollection<NonRepresentableObject> listNonRepresentableObjects_()
+            throws IOException, SQLException;
 }

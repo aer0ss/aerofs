@@ -15,6 +15,7 @@ import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.phy.linked.db.LinkedStorageSchema.*;
@@ -52,6 +53,33 @@ public class NRODatabase extends AbstractDatabase
             return DBUtil.binaryCount(ps.executeQuery());
         } catch (SQLException e) {
             _pswCheck.close();
+            throw e;
+        }
+    }
+
+    private final PreparedStatementWrapper _pswGetConflict = new PreparedStatementWrapper();
+    public @Nullable OID getConflict_(SOID soid) throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswGetConflict.get();
+            if (ps == null) {
+                _pswGetConflict.set(ps = c().prepareStatement(DBUtil.selectWhere(T_NRO,
+                        C_NRO_SIDX + "=? and " + C_NRO_OID + "=?",
+                        C_NRO_CONFLICT_OID)));
+            }
+
+            ps.setInt(1, soid.sidx().getInt());
+            ps.setBytes(2, soid.oid().getBytes());
+
+            ResultSet rs = ps.executeQuery();
+            try {
+                byte[] b = rs.next() ? rs.getBytes(1) : null;
+                return b != null ? new OID(b) : null;
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            _pswGetConflict.close();
             throw e;
         }
     }

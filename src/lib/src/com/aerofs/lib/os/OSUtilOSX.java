@@ -14,6 +14,7 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.RootAnchor;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -331,6 +332,19 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         return name.length() > 255
                 || INVALID_FILENAME_CHARS.matcher(name).find()
                 || !Normalizer.isNormalized(name, Form.NFD);
+    }
+
+    @Override
+    public String reasonForInvalidFilename(String name)
+    {
+        if (name.length() > 255) {
+            return S.INVALID_TOO_LONG;
+        } else if (INVALID_FILENAME_CHARS.matcher(name).find()) {
+            return S.INVALID_FORBIDDEN_CHARACTERS;
+        } else if (!Normalizer.isNormalized(name, Form.NFD)) {
+            return S.INVALID_NON_NFD;
+        }
+        return null;
     }
 
     @Override

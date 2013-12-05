@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
@@ -21,6 +22,10 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SOID;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableCollection.Builder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
@@ -199,6 +204,33 @@ public class LinkedStorage implements IPhysicalStorage
     {
         _tlUseHistory.set(t, false);
     }
+
+    @Override
+    public ImmutableCollection<NonRepresentableObject> listNonRepresentableObjects_()
+            throws IOException, SQLException
+    {
+        ImmutableCollection.Builder<NonRepresentableObject> bd = ImmutableList.builder();
+
+        for (LinkerRoot r : _lrm.getAllRoots_()) {
+            String nro = Util.join(r.absAuxRoot(), AuxFolder.NON_REPRESENTABLE._name);
+            listNonRepresentableObjects_(nro, bd);
+        }
+
+        return bd.build();
+    }
+
+    private void listNonRepresentableObjects_(String absPath, Builder<NonRepresentableObject> bd)
+            throws IOException, SQLException
+    {
+        String[] children = new File(absPath).list();
+        for (String child : children) {
+            SOID soid = LinkedPath.soidFromFileNameNullable(child);
+            if (soid != null) {
+                bd.add(new NonRepresentableObject(soid, _rh.conflict(soid)));
+            }
+        }
+    }
+
 
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException
     {

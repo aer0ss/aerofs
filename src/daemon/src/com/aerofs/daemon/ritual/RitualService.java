@@ -49,6 +49,7 @@ import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.fs.EIImportFile;
 import com.aerofs.daemon.event.fs.EILinkRoot;
+import com.aerofs.daemon.event.fs.EIListNonRepresentableObjects;
 import com.aerofs.daemon.event.fs.EIListPendingRoots;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
@@ -83,6 +84,7 @@ import com.aerofs.proto.Ritual.IRitualService;
 import com.aerofs.proto.Ritual.LinkRootReply;
 import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListExcludedFoldersReply;
+import com.aerofs.proto.Ritual.ListNonRepresentableObjectsReply;
 import com.aerofs.proto.Ritual.ListPendingRootsReply;
 import com.aerofs.proto.Ritual.ListPendingRootsReply.PendingRoot;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
@@ -279,6 +281,18 @@ public class RitualService implements IRitualService
         }
 
         return createReply(bd.build());
+    }
+
+    @Override
+    public ListenableFuture<ListNonRepresentableObjectsReply> listNonRepresentableObjects()
+            throws Exception
+    {
+        EIListNonRepresentableObjects ev = new EIListNonRepresentableObjects(Core.imce());
+        ev.execute(PRIO);
+
+        return createReply(ListNonRepresentableObjectsReply.newBuilder()
+                .addAllObjects(ev.nonRepresentableObjects())
+                .build());
     }
 
     @Override

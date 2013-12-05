@@ -34,6 +34,7 @@ import com.aerofs.daemon.core.fs.HdGetChildrenAttr;
 import com.aerofs.daemon.core.fs.HdImportFile;
 import com.aerofs.daemon.core.fs.HdJoinSharedFolder;
 import com.aerofs.daemon.core.fs.HdLeaveSharedFolder;
+import com.aerofs.daemon.core.fs.HdListNonRepresentableObjects;
 import com.aerofs.daemon.core.fs.HdListSharedFolders;
 import com.aerofs.daemon.core.fs.HdMoveObject;
 import com.aerofs.daemon.core.fs.HdSetAttr;
@@ -82,6 +83,7 @@ import com.aerofs.daemon.event.fs.EIDeleteObject;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.fs.EIImportFile;
+import com.aerofs.daemon.event.fs.EIListNonRepresentableObjects;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EISetAttr;
 import com.aerofs.daemon.event.fs.EIShareFolder;
@@ -100,127 +102,53 @@ import com.google.inject.Inject;
 
 public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
 {
-    private final HdCreateObject _hdco;
-    private final HdMoveObject _hdMoveObject;
-    private final HdDeleteObject _hddo;
-    private final HdDeleteBranch _hddb;
-    private final HdJoinSharedFolder _hdJoinSharedFolder;
-    private final HdLeaveSharedFolder _hdLeaveSharedFolder;
-    private final HdListSharedFolders _hdListSharedFolders;
-    private final HdListSharedFolderInvitations _hdListSharedFolderInvitations;
-    private final HdSetExpelled _hdSetExpelled;
-    private final HdListExpelledObjects _hdListExpelledObjects;
-    private final HdPulseStopped _hdPulseStopped;
-    private final HdStreamAborted _hdStreamAborted;
-    private final HdChunk _hdChunk;
-    private final HdStreamBegun _hdStreamBegun;
-    private final HdMaxcastMessage _hdMaxcastMessage;
-    private final HdUnicastMessage _hdUnicastMessage;
-    private final HdTransportMetricsUpdated _hdTransportMetricsUpdated;
-    private final HdPresence _hdPresence;
-    private final HdListConflicts _hdListConflicts;
-    private final HdExportConflict _hdExportConflict;
-    private final HdGetTransferStat _hdGetTransferStat;
-    private final HdDumpStat _hdDumpStat;
-    private final HdTransportDiagnostics _hdTransportDiagnostics;
-    private final HdReloadConfig _hdReloadConfig;
-    private final HdPauseOrResumeSyncing _hdPauseOrResumeSyncing;
-    private final HdUpdateACL _hdUpdateACL;
-    private final HdDeleteACL _hdDeleteACL;
-    private final HdSetAttr _hdSetAttr;
-    private final HdGetChildrenAttr _hdGetChildrenAttr;
-    private final HdGetAttr _hdGetAttr;
-    private final HdShareFolder _hdShareFolder;
-    private final HdImportFile _hdImportFile;
-    private final HdExportFile _hdExportFile;
-    private final HdRelocateRootAnchor _hdRelocateRootAnchor;
-    private final HdListRevChildren _hdListRevChildren;
-    private final HdListRevHistory _hdListRevHistory;
-    private final HdExportRevision _hdExportRevision;
-    private final HdDeleteRevision _hdDeleteRevision;
-    private final HdGetSyncStatus _hdGetSyncStatus;
-    private final HdGetStatusOverview _hdGetStatusOverview;
-    private final HdHeartbeat _hdHeartbeat;
-    private final HdGetActivities _hdGetActivities;
-    private final HdInvalidateUserNameCache _hdInvalidateUserNameCache;
-    private final HdInvalidateDeviceNameCache _hdInvalidateDeviceNameCache;
-    private final HdCreateSeedFile _hdCreateSeedFile;
-    private final HdTestGetAliasObject _hdTestGetAliasObject;
-
-    @Inject
-    public CoreEventHandlerRegistrar(HdCreateObject hdco, HdMoveObject hdMoveObject,
-            HdDeleteObject hddo, HdDeleteBranch hddb, HdJoinSharedFolder hdJoinSharedFolder,
-            HdSetExpelled hdSetExpelled, HdListSharedFolders hdListSharedFolders,
-            HdListSharedFolderInvitations hdListSharedFolderInvitations,
-            HdListExpelledObjects hdListExpelledObjects, HdPulseStopped hdPulseStopped,
-            HdStreamAborted hdStreamAborted, HdChunk hdChunk, HdStreamBegun hdStreamBegun,
-            HdMaxcastMessage hdMaxcastMessage, HdUnicastMessage hdUnicastMessage,
-            HdTransportMetricsUpdated hdTransportMetricsUpdated,
-            HdPresence hdPresence, HdListConflicts hdListConflicts,
-            HdExportConflict hdExportConflict, HdDumpStat hdDumpStat,
-            HdTransportDiagnostics hdTransportDiagnostics, HdReloadConfig hdReloadConfig,
-            HdPauseOrResumeSyncing hdPauseOrResumeSyncing,
-            HdUpdateACL hdUpdateACL, HdDeleteACL hdDeleteACL, HdSetAttr hdSetAttr,
-            HdGetChildrenAttr hdGetChildrenAttr, HdGetAttr hdGetAttr, HdShareFolder hdShareFolder,
-            HdImportFile hdImportFile, HdExportFile hdExportFile,
-            HdRelocateRootAnchor hdRelocateRootAnchor, HdListRevChildren hdListRevChildren,
-            HdListRevHistory hdListRevHistory, HdExportRevision hdExportRevision,
-            HdDeleteRevision hdDeleteRevision,
-            HdGetSyncStatus hdGetSyncStatus, HdGetStatusOverview hdGetStatusOverview,
-            HdHeartbeat hdHeartbeat, HdGetActivities hdGetActivities,
-            HdLeaveSharedFolder hdLeaveSharedFolder,
-            HdInvalidateUserNameCache hdInvalidateUserNameCache,
-            HdInvalidateDeviceNameCache hdInvalidateDeviceNameCache,
-            HdCreateSeedFile hdCreateSeedFile, HdGetTransferStat hdGetTransferStat,
-            HdTestGetAliasObject hdTestGetAliasObject)
-    {
-        _hdco = hdco;
-        _hdMoveObject = hdMoveObject;
-        _hddo = hddo;
-        _hddb = hddb;
-        _hdJoinSharedFolder = hdJoinSharedFolder;
-        _hdLeaveSharedFolder = hdLeaveSharedFolder;
-        _hdListSharedFolders = hdListSharedFolders;
-        _hdListSharedFolderInvitations = hdListSharedFolderInvitations;
-        _hdSetExpelled = hdSetExpelled;
-        _hdListExpelledObjects = hdListExpelledObjects;
-        _hdPulseStopped = hdPulseStopped;
-        _hdStreamAborted = hdStreamAborted;
-        _hdChunk = hdChunk;
-        _hdStreamBegun = hdStreamBegun;
-        _hdMaxcastMessage = hdMaxcastMessage;
-        _hdUnicastMessage = hdUnicastMessage;
-        _hdTransportMetricsUpdated = hdTransportMetricsUpdated;
-        _hdPresence = hdPresence;
-        _hdListConflicts = hdListConflicts;
-        _hdExportConflict = hdExportConflict;
-        _hdDumpStat = hdDumpStat;
-        _hdTransportDiagnostics = hdTransportDiagnostics;
-        _hdReloadConfig = hdReloadConfig;
-        _hdPauseOrResumeSyncing = hdPauseOrResumeSyncing;
-        _hdUpdateACL = hdUpdateACL;
-        _hdDeleteACL = hdDeleteACL;
-        _hdSetAttr = hdSetAttr;
-        _hdGetChildrenAttr = hdGetChildrenAttr;
-        _hdGetAttr = hdGetAttr;
-        _hdShareFolder = hdShareFolder;
-        _hdImportFile = hdImportFile;
-        _hdExportFile = hdExportFile;
-        _hdRelocateRootAnchor = hdRelocateRootAnchor;
-        _hdListRevChildren = hdListRevChildren;
-        _hdListRevHistory = hdListRevHistory;
-        _hdExportRevision = hdExportRevision;
-        _hdDeleteRevision = hdDeleteRevision;
-        _hdGetSyncStatus = hdGetSyncStatus;
-        _hdGetStatusOverview = hdGetStatusOverview;
-        _hdHeartbeat = hdHeartbeat;
-        _hdGetActivities = hdGetActivities;
-        _hdInvalidateUserNameCache = hdInvalidateUserNameCache;
-        _hdInvalidateDeviceNameCache = hdInvalidateDeviceNameCache;
-        _hdCreateSeedFile = hdCreateSeedFile;
-        _hdGetTransferStat = hdGetTransferStat;
-        _hdTestGetAliasObject = hdTestGetAliasObject;
-    }
+    @Inject HdCreateObject _hdco;
+    @Inject HdMoveObject _hdMoveObject;
+    @Inject HdDeleteObject _hddo;
+    @Inject HdDeleteBranch _hddb;
+    @Inject HdJoinSharedFolder _hdJoinSharedFolder;
+    @Inject HdLeaveSharedFolder _hdLeaveSharedFolder;
+    @Inject HdListSharedFolders _hdListSharedFolders;
+    @Inject HdListSharedFolderInvitations _hdListSharedFolderInvitations;
+    @Inject HdSetExpelled _hdSetExpelled;
+    @Inject HdListExpelledObjects _hdListExpelledObjects;
+    @Inject HdListNonRepresentableObjects _hdListNonRepresentableObjects;
+    @Inject HdPulseStopped _hdPulseStopped;
+    @Inject HdStreamAborted _hdStreamAborted;
+    @Inject HdChunk _hdChunk;
+    @Inject HdStreamBegun _hdStreamBegun;
+    @Inject HdMaxcastMessage _hdMaxcastMessage;
+    @Inject HdUnicastMessage _hdUnicastMessage;
+    @Inject HdTransportMetricsUpdated _hdTransportMetricsUpdated;
+    @Inject HdPresence _hdPresence;
+    @Inject HdListConflicts _hdListConflicts;
+    @Inject HdExportConflict _hdExportConflict;
+    @Inject HdGetTransferStat _hdGetTransferStat;
+    @Inject HdDumpStat _hdDumpStat;
+    @Inject HdTransportDiagnostics _hdTransportDiagnostics;
+    @Inject HdReloadConfig _hdReloadConfig;
+    @Inject HdPauseOrResumeSyncing _hdPauseOrResumeSyncing;
+    @Inject HdUpdateACL _hdUpdateACL;
+    @Inject HdDeleteACL _hdDeleteACL;
+    @Inject HdSetAttr _hdSetAttr;
+    @Inject HdGetChildrenAttr _hdGetChildrenAttr;
+    @Inject HdGetAttr _hdGetAttr;
+    @Inject HdShareFolder _hdShareFolder;
+    @Inject HdImportFile _hdImportFile;
+    @Inject HdExportFile _hdExportFile;
+    @Inject HdRelocateRootAnchor _hdRelocateRootAnchor;
+    @Inject HdListRevChildren _hdListRevChildren;
+    @Inject HdListRevHistory _hdListRevHistory;
+    @Inject HdExportRevision _hdExportRevision;
+    @Inject HdDeleteRevision _hdDeleteRevision;
+    @Inject HdGetSyncStatus _hdGetSyncStatus;
+    @Inject HdGetStatusOverview _hdGetStatusOverview;
+    @Inject HdHeartbeat _hdHeartbeat;
+    @Inject HdGetActivities _hdGetActivities;
+    @Inject HdInvalidateUserNameCache _hdInvalidateUserNameCache;
+    @Inject HdInvalidateDeviceNameCache _hdInvalidateDeviceNameCache;
+    @Inject HdCreateSeedFile _hdCreateSeedFile;
+    @Inject HdTestGetAliasObject _hdTestGetAliasObject;
 
     @Override
     public void registerHandlers_(CoreEventDispatcher disp)
@@ -252,6 +180,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIExportConflict.class, _hdExportConflict)
                 .setHandler_(EISetExpelled.class, _hdSetExpelled)
                 .setHandler_(EIListExpelledObjects.class, _hdListExpelledObjects)
+                .setHandler_(EIListNonRepresentableObjects.class, _hdListNonRepresentableObjects)
                 .setHandler_(EIPauseOrResumeSyncing.class, _hdPauseOrResumeSyncing)
                 .setHandler_(EIImportFile.class, _hdImportFile)
                 .setHandler_(EIExportFile.class, _hdExportFile)

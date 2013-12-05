@@ -8,6 +8,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,6 +17,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.RootAnchor;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -301,6 +304,18 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     {
         return name.length() > 255 || INVALID_FILENAME_CHARS.matcher(name).find();
     }
+
+    @Override
+    public String reasonForInvalidFilename(String name)
+    {
+        if (name.length() > 255) {
+            return S.INVALID_TOO_LONG;
+        } else if (INVALID_FILENAME_CHARS.matcher(name).find()) {
+            return S.INVALID_FORBIDDEN_CHARACTERS;
+        }
+        return null;
+    }
+
 
     @Override
     public String getIconPath(Icon icon)

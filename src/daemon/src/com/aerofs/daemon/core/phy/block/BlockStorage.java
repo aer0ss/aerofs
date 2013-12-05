@@ -46,6 +46,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -278,6 +280,13 @@ class BlockStorage implements IPhysicalStorage
     {
         // TODO: implement
         l.warn("discardRevForTrans not supported yet");
+    }
+
+    @Override
+    public ImmutableCollection<NonRepresentableObject> listNonRepresentableObjects_() throws IOException, SQLException
+    {
+        l.info("BlockStorage doesn't have NROs");
+        return ImmutableList.<NonRepresentableObject>builder().build();
     }
 
     /**

@@ -101,6 +101,12 @@ public class S
                     + " files and other unpredictable behaviors.",
             FORCE_LAUNCH = "Force Launch",
 
+            INVALID_TOO_LONG                = "Filename too long",
+            INVALID_FORBIDDEN_CHARACTERS    = "Forbidden characters",
+            INVALID_RESERVED_NAME           = "Reserved filename",
+            INVALID_NON_NFD                 = "Non-NFD characters",
+            INVALID_TRAILING_SPACE_PERIOD   = "Trailing space or period",
+
             // transfers dialog
 
             // N.B. LBL_UNKNOWN_USER & LBL_UNKNOWN_DEVICE should include

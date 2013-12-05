@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -278,5 +279,15 @@ public class RepresentabilityHelper
         } finally {
             it.close_();
         }
+    }
+
+    /**
+     * @return the OID of another object that is in conflict with the object identified by
+     * {@paramref soid}, null if the object with SOID {@paramref soid} is not in conflict with any
+     * other objects.
+     */
+    public @Nullable OID conflict(SOID soid) throws SQLException
+    {
+        return _nrodb.getConflict_(soid);
     }
 }
