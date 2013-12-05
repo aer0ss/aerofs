@@ -220,7 +220,8 @@ public class TrayIcon implements ITrayMenuListener
     public static enum NotificationReason
     {
         UPDATE,
-        CONFLICT
+        CONFLICT,
+        UNSYNCABLE_FILE
     }
 
     private final Set<NotificationReason> _notificationReasons = Sets.newHashSet();

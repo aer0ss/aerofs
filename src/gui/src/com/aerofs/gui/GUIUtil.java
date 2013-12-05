@@ -2,7 +2,7 @@ package com.aerofs.gui;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.IAnalyticsEvent;
-import com.aerofs.gui.diagnosis.DlgConflicts;
+import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;

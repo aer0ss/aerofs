@@ -9,8 +9,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
-import com.aerofs.gui.diagnosis.DlgConflicts;
-import com.aerofs.gui.diagnosis.DlgDiagnosis;
+import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
@@ -22,6 +21,7 @@ import com.aerofs.gui.tray.RebuildDisposition;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
+import com.aerofs.gui.unsyncablefiles.DlgUnsyncableFiles;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
@@ -47,11 +47,14 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 
 import java.util.Map.Entry;
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotificationListener, ITrayMenu
 {
     private static final ClickEvent RESOLVE_CONFLICTS
             = new ClickEvent(Action.RESOLVE_CONFLICTS, Source.TASKBAR);
+    private static final ClickEvent RESOLVE_UNSYNCABLE_FILES
+            = new ClickEvent(Action.RESOLVE_UNSYNCABLE_FILES, Source.TASKBAR);
     private static final ClickEvent PAUSE_SYNCING
             = new ClickEvent(Action.PAUSE_SYNCING, Source.TASKBAR);
     private static final ClickEvent RESUME_SYNCING
@@ -62,6 +65,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             = new ClickEvent(Action.WHY_NOT_SYNCED, Source.TASKBAR);
 
     private volatile int _conflictCount = 0;
+    private volatile int _unsyncableFilesCount = 0;
 
     private final PauseOrResumeSyncing _prs = new PauseOrResumeSyncing();
 
@@ -118,6 +122,10 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             addConflictsMenuItem(trayMenuPopulator, _conflictCount);
             hasWarnings = true;
         }
+        if (_unsyncableFilesCount > 0) {
+            addUnsyncableFileMenuItem(trayMenuPopulator, _unsyncableFilesCount);
+            hasWarnings = true;
+        }
         if (hasWarnings) trayMenuPopulator.addMenuSeparator();
 
         // Open AeroFS folder
@@ -165,10 +173,14 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
     public void onNotificationReceived(PBNotification pb) {
         switch (pb.getType().getNumber()) {
         case Type.CONFLICT_COUNT_VALUE:
-            assert pb.hasCount();
+            checkArgument(pb.hasCount());
             _conflictCount = pb.getCount();
-            _icon.showNotification(NotificationReason.CONFLICT, pb.getCount() > 0);
-            // TODO: schedule GUI update in case the menu is currently visible?
+            _icon.showNotification(NotificationReason.CONFLICT, _conflictCount > 0);
+            break;
+        case Type.NRO_COUNT_VALUE:
+            checkArgument(pb.hasCount());
+            _unsyncableFilesCount = pb.getCount();
+            _icon.showNotification(NotificationReason.UNSYNCABLE_FILE, _unsyncableFilesCount > 0);
             break;
         case Type.SHARED_FOLDER_JOIN_VALUE:
             final Path p = Path.fromPB(pb.getPath());
@@ -210,6 +222,22 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                     protected void handleEventImpl(Event event)
                     {
                         new DlgConflicts(GUI.get().sh()).openDialog();
+                    }
+                });
+    }
+
+    private void addUnsyncableFileMenuItem(TrayMenuPopulator trayMenuPopulator, int nroCount)
+    {
+        String label = UIUtil.prettyLabelWithCount(nroCount, "An unsyncable file was found",
+                "unsyncable files were found");
+
+        trayMenuPopulator.addWarningMenuItem(label,
+                new AbstractListener(RESOLVE_UNSYNCABLE_FILES)
+                {
+                    @Override
+                    protected void handleEventImpl(Event event)
+                    {
+                        new DlgUnsyncableFiles(GUI.get().sh()).openDialog();
                     }
                 });
     }
@@ -339,20 +367,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
     {
         Menu helpMenu = trayMenuPopulator.createHelpMenu();
         TrayMenuPopulator helpTrayMenuPopulator = new TrayMenuPopulator(helpMenu);
-        if (_enabled) {
-            helpTrayMenuPopulator.addMenuItem(S.WHY_ARENT_MY_FILES_SYNCED,
-                    new AbstractListener(WHY_NOT_SYNCED)
-                    {
-                        @Override
-                        protected void handleEventImpl(Event event)
-                        {
-                            boolean showSysFiles = (event.stateMask & SWT.SHIFT) != 0;
-                            new DlgDiagnosis(GUI.get().sh(), showSysFiles).openDialog();
-                        }
-                    });
-
-            helpTrayMenuPopulator.addMenuSeparator();
-        }
         helpTrayMenuPopulator.addHelpMenuItems();
     }
 }

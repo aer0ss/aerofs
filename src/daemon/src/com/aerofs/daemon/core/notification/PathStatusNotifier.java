@@ -102,7 +102,8 @@ public class PathStatusNotifier implements ISyncStatusChangeListener, IConflictS
 
     void sendConflictCountNotification_()
     {
-        _rns.getRitualNotifier().sendNotification(newConflictCountNotification(_ps.conflictCount_()));
+        _rns.getRitualNotifier().sendNotification(
+                newConflictCountNotification(_ps.conflictCount_()));
     }
 
     @Override

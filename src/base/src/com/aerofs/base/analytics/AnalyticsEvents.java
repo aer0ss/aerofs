@@ -200,6 +200,7 @@ public class AnalyticsEvents
             WHY_NOT_SYNCED("Why Not Synced"),
             RESOLVE_CONFLICTS("Resolve Conflicts"),
             MANAGE_TEAM("Manage Team"),
+            RESOLVE_UNSYNCABLE_FILES("Resolve Unsyncable Files"),
             ;
 
             private final String _name;

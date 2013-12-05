@@ -39,6 +39,7 @@ import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
@@ -467,5 +468,15 @@ public class UIUtil
             l.error("ignored exception", e);
         }
         return absRoot != null ? path.toAbsoluteString(absRoot) : null;
+    }
+
+    /**
+     * @param path - a file path which may or may not contain non-printable characters
+     * @return a path based on {@paramref path} where all non-printable characters are replaced
+     *   with '?'
+     */
+    public static @Nonnull String getPrintablePath(@Nonnull String path)
+    {
+        return path.replaceAll("\\p{C}", "?");
     }
 }

@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.gui.diagnosis;
+package com.aerofs.gui.conflicts;
 
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.AeroFSMessageBox;
