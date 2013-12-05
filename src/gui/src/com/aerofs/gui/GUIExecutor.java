@@ -25,5 +25,4 @@ public class GUIExecutor implements Executor
     {
         GUI.get().safeAsyncExec(_w, runnable);
     }
-
 }

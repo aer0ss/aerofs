@@ -79,7 +79,7 @@ public class CompUnsyncableFiles extends Composite
             }
         });
         // update the selected state
-        _table.addSelectionChangedListener(new ISelectionChangedListener()
+        _table.addPostSelectionChangedListener(new ISelectionChangedListener()
         {
             @Override
             public void selectionChanged(SelectionChangedEvent selectionChangedEvent)

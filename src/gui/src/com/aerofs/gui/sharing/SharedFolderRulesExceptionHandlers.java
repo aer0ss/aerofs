@@ -6,6 +6,7 @@ package com.aerofs.gui.sharing;
 
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
@@ -70,8 +71,8 @@ public class SharedFolderRulesExceptionHandlers
         StringBuilder builder = new StringBuilder();
 
         for (Entry<UserID, FullName> user : users.entrySet()) {
-            // \u25CF is the unicode character for black circle. It is used as a bullet.
-            builder.append("\u25CF ")
+            builder.append(GUIUtil.BULLET)
+                    .append(" ")
                     .append(user.getValue().getString())
                     .append(" <")
                     .append(user.getKey().getString())

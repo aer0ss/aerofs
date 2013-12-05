@@ -58,6 +58,8 @@ public class GUIUtil
     // this is the Unicode character that looks like a downward solid triangle, we use it
     // on some widgets to indicate that there's a drop-down menu.
     public static final String TRIANGLE_DOWNWARD = "\u25BE";
+    // this is the unicode character for black circle. It is used as a bullet.
+    public static final String BULLET = "\u25CF";
 
     public static String getNewText(Text txt, VerifyEvent ev)
     {
@@ -234,11 +236,6 @@ public class GUIUtil
         } finally {
             gc.dispose();
         }
-    }
-
-    public static int getInterButtonHorizontalSpace(GridLayout gl)
-    {
-        return OSUtil.isOSX() ? 0 : gl.horizontalSpacing;
     }
 
     public static Font makeBold(Font org)
