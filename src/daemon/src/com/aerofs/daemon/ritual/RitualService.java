@@ -69,6 +69,7 @@ import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Ritual.CreateSeedFileReply;
+import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.aerofs.proto.Ritual.DumpStatsReply;
 import com.aerofs.proto.Ritual.ExportConflictReply;
 import com.aerofs.proto.Ritual.ExportFileReply;
@@ -228,7 +229,11 @@ public class RitualService implements IRitualService
         return createVoidReply();
     }
 
-    private static PBObjectAttributes toPB(OA oa)
+    /**
+     * Creates a PBObjectAttributes instance with attributes from {@paramref oa} and branches
+     * listed in {@paramref div}, and each branch will contain the contributors in {@paramref div}.
+     */
+    private static PBObjectAttributes toPB(OA oa, @Nullable Map<KIndex, List<PBPeer>> div)
     {
         PBObjectAttributes.Builder bd = PBObjectAttributes.newBuilder()
                 .setExcluded(oa.isExpelled());
@@ -242,11 +247,17 @@ public class RitualService implements IRitualService
             break;
         case FILE:
             bd.setType(PBObjectAttributes.Type.FILE);
+
             for (Entry<KIndex, CA> en : oa.cas().entrySet()) {
-                bd.addBranch(PBBranch.newBuilder()
+                PBBranch.Builder bbd = PBBranch.newBuilder()
                         .setKidx(en.getKey().getInt())
                         .setLength(en.getValue().length())
-                        .setMtime(en.getValue().mtime()));
+                        .setMtime(en.getValue().mtime());
+                if (div != null) {
+                    assert div.containsKey(en.getKey()) : oa + " " + en.getKey();
+                    bbd.addAllAncestorToBranch(div.get(en.getKey()));
+                }
+                bd.addBranch(bbd);
             }
             break;
         default: assert false;
@@ -263,7 +274,7 @@ public class RitualService implements IRitualService
         if (ev._oa == null) throw new ExNotFound();
 
         GetObjectAttributesReply reply = GetObjectAttributesReply.newBuilder()
-                .setObjectAttributes(toPB(ev._oa))
+                .setObjectAttributes(toPB(ev._oa, ev._div))
                 .build();
         return createReply(reply);
     }
@@ -277,7 +288,7 @@ public class RitualService implements IRitualService
         GetChildrenAttributesReply.Builder bd = GetChildrenAttributesReply.newBuilder();
         for (OA oa : ev._oas) {
             bd.addChildrenName(oa.name());
-            bd.addChildrenAttributes(toPB(oa));
+            bd.addChildrenAttributes(toPB(oa, null));
         }
 
         return createReply(bd.build());

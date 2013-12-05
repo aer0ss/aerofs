@@ -197,7 +197,7 @@ public class CompUnsyncableFiles extends Composite
         _tv.setInput(_entries);
 
         _table = _tv.getTable();
-        _table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, true, 3, 1));
+        _table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
 
         _table.addSelectionListener(new SelectionListener() {
             @Override

@@ -272,6 +272,25 @@ message PBBranch {
 
     // last modification of the conflict file
     required uint64 mtime = 3;
+
+    message PBPeer {
+        required string user_name = 1;
+        optional string device_name = 2;  // only present for devices of the local user
+    }
+
+    // The divergence between two branches B and C can be two sets of edits made by
+    // different users, starting from an (hypothetical) "common ancestor" version A.
+    // The first leads from A to B and the second from B to C. Theoretically a peer
+    // should not appear in both of these sets, however because we aggregate devices
+    // belonging to foreign peers, the same user may in practice appear in both sets.
+    //
+    // This information would allow us to build a tree of conflict branches however
+    // for the time being the UI is restricted to a flat representation so Ritual
+    // instead provides for each branch the list of peers having contributed to it,
+    // since the hypothetical common ancestor of *all* branches.
+    //
+    // NB: this field is only populated by GetObjectAttributes
+    repeated PBPeer ancestor_to_branch = 4;
 }
 
 message ListNonRepresentableObjectsReply {

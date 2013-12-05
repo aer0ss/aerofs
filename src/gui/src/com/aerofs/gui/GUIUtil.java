@@ -2,7 +2,7 @@ package com.aerofs.gui;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.IAnalyticsEvent;
-import com.aerofs.gui.diagnosis.DlgDiagnosis;
+import com.aerofs.gui.diagnosis.DlgConflicts;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
@@ -356,13 +356,12 @@ public class GUIUtil
      */
     public static void showConflictResolutionDialog(final Path path)
     {
-        // TODO: simpler dialog for resolving conflict of a single file
         GUI.get().asyncExec(new Runnable()
         {
             @Override
             public void run()
             {
-                new DlgDiagnosis(GUI.get().sh(), false).openDialog();
+                new DlgConflicts(GUI.get().sh(), path).openDialog();
             }
         });
     }

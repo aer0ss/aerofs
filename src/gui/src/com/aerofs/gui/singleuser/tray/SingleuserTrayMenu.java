@@ -9,6 +9,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
+import com.aerofs.gui.diagnosis.DlgConflicts;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
@@ -208,9 +209,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                     @Override
                     protected void handleEventImpl(Event event)
                     {
-                        // TODO: split conflict resolution from diagnosis dialog
-                        boolean showSysFiles = (event.stateMask & SWT.SHIFT) != 0;
-                        new DlgDiagnosis(GUI.get().sh(), showSysFiles).openDialog();
+                        new DlgConflicts(GUI.get().sh()).openDialog();
                     }
                 });
     }
