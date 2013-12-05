@@ -81,8 +81,8 @@ public class DlgConflicts extends AeroFSDialog
         delegate.initializeContent(spinner);
 
         lnkMessage.setText("<a>Learn more about managing conflicts.</a>");
-        // TODO (AT): create the support article and populate this with the URL to the article.
-        lnkMessage.addSelectionListener(GUIUtil.createUrlLaunchListener(""));
+        lnkMessage.addSelectionListener(
+                GUIUtil.createUrlLaunchListener("https://support.aerofs.com/entries/23590415"));
 
         btnRefresh.setText("Refresh");
         btnRefresh.addSelectionListener(new SelectionAdapter()

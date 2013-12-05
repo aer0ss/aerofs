@@ -62,32 +62,6 @@ class CompBranch extends Composite
 
         Composite buttonsBar = GUIUtil.newButtonContainer(this, false);
 
-        Button btnOpen = GUIUtil.createButton(buttonsBar, SWT.PUSH);
-        btnOpen.setText(_branch.isMaster() ? "Edit" : "View");
-        btnOpen.setToolTipText(_branch.isMaster()
-                ? "Open and edit the current version of this file."
-                : "Open and view a read-only copy of the conflicting version.");
-        btnOpen.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                onOpen();
-            }
-        });
-
-        Button btnSaveAs = GUIUtil.createButton(buttonsBar, SWT.PUSH);
-        btnSaveAs.setText("Save As...");
-        btnSaveAs.setToolTipText("Save a copy of this version in a different location.");
-        btnSaveAs.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                onSaveAs();
-            }
-        });
-
         Button btnDelete = GUIUtil.createButton(buttonsBar, SWT.PUSH);
         btnDelete.setText("Delete");
         btnDelete.setToolTipText("Delete this conflicting version.");
@@ -103,6 +77,32 @@ class CompBranch extends Composite
         // the button is created but hidden, this ensures that layout works as desired and the
         // button is not visible nor accessible.
         if (branch.isMaster()) btnDelete.setVisible(false);
+
+        Button btnSaveAs = GUIUtil.createButton(buttonsBar, SWT.PUSH);
+        btnSaveAs.setText("Save As...");
+        btnSaveAs.setToolTipText("Save a copy of this version in a different location.");
+        btnSaveAs.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                onSaveAs();
+            }
+        });
+
+        Button btnOpen = GUIUtil.createButton(buttonsBar, SWT.PUSH);
+        btnOpen.setText(_branch.isMaster() ? "Open" : "View");
+        btnOpen.setToolTipText(_branch.isMaster()
+                ? "Open and edit the current version of this file."
+                : "Open and view a read-only copy of the conflicting version.");
+        btnOpen.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                onOpen();
+            }
+        });
 
         /**
          * Layout := 3x3 grid as follows to allow path and buttons to overlap

@@ -35,7 +35,6 @@ import org.eclipse.swt.widgets.Text;
 
 import javax.annotation.Nonnull;
 
-import static com.aerofs.gui.GUIUtil.makeBold;
 import static com.aerofs.gui.GUIUtil.makeSubtitle;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang.StringUtils.isBlank;
@@ -78,7 +77,7 @@ public class DlgRenameFile extends AeroFSDialog
         super(parentShell, "Rename", true, false, true);
 
         _path = path;
-        _message = "Rename " + UIUtil.getPrintablePath(path.toStringRelative()) + " to:";
+        _message = "Rename " + UIUtil.getPrintablePath(path.last()) + " to:";
         _initialValue = UIUtil.getPrintablePath(path.last());
     }
 
@@ -113,6 +112,7 @@ public class DlgRenameFile extends AeroFSDialog
 
             _txtInput = new Text(this, SWT.BORDER);
             _txtInput.setText(_initialValue);
+            _txtInput.selectAll();
             _txtInput.addModifyListener(new ModifyListener()
             {
                 @Override
@@ -127,7 +127,7 @@ public class DlgRenameFile extends AeroFSDialog
             _lblErrorMessage = new Label(_compMessage, SWT.WRAP);
             _lblErrorMessage.setText("");
             _lblErrorMessage.setForeground(SWTResourceManager.getColor(SWT.COLOR_RED));
-            _lblErrorMessage.setFont(makeBold(makeSubtitle(_lblErrorMessage.getFont())));
+            _lblErrorMessage.setFont(makeSubtitle(_lblErrorMessage.getFont()));
 
             _spinner = new CompSpin(_compMessage, SWT.NONE);
 

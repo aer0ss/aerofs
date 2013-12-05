@@ -10,7 +10,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Maps;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
@@ -20,8 +19,6 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.program.Program;
 
-import javax.annotation.Nonnull;
-
 import java.util.Map;
 
 import static com.aerofs.ui.UIUtil.isSystemFile;
@@ -30,7 +27,6 @@ import static com.aerofs.ui.UIUtil.isSystemFile;
  * Features:
  * - Produces text based on path.
  * - Shortens text based on column width, refreshes on resize.
- * - Uses full text as tooltip, and enables tooltip support.
  * - Produces images based on file type, self-manages image cache and the disposal of.
  */
 public class PathLabelProvider extends ColumnLabelProvider
@@ -65,14 +61,6 @@ public class PathLabelProvider extends ColumnLabelProvider
                 _iconCache.clear();
             }
         });
-
-        ColumnViewerToolTipSupport.enableFor(_column.getViewer());
-    }
-
-    private  @Nonnull String getTextImpl(Object element)
-    {
-        Path path = getPathNullable(element);
-        return path == null ? "" : UIUtil.getPrintablePath(path.toStringRelative());
     }
 
     protected Path getPathNullable(Object element)
@@ -83,13 +71,9 @@ public class PathLabelProvider extends ColumnLabelProvider
     @Override
     public String getText(Object element)
     {
-        return GUIUtil.shortenText(_gc, getTextImpl(element), _column.getColumn(), true);
-    }
-
-    @Override
-    public String getToolTipText(Object element)
-    {
-        return getTextImpl(element);
+        Path path = getPathNullable(element);
+        String text = path == null ? "" : UIUtil.getPrintablePath(path.last());
+        return GUIUtil.shortenText(_gc, text, _column.getColumn(), true);
     }
 
     @Override

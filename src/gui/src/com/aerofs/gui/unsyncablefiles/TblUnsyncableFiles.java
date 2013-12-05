@@ -56,8 +56,8 @@ public class TblUnsyncableFiles extends Composite
         colReason.getColumn().setText("Detail");
 
         TableColumnLayout layout = new TableColumnLayout();
-        layout.setColumnData(colFilename.getColumn(), new ColumnWeightData(618, true));
-        layout.setColumnData(colReason.getColumn(), new ColumnWeightData(382, true));
+        layout.setColumnData(colFilename.getColumn(), new ColumnWeightData(1, true));
+        layout.setColumnData(colReason.getColumn(), new ColumnWeightData(1, true));
         setLayout(layout);
     }
 

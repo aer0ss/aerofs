@@ -97,6 +97,12 @@ class LstConflicts extends Composite
         if (_listener != null) _listener.onStatusChanged(isBusy, status);
     }
 
+    private void notifyVersionDataStale()
+    {
+        checkState(GUI.get().isUIThread());
+        if (_listener != null) _listener.onVersionDataStale();
+    }
+
     public void addPostSelectionChangedListener(ISelectionChangedListener listener)
     {
         checkState(GUI.get().isUIThread());
@@ -125,6 +131,7 @@ class LstConflicts extends Composite
                 _viewer.refresh();
 
                 notifyStatusChanged(false, "");
+                notifyVersionDataStale();
             }
 
             @Override

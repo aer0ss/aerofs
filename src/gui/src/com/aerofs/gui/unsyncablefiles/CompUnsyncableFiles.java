@@ -106,7 +106,7 @@ public class CompUnsyncableFiles extends Composite
         _buttonBar = GUIUtil.newButtonContainer(this, false);
 
         _btnOpen = GUIUtil.createButton(_buttonBar, SWT.PUSH);
-        _btnOpen.setText("Open...");
+        _btnOpen.setText("Open Parent Folder");
         getShell().setDefaultButton(_btnOpen);
         _btnOpen.addSelectionListener(new SelectionAdapter()
         {
