@@ -7,6 +7,7 @@ TARGET_REPOSITORY=$(BIN) # The target repository is set to the bin.
 
 # List of known packages that can be built in alphabetical order.
 PACKAGES= \
+	auditor \
 	bootstrap \
 	bifrost \
 	ca-server \

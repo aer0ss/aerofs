@@ -37,6 +37,16 @@ class transient::services {
     include servlet::identity
 
     # --------------
+    # Auditor
+    # --------------
+
+    include auditor
+    file{"/opt/auditor/resources":
+        ensure => directory,
+        require => Package["aerofs-auditor"]
+    }
+
+    # --------------
     # Verkehr
     # --------------
 
