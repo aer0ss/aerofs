@@ -165,10 +165,12 @@ def is_team_server_user_id(user_id):
     return user_id.startswith(':')
 
 def str2bool(v):
-    if isinstance(v, bool):
+    if v == None:
+        return False
+    elif isinstance(v, bool):
         return v
     else:
-        return v.lower() in ("yes", "true", "t", "1")
+        return v.lower() in ("yes", "true", "t", "1", "on")
 
 def is_private_deployment(settings):
     return str2bool(settings.get('config.loader.is_private_deployment', False))

@@ -48,6 +48,11 @@ openid.idp.user.email={{ openid_idp_user_email }}
 openid.idp.user.name.first={{ openid_idp_user_name_first }}
 openid.idp.user.name.last={{ openid_idp_user_name_last }}
 
+base.audit.downstream_host={{ audit_downstream_host }}
+base.audit.downstream_port={{ audit_downstream_port }}
+base.audit.downstream_ssl_enabled={{ audit_downstream_ssl_enabled }}
+base.audit.downstream_certificate={{ audit_downstream_certificate }}
+
 {# This section will be filled with all key-value pairs stored in the
  # license-info file inside the license file.  On first boot, it will be empty;
  # otherwise, it will contain a set of key-value pairs, including at least

@@ -6,6 +6,7 @@ import tempfile
 import os
 import socket
 import re
+from web.util import str2bool
 from subprocess import call, Popen, PIPE
 from pyramid.security import NO_PERMISSION_REQUIRED
 
@@ -17,10 +18,11 @@ import aerofs_common.bootstrap
 from aerofs_common.configuration import Configuration
 from web.error import error
 from web.login_util import remember_license_based_login
-from web.util import is_private_deployment, is_configuration_initialized
-from web.license import is_license_present_and_valid, is_license_present,\
-    set_license_file_and_attach_shasum_to_session, get_license_shasum_from_session,\
-    URL_PARAM_KEY_LICENSE_SHASUM
+from web.util import is_private_deployment, is_configuration_initialized, \
+     is_audit_allowed, is_audit_enabled
+from web.license import is_license_present_and_valid, is_license_present, \
+     set_license_file_and_attach_shasum_to_session, get_license_shasum_from_session, \
+     URL_PARAM_KEY_LICENSE_SHASUM
 from backup_view import BACKUP_FILE_PATH
 from web.views.login.login_view import URL_PARAM_EMAIL
 
@@ -124,6 +126,8 @@ def _setup_common(request, conf, license_page_only):
         # The following two parameters are used by welcome_and_license.mako
         'is_license_present': is_license_present(conf),
         'is_license_present_and_valid': is_license_present_and_valid(conf),
+        'is_audit_allowed': is_audit_allowed(conf),
+        'is_audit_enabled': is_audit_enabled(conf),
         # This parameter is used by apply_and_create_user_page.mako
         'url_param_email': URL_PARAM_EMAIL,
         # The following parameter is used by email_page.mako
@@ -193,6 +197,53 @@ def json_get_license_shasum_from_session(request):
     return {
         'shasum': get_license_shasum_from_session(request)
     }
+
+
+# ------------------------------------------------------------------------
+# Audit
+# ------------------------------------------------------------------------
+
+@view_config(
+    route_name='json_setup_audit',
+    permission='maintain',
+    renderer='json',
+    request_method='POST'
+)
+def json_setup_audit(request):
+    audit_enabled = str2bool(request.params['audit-enabled'])
+
+    config = Configuration()
+    config.set_external_property('audit_enabled', audit_enabled)
+
+    if audit_enabled:
+        audit_downstream_host = request.params['audit-downstream-host']
+        audit_downstream_port = request.params['audit-downstream-port']
+        audit_downstream_ssl_enabled = str2bool(request.params.get('audit-downstream-ssl-enabled'))
+        audit_downstream_certificate = request.params['audit-downstream-certificate']
+
+        # TODO (MP) need better sanity checking on downstream system.
+
+        # Check the validity of the certificate, if provided.
+        if len(audit_downstream_certificate) > 0:
+            certificate_filename = _write_pem_to_file(audit_downstream_certificate)
+            try:
+                is_certificate_valid = _is_certificate_formatted_correctly(certificate_filename)
+                if not is_certificate_valid:
+                    error("The certificate you provided is invalid.")
+            finally:
+                os.unlink(certificate_filename)
+
+        config.set_external_property('audit_downstream_host', audit_downstream_host)
+        config.set_external_property('audit_downstream_port', audit_downstream_port)
+        config.set_external_property('audit_downstream_ssl_enabled', audit_downstream_ssl_enabled)
+        config.set_external_property('audit_downstream_certificate', _format_pem(audit_downstream_certificate))
+    else:
+        config.set_external_property('audit_downstream_host', '')
+        config.set_external_property('audit_downstream_port', '')
+        config.set_external_property('audit_downstream_ssl_enabled', '')
+        config.set_external_property('audit_downstream_certificate', '')
+
+    return {}
 
 
 # ------------------------------------------------------------------------
