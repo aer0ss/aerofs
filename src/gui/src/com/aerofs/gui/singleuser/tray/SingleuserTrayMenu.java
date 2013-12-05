@@ -164,9 +164,9 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
     public void onNotificationReceived(PBNotification pb) {
         switch (pb.getType().getNumber()) {
         case Type.CONFLICT_COUNT_VALUE:
-            assert pb.hasConflictCount();
-            _conflictCount = pb.getConflictCount();
-            _icon.showNotification(NotificationReason.CONFLICT, pb.getConflictCount() > 0);
+            assert pb.hasCount();
+            _conflictCount = pb.getCount();
+            _icon.showNotification(NotificationReason.CONFLICT, pb.getCount() > 0);
             // TODO: schedule GUI update in case the menu is currently visible?
             break;
         case Type.SHARED_FOLDER_JOIN_VALUE:

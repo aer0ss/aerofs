@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.notification;
 
-import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
 import com.aerofs.daemon.core.transfers.BaseTransferState;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
@@ -10,6 +9,7 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Retrieve the snapshot of all the events from the core
@@ -20,19 +20,17 @@ class EISendSnapshot extends AbstractEBSelfHandling
     private final DownloadNotifier _dn;
     private final UploadState _uls;
     private final UploadNotifier _un;
-    private final PathStatusNotifier _psn;
-    private final OnlineStatusNotifier _osn;
+    private final Set<ISnapshotableNotificationEmitter> _snapshotables;
     private final boolean _filterMeta;
 
     EISendSnapshot(DownloadState dls, DownloadNotifier dn, UploadState uls, UploadNotifier un,
-            PathStatusNotifier psn, OnlineStatusNotifier osn, boolean filterMeta)
+            Set<ISnapshotableNotificationEmitter> snapshotables, boolean filterMeta)
     {
         _dls = dls;
         _dn = dn;
         _uls = uls;
         _un = un;
-        _psn = psn;
-        _osn = osn;
+        _snapshotables = snapshotables;
         _filterMeta = filterMeta;
     }
 
@@ -52,22 +50,11 @@ class EISendSnapshot extends AbstractEBSelfHandling
         }
     }
 
-    private void sendPathStatusNotifications_()
-    {
-        _psn.sendConflictCountNotification_();
-    }
-
-    private void sendOnlineStatusNotifications_()
-    {
-        _osn.sendOnlineStatusNotification_();
-    }
-
     @Override
     public void handle_()
     {
         sendTransferNotifications_(_dls, _dn);
         sendTransferNotifications_(_uls, _un);
-        sendPathStatusNotifications_();
-        sendOnlineStatusNotifications_();
+        for (ISnapshotableNotificationEmitter snapshotable : _snapshotables) snapshotable.sendSnapshot_();
     }
 }

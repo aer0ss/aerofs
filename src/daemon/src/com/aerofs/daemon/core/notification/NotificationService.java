@@ -6,15 +6,10 @@ package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.UserAndDeviceNames;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.notification.DownloadNotifier.DownloadThrottler;
-import com.aerofs.daemon.core.notification.UploadNotifier.UploadThrottler;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.IServiceStatusListener;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
-import com.aerofs.daemon.core.status.PathStatus;
 import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer.IListener;
@@ -57,27 +52,30 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     private final DownloadNotifier _dn;
     private final UploadNotifier _un;
     private final OnlineStatusNotifier _osn;
+    private final Set<ISnapshotableNotificationEmitter> _snapshotables;
 
     @Inject
     public NotificationService(CoreScheduler sched, RitualNotificationServer rns,
-            DirectoryService ds, UserAndDeviceNames nr, DownloadState dls, UploadState uls,
-            BadCredentialNotifier bcl, PathStatus so, SyncStatusSynchronizer sss,
-            AggregateSyncStatus agss, ServerConnectionStatus scs, ConflictNotifier cl,
-            DownloadThrottler dlt, UploadThrottler ult, OnlineStatusNotifier osn)
+            DownloadState dls, DownloadNotifier dn, UploadState uls, UploadNotifier un,
+            BadCredentialNotifier bcl, SyncStatusSynchronizer sss, AggregateSyncStatus agss,
+            ServerConnectionStatus scs, ConflictNotifier cl,
+            PathStatusNotifier psn, OnlineStatusNotifier osn,
+            Set<ISnapshotableNotificationEmitter> snapshotables)
     {
         _sched = sched;
         _rns = rns;
         _dls = dls;
         _uls = uls;
         _bcl = bcl;
-        _psn = new PathStatusNotifier(_rns, ds, so, _dls, _uls);
+        _psn = psn;
         _sss = sss;
         _agss = agss;
         _scs = scs;
         _cl = cl;
-        _dn = new DownloadNotifier(ds, nr, _rns, dlt);
-        _un = new UploadNotifier(ds, nr, _rns, ult);
+        _dn = dn;
+        _un = un;
         _osn = osn;
+        _snapshotables = snapshotables;
     }
 
     //
@@ -125,7 +123,8 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
             public void handle_()
             {
                 try {
-                    _cl.sendSnapshot_(_psn); // FIXME (AG): ???
+                    // initialize PathStatus based on current conflict state
+                    _cl.sendSnapshot_(_psn);
                 } catch (SQLException e) {
                     l.warn("Failed to send conflict snapshot", e);
                 }
@@ -185,6 +184,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     @Override
     public void onNotificationClientConnected()
     {
-        _sched.schedule(new EISendSnapshot(_dls, _dn, _uls, _un, _psn, _osn, filterMeta_()), 0);
+        _sched.schedule(new EISendSnapshot(_dls, _dn, _uls, _un, _snapshotables, filterMeta_()), 0);
     }
 }

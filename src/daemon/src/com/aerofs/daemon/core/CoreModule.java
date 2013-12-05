@@ -7,6 +7,9 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
+import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
+import com.aerofs.daemon.core.notification.PathStatusNotifier;
+import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.SIDMap;
@@ -52,7 +55,6 @@ import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
-import com.aerofs.lib.guice.GuiceUtil;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.google.inject.AbstractModule;
@@ -61,6 +63,8 @@ import com.google.inject.internal.Scoping;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
+
+import static com.aerofs.lib.guice.GuiceUtil.multibind;
 
 public class CoreModule extends AbstractModule
 {
@@ -71,8 +75,7 @@ public class CoreModule extends AbstractModule
 
         binder().disableCircularProxies();
 
-        GuiceUtil.multibind(binder(), ICoreEventHandlerRegistrar.class,
-                CoreEventHandlerRegistrar.class);
+        multibind(binder(), ICoreEventHandlerRegistrar.class, CoreEventHandlerRegistrar.class);
 
         bind(DirectoryService.class).to(DirectoryServiceImpl.class);
         bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
@@ -103,8 +106,11 @@ public class CoreModule extends AbstractModule
         // we use multibindings to allow splitting DB schemas cleanly, only setting up
         // exactly as much as required depending on Module instantiation and preventing
         // schemas from leaking outside of the packages that actually use them
-        GuiceUtil.multibind(binder(), ISchema.class, CoreSchema.class);
-        GuiceUtil.multibind(binder(), ISchema.class, TamperingDetectionSchema.class);
+        multibind(binder(), ISchema.class, CoreSchema.class);
+        multibind(binder(), ISchema.class, TamperingDetectionSchema.class);
+
+        multibind(binder(), ISnapshotableNotificationEmitter.class, PathStatusNotifier.class);
+        multibind(binder(), ISnapshotableNotificationEmitter.class, OnlineStatusNotifier.class);
 
         // RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
         // instanciation. However we don't want to leak the specific classes outside the package

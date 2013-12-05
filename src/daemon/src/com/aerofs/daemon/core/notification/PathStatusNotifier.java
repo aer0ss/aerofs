@@ -20,6 +20,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.ritual_notification.RitualNotificationServer;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
@@ -35,7 +36,8 @@ import static com.aerofs.daemon.core.notification.Notifications.newPathStatusNot
  *
  * See {@link PathStatus}
  */
-class PathStatusNotifier implements ISyncStatusChangeListener, IConflictStateListener
+public class PathStatusNotifier implements ISyncStatusChangeListener, IConflictStateListener,
+        ISnapshotableNotificationEmitter
 {
     private static final Logger l = Loggers.getLogger(PathStatusNotifier.class);
 
@@ -43,6 +45,7 @@ class PathStatusNotifier implements ISyncStatusChangeListener, IConflictStateLis
     private final DirectoryService _ds;
     private final RitualNotificationServer _rns;
 
+    @Inject
     public PathStatusNotifier(RitualNotificationServer rns, DirectoryService ds, PathStatus ps,
             DownloadState dls, UploadState uls)
     {
@@ -106,6 +109,12 @@ class PathStatusNotifier implements ISyncStatusChangeListener, IConflictStateLis
     public void branchesChanged_(Map<Path, Boolean> conflicts)
     {
         sendPathStatusNotification_(_ps.setConflictState_(conflicts));
+        sendConflictCountNotification_();
+    }
+
+    @Override
+    public final void sendSnapshot_()
+    {
         sendConflictCountNotification_();
     }
 }

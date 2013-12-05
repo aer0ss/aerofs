@@ -16,6 +16,7 @@ import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -39,7 +40,8 @@ public class TestEISendSnapshot
 
     private EISendSnapshot createHandler(boolean filterMeta)
     {
-        return new EISendSnapshot(_dls, _dn, _uls, _un, _psn, _osn, filterMeta);
+        return new EISendSnapshot(_dls, _dn, _uls, _un,
+                ImmutableSet.<ISnapshotableNotificationEmitter>of(_psn, _osn), filterMeta);
     }
 
     private SOCID createSOCID(boolean isMeta)

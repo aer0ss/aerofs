@@ -17,20 +17,24 @@ message PBNotification {
         SHARED_FOLDER_JOIN = 5;      // joined a shared folder
         SHARED_FOLDER_KICKOUT = 6;   // kicked out of a shared folder
         INDEXING_PROGRESS = 7;
-        SHARED_FOLDER_PENDING = 8;    // list of pending roots changed
-        ROOTS_CHANGED = 9;            // roots changed (added/removed/moved)
-        ONLINE_STATUS_CHANGED = 10;   // online status (on/off) has changed
+        SHARED_FOLDER_PENDING = 8;   // list of pending roots changed
+        ROOTS_CHANGED = 9;           // roots changed (added/removed/moved)
+        ONLINE_STATUS_CHANGED = 10;  // online status (on/off) has changed
+        NRO_COUNT = 11;              // number of non-representable objects changed
     }
 
     required Type type = 1;
 
-    optional PBTransferEvent transfer = 2;  // for DOWNLOAD or UPLOAD
+    optional PBTransferEvent transfer = 2;          // for DOWNLOAD or UPLOAD
     optional PBPathStatusEvent path_status = 4;
-    optional int32 conflict_count = 5;          // number of files with existing conflicts
-    optional PBPath path = 6;                   // path of shared folder joined/left
+    optional int32 count = 5;                       // for CONFLICT_COUNT,
+                                                    //   number of files with existing conflicts
+                                                    // for NRO_COUNT,
+                                                    //   number of non-representable objects
+    optional PBPath path = 6;                       // path of shared folder joined/left
     optional PBIndexingProgress indexing_progress = 7;
-    optional bool online_status = 8; // true/false => online/offline,
-                                     // only used w/ ONLINE_STATUS_CHANGED
+    optional bool online_status = 8;                // true/false => online/offline,
+                                                    // only used w/ ONLINE_STATUS_CHANGED
 }
 
 enum PBTransportMethod {

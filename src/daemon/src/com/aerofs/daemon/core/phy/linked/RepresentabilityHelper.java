@@ -5,12 +5,17 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
+import com.aerofs.daemon.core.notification.Notifications;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
 import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
@@ -19,7 +24,10 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -27,13 +35,15 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Helper class that abstracts out most of the complexity of dealing with Non-Representable Objects
  *
  * See docs/design/filesystem_restricitons.md for a high-level overview
  */
-public class RepresentabilityHelper
+public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
 {
     private final static Logger l = Loggers.getLogger(RepresentabilityHelper.class);
 
@@ -53,10 +63,14 @@ public class RepresentabilityHelper
     private final IMetaDatabase _mdb;
     private final NRODatabase _nrodb;
     private final InjectableFile.Factory _factFile;
+    private final RitualNotificationServer _rns;
+
+    private final Map<SID, Integer> _nroCount = Maps.newHashMap();
 
     @Inject
     public RepresentabilityHelper(IOSUtil os, InjectableDriver dr, LinkerRootMap lrm,
-            IMetaDatabase mdb, NRODatabase nrodb, InjectableFile.Factory factFile)
+            IMetaDatabase mdb, NRODatabase nrodb, InjectableFile.Factory factFile,
+            RitualNotificationServer rns)
     {
         _os = os;
         _dr = dr;
@@ -64,6 +78,7 @@ public class RepresentabilityHelper
         _mdb = mdb;
         _nrodb = nrodb;
         _factFile = factFile;
+        _rns = rns;
     }
 
     public boolean isNonRepresentable(OA oa) throws SQLException
@@ -116,6 +131,54 @@ public class RepresentabilityHelper
         return LinkedPath.representable(path, _lrm.absRootAnchor_(path.sid()));
     }
 
+    /**
+     * Whenever a transaction touches NROs, count number of NROs when it is committed and
+     * send emit a Ritual notification with that information
+     */
+    private final TransLocal<Set<SID>> _tlNotify = new TransLocal<Set<SID>>() {
+        @Override
+        protected Set<SID> initialValue(Trans t)
+        {
+            final Set<SID> s = Sets.newHashSet();
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committed_()
+                {
+                    // update NRO counter for affected physical roots
+                    for (SID sid : s) updateCount_(sid);
+                    sendSnapshot_();
+                }
+            });
+            return s;
+        }
+    };
+
+    @Override
+    public void sendSnapshot_()
+    {
+        int total = 0;
+        for (LinkerRoot r : _lrm.getAllRoots_()) {
+            // initialize NRO counter the first time a notificaiton is sent
+            if (_nroCount.get(r.sid()) == null) {
+                updateCount_(r.sid());
+            }
+            total += _nroCount.get(r.sid());
+        }
+        _rns.getRitualNotifier()
+                .sendNotification(Notifications.newNROCountNotification(total));
+    }
+
+    private void updateCount_(SID sid)
+    {
+        String[] children = _factFile.create(_lrm.auxRoot_(sid), AuxFolder.NON_REPRESENTABLE._name).list();
+        int n = 0;
+        if (children != null) {
+            for (String child : children) {
+                if (LinkedPath.soidFromFileNameNullable(child) != null) ++n;
+            }
+        }
+        _nroCount.put(sid, n);
+    }
 
     /**
      * Attemps to perform an operation (create, move, ...) on a given destination object
@@ -129,6 +192,7 @@ public class RepresentabilityHelper
         if (!dest._path.isRepresentable()) {
             l.debug("op on nro");
             op.run_();
+            if (dest._path.virtual != null) _tlNotify.get(t).add(dest._path.virtual.sid());
         } else if (isContextuallyNonRepresentable_(dest)) {
             l.info("make cnro eagerly {}", dest);
             markNonRepresentable_(dest, t);
@@ -210,6 +274,7 @@ public class RepresentabilityHelper
             }
         }
         _nrodb.setNonRepresentable_(dest.soid(), conflict, t);
+        if (dest._path.virtual != null) _tlNotify.get(t).add(dest._path.virtual.sid());
     }
 
     /**
@@ -230,6 +295,7 @@ public class RepresentabilityHelper
             updateConflictsOnDeletion_(o.soid(), o._path, t);
         } else if (o._path.isNonRepresentable()) {
             _nrodb.setRepresentable_(o.soid(), t);
+            if (o._path.virtual != null) _tlNotify.get(t).add(o._path.virtual.sid());
         }
     }
 
@@ -271,6 +337,7 @@ public class RepresentabilityHelper
 
                 // mark object as representable
                 _nrodb.setRepresentable_(winner, t);
+                _tlNotify.get(t).add(path.virtual.sid());
 
                 // if more conflicting objects are left, update conflict column in NRO table
                 if (it.next_()) _nrodb.updateConflicts_(soid, winner.oid(), t);

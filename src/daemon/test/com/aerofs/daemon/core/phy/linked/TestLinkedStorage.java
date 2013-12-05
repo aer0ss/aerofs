@@ -43,6 +43,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -174,7 +175,7 @@ public class TestLinkedStorage extends AbstractTest
         when(ds.getSOIDNullable_(any(FID.class))).thenReturn(sokid.soid());
 
         RepresentabilityHelper rh = new RepresentabilityHelper(os, dr, lrm,
-                mock(IMetaDatabase.class), nro, factFile);
+                mock(IMetaDatabase.class), nro, factFile, mock(RitualNotificationServer.class));
 
         storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
                 rh, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, null,

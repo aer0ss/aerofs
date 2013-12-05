@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.linked;
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.CrossFSRelocator;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.SameFSRelocator;
+import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
 import com.aerofs.daemon.core.phy.linked.db.LinkedStorageSchema;
 import com.aerofs.daemon.core.phy.linked.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter;
@@ -35,6 +36,8 @@ public class LinkedStorageModule extends AbstractModule
         multibind(binder(), ICoreEventHandlerRegistrar.class, LinkerEventHandlerRegistar.class);
 
         multibind(binder(), ISchema.class, LinkedStorageSchema.class);
+
+        multibind(binder(), ISnapshotableNotificationEmitter.class, RepresentabilityHelper.class);
 
         bind(IPhysicalStorage.class).to(_flat
                 ? FlatLinkedStorage.class

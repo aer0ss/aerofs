@@ -105,7 +105,16 @@ public abstract class Notifications
         return PBNotification
                 .newBuilder()
                 .setType(CONFLICT_COUNT)
-                .setConflictCount(numConflicts)
+                .setCount(numConflicts)
+                .build();
+    }
+
+    public static PBNotification newNROCountNotification(int numNRO)
+    {
+        return PBNotification
+                .newBuilder()
+                .setType(NRO_COUNT)
+                .setCount(numNRO)
                 .build();
     }
 

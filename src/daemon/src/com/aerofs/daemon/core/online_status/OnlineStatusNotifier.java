@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.online_status;
 
+import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
 import com.aerofs.daemon.core.notification.Notifications;
 import com.aerofs.daemon.core.serverstatus.IConnectionStatusNotifier.IListener;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
@@ -41,7 +42,7 @@ import java.util.concurrent.Executor;
  * As a side effect, if the core queue is full, the callback threads for Verkehr and LinkState
  * are blocked until the event is successfully enqueued on the core queueu.
  */
-public class OnlineStatusNotifier
+public class OnlineStatusNotifier implements ISnapshotableNotificationEmitter
 {
     private final VerkehrNotificationSubscriber _vns;
     private final LinkStateService _lss;
@@ -109,5 +110,11 @@ public class OnlineStatusNotifier
     {
         _rns.getRitualNotifier()
                 .sendNotification(Notifications.newOnlineStatusChangedNotification(_isOnline));
+    }
+
+    @Override
+    public final void sendSnapshot_()
+    {
+        sendOnlineStatusNotification_();
     }
 }
