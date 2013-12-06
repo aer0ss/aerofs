@@ -1,6 +1,5 @@
 package com.aerofs.daemon.rest;
 
-import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -8,7 +7,6 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOID;
 import com.google.common.io.ByteStreams;
 import com.jayway.restassured.response.Response;
 import org.junit.Assert;
@@ -26,7 +24,6 @@ import java.util.Date;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,7 +34,7 @@ public class TestFileResource extends AbstractRestTest
 
     private static long FILE_MTIME = 0xdeadbeef;
     private static byte[] FILE_CONTENT = { 'H', 'e', 'l', 'l', 'o'};
-    private static byte[] VERSION_HASH = BaseSecUtil.newMessageDigestMD5().digest(FILE_CONTENT);
+
 
     public TestFileResource(boolean useProxy)
     {
@@ -65,7 +62,6 @@ public class TestFileResource extends AbstractRestTest
     {
         mockContent("f1", FILE_CONTENT);
         mockContent("f1.txt", FILE_CONTENT);
-        when(nvc.getVersionHash_(any(SOID.class))).thenReturn(VERSION_HASH);
     }
 
     @Test

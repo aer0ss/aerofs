@@ -4,24 +4,32 @@
 
 package com.aerofs.daemon.rest.resources;
 
+import com.aerofs.base.Version;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
+import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.rest.api.Folder;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 
 @Path(Service.VERSION + "/folders")
 @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_OCTET_STREAM})
@@ -43,5 +51,19 @@ public class FoldersResource
     {
         UserID userid = principal.getUserID();
         return new EIObjectInfo(_imce, userid, object, Type.FOLDER).execute();
+    }
+
+    @Since("0.10")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response create(@Auth AuthenticatedPrincipal principal,
+            @Context Version version,
+            Folder folder) throws IOException
+    {
+        UserID userid = principal.getUserID();
+        Preconditions.checkArgument(folder.parent != null);
+        Preconditions.checkArgument(folder.name != null);
+        return new EICreateObject(_imce, userid, version, folder.parent, folder.name, true)
+                .execute();
     }
 }

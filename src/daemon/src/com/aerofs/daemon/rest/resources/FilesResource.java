@@ -4,28 +4,35 @@
 
 package com.aerofs.daemon.rest.resources;
 
+import com.aerofs.base.Version;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.daemon.rest.util.RestObject;
+import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.daemon.rest.util.EntityTagSet;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
+import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.rest.api.File;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
+import com.google.common.base.Preconditions;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -65,6 +72,19 @@ public class FilesResource
         UserID userid = principal.getUserID();
         EntityTag etIfRange = EntityTagUtil.parse(ifRange);
         return new EIFileContent(_imce, userid, object, etIfRange, range, ifNoneMatch).execute();
+    }
+
+    @Since("0.10")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response create(@Auth AuthenticatedPrincipal principal,
+            @Context Version version,
+            File file) throws IOException
+    {
+        UserID userid = principal.getUserID();
+        Preconditions.checkArgument(file.parent != null);
+        Preconditions.checkArgument(file.name != null);
+        return new EICreateObject(_imce, userid, version, file.parent, file.name, false).execute();
     }
 }
 

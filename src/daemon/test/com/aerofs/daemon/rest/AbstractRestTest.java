@@ -3,6 +3,7 @@ package com.aerofs.daemon.rest;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
@@ -14,15 +15,26 @@ import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.mock.logical.MockDS;
+import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
+import com.aerofs.daemon.core.object.ObjectCreator;
+import com.aerofs.daemon.core.object.ObjectDeleter;
+import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.util.RestObject;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.havre.Havre;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
@@ -35,11 +47,18 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -71,8 +90,12 @@ import java.util.concurrent.Executors;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.jayway.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -92,6 +115,8 @@ public class AbstractRestTest extends AbstractTest
     protected static final Logger l = Loggers.getLogger(AbstractRestTest.class);
 
     protected @Mock DirectoryService ds;
+    protected @Mock IPhysicalStorage ps;
+
     protected @Mock LocalACL acl;
     protected @Mock SIDMap sm;
     protected @Mock IStores ss;
@@ -105,7 +130,15 @@ public class AbstractRestTest extends AbstractTest
 
     protected @InjectMocks ClientSSLEngineFactory clientSslEngineFactory;
 
-    protected @Mock IPhysicalStorage ps;
+    protected @Mock Trans t;
+    protected @Mock TransManager tm;
+
+    protected @Mock Token tk;
+    protected @Mock TokenManager tokenManager;
+
+    protected @Mock ObjectCreator oc;
+    protected @Mock ObjectMover om;
+    protected @Mock ObjectDeleter od;
 
     protected @Mock SessionFactory sessionFactory;
     protected @Mock Session session;
@@ -152,6 +185,10 @@ public class AbstractRestTest extends AbstractTest
     protected final static byte[] VERSION_HASH =
             BaseSecUtil.newMessageDigestMD5().digest(new byte[0]);
 
+    private static Gson _gson = new GsonBuilder()
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .create();
+
     private static DateFormat utcFormat(String pattern) {
         DateFormat dateFormat = new SimpleDateFormat(pattern);
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -173,6 +210,10 @@ public class AbstractRestTest extends AbstractTest
         when(cacert.getCert()).thenReturn(ca.cert);
 
         when(sessionFactory.openSession()).thenReturn(session);
+
+        when(tm.begin_()).thenReturn(t);
+        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
 
         when(nvc.getVersionHash_(any(SOID.class))).thenReturn(VERSION_HASH);
 
@@ -253,6 +294,11 @@ public class AbstractRestTest extends AbstractTest
                 bind(IMapSIndex2SID.class).toInstance(sm);
                 bind(IPhysicalStorage.class).toInstance(ps);
                 bind(Timer.class).toInstance(getGlobalTimer());
+                bind(TransManager.class).toInstance(tm);
+                bind(TokenManager.class).toInstance(tokenManager);
+                bind(ObjectCreator.class).toInstance(oc);
+                bind(ObjectMover.class).toInstance(om);
+                bind(ObjectDeleter.class).toInstance(od);
                 bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));
             }
         });
@@ -318,5 +364,64 @@ public class AbstractRestTest extends AbstractTest
     {
         return given()
                 .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.TOKEN);
+    }
+
+    protected static String json(Object o) { return _gson.toJson(o); }
+
+    private class EqualFutureObject extends BaseMatcher<String>
+    {
+        private final SettableFuture<SOID> future;
+
+        public EqualFutureObject(SettableFuture<SOID> future)
+        {
+            this.future = future;
+        }
+
+        @Override
+        public boolean matches(Object o)
+        {
+            try {
+                SOID soid = future.get();
+                return equalTo(new RestObject(sm.get_(soid.sidx()), soid.oid()).toStringFormal())
+                        .matches(o);
+            } catch (Exception e) {
+                fail();
+                return false;
+            }
+        }
+
+        @Override
+        public void describeTo(Description description)
+        {
+            try {
+                description.appendValue(new RestObject(rootSID, future.get().oid()).toStringFormal());
+            } catch (Exception e) { }
+        }
+    }
+
+    protected Matcher<String> equalToFutureObject(SettableFuture<SOID> soid)
+    {
+        return new EqualFutureObject(soid);
+    }
+
+    protected SettableFuture<SOID> whenCreate(Type type, String parent, String name) throws Exception
+    {
+        SOID p = ds.resolveThrows_(Path.fromString(rootSID, parent));
+        final SettableFuture<SOID> soid = SettableFuture.create();
+
+        when(oc.create_(eq(type), eq(p), eq(name), eq(PhysicalOp.APPLY), eq(t)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable
+                    {
+                        Object[] args = invocation.getArguments();
+                        MockDSDir d = mds.root().dir((String)args[2]);
+                        soid.set(d.soid());
+                        return d.soid();
+                    }
+                })
+                .thenThrow(new ExAlreadyExist());
+
+        return soid;
     }
 }
