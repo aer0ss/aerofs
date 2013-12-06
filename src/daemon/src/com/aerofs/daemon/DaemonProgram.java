@@ -27,6 +27,7 @@ import com.aerofs.daemon.rest.RestTunnelClient;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -117,11 +118,10 @@ public class DaemonProgram implements IProgram
 
         Daemon d = injDaemon.getInstance(Daemon.class);
 
-        // TODO (HB): clean this up
-        // TODO (GS): Temporary hack to start the REST service only for us
+        // TODO (HB): control Rest service through GUI
         // NB: he RestService MUST be started AFTER creation of the Daemon instance or Guice
         // throws a fit
-        if (Cfg.user().isAeroFSUser()) {
+        if (Cfg.user().isAeroFSUser() || PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             injCore.getInstance(RestService.class).start();
             injCore.getInstance(RestTunnelClient.class).start();
         }
