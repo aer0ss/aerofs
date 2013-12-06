@@ -138,7 +138,7 @@ def send_internal_email(subject, body):
     """
     Send an email to business@aerofs.com. Ignore errors.
     """
-    fromEmail = 'Pyramid Server <support@aerofs.com>'
+    fromEmail = 'Pyramid Server <business@aerofs.com>'
     toEmail = 'business@aerofs.com'
 
     log.info("send_internal_email:\n"
