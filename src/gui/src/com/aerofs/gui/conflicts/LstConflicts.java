@@ -91,10 +91,10 @@ class LstConflicts extends Composite
         _listener = listener;
     }
 
-    private void notifyStatusChanged(boolean isBusy, String status)
+    private void notifyStatusChanged(boolean isBusy)
     {
         checkState(GUI.get().isUIThread());
-        if (_listener != null) _listener.onStatusChanged(isBusy, status);
+        if (_listener != null) _listener.onStatusChanged(isBusy);
     }
 
     private void notifyVersionDataStale()
@@ -121,7 +121,7 @@ class LstConflicts extends Composite
     public void reload()
     {
         checkState(GUI.get().isUIThread());
-        notifyStatusChanged(true, "Loading list of files with conflicts.");
+        notifyStatusChanged(true);
         _model.listConflicts(new GUIExecutor(_table), new FutureCallback<Collection<Conflict>>()
         {
             @Override
@@ -130,7 +130,7 @@ class LstConflicts extends Composite
                 _viewer.setInput(conflicts);
                 _viewer.refresh();
 
-                notifyStatusChanged(false, "");
+                notifyStatusChanged(false);
                 notifyVersionDataStale();
             }
 
@@ -138,9 +138,10 @@ class LstConflicts extends Composite
             public void onFailure(Throwable throwable)
             {
                 ErrorMessages.show(getShell(), throwable,
-                        "Failed to load the list of files with conflicts.");
+                        "Sorry, we encountered an error while loading the list of files with " +
+                                "conflicts.");
 
-                notifyStatusChanged(false, "");
+                notifyStatusChanged(false);
             }
         });
     }

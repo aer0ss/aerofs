@@ -149,7 +149,7 @@ public class DlgConflicts extends AeroFSDialog
             _lstBranches.setConflictEventListener(new IConflictEventListener()
             {
                 @Override
-                public void onStatusChanged(boolean isBusy, @Nonnull String status)
+                public void onStatusChanged(boolean isBusy)
                 {
                     _lstBranches.getContent().setEnabled(!isBusy);
 
@@ -206,12 +206,12 @@ public class DlgConflicts extends AeroFSDialog
             IConflictEventListener listener = new IConflictEventListener()
             {
                 @Override
-                public void onStatusChanged(boolean isBusy, @Nonnull String status)
+                public void onStatusChanged(boolean isBusy)
                 {
                     _lstConflicts.setEnabled(!isBusy);
                     if (_lstConflicts.isEnabled()) _lstConflicts.setFocus();
 
-                    _lstBranches.setEnabled(!isBusy);
+                    _lstBranches.getContent().setEnabled(!isBusy);
 
                     if (isBusy) spinner.start();
                     else spinner.stop();
@@ -265,7 +265,7 @@ public class DlgConflicts extends AeroFSDialog
     interface IConflictEventListener
     {
         // used to propagate busy state and block GUI while busy
-        void onStatusChanged(boolean isBusy, @Nonnull String status);
+        void onStatusChanged(boolean isBusy);
         void onConflictResolved();
         void onVersionDataStale();
     }

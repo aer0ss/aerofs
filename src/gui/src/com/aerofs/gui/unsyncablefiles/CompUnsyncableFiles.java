@@ -242,7 +242,9 @@ public class CompUnsyncableFiles extends Composite
             @Override
             public void error(Exception e)
             {
-                ErrorMessages.show(getShell(), e, "Failed to load the list of unsyncable files.");
+                ErrorMessages.show(getShell(), e,
+                        "Sorry, we encountered an error while loading the list of " +
+                                "unsyncable files.");
                 clearBusyState();
             }
         });
@@ -334,7 +336,8 @@ public class CompUnsyncableFiles extends Composite
                 @Override
                 public void error(Exception e)
                 {
-                    ErrorMessages.show(getShell(), e, "Failed to delete the selected files.");
+                    ErrorMessages.show(getShell(), e,
+                            "Sorry, we encountered an error while deleting the selected files.");
 
                     // it's not necessary to clearBusyState to false here because we will follow up
                     // with a refresh

@@ -269,7 +269,8 @@ public class DlgRenameFile extends AeroFSDialog
                 @Override
                 public void error(Exception e)
                 {
-                    ErrorMessages.show(getShell(), e, "Failed to rename the file.");
+                    ErrorMessages.show(getShell(), e,
+                            "Sorry, we encountered an error while renaming the file.");
                     setBusyState(false);
                 }
             });

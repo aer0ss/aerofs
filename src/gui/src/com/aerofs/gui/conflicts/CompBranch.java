@@ -125,10 +125,10 @@ class CompBranch extends Composite
         _listener = listener;
     }
 
-    private void notifyStatusChanged(boolean isBusy, String status)
+    private void notifyStatusChanged(boolean isBusy)
     {
         checkState(GUI.get().isUIThread());
-        if (_listener != null) _listener.onStatusChanged(isBusy, status);
+        if (_listener != null) _listener.onStatusChanged(isBusy);
     }
 
     private void notifyVersionDataStale()
@@ -153,7 +153,8 @@ class CompBranch extends Composite
             @Override
             public void onFailure(Throwable throwable)
             {
-                ErrorMessages.show(getShell(), throwable, "Failed to open the selected version.");
+                ErrorMessages.show(getShell(), throwable,
+                        "Sorry, we encountered an error while opening the selected version.");
             }
         });
     }
@@ -164,7 +165,7 @@ class CompBranch extends Composite
 
         final String dest = promptSaveAsPathNullable();
         if (dest != null) {
-            notifyStatusChanged(true, "Exporting the selected version.");
+            notifyStatusChanged(true);
             _branch.export(new GUIExecutor(this), new FutureCallback<String>()
             {
                 @Override
@@ -176,15 +177,16 @@ class CompBranch extends Composite
                         onFailure(e);
                     }
 
-                    notifyStatusChanged(false, "");
+                    notifyStatusChanged(false);
                 }
 
                 @Override
                 public void onFailure(Throwable throwable)
                 {
-                    ErrorMessages.show(getShell(), throwable, "Failed to save the file.");
+                    ErrorMessages.show(getShell(), throwable,
+                            "Sorry, we encountered an error while saving the file to disk.");
 
-                    notifyStatusChanged(false, "");
+                    notifyStatusChanged(false);
                 }
             });
         }
@@ -220,15 +222,16 @@ class CompBranch extends Composite
             @Override
             public void onSuccess(Void aVoid)
             {
-                notifyStatusChanged(false, "");
+                notifyStatusChanged(false);
                 notifyVersionDataStale();
             }
 
             @Override
             public void onFailure(Throwable throwable)
             {
-                ErrorMessages.show(getShell(), throwable, "Failed to delete this version.");
-                notifyStatusChanged(false, "");
+                ErrorMessages.show(getShell(), throwable,
+                        "Sorry, we encountered an error while deleting this version.");
+                notifyStatusChanged(false);
                 notifyVersionDataStale();
             }
         });

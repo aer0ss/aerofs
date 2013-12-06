@@ -74,10 +74,10 @@ class LstBranches extends ScrolledComposite
         }
     }
 
-    private void notifyStatusChanged(boolean isBusy, String status)
+    private void notifyStatusChanged(boolean isBusy)
     {
         checkState(GUI.get().isUIThread());
-        if (_listener != null) _listener.onStatusChanged(isBusy, status);
+        if (_listener != null) _listener.onStatusChanged(isBusy);
     }
 
     private void notifyConflictResolved()
@@ -95,7 +95,7 @@ class LstBranches extends ScrolledComposite
     public void loadFrom(@Nonnull Conflict conflict)
     {
         checkState(GUI.get().isUIThread());
-        notifyStatusChanged(true, "Loading different versions of this conflict.");
+        notifyStatusChanged(true);
         conflict.listBranches(new GUIExecutor(_content), new FutureCallback<Collection<Branch>>()
         {
             @Override
@@ -112,7 +112,7 @@ class LstBranches extends ScrolledComposite
                     }
                 }
 
-                notifyStatusChanged(false, "");
+                notifyStatusChanged(false);
 
                 if (branches.size() <= 1) notifyConflictResolved();
             }
@@ -121,11 +121,12 @@ class LstBranches extends ScrolledComposite
             public void onFailure(Throwable throwable)
             {
                 ErrorMessages.show(getShell(), throwable,
-                        "Failed to load different versions of this conflict.",
+                        "Sorry, we encountered an error while looking up the versions for this " +
+                                "file." +
                         new ErrorMessage(ExMasterBranchNotFound.class,
-                                "Failed to find the current version of this conflict."));
+                                "Sorry, we cannot find the current version of this file."));
 
-                notifyStatusChanged(false, "");
+                notifyStatusChanged(false);
             }
         });
     }
