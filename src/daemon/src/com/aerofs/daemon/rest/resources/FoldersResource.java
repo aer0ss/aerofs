@@ -12,6 +12,7 @@ import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.daemon.rest.event.EICreateObject;
+import com.aerofs.daemon.rest.event.EIDeleteObject;
 import com.aerofs.daemon.rest.event.EIMoveObject;
 import com.aerofs.daemon.rest.util.EntityTagSet;
 import com.aerofs.oauth.AuthenticatedPrincipal;
@@ -24,6 +25,7 @@ import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -87,5 +89,18 @@ public class FoldersResource
         Preconditions.checkArgument(folder.name != null);
         return new EIMoveObject(_imce, userid, object, folder.parent, folder.name, ifMatch)
                 .execute();
+    }
+
+    @Since("0.10")
+    @DELETE
+    @Path("/{folder_id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response delete(@Auth AuthenticatedPrincipal principal,
+            @PathParam("folder_id") RestObject object,
+            @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
+            throws IOException
+    {
+        UserID userid = principal.getUserID();
+        return new EIDeleteObject(_imce, userid, object, ifMatch).execute();
     }
 }

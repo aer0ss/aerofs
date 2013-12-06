@@ -9,6 +9,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.event.EICreateObject;
+import com.aerofs.daemon.rest.event.EIDeleteObject;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.event.EIMoveObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
@@ -26,6 +27,7 @@ import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -39,6 +41,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
 
 @Path(Service.VERSION + "/files")
 @Produces(MediaType.APPLICATION_JSON)
@@ -103,6 +106,19 @@ public class FilesResource
         Preconditions.checkArgument(file.parent != null);
         Preconditions.checkArgument(file.name != null);
         return new EIMoveObject(_imce, userid, object, file.parent, file.name, ifMatch).execute();
+    }
+
+    @Since("0.10")
+    @DELETE
+    @Path("/{file_id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response delete(@Auth AuthenticatedPrincipal principal,
+            @PathParam("file_id") RestObject object,
+            @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
+            throws IOException
+    {
+        UserID userid = principal.getUserID();
+        return new EIDeleteObject(_imce, userid, object, ifMatch).execute();
     }
 }
 
