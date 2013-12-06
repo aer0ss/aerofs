@@ -23,6 +23,7 @@
         %endif
     </title>
 
+    ## fav and touch icons
     <link rel="shortcut icon" href="${request.static_path('web:static/img/favicon.ico')}">
 
     ## stylesheets
@@ -40,9 +41,6 @@
     <!--[if lt IE 9]>
     <script src="${request.static_path('web:static/js/html5.js')}"></script>
     <![endif]-->
-
-    ## fav and touch icons
-    <link rel="shortcut icon" href="${request.static_path('web:static/img/favicon.ico')}">
 
     %if not is_private_deployment(request.registry.settings):
         ${tracking_codes()}
@@ -85,7 +83,7 @@
                     <div class="btn-group pull-right hidden-desktop">
                         <a href="#" class="btn dropdown-toggle"
                                 data-toggle="dropdown">
-                            <i class="icon-list"></i>
+                            <i class="icon-th-list"></i>
                         </a>
                         <ul class="dropdown-menu">
                             <%block name="top_navigation_bar_mobile"/>
