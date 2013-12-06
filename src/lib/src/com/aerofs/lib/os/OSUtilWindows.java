@@ -5,8 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.util.Map;
 import java.util.regex.Pattern;
 

@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExInviteeListEmpty;
-import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -17,7 +16,6 @@ import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Assert;

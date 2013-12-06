@@ -5,27 +5,14 @@
 package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.acl.Role;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExLicenseLimit;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableSet;
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import org.junit.Assert;
 import org.junit.Test;
-
-import java.sql.SQLException;
-import java.util.Collection;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;

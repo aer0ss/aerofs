@@ -6,7 +6,6 @@ package com.aerofs.daemon.rest.providers;
 
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.sun.jersey.spi.container.WebApplication;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
