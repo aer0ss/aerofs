@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.daemon.rest.event.EIFileContent;
+import com.aerofs.daemon.rest.event.EIMoveObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.daemon.rest.util.EntityTagSet;
@@ -29,6 +30,7 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -36,6 +38,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 
 @Path(Service.VERSION + "/files")
 @Produces(MediaType.APPLICATION_JSON)
@@ -85,6 +88,21 @@ public class FilesResource
         Preconditions.checkArgument(file.parent != null);
         Preconditions.checkArgument(file.name != null);
         return new EICreateObject(_imce, userid, version, file.parent, file.name, false).execute();
+    }
+
+    @Since("0.10")
+    @PUT
+    @Path("/{file_id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response move(@Auth AuthenticatedPrincipal principal,
+            @PathParam("file_id") RestObject object,
+            @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
+            File file) throws IOException
+    {
+        UserID userid = principal.getUserID();
+        Preconditions.checkArgument(file.parent != null);
+        Preconditions.checkArgument(file.name != null);
+        return new EIMoveObject(_imce, userid, object, file.parent, file.name, ifMatch).execute();
     }
 }
 

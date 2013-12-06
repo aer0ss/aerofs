@@ -12,17 +12,23 @@ import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.daemon.rest.event.EICreateObject;
+import com.aerofs.daemon.rest.event.EIMoveObject;
+import com.aerofs.daemon.rest.util.EntityTagSet;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.rest.api.Folder;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.google.common.base.Preconditions;
+import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -64,6 +70,22 @@ public class FoldersResource
         Preconditions.checkArgument(folder.parent != null);
         Preconditions.checkArgument(folder.name != null);
         return new EICreateObject(_imce, userid, version, folder.parent, folder.name, true)
+                .execute();
+    }
+
+    @Since("0.10")
+    @PUT
+    @Path("/{folder_id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response move(@Auth AuthenticatedPrincipal principal,
+            @PathParam("folder_id") RestObject object,
+            @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
+            Folder folder) throws IOException
+    {
+        UserID userid = principal.getUserID();
+        Preconditions.checkArgument(folder.parent != null);
+        Preconditions.checkArgument(folder.name != null);
+        return new EIMoveObject(_imce, userid, object, folder.parent, folder.name, ifMatch)
                 .execute();
     }
 }
