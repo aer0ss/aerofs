@@ -87,9 +87,9 @@ public class TokenVerificationClient
         return "Basic " + Base64.encodeBytes(BaseUtil.string2utf(clientId + ":" + clientSecret));
     }
 
-    public ListenableFuture<VerifyTokenResponse> verify(String accessToken, String clientId, String clientSecret)
+    public ListenableFuture<VerifyTokenResponse> verify(String accessToken, String key, String secret)
     {
-        return verify(accessToken, makeAuth(clientId, clientSecret));
+        return verify(accessToken, makeAuth(key, secret));
     }
 
     public ListenableFuture<VerifyTokenResponse> verify(String accessToken, String auth)
