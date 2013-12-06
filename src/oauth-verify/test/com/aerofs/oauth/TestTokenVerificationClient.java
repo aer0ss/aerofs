@@ -44,7 +44,7 @@ public class TestTokenVerificationClient extends BifrostTest
     @Test
     public void shouldReturnErrorResponseWhenAccessTokenInvalid() throws Exception
     {
-        VerifyTokenResponse response = verify("totallynotatoken", RESOURCEID, RESOURCESECRET);
+        VerifyTokenResponse response = verify("totallynotatoken", RESOURCEKEY, RESOURCESECRET);
 
         Assert.assertEquals("not_found", response.error);
     }
@@ -64,7 +64,7 @@ public class TestTokenVerificationClient extends BifrostTest
     public void shouldReturn401ResponseWhenResourceSecretInvalid() throws Exception
     {
         try {
-            verify(TOKEN, RESOURCEID, "totallynotasecret");
+            verify(TOKEN, RESOURCEKEY, "totallynotasecret");
             fail();
         } catch (UnexpectedResponse e) {
             assertEquals(401, e.statusCode);
@@ -74,7 +74,7 @@ public class TestTokenVerificationClient extends BifrostTest
     @Test
     public void shouldReturnTokenInfo() throws Exception
     {
-        VerifyTokenResponse response = verify(TOKEN, RESOURCEID, RESOURCESECRET);
+        VerifyTokenResponse response = verify(TOKEN, RESOURCEKEY, RESOURCESECRET);
 
         Assert.assertNull(response.error);
         Assert.assertEquals(USERNAME, response.principal.getName());

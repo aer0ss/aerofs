@@ -91,7 +91,7 @@ public class TestTokenResource extends BifrostTest
 
         // Verify the token has orgid and userid:
         String verifyResponse = given()
-                .header("Authorization", buildAuthHeader(RESOURCEID, RESOURCESECRET))
+                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
                 .queryParam("access_token", token)
                 .get("/tokeninfo").asString();
 

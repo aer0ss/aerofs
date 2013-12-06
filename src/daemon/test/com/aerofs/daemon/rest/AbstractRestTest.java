@@ -183,14 +183,14 @@ public class AbstractRestTest extends AbstractTest
         prop.setProperty("api.daemon.port", "0");
         prop.setProperty("api.tunnel.host", "localhost");
         prop.setProperty("api.tunnel.port", "48808");
-        prop.setProperty("daemon.oauth.id", BifrostTest.RESOURCEID);
+        prop.setProperty("daemon.oauth.id", BifrostTest.RESOURCEKEY);
         prop.setProperty("daemon.oauth.secret", BifrostTest.RESOURCESECRET);
         prop.setProperty("daemon.oauth.url", bifrostUrl);
         prop.setProperty("havre.tunnel.host", "localhost");
         prop.setProperty("havre.tunnel.port", "48808");
         prop.setProperty("havre.proxy.host", "localhost");
         prop.setProperty("havre.proxy.port", "0");
-        prop.setProperty("havre.oauth.id", BifrostTest.RESOURCEID);
+        prop.setProperty("havre.oauth.id", BifrostTest.RESOURCEKEY);
         prop.setProperty("havre.oauth.secret", BifrostTest.RESOURCESECRET);
         prop.setProperty("havre.oauth.url", bifrostUrl);
         ConfigurationProperties.setProperties(prop);

@@ -51,16 +51,18 @@ import static org.mockito.Mockito.when;
  */
 public abstract class BifrostTest extends AbstractTest
 {
-    public final static String RESOURCEID = "authorization-server-admin";
-    protected final static String CLIENTSECRET = "secret";
+    public final static String RESOURCEKEY = "authorization-server-admin";
     public final static String RESOURCESECRET = "rs_secret";
+    protected final static String CLIENTID = "test-app-unique-id";
+    protected final static String CLIENTNAME = "test-app-name";
+    protected final static String CLIENTSECRET = "test-app-secret";
     protected final static String CLIENTREDIRECT = "http://client.example.com:9000/redirect";
     protected final static String USERNAME = "user";
     public final static String TOKEN = "token";
     public final static String EXPIRED = "expired";
     protected final static String AUTH_URL = "/authorize";
     protected final static String TOKEN_URL = "/token";
-    protected final static String CLIENTID = "testapp";
+    protected final static String CLIENTS_URL = "/clients";
 
     @Mock SessionFactory _sessionFactory;
     @Mock SPBlockingClient _spClient;
@@ -70,6 +72,10 @@ public abstract class BifrostTest extends AbstractTest
     protected int _port;
     private Injector _injector;
 
+    protected ClientRepository _clientRepository;
+    protected AccessTokenRepository _accessTokenRepository;
+    protected ResourceServerRepository _resourceServerRepository;
+
     @Before
     public void setUp() throws Exception
     {
@@ -78,11 +84,16 @@ public abstract class BifrostTest extends AbstractTest
                 mockDatabaseModule(_sessionFactory),
                 mockSPClientModule());
 
+        _clientRepository = _injector.getInstance(ClientRepository.class);
+        _accessTokenRepository = _injector.getInstance(AccessTokenRepository.class);
+        _resourceServerRepository = _injector.getInstance(ResourceServerRepository.class);
+
         _service = new Bifrost(_injector, null);
         _service.start();
         _port = _service.getListeningPort();
 
         when(_sessionFactory.openSession()).thenReturn(_session);
+        when(_sessionFactory.getCurrentSession()).thenReturn(_session);
 
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = _port;
@@ -128,15 +139,16 @@ public abstract class BifrostTest extends AbstractTest
         rs.setContactEmail("localadmin@example.com");
         rs.setContactName("local admin");
         rs.setName("Auth server");
-        rs.setKey(RESOURCEID);
+        rs.setKey(RESOURCEKEY);
         rs.setSecret(RESOURCESECRET);
 
         client.setClientId(CLIENTID);
         client.setSecret(CLIENTSECRET);
+        client.setName(CLIENTNAME);
         client.setRedirectUris(ImmutableList.of(CLIENTREDIRECT));
         client.updateTimeStamps();
         client.setContactEmail("test@example.com");
-        client.setName("Test contact");
+        client.setContactName("Test contact");
         client.setIncludePrincipal(true);
         client.setSkipConsent(false);
 
