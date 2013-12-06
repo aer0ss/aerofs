@@ -176,4 +176,15 @@ public class AbstractDAO<E> {
         }
         return proxy;
     }
+
+    /**
+     * Delete the given instance.
+     *
+     * @param entity an instance to delete
+     * @throws HibernateException
+     * @see Session#delete(Object)
+     */
+    protected void delete(E entity) throws HibernateException {
+        currentSession().delete(checkNotNull(entity));
+    }
 }

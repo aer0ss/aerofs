@@ -18,9 +18,15 @@ package com.aerofs.bifrost.oaaas.repository;
 
 import com.aerofs.bifrost.oaaas.model.Client;
 
-public interface ClientRepository {
+import java.util.List;
 
-  Client findByClientId(String clientId);
+public interface ClientRepository
+{
+    Client findByClientId(String clientId);
 
     <S extends Client> S save(S client);
+
+    <S extends Client> void delete(S s);
+
+    List<Client> listAll();
 }

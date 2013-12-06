@@ -27,6 +27,7 @@ import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.aerofs.bifrost.oaaas.resource.ClientsResource;
 import com.aerofs.bifrost.oaaas.resource.TokenResource;
 import com.aerofs.bifrost.oaaas.resource.VerifyResource;
 import com.aerofs.lib.properties.Configuration.Server;
@@ -68,8 +69,8 @@ public class Bifrost extends Service
 
         SessionFactory sessionFactory = injector.getInstance(SessionFactory.class);
         _trans = new TransactionalWrapper(sessionFactory,
-                ImmutableSet.of("/token", "/authorize"),    // read-write
-                ImmutableSet.of("/tokeninfo"));             // read-only
+                ImmutableSet.of("/token", "/authorize", "/clients"),    // read-write
+                ImmutableSet.of("/tokeninfo"));                         // read-only
 
         addRequestFilter(AuthenticationFilter.class);
         addRequestFilter(UserConsentFilter.class);
@@ -80,7 +81,8 @@ public class Bifrost extends Service
     {
         return ImmutableSet.of(
                 VerifyResource.class,
-                TokenResource.class
+                TokenResource.class,
+                ClientsResource.class
         );
     }
 

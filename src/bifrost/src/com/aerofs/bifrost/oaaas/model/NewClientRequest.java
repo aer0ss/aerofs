@@ -1,0 +1,88 @@
+package com.aerofs.bifrost.oaaas.model;
+
+import javax.ws.rs.core.MultivaluedMap;
+
+/**
+ * Representation of the client registration request as defined in bifrost_api.md
+ */
+public class NewClientRequest
+{
+    private String resourceServerKey;
+    private String clientName;
+    private String description;
+    private String contactEmail;
+    private String contactName;
+    private String redirectUri;
+
+    public static NewClientRequest fromMultiValuedFormParameters(MultivaluedMap<String, String> formParameters)
+    {
+        NewClientRequest ncr = new NewClientRequest();
+        ncr.setResourceServerKey(formParameters.getFirst("resource_server_key"));
+        ncr.setClientName(formParameters.getFirst("client_name"));
+        ncr.setDescription(formParameters.getFirst("description"));
+        ncr.setContactEmail(formParameters.getFirst("contact_email"));
+        ncr.setContactName(formParameters.getFirst("contact_name"));
+        ncr.setRedirectUri(formParameters.getFirst("redirect_uri"));
+        return ncr;
+    }
+
+    public String getResourceServerKey()
+    {
+        return resourceServerKey;
+    }
+
+    public void setResourceServerKey(String resourceServerKey)
+    {
+        this.resourceServerKey = resourceServerKey;
+    }
+
+    public String getClientName()
+    {
+        return clientName;
+    }
+
+    public void setClientName(String clientName)
+    {
+        this.clientName = clientName;
+    }
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public void setDescription(String description)
+    {
+        this.description = description;
+    }
+
+    public String getContactEmail()
+    {
+        return contactEmail;
+    }
+
+    public void setContactEmail(String contactEmail)
+    {
+        this.contactEmail = contactEmail;
+    }
+
+    public String getContactName()
+    {
+        return contactName;
+    }
+
+    public void setContactName(String contactName)
+    {
+        this.contactName = contactName;
+    }
+
+    public String getRedirectUri()
+    {
+        return redirectUri;
+    }
+
+    public void setRedirectUri(String redirectUri)
+    {
+        this.redirectUri = redirectUri;
+    }
+}
