@@ -27,12 +27,15 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Link;
 
 import java.util.Set;
 
+import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -56,10 +59,10 @@ import static com.google.common.base.Preconditions.checkState;
 public class CompUnsyncableFiles extends Composite
 {
     private final TblUnsyncableFiles    _table;
-    private final Composite             _compRefresh;
+    private final Link                  _lnkHelp;
+    private final Composite             _buttonBar;
     private final Button                _btnRefresh;
     private final CompSpin              _spinner;
-    private final Composite             _buttonBar;
     private final Button                _btnOpen;
     private final Button                _btnRename;
     private final Button                _btnDelete;
@@ -88,9 +91,16 @@ public class CompUnsyncableFiles extends Composite
             }
         });
 
-        _compRefresh = GUIUtil.newPackedButtonContainer(this);
+        _lnkHelp = new Link(this, SWT.NONE);
+        _lnkHelp.setText("<a>Learn more about unsyncable files.</a>");
+        _lnkHelp.addSelectionListener(
+                createUrlLaunchListener("https://support.aerofs.com/entries/23776990"));
 
-        _btnRefresh = GUIUtil.createButton(_compRefresh, SWT.PUSH);
+        _buttonBar = GUIUtil.newPackedButtonContainer(this);
+
+        _spinner = new CompSpin(_buttonBar, SWT.NONE);
+
+        _btnRefresh = GUIUtil.createButton(_buttonBar, SWT.PUSH);
         _btnRefresh.setText("Refresh");
         _btnRefresh.addSelectionListener(new SelectionAdapter()
         {
@@ -100,10 +110,6 @@ public class CompUnsyncableFiles extends Composite
                 onCmdRefresh();
             }
         });
-
-        _spinner = new CompSpin(_compRefresh, SWT.NONE);
-
-        _buttonBar = GUIUtil.newButtonContainer(this, false);
 
         _btnOpen = GUIUtil.createButton(_buttonBar, SWT.PUSH);
         _btnOpen.setText("Open Parent Folder");
@@ -145,13 +151,19 @@ public class CompUnsyncableFiles extends Composite
         layout.verticalSpacing = GUIParam.MAJOR_SPACING;
         setLayout(layout);
 
-        GridData tableLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
+        GridData tableLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1);
         tableLayoutData.widthHint = 640;
         tableLayoutData.heightHint = 160;
         _table.setLayoutData(tableLayoutData);
 
-        _compRefresh.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, false, false));
-        _buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
+        _lnkHelp.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
+        _buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+
+        int buttonWidth = 120;
+        _btnRefresh.setLayoutData(new RowData(buttonWidth, SWT.DEFAULT));
+        _btnOpen.setLayoutData(new RowData(buttonWidth, SWT.DEFAULT));
+        _btnRename.setLayoutData(new RowData(buttonWidth, SWT.DEFAULT));
+        _btnDelete.setLayoutData(new RowData(buttonWidth, SWT.DEFAULT));
 
         // when the dialog is constructed, we'll be in the busy state while we are loading
         // data. After loading the data, the busy state will be set to false, which will set
@@ -173,7 +185,7 @@ public class CompUnsyncableFiles extends Composite
     {
         checkState(GUI.get().isUIThread());
 
-        Control[] controls = new Control[] { _btnRename, _table, _btnOpen, _btnRename, _btnDelete };
+        Control[] controls = new Control[] { _btnRefresh, _table, _btnOpen, _btnRename, _btnDelete };
         for (Control control : controls) control.setEnabled(true);
 
         _spinner.stop();
