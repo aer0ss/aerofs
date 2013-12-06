@@ -223,7 +223,7 @@ public class TestBlockStorage extends AbstractBlockTest
             throws Exception
     {
         SOCKID sockid = new SOCKID(sokid, CID.CONTENT);
-        IPhysicalPrefix prefix = bs.newPrefix_(sockid);
+        IPhysicalPrefix prefix = bs.newPrefix_(sockid, null);
         IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx()) ;
 
         OutputStream out = prefix.newOutputStream_(false);
@@ -893,7 +893,7 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldSplitLargeInputIntoBlocks() throws Exception
     {
         SOKID sokid = newSOKID();
-        IPhysicalPrefix prefix = bs.newPrefix_(new SOCKID(sokid, CID.CONTENT));
+        IPhysicalPrefix prefix = bs.newPrefix_(new SOCKID(sokid, CID.CONTENT), null);
         OutputStream out = prefix.newOutputStream_(false);
 
         ByteStreams.copy(new DevCtr(4 * LibParam.FILE_BLOCK_SIZE + 1), out);
@@ -907,7 +907,7 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldAvoidStoringAlreadyStoredBlocks() throws Exception
     {
         SOKID sokid = newSOKID();
-        IPhysicalPrefix prefix = bs.newPrefix_(new SOCKID(sokid, CID.CONTENT));
+        IPhysicalPrefix prefix = bs.newPrefix_(new SOCKID(sokid, CID.CONTENT), null);
         OutputStream out = prefix.newOutputStream_(false);
 
         ByteStreams.copy(new DevZero(4 * LibParam.FILE_BLOCK_SIZE + 1), out);

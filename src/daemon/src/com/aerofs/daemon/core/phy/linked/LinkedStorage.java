@@ -132,10 +132,11 @@ public class LinkedStorage implements IPhysicalStorage
 
 
     @Override
-    public IPhysicalPrefix newPrefix_(SOCKID k) throws SQLException
+    public IPhysicalPrefix newPrefix_(SOCKID k, @Nullable String scope) throws SQLException
     {
-        return new LinkedPrefix(this, k.sokid(),
-                LinkedPath.auxiliary(null, auxFilePath(k.sokid(), AuxFolder.PREFIX)));
+        String filePath = auxFilePath(k.sokid(), AuxFolder.PREFIX)
+                + (scope != null ? "-" + scope : "");
+        return new LinkedPrefix(this, k.sokid(), LinkedPath.auxiliary(null, filePath));
     }
 
     @Override

@@ -729,10 +729,10 @@ public class ReceiveAndApplyUpdate
         try {
             // TODO (DF) : figure out if prefix files need a KIndex or are assumed
             // to be MASTER like everything else in Download
-            IPhysicalPrefix from = _ps.newPrefix_(new SOCKID(socid.soid(), socid.cid(), kFrom));
+            IPhysicalPrefix from = _ps.newPrefix_(new SOCKID(socid, kFrom), null);
             assert from.getLength_() > 0;
 
-            IPhysicalPrefix to = _ps.newPrefix_(new SOCKID(socid.soid(), socid.cid(), kTo));
+            IPhysicalPrefix to = _ps.newPrefix_(new SOCKID(socid, kTo), null);
             from.moveTo_(to, t);
 
             // note: transaction may fail (i.e. process_ crashes) after the
@@ -986,7 +986,7 @@ public class ReceiveAndApplyUpdate
             return _tm.begin_();
         }
 
-        final IPhysicalPrefix pfPrefix = _ps.newPrefix_(k);
+        final IPhysicalPrefix pfPrefix = _ps.newPrefix_(k, null);
 
         // Write the new content to the prefix file
         writeContentToPrefixFile_(pfPrefix, msg, reply.getFileTotalLength(),

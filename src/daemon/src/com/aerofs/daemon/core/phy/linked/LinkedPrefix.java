@@ -62,6 +62,12 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
     }
 
     @Override
+    public void delete_() throws IOException
+    {
+        _f.delete();
+    }
+
+    @Override
     public String toString()
     {
         return _f.toString();

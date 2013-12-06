@@ -153,10 +153,10 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
-    public IPhysicalPrefix newPrefix_(SOCKID k)
+    public IPhysicalPrefix newPrefix_(SOCKID k, @Nullable String scope)
     {
-        // TODO: take component into account if we ever use components other than META/CONTENT
-        return new BlockPrefix(this, k, _fileFactory.create(_prefixDir, makeFileName(k.sokid())));
+        String fileName = makeFileName(k.sokid()) + (scope != null ? "-" + scope : "");
+        return new BlockPrefix(this, k, _fileFactory.create(_prefixDir, fileName));
     }
 
     @Override

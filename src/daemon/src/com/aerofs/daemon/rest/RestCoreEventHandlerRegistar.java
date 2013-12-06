@@ -5,14 +5,16 @@ import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.daemon.rest.event.EIDeleteObject;
 import com.aerofs.daemon.rest.event.EIFileContent;
-import com.aerofs.daemon.rest.event.EIListChildren;
+import com.aerofs.daemon.rest.event.EIFileUpload;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
+import com.aerofs.daemon.rest.event.EIListChildren;
 import com.aerofs.daemon.rest.event.EIMoveObject;
 import com.aerofs.daemon.rest.handler.HdCreateObject;
 import com.aerofs.daemon.rest.handler.HdDeleteObject;
 import com.aerofs.daemon.rest.handler.HdFileContent;
-import com.aerofs.daemon.rest.handler.HdListChildren;
+import com.aerofs.daemon.rest.handler.HdFileUpload;
 import com.aerofs.daemon.rest.handler.HdObjectInfo;
+import com.aerofs.daemon.rest.handler.HdListChildren;
 import com.aerofs.daemon.rest.handler.HdMoveObject;
 import com.google.inject.Inject;
 
@@ -24,12 +26,13 @@ public class RestCoreEventHandlerRegistar implements ICoreEventHandlerRegistrar
     private final HdCreateObject _hdCreateObject;
     private final HdMoveObject _hdMoveObject;
     private final HdDeleteObject _hdDeleteObject;
+    private final HdFileUpload _hdFileUpload;
 
     @Inject
     RestCoreEventHandlerRegistar(HdListChildren hdListChildren,
             HdObjectInfo hdObjectInfo,
             HdCreateObject hdCreateObject, HdMoveObject hdMoveObject, HdDeleteObject hdDeleteObject,
-            HdFileContent hdFileContent)
+            HdFileContent hdFileContent, HdFileUpload hdFileUpload)
     {
         _hdListChildren = hdListChildren;
         _hdObjectInfo = hdObjectInfo;
@@ -37,6 +40,7 @@ public class RestCoreEventHandlerRegistar implements ICoreEventHandlerRegistrar
         _hdMoveObject = hdMoveObject;
         _hdDeleteObject = hdDeleteObject;
         _hdFileContent = hdFileContent;
+        _hdFileUpload = hdFileUpload;
     }
 
     @Override
@@ -49,6 +53,7 @@ public class RestCoreEventHandlerRegistar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIMoveObject.class, _hdMoveObject)
                 .setHandler_(EIDeleteObject.class, _hdDeleteObject)
                 .setHandler_(EIFileContent.class, _hdFileContent)
+                .setHandler_(EIFileUpload.class, _hdFileUpload)
         ;
     }
 }
