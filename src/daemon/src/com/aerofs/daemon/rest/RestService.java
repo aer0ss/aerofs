@@ -5,6 +5,9 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.Version;
+import com.aerofs.daemon.rest.providers.IllegalArgumentExceptionMapper;
+import com.aerofs.daemon.rest.providers.ParamExceptionMapper;
+import com.aerofs.daemon.rest.providers.JsonExceptionMapper;
 import com.aerofs.daemon.rest.providers.OAuthProvider;
 import com.aerofs.daemon.rest.providers.RuntimeExceptionMapper;
 import com.aerofs.daemon.rest.resources.ChildrenResource;
@@ -32,9 +35,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RestService extends Service
 {
     public static final Version HIGHEST_SUPPORTED_VERSION = new Version(0, 10);
-
-    // For now accept any version,
-    public static final String VERSION = "/v{version: [0-9]+\\.[0-9]+}";
 
     // Port for the service. 0 to use any available port (default)
     // configurable for firewall-friendliness
@@ -73,14 +73,16 @@ public class RestService extends Service
         return p;
     }
 
-
     @Override
     protected Set<Class<?>> singletons()
     {
-        // specify all providers and resources explictly instead of using a package scanner
+        // specify all providers explictly instead of using a package scanner
         // because we flatten packages in the proguard step
         return ImmutableSet.of(
                 OAuthProvider.class,
+                JsonExceptionMapper.class,
+                ParamExceptionMapper.class,
+                IllegalArgumentExceptionMapper.class,
                 RuntimeExceptionMapper.class
         );
     }

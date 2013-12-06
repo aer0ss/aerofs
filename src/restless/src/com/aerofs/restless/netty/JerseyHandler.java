@@ -6,6 +6,7 @@ package com.aerofs.restless.netty;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.restless.Configuration;
+import com.aerofs.restless.Service;
 import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.WebApplication;
@@ -37,10 +38,6 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
     private final WebApplication _application;
 
     private ChunkedRequestInputStream _chunkedRequestInputStream;
-
-    // NB: for some reason Jersey's ContainerRequest requires a base URI to be provided
-    // in all cases although we absolutely don't need it for any reason whatsoever...
-    private final URI _baseURI = URI.create("https://dummy/");
 
     public JerseyHandler(WebApplication application, Configuration config)
     {
@@ -83,16 +80,14 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
 
     private void handleRequest(Channel c, HttpRequest request, InputStream content)
     {
-        URI requestUri = URI.create(_baseURI + request.getUri().substring(1));
+        URI requestUri = URI.create(Service.DUMMY_BASE_URI + request.getUri().substring(1));
 
         ContainerRequest cRequest = new ContainerRequest(_application,
-                request.getMethod().getName(), _baseURI, requestUri, getHeaders(request),
+                request.getMethod().getName(), Service.DUMMY_BASE_URI, requestUri, getHeaders(request),
                 content);
 
-        boolean keepAlive = HttpHeaders.isKeepAlive(request);
-
         try {
-            _application.handleRequest(cRequest, new JerseyResponseWriter(c, keepAlive, _config));
+            _application.handleRequest(cRequest, new JerseyResponseWriter(c, request, _config));
         } catch (Exception e) {
             // When a WebApplicationException (or really any exception whatsoever) is thrown
             // after the response is committed (i.e. the first byte has been written on a Netty

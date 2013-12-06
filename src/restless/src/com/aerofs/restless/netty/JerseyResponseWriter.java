@@ -4,6 +4,7 @@
 package com.aerofs.restless.netty;
 
 import com.aerofs.restless.Configuration;
+import com.aerofs.restless.Service;
 import com.aerofs.restless.stream.ContentStream;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
@@ -18,8 +19,10 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
+import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
@@ -34,6 +37,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
     private final Configuration _config;
 
     private final Channel _channel;
+    private final String _location;
     private final boolean _keepAlive;
 
     private ChannelBuffer _buffer;
@@ -41,12 +45,15 @@ class JerseyResponseWriter implements ContainerResponseWriter
 
     private static final HttpChunk EMPTY = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
 
-    public JerseyResponseWriter(final Channel channel, boolean keepAlive, Configuration config)
+    public JerseyResponseWriter(final Channel channel, HttpRequest request,
+            Configuration config)
     {
         _config = config;
 
         _channel = channel;
-        _keepAlive = keepAlive;
+        _location = "https://" + request.getHeader(Names.HOST) + "/";
+        _keepAlive = HttpHeaders.isKeepAlive(request);
+
         _trailer = new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture cf)
@@ -84,6 +91,12 @@ class JerseyResponseWriter implements ContainerResponseWriter
             // -> can stream content of unknown length on a persistent connection
             r.setChunked(true);
             r.setHeader(Names.TRANSFER_ENCODING, Values.CHUNKED);
+        }
+
+        // rewrite Location: header if needed
+        String location = r.getHeader(Names.LOCATION);
+        if (location != null && location.startsWith(Service.DUMMY_LOCATION)) {
+            r.setHeader(Names.LOCATION, location.replace(Service.DUMMY_LOCATION, _location));
         }
 
         // write response status and headers

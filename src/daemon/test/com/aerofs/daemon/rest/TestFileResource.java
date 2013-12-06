@@ -5,6 +5,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
@@ -140,7 +141,7 @@ public class TestFileResource extends AbstractRestTest
                 .body("size", equalTo(FILE_CONTENT.length))
                 .body("last_modified", equalTo(ISO_8601.format(new Date(FILE_MTIME))))
                 .body("mime_type", equalTo("text/plain"))
-                .when().get(RESOURCE, object("f1.txt").toStringFormal());
+        .when().get(RESOURCE, object("f1.txt").toStringFormal());
     }
 
     @Test

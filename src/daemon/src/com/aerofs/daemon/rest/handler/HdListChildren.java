@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.rest.RestObject;
+import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
 import com.aerofs.daemon.rest.util.AccessChecker;
 import com.aerofs.daemon.rest.util.MimeTypeDetector;
@@ -69,10 +69,10 @@ public class HdListChildren extends AbstractHdIMC<EIListChildren>
                     size = coa.caMaster().length();
                     lastModified = new Date(coa.caMaster().mtime());
                 }
-                files.add(new File(coa.name(), restId, lastModified, size,
+                files.add(new File(restId, coa.name(), lastModified, size,
                         _detector.detect(coa.name())));
             } else {
-                folders.add(new Folder(coa.name(), restId, coa.isAnchor()));
+                folders.add(new Folder(restId, coa.name(), coa.isAnchor()));
             }
         }
 

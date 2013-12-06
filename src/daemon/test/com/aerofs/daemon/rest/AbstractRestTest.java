@@ -1,5 +1,6 @@
 package com.aerofs.daemon.rest;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.DID;
@@ -21,6 +22,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.havre.Havre;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
@@ -144,7 +146,10 @@ public class AbstractRestTest extends AbstractTest
     private Havre havre;
     private Bifrost bifrost;
 
-    protected static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    protected final static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+    protected final static byte[] VERSION_HASH =
+            BaseSecUtil.newMessageDigestMD5().digest(new byte[0]);
 
     private static DateFormat utcFormat(String pattern) {
         DateFormat dateFormat = new SimpleDateFormat(pattern);
@@ -167,6 +172,8 @@ public class AbstractRestTest extends AbstractTest
         when(cacert.getCert()).thenReturn(ca.cert);
 
         when(sessionFactory.openSession()).thenReturn(session);
+
+        when(nvc.getVersionHash_(any(SOID.class))).thenReturn(VERSION_HASH);
 
         Properties prop = new Properties();
         prop.setProperty("bifrost.port", "0");

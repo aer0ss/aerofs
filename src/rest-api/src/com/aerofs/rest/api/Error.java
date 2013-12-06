@@ -15,6 +15,7 @@ public class Error
         UNAUTHORIZED,
         FORBIDDEN,
         NOT_FOUND,
+        CONFLICT,
         INTERNAL_ERROR,
     }
 

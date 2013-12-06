@@ -62,10 +62,10 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         if (!oa.isFile()) throw new ExNotFound();
 
         final CA ca = oa.caMasterThrows();
-        final EntityTag etag = _etags.etagForFile(oa.soid());
+        final EntityTag etag = _etags.etagForObject(oa.soid());
 
         // conditional request: 304 Not Modified on ETAG match
-        if (ev._ifNoneMatch != null && EntityTagUtil.match(ev._ifNoneMatch, etag)) {
+        if (ev._ifNoneMatch.isValid() && ev._ifNoneMatch.matches(etag)) {
             ev.setResult_(Response.notModified(etag));
             return;
         }

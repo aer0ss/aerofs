@@ -3,6 +3,7 @@ package com.aerofs.daemon.rest;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSAnchor;
+import com.aerofs.daemon.rest.util.RestObject;
 import org.junit.Test;
 
 import java.util.Date;

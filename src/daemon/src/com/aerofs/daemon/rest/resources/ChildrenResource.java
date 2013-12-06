@@ -9,12 +9,11 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.daemon.rest.RestObject;
-import com.aerofs.daemon.rest.RestService;
+import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
-import com.aerofs.daemon.rest.jersey.RestObjectParam;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.restless.Auth;
+import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.google.inject.Inject;
 
@@ -25,7 +24,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-@Path(RestService.VERSION + "/children")
+@Path(Service.VERSION + "/children")
 @Produces(MediaType.APPLICATION_JSON)
 public class ChildrenResource
 {
@@ -48,12 +47,11 @@ public class ChildrenResource
 
     @Since("0.9")
     @GET
-    @Path("/{object}")
+    @Path("/{folder_id}")
     public Response list(@Auth AuthenticatedPrincipal principal,
-            @PathParam("object") RestObjectParam object)
+            @PathParam("folder_id") RestObject object)
     {
         UserID userid = principal.getUserID();
-        return new EIListChildren(_imce, userid, object.get())
-                .execute();
+        return new EIListChildren(_imce, userid, object).execute();
     }
 }

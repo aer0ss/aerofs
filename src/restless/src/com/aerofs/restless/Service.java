@@ -11,6 +11,7 @@ import com.aerofs.restless.netty.JerseyHandler;
 import com.aerofs.restless.providers.ContentStreamProvider;
 import com.aerofs.restless.providers.GsonProvider;
 import com.aerofs.restless.providers.NotFoundMapper;
+import com.aerofs.restless.providers.VersionProvider;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -29,6 +30,7 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -56,6 +58,12 @@ public class Service extends AbstractNettyServer
             ContentStreamProvider.class,
             NotFoundMapper.class
     );
+
+    // accept any version in the URL and on a per-request basis
+    public static final String VERSION = "/v{version: [0-9]+\\.[0-9]+}";
+
+    public static final String DUMMY_LOCATION = "https://dummy/";
+    public static final URI DUMMY_BASE_URI = URI.create(DUMMY_LOCATION);
 
     protected final Injector _injector;
 
@@ -87,8 +95,7 @@ public class Service extends AbstractNettyServer
     {
         Preconditions.checkNotNull(clazz);
         _requestFilters.add(clazz.getCanonicalName());
-        _resources.getProperties().put(
-                ResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS,
+        _resources.getProperties().put(ResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS,
                 _requestFilters.toArray(new String[_requestFilters.size()]));
     }
 
@@ -133,5 +140,6 @@ public class Service extends AbstractNettyServer
     {
         _resources.getProperties()
                 .put(ResourceConfig.PROPERTY_RESOURCE_FILTER_FACTORIES, VersionFilterFactory.class);
+        _resources.getClasses().add(VersionProvider.class);
     }
 }

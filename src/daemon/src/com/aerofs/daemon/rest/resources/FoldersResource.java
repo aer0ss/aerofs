@@ -7,11 +7,12 @@ package com.aerofs.daemon.rest.resources;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.daemon.rest.RestService;
-import com.aerofs.daemon.rest.event.EIFolderInfo;
-import com.aerofs.daemon.rest.jersey.RestObjectParam;
+import com.aerofs.daemon.rest.util.RestObject;
+import com.aerofs.daemon.rest.event.EIObjectInfo;
+import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.restless.Auth;
+import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.google.inject.Inject;
 
@@ -22,7 +23,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-@Path(RestService.VERSION + "/folders/{object}")
+@Path(Service.VERSION + "/folders")
 @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_OCTET_STREAM})
 public class FoldersResource
 {
@@ -36,10 +37,11 @@ public class FoldersResource
 
     @Since("0.9")
     @GET
+    @Path("/{folder_id}")
     public Response metadata(@Auth AuthenticatedPrincipal principal,
-            @PathParam("object") RestObjectParam object)
+            @PathParam("folder_id") RestObject object)
     {
         UserID userid = principal.getUserID();
-        return new EIFolderInfo(_imce, userid, object.get()).execute();
+        return new EIObjectInfo(_imce, userid, object, Type.FOLDER).execute();
     }
 }

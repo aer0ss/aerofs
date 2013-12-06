@@ -10,9 +10,10 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.rest.RestObject;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;
@@ -21,13 +22,16 @@ public class AccessChecker
 {
     private final LocalACL _acl;
     private final DirectoryService _ds;
+    private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public AccessChecker(LocalACL acl, DirectoryService ds, IMapSID2SIndex sid2sidx)
+    public AccessChecker(LocalACL acl, DirectoryService ds, IMapSIndex2SID sidx2sid,
+            IMapSID2SIndex sid2sidx)
     {
         _acl = acl;
         _ds = ds;
+        _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
     }
 
@@ -88,5 +92,17 @@ public class AccessChecker
         if (oa.isExpelled()) throw new ExNotFound();
 
         return oa;
+    }
+
+    public RestObject parent(RestObject o, OA oa) throws SQLException
+    {
+        if (oa.parent().isRoot()) {
+            ImmutableList<SOID> l = _ds.resolve_(oa).soids;
+            if (l.size() > 1) {
+                SOID soid = l.get(l.size() - 2);
+                return new RestObject(_sidx2sid.get_(soid.sidx()), soid.oid());
+            }
+        }
+        return new RestObject(o.sid, oa.parent());
     }
 }
