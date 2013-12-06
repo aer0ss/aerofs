@@ -170,5 +170,8 @@ class LstBranches extends ScrolledComposite
         separator.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
     }
 
-    public class ExMasterBranchNotFound extends Exception {}
+    public class ExMasterBranchNotFound extends Exception
+    {
+        private static final long serialVersionUID = 0L;
+    }
 }
