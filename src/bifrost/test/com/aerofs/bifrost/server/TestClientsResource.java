@@ -90,6 +90,7 @@ public class TestClientsResource extends BifrostTest
          * - client_id
          * - resource_server_key
          * - client_name
+         * - secret
          * - description (optional)
          * - contact_email (optional)
          * - contact_name (optional)
@@ -104,6 +105,7 @@ public class TestClientsResource extends BifrostTest
             assertNotNull(client.get("client_id"));
             assertNotNull(client.get("resource_server_key"));
             assertNotNull(client.get("client_name"));
+            assertNotNull(client.get("secret"));
 
             if (client.get("client_id").equals(CLIENTID)) {
                 assertEquals(CLIENTNAME, client.get("client_name"));

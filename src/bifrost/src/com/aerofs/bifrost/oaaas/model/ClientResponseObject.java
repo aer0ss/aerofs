@@ -13,9 +13,11 @@ public class ClientResponseObject
     String contactEmail;
     String contactName;
     String redirectUri;
+    String secret;
 
     public ClientResponseObject(String clientId, String resourceServerKey, String clientName,
-            String description, String contactEmail, String contactName, String redirectUri)
+            String description, String contactEmail, String contactName, String redirectUri,
+            String secret)
     {
         this.clientId = clientId;
         this.resourceServerKey = resourceServerKey;
@@ -24,6 +26,7 @@ public class ClientResponseObject
         this.contactEmail = contactEmail;
         this.contactName = contactName;
         this.redirectUri = redirectUri;
+        this.secret = secret;
     }
 
     public String getClientId()
@@ -94,5 +97,15 @@ public class ClientResponseObject
     public void setRedirectUri(String redirectUri)
     {
         this.redirectUri = redirectUri;
+    }
+
+    public String getSecret()
+    {
+        return secret;
+    }
+
+    public void setSecret(String secret)
+    {
+        this.secret = secret;
     }
 }

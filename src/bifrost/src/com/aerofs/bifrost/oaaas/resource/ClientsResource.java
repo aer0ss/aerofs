@@ -116,7 +116,8 @@ public class ClientsResource
                     client.getDescription(),
                     client.getContactEmail(),
                     client.getContactName(),
-                    client.getRedirectUris().size() == 0 ? null : client.getRedirectUris().get(0)));
+                    client.getRedirectUris().size() == 0 ? null : client.getRedirectUris().get(0),
+                    client.getSecret()));
         }
 
         ListClientsResponse response = new ListClientsResponse(clientResponseObjectList);
