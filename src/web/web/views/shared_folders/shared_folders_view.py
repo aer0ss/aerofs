@@ -16,7 +16,7 @@ import aerofs_sp.gen.common_pb2 as common
 from web.auth import is_admin
 from web.sp_util import exception2error
 from web.util import get_rpc_stub, parse_rpc_error_exception
-from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
+from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import JOINED
@@ -98,16 +98,16 @@ def user_shared_folders(request):
 
 
 @view_config(
-    route_name = 'team_shared_folders',
+    route_name = 'org_shared_folders',
     renderer = 'shared_folders.mako',
     permission = 'admin'
 )
-def team_shared_folders(request):
+def org_shared_folders(request):
     _ = request.translate
 
     return _shared_folders(DatatablesPaginate.YES, request,
             _("Shared folders in my organization"),
-            request.route_url('json.get_team_shared_folders'),
+            request.route_url('json.get_org_shared_folders'),
             _(_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN),
             _(_UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN))
 
@@ -193,11 +193,11 @@ def json_get_user_shared_folders(request):
 
 
 @view_config(
-    route_name = 'json.get_team_shared_folders',
+    route_name = 'json.get_org_shared_folders',
     renderer = 'json',
     permission = 'admin'
 )
-def json_get_team_shared_folders(request):
+def json_get_org_shared_folders(request):
     echo = request.params['sEcho']
     count = int(request.params['iDisplayLength'])
     offset = int(request.params['iDisplayStart'])
@@ -373,7 +373,7 @@ def json_add_shared_folder_perm(request):
                                       None, suppress_warnings),
                                       _add_shared_folder_rules_errors({
         # TODO (WW) change to ALREADY_MEMBER?
-        # See also team_members_view.py:json_invite_user()
+        # See also org_users_view.py:json_invite_user()
         PBException.ALREADY_EXIST:
             _("The user is already a member of the folder."),
         PBException.EMPTY_EMAIL_ADDRESS:

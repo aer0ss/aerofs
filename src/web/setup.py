@@ -17,8 +17,8 @@ packages = [
         "web.views.payment",
         "web.views.shared_folders",
         "web.views.signup",
-        "web.views.team_members",
-        "web.views.team_settings",
+        "web.views.org_users",
+        "web.views.org_settings",
         "web.views.unsubscribe",
         "web.views.unsubscribe.templates",
         ]

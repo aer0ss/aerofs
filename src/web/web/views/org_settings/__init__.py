@@ -1,5 +1,5 @@
 def includeme(config):
-    config.add_route('team_settings', 'admin/settings')
+    config.add_route('org_settings', 'org/settings')
 
     # Use a short and easy to remember link since non-admins need to email the
     # link to their admins when necessary.

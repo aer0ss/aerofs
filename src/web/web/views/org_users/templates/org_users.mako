@@ -24,7 +24,7 @@
     <table class="table"><tbody id='invited_users_tbody'></tbody></table>
 </div>
 
-<div id="remove_from_team_modal" class="modal hide">
+<div id="remove_user_modal" class="modal hide">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h4>Remove the user from your organization?</h4>
@@ -98,7 +98,7 @@
 
                 ## Parameters
                 "sDom": "<'datatable_body't><'row'<'span1'r><'span7'pi>>",
-                "sAjaxSource": "${request.route_path("json.list_team_members")}",
+                "sAjaxSource": "${request.route_path("json.list_org_users")}",
                 "sPaginationType": "bootstrap",
                 "iDisplayLength": 20,
                 "oLanguage": {
@@ -186,7 +186,7 @@
         }
 
         function removeInvitation(user, link) {
-            $.post("${request.route_path('json.delete_team_invitation')}", {
+            $.post("${request.route_path('json.delete_org_invitation')}", {
                     ${self.csrf.token_param()}
                     "${url_param_user}": user
                 }
@@ -205,7 +205,7 @@
         ## newLinkText: the new text that should be displayed in the link if the change was successful
         ## link: the jquery object of the calling link
         function toggleAdmin(user, becomeAdmin, newLinkText, $link) {
-            $.post("${request.route_path('json.set_level')}", {
+            $.post("${request.route_path('json.set_auth_level')}", {
                     ${self.csrf.token_param()}
                     "${url_param_user}": user,
                     "${url_param_level}": becomeAdmin ? ${admin_level} : ${user_level}
@@ -229,12 +229,12 @@
         }
 
         function removeFromTeam(user, viewDevicesUrl, $link) {
-            var modal = $("#remove_from_team_modal");
+            var modal = $("#remove_user_modal");
             modal.find(".device_link").prop("href", viewDevicesUrl);
             modal.find(".user_email").text(user);
             modal.find("#confirm_remove_user").off().on('click', function() {
                 modal.modal('hide');
-                $.post("${request.route_path('json.remove_from_team')}", {
+                $.post("${request.route_path('json.remove_user')}", {
                         ${self.csrf.token_param()}
                         "${url_param_user}": user
                     }

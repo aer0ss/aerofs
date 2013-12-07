@@ -113,10 +113,10 @@
 <%def name="render_admin_org_links()">
     <%
         links = [
-            ('team_members', _("Users")),
-            ('team_shared_folders', _("Shared Folders")),
+            ('org_users', _("Users")),
+            ('org_shared_folders', _("Shared Folders")),
             ('team_server_devices', _("Team Servers")),
-            ('team_settings', _("Settings")),
+            ('org_settings', _("Settings")),
         ]
     %>
     % for link in links:

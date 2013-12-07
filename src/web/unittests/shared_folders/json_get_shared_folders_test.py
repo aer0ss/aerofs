@@ -58,9 +58,9 @@ class GetSharedFoldersTest(TestBase):
         urs.user.first_name = 'first'
         urs.user.last_name = 'last'
 
-    def test_get_team_shared_folders(self):
+    def test_get_org_shared_folders(self):
         from web.views.shared_folders.shared_folders_view import \
-            json_get_team_shared_folders
+            json_get_org_shared_folders
 
         request = self.create_dummy_request({
             'sEcho': 'hoho',
@@ -70,7 +70,7 @@ class GetSharedFoldersTest(TestBase):
         auth.is_admin = Mock(return_value=True)
         authenticated_userid = Mock(return_value='test@email')
 
-        response = json_get_team_shared_folders(request)
+        response = json_get_org_shared_folders(request)
         self.assertEquals(len(response['aaData']), 2)
 
     def test_get_user_shared_folders(self):

@@ -5,7 +5,7 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNoContent, HTTPFound
 
 from web.util import get_rpc_stub
-from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
+from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 
 
 log = logging.getLogger("web")

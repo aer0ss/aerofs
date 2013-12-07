@@ -23,7 +23,7 @@ def decode_store_id(encoded_sid):
 
 @view_config(
     route_name = 'start_subscription',
-    renderer = 'team_settings.mako',
+    renderer = 'org_settings.mako',
     permission = 'admin'
 )
 def start_subscription(request):
@@ -33,8 +33,8 @@ def start_subscription(request):
     return ret
 
 @view_config(
-    route_name = 'team_settings',
-    renderer = 'team_settings.mako',
+    route_name = 'org_settings',
+    renderer = 'org_settings.mako',
     permission = 'admin'
 )
 def team_settings(request):

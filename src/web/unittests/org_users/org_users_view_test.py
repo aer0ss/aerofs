@@ -18,8 +18,8 @@ class TeamMembersViewTest(TestBase):
             Mock(return_value=self.reply)
 
     def test_should_call_list_organization_invited_users(self):
-        from web.views.team_members.team_members_view import team_members
-        ret = team_members(testing.DummyRequest())
+        from web.views.org_users.org_users_view import org_users
+        ret = org_users(testing.DummyRequest())
         self.assertTrue(ret['invited_users'] == [_USER_ID])
 
 def test_suite():

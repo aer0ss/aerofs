@@ -12,7 +12,7 @@
     <h2>Organization settings</h2>
     ## TODO (WW) use form-horizontal when adding new fields. see login.mako
     Change organization name:
-    <form class="form-inline" id="update-name-form" action="${request.route_path('team_settings')}" method="post">
+    <form class="form-inline" id="update-name-form" action="${request.route_path('org_settings')}" method="post">
         <div class="input_container">
             ${self.csrf.token_input()}
             <input type="hidden" name="form.submitted">

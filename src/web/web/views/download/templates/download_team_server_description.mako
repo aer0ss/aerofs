@@ -2,8 +2,8 @@
     <h4>What is Team Server?</h4>
     <p>
         AeroFS Team Server is an software application that securely backs
-        up your entire team's files at a central location, either on your local drive or
-        Amazon S3. It provides a central access point for your team's data.
+        up your entire organization's files at a central location, either on your local drive or
+        Amazon S3. It provides a central access point for your organization's data.
         ## TOOD (WW) this should points to the public Web site rather than a marketing page
         ## inside the private deployment. Add a static path that points to the public Web
         ## site.
@@ -25,11 +25,11 @@
     </p>
 </div>
 <div class="page-block">
-    <h4>How to add team members to sync?</h4>
+    <h4>How to add users to sync?</h4>
     <p>
         Once installed, the server will immediately sync with your own AeroFS clients.
         To sync with colleagues and clients, simply
-        <a href="${request.route_path('team_members')}">invite them to your team</a>.
+        <a href="${request.route_path('org_users')}">invite them to your organization</a>.
         After they accept the invitation, all their AeroFS files will be synced
         to the Team Server.
     </p>

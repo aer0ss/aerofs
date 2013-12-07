@@ -124,7 +124,7 @@ ${common.render_previous_button()}
         <a href="#" class="btn"
             onclick="hideAllModals(); $('#create-user-modal').modal('show'); return false;">
             No. Resend Email</a>
-        <a href="${request.route_path('team_members')}" class="btn btn-danger">
+        <a href="${request.route_path('org_users')}" class="btn btn-danger">
             Yes. Proceed</a>
     </div>
 </div>

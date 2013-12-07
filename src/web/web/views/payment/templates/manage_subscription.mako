@@ -31,7 +31,7 @@
 
     <p>
         The system will automatically adjust the subscription when you
-        <a href="${request.route_path('team_members')}">add or remove members</a>.
+        <a href="${request.route_path('org_users')}">add or remove members</a>.
     </p>
 </div>
 

@@ -9,8 +9,8 @@ class AdminSettingsViewTest(TestBase):
         # module under test to reset its referecnes to these methods, in case
         # the module has been loaded before by other test cases.
         # TODO (WW) a better way to do it?
-        from web.views.team_settings import team_settings_view
-        reload(team_settings_view)
+        from web.views.org_settings import org_settings_view
+        reload(org_settings_view)
 
         # Create spy methods. Do not use mock so the RPC stub can validate
         # paramaters passed to these methods.
@@ -20,7 +20,7 @@ class AdminSettingsViewTest(TestBase):
             self.spy(self.sp_rpc_stub.set_org_preferences)
 
     def test_admin_settings_with_set(self):
-        from web.views.team_settings.team_settings_view import team_settings
+        from web.views.org_settings.org_settings_view import team_settings
 
         org_name = u'test'
         request = self.create_dummy_request({
@@ -36,7 +36,7 @@ class AdminSettingsViewTest(TestBase):
                                                                      None)
 
     def test_admin_settings_with_get(self):
-        from web.views.team_settings.team_settings_view import team_settings
+        from web.views.org_settings.org_settings_view import team_settings
 
         team_settings(self.create_dummy_request())
 

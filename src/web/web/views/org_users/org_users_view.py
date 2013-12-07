@@ -20,11 +20,11 @@ URL_PARAM_ERASE_DEVICES = 'erase_devices'
 log = logging.getLogger(__name__)
 
 @view_config(
-    route_name = 'team_members',
-    renderer = 'team_members.mako',
+    route_name = 'org_users',
+    renderer = 'org_users.mako',
     permission = 'admin'
 )
-def team_members(request):
+def org_users(request):
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
@@ -41,11 +41,11 @@ def team_members(request):
     }
 
 @view_config(
-    route_name = 'json.list_team_members',
+    route_name = 'json.list_org_users',
     renderer = 'json',
     permission = 'admin'
 )
-def json_list_team_members(request):
+def json_list_org_users(request):
     echo = str(request.GET['sEcho'])
     count = int(request.GET['iDisplayLength'])
     offset = int(request.GET['iDisplayStart'])
@@ -136,12 +136,12 @@ def json_invite_user(request):
     }
 
 @view_config(
-    route_name = 'json.delete_team_invitation',
+    route_name = 'json.delete_org_invitation',
     renderer = 'json',
     permission = 'admin',
     request_method = 'POST'
 )
-def json_delete_team_invitation(request):
+def json_delete_org_invitation(request):
     user = request.params[URL_PARAM_USER]
     sp = get_rpc_stub(request)
     stripe_data = sp.delete_organization_invitation_for_user(user).stripe_data
@@ -149,12 +149,12 @@ def json_delete_team_invitation(request):
     return HTTPOk()
 
 @view_config(
-    route_name = 'json.set_level',
+    route_name = 'json.set_auth_level',
     renderer = 'json',
     permission = 'admin',
     request_method = 'POST'
 )
-def json_set_level(request):
+def json_set_auth_level(request):
     user = request.params[URL_PARAM_USER]
     level = int(request.params[URL_PARAM_LEVEL])
     sp = get_rpc_stub(request)
@@ -162,12 +162,12 @@ def json_set_level(request):
     return HTTPOk()
 
 @view_config(
-    route_name = 'json.remove_from_team',
+    route_name = 'json.remove_user',
     renderer = 'json',
     permission = 'admin',
     request_method = 'POST'
 )
-def json_remove_from_team(request):
+def json_remove_user(request):
     user = request.params[URL_PARAM_USER]
     sp = get_rpc_stub(request)
     stripe_data = sp.remove_user_from_organization(user).stripe_data
