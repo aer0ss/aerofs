@@ -85,10 +85,15 @@ public class FormAuthenticator extends AbstractAuthenticator
 
         try {
             processForm(request);
+        } catch (ExBadCredential ebc) {
+            throw new WebApplicationException(
+                    Response.status(Status.UNAUTHORIZED)
+                            .entity("Bad credential.")
+                            .build());
         } catch (Exception e) {
             throw new WebApplicationException(
                     Response.status(Status.INTERNAL_SERVER_ERROR)
-                            .entity("Bad credential.")
+                            .entity("Invalid authentication request")
                             .build());
         }
     }
@@ -137,14 +142,9 @@ public class FormAuthenticator extends AbstractAuthenticator
 
         l.info("Validate user credential {}", user.getString());
 
-        try {
-            client.validateCredential(user.getString(), ByteString.copyFromUtf8(cred));
-        } catch (ExBadCredential badCredential) {
-            throw new WebApplicationException(
-                    Response.status(Status.UNAUTHORIZED)
-                            .entity("Bad credential.")
-                            .build());
-        }
+        // recall that validateCredential uses a throw to indicate bad credentials
+        client.validateCredential(user.getString(), ByteString.copyFromUtf8(cred));
+
         return user;
     }
 
