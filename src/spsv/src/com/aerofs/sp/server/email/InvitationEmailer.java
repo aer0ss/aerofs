@@ -136,14 +136,14 @@ public class InvitationEmailer
                 @Nonnull final User invitee)
                 throws IOException, SQLException, ExNotFound
         {
-            final String subject = "Join my team on AeroFS!";
+            final String subject = "Join my organization on AeroFS!";
             final NameFormatter ns = new NameFormatter(inviter);
             String body = "\n" +
-                    ns.nameAndEmail() + " has invited you to join the team on AeroFS.\n" +
+                    ns.nameAndEmail() + " has invited you to join their organization on AeroFS.\n" +
                     "\n" +
                     "Click on this link to view the invitation: " + ACCEPT_INVITATION_LINK + "\n" +
                     "\n" +
-                    "If you do not wish to join the team, simply ignore this email.";
+                    "If you do not wish to join the organization, simply ignore this email.";
 
             final Email email = new Email();
             email.addSection(subject, body);

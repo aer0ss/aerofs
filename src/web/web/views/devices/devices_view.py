@@ -30,7 +30,7 @@ def my_devices(request):
     if len(devices) == 0:
         raise HTTPFound(request.route_path('download', _query={'msg_type':'no_device'}))
 
-    return _devices(devices, user, _("My Devices"), False, True)
+    return _devices(devices, user, _("My devices"), False, True)
 
 @view_config(
     route_name = 'user_devices',
@@ -46,7 +46,7 @@ def user_devices(request):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    return _devices(devices, user, _("${name}'s Devices", {'name': full_name}), False, False)
+    return _devices(devices, user, _("${name}'s devices", {'name': full_name}), False, False)
 
 @view_config(
     route_name = 'team_server_devices',

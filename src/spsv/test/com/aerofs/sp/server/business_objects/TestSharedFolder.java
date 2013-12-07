@@ -74,7 +74,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         SharedFolder sf = saveUserAndSharedFolder();
         assertTrue(sf.exists());
-        // why 2? the user and his team server
+        // why 2? the user and his Team Server
         assertEquals(sf.destroy().size(), 2);
         assertFalse(sf.exists());
     }
@@ -131,7 +131,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
         User user = saveUser();
-        // why 4? owner, user, and their team servers
+        // why 4? owner, user, and their Team Servers
         addJoinedUser(sf, user, Role.EDITOR, owner, 4);
 
         User ts = user.getOrganization().getTeamServerUser();
@@ -182,7 +182,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         sf.addPendingUser(user, Role.EDITOR, owner);
         assertNull(sf.getRoleNullable(getTeamServerUser(user)));
 
-        // why 2? owner, owner's team server
+        // why 2? owner, owner's Team Server
         assertEquals(sf.getJoinedUsers().size(), 2);
     }
 
@@ -219,7 +219,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = saveSharedFolder(owner);
         User user = saveUser();
 
-        // why 4? owner, user, and their team servers
+        // why 4? owner, user, and their Team Servers
         addJoinedUser(sf, user, Role.EDITOR, owner, 4);
         User tsUser = getTeamServerUser(user);
         assertEquals(sf.getRoleNullable(tsUser), Role.EDITOR);

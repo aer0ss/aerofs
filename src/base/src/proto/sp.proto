@@ -47,7 +47,7 @@ service SPService {
     //   ExEmptyEmailAddress if the user id is empty
     //   ExBadCredential if username/password combination is incorrect
     //
-    // TODO: Remove this once we feel confident dropping support for team servers from
+    // TODO: Remove this once we feel confident dropping support for Team Servers from
     // before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
     // (Remove after Dec.2013)
     rpc SignIn(SignInCall) returns(Void);
@@ -111,13 +111,13 @@ service SPService {
     //   ExAlreadyInvited if the user has already been invited to the organization but has not yet
     //                  accepted the invitation.
     //   ExEmailSendingFailed if we were unable to send the email.
-    //   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
+    //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a Stripe
     //                  customer ID.
     //   ExEmailNotVerified if the user's email hasn't been verified
      rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
 
     // Accept an organization invitation and move the caller into that organization. Makes
-    // appropriate ACL updates to allow for team server sync.
+    // appropriate ACL updates to allow for Team Server sync.
     //
     // This call will also delete the pending organization invitation, since it has already been
     // acted upon.
@@ -125,7 +125,7 @@ service SPService {
     // Throws:
     //   ExNotFound if the user does not have a pending invitation for the specified organization.
     //   ExBadArgs if the user is already a member of the target organization.
-    //   ExNoAdminForNonEmptyTeam if the team would have no admins but non-admin members.
+    //   ExNoAdminForNonEmptyTeam if the organization would have no admins but non-admin members.
     //   ExEmailNotVerified if the user's email hasn't been verified
     rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall)
             returns(AcceptOrganizationInvitationReply);
@@ -143,7 +143,7 @@ service SPService {
     //   ExAlreadyExists if the user is already a member of the folder
     //   ExCannotInviteSelf if the sharer appears in the list of sharees
     //   ExInviteeListEmpty if the list of invitees is empty AND the external flag is false
-    //   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
+    //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a Stripe
     //                  customer ID.
     //   ExEmailNotVerified if the user's email hasn't been verified
     //
@@ -364,7 +364,7 @@ service SPService {
 
     // Certify a Team Server's device and save the device information on SP. It is different from
     // RegisterDevice in that the this call allows the user to register the device under a user
-    // ID different from his own ID. This call is needed only for setting up the team server.
+    // ID different from his own ID. This call is needed only for setting up the Team Server.
     //
     // Required Auth Level: Admin
     //
@@ -514,7 +514,7 @@ service SPService {
 
     // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move this after AcceptOrganizationInvitation
     // Remove a user from the caller's organization. The user will be moved to a new empty
-    // organization, and will be seen as an external collaborator on any shared folders that he
+    // organization, and will be seen as an external user on any shared folders that he
     // may have with the previous organization.
     //
     // Required Auth Level: admin
@@ -530,7 +530,7 @@ service SPService {
     // Throws: ExNotFound if the specified device id is not known to be owned by that user.
     rpc RecertifyDevice(RecertifyDeviceCall) returns (RecertifyDeviceReply);
 
-    // Issue a new team server (organization) certificate for the requesting user/did.
+    // Issue a new Team Server (organization) certificate for the requesting user/did.
     // Requires
     //
     // Required Auth Level: admin
@@ -563,8 +563,8 @@ service SPService {
     //
     // Throws:
     //   ExEmptyEmailAddress if the user id is empty
-    //   ExBadCredential if username/password combination is incorrect, or in the case of the team
-    //                   server, if they have not signed in successfully using mutual
+    //   ExBadCredential if username/password combination is incorrect, or in the case of the Team
+    //                   Server, if they have not signed in successfully using mutual
     //                   authentication.
     rpc SignInUser(SignInUserCall) returns (Void);
 
@@ -595,8 +595,8 @@ service SPService {
     // Validate the given username/credential pair without signing the user in.
     //
     //   ExEmptyEmailAddress if the user id is empty
-    //   ExBadCredential if username/password combination is incorrect, or in the case of the team
-    //                   server, if they have not signed in successfully using mutual
+    //   ExBadCredential if username/password combination is incorrect, or in the case of the Team
+    //                   Server, if they have not signed in successfully using mutual
     //                   authentication.
     rpc ValidateCredential(SignInUserCall) returns (Void);
 
@@ -677,15 +677,15 @@ message DeleteOrganizationInvitationForUserReply {
     required PBStripeData stripe_data = 1;
 }
 
-// The data structure holds all the information that describes the Stripe subscription of a
-// team. The Web server uses it to perform Stripe transactions. Ideally, all Stripe
+// The data structure holds all the information that describes the Stripe subscription of an
+// organization. The Web server uses it to perform Stripe transactions. Ideally, all Stripe
 // transactions should be done inside SP and this data structure should not be needed.
 // See src/web/README.stirpe.txt for detail.
 message PBStripeData {
     // Stripe customer ID of the organization. Absent if the organization doesn't have the ID.
     // If the field is present, the caller MUST update Stripe subscription based on quantity.
     optional string customer_id = 1;
-    // The quantity of the subscription. It is identical to the number of team members.
+    // The quantity of the subscription. It is identical to the number of organization members.
     required uint32 quantity = 2;
 }
 
@@ -707,10 +707,10 @@ message SignUpWithCodeCall {
 
 message SignUpWithCodeReply {
     required string org_id = 1;
-    required bool existing_team = 2; // is the user joining an existing team, or a new team?
+    required bool existing_team = 2; // is the user joining an existing organization, or a new one?
 }
 
-// TODO: Remove this once we feel confident dropping support for team servers from
+// TODO: Remove this once we feel confident dropping support for Team Servers from
 // before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
 // (Remove after Dec.2013)
 message SignInCall {
@@ -755,8 +755,8 @@ message AcceptOrganizationInvitationCall {
 }
 
 message AcceptOrganizationInvitationReply {
-    // Return Stripe data for the user's _previous_ team, so the Web server can downgrade
-    // subscription for that team.
+    // Return Stripe data for the user's _previous_ organization, so the Web server can downgrade
+    // subscription for that organization.
     required PBStripeData stripe_data = 1;
 }
 
@@ -1048,7 +1048,7 @@ message PBSharedFolder {
 
     required bytes store_id = 1;
     required string name = 2;
-    // Whether any team member of the session user's team owns the folder
+    // Whether any user of the session user's organization owns the folder
     required bool owned_by_team = 3;
     repeated PBUserRoleAndState user_role_and_state = 4;
 }

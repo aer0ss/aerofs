@@ -88,8 +88,8 @@
     <ul class="nav nav-list left-nav">
         <li class="nav-header">My AeroFS</li>
         ${render_nonadmin_links()}
-        <li class="nav-header">My Team</li>
-        ${render_admin_team_links()}
+        <li class="nav-header">My Organization</li>
+        ${render_admin_org_links()}
         %if is_private_deployment(request.registry.settings):
             <li class="nav-header">My Appliance</li>
             ${navigation.link(('manage', _("Manage")))}
@@ -110,13 +110,13 @@
     % endfor
 </%def>
 
-<%def name="render_admin_team_links()">
+<%def name="render_admin_org_links()">
     <%
         links = [
-            ('team_members', _("Team Members")),
-            ('team_shared_folders', _("All Shared Folders")),
+            ('team_members', _("Users")),
+            ('team_shared_folders', _("Shared Folders")),
             ('team_server_devices', _("Team Servers")),
-            ('team_settings', _("Team Settings")),
+            ('team_settings', _("Settings")),
         ]
     %>
     % for link in links:

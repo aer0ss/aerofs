@@ -115,7 +115,7 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
             }
             sb.append("]");
 
-            fail("getACL() returns mismatch expected: " + Arrays.toString(urs) + " + team servers," +
+            fail("getACL() returns mismatch expected: " + Arrays.toString(urs) + " + Team Servers," +
                     " actual: " + sb.toString());
         }
     }

@@ -91,11 +91,11 @@ public class BaseParam
 
         public static final String SHARED_FOLDERS_URL = DASHBOARD_HOST_URL + "/shared_folders";
 
-        public static final String TEAM_MEMBERS_URL = DASHBOARD_HOST_URL + "/admin/team_members";
+        public static final String ORGANIZATION_USERS_URL = DASHBOARD_HOST_URL + "/users";
 
         public static final String DEVICES_URL = DASHBOARD_HOST_URL + "/devices";
 
-        public static final String TEAM_SERVER_DEVICES_URL = DASHBOARD_HOST_URL + "/admin/team_servers";
+        public static final String TEAM_SERVER_DEVICES_URL = DASHBOARD_HOST_URL + "/team_servers";
 
         public static final String DOWNLOAD_URL = DASHBOARD_HOST_URL + "/download";
 

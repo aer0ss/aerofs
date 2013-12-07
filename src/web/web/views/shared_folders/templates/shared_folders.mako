@@ -32,9 +32,8 @@
     <div class="span8">
         <h2>${page_heading}</h2>
         <div class="well well-small footnote">
-            This is a list of shared folder names only.  To see the actual
-            content of your folders and files, please go to the AeroFS
-            application.
+            This is a list of shared folder names only. Please use an AeroFS
+            client to see the actual content of your folders and files.
         </div>
 
         <table id="folders_table" class="table table-hover">

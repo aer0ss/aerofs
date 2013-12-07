@@ -57,7 +57,7 @@ public class CredentialUtil
     }
 
     /**
-     * Call this method only to setup a team server. After setup, the team server can use
+     * Call this method only to setup a Team Server. After setup, the Team Server can use
      * registerDeviceAndSaveKeys. See sp.proto:CertifyTeamServerDevice for detail.
      *
      * See registerDeviceAndSaveKeys for the parameter list

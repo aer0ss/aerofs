@@ -27,7 +27,7 @@ class NameFormatter
             throws SQLException, ExNotFound
     {
         if (user.id().isTeamServerID()) {
-            _inviterName = _inviterLongName = "Team Admin";
+            _inviterName = _inviterLongName = "Organization Admin";
         } else {
             FullName inviterFullName = user.getFullName();
             if (inviterFullName.isFirstOrLastNameEmpty()) {

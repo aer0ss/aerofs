@@ -22,7 +22,7 @@ public class OrganizationID extends IntegerID
     public static final OrganizationID PRIVATE_ORGANIZATION = new OrganizationID(2);
 
     static {
-        // assert the team server prefix is an invalid email address char. This check can be done
+        // assert the Team Server prefix is an invalid email address char. This check can be done
         // in UserID. But I don't really want to slow down client launch time any further.
         assert !BaseUtil.isValidEmailAddressToken(String.valueOf(UserID.TEAM_SERVER_PREFIX));
     }

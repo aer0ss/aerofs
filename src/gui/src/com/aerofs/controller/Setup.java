@@ -174,7 +174,7 @@ public class Setup
     {
         assert deviceName != null; // can be empty, but can't be null
 
-        // Retrieve the team server user ID
+        // Retrieve the Team Server user ID
         UserID tsUserId = UserID.fromInternal(sp.getTeamServerUserID().getId());
         byte[] tsScrypted = SecUtil.scrypt(LibParam.MULTIUSER_LOCAL_PASSWORD, tsUserId);
 

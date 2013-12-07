@@ -66,7 +66,7 @@ def my_shared_folders(request):
     _ = request.translate
 
     return _shared_folders(DatatablesPaginate.NO, request,
-            _("My Shared Folders"),
+            _("My shared folders"),
             request.route_url('json.get_my_shared_folders'),
             _("You can manage this folder because you are an Owner of this"
               " folder."),
@@ -74,11 +74,11 @@ def my_shared_folders(request):
               " an Owner of this folder."))
 
 _PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN = \
-    "You can manage this folder because you are a team admin and one or more " \
-    "teammates in your team are this folder's Owners."
+    "You can manage this folder because you are an organization admin and one or more " \
+    "users in your organization are this folder's Owners."
 _UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN = \
-    "You cannot change this folder's settings since no teammates in your " \
-    "team are its Owners."
+    "You cannot change this folder's settings since no users in your " \
+    "organization are its Owners."
 
 @view_config(
     route_name = 'user_shared_folders',
@@ -91,7 +91,7 @@ def user_shared_folders(request):
     full_name = request.params[URL_PARAM_FULL_NAME]
 
     return _shared_folders(DatatablesPaginate.NO, request,
-            _("${name}'s Shared Folders", {'name': full_name}),
+            _("${name}'s shared folders", {'name': full_name}),
             request.route_url('json.get_user_shared_folders', _query={URL_PARAM_USER: user}),
             _(_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN),
             _(_UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN))
@@ -106,7 +106,7 @@ def team_shared_folders(request):
     _ = request.translate
 
     return _shared_folders(DatatablesPaginate.YES, request,
-            _("Team's Shared Folders"),
+            _("Shared folders in my organization"),
             request.route_url('json.get_team_shared_folders'),
             _(_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN),
             _(_UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN))

@@ -50,7 +50,7 @@ public interface IAnalyticsPlatformProperties
     long getSignupDate();
 
     /**
-     * User's current team
+     * User's current organization
      *
      * An Exception may be thrown if an SP event cannot be executed
      */

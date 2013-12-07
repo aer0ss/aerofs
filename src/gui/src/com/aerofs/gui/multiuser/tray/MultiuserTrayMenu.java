@@ -31,8 +31,8 @@ import org.eclipse.swt.widgets.Menu;
 
 public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentListener
 {
-    private static final ClickEvent MANAGE_TEAM_CLICKED
-            = new ClickEvent(Action.MANAGE_TEAM, Source.TASKBAR);
+    private static final ClickEvent MANAGE_ORGANIZATION_CLICKED
+            = new ClickEvent(Action.MANAGE_ORGANIZATION, Source.TASKBAR);
 
     public MultiuserTrayMenu(TrayIcon icon, RebuildDisposition buildOrReuse)
     {
@@ -115,12 +115,13 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
 
     private void addManageTeamMenuItem(TrayMenuPopulator trayMenuPopulator)
     {
-        trayMenuPopulator.addMenuItem("Manage Team", new AbstractListener(MANAGE_TEAM_CLICKED)
+        trayMenuPopulator.addMenuItem("Manage Organization", new AbstractListener(
+                MANAGE_ORGANIZATION_CLICKED)
         {
             @Override
             protected void handleEventImpl(Event event)
             {
-                GUIUtil.launch(WWW.TEAM_MEMBERS_URL);
+                GUIUtil.launch(WWW.ORGANIZATION_USERS_URL);
             }
         });
     }

@@ -91,7 +91,7 @@ def accept_team_invitation(request):
 
     sp = get_rpc_stub(request)
     reply = exception2error(sp.accept_organization_invitation, org_id, {
-        PBException.NO_ADMIN_OR_OWNER: _("no admin for the team")
+        PBException.NO_ADMIN_OR_OWNER: _("no admin for the organization")
     })
 
     # downgrade subscription for the user's previous org

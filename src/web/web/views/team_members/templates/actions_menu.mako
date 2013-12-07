@@ -23,7 +23,7 @@
     <li><a href="#" onclick="toggleAdmin('${email}', ${become_admin}, '${newText}', $(this)); return false;">${currentText}</a></li>
 
     %if not is_private:  ## We do not support removing users on enterprise deployment
-        <li><a href="#" onclick="removeFromTeam('${email}', '${devices_url}', $(this)); return false;">Remove from Team</a></li>
+        <li><a href="#" onclick="removeFromTeam('${email}', '${devices_url}', $(this)); return false;">Remove from Organization</a></li>
     %endif
 
     <li><a href="#" onclick="deactivate('${email}', $(this)); return false;">Delete User</a></li>

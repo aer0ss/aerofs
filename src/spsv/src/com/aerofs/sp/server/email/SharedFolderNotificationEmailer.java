@@ -66,8 +66,8 @@ public class SharedFolderNotificationEmailer
         String title = " Your role in the folder " + Util.quote(sf.getName()) + " has changed to " +
                 newRoleStr;
         String body = "\n" +
-                "This email is a confirmation that a " +
-                (changer.id().isTeamServerID() ? "team admin" : "folder owner (" + nfChanger.nameOnly() + ")") +
+                "This email is a confirmation that " +
+                (changer.id().isTeamServerID() ? "an organization admin" : "a folder owner (" + nfChanger.nameOnly() + ")") +
                 "has changed your role in the folder from " + oldRoleStr + " to " + newRoleStr + ".\n" +
                 "\n" +
                 "If you'd like to find out more about the different " + L.brand() + " roles, " +

@@ -61,7 +61,7 @@ public class Organization
         }
 
         /**
-         * Add a new organization with a random org id and its team server account to the DB.
+         * Add a new organization with a random org id and its Team Server account to the DB.
          */
         public Organization save()
                 throws SQLException
@@ -79,7 +79,7 @@ public class Organization
         }
 
         /**
-         * Add a new organization with the given org id and its team server account to the DB.
+         * Add a new organization with the given org id and its Team Server account to the DB.
          * @throws ExAlreadyExist if there already is an organization with this org id.
          */
         public Organization save(OrganizationID orgID)

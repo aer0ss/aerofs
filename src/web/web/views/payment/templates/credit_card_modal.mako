@@ -34,7 +34,7 @@
 <%def name="default_description()">
     <p>
         Please enter your payment information below. We will adjust your
-        subscription automatically as you add or remove team members, so you
+        subscription automatically as you add or remove users, so you
         never have to worry!
     </p>
 </%def>

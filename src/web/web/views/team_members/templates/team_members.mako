@@ -1,5 +1,5 @@
 <%inherit file="dashboard_layout.mako"/>
-<%! page_title = "Team Members" %>
+<%! page_title = "Users" %>
 
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
 <%namespace name="modal" file="modal.mako"/>
@@ -9,14 +9,14 @@
 </%block>
 
 <div class="page-block">
-    <h2>Team Members</h2>
+    <h2>Users in my organization</h2>
     <table id="users_table" class="table table-hover">
         ## thead is required by datatables
         <thead style="display: none;"><tr><th></th><th></th><th></th><th></th></tr></thead>
         <tbody></tbody>
     </table>
 
-    <h3>Invite People to Team</h3>
+    <h3>Invite people to organization</h3>
     <form class="form-inline" id="invite_form" method="post" onsubmit="inviteUser(); return false;">
         <input type="text" id="invite_user_email" placeHolder="Email address"/>
         <input id='invite_button' class="btn btn-primary" type="submit" value="Send Invite"/>
@@ -27,14 +27,14 @@
 <div id="remove_from_team_modal" class="modal hide">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4>Remove the user from your team?</h4>
+        <h4>Remove the user from your organization?</h4>
     </div>
     <div class="modal-body">
-        <p>Are you sure that you want to remove <strong class="user_email"></strong> from your team?</p>
+        <p>Are you sure that you want to remove <strong class="user_email"></strong> from your organization?</p>
         <p>This user will still have access to all folders currently shared with them, but their
             data will no longer be backed up on the AeroFS Team Server.</p>
         <p>If you would like to unlink or erase this user's devices, you may do so by visiting the
-            <a href="#" class="device_link">devices</a> page before removing the user from your team.</p>
+            <a href="#" class="device_link">devices</a> page before removing the user from your organization.</p>
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</a>
@@ -67,9 +67,9 @@
     </%def>
     <%def name="description()">
         <p>
-            The free plan allows <strong>three</strong> team members. If you'd
-            like to add additional team members, please upgrade to the paid plan
-            ($10/team member/month).
+            The free plan allows <strong>three</strong> users. If you'd
+            like to add additional users, please upgrade to the paid plan
+            ($10/user/month).
             <a href="${request.route_path('pricing')}" target="_blank">Compare plans</a>.
         </p>
 
@@ -131,8 +131,8 @@
         });
 
         function registerUserRowTooltips() {
-            $('.tooltip_admin').tooltip({placement: 'top', 'title' : 'An admin of your team has access to ' +
-                    'administrative functions for the team: provision Team Servers, manage team members and shared ' +
+            $('.tooltip_admin').tooltip({placement: 'top', 'title' : 'An admin has access to ' +
+                    'administrative functions for your organization: provision Team Servers, manage users and shared ' +
                     'folders, add/remove other admins, manage payment, and so on.'});
         }
 
@@ -240,7 +240,7 @@
                     }
                 )
                 .done(function() {
-                    showSuccessMessage("The user " + user + " has been removed from your team.");
+                    showSuccessMessage("The user " + user + " has been removed from your organization.");
                     $link.closest('tr').remove();
                 })
                 .fail(showErrorMessageFromResponse);

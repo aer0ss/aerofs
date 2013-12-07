@@ -12,11 +12,11 @@
 </%block>
 
 <div class="hidden page-block" id="no-invitation-div">
-    <h2>No Pending Invitations</h2>
+    <h2>No pending invitations</h2>
 </div>
 
 <div class="hidden page-block" id="team-invitations-div">
-    <h2 style="margin-bottom: 15px;">Invitations to Teams</h2>
+    <h2 style="margin-bottom: 15px;">Invitations to organizations</h2>
     <table class="table" style="border: 1px dotted #ccc;">
         <tbody id="team-invitations-tbody">
             % for invite in team_invitations:
@@ -27,7 +27,7 @@
 </div>
 
 <div class="hidden page-block" id="folder-invitations-div">
-    <h2 style="margin-bottom: 15px;">Invitations to Shared Folders</h2>
+    <h2 style="margin-bottom: 15px;">Invitations to shared folders</h2>
     <table class="table" style="border: 1px dotted #ccc;">
         <tbody id="folder-invitations-tbody">
                 % for invite in folder_invitations:
@@ -47,7 +47,7 @@
     <tr>
         <td>
             <span class="invitation_title" style="display: block; margin-bottom: 3px;">
-                Invitation to team "${org_name | h}"
+                Invitation to organization "${org_name | h}"
             </span>
             <span style="margin-left: 20px;">
                 by ${inviter | h}
@@ -76,7 +76,7 @@
             </span>
             <span style="margin-left: 20px;">
                 %if from_team_server:
-                    by a team administrator
+                    by an organization administrator
                 %else:
                     by ${sharer | h}
                 %endif
@@ -93,23 +93,23 @@
 <div id="join-team-modal" class="modal hide" tabindex="-1" role="dialog">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">×</button>
-        <h4>Confirm Leaving the Current Team</h4>
+        <h4>Leave the Current Organization</h4>
     </div>
     <div class="modal-body">
         <p>
-            Accepting this invitation will require leaving your current team.
+            Accepting this invitation will require leaving your current organization.
             Are you sure you want to proceed?
         </p>
         <p>
             If you continue,
             %if i_am_admin:
-                you will no longer be able to administrate the current team.
+                you will no longer be able to administrate the current organization.
                 Additionally,
             %endif
-            the Team Servers of your current team will
+            the Team Servers of your current organization will
             automatically delete your files that are not shared with other
-            team members. The Team Servers of the new team will sync all your
-            files once this change is complete.
+            users of the current organization. The Team Servers of the new organization
+            will sync all your files once this change is complete.
         </p>
         <p>
             Files and shared folders on your own AeroFS devices will not be
@@ -119,7 +119,7 @@
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Cancel</a>
         <a href="#" id="join-team-model-confirm" class="btn btn-primary">
-            Leave my team and join the new team</a>
+            Leave my organization and join the new one</a>
     </div>
 </div>
 
@@ -133,17 +133,17 @@
     </div>
     <div class="modal-body">
         <p>
-            Unfortunately, you can't leave your current team since you are the
-            only administrator of the team. Please assign another team
-            member as an administrator before accepting the invitation.
+            Unfortunately, you can't leave your current organization since you
+            are the only administrator of the organization. Please assign another
+            user as an admin before accepting the invitation.
         </p>
 
-        <p class="footnote">Teams with no admin will be eaten by dinosaurs.</p>
+        <p class="footnote">Organizations with no admins will be eaten by dinosaurs.</p>
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Close</a>
         <a href="${request.route_path('team_members')}" class="btn btn-primary">
-            View Team Members</a>
+            View Users</a>
     </div>
 </div>
 

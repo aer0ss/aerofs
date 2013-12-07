@@ -100,7 +100,7 @@
     <div class="modal-body">
         <p>
             Are you sure you want to cancel the subscription?
-            <strong>All</strong> your team members will be removed from your team.
+            <strong>All</strong> your users will be removed from your organization.
         </p>
 
     </div>

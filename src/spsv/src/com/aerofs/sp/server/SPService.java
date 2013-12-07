@@ -203,7 +203,7 @@ public class SPService implements ISPService
 
     // Remember to udpate text in team_members.mako, team_settings.mako, and pricing.mako when
     // changing this number.
-    private int _maxFreeMembersPerTeam = 3;
+    private int _maxFreeMembersPerOrg = 3;
 
     // Whether to enforce payment checks
     private final Boolean ENABLE_PAYMENT =
@@ -263,9 +263,9 @@ public class SPService implements ISPService
      * For testing only. Don't use in production.
      * TODO (WW) use configuration service.
      */
-    public void setMaxFreeMembers(int maxFreeMembersPerTeam)
+    public void setMaxFreeMembers(int maxFreeMembersPerOrg)
     {
-        _maxFreeMembersPerTeam = maxFreeMembersPerTeam;
+        _maxFreeMembersPerOrg = maxFreeMembersPerOrg;
     }
 
     public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
@@ -643,7 +643,7 @@ public class SPService implements ISPService
             Builder builder, User user, Role role, SharedFolderState state)
             throws ExNotFound, SQLException
     {
-        // don't add team server to the list.
+        // don't add Team Server to the list.
         if (user.id().isTeamServerID()) return;
 
         // the folder is owned by the session organization if an owner of the folder belongs to
@@ -714,8 +714,8 @@ public class SPService implements ISPService
 
         // Verify caller and subject's organization match
         if (!subject.exists() || !requester.belongsTo(subject.getOrganization())) {
-            throw new ExNoPerm(subject.id().getString() + " is not a member of your team. " +
-                    "Please invite the user to your team first.");
+            throw new ExNoPerm(subject.id().getString() + " is not a member of your organization. " +
+                    "Please invite the user to your organization first.");
         }
 
         if (requester.id().equals(subject.id())) {
@@ -981,7 +981,7 @@ public class SPService implements ISPService
         // This should not be part of a transaction because it involves an RPC call
         // FIXME: (PH) This leaves us vulnerable to a situation where the users organization changes
         // between the first transaction and the second transaction. This would result in a no-sync
-        // on the team server.
+        // on the Team Server.
         Device device = _factDevice.create(deviceId);
         CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
                 tsUser);
@@ -1394,14 +1394,14 @@ public class SPService implements ISPService
         User invitee = _factUser.create(UserID.fromExternal(userIdString));
         Organization org = inviter.getOrganization();
 
-        l.info("{} sends team invite to {}", inviter, invitee);
+        l.info("{} sends organization invite to {}", inviter, invitee);
 
         inviter.throwIfNotAdmin();
 
         InvitationEmailer emailer;
         if (!invitee.exists()) {
             // The user doesn't exist. Send him a sign-up invitation email only, and associate the
-            // signup code with the team invitation. See signUpWithCode() on how this association is
+            // signup code with the organization invitation. See signUpWithCode() on how this association is
             // consumed.
             InviteToSignUpResult res = inviteToSignUp(inviter, invitee, null, null, null);
             // ignore the emailer returned by inviteToOrganization(), so we only send one email
@@ -1414,7 +1414,7 @@ public class SPService implements ISPService
             emailer = inviteToOrganization(inviter, invitee, org, null);
 
         } else {
-            throw new ExAlreadyExist(invitee + " is already a member of the team");
+            throw new ExAlreadyExist(invitee + " is already a member of the organization");
         }
 
         PBStripeData sd = getStripeData(org);
@@ -1436,8 +1436,8 @@ public class SPService implements ISPService
     /**
      * Note that the invitee may not exist when the method is called.
      *
-     * @param signUpCode The signUp code to be associated with the team invitation. If the user
-     * signs up with the associated code, the system will automatically accept the team invitation.
+     * @param signUpCode The signUp code to be associated with the organization invitation. If the user
+     * signs up with the associated code, the system will automatically accept the organization invitation.
      * See signUpWithCode().
      */
     InvitationEmailer inviteToOrganization(User inviter, User invitee, Organization org,
@@ -1473,7 +1473,7 @@ public class SPService implements ISPService
         // TODO (WW) this comment points to poor naming (or cohesion) in setOrganization
         Collection<UserID> users = accepter.setOrganization(orgNew, AuthorizationLevel.USER);
 
-        // retrieve the stripe data for the old team _after_ the user moves out.
+        // retrieve the stripe data for the old organization _after_ the user moves out.
         PBStripeData sd = getStripeData(orgOld);
 
         publishACLs_(users);
@@ -1618,7 +1618,7 @@ public class SPService implements ISPService
         // This should not be part of a transaction because it involves an RPC call
         // FIXME: (DF) This leaves us vulnerable to a situation where the users organization changes
         // between the first transaction and the second transaction. This would result in a no-sync
-        // on the team server.  But most people probably won't migrate organizations while manually
+        // on the Team Server.  But most people probably won't migrate organizations while manually
         // renewing certs.
         CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
                 tsUser);
@@ -1635,7 +1635,7 @@ public class SPService implements ISPService
     }
 
     /**
-     * Return a StripeData object for the specified org based on its team size
+     * Return a StripeData object for the specified org based on its organization size
      */
     private PBStripeData getStripeData(Organization org)
             throws SQLException, ExNotFound
@@ -1657,7 +1657,7 @@ public class SPService implements ISPService
     {
         if (!ENABLE_PAYMENT) return;
 
-        if (sd.getQuantity() > _maxFreeMembersPerTeam && !sd.hasCustomerId()) {
+        if (sd.getQuantity() > _maxFreeMembersPerOrg && !sd.hasCustomerId()) {
             throw new ExNoStripeCustomerID();
         }
     }
@@ -1836,7 +1836,7 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userIdString);
 
         if (user.id().isTeamServerID()) {
-            // Team servers use certificates (in this case the passed credentials represent the
+            // Team Servers use certificates (in this case the passed credentials represent the
             // device ID).
             Device device;
             _sqlTrans.begin();
@@ -1916,8 +1916,8 @@ public class SPService implements ISPService
             ByteString password, String firstName, String lastName)
             throws Exception
     {
-        // is the user joining a new team or an existing team?
-        boolean joinExistingTeam;
+        // is the user joining a new organization or an existing one?
+        boolean joinExistingOrg;
 
         // FIXME(jP): WAAAAAH! I don't want to do hash-generation in a database transaction!
         // But how else will I get the user id given nothing but this lousy signup code?
@@ -1937,12 +1937,12 @@ public class SPService implements ISPService
             // no-op. This is needed for the user to retry signing up using the link in the signup
             // verification email.
             users = Collections.emptyList();
-            joinExistingTeam = true;
+            joinExistingOrg = true;
         } else {
             SignUpWithCodeImplResult result = signUpWithCodeImpl(signUpCode, user, firstName,
                     lastName, shaedSP);
             users = result._users;
-            joinExistingTeam = result._joinedExistingTeam;
+            joinExistingOrg = result._joinedExistingOrg;
         }
 
         OrganizationID orgID = user.getOrganization().id();
@@ -1953,19 +1953,19 @@ public class SPService implements ISPService
 
         return createReply(SignUpWithCodeReply.newBuilder()
                 .setOrgId(orgID.toHexString())
-                .setExistingTeam(joinExistingTeam)
+                .setExistingTeam(joinExistingOrg)
                 .build());
     }
 
     private class SignUpWithCodeImplResult
     {
         final Collection<UserID> _users;
-        final boolean _joinedExistingTeam; // is the user joining a new team or an existing team?
+        final boolean _joinedExistingOrg; // is the user joining a new organization or an existing one?
 
-        private SignUpWithCodeImplResult(Collection<UserID> users, boolean joinedExistingTeam)
+        private SignUpWithCodeImplResult(Collection<UserID> users, boolean joinedExistingOrg)
         {
             _users = users;
-            _joinedExistingTeam = joinedExistingTeam;
+            _joinedExistingOrg = joinedExistingOrg;
         }
     }
     /**
@@ -1987,7 +1987,7 @@ public class SPService implements ISPService
         // N.B. do not remove the sign up invitation code so users can retry signing up using the
         // same link in the signup verification email. See this method's caller for detail.
 
-        // Accept team invitation if there is one associated with the signup code.
+        // Accept organization invitation if there is one associated with the signup code.
         OrganizationInvitation oi = _factOrgInvite.getBySignUpCodeNullable(signUpCode);
         if (oi == null) {
             return new SignUpWithCodeImplResult(Collections.<UserID>emptyList(), false);
@@ -1999,7 +1999,7 @@ public class SPService implements ISPService
             throw new ExNotFound();
 
         } else {
-            l.info("{} automatically accepts team invitation to {}", user, oi.getOrganization());
+            l.info("{} automatically accepts organization invitation to {}", user, oi.getOrganization());
 
             Collection<UserID> users = user.setOrganization(oi.getOrganization(),
                     AuthorizationLevel.USER);

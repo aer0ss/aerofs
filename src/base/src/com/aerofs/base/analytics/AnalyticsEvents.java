@@ -199,7 +199,7 @@ public class AnalyticsEvents
             RESUME_SYNCING("Resume Syncing"),
             WHY_NOT_SYNCED("Why Not Synced"),
             RESOLVE_CONFLICTS("Resolve Conflicts"),
-            MANAGE_TEAM("Manage Team"),
+            MANAGE_ORGANIZATION("Manage Organization"),
             RESOLVE_UNSYNCABLE_FILES("Resolve Unsyncable Files"),
             ;
 

@@ -119,11 +119,11 @@ def json_invite_user(request):
             # TODO (WW) change to ALREADY_MEMBER?
             # See also shared_folders_view.py:json_add_shared_folder_perm()
             PBException.ALREADY_EXIST:
-                _("The user is already a member of your team."),
+                _("The user is already a member of your organization."),
             PBException.EMPTY_EMAIL_ADDRESS:
                 _("The email address can't be empty."),
             PBException.ALREADY_INVITED:
-                _("The user has already been invited to your team."),
+                _("The user has already been invited to your organization."),
             PBException.NO_STRIPE_CUSTOMER_ID:
                 _("Payment is required to invite more users.")
         }

@@ -25,7 +25,7 @@ public class S
 
             // used in setup login screen
             SETUP_TITLE              = "Setup AeroFS Team Server",
-            SETUP_MESSAGE            = "Please enter a team administrator's credential to proceed:",
+            SETUP_MESSAGE            = "Please enter an organization administrator's credential to proceed:",
             SETUP_USER_ID            = "Email",
             SETUP_PASSWD             = "Password",
             SETUP_LINK_FORGOT_PASSWD = "<a>Forgot password?</a>",
@@ -34,7 +34,7 @@ public class S
             SETUP_INSTALL_MESSAGE    = "Performing magic",
 
             // used in setup storage screen
-            SETUP_STORAGE_MESSAGE    = "Where would you like to store your team's data?",
+            SETUP_STORAGE_MESSAGE    = "Where would you like to store your organization's data?",
             SETUP_STORAGE_LOCAL      = "On this computer",
             SETUP_STORAGE_S3         = "On Amazon S3",
 
@@ -72,8 +72,8 @@ public class S
             SETUP_S3_ENCRYPTION_PASSWORD = "Create an " + S3_ENCRYPTION_PASSWORD +
                 " (used to encrypt your data before sending to S3)",
             SETUP_NOT_ADMIN          = "This account is not an administrator account for the " +
-                    "organization. Only administrator accounts can be used to install a team " +
-                    "server.",
+                    "organization. Only administrator accounts can be used to install a Team " +
+                    "Server.",
 
             RAW_LOCATION_CHANGE      = "Folder Location Was Changed",
 

@@ -122,18 +122,18 @@ public class RoleMenu
     }
 
     /**
-     * FIXME Edge case: Team Servers show the menu to update ACL even though the team server may
+     * FIXME Edge case: Team Servers show the menu to update ACL even though the Team Server may
      * not necessarily have the permission to update the ACL.
      *
-     * It occurs when the team server sees a particular shared folder because someone in the
+     * It occurs when the Team Server sees a particular shared folder because someone in the
      * organization is a member but none of the owners of the said shared folder is in the
      * organization.
      *
-     * TODO: team servers should get "effective" ACLs from SP which would neatly solve this mess
+     * TODO: Team Servers should get "effective" ACLs from SP which would neatly solve this mess
      */
     private boolean shouldShowUpdateACLMenuItems(Role selfRole)
     {
-        return L.isMultiuser()              // team server only
+        return L.isMultiuser()              // Team Server only
                 || selfRole == Role.OWNER;  // regular client
     }
 

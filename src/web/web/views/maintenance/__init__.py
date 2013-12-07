@@ -28,7 +28,7 @@ routes = {
     'maintenance_login',
     'maintenance_login_submit',
     'backup_appliance',
-    # 'upgrade' is already taken by the team settings page
+    # 'upgrade' is already taken by the organization settings page
     'upgrade_appliance',
     'download_backup_file',
     'status',

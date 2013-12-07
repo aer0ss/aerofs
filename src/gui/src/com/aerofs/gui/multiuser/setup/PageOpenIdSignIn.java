@@ -38,7 +38,7 @@ public class PageOpenIdSignIn extends AbstractSetupWorkPage
         Composite content = new Composite(parent, SWT.NONE);
 
         _btnContinue = GUIUtil.createButton(content, SWT.PUSH);
-        _btnContinue.setText("Sign in using the Team Administrator's\n" +
+        _btnContinue.setText("Sign in using the organization administrator's\n" +
                 Identity.SERVICE_IDENTIFIER + " account.");
         _btnContinue.addSelectionListener(createListenerToDoWork());
         getShell().setDefaultButton(_btnContinue);

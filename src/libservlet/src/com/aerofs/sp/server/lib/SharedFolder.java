@@ -211,8 +211,8 @@ public class SharedFolder
     }
 
     /**
-     * Add the user's team server ID to the ACL. No-op if there are other users on the shared folder
-     * belonging to the same team server.
+     * Add the user's Team Server ID to the ACL. No-op if there are other users on the shared folder
+     * belonging to the same Team Server.
      */
     public ImmutableCollection<UserID> addTeamServerForUser(User user)
             throws ExNotFound, ExAlreadyExist, SQLException
@@ -225,7 +225,7 @@ public class SharedFolder
     }
 
     /**
-     * No-op if the team server ACL already exists
+     * No-op if the Team Server ACL already exists
      *
      * @return whether actual operations are performed
      */
@@ -280,7 +280,7 @@ public class SharedFolder
 
         _f._db.delete(_sid, user.id());
 
-        // remove the team server only if the user has joined the folder
+        // remove the Team Server only if the user has joined the folder
         if (isJoined) removeTeamServerForUserImpl(user);
 
         // auto-destroy folder if empty
@@ -292,8 +292,8 @@ public class SharedFolder
     }
 
     /**
-     * Remove the user's team server from the folder. No-op if there are other users on the shared
-     * folder belonging to the same team server.
+     * Remove the user's Team Server from the folder. No-op if there are other users on the shared
+     * folder belonging to the same Team Server.
      */
     public ImmutableCollection<UserID> removeTeamServerForUser(User user)
             throws SQLException, ExNotFound
@@ -420,7 +420,7 @@ public class SharedFolder
     /**
      * A user has privileges to change ACLs if and only if:
      *  1. the user is the owner of the folder, or
-     *  2. the user is the team admin of at least one non-pending owner of the folder.
+     *  2. the user is the organization admin of at least one non-pending owner of the folder.
      */
     public void throwIfNoPrivilegeToChangeACL(User user)
             throws SQLException, ExNoPerm, ExNotFound
@@ -428,7 +428,7 @@ public class SharedFolder
         // Bypass the following expensive tests for common cases.
         if (isJoinedOwner(user)) return;
 
-        // See if the user is the team admin of a non-pending owner of the folder.
+        // See if the user is the organization admin of a non-pending owner of the folder.
         // NB: TeamServer user is treated as an org admin as it can only be setup by an org admin...
         if (user.isAdmin() || user.id().isTeamServerID()) {
             Organization org = user.getOrganization();
@@ -452,7 +452,7 @@ public class SharedFolder
 
     /**
      * @return the sharer (i.e. inviter) of the given user. Return null if the user is not invited
-     * by anyone (e.g. the initial owner, team server users).
+     * by anyone (e.g. the initial owner, Team Server users).
      */
     public @Nullable User getSharerNullable(User user)
             throws SQLException

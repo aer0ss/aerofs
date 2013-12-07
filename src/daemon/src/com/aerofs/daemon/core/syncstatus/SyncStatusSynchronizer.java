@@ -560,7 +560,7 @@ public class SyncStatusSynchronizer extends DirectoryServiceAdapter
          *
          * Although there is currently no case where an object is created and its version vector
          * remains empty, this assumption may not hold forever (in particular the ACL push required
-         * by the team server will most likely change that to avoid false META conflicts). Avoid
+         * by the Team Server will most likely change that to avoid false META conflicts). Avoid
          * coupling by making SyncStatusSynchronizer more robust.
          */
         if (!(obj.oid().isRoot() || obj.oid().isTrash())) _tlModified.get(t).add(obj);

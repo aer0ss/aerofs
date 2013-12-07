@@ -53,7 +53,7 @@ def team_settings(request):
 
         try:
             sp.set_org_preferences(form['organization_name'], None)
-            flash_success(request, _("Team preferences have been updated."))
+            flash_success(request, _("Organization preferences have been updated."))
         except Exception as e:
             flash_error(request, parse_rpc_error_exception(request, e))
 
