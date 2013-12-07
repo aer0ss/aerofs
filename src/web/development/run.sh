@@ -3,11 +3,13 @@ set -e
 MODE_ROOT=$(dirname "${BASH_SOURCE[0]}")/modes
 SRC_ROOT=$(dirname "${BASH_SOURCE[0]}")/../..
 
-if [ $# -ne 1 ]
+if [ $# -ne 1 ] && [ $# -ne 2 ]
 then
-    echo "Usage: $0 <mode>"
+    echo "Usage: $0 <mode> [-q]"
     echo
     echo "Available modes: public, private."
+    echo
+    echo "-q: quick: Skip network reconfiguration in the private mode. Useful when running this script repeatedly."
     echo
     echo "Note:"
     echo " - If running in private mode, the corresponding development"
@@ -18,10 +20,17 @@ fi
 
 MODE=$1
 
+if [ "$2" = '-q' ]
+then
+    QUICK=1
+else
+    QUICK=0
+fi
+
 export STRIPE_PUBLISHABLE_KEY=pk_test_nlFBUMTVShdEAASKB0nZm6xf
 export STRIPE_SECRET_KEY=sk_test_lqV5voHmrJZLom3iybJFSVqK
 
-if [ "$MODE" = "private" ]
+if [ "$MODE" = "private" ] && [ $QUICK -eq 0 ]
 then
     echo ">>> Configuring your local prod to allow incoming connections..."
     pushd "$SRC_ROOT"/../packaging/bakery/development 1>/dev/null
