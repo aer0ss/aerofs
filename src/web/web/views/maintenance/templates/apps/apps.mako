@@ -1,0 +1,95 @@
+<%inherit file="../maintenance_layout.mako"/>
+<%! page_title = "Apps" %>
+
+<%namespace file="../modal.mako" name="modal"/>
+
+<%block name="css">
+    <style>
+        .info-label {
+            display: inline-block;
+            width: 100px;
+        }
+    </style>
+</%block>
+
+<h2 style="margin-bottom: 30px">Apps</h2>
+
+<table id='clients-table' class="table table-hover hidden">
+    <tbody>
+        %for client in clients:
+            <tr>
+                <td><strong>${client['client_name']}</strong></td>
+                <td style="padding-bottom: 30px;">
+                    <div class="info-label">Client ID:</div>
+                    ${client['client_id']}
+                    <br>
+                    <div class="info-label">Client Secret:</div>
+                    ${client['secret']}
+                    <br>
+                    <div class="info-label">Redirect URI:</div>
+                    <%
+                        uri = client['redirect_uri']
+                        if not uri: uri = '-'
+                    %>
+
+                    ${uri}
+                </td>
+                <td><a href="#" onclick="confirmDeletion('${client['client_id']}', $(this));
+                        return false;">Delete</a></td>
+            </tr>
+        %endfor
+    </tbody>
+</table>
+
+<p id="no-clients-label" class="hidden" style="margin-bottom: 40px;">No apps are registered yet.</p>
+
+<p>
+    <a class="btn btn-primary" href="${request.route_path('register_app')}">Register App</a>
+</p>
+
+<%modal:modal>
+    <%def name="id()">delete-modal</%def>
+    <%def name="title()">Delete the app?</%def>
+    <%def name="footer()">
+        <a href="#" class="btn" data-dismiss="modal">Close</a>
+        <a href="#" id="confirm-btn" class="btn btn-danger" data-dismiss="modal">Delete App</a>
+    </%def>
+
+    Keys associated with the app will be deleted. Once deleted, they can no longer
+    be used to make API requests.
+</%modal:modal>
+
+<%block name="scripts">
+    <script>
+        $(document).ready(refreshUI);
+
+        function refreshUI() {
+            var $table = $('#clients-table');
+            var clients = $table.find('tbody').find('tr').length;
+            console.log("clients >> " + clients);
+            setVisible($table, clients > 0);
+            setVisible($('#no-clients-label'), clients == 0);
+        }
+
+        function confirmDeletion(clientID, $deleteButton) {
+            var $modal = $('#delete-modal');
+            $('#confirm-btn').off().on('click', function() {
+                $modal.modal('hide');
+                deleteApp(clientID, $deleteButton);
+            });
+            $modal.modal('show');
+        }
+
+        function deleteApp(clientID, $deleteButton) {
+            $.post('${request.route_path('json_delete_app')}', {
+                ${self.csrf.token_param()}
+                'client_id': clientID
+            }).done(function () {
+                showSuccessMessage('The application is deleted.');
+                ## Remove the app's row
+                $deleteButton.closest('tr').remove();
+                refreshUI();
+            }).fail(showErrorMessageFromResponse);
+        }
+    </script>
+</%block>

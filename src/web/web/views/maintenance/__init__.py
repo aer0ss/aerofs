@@ -28,6 +28,9 @@ routes = {
     'maintenance_login',
     'maintenance_login_submit',
     'backup_appliance',
+    'apps',
+    'register_app',
+    'json_delete_app',
     # 'upgrade' is already taken by the organization settings page
     'upgrade_appliance',
     'download_backup_file',

@@ -32,6 +32,7 @@
                     ('upgrade_appliance', _("Upgrade")),
                     ('backup_appliance', _("Backup")),
                     ('setup', _("Setup")),
+                    ('apps', _("Apps")),
                 ]
             %>
             %for link in links:
