@@ -15,7 +15,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 _C_HOSTNAME         = 'c.aerofs.com'
 _DEFECT_FOLDER_NAME = 'defect-{0}'
 _LOG_NAMES          = ['cli.log', 'daemon.log', 'gui.log']
-_MAP_FILE_NAME      = 'aerofs-{0}-prod.map'
+_MAP_FILE_NAME      = 'aerofs-{0}-public.map'
 _NEW_VERSION_SUFFIX = '========================================================\n'
 _OBFUSCATED_PREFIX  = 'obfuscated.'
 _PROJ_PREFIX        = 'com.aerofs.'

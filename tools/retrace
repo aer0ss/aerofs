@@ -18,7 +18,7 @@ if [ x"$VER" == x ]; then
     exit 1
 fi
 
-MAP_FILE="$BASE/aerofs-$VER-prod.map"
+MAP_FILE="$BASE/aerofs-$VER-public.map"
 "$BASE"/get-map $VER $BASE
 cd "$BASE"/proguard
 bin/retrace.sh "$MAP_FILE"

@@ -2,7 +2,7 @@
 # This script retrives defect log files and retrace them
 
 if [ $# -lt 2 ]; then
-    echo "usage: $0 [prod version] [defect # (multiple, space separated)]"
+    echo "usage: $0 [public version] [defect # (multiple, space separated)]"
     echo
     echo "example: $0 0.2.37 6308 6310 6317"
     exit 1
@@ -13,7 +13,7 @@ shift # remove the first argument
 DEFECTS="$@"
 
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-MAP_FILE="$BASE"/"aerofs-$VER-prod.map"
+MAP_FILE="$BASE"/"aerofs-$VER-public.map"
 
 retrace()
 {

@@ -382,7 +382,7 @@ public class SVReactor
 
                 //yuris note: please make sure that the "proguard" package is installed
                 SystemUtil.execForeground(retracedEx, "java", "-jar", "/usr/share/java/retrace.jar",
-                        "/maps/aerofs-" + version + "-prod.map", f.getAbsolutePath());
+                        "/maps/aerofs-" + version + "-public.map", f.getAbsolutePath());
 
                 FileUtil.deleteOrOnExit(f);
 

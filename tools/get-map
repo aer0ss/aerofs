@@ -8,7 +8,7 @@ if [ ! "$#" -eq "2" ]; then
   exit 1
 fi
 
-FILE="aerofs-$VER-prod.map"
+FILE="aerofs-$VER-public.map"
 MAP_FILE="$DIR"/"$FILE"
 
 if [ ! -f "$MAP_FILE" ]; then
