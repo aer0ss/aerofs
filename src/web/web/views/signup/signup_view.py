@@ -115,8 +115,11 @@ def json_signup(request):
         sp = get_rpc_stub(request)
         sp.sign_up_with_code(code, password, first_name, last_name)
 
+        # disable async because uWSGI seems to kill the analytics thread as soon as the process returns
+        # instead of allowing it to finish
+
         if not is_private_deployment(request.registry.settings):
-            analytics.init(request.registry.settings['segmentio.secret_key'], flush_at=1)
+            analytics.init(request.registry.settings['segmentio.secret_key'], flush_at=1, async=False)
 
             context = {
                 'providers': {
@@ -174,7 +177,7 @@ def json_request_to_sign_up(request):
     if not email_address: error(empty_email_message)
 
     if not is_private_deployment(request.registry.settings):
-        analytics.init(request.registry.settings['segmentio.secret_key'], flush_at=1)
+        analytics.init(request.registry.settings['segmentio.secret_key'], flush_at=1, async=False)
         analytics.identify(request.params[URL_PARAM_EMAIL],{
                     'email': request.params[URL_PARAM_EMAIL]
                 })
