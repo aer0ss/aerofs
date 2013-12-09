@@ -1,5 +1,4 @@
 import logging
-import json
 from pyramid.httpexceptions import HTTPFound
 import requests
 

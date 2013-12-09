@@ -9,6 +9,9 @@
             display: inline-block;
             width: 100px;
         }
+        .id_string {
+            font-family:monospace;
+        }
     </style>
 </%block>
 
@@ -21,10 +24,10 @@
                 <td><strong>${client['client_name']}</strong></td>
                 <td style="padding-bottom: 30px;">
                     <div class="info-label">Client ID:</div>
-                    ${client['client_id']}
+                    <span class="id_string">${client['client_id']}</span>
                     <br>
                     <div class="info-label">Client Secret:</div>
-                    ${client['secret']}
+                    <span class="id_string">${client['secret']}</span>
                     <br>
                     <div class="info-label">Redirect URI:</div>
                     <%
