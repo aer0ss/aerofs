@@ -12,7 +12,7 @@ node "c.aerofs.com" inherits default {
     cron {"Backup github":
         command => "/usr/local/bin/backup_github",
         user => root,
-        hour => 0,
+        hour => 10,
         minute => 0,
     }
 }
