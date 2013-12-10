@@ -398,7 +398,7 @@ public class CompUserList extends Composite
                         member._role = role;
                     }
 
-                    _tv.refresh(member, true, true);
+                    _tv.refresh();
 
                     notifyLoadListener();
                 }
