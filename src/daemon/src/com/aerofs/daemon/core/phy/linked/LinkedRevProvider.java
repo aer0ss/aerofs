@@ -458,6 +458,13 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         private void loop()
         {
             while (true) {
+                // FIXME: ConcurrentModificationException lurks here
+                // as physical roots can be added/removed from a core thread while the
+                // cleaner is running. This is especially a concern in Team Server as
+                // regular clients do not currently expose multiroot
+                // NB: low probabvility of occurence, low impact, no serious consequence
+                // (daemon will be restarted) so not a high priority fix but should be
+                // dealt with next time someone touches this code
                 for (LinkerRoot root : _lrm.getAllRoots_()) {
                     sweep(root.sid());
                 }
