@@ -1,7 +1,8 @@
-#!/bin/bash -eu
+#!/bin/bash
 # This script assumes 2 things:
 #   1) s3cmd is set up with access to the aerofs.github bucket
 #   2) root has an ssh public key on github.arrowfs.org
+set -eu
 
 rm -rf /mnt/github
 mkdir -p /mnt/github
@@ -27,4 +28,4 @@ FILENAME=github_${DATE}.tar.bz2
 tar cjf /mnt/$FILENAME github
 popd
 
-s3cmd put /mnt/$FILENAME s3://aerofs.github/$FILENAME
+/usr/bin/s3cmd put /mnt/$FILENAME s3://aerofs.github/$FILENAME
