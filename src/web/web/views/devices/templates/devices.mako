@@ -3,7 +3,7 @@
 
 <h2>${page_heading}</h2>
 
-%if show_add_device:
+%if show_add_mobile_device:
     <p class="text-right">
         <a href="${request.route_path('add_mobile_device')}" class="btn btn-primary btn-lg" role="button">Add mobile device</a>
     </p>

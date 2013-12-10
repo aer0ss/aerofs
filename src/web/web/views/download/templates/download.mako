@@ -110,6 +110,12 @@
     %endif
 </p>
 
+%if show_add_mobile_device:
+    <p>
+        Got the AeroFS iOS app from the App Store? <a href="${request.route_path('add_mobile_device')}">Register your iOS device</a>
+    </p>
+%endif
+
 ## Descriptions
 <div class="top-divider description-block">
     <%include file="${description_mako}"/>

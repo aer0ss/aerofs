@@ -17,6 +17,13 @@ log = logging.getLogger("web")
 # !! Don't forget to update this number in the mobile apps as well !!
 MAGIC_BYTE = chr(188)
 
+def is_mobile_supported(settings):
+    """
+    Utility function that returns whether the 'add mobile device' view is supported
+    @param settings: settings dictionnary (request.registry.settings)
+    """
+    return is_private_deployment(settings)
+
 @view_config(
     route_name='add_mobile_device',
     permission='user',

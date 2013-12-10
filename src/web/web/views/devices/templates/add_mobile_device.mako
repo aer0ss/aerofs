@@ -3,7 +3,7 @@
 
 <h2>Add Mobile Device</h2>
 
-<p>Ready to Set up AeroFS on your iPhone or iPad?</p>
+<p>Ready to set up AeroFS on your iPhone or iPad?</p>
 <ol>
     <li>Install the app from the App Store.</li>
     <li>Launch the app and follow the instructions there.</li>

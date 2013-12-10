@@ -1,5 +1,6 @@
 from pyramid.view import view_config
 import re
+from ..devices.add_mobile_device_view import is_mobile_supported
 
 _URL_PARAM_OS = 'os'
 
@@ -23,6 +24,7 @@ def _download(request, is_team_server):
     return {
         'url_param_os': _URL_PARAM_OS,
         'is_team_server': is_team_server,
+        'show_add_mobile_device': not is_team_server and is_mobile_supported(request.registry.settings),
         'os': _get_browser_os(request)
     }
 

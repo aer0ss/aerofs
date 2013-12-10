@@ -6,6 +6,7 @@ from pyramid.httpexceptions import HTTPNoContent, HTTPFound
 
 from web.util import get_rpc_stub
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
+from add_mobile_device_view import is_mobile_supported
 
 
 log = logging.getLogger("web")
@@ -30,7 +31,7 @@ def my_devices(request):
     if len(devices) == 0:
         raise HTTPFound(request.route_path('download', _query={'msg_type':'no_device'}))
 
-    return _devices(devices, user, _("My devices"), False, True)
+    return _devices(request, devices, user, _("My devices"), False, True)
 
 @view_config(
     route_name = 'user_devices',
@@ -46,7 +47,7 @@ def user_devices(request):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    return _devices(devices, user, _("${name}'s devices", {'name': full_name}), False, False)
+    return _devices(request, devices, user, _("${name}'s devices", {'name': full_name}), False, False)
 
 @view_config(
     route_name = 'team_server_devices',
@@ -63,13 +64,9 @@ def team_server_devices(request):
     if len(devices) == 0:
         raise HTTPFound(request.route_path('download_team_server', _query={'msg_type':'no_device'}))
 
-    return _devices(devices, ts_user, _("Team Servers"), True, False)
+    return _devices(request, devices, ts_user, _("Team Servers"), True, False)
 
-def _devices(devices, user, page_heading, are_team_servers, show_add_device):
-
-    # `Add device` is only for us now
-    show_add_device = show_add_device and user.endswith('@aerofs.com')
-
+def _devices(request, devices, user, page_heading, are_team_servers, show_add_mobile_device):
     return {
         'url_param_user': URL_PARAM_USER,
         'url_param_device_id': _URL_PARAM_DEVICE_ID,
@@ -80,7 +77,7 @@ def _devices(devices, user, page_heading, are_team_servers, show_add_device):
         'user': user,
         'devices': devices,
         'are_team_servers': are_team_servers,
-        'show_add_device': show_add_device,
+        'show_add_mobile_device': show_add_mobile_device and is_mobile_supported(request.registry.settings),
     }
 
 @view_config(
