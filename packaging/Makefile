@@ -21,6 +21,7 @@ PACKAGES= \
 	havre \
 	identity \
 	jeq-tools \
+	lizard \
 	middleman \
 	pagerduty \
 	repackaging \

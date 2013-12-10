@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+chown www-data:www-data /var/log/lizard -R
+
+PYHOME=/opt/lizard/pythonenv
+PYTHON=$PYHOME/bin/python
+
+# Produce clean virtualenv from scratch
+pushd /opt/lizard
+rm -rf $PYHOME
+mkdir -p $PYHOME
+virtualenv $PYHOME
+
+$PYHOME/bin/pip install --find-links file:///opt/lizard/sdist      \
+                        --no-index                                 \
+                        --log /var/log/lizard/lizard.install.log   \
+                        --requirement /opt/lizard/requirements.txt
+
+# Return to initial starting folder
+popd
