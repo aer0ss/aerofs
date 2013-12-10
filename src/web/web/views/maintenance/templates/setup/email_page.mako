@@ -36,56 +36,56 @@
                    checked="checked"
                 %endif
             >
-            Use external mail relay
+            <p>Use external mail relay</p>
+
+            ## The slide down options
+            <div id="public-host-options"
+                %if not local.is_remote_host:
+                    class="hide"
+                %endif
+            >
+
+                <div class="row-fluid">
+                    <div class="span8">
+                        <label for="email-sender-public-host">SMTP host:</label>
+                        <input class="input-block-level" id="email-sender-public-host" name="email-sender-public-host" type="text"
+                               ## We don't want to show "localhost" as the remote host
+                               ## if the local mail relay is used.
+                               value="${public_host_name if local.is_remote_host else ''}">
+                    </div>
+                    <div class="span4">
+                        <%
+                            # We don't want to show the local relay's port as the
+                            # remote port if the local mail relay is used.
+                            val = current_config['email.sender.public_port'] \
+                                if local.is_remote_host else ''
+                            if not val: val = '25'
+                        %>
+                        <label for="email-sender-public-port">SMTP port:</label>
+                        <input class="input-block-level" id="email-sender-public-port" name="email-sender-public-port" type="text" value="${val}">
+                    </div>
+                </div>
+
+                <div class="row-fluid">
+                    <div class="span6">
+                        <label for="email-sender-public-username">SMTP username:</label>
+                        <input class="input-block-level" id="email-sender-public-username" name="email-sender-public-username" type="text" value="${current_config['email.sender.public_username']}">
+                    </div>
+                    <div class="span6">
+                        <label for="email-sender-public-password">SMTP password:</label>
+                        <input class="input-block-level" id="email-sender-public-password" name="email-sender-public-password" type="password" value="${current_config['email.sender.public_password']}">
+                    </div>
+                </div>
+
+                <label for="email-sender-public-enable-tls" class="checkbox">
+                    <input id="email-sender-public-enable-tls" name="email-sender-public-enable-tls" type="checkbox"
+                        %if str2bool(current_config['email.sender.public_enable_tls']):
+                            checked
+                        %endif
+                    >Use STARTTLS encryption
+                </label>
+            </div>
         </label>
-
-        ## The slide down options
-        <div id="public-host-options"
-            %if not local.is_remote_host:
-                class="hide"
-            %endif
-        >
-
-            <div class="row-fluid">
-                <div class="span8">
-                    <label for="email-sender-public-host">SMTP host:</label>
-                    <input class="input-block-level" id="email-sender-public-host" name="email-sender-public-host" type="text"
-                           ## We don't want to show "localhost" as the remote host
-                           ## if the local mail relay is used.
-                           value="${public_host_name if local.is_remote_host else ''}">
-                </div>
-                <div class="span4">
-                    <%
-                        # We don't want to show the local relay's port as the
-                        # remote port if the local mail relay is used.
-                        val = current_config['email.sender.public_port'] \
-                            if local.is_remote_host else ''
-                        if not val: val = '25'
-                    %>
-                    <label for="email-sender-public-port">SMTP port:</label>
-                    <input class="input-block-level" id="email-sender-public-port" name="email-sender-public-port" type="text" value="${val}">
-                </div>
-            </div>
-
-            <div class="row-fluid">
-                <div class="span6">
-                    <label for="email-sender-public-username">SMTP username:</label>
-                    <input class="input-block-level" id="email-sender-public-username" name="email-sender-public-username" type="text" value="${current_config['email.sender.public_username']}">
-                </div>
-                <div class="span6">
-                    <label for="email-sender-public-password">SMTP password:</label>
-                    <input class="input-block-level" id="email-sender-public-password" name="email-sender-public-password" type="password" value="${current_config['email.sender.public_password']}">
-                </div>
-            </div>
-
-            <label for="email-sender-public-enable-tls" class="checkbox">
-                <input id="email-sender-public-enable-tls" name="email-sender-public-enable-tls" type="checkbox"
-                    %if str2bool(current_config['email.sender.public_enable_tls']):
-                        checked
-                    %endif
-                >Use STARTTLS encryption
-            </label>
-        </div>
 
         <p style="margin-top: 8px">AeroFS sends emails to users for various purposes such as sign up verification and folder invitations. A functional email server is required.</p>
     </div>

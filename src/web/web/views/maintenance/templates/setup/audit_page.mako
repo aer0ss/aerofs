@@ -45,7 +45,11 @@ track user activities within the AeroFS system.</p>
         %endif
     </label>
 
-    <div id="external-endpoint-options">
+    <div id="external-endpoint-options"
+        %if not is_audit_enabled:
+            class="hide"
+        %endif
+    >
         <hr/>
         <h4>Downstream Options</h4>
         <p>You can optionally specify a downstream service to which we will
@@ -92,10 +96,6 @@ track user activities within the AeroFS system.</p>
 
 <%def name="scripts()">
     <script>
-        %if not is_audit_enabled:
-        disableSelected();
-        %endif
-
         function submitForm() {
             disableNavButtons();
 

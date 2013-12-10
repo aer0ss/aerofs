@@ -29,11 +29,8 @@
         >
         Use AeroFS to manage user accounts
 
-        %if not is_configuration_initialized:
-            <div class="main-option-footnote">Choose this option if you're not sure.
-                You'll be able to change it later at any time. All your users
-                will migrate automatically.</div>
-        %endif
+        <div class="main-option-footnote">Choose this option if you're not sure.
+            You'll be able to change it later at any time. <a href="https://support.aerofs.com/entries/23544130" target="_blank">Learn more</a>.</div>
     </label>
 
     <label class="radio">
@@ -44,16 +41,21 @@
             %endif
         >
         Use ActiveDirectory or LDAP
-    </label>
 
-    ## The slide down options
-    <div id="ldap-options"
-        %if local.local_auth:
-            class="hide"
-        %endif
-    >
-        ${ldap_options()}
-    </div>
+        ## The slide down options
+        <div id="ldap-options"
+            %if local.local_auth:
+                class="hide"
+            %endif
+        >
+            <div class="main-option-footnote" style="margin-bottom: 10px">
+                Need help setting up or troubleshooting AD/LDAP?
+                <a href="https://support.aerofs.com/entries/23101219" target="_blank">
+                    Click here</a>.</div>
+
+            ${ldap_options()}
+        </div>
+    </label>
 
     <hr />
     ${common.render_next_button()}
