@@ -23,6 +23,7 @@ import com.google.common.base.Charsets;
 import org.hamcrest.MatcherAssert;
 import org.jboss.netty.channel.Channel;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -97,6 +98,7 @@ public final class TestZephyrUnicast
         return channel ;
     }
 
+    @Ignore
     @Test
     public void shouldDisconnectChannelAndNotifyUnicastListenerOfDeviceDisconnectionWhenLinkGoesDown()
             throws Exception

@@ -21,6 +21,7 @@ import org.hamcrest.MatcherAssert;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -99,6 +100,7 @@ public final class TestTCPUnicast
         return clientHandler;
     }
 
+    @Ignore
     @Test
     public void shouldDisconnectChannelAndNotifyUnicastListenerOfDeviceDisconnectionWhenLinkGoesDown()
             throws Exception
