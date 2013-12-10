@@ -1,0 +1,8 @@
+    # Expose the whole site at /
+    location /static {
+        root /opt/lizard/lizard/static;
+    }
+    location / {
+        # proxies to cherrypy driving the licensing website
+        proxy_pass http://127.0.0.1:8588;
+    }

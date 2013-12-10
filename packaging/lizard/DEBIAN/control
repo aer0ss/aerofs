@@ -1,0 +1,7 @@
+Package: aerofs-lizard
+Section: admin
+Priority: optional
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS private cloud license self-service website
+Architecture: all
+Depends: nginx, python, python-dev, python-virtualenv, python-setuptools, python-pip, gcc
