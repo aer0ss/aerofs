@@ -71,7 +71,8 @@ public class SharedFolderNotificationEmailer
                 "has changed your role in the folder from " + oldRoleStr + " to " + newRoleStr + ".\n" +
                 "\n" +
                 "If you'd like to find out more about the different " + L.brand() + " roles, " +
-                "please take a look at https://support.aerofs.com/entries/22831810.";
+                // Whitespace required after URL for autolinker. TODO (WW) fix this!
+                "please take a look at https://support.aerofs.com/entries/22831810 .";
 
         Email email = new Email();
         email.addSection(title, body);
