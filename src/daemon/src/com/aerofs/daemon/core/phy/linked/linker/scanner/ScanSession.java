@@ -366,17 +366,24 @@ class ScanSession
      */
     private boolean addLogicalChildrenToDeletionBufferIfScanNeeded_(PathCombo pcParent) throws Exception
     {
-        // Locate the logical object corresponding to the physical object. If the logical object is
-        // not found, move one folder level up and update pcParent's value and repeat. This is
-        // needed because when adding a multi-level folder structure on OSX, the OS may include
-        // subfolders before parent folders in a notification batch (see OSXNotifier).
-        SOID soidParent;
-        while (true) {
-            soidParent = _f._ds.resolveNullable_(pcParent._path);
-            if (soidParent != null) break;
-            // The resolution above must have succeeded if the path is empty.
-            assert !pcParent._path.isEmpty() : pcParent._absPath + " " + soidParent;
-            pcParent = new PathCombo(_root.absRootAnchor(), pcParent._path.removeLast());
+        SOID soidParent = _f._ds.resolveNullable_(pcParent._path);
+        if (soidParent == null) {
+            // mkay, so we're supposed to scan a physical folder, except we have no corresponding
+            // logical object at that path, which the scan flow should ensure and is required to,
+            // you know, add children...
+            //
+            // Possible scenarios:
+            //      * scan interrupted and folder deleted before continuations
+            //      * scan triggered by notifications about deleted object(s)
+            //      * scan triggered by notification about children of ignored folder(s)
+            //      * something else?
+            //
+            // In any case the only safe thing to do is to ignore that path for now.
+            //
+            // TODO: schedule a scan of the parent to make sure we don't somehow lose updates?
+            // Theoretically this should be unnecessary but the thing about theory is that it
+            // rarely ever holds in practice, especially so when dealing with filesystems...
+            return false;
         }
 
         if (l.isInfoEnabled()) l.info("on " + soidParent + ":" + pcParent);
@@ -384,6 +391,9 @@ class ScanSession
         OA oaParent = _f._ds.getOA_(soidParent);
         if (_f._filter.shouldIgnoreChilren_(pcParent, oaParent)) return false;
 
+        // NB: it is VERY IMPORTANT to call that AT MOST ONCE per SOID per scan
+        // every time you violate that contract TimeoutDeletionBuffer devours the soul
+        // of an innocent kitten
         addLogicalChildrenToDeletionBuffer_(oaParent);
         return true;
     }
