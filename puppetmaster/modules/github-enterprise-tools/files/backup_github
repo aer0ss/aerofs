@@ -21,7 +21,8 @@ echo "Backing up settings"
 ssh admin@github.arrowfs.org -- 'ghe-export-settings' > /mnt/github/settings.json
 echo "Backing up ssh host keys"
 ssh admin@github.arrowfs.org -- 'ghe-export-ssh-host-keys' > /mnt/github/host-keys.tar
-
+echo "Backing up pages"
+ssh admin@github.arrowfs.org -- 'ghe-export-pages' > /mnt/github/pages.tar
 pushd /mnt/
 DATE=$(date -u +%Y%m%d_%H%M%S)UTC
 FILENAME=github_${DATE}.tar.bz2
