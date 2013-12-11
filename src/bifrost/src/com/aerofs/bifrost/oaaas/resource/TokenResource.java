@@ -49,10 +49,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -217,6 +219,28 @@ public class TokenResource
 
             TokenListReponse response = new TokenListReponse(tokenResponseObjects);
             return Response.ok(response).build();
+
+        } catch (Exception e) {
+            l.error(e.toString());
+            return Response.serverError().build();
+        }
+    }
+
+    @DELETE
+    @Path("/token/{token}")
+    public Response deleteToken(@PathParam("token") String token)
+    {
+        try {
+            AccessToken accessToken = accessTokenRepository.findByToken(token);
+
+            if (accessToken == null) {
+                l.warn("token not found: {}", token);
+                return Response.status(Status.NOT_FOUND).build();
+            }
+
+            accessTokenRepository.delete(accessToken);
+
+            return Response.ok().build();
 
         } catch (Exception e) {
             l.error(e.toString());

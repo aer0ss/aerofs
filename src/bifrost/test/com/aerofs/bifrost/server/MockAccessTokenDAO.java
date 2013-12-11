@@ -47,4 +47,8 @@ public class MockAccessTokenDAO extends AccessTokenDAO
         m_map.put(s.getToken(), s);
         return s;
     }
+
+    @Override
+    public void delete(AccessToken s) { m_map.remove(s.getToken()); }
 }
+

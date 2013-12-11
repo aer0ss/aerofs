@@ -6,7 +6,10 @@ package com.aerofs.bifrost.server;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.bifrost.oaaas.model.AccessToken;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
+import com.google.common.collect.Sets;
 import com.jayway.restassured.response.Response;
 import org.junit.Test;
 
@@ -19,6 +22,7 @@ import static com.jayway.restassured.path.json.JsonPath.from;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
@@ -197,6 +201,38 @@ public class TestTokenResource extends BifrostTest
             assertNotNull(t.get("expires"));
             assertNotNull(t.get("token"));
         }
+    }
+
+    @Test
+    public void shouldGet404OnDeleteTokenIfTokenDNE() throws Exception
+    {
+        expect()
+                .statusCode(404)
+        .given()
+                .delete(TOKEN_URL + "/no-token-by-this-name");
+    }
+
+    @Test
+    public void shouldDeleteTokenOnDeleteTokenRequest() throws Exception
+    {
+        final String tokenVal = "this-token-will-be-deleted";
+
+        AccessToken token = new AccessToken(
+                tokenVal,
+                new AuthenticatedPrincipal(USERNAME),
+                _clientRepository.findByClientId(CLIENTID),
+                0,
+                Sets.newHashSet("readonly"),
+                "");
+        _accessTokenRepository.save(token);
+        _session.flush();
+
+        expect()
+                .statusCode(200)
+        .given()
+                .delete(TOKEN_URL + "/" + tokenVal);
+
+        assertNull(_accessTokenRepository.findByToken(tokenVal));
     }
 
     private String buildAuthHeader(String user, String password)

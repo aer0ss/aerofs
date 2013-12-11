@@ -22,10 +22,7 @@ public class AccessTokenRepositoryImpl implements AccessTokenRepository
     public AccessToken save(AccessToken s) { return _dao.save(s); }
 
     @Override
-    public void delete(AccessToken accessToken)
-    {
-
-    }
+    public void delete(AccessToken accessToken) { _dao.delete(accessToken); }
 
     @Inject private AccessTokenDAO _dao;
 
