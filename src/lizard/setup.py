@@ -10,6 +10,8 @@ setup(name='lizard',
       provides     = ["lizard"],
       url          = 'https://www.aerofs.com',
       packages     = ['lizard'],
-      #package_data = {'lizard': ['templates/*']},
+      package_data = {'lizard': ['migrations/manage.py',
+                                 'migrations/migrate.cfg',
+                                 'migrations/versions/*.py']},
       )
 

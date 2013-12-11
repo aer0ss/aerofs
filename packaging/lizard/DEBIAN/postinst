@@ -3,6 +3,10 @@ set -e
 
 chown www-data:www-data /var/log/lizard -R
 
+# A folder where the lizard service can write some state.
+# In particular, a randomly-generated private csrf_token.
+chown www-data:www-data /opt/lizard/state -R
+
 PYHOME=/opt/lizard/pythonenv
 PYTHON=$PYHOME/bin/python
 
