@@ -18,9 +18,6 @@ from web.views.login.login_view import URL_PARAM_FORM_SUBMITTED, URL_PARAM_EMAIL
     URL_PARAM_PASSWORD, URL_PARAM_REMEMBER_ME
 from web.login_util import URL_PARAM_NEXT
 
-from urllib import urlencode
-from urllib2 import urlopen
-
 import analytics
 import markupsafe
 

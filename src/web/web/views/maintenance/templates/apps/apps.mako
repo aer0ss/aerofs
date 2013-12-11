@@ -1,6 +1,10 @@
 <%inherit file="../maintenance_layout.mako"/>
 <%! page_title = "Apps" %>
 
+##
+## Note: this file's structure is very similar to access_tokens.mako
+##
+
 <%namespace file="../modal.mako" name="modal"/>
 
 <%block name="css">
@@ -69,7 +73,6 @@
         function refreshUI() {
             var $table = $('#clients-table');
             var clients = $table.find('tbody').find('tr').length;
-            console.log("clients >> " + clients);
             setVisible($table, clients > 0);
             setVisible($('#no-clients-label'), clients == 0);
         }

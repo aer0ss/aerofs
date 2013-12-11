@@ -12,6 +12,9 @@ def test_suite():
     import unittests.org_users
     import unittests.org_settings
     import unittests.password_reset
+    import unittests.maintenance
+    import unittests.settings
+
 
     suite = unittest.TestSuite()
 
@@ -25,5 +28,7 @@ def test_suite():
     suite.addTest(unittests.shared_folders.test_suite())
     suite.addTest(unittests.org_users.test_suite())
     suite.addTest(unittests.org_settings.test_suite())
+    suite.addTest(unittests.maintenance.test_suite())
+    suite.addTest(unittests.settings.test_suite())
 
     return suite

@@ -14,5 +14,6 @@ __all__ = [
         'unsubscribe',
         'accept',
         'payment',
-        'error'
+        'error',
+        'settings'
     ]

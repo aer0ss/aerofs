@@ -28,7 +28,8 @@ routes = {
     'maintenance_login',
     'maintenance_login_submit',
     'backup_appliance',
-    'apps',
+    # 'apps' is already taken by the access token management page
+    'registered_apps',
     'register_app',
     'json_delete_app',
     # 'upgrade' is already taken by the organization settings page

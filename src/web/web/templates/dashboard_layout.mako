@@ -30,13 +30,25 @@
 <%block name="top_navigation_bar_mobile">
     <%navigation:marketing_links/>
     <li class="divider"></li>
+    ## <li><a href="${request.route_path('apps')}">My Apps</a></li>
     <li><a href="${request.route_path('logout')}">Sign out</a></li>
 </%block>
 
 <%block name="top_navigation_bar_desktop">
     <%navigation:marketing_links/>
-    <li class="pull-right"><a href="${request.route_path('logout')}">Sign out</a></li>
-    <li class="pull-right disabled"><a href="#">${authenticated_userid(request)}</a></li>
+    <li class="pull-right dropdown">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            ${authenticated_userid(request)} <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+            ## Remember to update top_navigation_bar_mobile() when adding items
+            %if is_private_deployment(request.registry.settings):
+                ## <li><a href="${request.route_path('apps')}">My Apps</a></li>
+            %endif
+            <li><a href="${request.route_path('logout')}">Sign out</a></li>
+        </ul>
+    </li>
+
     % if is_admin(request):
         ${render_download_links(True)}
     % else:
@@ -58,14 +70,13 @@
                 AeroFS Desktop
             </a></li>
 
-            %if request.registry.settings['deployment.mode'] == 'public':
+            %if not is_private_deployment(request.registry.settings):
                 <li><a href="http://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
                     Android App
                 </a></li>
             %endif
 
             %if admin:
-                <li class="divider"></li>
                 <li><a href="${request.route_path('download_team_server')}">
                     Team Server
                 </a></li>
