@@ -22,6 +22,8 @@ import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.AbstractTestWithDatabase;
+import com.aerofs.sp.server.AuditClient;
+import com.aerofs.sp.server.AuditClient.AuditTopic;
 import com.aerofs.sp.server.IdentitySessionManager;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
@@ -92,6 +94,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // Some subclasses will add custom mocking to the verkehr objects.
     @Mock protected VerkehrPublisher verkehrPublisher;
     @Mock protected VerkehrAdmin verkehrAdmin;
+    @Spy protected AuditClient auditClient = new AuditClient();
 
     protected SPActiveUserSessionTracker userSessionTracker =
             new SPActiveUserSessionTracker();
@@ -220,6 +223,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // Do wiring for SP after its construction
     protected void wireSPService()
     {
+        service.setAuditorClient_(auditClient);
         service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
         service.setSessionInvalidator(sessionInvalidator);
         service.setUserTracker(userSessionTracker);

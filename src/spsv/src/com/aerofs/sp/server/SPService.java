@@ -97,6 +97,7 @@ import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
+import com.aerofs.sp.server.AuditClient.AuditTopic;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
@@ -169,6 +170,7 @@ public class SPService implements ISPService
 
     private VerkehrPublisher _verkehrPublisher;
     private VerkehrAdmin _verkehrAdmin;
+    private AuditClient _auditClient;
 
     private SPActiveUserSessionTracker _userTracker;
     private SPSessionInvalidator _sessionInvalidator;
@@ -275,6 +277,11 @@ public class SPService implements ISPService
 
         _verkehrPublisher = verkehrPublisher;
         _verkehrAdmin = verkehrAdmin;
+    }
+
+    public void setAuditorClient_(AuditClient auditClient)
+    {
+        _auditClient = auditClient;
     }
 
     public void setUserTracker(SPActiveUserSessionTracker userTracker)
@@ -2085,6 +2092,11 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userId);
         _authenticator.authenticateUser(
                 user, cred.toByteArray(), _sqlTrans, Authenticator.CredentialFormat.TEXT);
+
+        _auditClient.event(AuditTopic.USER, "signIn")
+                .add("user", user)
+                .add("type", "credential")
+                .publish();
         l.info("SI: cred auth ok {}", user.id().getString());
         return user;
     }

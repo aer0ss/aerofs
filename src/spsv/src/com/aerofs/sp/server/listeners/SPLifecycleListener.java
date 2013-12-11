@@ -1,14 +1,17 @@
 package com.aerofs.sp.server.listeners;
 
+import com.aerofs.base.BaseParam;
+import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
-import com.aerofs.sp.server.lib.session.HttpSessionUserID;
-import com.aerofs.lib.properties.Configuration;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.properties.Configuration;
 import com.aerofs.servlets.lib.NoopConnectionListener;
+import com.aerofs.sp.server.AuditClient;
+import com.aerofs.sp.server.lib.session.HttpSessionUserID;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -17,8 +20,8 @@ import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
-import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
+import org.slf4j.Logger;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -31,12 +34,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static com.aerofs.lib.Util.join;
+import static com.aerofs.sp.server.lib.SPParam.AUDIT_CLIENT_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ACK_TIMEOUT;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_RECONNECT_DELAY;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -100,6 +104,18 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
                 timer, new NoopConnectionListener(), sameThreadExecutor());
         admin.start();
         ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);
+
+        // FIX THIS: if (BaseParam.AUDIT_ENABLED)
+
+        VerkehrPublisher vkAuditClient = null;
+        if (Audit.AUDIT_ENABLED) {
+            vkAuditClient = getPublisher(Audit.HOST, (short)Audit.PUBLISH_PORT,
+                cacertProvider, boss, workers, timer, new NoopConnectionListener(),
+                sameThreadExecutor());
+            vkAuditClient.start();
+        }
+        AuditClient auditClient = new AuditClient(vkAuditClient);
+        ctx.setAttribute(AUDIT_CLIENT_ATTRIBUTE, auditClient);
 
         // Set up the user session objects.
         ctx.setAttribute(SESSION_USER_TRACKER, _userSessionTracker);

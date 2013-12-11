@@ -58,6 +58,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
 
+import static com.aerofs.sp.server.lib.SPParam.AUDIT_CLIENT_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
@@ -151,6 +152,7 @@ public class SPServlet extends AeroServlet
         init_();
 
         _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrAdmin());
+        _service.setAuditorClient_(getAuditClient());
 
         _service.setUserTracker(getUserTracker());
         _service.setSessionInvalidator(getSessionInvalidator());
@@ -200,6 +202,11 @@ public class SPServlet extends AeroServlet
     private VerkehrPublisher getVerkehrPublisher()
     {
         return (VerkehrPublisher) getServletContext().getAttribute(VERKEHR_PUBLISHER_ATTRIBUTE);
+    }
+
+    private AuditClient getAuditClient()
+    {
+        return (AuditClient) getServletContext().getAttribute(AUDIT_CLIENT_ATTRIBUTE);
     }
 
     private SPActiveUserSessionTracker getUserTracker()

@@ -14,6 +14,7 @@ import java.security.cert.X509Certificate;
 import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getCertificateProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
 
@@ -176,5 +177,22 @@ public class BaseParam
          */
         public static boolean AUDIT_ENABLED = AUDIT_ALLOWED &&
                 getBooleanProperty("base.audit.enabled", false);
+
+        /**
+         * Hostname of the audit service (the endpoint to which clients will deliver
+         * auditable events)
+         */
+        public static final String HOST =
+                getStringProperty("base.audit.service.host", "sp.aerofs.com");
+        /**
+         * Publish port on the audit service.
+         */
+        public static final int PUBLISH_PORT =
+                getIntegerProperty("base.audit.service.port.publish", 9300);
+        /**
+         * Subscribe port on the audit service (should not be public).
+         */
+        public static final int SUBSCRIBE_PORT =
+                getIntegerProperty("base.audit.service.port.subscribe", 9301);
     }
 }

@@ -19,6 +19,7 @@ public class SPParam
     // Context attributes.
     public static final String VERKEHR_PUBLISHER_ATTRIBUTE = "verkehr_publisher";
     public static final String VERKEHR_ADMIN_ATTRIBUTE = "verkehr_admin";
+    public static final String AUDIT_CLIENT_ATTRIBUTE = "audit_client";
 
     public static final String SESSION_USER_TRACKER = "session_user_tracker";
     public static final String SESSION_INVALIDATOR = "session_invalidator";
