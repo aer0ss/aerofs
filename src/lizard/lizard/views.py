@@ -157,6 +157,38 @@ def signup_completion_page():
     return render_template("complete_signup.html",
             form=form)
 
+@app.route("/users/edit", methods=["GET", "POST"])
+@login.login_required
+def edit_preferences():
+    user = login.current_user
+    form = forms.PreferencesForm()
+    if form.validate_on_submit():
+        # Update name
+        user.name = form.name.data
+        if len(form.password.data) > 0:
+            # Always generate a new salt when updating password.
+            salt = scrypt.generate_random_salt()
+            user.salt = salt
+            user.pw_hash = scrypt.generate_password_hash(form.password.data, salt)
+        # Update email preferences
+        user.notify_security    = form.security_emails.data
+        user.notify_release     = form.release_emails.data
+        user.notify_maintenance = form.maintenance_emails.data
+        # Save to DB
+        db.session.add(user)
+        db.session.commit()
+        flash(u'Saved changes.')
+        return redirect(url_for("edit_preferences"))
+    form.name.data = user.name
+    form.security_emails.data = user.notify_security
+    form.release_emails.data = user.notify_release
+    form.maintenance_emails.data = user.notify_maintenance
+    return render_template("preferences.html",
+        title=u"Edit Preferences",
+        form=form,
+        user=user
+        )
+
 # FIXME:
 # This is a test page I used to test the behavior of login_required and skip
 # dealing with emails.  It should be removed before first release.
