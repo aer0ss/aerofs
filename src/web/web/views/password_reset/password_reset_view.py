@@ -11,7 +11,7 @@ from pyramid.view import view_config
 from aerofs_sp.gen.common_pb2 import PBException
 from web.util import flash_error, get_rpc_stub, is_valid_email, is_valid_password
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 # Define views.
 @view_config(

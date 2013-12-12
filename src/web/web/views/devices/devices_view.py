@@ -9,7 +9,7 @@ from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from add_mobile_device_view import is_mobile_supported
 
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 # URL param keys
 _URL_PARAM_DEVICE_ID = 'device_id' # the value is a HEX encoded device id

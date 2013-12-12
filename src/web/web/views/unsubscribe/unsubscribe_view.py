@@ -6,7 +6,7 @@ from aerofs_sp.gen.common_pb2 import PBException
 
 from web.util import get_rpc_stub
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 @view_config(
     route_name='unsubscribe',

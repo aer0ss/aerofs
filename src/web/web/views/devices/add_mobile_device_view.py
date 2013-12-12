@@ -10,7 +10,7 @@ from pyramid.response import Response
 from web.util import *
 
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 # Magic byte that we prefix to our qrcodes.
 # Note: If you change this number, it will break sign-in with older mobile apps.

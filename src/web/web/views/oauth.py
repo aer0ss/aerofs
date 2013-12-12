@@ -7,7 +7,7 @@ import requests
 from web import util
 from web.util import flash_error, get_rpc_stub
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 
 # The URL to Bifrost, i.e. the OAuth server

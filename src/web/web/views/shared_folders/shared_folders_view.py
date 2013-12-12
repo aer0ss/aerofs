@@ -25,7 +25,7 @@ from web.views.payment.stripe_util\
     import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
 
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 
 def _encode_store_id(sid):

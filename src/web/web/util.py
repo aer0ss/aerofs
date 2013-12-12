@@ -13,7 +13,7 @@ from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 # Form validation functions
 

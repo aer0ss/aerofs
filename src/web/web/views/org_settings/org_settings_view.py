@@ -10,7 +10,7 @@ from web.views.payment.stripe_util \
 URL_PARAM_USER = 'user'
 URL_PARAM_FULL_NAME = 'full_name'
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 def get_permission(pbrole):
     return common._PBROLE.values_by_number[int(pbrole)].name

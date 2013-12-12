@@ -8,7 +8,7 @@ from web.util import flash_error, flash_success
 from web.views.oauth import raise_error_for_bifrost_response, flash_error_for_bifrost_response, is_builtin_client_id, BIFROST_URL, is_valid_non_builtin_client_id
 
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 
 @view_config(

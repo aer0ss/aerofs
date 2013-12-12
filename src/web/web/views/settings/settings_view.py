@@ -8,7 +8,7 @@ from web.util import get_rpc_stub
 from web.views.oauth import flash_error_for_bifrost_response, BIFROST_URL, \
     is_builtin_client_id, raise_error_for_bifrost_response, is_valid_access_token
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 
 @view_config(

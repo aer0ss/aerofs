@@ -26,7 +26,7 @@ from web.license import is_license_present_and_valid, is_license_present, \
 from backup_view import BACKUP_FILE_PATH
 from web.views.login.login_view import URL_PARAM_EMAIL
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------------
