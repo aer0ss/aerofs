@@ -18,6 +18,11 @@ cp -a $SOURCE_DIR/requirements.txt $OPT/
 cp -a $SOURCE_DIR/config.py $OPT/
 # Include entry point script
 cp -a $SOURCE_DIR/entry.py $OPT/
+# Include static assets.
+# If sharing a file with the web module is desired, check in a symlink in
+# lizard/static and copy the target rather than the symlink.
+mkdir -p $OPT/static
+cp -a $SOURCE_DIR/lizard/static/* $OPT/static
 
 SDIST=$OPT/sdist
 SDIST_CACHE=$HOME/.aerofs-cache/pip/lizard

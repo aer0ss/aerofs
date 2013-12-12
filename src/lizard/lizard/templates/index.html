@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{# Note: this is not the final index page.  It's for making testing easier #}
+
+{% block content %}
+<div class="header"><h1>It works.</h1></div>
+<div class="span7 offset5">
+<ul>
+	<li><a href="/login">Login</a></li>
+	<li><a href="/logout">Logout</a></li>
+	<li><a href="/request_signup_code">Request to sign up</a></li>
+	<li><a href="/magic">See invite codes</a></li>
+</ul>
+</div>
+{% endblock %}

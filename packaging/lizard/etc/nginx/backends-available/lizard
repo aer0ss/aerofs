@@ -1,6 +1,6 @@
     # Expose the whole site at /
     location /static {
-        root /opt/lizard/lizard/static;
+        root /opt/lizard;
     }
     location / {
         # proxies to cherrypy driving the licensing website

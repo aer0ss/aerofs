@@ -1,0 +1,11 @@
+/*
+ * Stylesheets still a work in progress
+ */
+#messages {
+    background-color: #ffff00 ;
+    border-bottom: 1px solid #000000 ;
+}
+
+.header {
+	text-align: center;
+}

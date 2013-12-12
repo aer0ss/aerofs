@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from flask.ext.login import LoginManager
 from flask.ext.sqlalchemy import SQLAlchemy
 from migrate.versioning import api
 from migrate.exceptions import DatabaseAlreadyControlledError
@@ -13,8 +14,13 @@ app.config.from_object('config')
 if 'CONFIG_EXTRA' in os.environ:
     app.config.from_envvar('CONFIG_EXTRA')
 
-db = SQLAlchemy(app)
+# Login manager.  Flask-login does session management.
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login_page'
 
+# Database stuff
+db = SQLAlchemy(app)
 _moddir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_MIGRATE_REPO'] = os.path.join(_moddir, 'migrations')
 
@@ -32,4 +38,4 @@ def migrate_database():
     # Apply all known migrations to bring the database schema up to date
     api.upgrade(db_uri, repo, api.version(repo))
 
-from lizard import models, views
+from lizard import emails, forms, models, views

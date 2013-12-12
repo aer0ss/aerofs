@@ -12,6 +12,9 @@ setup(name='lizard',
       packages     = ['lizard'],
       package_data = {'lizard': ['migrations/manage.py',
                                  'migrations/migrate.cfg',
-                                 'migrations/versions/*.py']},
+                                 'migrations/versions/*.py',
+                                 'templates/*.html',
+                                 'templates/*.txt',
+                                 ]},
       )
 
