@@ -1,5 +1,6 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.audit.client.AuditClient;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;

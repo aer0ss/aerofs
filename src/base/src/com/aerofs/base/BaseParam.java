@@ -160,8 +160,8 @@ public class BaseParam
         /**
          * Boolean indicating whether or not the license allows us to use the audit feature.
          */
-        private static boolean AUDIT_ALLOWED =
-                getBooleanProperty("license_allow_auditing", false);
+        private static boolean                  AUDIT_ALLOWED =
+                getBooleanProperty(             "license_allow_auditing", false);
 
         /**
          * Boolean indicating whether or not the audit feature has been enabled.
@@ -171,24 +171,44 @@ public class BaseParam
          *  1. Our license allows us to use the audit feature, AND
          *  2. The user has enabled auditing during the setup process.
          */
-        public static boolean AUDIT_ENABLED = AUDIT_ALLOWED &&
-                getBooleanProperty("base.audit.enabled", false);
+        public static boolean                   AUDIT_ENABLED = AUDIT_ALLOWED &&
+                getBooleanProperty(             "base.audit.enabled", false);
 
         /**
-         * Hostname of the audit service (the endpoint to which clients will deliver
-         * auditable events)
+         * Hostname for private (server-component-only) access to the audit service.
          */
-        public static final String HOST =
-                getStringProperty("base.audit.service.host", "sp.aerofs.com");
+        public static final String              SERVICE_HOST =
+                getStringProperty(              "base.audit.service.host", "localhost");
+
         /**
-         * Publish port on the audit service.
+         * Port number for private (server-component-only) access to the audit service.
          */
-        public static final int PUBLISH_PORT =
-                getIntegerProperty("base.audit.service.port.publish", 9300);
+        public static final Integer             SERVICE_PORT =
+                getIntegerProperty(             "base.audit.service.port", 9300);
+
         /**
-         * Subscribe port on the audit service (should not be public).
+         * Path component (server-component-only) access to the audit REST service.
          */
-        public static final int SUBSCRIBE_PORT =
-                getIntegerProperty("base.audit.service.port.subscribe", 9301);
+        public static final String              SERVICE_EVENT_PATH =
+                getStringProperty(              "base.audit.service.path", "/event");
+
+        /**
+         * URL for public access to the audit REST service.
+         * TODO: Not currently exposed.
+         */
+//        public static final String              SERVICE_EVENT_URL =
+//                getStringProperty(              "https://sp.aerofs.com:9300/audit/event";
+
+        /**
+         * Connection timeout in milliseconds.
+         */
+        public static final int CONN_TIMEOUT =
+                getIntegerProperty(             "base.audit.service.conn.timeout", 10 * (int)C.SEC);
+
+        /**
+         * Read timeout in milliseconds.
+         */
+        public static final int READ_TIMEOUT =
+                getIntegerProperty(             "base.audit.service.read.timeout", 10 * (int)C.SEC);
     }
 }

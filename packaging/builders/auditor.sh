@@ -6,12 +6,12 @@ SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTPUT_DIR=build/auditor
 RESOURCES=../src/auditor/resources
 
-CONFIG="$RESOURCES/auditor.yml"
+CONFIG="$RESOURCES/logback.xml $RESOURCES/auditor.properties"
 #-XX:+UseBiasedLocking -XX:+UseStringCache -XX:+OptimizeStringConcat
 #XXX (AG): add this to enable SSL debugging
 #   -Djavax.net.debug=all
 JAVA_ARGS="-Xmx500m"
-SERVICE_ARGS="server auditor.yml"
+SERVICE_ARGS="auditor.properties"
 
 "$SCRIPT_DIR"/generators/generate_service_deb_template.sh auditor "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
 

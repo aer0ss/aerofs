@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../../src/android/android.iml" filepath="$PROJECT_DIR$/../../src/android/android.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/android-test/android-test.iml" filepath="$PROJECT_DIR$/../../src/android-test/android-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/auditor/auditor.iml" filepath="$PROJECT_DIR$/../../src/auditor/auditor.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/base/base.iml" filepath="$PROJECT_DIR$/../../src/base/base.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/bifrost/bifrost.iml" filepath="$PROJECT_DIR$/../../src/bifrost/bifrost.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/bootstrap/bootstrap.iml" filepath="$PROJECT_DIR$/../../src/bootstrap/bootstrap.iml" />

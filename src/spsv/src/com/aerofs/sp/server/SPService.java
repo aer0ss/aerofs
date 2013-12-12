@@ -1,5 +1,6 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.audit.client.AuditClient;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
@@ -99,7 +100,7 @@ import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
-import com.aerofs.sp.server.AuditClient.AuditTopic;
+import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;

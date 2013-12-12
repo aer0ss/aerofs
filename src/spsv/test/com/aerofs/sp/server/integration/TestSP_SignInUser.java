@@ -6,14 +6,9 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.SecUtil;
-import com.aerofs.sp.server.AuditClient.AuditTopic;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.verify;
 
 /**
  * Important: signIn() and signInUser() might expect scrypted password, or plaintext, depending on

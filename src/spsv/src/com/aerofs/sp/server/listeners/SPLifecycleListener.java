@@ -1,6 +1,7 @@
 package com.aerofs.sp.server.listeners;
 
-import com.aerofs.base.BaseParam.Audit;
+import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.AuditHttpClient;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
@@ -9,7 +10,6 @@ import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.properties.Configuration;
 import com.aerofs.servlets.lib.NoopConnectionListener;
-import com.aerofs.sp.server.AuditClient;
 import com.aerofs.sp.server.lib.session.HttpSessionUserID;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
@@ -104,16 +104,7 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         admin.start();
         ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);
 
-        // FIX THIS: if (BaseParam.AUDIT_ENABLED)
-
-        VerkehrPublisher vkAuditClient = null;
-        if (Audit.AUDIT_ENABLED) {
-            vkAuditClient = getPublisher(Audit.HOST, (short)Audit.PUBLISH_PORT,
-                cacertProvider, boss, workers, timer, new NoopConnectionListener(),
-                sameThreadExecutor());
-            vkAuditClient.start();
-        }
-        AuditClient auditClient = new AuditClient(vkAuditClient);
+        AuditClient auditClient = new AuditClient().setHttpClient(AuditHttpClient.create());
         ctx.setAttribute(AUDIT_CLIENT_ATTRIBUTE, auditClient);
 
         // Set up the user session objects.
