@@ -1,0 +1,6 @@
+Please complete your AeroFS Private Cloud by following this link:
+
+{{ signup_url }}
+
+You can just ignore this email if you didn't sign up for AeroFS Private
+Cloud.

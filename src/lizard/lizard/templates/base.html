@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+    <head>
+        {% block head %}
+        <title>{% block title %}{{title}}{% endblock %}</title>
+        <link href="{{ url_for('static', filename='bootstrap.css') }}" media="all" rel="stylesheet" type="text/css" />
+        <link href="{{ url_for('static', filename='style.css') }}" media="all" rel="stylesheet" type="text/css" />
+        {% endblock %}
+    </head>
+    <body>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div id="messages">
+            <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+            </div>
+        {% endif %}
+        {% endwith %}
+        <div id="content">{% block content %}{% endblock %}</div>
+        <div id="footer">{% block footer %}{% endblock %}</div>
+    </body>
+</html>

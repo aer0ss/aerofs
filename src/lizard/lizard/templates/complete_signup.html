@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% from "_formhelpers.html" import render_field, submit_button %}
+
+{% block content %}
+<h1>Complete your signup</h1>
+<form action="" method="post" name="login">
+    {{form.hidden_tag()}}
+    {{form.signup_code()}}
+    <p>
+        {{ render_field(form.name) }}
+        {{ render_field(form.company_name) }}
+        {{ render_field(form.password) }}
+    </p>
+    {{ submit_button("Complete Sign Up") }}
+</form>
+{% endblock %}
+
