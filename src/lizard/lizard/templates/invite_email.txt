@@ -2,7 +2,7 @@ Welcome to AeroFS Private Cloud! You've been invited to help manage
 purchasing for the {{ customer.name }} organization. Please sign in at
 the following URL to complete the order:
 
-{{ accept_url }}
+{{ invite_url }}
 
 Questions?  Check out our frequently asked questions at {{ faq_url }} or reply
 directly to this email for sales or technical support.

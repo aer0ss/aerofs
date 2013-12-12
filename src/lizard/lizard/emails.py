@@ -36,14 +36,16 @@ def _verification_email_for(email_address, signup_code):
             text_body, html_body)
 
 def _invite_email_for(email_address, company, invite_code):
-    invite_url = url_for('invite_accept_page', invite_code=invite_code, _external=True)
+    invite_url = url_for('accept_organization_invite', invite_code=invite_code, _external=True)
     print u"will email invite to {}, link {}".format(email_address, invite_url)
 
     text_body = render_template("invite_email.txt",
             invite_url=invite_url,
+            customer=company,
             )
     html_body = render_template("invite_email.html",
             invite_url=invite_url,
+            customer=company,
             )
 
     return _make_email_message(email_address, "You've been invited to help purchase AeroFS Private Cloud",
@@ -60,6 +62,6 @@ def send_verification_email(email_address, signup_code):
     msg = _verification_email_for(email_address, signup_code)
     _send_email(email_address, msg)
 
-def send_invite_email(email_address, company, signup_code):
-    msg = _invite_email_for(email_address, company, signup_code)
+def send_invite_email(email_address, company, invite_code):
+    msg = _invite_email_for(email_address, company, invite_code)
     _send_email(email_address, msg)
