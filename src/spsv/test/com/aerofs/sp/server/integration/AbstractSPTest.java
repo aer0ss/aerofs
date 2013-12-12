@@ -23,7 +23,6 @@ import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.AbstractTestWithDatabase;
 import com.aerofs.sp.server.AuditClient;
-import com.aerofs.sp.server.AuditClient.AuditTopic;
 import com.aerofs.sp.server.IdentitySessionManager;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
