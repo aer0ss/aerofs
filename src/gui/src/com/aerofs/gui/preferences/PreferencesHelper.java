@@ -53,13 +53,7 @@ public class PreferencesHelper
 
     private CompSpin _compSpin;
 
-    // These fields are null if the client doesn't create these text controls.
-    private @Nullable Text _txtFirstName;
-    private @Nullable Text _txtLastName;
-
     private boolean _asyncInited;
-    private @Nullable String _firstName;
-    private @Nullable String _lastName;
     private @Nullable String _deviceName;
 
     public PreferencesHelper(Composite comp)
@@ -126,48 +120,6 @@ public class PreferencesHelper
         return dd.open();
     }
 
-
-    public void createLastNameLabelAndText()
-    {
-
-        Label lblLastName = new Label(_comp, SWT.NONE);
-        lblLastName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblLastName.setText("Last name:");
-
-        _txtLastName = new Text(_comp, SWT.BORDER);
-        _txtLastName.setLayoutData(getTextFieldGridData());
-        _txtLastName.addFocusListener(new FocusAdapter()
-        {
-            @Override
-            public void focusLost(FocusEvent focusEvent)
-            {
-                updateUserAndDeviceName(_txtLastName);
-            }
-        });
-
-        new Label(_comp, SWT.NONE);
-    }
-
-    public void createFirstNameLabelAndText()
-    {
-        Label lblFirstName = new Label(_comp, SWT.NONE);
-        lblFirstName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblFirstName.setText("First name:");
-
-        _txtFirstName = new Text(_comp, SWT.BORDER);
-        _txtFirstName.setLayoutData(getTextFieldGridData());
-        _txtFirstName.addFocusListener(new FocusAdapter()
-        {
-            @Override
-            public void focusLost(FocusEvent focusEvent)
-            {
-                updateUserAndDeviceName(_txtFirstName);
-            }
-        });
-
-        new Label(_comp, SWT.NONE);
-    }
-
     public void createRelocationLabelAndText()
     {
         Label lblRootAnchor = new Label(_comp, SWT.NONE);
@@ -203,7 +155,7 @@ public class PreferencesHelper
             @Override
             public void focusLost(FocusEvent focusEvent)
             {
-                updateUserAndDeviceName(_txtDeviceName);
+                updateDeviceName(_txtDeviceName);
             }
         });
 
@@ -242,8 +194,6 @@ public class PreferencesHelper
         _txtRootAnchor.setText(Cfg.absDefaultRootAnchor());
 
         _txtDeviceName.setEditable(false);
-        if (_txtFirstName != null) _txtFirstName.setEditable(false);
-        if (_txtLastName != null) _txtLastName.setEditable(false);
 
         _compSpin.start();
 
@@ -277,18 +227,6 @@ public class PreferencesHelper
                             GUI.get().show(_comp.getShell(), MessageType.ERROR,
                                     ErrorMessages.e2msgDeprecated(eFinal));
                         } else if (reply != null) {
-                            if (_txtFirstName != null) {
-                                _txtFirstName.setText(reply.getFirstName());
-                                _txtFirstName.setEditable(true);
-                                _firstName = _txtFirstName.getText();
-                            }
-
-                            if (_txtLastName != null) {
-                                _txtLastName.setText(reply.getLastName());
-                                _txtLastName.setEditable(true);
-                                _lastName = _txtLastName.getText();
-                            }
-
                             _txtDeviceName.setText(reply.getDeviceName());
                             _txtDeviceName.setEditable(true);
 
@@ -305,31 +243,16 @@ public class PreferencesHelper
         thd.start();
     }
 
-    private void updateUserAndDeviceName(@Nullable final Text selectAll)
+    private void updateDeviceName(@Nullable final Text selectAll)
     {
         // the user name is updated before we successfully fetched the
         // profile. ignore the request in the case.
         if (!_asyncInited) return;
 
-        // If either first or last name changed, set both
-        boolean changed = shouldUpdateUserName();
-        final String firstName, lastName;
-        if (changed) {
-            // guaranteed by shouldUpdateUserName
-            assert _txtFirstName != null && _txtLastName != null;
-            firstName = _txtFirstName.getText();
-            lastName = _txtLastName.getText();
-            changed = true;
-        } else {
-            firstName = null;
-            lastName = null;
-        }
-
         final String deviceName = _txtDeviceName.getText();
         final String deviceNameToSend = deviceName.equals(_deviceName) ? null : deviceName;
-        changed |= (deviceNameToSend != null);
 
-        if (!changed) return;
+        if (deviceNameToSend == null) return;
 
         _compSpin.start();
 
@@ -343,8 +266,8 @@ public class PreferencesHelper
                     SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
                     SPBlockingClient sp = fact.create_(Cfg.user());
                     sp.signInRemote();
-                    sp.setUserPreferences(Cfg.user().getString(), firstName, lastName,
-                            (deviceNameToSend != null) ? Cfg.did().toPB() : null, deviceNameToSend);
+                    sp.setUserPreferences(Cfg.user().getString(), null, null, Cfg.did().toPB(),
+                            deviceNameToSend);
                     e = null;
                 } catch (Exception e2) {
                     e = e2;
@@ -364,8 +287,6 @@ public class PreferencesHelper
                                             "Couldn't update the name " + ErrorMessages.e2msgDeprecated(
                                                     eFinal));
                         } else {
-                            if (_txtFirstName != null) _firstName = _txtFirstName.getText();
-                            if (_txtLastName != null) _lastName = _txtLastName.getText();
                             _deviceName = deviceName;
                             if (selectAll != null) selectAll.selectAll();
                         }
@@ -373,13 +294,6 @@ public class PreferencesHelper
                 });
             }
         });
-    }
-
-    private boolean shouldUpdateUserName()
-    {
-        return _txtFirstName != null && _txtLastName != null &&
-                (!_txtFirstName.getText().equals(_firstName) ||
-                 !_txtLastName.getText().equals(_lastName));
     }
 
     public void createSpinner()
@@ -405,7 +319,7 @@ public class PreferencesHelper
             @Override
             public void shellClosed(ShellEvent shellEvent)
             {
-                updateUserAndDeviceName(null);
+                updateDeviceName(null);
             }
         });
     }

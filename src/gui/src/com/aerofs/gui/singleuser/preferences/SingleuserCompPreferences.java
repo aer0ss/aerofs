@@ -71,21 +71,13 @@ public class SingleuserCompPreferences extends Composite
             }
         });
 
-        // First name row
-
-        helper.createFirstNameLabelAndText();
-
-        // Last name row
-
-        helper.createLastNameLabelAndText();
-
         // Device name row
 
         helper.createDeviceNameLabelAndText();
 
         // Manage devices row
 
-        helper.createManageDevices("Manage all your devices", WWW.DEVICES_URL);
+        helper.createManageDevices("Manage your devices", WWW.DEVICES_URL);
 
         // Root anchor relocation row
 

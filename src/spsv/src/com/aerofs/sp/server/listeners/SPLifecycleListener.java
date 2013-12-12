@@ -1,6 +1,5 @@
 package com.aerofs.sp.server.listeners;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;

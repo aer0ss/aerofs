@@ -61,8 +61,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             = new ClickEvent(Action.RESUME_SYNCING, Source.TASKBAR);
     private static final ClickEvent SHARE_FOLDER
             = new ClickEvent(Action.SHARE_FOLDER, Source.TASKBAR);
-    private static final ClickEvent WHY_NOT_SYNCED
-            = new ClickEvent(Action.WHY_NOT_SYNCED, Source.TASKBAR);
 
     private volatile int _conflictCount = 0;
     private volatile int _unsyncableFilesCount = 0;
