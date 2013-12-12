@@ -1,9 +1,9 @@
 Getting Started
 
 ```bash
+cd ~/repos/aerofs/src/lizard
 virtualenv env
 env/bin/pip install -r requirements.txt
-./db_init.py
 ./rundebug.py
 ```
 
