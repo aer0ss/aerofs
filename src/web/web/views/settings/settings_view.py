@@ -45,7 +45,7 @@ def json_send_password_reset_email(request):
     renderer='json',
     request_method='POST'
 )
-def json_send_password_reset_email(request):
+def json_set_full_name(request):
     sp = get_rpc_stub(request)
     sp.set_user_preferences(authenticated_userid(request),
                             request.params['first-name'],
