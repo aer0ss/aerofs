@@ -49,7 +49,9 @@ BOOL swizzleMethod(SEL origSel, Class targetClass, SEL newSel, Class ourClass, B
         method_exchangeImplementations(meth, newMeth);
         return YES;
     } else {
-        NSLog(@"AeroFS: Method swizzling failed"); // TODO: More information
+        NSLog(@"AeroFS: Method swizzling failed %@ %@",
+                NSStringFromClass(targetClass),
+                NSStringFromSelector(origSel));
         return NO;
     }
 }

@@ -6,12 +6,15 @@
 #import "AeroUtils.h"
 #import "AeroIconPair.h"
 
+void drawOverlayForNode(const TFENode* fenode, NSRect rect);
+
 @implementation AeroOverlay
 
 - (void) dealloc
 {
     [dlIcon release];
     [ulIcon release];
+    [cfIcon release];
     [isIcon release];
     [psIcon release];
     [osIcon release];
@@ -44,6 +47,13 @@
     [AeroUtils swizzleInstanceMethod:@selector(drawIconWithFrame:) fromClass:NSClassFromString(@"TListViewIconAndTextCell")
                           withMethod:@selector(aero_TListViewIconAndTextCell_drawIconWithFrame:) fromClass:[AeroOverlaySwizzledMethods class]];
 
+
+    // OS X 10.9
+    if ([(NSClassFromString(@"TDimmableIconImageView")) instancesRespondToSelector:@selector(drawRect:)]) {
+        [AeroUtils swizzleInstanceMethod:@selector(drawRect:) fromClass:NSClassFromString(@"TDimmableIconImageView")
+                withMethod:@selector(aero_TDimmableIconImageView_drawRect:) fromClass:[AeroOverlaySwizzledMethods class]];
+    }
+
     return self;
 }
 
@@ -74,6 +84,9 @@
 
 @implementation AeroOverlaySwizzledMethods
 
+/**
+* Draw overlay icons in Icon View (OS X 10.6 - 10.9)
+*/
 -(CALayer*) aero_IKIconCell_layerForType:(NSString*)type
 {
     @try {
@@ -121,6 +134,10 @@
     }
 }
 
+/**
+* Draw overlay icons for both List View and Column View in 10.6 - 10.8
+* Draw overlay icons for Column View only in 10.9
+*/
 -(void)aero_TListViewIconAndTextCell_drawIconWithFrame:(CGRect) frame
 {
     @try {
@@ -135,20 +152,51 @@
 
         // Get the path to this node
         const TFENode* fenode = [_self node];
-        id finode = FINodeFromFENode(fenode);
-        NSString* path = [[finode previewItemURL] path];
-
-        NSImage* icon = [[[AeroFinderExt instance] overlay] iconForPath:path flipped:YES];
-
-        // Draw the overlay
-        NSGraphicsContext* nsgc = [NSGraphicsContext currentContext];
-        CGContextRef context = (CGContextRef) [nsgc graphicsPort];
         NSRect imageFrame = [_self imageRectForBounds: NSRectFromCGRect(frame)];
-        CGContextDrawImage(context, NSRectToCGRect(imageFrame), [icon CGImageForProposedRect:&imageFrame context:nil hints:nil]);
+        drawOverlayForNode(fenode, imageFrame);
     }
     @catch (NSException* exception) {
         NSLog(@"AeroFS: Exception in aero_TListViewIconAndTextCell_drawIconWithFrame: %@", exception);
     }
+}
+
+/**
+* Draw overlay icons in List View in 10.9
+* This method does not exist pre-10.9
+*/
+- (void)aero_TDimmableIconImageView_drawRect:(NSRect)dirtyRect
+{
+    @try {
+        // Call original implementation
+        [self aero_TDimmableIconImageView_drawRect:dirtyRect];
+
+        if (![[AeroFinderExt instance] shouldModifyFinder]) {
+            return;
+        }
+
+        TDimmableIconImageView* _self = (TDimmableIconImageView*) self;
+        TListRowView* rowView = (TListRowView*)[[_self superview] superview];
+
+        TFENode fenode = [rowView node];
+        drawOverlayForNode(&fenode, dirtyRect);
+    }
+    @catch (NSException* exception) {
+        NSLog(@"AeroFS: Exception in aero_TDimmableIconImageView_drawRect: %@", exception);
+    }
+}
+
+void drawOverlayForNode(const TFENode* fenode, NSRect rect)
+{
+    // Get the path from the node
+    id finode = FINodeFromFENode(fenode);
+    NSString* path = [[finode previewItemURL] path];
+
+    NSImage* icon = [[[AeroFinderExt instance] overlay] iconForPath:path flipped:YES];
+
+    // Draw the overlay
+    NSGraphicsContext* nsgc = [NSGraphicsContext currentContext];
+    CGContextRef context = (CGContextRef) [nsgc graphicsPort];
+    CGContextDrawImage(context, NSRectToCGRect(rect), [icon CGImageForProposedRect:&rect context:nil hints:nil]);
 }
 
 @end

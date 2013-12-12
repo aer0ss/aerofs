@@ -28,5 +28,6 @@
 
 -(CALayer*) aero_IKIconCell_layerForType:(NSString*)type;
 -(void)aero_TListViewIconAndTextCell_drawIconWithFrame:(CGRect) frame;
+-(void)aero_TDimmableIconImageView_drawRect:(NSRect)dirtyRect;
 
 @end

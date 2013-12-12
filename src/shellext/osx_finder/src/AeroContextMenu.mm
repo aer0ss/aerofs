@@ -11,6 +11,7 @@ NSURL* targetInColumnVC(id columnVC);
 NSURL* targetInListVC(id listVC);
 NSURL* targetInIconVC(id iconVC);
 NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
+void doChangeContextMenu(NSMenu* menu, id browserVC);
 
 @implementation AeroContextMenu
 
@@ -21,8 +22,21 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
         return nil;
     }
 
-    [AeroUtils swizzleClassMethod:@selector(addViewSpecificStuffToMenu:browserViewController:context:) fromClass:NSClassFromString(@"TContextMenu")
-                       withMethod:@selector(aero_addViewSpecificStuffToMenu:browserViewController:context:) fromClass:[AeroContextMenuSwizzledMethods class]];
+    Class contextMenu = NSClassFromString(@"TContextMenu");
+
+    if ([contextMenu respondsToSelector:@selector(addViewSpecificStuffToMenu:clickedView:browserViewController:context:)]) {
+        // OS X 10.9
+        [AeroUtils swizzleClassMethod:@selector(addViewSpecificStuffToMenu:clickedView:browserViewController:context:)
+                fromClass:contextMenu
+                withMethod:@selector(aero_addViewSpecificStuffToMenu:clickedView:browserViewController:context:)
+                fromClass:[AeroContextMenuSwizzledMethods class]];
+    } else {
+        // OS X 10.6 - 10.8
+        [AeroUtils swizzleClassMethod:@selector(addViewSpecificStuffToMenu:browserViewController:context:)
+                fromClass:contextMenu
+                withMethod:@selector(aero_addViewSpecificStuffToMenu:browserViewController:context:)
+                fromClass:[AeroContextMenuSwizzledMethods class]];
+    }
 
     return self;
 }
@@ -31,75 +45,92 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
 
 @implementation AeroContextMenuSwizzledMethods
 
-+(void) aero_addViewSpecificStuffToMenu:(NSMenu*)menu browserViewController:(id)browserVC context:(unsigned int)ctx
++ (void)aero_addViewSpecificStuffToMenu:(NSMenu*)menu browserViewController:(id)browserVC context:(unsigned int)ctx
 {
     @try {
         // Call the original method
         [self aero_addViewSpecificStuffToMenu:menu browserViewController:browserVC context:ctx];
-
-        if (![[AeroFinderExt instance] shouldModifyFinder]) {
-            return;
-        }
-
-        NSString* path = getTargetPathFromViewController(browserVC);
-
-        if (path == nil) { // User right-clicked on blank space (ie: not on a file or directory)
-            return;
-        }
-
-        if ([[AeroFinderExt instance] isUnderRootAnchor:path]) {
-            int flags = [[AeroFinderExt instance] flagsForPath:path];
-
-            NSMenu* submenu = [[[NSMenu alloc] init] autorelease];
-
-            int idx = 0;
-            if (!(flags & Directory) && [[AeroFinderExt instance] overlayForPath:path] == CONFLICT) {
-                NSMenuItem* conflict = [submenu insertItemWithTitle:NSLocalizedString(@"Resolve Conflict...", @"Context menu")
-                                                             action:@selector(showConflictResolutionDialog:)
-                                                      keyEquivalent:@""
-                                                            atIndex:idx];
-                [conflict setTarget: [AeroFinderExt instance]];
-                [conflict setRepresentedObject:path];
-                ++idx;
-            }
-
-            if ([[AeroFinderExt instance] shouldEnableTestingFeatures]) {
-
-                NSMenuItem* syncstat = [submenu insertItemWithTitle:NSLocalizedString(@"Sync Status...", @"Context menu")
-                                                             action:@selector(showSyncStatusDialog:)
-                                                      keyEquivalent:@""
-                                                            atIndex:idx];
-                [syncstat setTarget: [AeroFinderExt instance]];
-                [syncstat setRepresentedObject:path];
-                ++idx;
-            }
-
-            NSMenuItem* history = [submenu insertItemWithTitle:NSLocalizedString(@"Sync History...", @"Context menu")
-                                                         action:@selector(showVersionHistoryDialog:)
-                                                  keyEquivalent:@""
-                                                        atIndex:idx];
-            [history setTarget: [AeroFinderExt instance]];
-            [history setRepresentedObject:path];
-            ++idx;
-
-            if ((flags & Directory) && !(flags & RootAnchor)) {
-                NSMenuItem* share = [submenu insertItemWithTitle:NSLocalizedString(@"Share This Folder...", @"Context menu")
-                                                          action:@selector(showShareFolderDialog:)
-                                                   keyEquivalent:@""
-                                                         atIndex:idx];
-
-                [share setTarget: [AeroFinderExt instance]];
-                [share setRepresentedObject:path];
-                ++idx;
-            }
-
-            if ([submenu numberOfItems] > 0) {
-                NSMenuItem* item = [menu insertItemWithTitle:@"AeroFS" action:nil keyEquivalent:@"" atIndex:2];
-                [item setSubmenu: submenu];
-            }
-        }
+        doChangeContextMenu(menu, browserVC);
     } @catch (NSException* exception) {
-        NSLog(@"AeroFS: Exception in aero_addViewSpecificStuffToMenu: %@", exception);
+        NSLog(@"AeroFS: Exception in aero_addViewSpecificStuffToMenu:browserViewController:context: %@", exception);
+    }
+}
+
++ (void)aero_addViewSpecificStuffToMenu:(NSMenu*)menu clickedView:(id)clickedView browserViewController:(id)browserVC context:(unsigned int)ctx
+{
+    @try {
+        // Call the original method
+        [self aero_addViewSpecificStuffToMenu:menu clickedView:clickedView browserViewController:browserVC context:ctx];
+        doChangeContextMenu(menu, browserVC);
+    } @catch (NSException* exception) {
+        NSLog(@"AeroFS: Exception in aero_addViewSpecificStuffToMenu:clickedView:browserViewController:context: %@", exception);
+    }
+}
+
+void doChangeContextMenu(NSMenu* menu, id browserVC)
+{
+    if (![[AeroFinderExt instance] shouldModifyFinder]) {
+        return;
+    }
+
+    NSString* path = getTargetPathFromViewController(browserVC);
+
+    if (path == nil) { // User right-clicked on blank space (ie: not on a file or directory)
+        return;
+    }
+
+    if (![[AeroFinderExt instance] isUnderRootAnchor:path]) {
+        return;
+    }
+
+    int flags = [[AeroFinderExt instance] flagsForPath:path];
+
+    NSMenu* submenu = [[[NSMenu alloc] init] autorelease];
+
+    int idx = 0;
+
+    if ((flags & Directory) && !(flags & RootAnchor)) {
+        NSMenuItem* share = [submenu insertItemWithTitle:NSLocalizedString(@"Share This Folder...", @"Context menu")
+                                                  action:@selector(showShareFolderDialog:)
+                                           keyEquivalent:@""
+                                                 atIndex:idx];
+
+        [share setTarget: [AeroFinderExt instance]];
+        [share setRepresentedObject:path];
+        ++idx;
+    }
+
+    if (!(flags & Directory) && [[AeroFinderExt instance] overlayForPath:path] == CONFLICT) {
+        NSMenuItem* conflict = [submenu insertItemWithTitle:NSLocalizedString(@"Resolve Conflict...", @"Context menu")
+                                                     action:@selector(showConflictResolutionDialog:)
+                                              keyEquivalent:@""
+                                                    atIndex:idx];
+        [conflict setTarget: [AeroFinderExt instance]];
+        [conflict setRepresentedObject:path];
+        ++idx;
+    }
+
+    NSMenuItem* history = [submenu insertItemWithTitle:NSLocalizedString(@"Sync History...", @"Context menu")
+                                                 action:@selector(showVersionHistoryDialog:)
+                                          keyEquivalent:@""
+                                                atIndex:idx];
+    [history setTarget: [AeroFinderExt instance]];
+    [history setRepresentedObject:path];
+    ++idx;
+
+    if ([[AeroFinderExt instance] shouldEnableTestingFeatures]) {
+        NSMenuItem* syncstat = [submenu insertItemWithTitle:NSLocalizedString(@"Sync Status...", @"Context menu")
+                                                     action:@selector(showSyncStatusDialog:)
+                                              keyEquivalent:@""
+                                                    atIndex:idx];
+        [syncstat setTarget: [AeroFinderExt instance]];
+        [syncstat setRepresentedObject:path];
+        ++idx;
+    }
+
+    if ([submenu numberOfItems] > 0) {
+        NSMenuItem* item = [menu insertItemWithTitle:@"AeroFS" action:nil keyEquivalent:@"" atIndex:2];
+        [item setSubmenu: submenu];
     }
 }
 
