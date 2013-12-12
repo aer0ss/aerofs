@@ -1,8 +1,7 @@
 package com.aerofs.bifrost.oaaas.model;
 
 /**
- * Represents a single Client object, as listed in the client list response
- * (see bifrost_api.md)
+ * Represents a single Client object, as listed in the client list response (see bifrost_api.md)
  */
 public class ClientResponseObject
 {

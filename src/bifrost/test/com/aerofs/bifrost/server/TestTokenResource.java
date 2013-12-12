@@ -10,6 +10,7 @@ import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.jayway.restassured.response.Response;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.jayway.restassured.RestAssured.expect;
@@ -166,6 +167,36 @@ public class TestTokenResource extends BifrostTest
 
         assertEquals(400, post.getStatusCode());
         assertEquals("unsupported_grant_type", from(post.asString()).get("error"));
+    }
+
+    @Test
+    public void shouldGet400OnGetTokenListWithNoOwner() throws Exception
+    {
+        expect()
+                .statusCode(400)
+        .given()
+                .get(TOKENLIST_URL);
+    }
+
+    @Test
+    public void shouldListTokensOnGet() throws Exception
+    {
+        Response response = given()
+                .queryParam("owner", USERNAME)
+                .get(TOKENLIST_URL);
+
+        assertEquals(200, response.getStatusCode());
+
+        List<Map> tokens = from(response.asString()).get("tokens");
+        assertNotNull(tokens);
+        assertTrue(tokens.size() >= 1);
+
+        for (Map t : tokens) {
+            assertNotNull(t.get("client_id"));
+            assertNotNull(t.get("client_name"));
+            assertNotNull(t.get("expires"));
+            assertNotNull(t.get("token"));
+        }
     }
 
     private String buildAuthHeader(String user, String password)

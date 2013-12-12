@@ -31,185 +31,202 @@ import org.apache.commons.lang.StringUtils;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 
 /**
- * Representation of an <a
- * href="http://tools.ietf.org/html/draft-ietf-oauth-v2-30#section-1.4"
+ * Representation of an <a href="http://tools.ietf.org/html/draft-ietf-oauth-v2-30#section-1.4"
  * >AccessToken</a>
- *
  */
 @Entity
 @Table(name = "accesstoken")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class AccessToken extends AbstractEntity
 {
-  private static final long serialVersionUID = 1;
+    private static final long serialVersionUID = 1;
 
-  @Column(unique = true)
-  @NotNull
-  private String token;
+    @Column(unique = true) @NotNull
+    private String token;
 
-  @Column(unique = true, nullable = true)
-  private String refreshToken;
+    @Column(unique = true, nullable = true)
+    private String refreshToken;
 
-  @Transient
-  private AuthenticatedPrincipal principal;
+    @Transient
+    private AuthenticatedPrincipal principal;
 
-  @Lob
-  @Column(length = 16384)
-  @NotNull
-  private String encodedPrincipal;
+    @Lob @Column(length = 16384) @NotNull
+    private String encodedPrincipal;
 
-  @ManyToOne(optional = false)
-  @JoinColumn(name = "client_id", nullable = false, updatable = false)
-  private Client client;
+    @ManyToOne(optional = false) @JoinColumn(name = "client_id", nullable = false,
+            updatable = false)
+    private Client client;
 
-  @Column
-  private long expires;
+    @Column
+    private long expires;
 
-  @ElementCollection(fetch= FetchType.EAGER)
-  private Set<String> scopes = Sets.newHashSet();
+    @ElementCollection(fetch = FetchType.EAGER)
+    private Set<String> scopes = Sets.newHashSet();
 
-  @Column
-  @NotNull
-  private String resourceOwnerId;
+    @Column @NotNull
+    private String resourceOwnerId;
 
-  public AccessToken(String token, AuthenticatedPrincipal principal, Client client, long expires, Set<String> scopes,
-      String refreshToken) {
-    super();
-    this.token = token;
-    this.principal = principal;
-    this.encodePrincipal();
-    this.resourceOwnerId = principal.getName();
-    this.client = client;
-    this.expires = expires;
-    this.scopes = ImmutableSet.copyOf(scopes);
-    this.refreshToken = refreshToken;
-    invariant();
-  }
+    @Column @NotNull
+    private String owner;
 
-  public AccessToken() { }
-
-  private void invariant() {
-    Preconditions.checkNotNull(token, "Token may not be null");
-    Preconditions.checkNotNull(client, "Client may not be null");
-    Preconditions.checkNotNull(principal, "AuthenticatedPrincipal may not be null");
-    Preconditions.checkState(StringUtils.isNotBlank(principal.getName()), "AuthenticatedPrincipal#name may not be null");
-  }
-
-  @PreUpdate
-  @PrePersist
-  public void encodePrincipal() {
-    if (principal != null) {
-      this.encodedPrincipal = PrincipalUtils.serialize(principal);
+    public AccessToken(String token, AuthenticatedPrincipal principal, Client client, long expires,
+            Set<String> scopes, String refreshToken)
+    {
+        super();
+        this.token = token;
+        this.principal = principal;
+        this.encodePrincipal();
+        this.resourceOwnerId = principal.getName();
+        this.client = client;
+        this.expires = expires;
+        this.scopes = ImmutableSet.copyOf(scopes);
+        this.refreshToken = refreshToken;
+        invariant();
     }
-  }
 
-  @PostLoad
-  @PostPersist
-  @PostUpdate
-  public void decodePrincipal() {
-    if (StringUtils.isNotBlank(encodedPrincipal)) {
-      this.principal = PrincipalUtils.deserialize(encodedPrincipal);
+    public AccessToken() { }
+
+    private void invariant()
+    {
+        Preconditions.checkNotNull(token, "Token may not be null");
+        Preconditions.checkNotNull(client, "Client may not be null");
+        Preconditions.checkNotNull(principal, "AuthenticatedPrincipal may not be null");
+        Preconditions.checkState(StringUtils.isNotBlank(principal.getName()),
+                "AuthenticatedPrincipal#name may not be null");
+        Preconditions.checkNotNull(owner, "Owner may not be null");
     }
-  }
 
-  /**
-   * @return the token
-   */
-  public String getToken() {
-    return token;
-  }
+    @PreUpdate
+    @PrePersist
+    public void encodePrincipal()
+    {
+        if (principal != null) {
+            this.encodedPrincipal = PrincipalUtils.serialize(principal);
+            this.owner = principal.getName();
+        }
+    }
 
-  /**
-   * @param token
-   *          the token to set
-   */
-  public void setToken(String token) {
-    this.token = token;
-  }
+    @PostLoad
+    @PostPersist
+    @PostUpdate
+    public void decodePrincipal()
+    {
+        if (StringUtils.isNotBlank(encodedPrincipal)) {
+            this.principal = PrincipalUtils.deserialize(encodedPrincipal);
+        }
+    }
 
-  /**
-   * @return the client
-   */
-  public Client getClient() {
-    return client;
-  }
+    /**
+     * @return the token
+     */
+    public String getToken()
+    {
+        return token;
+    }
 
-  /**
-   * @param client
-   *          the client to set
-   */
-  public void setClient(Client client) {
-    this.client = client;
-  }
+    /**
+     * @param token the token to set
+     */
+    public void setToken(String token)
+    {
+        this.token = token;
+    }
 
-  /**
-   * @return the expires
-   */
-  public long getExpires() {
-    return expires;
-  }
+    /**
+     * @return the client
+     */
+    public Client getClient()
+    {
+        return client;
+    }
 
-  /**
-   * @param expires
-   *          the expires to set
-   */
-  public void setExpires(long expires) {
-    this.expires = expires;
-  }
+    /**
+     * @param client the client to set
+     */
+    public void setClient(Client client)
+    {
+        this.client = client;
+    }
 
-  /**
-   * @return the scopes
-   */
-  public Set<String> getScopes() {
-    return scopes;
-  }
+    /**
+     * @return the expires
+     */
+    public long getExpires()
+    {
+        return expires;
+    }
 
-  /**
-   * @param scopes
-   *          the scopes to set
-   */
-  public void setScopes(Set<String> scopes) {
-    this.scopes = scopes;
-  }
+    /**
+     * @param expires the expires to set
+     */
+    public void setExpires(long expires)
+    {
+        this.expires = expires;
+    }
 
-  /**
-   * @return the principal
-   */
-  public AuthenticatedPrincipal getPrincipal() {
-    return principal;
-  }
+    /**
+     * @return the scopes
+     */
+    public Set<String> getScopes()
+    {
+        return scopes;
+    }
 
-  /**
-   * @return the encodedPrincipal
-   */
-  public String getEncodedPrincipal() {
-    return encodedPrincipal;
-  }
+    /**
+     * @param scopes the scopes to set
+     */
+    public void setScopes(Set<String> scopes)
+    {
+        this.scopes = scopes;
+    }
 
-  /**
-   * @return the refreshToken
-   */
-  public String getRefreshToken() {
-    return refreshToken;
-  }
+    /**
+     * @return the principal
+     */
+    public AuthenticatedPrincipal getPrincipal()
+    {
+        return principal;
+    }
 
-  /**
-   * @param refreshToken
-   *          the refreshToken to set
-   */
-  public void setRefreshToken(String refreshToken) {
-    this.refreshToken = refreshToken;
-  }
+    /**
+     * @return the encodedPrincipal
+     */
+    public String getEncodedPrincipal()
+    {
+        return encodedPrincipal;
+    }
 
-  /**
-   * @return the resourceOwnerId
-   */
-  public String getResourceOwnerId() {
-    return resourceOwnerId;
-  }
+    /**
+     * @return the refreshToken
+     */
+    public String getRefreshToken()
+    {
+        return refreshToken;
+    }
 
-  public String getClientId() {
-    return client.getClientId();
-  }
+    /**
+     * @param refreshToken the refreshToken to set
+     */
+    public void setRefreshToken(String refreshToken)
+    {
+        this.refreshToken = refreshToken;
+    }
 
+    /**
+     * @return the resourceOwnerId
+     */
+    public String getResourceOwnerId()
+    {
+        return resourceOwnerId;
+    }
+
+    public String getClientId()
+    {
+        return client.getClientId();
+    }
+
+    public String getOwner()
+    {
+        return owner;
+    }
 }

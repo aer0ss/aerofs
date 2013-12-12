@@ -18,6 +18,8 @@ package com.aerofs.bifrost.oaaas.repository;
 
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 
+import java.util.List;
+
 public interface AccessTokenRepository
 {
     AccessToken findByToken(String token);
@@ -27,4 +29,6 @@ public interface AccessTokenRepository
     AccessToken save(AccessToken token);
 
     void delete(AccessToken accessToken);
+
+    List<AccessToken> findByOwner(String owner);
 }

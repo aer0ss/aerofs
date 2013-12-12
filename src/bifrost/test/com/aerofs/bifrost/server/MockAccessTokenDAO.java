@@ -9,7 +9,10 @@ import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.google.inject.Inject;
 import org.hibernate.SessionFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
 /**
  * Mock-database implementation for AccessToken
@@ -27,6 +30,16 @@ public class MockAccessTokenDAO extends AccessTokenDAO
 
     @Override
     public AccessToken findByToken(String tokenId) { return m_map.get(tokenId); }
+
+    @Override
+    public List<AccessToken> findByOwner(String owner)
+    {
+        List<AccessToken> list = new ArrayList<AccessToken>(m_map.size());
+        for (Entry<String, AccessToken> e : m_map.entrySet()) {
+            if (e.getValue().getOwner().equals(owner)) list.add(e.getValue());
+        }
+        return list;
+    }
 
     @Override
     public AccessToken save(AccessToken s)

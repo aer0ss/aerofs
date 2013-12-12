@@ -8,6 +8,8 @@ import com.google.inject.Inject;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 
+import java.util.List;
+
 
 /**
  */
@@ -33,4 +35,7 @@ public class AccessTokenRepositoryImpl implements AccessTokenRepository
 
     @Override
     public AccessToken findByRefreshToken(String refreshToken) { throw new UnsupportedOperationException(); }
+
+    @Override
+    public List<AccessToken> findByOwner(String owner) { return _dao.findByOwner(owner); }
 }
