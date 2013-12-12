@@ -1,9 +1,10 @@
 class lizard {
     package{"aerofs-lizard":
         ensure => latest,
+        notify => Service["lizard"],
         require => [
             Apt::Source["aerofs"]
-        ]
+        ],
     }
 
     # Upstart job provided by deb, legacy init integration added here

@@ -10,6 +10,8 @@ mkdir -p $OUTPUT_DIR/var/log/lizard
 
 OPT=$OUTPUT_DIR/opt/lizard
 mkdir -p $OPT
+# A folder for lizard to store some state in; it'll be writable by www-data
+mkdir -p $OPT/state
 # Include requirements for package installation
 cp -a $SOURCE_DIR/requirements.txt $OPT/
 # Include base config (this should probably be provided by puppet?)

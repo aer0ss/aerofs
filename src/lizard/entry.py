@@ -2,14 +2,18 @@
 # server hand over fist and is pure-python.
 # We could always run under uwsgi if we wanted to
 from cherrypy import wsgiserver
-from lizard import app
+
+from lizard import app, migrate_database
 
 d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
-server = wsgiserver.CherryPyWSGIServer(('127.0.0.1', 8588), d)
+# TODO: make this localhost if not testing
+server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 8588), d)
 server.shutdown_timeout = .1
 
 if __name__ == "__main__":
+    migrate_database()
     try:
+        # And run the server.
         server.start()
     except KeyboardInterrupt:
         server.stop()
