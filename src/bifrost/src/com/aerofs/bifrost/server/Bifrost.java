@@ -70,7 +70,7 @@ public class Bifrost extends Service
         SessionFactory sessionFactory = injector.getInstance(SessionFactory.class);
         _trans = new TransactionalWrapper(sessionFactory,
                 ImmutableSet.of("/token", "/authorize", "/clients"),    // read-write
-                ImmutableSet.of("/tokeninfo"));                         // read-only
+                ImmutableSet.of("/tokeninfo", "/tokenlist"));           // read-only
 
         addRequestFilter(AuthenticationFilter.class);
         addRequestFilter(UserConsentFilter.class);
