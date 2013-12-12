@@ -54,104 +54,116 @@ public class ClientsResource
     @Consumes("application/x-www-form-urlencoded")
     public Response newClient(final MultivaluedMap<String, String> formParameters)
     {
-        l.info("POST /clients {}", formParameters);
-
-        NewClientRequest ncr = NewClientRequest.fromMultiValuedFormParameters(formParameters);
-        if (ncr.getClientName() == null || ncr.getResourceServerKey() == null) {
-            l.warn("client_name: {}, resource_server_key: {}", ncr.getClientName(),
-                    ncr.getResourceServerKey());
-            return Response.status(Status.BAD_REQUEST).build();
-        }
-
-        ResourceServer resourceServer = resourceServerRepository.findByKey(ncr.getResourceServerKey());
-        if (resourceServer == null) {
-            l.warn("no resource server with key: {}", ncr.getResourceServerKey());
-            return Response.status(Status.BAD_REQUEST).build();
-        }
-
-        String clientID = UUID.randomUUID().toString();
-        String secret = UUID.randomUUID().toString();
-
-        Client client = new Client();
-        client.setName(ncr.getClientName());
-        client.setResourceServer(resourceServer);
-        client.setDescription(ncr.getDescription());
-        client.setContactEmail(ncr.getContactEmail());
-        client.setContactName(ncr.getContactName());
-        client.setClientId(clientID);
-        client.setSecret(secret);
-        client.setScopes(new HashSet<String>(Arrays.asList("readonly")));
-        if (ncr.getRedirectUri() != null) client.getRedirectUris().add(ncr.getRedirectUri());
-
-        resourceServer.getClients().add(client);
-
+        /**
+         * FIXME: If we don't wrap this in a try/catch, the server will not return 500,
+         * it will just close the connection. This is problem.
+         */
         try {
+            l.info("POST /clients {}", formParameters);
+
+            NewClientRequest ncr = NewClientRequest.fromMultiValuedFormParameters(formParameters);
+            if (ncr.getClientName() == null || ncr.getResourceServerKey() == null) {
+                l.warn("client_name: {}, resource_server_key: {}", ncr.getClientName(),
+                        ncr.getResourceServerKey());
+                return Response.status(Status.BAD_REQUEST).build();
+            }
+
+            ResourceServer resourceServer = resourceServerRepository.findByKey(ncr.getResourceServerKey());
+            if (resourceServer == null) {
+                l.warn("no resource server with key: {}", ncr.getResourceServerKey());
+                return Response.status(Status.BAD_REQUEST).build();
+            }
+
+            String clientID = UUID.randomUUID().toString();
+            String secret = UUID.randomUUID().toString();
+
+            Client client = new Client();
+            client.setName(ncr.getClientName());
+            client.setResourceServer(resourceServer);
+            client.setDescription(ncr.getDescription());
+            client.setContactEmail(ncr.getContactEmail());
+            client.setContactName(ncr.getContactName());
+            client.setClientId(clientID);
+            client.setSecret(secret);
+            client.setScopes(new HashSet<String>(Arrays.asList("readonly")));
+            if (ncr.getRedirectUri() != null) client.getRedirectUris().add(ncr.getRedirectUri());
+
+            resourceServer.getClients().add(client);
+
             clientRepository.save(client);
             resourceServerRepository.save(resourceServer);
             sessionFactory.getCurrentSession().flush();
-        } catch (HibernateException e) {
+
+            NewClientResponse response = new NewClientResponse(clientID, secret);
+            return Response.ok().entity(response).build();
+
+        } catch (Exception e) {
             l.error(e.toString());
             return Response.status(Status.INTERNAL_SERVER_ERROR).build();
         }
-
-        NewClientResponse response = new NewClientResponse(clientID, secret);
-        return Response.ok().entity(response).build();
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response listClients()
     {
-        l.debug("GET /clients");
+        try {
+            l.debug("GET /clients");
 
-        List<Client> clientList = clientRepository.listAll();
+            List<Client> clientList = clientRepository.listAll();
 
-        List<ClientResponseObject> clientResponseObjectList =
-                new ArrayList<ClientResponseObject>(clientList.size());
-        for (Client client : clientList) {
-            clientResponseObjectList.add(new ClientResponseObject(
-                    client.getClientId(),
-                    client.getResourceServer().getKey(),
-                    client.getName(),
-                    client.getDescription(),
-                    client.getContactEmail(),
-                    client.getContactName(),
-                    client.getRedirectUris().size() == 0 ? null : client.getRedirectUris().get(0),
-                    client.getSecret()));
+            List<ClientResponseObject> clientResponseObjectList =
+                    new ArrayList<ClientResponseObject>(clientList.size());
+            for (Client client : clientList) {
+                clientResponseObjectList.add(new ClientResponseObject(
+                        client.getClientId(),
+                        client.getResourceServer().getKey(),
+                        client.getName(),
+                        client.getDescription(),
+                        client.getContactEmail(),
+                        client.getContactName(),
+                        client.getRedirectUris().size() == 0 ? null : client.getRedirectUris().get(0),
+                        client.getSecret()));
+            }
+
+            ListClientsResponse response = new ListClientsResponse(clientResponseObjectList);
+            return Response.ok().entity(response).build();
+
+        } catch (Exception e) {
+            l.error(e.toString());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).build();
         }
-
-        ListClientsResponse response = new ListClientsResponse(clientResponseObjectList);
-        return Response.ok().entity(response).build();
     }
 
     @DELETE @Path("{client_id}")
     public Response deleteClient(@PathParam("client_id") String client_id)
     {
-        l.info("DELETE /clients/{}", client_id);
-
-        Client client = clientRepository.findByClientId(client_id);
-        if (client == null) {
-            l.warn("clientRepository.findByClientId({}) failed", client_id);
-            return Response.status(Status.BAD_REQUEST).build();
-        }
-
-        ResourceServer resourceServer = client.getResourceServer();
-        resourceServer.getClients().remove(client);
-
-        /**
-         * TODO: should we delete access_tokens associated with client? Verifying tokens
-         * will fail as long as we delete the client.
-         */
-
         try {
+            l.info("DELETE /clients/{}", client_id);
+
+            Client client = clientRepository.findByClientId(client_id);
+            if (client == null) {
+                l.warn("clientRepository.findByClientId({}) failed", client_id);
+                return Response.status(Status.BAD_REQUEST).build();
+            }
+
+            ResourceServer resourceServer = client.getResourceServer();
+            resourceServer.getClients().remove(client);
+
+            /**
+             * TODO: should we delete access_tokens associated with client? Verifying tokens
+             * will fail as long as we delete the client.
+             */
+
             clientRepository.delete(client);
             resourceServerRepository.save(resourceServer);
             sessionFactory.getCurrentSession().flush();
-        } catch (HibernateException e) {
+
+            return Response.ok().build();
+
+        } catch (Exception e) {
             l.error(e.toString());
             return Response.status(Status.INTERNAL_SERVER_ERROR).build();
         }
-
-        return Response.ok().build();
     }
 }
