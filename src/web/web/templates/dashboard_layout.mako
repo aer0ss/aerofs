@@ -30,6 +30,8 @@
 <%block name="top_navigation_bar_mobile">
     <%navigation:marketing_links/>
     <li class="divider"></li>
+    <li><a href="${request.route_path('my_devices')}">My Devices</a></li>
+    <li><a href="${request.route_path('settings')}">Settings</a></li>
     ## <li><a href="${request.route_path('apps')}">My Apps</a></li>
     <li><a href="${request.route_path('logout')}">Sign out</a></li>
 </%block>
@@ -42,9 +44,11 @@
         </a>
         <ul class="dropdown-menu">
             ## Remember to update top_navigation_bar_mobile() when adding items
-            %if is_private_deployment(request.registry.settings):
-                ## <li><a href="${request.route_path('apps')}">My Apps</a></li>
-            %endif
+            <li><a href="${request.route_path('my_devices')}">My Devices</a></li>
+            <li><a href="${request.route_path('settings')}">Settings</a></li>
+##            %if is_private_deployment(request.registry.settings):
+##                <li><a href="${request.route_path('apps')}">My Apps</a></li>
+##            %endif
             <li><a href="${request.route_path('logout')}">Sign out</a></li>
         </ul>
     </li>
@@ -112,7 +116,6 @@
     <%
         links = [
             ('my_shared_folders', _("My Shared Folders")),
-            ('my_devices', _("My Devices")),
             ('accept', _("My Invitations")),
         ]
     %>

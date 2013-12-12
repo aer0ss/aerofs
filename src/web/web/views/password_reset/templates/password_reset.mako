@@ -13,7 +13,7 @@
             <h2>Reset Password</h2>
 
             %if error is None or not valid_password:
-                <div>Hi <strong>${user_id}</strong>, please enter your new password.</div>
+                <div>Please enter a new password for <strong>${user_id}</strong>.</div>
                 <form class="form-inline" action="${request.route_path('password_reset')}" method="post">
                     ## Note that the server doesn't always verify the CSRF token
                     ## since the users is usually logged off when changing the password.

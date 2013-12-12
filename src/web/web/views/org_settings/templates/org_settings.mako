@@ -8,19 +8,18 @@
           rel="stylesheet">
 </%block>
 
-<div class="page-block">
-    <h2>Organization settings</h2>
-    ## TODO (WW) use form-horizontal when adding new fields. see login.mako
-    Change organization name:
-    <form class="form-inline" id="update-name-form" action="${request.route_path('org_settings')}" method="post">
-        <div class="input_container">
-            ${self.csrf.token_input()}
-            <input type="hidden" name="form.submitted">
-            <input id="organization_name" type="text" name="organization_name" value="${organization_name}"/>
-            <input class="btn" id="update-name-button" type="submit" value="Update" />
-        </div>
-    </form>
-</div>
+<h2 class="page-block">Organization settings</h2>
+
+<form class="form-inline page-block" id="update-name-form"
+        action="${request.route_path('org_settings')}" method="post">
+    ${self.csrf.token_input()}
+    <input type="hidden" name="form.submitted">
+    <label class="control-label" for="organization_name">Organization name:</label>
+        <input type="text" id="organization_name" name="organization_name"
+                value="${organization_name}">
+    <button class="btn" id="update-name-button">Update</button>
+</form>
+
 
 <%! from web.util import is_private_deployment %>
 
@@ -37,19 +36,14 @@
     </div>
 
     <%def name="upgrade_plan()">
-        <h2>Upgrade Plan</h2>
+        <h3>Upgrade plan</h3>
 
         <p>Your organization is currently on the free AeroFS plan.
-            For $10/user/month, you will enjoy:</p>
-        <ul>
-            <li><strong>Unlimited</strong> users</li>
-            <li>Priority email support</li>
-        </ul>
-        <p>
-            <a class="btn btn-primary" href="#"
-               onclick="upgrade(); return false;">Upgrade</a>
-            <a class="btn btn-link" href="${request.route_path('pricing')}"
-               target="_blank">Compare plans</a>
+            For $10/user/month, you will enjoy <strong>unlimited</strong> users.
+            <a href="${request.route_path('pricing')}" target="_blank">View pricing.</a>
+        </p>
+        <p style="margin-top: 20px">
+            <a class="btn btn-primary" href="#" onclick="upgrade(); return false;">Upgrade</a>
         </p>
 
         ## Note that this modal can be brought up by clicking the Upgrade button on this
