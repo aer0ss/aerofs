@@ -46,8 +46,7 @@ service SyncStatusService {
 
 message SyncSignInCall {
     required string user_id = 1;
-    required bytes credentials = 2;
-    required bytes did = 3;
+    required bytes did = 2;
 }
 
 message SyncSignInReply {
