@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 thisdir=$(dirname $0)
 
 rm -rf $thisdir/../build/*
@@ -22,6 +24,10 @@ fi
 
 echo "Signing code..."
 codesign -f -s "Air Computing, Inc." $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax
+if [ $? -ne 0 ] ; then
+    echo "Codesigning failed.  Do you have the keys installed in your keychain?"
+    exit 3
+fi
 
 echo "Moving to resource/client..."
 rm -rf $thisdir/../../../../resource/client/osx/AeroFSFinderExtension.osax
