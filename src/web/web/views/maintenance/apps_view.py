@@ -5,7 +5,8 @@ import requests
 from pyramid.view import view_config
 from web import util
 from web.util import flash_error, flash_success
-from web.views.oauth import raise_error_for_bifrost_response, flash_error_for_bifrost_response, is_builtin_client_id, BIFROST_URL, is_valid_non_builtin_client_id
+from web.views.oauth import raise_error_for_bifrost_response, flash_error_for_bifrost_response, \
+    is_builtin_client_id, BIFROST_URL, is_valid_non_builtin_client_id
 
 
 log = logging.getLogger(__name__)
@@ -49,15 +50,21 @@ def register_app_get(request):
     request_method='POST'
 )
 def register_app_post(request):
-    client_name = request.params.get('client_name', '')
-    if not client_name:
+    client_name = request.params.get('client_name')
+    redirect_uri = request.params.get('redirect_uri')
+
+    if client_name is None:
         flash_error(request, 'The application name is required.')
+        raise HTTPFound(request.route_path('register_app'))
+
+    if redirect_uri is None:
+        flash_error(request, 'The redirect URI is required.')
         raise HTTPFound(request.route_path('register_app'))
 
     r = requests.post(BIFROST_URL + '/clients', data = {
         'resource_server_key': 'oauth-havre',
         'client_name': client_name,
-        'redirect_uri': request.params.get('redirect_uri')
+        'redirect_uri': redirect_uri
     })
     if not r.ok:
         flash_error_for_bifrost_response(request, r)

@@ -31,7 +31,6 @@ public class TestSP_SignInUser extends AbstractSPTest
         sqlTrans.commit();
 
         service.credentialSignIn(user.id().getString(), ByteString.copyFrom(CRED));
-        verify(auditClient).event(any(AuditTopic.class), anyString());
     }
 
     @Test(expected = ExBadCredential.class)

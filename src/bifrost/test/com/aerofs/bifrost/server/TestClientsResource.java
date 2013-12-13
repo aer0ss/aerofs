@@ -31,12 +31,22 @@ public class TestClientsResource extends BifrostTest
                 .statusCode(400)
         .given()
                 .formParam("client_name", "new-app-name")
+                .formParam("redirect_uri", "aerofs://redirect")
                 .post(CLIENTS_URL);
 
         // this request is missing client_name
         expect()
                 .statusCode(400)
         .given()
+                .formParam("resource_server_key", RESOURCEKEY)
+                .formParam("redirect_uri", "aerofs://redirect")
+                .post(CLIENTS_URL);
+
+        // this request is missing redirect_uri
+        expect()
+                .statusCode(400)
+                .given()
+                .formParam("client_name", "new-app-name")
                 .formParam("resource_server_key", RESOURCEKEY)
                 .post(CLIENTS_URL);
     }
@@ -60,6 +70,7 @@ public class TestClientsResource extends BifrostTest
         Response response = given()
                 .formParam("client_name", client_name)
                 .formParam("resource_server_key", RESOURCEKEY)
+                .formParam("redirect_uri", "aerofs://redirect")
                 .post(CLIENTS_URL);
 
         assertEquals(200, response.getStatusCode());
@@ -91,6 +102,7 @@ public class TestClientsResource extends BifrostTest
          * - resource_server_key
          * - client_name
          * - secret
+         * - redirect_uri
          * - description (optional)
          * - contact_email (optional)
          * - contact_name (optional)
@@ -106,12 +118,35 @@ public class TestClientsResource extends BifrostTest
             assertNotNull(client.get("resource_server_key"));
             assertNotNull(client.get("client_name"));
             assertNotNull(client.get("secret"));
+            assertNotNull(client.get("redirect_uri"));
 
             if (client.get("client_id").equals(CLIENTID)) {
                 assertEquals(CLIENTNAME, client.get("client_name"));
                 assertEquals(RESOURCEKEY, client.get("resource_server_key"));
             }
         }
+    }
+
+    @Test
+    public void shouldGet404OnClientInfoWithBadId() throws Exception
+    {
+        expect()
+                .statusCode(404)
+        .given()
+                .get(CLIENTS_URL + "/" + "nothing-to-see-here-folks");
+    }
+
+    @Test
+    public void shouldGetClientInfoOnGetById() throws Exception
+    {
+        Response response = given().get(CLIENTS_URL + "/" + CLIENTID);
+        assertEquals(200, response.getStatusCode());
+
+        String json = response.asString();
+        assertEquals(CLIENTID, from(json).get("client_id"));
+        assertEquals(CLIENTSECRET, from(json).get("secret"));
+        assertEquals(CLIENTREDIRECT, from(json).get("redirect_uri"));
+        assertEquals(RESOURCEKEY, from(json).get("resource_server_key"));
     }
 
     @Test
@@ -130,6 +165,7 @@ public class TestClientsResource extends BifrostTest
         Response response = given()
                 .formParam("client_name", "new-client-w00t")
                 .formParam("resource_server_key", RESOURCEKEY)
+                .formParam("redirect_uri", "aerofs://redirect")
                 .post(CLIENTS_URL);
 
         assertEquals(200, response.getStatusCode());

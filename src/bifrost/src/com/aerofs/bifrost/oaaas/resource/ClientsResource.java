@@ -62,9 +62,13 @@ public class ClientsResource
             l.info("POST /clients {}", formParameters);
 
             NewClientRequest ncr = NewClientRequest.fromMultiValuedFormParameters(formParameters);
-            if (ncr.getClientName() == null || ncr.getResourceServerKey() == null) {
-                l.warn("client_name: {}, resource_server_key: {}", ncr.getClientName(),
-                        ncr.getResourceServerKey());
+            if (ncr.getClientName() == null
+                    || ncr.getResourceServerKey() == null
+                    || ncr.getRedirectUri() == null) {
+                l.warn("client_name: {}, resource_server_key: {}, redirect_uri: {}",
+                        ncr.getClientName(),
+                        ncr.getResourceServerKey(),
+                        ncr.getRedirectUri());
                 return Response.status(Status.BAD_REQUEST).build();
             }
 
@@ -86,7 +90,7 @@ public class ClientsResource
             client.setClientId(clientID);
             client.setSecret(secret);
             client.setScopes(new HashSet<String>(Arrays.asList("readonly")));
-            if (ncr.getRedirectUri() != null) client.getRedirectUris().add(ncr.getRedirectUri());
+            client.getRedirectUris().add(ncr.getRedirectUri());
 
             resourceServer.getClients().add(client);
 
@@ -122,7 +126,7 @@ public class ClientsResource
                         client.getDescription(),
                         client.getContactEmail(),
                         client.getContactName(),
-                        client.getRedirectUris().size() == 0 ? null : client.getRedirectUris().get(0),
+                        client.getRedirectUris().get(0),
                         client.getSecret()));
             }
 
@@ -130,20 +134,51 @@ public class ClientsResource
             return Response.ok().entity(response).build();
 
         } catch (Exception e) {
+            e.printStackTrace();
             l.error(e.toString());
             return Response.status(Status.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    @DELETE @Path("{client_id}")
-    public Response deleteClient(@PathParam("client_id") String client_id)
+    @GET @Path("{clientId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clientInfo(@PathParam("clientId") String clientId)
     {
         try {
-            l.info("DELETE /clients/{}", client_id);
+            l.debug("GET /clients/{}", clientId);
 
-            Client client = clientRepository.findByClientId(client_id);
+            Client client = clientRepository.findByClientId(clientId);
+
             if (client == null) {
-                l.warn("clientRepository.findByClientId({}) failed", client_id);
+                l.warn("client not found: {}", clientId);
+                return Response.status(Status.NOT_FOUND).build();
+            }
+
+            return Response.ok().entity(new ClientResponseObject(
+                    client.getClientId(),
+                    client.getResourceServer().getKey(),
+                    client.getName(),
+                    client.getDescription(),
+                    client.getContactEmail(),
+                    client.getContactName(),
+                    client.getRedirectUris().get(0),
+                    client.getSecret())).build();
+
+        } catch (Exception e) {
+            l.error(e.toString());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DELETE @Path("{clientId}")
+    public Response deleteClient(@PathParam("clientId") String clientId)
+    {
+        try {
+            l.info("DELETE /clients/{}", clientId);
+
+            Client client = clientRepository.findByClientId(clientId);
+            if (client == null) {
+                l.warn("clientRepository.findByClientId({}) failed", clientId);
                 return Response.status(Status.BAD_REQUEST).build();
             }
 
