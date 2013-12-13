@@ -1,25 +1,97 @@
+{# N.B. Match this file's content with the Pyramid's base_layout.mako #}
+
+{% set marketing_url = 'https://www.aerofs.com' %}
+
 <!doctype html>
-<html>
+<html lang="en">
     <head>
-        {% block head %}
-        <title>{% block title %}{{title}}{% endblock %}</title>
-        <link href="{{ url_for('static', filename='bootstrap.css') }}" media="all" rel="stylesheet" type="text/css" />
-        <link href="{{ url_for('static', filename='style.css') }}" media="all" rel="stylesheet" type="text/css" />
-        {% endblock %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="P2P file sharing and file sync lets you create your own hybrid and private cloud. Secure, unlimited data transfer for large or sensitive files on Windows, Mac, Linux, and Android.">
+
+        <title>
+            {% block title %}{% endblock %} - AeroFS Licensing Management
+        </title>
+
+        <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+
+        <link href="{{ url_for('static', filename='css/google-open-sans.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/bootstrap.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/aerofs.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/lizard.css') }}" rel="stylesheet" />
+
+        {# Le HTML5 shim, for IE6-8 support of HTML5 elements #}
+        <!--[if lt IE 9]>
+        <script src="{{ url_for('static', filename='js/html5.js') }}"></script>
+        <![endif]-->
     </head>
     <body>
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div id="messages">
-            <ul>
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
+        {# See base_layout.mako for comments on the layout #}
+        <div id="wrapper">
+            <div class="container" style="margin-bottom: 20px;">
+                <div class="row">
+                    <div class="span10 offset1" id="top-nav-span">
+                        <ul class="nav nav-pills top-nav">
+                            <li><a href="{{ marketing_url }}">
+                                <img src="{{ url_for('static', filename='img/logo_small.png') }}"
+                                     width="144" height="40" alt="AeroFS"/>
+                            </a></li>
+                            {# <%block name="top_navigation_bar_desktop"/> #}
+                        </ul>
+                    </div>
+                </div>
             </div>
-        {% endif %}
+
+            <div class="container">
+                <div id="message_bar" class="span6 offset3 message_container"></div>
+            </div>
+
+            <div class="container">
+                {% block content %}{% endblock %}
+            </div>
+
+            <div id="footer-push"></div>
+        </div>
+
+        <footer>
+            <div class="container">
+                <div class="row">
+                    <div class="span10 offset1" id="footer-span">
+                        <ul class="inline">
+                            <li><a href="{{ marketing_url }}/about">About</a></li>
+                            <li><a href="{{ marketing_url }}/press">Press</a></li>
+                            <li><a href="http://blog.aerofs.com">Blog</a></li>
+                            <li><a href="http://www.twitter.com/aerofs">Twitter</a></li>
+                            <li><a href="{{ marketing_url }}/careers">Careers</a></li>
+                            <li><a href="{{ marketing_url }}/terms">Terms</a></li>
+                            <li><a href="http://support.aerofs.com">Support</a></li>
+                            <li><a href="{{ marketing_url }}/resources)}">Resources</a></li>
+
+                            <li class="pull-right">&copy; Air Computing Inc. 2013</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <script src="{{ url_for('static', filename='js/jquery.min.js') }}" ></script>
+        <script src="{{ url_for('static', filename='js/jquery.easing.1.3.js') }}" ></script>
+        <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}" ></script>
+        <script src="{{ url_for('static', filename='js/aerofs.js') }}" ></script>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <script type="text/javascript">
+                    $(document).ready(function() {
+                        {# Only show the last message #}
+                        showErrorMessage("{{ messages[-1] }}");
+                    });
+                </script>
+            {% endif %}
         {% endwith %}
-        <div id="content">{% block content %}{% endblock %}</div>
-        <div id="footer">{% block footer %}{% endblock %}</div>
+
+        {% block scripts %}{% endblock %}
     </body>
 </html>
+

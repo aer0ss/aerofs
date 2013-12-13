@@ -3,7 +3,6 @@ from flask.ext import scrypt, login
 from lizard import app, db, emails, forms, login_manager, models
 
 import base64
-import datetime
 import os
 
 @login_manager.user_loader
@@ -17,8 +16,7 @@ def load_user(userid):
 def index():
     user = login.current_user
     if user.is_anonymous():
-        return render_template("index.html",
-                title=u"Home")
+        return render_template("index.html")
     else:
         return redirect(url_for("TODO_DELETE_THIS"))
 
@@ -29,10 +27,10 @@ def login_page():
         admin = models.Admin.query.filter_by(email=form.email.data).first()
         if not admin:
             # This user doesn't exist.
-            flash(u"Incorrect email/password")
+            flash(u"Email or password is incorrect")
         elif not scrypt.check_password_hash(form.password.data, admin.pw_hash, admin.salt):
             # The password was wrong.
-            flash(u"Incorrect email/password")
+            flash(u"Email or password is incorrect")
         else:
             # Successful login.
             login_success = login.login_user(admin, remember=False)
@@ -50,13 +48,12 @@ def login_page():
                 next_url = url_for("index")
             return redirect(next_url)
     return render_template("login.html",
-            title=u"Login",
             form=form)
 
 @app.route("/logout")
 def logout():
     login.logout_user()
-    flash(u"Logged out successfully")
+    flash(u"You have logged out successfully")
     return redirect(url_for("index"))
 
 @app.route("/request_signup_code", methods=["GET", "POST"])
@@ -91,17 +88,13 @@ def signup_request_page():
         # TODO: Email user with link rather than flashing it here
         emails.send_verification_email(form.email.data, record.signup_code)
         # FIXME: Remove the following two lines
-        signup_url = url_for('signup_completion_page', signup_code=record.signup_code)
-        flash(u"Signup requested for email: {} <a href='{}'>link</a>".format(form.email.data, signup_url))
         return redirect(url_for("signup_request_done"))
     return render_template("request_signup.html",
-            title=u"Sign up for AeroFS Private Cloud",
             form=form)
 
 @app.route("/request_signup_done", methods=["GET"])
 def signup_request_done():
-    return render_template("request_signup_complete.html",
-            title=u"Verification email sent")
+    return render_template("request_signup_complete.html")
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup_completion_page():
@@ -172,5 +165,4 @@ def signup_completion_page():
 def TODO_DELETE_THIS():
     signups = models.UnboundSignup.query.all()
     return render_template("magic.html",
-            title=u'signup code list',
             signups=signups)

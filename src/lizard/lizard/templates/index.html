@@ -1,14 +1,19 @@
 {% extends "base.html" %}
-{# Note: this is not the final index page.  It's for making testing easier #}
+
+{% block title %} Home {% endblock %}
 
 {% block content %}
-<div class="header"><h1>It works.</h1></div>
-<div class="span7 offset5">
-<ul>
-	<li><a href="/login">Login</a></li>
-	<li><a href="/logout">Logout</a></li>
-	<li><a href="/request_signup_code">Request to sign up</a></li>
-	<li><a href="/magic">See invite codes</a></li>
-</ul>
-</div>
+    <div class="row text-center">
+        <div class="span12 page-block">
+            <h1>AeroFS Private Cloud</h1>
+        </div>
+
+        <div class="span12 page-block">
+            <a class="btn btn-primary btn-large" href="/request_signup_code">
+                Try AeroFS Private Cloud for Free</a>
+        </div>
+        <div class="span12 text-center page-block">
+            <a href="/login">I already have an account. Log in</a>
+        </div>
+    </div>
 {% endblock %}

@@ -3,6 +3,9 @@
 
 <%! from web.util import is_private_deployment %>
 
+##
+## N.B. Match this file's content with Lizard's base.html
+##
 <!DOCTYPE html>
 <html lang="en">
 <head>

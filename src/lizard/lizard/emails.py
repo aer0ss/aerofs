@@ -4,10 +4,8 @@ from email.mime.text import MIMEText
 
 from flask import render_template, url_for
 
-from lizard import app
-
 # TODO: extract these into external configuration
-SENDER_ADDR = "support@aerofs.com"
+SENDER_ADDR = "AeroFS <support@aerofs.com>"
 SMTP_RELAY = "sv.aerofs.com"
 
 def _make_email_message(email_address, subject, text_body, html_body):
@@ -30,7 +28,7 @@ def _make_email_message(email_address, subject, text_body, html_body):
 
 def _verification_email_for(email_address, signup_code):
     signup_url = url_for('signup_completion_page', signup_code=signup_code, _external=True)
-    print u"will email link to {}".format(signup_url)
+    print u"will email verification to {}, link {}".format(email_address, signup_url)
 
     text_body = render_template("signup_email.txt", signup_url=signup_url)
     html_body = render_template("signup_email.html", signup_url=signup_url)
@@ -39,7 +37,7 @@ def _verification_email_for(email_address, signup_code):
 
 def _invite_email_for(email_address, company, invite_code):
     invite_url = url_for('invite_accept_page', invite_code=invite_code, _external=True)
-    print u"will email link to {}".format(signup_url)
+    print u"will email invite to {}, link {}".format(email_address, invite_url)
 
     text_body = render_template("invite_email.txt",
             invite_url=invite_url,
