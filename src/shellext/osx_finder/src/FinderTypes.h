@@ -84,3 +84,11 @@ id FINodeFromFENode(const TFENode* node);
 
 @interface TDimmableIconImageView : NSImageView
 @end
+
+@interface TSidebarItemCell : NSTextFieldCell
+- (NSString*)name;
+@end
+
+@interface NSSidebarImage : NSImage
+- (id)initWithSourceImage:(NSImage*)image;
+@end

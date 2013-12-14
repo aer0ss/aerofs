@@ -6,6 +6,7 @@
 @class AeroContextMenu;
 @class ShellextNotification;
 @class PathStatusNotification;
+@class AeroSidebarIcon;
 
 typedef enum {
     NONE,
@@ -30,6 +31,7 @@ typedef enum {
     AeroSocket* socket;
     AeroOverlay* overlay;
     AeroContextMenu* contextMenu;
+    AeroSidebarIcon* sidebarIcon;
     NSString* rootAnchor;
     NSString* userId;
     AeroOverlayCache* statusCache;
@@ -40,6 +42,7 @@ typedef enum {
 
 @property (readonly) AeroOverlay* overlay;
 @property (readonly) AeroContextMenu* contextMenu;
+@property (readonly) AeroSidebarIcon* sidebarIcon;
 
 OSErr AeroLoadHandler(const AppleEvent* ev, AppleEvent* reply, long refcon);
 

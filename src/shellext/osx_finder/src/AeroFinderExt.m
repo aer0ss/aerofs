@@ -8,6 +8,7 @@
 #import "AeroOverlayCache.h"
 
 #import  "../../common/common.h"
+#import "AeroSidebarIcon.h"
 
 static Overlay overlayForStatus(PBPathStatus* status)
 {
@@ -40,12 +41,14 @@ static Overlay overlayForStatus(PBPathStatus* status)
 
 @synthesize overlay;
 @synthesize contextMenu;
+@synthesize sidebarIcon;
 
 - (void) dealloc
 {
     [socket release];
     [overlay release];
     [contextMenu release];
+    [sidebarIcon release];
     [statusCache release];
     [rootAnchor release];
     [userId release];
@@ -104,6 +107,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     socket = [[AeroSocket alloc] init];
     overlay = [[AeroOverlay alloc] init];
     contextMenu = [[AeroContextMenu alloc] init];
+    sidebarIcon = [[AeroSidebarIcon alloc] init];
 
     statusCache = [[AeroOverlayCache alloc] initWithLimit:100000];
     [statusCache setDelegate:self];

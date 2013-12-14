@@ -1,0 +1,67 @@
+How to reverse-engineer the Finder
+==================================
+
+
+Finding the hook points in the Finder
+-------------------------------------
+
+Start with class-dump:
+
+  $ brew install class-dump
+  $ class-dump /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder > finder_classes.h
+
+This will dump the information about all Finder classes to finder_classes.h.
+Keep this file open somewhere as you're going to constantly refer to it.
+
+Next, download and install F-Script from http://www.fscript.org. Open a Finder
+window and from the menu bar click on Finder -> Services -> Inject F-Script.
+This will add a "F-Script" menu to the Finder's menu bar. Click on it, then on
+"Open Object Browser".
+
+F-Script's Object Browser allow you to interactively browse and explore classes.
+Click on the "Select View" button, then on the Finder view that you'd like to
+hack. From there, you can browse and explore the class hierarchy and figure out
+appropriate hook points.
+
+Once you have found a potential hook point, you may want to reverse-engineer
+similar programs (*cough* dropbox *cough*) to make sure you're not crazy and
+they're doing the same thing. The best tools for that are OTX and Hopper
+Disassembler. OTX's official website seems down (http://otx.osxninja.com/), but
+you'll find a bunch of mirrors on github. This one even includes a pre-compiled
+binary: https://github.com/x43x61x69/otx. Hopper Disassembler is a paid tool
+but the evaluation version has all you need. It's extremely powerful, with the
+ability to generate pseudo-code from the assembly.
+
+Search the disassembly for the hook point you want to use, and you'll see if
+they use it as well, and how. From there, it's fairly straightforward to
+swizzle the method and start hacking.
+
+
+Setting up your dev environment
+-------------------------------
+
+This will allow you to quickly prototype and iterate:
+
+1. Create a symlink from /Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents
+   to wherever your code is built. This way, you won't have to copy your code
+   on each build
+
+2. Make sure you have a script that does a `killall Finder && sleep 1` before
+   running our finder_inject executable.
+
+
+Couple of things to keep in mind
+--------------------------------
+
+- Always call the original implementation when you swizzle a method.
+
+- Always wrap your code in a big try-catch block to avoid crashing the Finder
+  if something goes wrong. This only covers Cocoa exceptions though. Dereferencing
+  a null or dangling pointer will still make you crash. Be careful.
+
+- Keep in mind that the Finder is half coded in C++ and this can make things
+  more complicated.
+
+
+Have fun!
+

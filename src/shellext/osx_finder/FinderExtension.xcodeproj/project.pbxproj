@@ -28,9 +28,11 @@
 		1670114614840DEC0022673C /* download_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114414840DEC0022673C /* download_overlay.icns */; };
 		1670114714840DEC0022673C /* upload_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114514840DEC0022673C /* upload_overlay.icns */; };
 		16978FA1144E3C2D00F92021 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 16978F9D144E3C2D00F92021 /* InfoPlist.strings */; };
+		16A2353A185BCB4500649B38 /* sidebar.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 16A23539185BCB4500649B38 /* sidebar.tiff */; };
 		16A99D61145B296600C3EA3D /* AeroOverlay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 16A99D5F145B296600C3EA3D /* AeroOverlay.mm */; };
 		16F60E9E153F6F2B00A25339 /* Shellext.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F60E9C153F6F2B00A25339 /* Shellext.pb.m */; };
 		16F8E74B144E47BD00F78CD3 /* AeroFinderExt.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */; };
+		5E0CF56CB85528E2A9A72917 /* AeroSidebarIcon.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5E0CF97ADD3CA11D7C41611C /* AeroSidebarIcon.mm */; };
 		F341E7721612683D0055FC67 /* in_sync_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E76F1612683D0055FC67 /* in_sync_overlay.icns */; };
 		F341E7731612683D0055FC67 /* out_of_sync_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E7701612683D0055FC67 /* out_of_sync_overlay.icns */; };
 		F341E7741612683D0055FC67 /* partial_sync_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E7711612683D0055FC67 /* partial_sync_overlay.icns */; };
@@ -108,12 +110,15 @@
 		16978F9B144E3C2D00F92021 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = src/Info.plist; sourceTree = SOURCE_ROOT; };
 		16978F9E144E3C2D00F92021 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = InfoPlist.strings; sourceTree = "<group>"; };
 		16978F9F144E3C2D00F92021 /* FinderExtension-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "FinderExtension-Prefix.pch"; path = "src/FinderExtension-Prefix.pch"; sourceTree = SOURCE_ROOT; };
+		16A23539185BCB4500649B38 /* sidebar.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = sidebar.tiff; path = images/sidebar.tiff; sourceTree = SOURCE_ROOT; };
 		16A99D5F145B296600C3EA3D /* AeroOverlay.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroOverlay.mm; path = src/AeroOverlay.mm; sourceTree = SOURCE_ROOT; };
 		16A99D60145B296600C3EA3D /* AeroOverlay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroOverlay.h; path = src/AeroOverlay.h; sourceTree = SOURCE_ROOT; };
 		16F60E9C153F6F2B00A25339 /* Shellext.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Shellext.pb.m; path = gen/Shellext.pb.m; sourceTree = "<group>"; };
 		16F60E9D153F6F2B00A25339 /* Shellext.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Shellext.pb.h; path = gen/Shellext.pb.h; sourceTree = "<group>"; };
 		16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AeroFinderExt.m; path = src/AeroFinderExt.m; sourceTree = SOURCE_ROOT; };
 		16F8E74A144E47BD00F78CD3 /* AeroFinderExt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroFinderExt.h; path = src/AeroFinderExt.h; sourceTree = SOURCE_ROOT; };
+		5E0CF6CCE3866B78016BF2BF /* AeroSidebarIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AeroSidebarIcon.h; sourceTree = SOURCE_ROOT; };
+		5E0CF97ADD3CA11D7C41611C /* AeroSidebarIcon.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AeroSidebarIcon.mm; sourceTree = SOURCE_ROOT; };
 		F341E76F1612683D0055FC67 /* in_sync_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = in_sync_overlay.icns; path = images/in_sync_overlay.icns; sourceTree = SOURCE_ROOT; };
 		F341E7701612683D0055FC67 /* out_of_sync_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = out_of_sync_overlay.icns; path = images/out_of_sync_overlay.icns; sourceTree = SOURCE_ROOT; };
 		F341E7711612683D0055FC67 /* partial_sync_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = partial_sync_overlay.icns; path = images/partial_sync_overlay.icns; sourceTree = SOURCE_ROOT; };
@@ -258,6 +263,8 @@
 				16026EED145849670078E542 /* AeroSocket.m */,
 				16692661150AD6350072DA1E /* AsyncSocket.h */,
 				16692663150AD6450072DA1E /* AsyncSocket.m */,
+				5E0CF97ADD3CA11D7C41611C /* AeroSidebarIcon.mm */,
+				5E0CF6CCE3866B78016BF2BF /* AeroSidebarIcon.h */,
 			);
 			name = src;
 			path = FinderExtension;
@@ -266,6 +273,7 @@
 		16978F8C144E3B1B00F92021 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				16A23539185BCB4500649B38 /* sidebar.tiff */,
 				F3DC484D164982AE00D66E1E /* conflict_overlay.icns */,
 				F341E76F1612683D0055FC67 /* in_sync_overlay.icns */,
 				F341E7701612683D0055FC67 /* out_of_sync_overlay.icns */,
@@ -403,6 +411,7 @@
 				163F2F0F14560D4300762616 /* AeroFSFinderExtension.sdef in Resources */,
 				1670114614840DEC0022673C /* download_overlay.icns in Resources */,
 				1670114714840DEC0022673C /* upload_overlay.icns in Resources */,
+				16A2353A185BCB4500649B38 /* sidebar.tiff in Resources */,
 				F341E7721612683D0055FC67 /* in_sync_overlay.icns in Resources */,
 				F341E7731612683D0055FC67 /* out_of_sync_overlay.icns in Resources */,
 				F341E7741612683D0055FC67 /* partial_sync_overlay.icns in Resources */,
@@ -461,6 +470,7 @@
 				F341E7741612683D0055FC6D /* Path_status.pb.m in Sources */,
 				F341E7741612683D0055FC6F /* AeroOverlayCache.mm in Sources */,
 				F341E7741612683D0055FC72 /* OverlayCache.cpp in Sources */,
+				5E0CF56CB85528E2A9A72917 /* AeroSidebarIcon.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
