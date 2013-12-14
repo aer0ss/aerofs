@@ -30,6 +30,7 @@ import json
 import getpass
 from boto.s3.connection import S3Connection
 from time import sleep
+from ConfigParser import ConfigParser
 
 file_root = os.path.dirname(__file__)
 python_aerofs_lib = os.path.join(file_root, "../src/python-lib")
@@ -38,6 +39,10 @@ sys.path.append(python_aerofs_lib)
 from aerofs_sp import connection
 from aerofs_sp.gen import sp_pb2
 
+
+# read config .ini file for sp proto version
+ini_config = ConfigParser()
+ini_config.read(os.path.join(file_root, "../src/web/development/modes/private.ini"))
 
 #################################
 ##   DEFAULT/CONSTANT VALUES   ##
@@ -57,7 +62,7 @@ ARCHIVE_DIR = '~/archive'
 CODE_URL = "http://unified.syncfs.com:21337/get_code"
 POOL_URL = "http://newci.arrowfs.org:8040"
 CI_SP_URL = "https://unified.syncfs.com:4433/sp"
-CI_SP_VERSION = 20
+CI_SP_VERSION = ini_config.getint('app:main', 'sp.version')
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
