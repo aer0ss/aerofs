@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 thisdir=$(dirname $0)
 
@@ -12,9 +11,10 @@ then
     exit 1
 fi
 
+# We no longer need to do this, but it's decent policy.
 echo "Looking for absolute paths hardcoded in the executable..."
-error1=$(strings $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/MacOS/AeroFSFinderExtension | grep -c /Users)
-error2=$(strings $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/Resources/finder_inject | grep -c /Users)
+error1=$(strings - $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/MacOS/AeroFSFinderExtension | grep -c /Users)
+error2=$(strings - $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/Resources/finder_inject | grep -c /Users)
 
 if [ $error1 -ne 0 ] || [ $error2 -ne 0 ]
 then

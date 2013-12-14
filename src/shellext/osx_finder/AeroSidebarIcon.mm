@@ -7,6 +7,7 @@
 @end
 
 @implementation AeroSidebarIcon
+@synthesize sidebarImage = _sidebarImage;
 
 - (void)dealloc
 {
