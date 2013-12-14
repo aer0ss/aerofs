@@ -67,6 +67,14 @@ public class VirtualChannel extends AbstractChannel
                 }
             }
         }
+
+        @Override
+        public ChannelFuture execute(ChannelPipeline pipeline, Runnable task)
+        {
+            VirtualChannel c = ((VirtualChannel)pipeline.getChannel());
+            // execute in physical channel's I/O thread to respect Netty's threading model
+            return c._tunnel._channel.getPipeline().execute(task);
+        }
     }
 
     private final TunnelHandler _tunnel;
@@ -147,6 +155,9 @@ public class VirtualChannel extends AbstractChannel
         return ((physical & virtual) & OP_READ) | ((physical | virtual) & OP_WRITE);
     }
 
+    /**
+     * To honor Netty's threading model, this should only be called from the channel's I/O thread
+     */
     void fireDisconnected()
     {
         l.debug("disconnecting {}", this);
@@ -157,6 +168,9 @@ public class VirtualChannel extends AbstractChannel
         setClosed();
     }
 
+    /**
+     * To honor Netty's threading model, this should only be called from the channel's I/O thread
+     */
     void fireInterestChanged(int ops)
     {
         int prev = getInterestOps();
