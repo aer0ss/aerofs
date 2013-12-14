@@ -127,7 +127,7 @@ public class SeedDatabase extends AbstractDatabase
             Statement s = db.c().createStatement();
             try {
                 s.executeUpdate("create table " + T_SEED + "("
-                        + C_SEED_PATH + " text not null collate nocase,"
+                        + C_SEED_PATH + " text not null,"
                         + C_SEED_TYPE + " integer not null,"
                         + C_SEED_OID + " blob not null,"
                         + " primary key (" + C_SEED_PATH + "," + C_SEED_TYPE + ")"
