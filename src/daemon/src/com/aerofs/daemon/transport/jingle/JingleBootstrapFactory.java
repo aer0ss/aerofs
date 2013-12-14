@@ -33,52 +33,66 @@ import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newStatsHandl
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Helper class to create client and server bootstraps
+ * Creates {@link org.jboss.netty.bootstrap.ServerBootstrap} and
+ * {@link org.jboss.netty.bootstrap.ClientBootstrap} instances to
+ * allow network communication over libjingle with a remote device.
  */
-class JingleBootstrapFactory
+final class JingleBootstrapFactory
 {
-    private final String _transportId;
-    private final UserID _localuser;
-    private final DID _localdid;
-    private final SSLEngineFactory _clientSslEngineFactory;
-    private final SSLEngineFactory _serverSslEngineFactory;
-    private final IUnicastListener _unicastListener;
-    private final RockLog _rockLog;
-    private final TransportStats _stats;
-    private final HashedWheelTimer _timer = new HashedWheelTimer(500, MILLISECONDS);
+    private final String transportId;
+    private final UserID localuser;
+    private final DID localdid;
+    private final SSLEngineFactory clientSslEngineFactory;
+    private final SSLEngineFactory serverSslEngineFactory;
+    private final IUnicastListener unicastListener;
+    private final RockLog rockLog;
+    private final TransportStats transportStats;
+    private final JingleChannelWorker channelWorker;
+    private final HashedWheelTimer timer = new HashedWheelTimer(500, MILLISECONDS);
 
-    JingleBootstrapFactory(String transportId, UserID localuser, DID localdid, SSLEngineFactory clientSslEngineFactory, SSLEngineFactory serverSslEngineFactory, IUnicastListener unicastListener, RockLog rockLog, TransportStats stats)
+    JingleBootstrapFactory(
+            String transportId,
+            UserID localuser,
+            DID localdid,
+            SSLEngineFactory clientSslEngineFactory,
+            SSLEngineFactory serverSslEngineFactory,
+            IUnicastListener unicastListener,
+            RockLog rockLog,
+            TransportStats transportStats,
+            JingleChannelWorker channelWorker)
     {
-        _transportId = transportId;
-        _localuser = localuser;
-        _localdid = localdid;
-        _clientSslEngineFactory = clientSslEngineFactory;
-        _serverSslEngineFactory = serverSslEngineFactory;
-        _unicastListener = unicastListener;
-        _rockLog = rockLog;
-        _stats = stats;
+        this.transportId = transportId;
+        this.localuser = localuser;
+        this.localdid = localdid;
+        this.clientSslEngineFactory = clientSslEngineFactory;
+        this.serverSslEngineFactory = serverSslEngineFactory;
+        this.unicastListener = unicastListener;
+        this.rockLog = rockLog;
+        this.transportStats = transportStats;
+        this.channelWorker = channelWorker;
     }
 
     ClientBootstrap newClientBootstrap(SignalThread signalThread, final ChannelTeardownHandler clientChannelTeardownHandler)
     {
-        ClientBootstrap bootstrap = new ClientBootstrap(new JingleClientChannelFactory(signalThread));
+        ClientBootstrap bootstrap = new ClientBootstrap(new JingleClientChannelFactory(signalThread, channelWorker));
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
             public ChannelPipeline getPipeline() throws Exception
             {
-                ClientHandler clientHandler = new ClientHandler(_unicastListener);
+                ClientHandler clientHandler = new ClientHandler(unicastListener);
 
                 return Channels.pipeline(
-                        newStatsHandler(_stats),
-                        newSslHandler(_clientSslEngineFactory),
+                        newStatsHandler(transportStats),
+                        newSslHandler(clientSslEngineFactory),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
-                        newCNameVerificationHandler(clientHandler, _localuser, _localdid),
-                        newDiagnosticsHandler(_transportId, _rockLog, _timer),
-                        clientHandler, clientChannelTeardownHandler);
+                        newCNameVerificationHandler(clientHandler, localuser, localdid),
+                        newDiagnosticsHandler(transportId, rockLog, timer),
+                        clientHandler,
+                        clientChannelTeardownHandler);
             }
         });
         return bootstrap;
@@ -90,25 +104,26 @@ class JingleBootstrapFactory
             final TransportProtocolHandler protocolHandler,
             final ChannelTeardownHandler serverChannelTeardownHandler)
     {
-        ServerBootstrap bootstrap = new ServerBootstrap(new JingleServerChannelFactory(signalThread));
+        ServerBootstrap bootstrap = new ServerBootstrap(new JingleServerChannelFactory(signalThread, channelWorker));
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
             public ChannelPipeline getPipeline() throws Exception
             {
-                ServerHandler serverHandler = new ServerHandler(_unicastListener, serverHandlerListener);
+                ServerHandler serverHandler = new ServerHandler(unicastListener, serverHandlerListener);
 
                 return Channels.pipeline(
-                        newStatsHandler(_stats),
-                        newSslHandler(_serverSslEngineFactory),
+                        newStatsHandler(transportStats),
+                        newSslHandler(serverSslEngineFactory),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
-                        newCNameVerificationHandler(serverHandler, _localuser, _localdid),
-                        newDiagnosticsHandler(_transportId, _rockLog, _timer),
+                        newCNameVerificationHandler(serverHandler, localuser, localdid),
+                        newDiagnosticsHandler(transportId, rockLog, timer),
                         serverHandler,
-                        protocolHandler, serverChannelTeardownHandler);
+                        protocolHandler,
+                        serverChannelTeardownHandler);
             }
         });
         return bootstrap;

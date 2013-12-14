@@ -34,6 +34,7 @@ public abstract class SystemUtil
         OUT_OF_MEMORY("out of memory"),
         JINGLE_CALL_TOO_LONG("jingle call too long"),
         JINGLE_TASK_FATAL_ERROR("jingle task fatal error"),
+        JINGLE_CHANNEL_TASK_UNCAUGHT_EXCEPTION("jingle channel task had uncaught exception"),
         DPUT_MIGRATE_AUX_ROOT_FAILED("migrating the aux root failed"),
         CONFIGURATION_INIT("initializing configuration failed"),
         CORRUPTED_DB("corrupted database"),

@@ -8,9 +8,9 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.daemon.transport.ExDeviceDisconnected;
-import com.aerofs.daemon.transport.ExDeviceUnreachable;
-import com.aerofs.daemon.transport.ExSendFailed;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExIOOFailed;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.IUnicastInternal;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -149,7 +149,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
     void init()
     {
-        //unicastListener.onUnicastReady(); // zephyr is always available
         signallingService.registerSignallingClient(this);
         linkStateService.addListener(this, sameThreadExecutor()); // our callback implementation is thread-safe and can be called on the notifier thread
     }
@@ -162,7 +161,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         l.info("start");
     }
 
-    @SuppressWarnings("unused")
     void stop()
     {
         boolean alreadyRunning = running.getAndSet(false);
@@ -171,7 +169,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         l.info("stop");
 
         synchronized (this) {
-            disconnectChannels(TRUE_FILTER, new ExDeviceDisconnected("connection service stopped"));
+            disconnectChannels(TRUE_FILTER, new ExTransportUnavailable("connection service stopped"));
         }
     }
 
@@ -213,7 +211,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         };
 
         synchronized (this) {
-            disconnectChannels(allChannelsFilter, new ExDeviceDisconnected("network interface down"));
+            disconnectChannels(allChannelsFilter, new ExTransportUnavailable("link down"));
         }
     }
 
@@ -233,7 +231,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                     // apparently the channel connected, but for some reason the
                     // upper layer doesn't think otherwise; this means that the channel
                     // isn't in a good state
-                    disconnectChannel(did, new ExDeviceDisconnected("triggered by local reconnect"));
+                    disconnectChannel(did, new ExDeviceUnavailable("triggered by local reconnect"));
                 } else {
                     // we're still in the process of handshaking - let's give it a
                     // chance. at any rate, if we fail to complete in time we'll get a
@@ -364,7 +362,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         if (channel == null) { // can happen because the upper layer hasn't yet been notified of a disconnection
             l.warn("d:{} no channel", did);
             if (wtr != null) {
-                wtr.error(new ExDeviceUnreachable(did.toStringFormal()));
+                wtr.error(new ExDeviceUnavailable("no connection"));
             }
             return null;
         }
@@ -372,7 +370,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         if (cke != null && (cke instanceof Channel) && !cke.equals(channel)) { // this is a stream using an older channel
             l.warn("d:{} fail send - stale channel", did);
             if (wtr != null) {
-                wtr.error(new ExSendFailed("stale connection"));
+                wtr.error(new ExDeviceUnavailable("stale connection"));
             }
             return null;
         }
@@ -387,7 +385,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                 if (future.isSuccess()) {
                     if (wtr != null) wtr.okay();
                 } else {
-                    if (wtr != null) wtr.error(new ExSendFailed("fail send packet to " + did, future.getCause()));
+                    if (wtr != null) wtr.error(new ExIOOFailed("fail send packet to " + did, future.getCause()));
                 }
             }
         });
@@ -444,7 +442,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         };
 
         synchronized (this) {
-            disconnectChannels(handshakeIncompletePredicate, new ExDeviceUnreachable("signalling service disconnected"));
+            disconnectChannels(handshakeIncompletePredicate, new ExTransportUnavailable("signalling service disconnected"));
         }
     }
 
@@ -483,17 +481,17 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                     consumeHandshake(did, handshake);
                 } catch (ExHandshakeRenegotiation e) {
                     rockLog.newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION).send();
-                    disconnectChannel(did, new ExDeviceDisconnected("attempted renegotiation of zephyr channel to " + did, e));
+                    disconnectChannel(did, new IllegalStateException("attempted renegotiation of zephyr channel to " + did, e));
                     consumeHandshake(did, handshake);
                 }
             } catch (Exception e) {
-                disconnectChannel(did, new ExDeviceDisconnected("fail to process signalling message from " + did, e));
+                disconnectChannel(did, new ExDeviceUnavailable("fail to process signalling message from " + did, e));
             }
         }
     }
 
     private void consumeHandshake(DID did, ZephyrHandshake handshake)
-            throws ExDeviceUnreachable, ExHandshakeFailed, ExHandshakeRenegotiation
+            throws ExDeviceUnavailable, ExHandshakeFailed, ExHandshakeRenegotiation
     {
         Channel channel = getChannel(did);
         if (channel == null) { // haven't connected yet, so attempt to do so
@@ -501,7 +499,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
             channel = getChannel(did); // check if the connect failed
             if (channel == null) {
-                throw new ExDeviceUnreachable("cannot reach " + did);
+                throw new ExDeviceUnavailable("cannot reach " + did);
             }
         }
 
@@ -512,7 +510,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     public synchronized void sendSignallingMessageFailed(DID did, byte[] failedmsg, Exception cause)
     {
         l.warn("d:{} ->sig fail err:", did, cause);
-        disconnectChannel(did, new ExDeviceUnreachable("failed to send zephyr handshake to " + did, cause));
+        disconnectChannel(did, new ExDeviceUnavailable("failed to send zephyr handshake to " + did, cause));
     }
 
     //
@@ -529,7 +527,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
         if (!running.get()) {
             l.warn("d:{} ->sig ignored - connection service stopped", did);
-            disconnectChannel(did, new ExDeviceUnreachable("connection service stopped"));
+            disconnectChannel(did, new ExDeviceUnavailable("connection service stopped"));
             return;
         }
 

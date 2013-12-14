@@ -2,8 +2,7 @@ package com.aerofs.daemon.transport.jingle;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.transport.ExSendFailed;
-import com.aerofs.daemon.transport.ExTransport;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.j.Jid;
@@ -23,89 +22,132 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Code convention for the jingle package:
- *
- * 1. a class must implement IProxyObjectContainer if it contains SWIG proxy
- * objects. see the interface's source code for more comments
- *
- * 2. a class that contains IProxyObjectContainer objects but doesn't implement
- * the interface itself must call the containing objects' delete() whenever
- * they are no longer used.
+ * Event loop for the Jingle subsystem.
  */
 class SignalThread extends Thread
 {
+    /**
+     * Implemented by classes that want to be notified
+     * when remote devices want to connect to the local device.
+     */
+    static interface IIncomingTunnelListener
+    {
+        /**
+         * Called by the {@code SignalThread} when a remote
+         * device wants to connect to the local device.
+         *
+         * @param client {@code TunnelSessionClient} that can be used to create a Jingle tunnel to the remote device
+         * @param jid Jabber ID of the remote device
+         * @param session C++ Session object associated with this potential connection
+         *        (<strong>do not</strong> call any methods on this object)
+         */
+        void onIncomingTunnel(TunnelSessionClient client, Jid jid, SWIGTYPE_p_cricket__Session session);
+    }
+
+    /**
+     * Implemented by classes that want to be notified
+     * when of {@code SignalThread} lifecycle events.
+     *
+     * @see com.aerofs.daemon.transport.jingle.SignalThread
+     */
     static interface ISignalThreadListener
     {
-        void onIncomingTunnel(TunnelSessionClient client, Jid jid, SWIGTYPE_p_cricket__Session session);
+        /**
+         * Called when the {@code SignalThread} is ready to process incoming and outgoing events.
+         */
+        void onSignalThreadReady();
 
-        void closeAllAcceptedChannels();
+        /**
+         * Called when the {@code SignalThread} is about to shut down.
+         */
+        void onSignalThreadClosing();
     }
 
     private static final Logger l = Loggers.getLogger(SignalThread.class);
 
-    private volatile XmppMain _main;
-    private volatile TunnelSessionClient _tsc;
-    private TunnelSessionClient_IncomingTunnelSlot _incomingTunnelSlot;
-    private final byte[] _logPathUTF8;
-    private final Jid _xmppUsername;
-    private final String _xmppPassword;
-    private final InetSocketAddress _stunServerAddress;
-    private final InetSocketAddress _xmppServerAddress;
-    private final String _absRTRoot;
-    private final boolean _enableJingleLibraryLogging;
-    private final ArrayList<Runnable> _postRunners = Lists.newArrayList(); // st thread only
-    private final Object _mxMain = new Object(); // lock object
-    private final BlockingQueue<ISignalThreadTask> _tasks = new LinkedBlockingQueue<ISignalThreadTask>(DaemonParam.QUEUE_LENGTH_DEFAULT);
+    private volatile XmppMain main;
+    private volatile TunnelSessionClient tunnelSessionClient;
+    private TunnelSessionClient_IncomingTunnelSlot incomingTunnelSlot;
+    private final byte[] logPathUTF8;
+    private final Jid xmppUsername;
+    private final String xmppPassword;
+    private final InetSocketAddress stunServerAddress;
+    private final InetSocketAddress xmppServerAddress;
+    private final String libjingleWorkingDirectory;
+    private final boolean enableJingleLibraryLogging;
+    private final ArrayList<Runnable> postHandlerTasks = Lists.newArrayList(); // st thread only // FIXME (AG): remove these
+    private final Object mxMain = new Object(); // lock object
+    private final BlockingQueue<ISignalThreadTask> signalThreadTasks = new LinkedBlockingQueue<ISignalThreadTask>(DaemonParam.QUEUE_LENGTH_DEFAULT);
+    private final Set<ISignalThreadListener> signalThreadListeners = Sets.newHashSet();
+    private final Object mxListeners = new Object(); // protects signalThreadListeners;
+    private final Semaphore stoppedSemaphore = new Semaphore(0);
 
-    private ISignalThreadListener _signalThreadListener;
-    private IUnicastListener _unicastConnectionServiceListener;
+    private volatile boolean running;
+    private IIncomingTunnelListener incomingTunnelListener;
+    private IUnicastListener unicastListener;
 
-    public SignalThread(Jid localjid, String xmppPassword, InetSocketAddress stunServerAddress, InetSocketAddress xmppServerAddress, String absRtRoot, boolean enableJingleLibraryLogging)
+    public SignalThread(String transportId, Jid xmppUsername, String xmppPassword, InetSocketAddress stunServerAddress, InetSocketAddress xmppServerAddress, String libjingleWorkingDirectory, boolean enableJingleLibraryLogging)
     {
-        super(TransportThreadGroup.get(), "j-st");
-        _stunServerAddress = stunServerAddress;
-        _xmppServerAddress = xmppServerAddress;
-        _absRTRoot = absRtRoot;
-        _logPathUTF8 = getLogPath();
-        _xmppUsername = localjid;
-        _xmppPassword = xmppPassword;
-        _enableJingleLibraryLogging = enableJingleLibraryLogging;
+        super(TransportThreadGroup.get(), transportId + "-st"); // FIXME (AG): remove direct call to TransportThreadGroup.get()
+        setDaemon(true);
+
+        this.stunServerAddress = stunServerAddress;
+        this.xmppServerAddress = xmppServerAddress;
+        this.libjingleWorkingDirectory = libjingleWorkingDirectory;
+        this.logPathUTF8 = getLogPath();
+        this.xmppUsername = xmppUsername;
+        this.xmppPassword = xmppPassword;
+        this.enableJingleLibraryLogging = enableJingleLibraryLogging;
     }
 
-    void setListener(ISignalThreadListener listener)
+    void setIncomingTunnelListener(IIncomingTunnelListener listener)
     {
         // Note: for now, we only allow one listener to the signal thread. This is because it would
         // not make much sense to have several Netty server channels getting notified when a client
         // is accepted. However, this highlights that the coupling between the signal thread and
         // the server channel isn't very well defined. We should revisit this later.
-        checkState(_signalThreadListener == null);
-        _signalThreadListener = listener;
+        checkState(incomingTunnelListener == null);
+        incomingTunnelListener = listener;
     }
 
-    void setListener(IUnicastListener listener)
+    void setUnicastListener(IUnicastListener listener)
     {
-        // Note: for now, we only allow one listener to the signal thread. This is because it would
-        // not make much sense to have several Netty server channels getting notified when a client
-        // is accepted. However, this highlights that the coupling between the signal thread and
-        // the server channel isn't very well defined. We should revisit this later.
-        checkState(_unicastConnectionServiceListener == null);
-        _unicastConnectionServiceListener = listener;
+        checkState(unicastListener == null);
+        unicastListener = listener;
+    }
+
+    void addSignalThreadListener(ISignalThreadListener listener)
+    {
+        synchronized (mxListeners) {
+            signalThreadListeners.add(listener);
+        }
+    }
+
+    void removeSignalThreadListener(ISignalThreadListener listener)
+    {
+        synchronized (mxListeners) {
+            signalThreadListeners.remove(listener);
+        }
     }
 
     private byte[] getLogPath()
     {
-        String ljlogpath = Util.join(_absRTRoot, "lj.log");
+        String ljlogpath = Util.join(libjingleWorkingDirectory, "lj.log");
         try {
             return ljlogpath.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -113,21 +155,52 @@ class SignalThread extends Thread
         }
     }
 
-    StreamInterface createTunnel(Jid to, String description)
+    public void shutdown()
     {
-        l.info("create tunnel to j:{} ({})", to, description);
+        running = false;
 
-        return _tsc.CreateTunnel(to, description);
+        call(new ISignalThreadTask()
+        {
+            @Override
+            public void run()
+            {
+                main.Stop();
+            }
+
+            @Override
+            public void error(Exception e)
+            {
+                l.warn("cannot shutdown signal thread");
+            }
+        });
+
+        try {
+            stoppedSemaphore.acquire();
+        } catch (InterruptedException e) {
+            l.warn("interrupted during shutdown wait");
+        }
     }
 
-    void checkThread()
+    StreamInterface createTunnel(Jid to, String description)
+            throws ExTransportUnavailable
     {
-        checkState(Thread.currentThread() == this);
+        if (tunnelSessionClient == null) {
+            throw new ExTransportUnavailable("signal thread stopped [null tsc]");
+        }
+
+        l.info("create tunnel to j:{} ({})", to, description);
+
+        return tunnelSessionClient.CreateTunnel(to, description);
+    }
+
+    void assertSignalThread()
+    {
+        checkState(Thread.currentThread() == this, "signal thread method called on %s thread", Thread.currentThread().getName());
     }
 
     /**
      * run the object within the signal thread. wait until the handler
-     * finishes before returning. The _main pointer is guaranteed valid within
+     * finishes before returning. The main pointer is guaranteed valid within
      * runnable.run().
      *
      * N.B. runnable.run() must not block
@@ -135,10 +208,10 @@ class SignalThread extends Thread
     void call(ISignalThreadTask task)
     {
         if (Thread.currentThread() == this) {
-            _tasks.add(task); // throws IllegalStateException if the queue is full
+            signalThreadTasks.add(task); // throws IllegalStateException if the queue is full
         } else {
             try {
-                _tasks.put(task);
+                signalThreadTasks.put(task);
             } catch (InterruptedException e) {
                 task.error(e);
             }
@@ -148,18 +221,18 @@ class SignalThread extends Thread
     }
 
     /**
-     * The _main pointer is guaranteed valid within runnable.run().
+     * The main pointer is guaranteed valid within runnable.run().
      */
     private void post(final Runnable runnable)
     {
-        checkThread();
-        checkState(_main != null);
+        assertSignalThread();
+        checkState(main != null);
 
-        _postRunners.add(runnable);
+        postHandlerTasks.add(runnable);
 
         // post the handler if it's not been scheduled
-        if (_postRunners.size() == 1) {
-            _main.signal_thread().Post(_postHandler);
+        if (postHandlerTasks.size() == 1) {
+            main.signal_thread().Post(postHandler);
         }
     }
 
@@ -170,7 +243,7 @@ class SignalThread extends Thread
      */
     void delayedDelete(final JingleStream stream)
     {
-        checkThread();
+        assertSignalThread();
 
         post(new Runnable()
         {
@@ -185,11 +258,14 @@ class SignalThread extends Thread
     @Override
     public void run()
     {
-        // noinspection InfiniteLoopStatement
-        while (true) {
+        running = true;
+
+        while (running) {
             runImpl();
             ThreadUtil.sleepUninterruptable(LibParam.EXP_RETRY_MIN_DEFAULT);
         }
+
+        stoppedSemaphore.release();
     }
 
     private void runImpl()
@@ -200,30 +276,30 @@ class SignalThread extends Thread
         // TODO (WW) XmppMain() should use int rather than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.
 
-        _main = new XmppMain(
-                _xmppServerAddress.getHostName(), _xmppServerAddress.getPort(),
-                _stunServerAddress.getHostName(), _stunServerAddress.getPort(),
+        main = new XmppMain(
+                xmppServerAddress.getHostName(), xmppServerAddress.getPort(),
+                stunServerAddress.getHostName(), stunServerAddress.getPort(),
                 true,
-                _xmppUsername,
-                _xmppPassword,
-                _logPathUTF8);
+                xmppUsername,
+                xmppPassword,
+                logPathUTF8);
 
-        _slotStateChange.connect(_main.xmpp_client());
+        slotStateChange.connect(main.xmpp_client());
 
         l.debug("start main");
 
         // >>>> WHEE...RUNNING >>>>
 
-        _main.Run(_enableJingleLibraryLogging);
+        main.Run(enableJingleLibraryLogging);
 
         l.debug("end main - start cleanup");
 
         // >>>> WHEE...OHHHH....DONE :( >>>>
 
-        synchronized (_mxMain) {
-            drainTasksQueue(new ExSendFailed("transport stopped [main ended]"));
-            _main.delete();
-            _main = null;
+        synchronized (mxMain) {
+            drainTasksQueue(new ExTransportUnavailable("signal thread stopped [main ended]"));
+            main.delete();
+            main = null;
         }
 
         l.debug("end cleanup");
@@ -235,20 +311,20 @@ class SignalThread extends Thread
     private void processTasksQueue()
     {
         // Synchronizing on mxMain is necessary because this may be called from any thread
-        synchronized (_mxMain) {
-            if (_main == null) {
-                drainTasksQueue(new ExTransport("transport stopped [null main]"));
+        synchronized (mxMain) {
+            if (main == null) {
+                drainTasksQueue(new ExTransportUnavailable("signal thread stopped [null main]"));
                 return;
             }
 
-            _main.signal_thread().Post(_callHandler);
+            main.signal_thread().Post(callHandler);
         }
     }
 
     private void drainTasksQueue(Exception reason)
     {
         ISignalThreadTask task;
-        while ((task = _tasks.poll()) != null) {
+        while ((task = signalThreadTasks.poll()) != null) {
             task.error(reason);
         }
     }
@@ -260,7 +336,7 @@ class SignalThread extends Thread
     // callback returns). It's not safe to delete from a non-signal thread, either, because other
     // threads don't know when the object is no longer needed by the signal thread. One solution is
     // to delete the handler using yet another handler executed by the signal thread, but it's too much.
-    private final MessageHandlerBase _callHandler = new MessageHandlerBase()
+    private final MessageHandlerBase callHandler = new MessageHandlerBase()
     {
         @Override
         public void OnMessage(Message msg)
@@ -273,14 +349,14 @@ class SignalThread extends Thread
             //
             // So if you're adding new code, **make sure it is within this try-catch block.**
             try {
-                checkThread();
+                assertSignalThread();
 
-                task = _tasks.poll();
+                task = signalThreadTasks.poll();
                 if (task == null) return;
 
-                // We don't have to hold _mxMain because the OnMessage callback is being run while
-                // _main is alive. If _main is alive the only person who can modify it (runImpl)
-                // is still in the _main.run() call and won't be modifying the value of _main.
+                // We don't have to hold mxMain because the OnMessage callback is being run while
+                // main is alive. If main is alive the only person who can modify it (runImpl)
+                // is still in the main.run() call and won't be modifying the value of main.
                 try {
                     task.run();
                 } catch (Exception e) {
@@ -296,15 +372,15 @@ class SignalThread extends Thread
         }
     };
 
-    private final MessageHandlerBase _postHandler = new MessageHandlerBase()
+    private final MessageHandlerBase postHandler = new MessageHandlerBase()
     {
         @Override
         public void OnMessage(Message msg)
         {
             // See comment in CallHandler.OnMessage(). Basically, don't throw anything here.
             try {
-                for (Runnable r : _postRunners) r.run();
-                _postRunners.clear();
+                for (Runnable r : postHandlerTasks) r.run();
+                postHandlerTasks.clear();
             } catch (Throwable t) {
                 l.error("caught throwable while handling post task", t);
                 ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
@@ -312,7 +388,7 @@ class SignalThread extends Thread
         }
     };
 
-    private final XmppClient_StateChangeSlot _slotStateChange = new XmppClient_StateChangeSlot()
+    private final XmppClient_StateChangeSlot slotStateChange = new XmppClient_StateChangeSlot()
     {
         @Override
         public void onStateChange(XmppEngine.State state)
@@ -334,25 +410,29 @@ class SignalThread extends Thread
         private void handleXMPPEngineClosed()
         {
             int[] subcode = {0};
-            XmppEngine.Error error = _main.xmpp_client().engine().GetError(subcode);
+            XmppEngine.Error error = main.xmpp_client().engine().GetError(subcode);
 
             l.warn("engine state changed to closed. err:{} subcode:{}", error, subcode[0]);
 
-            _unicastConnectionServiceListener.onUnicastUnavailable();
+            unicastListener.onUnicastUnavailable();
 
-            if (_tsc != null) {
-                _tsc.delete();
-                _tsc = null;
+            // notify all the listeners that the signal thread is closing
+            Collection<ISignalThreadListener> listenersToNotify = getSnapshotOfSignalThreadListenersList();
+            for (ISignalThreadListener listener : listenersToNotify) {
+                listener.onSignalThreadClosing();
             }
 
-            _signalThreadListener.closeAllAcceptedChannels();
-
-            if (_incomingTunnelSlot != null) {
-                _incomingTunnelSlot.delete();
-                _incomingTunnelSlot = null;
+            if (tunnelSessionClient != null) {
+                tunnelSessionClient.delete();
+                tunnelSessionClient = null;
             }
 
-            _main.ShutdownSignalThread();
+            if (incomingTunnelSlot != null) {
+                incomingTunnelSlot.delete();
+                incomingTunnelSlot = null;
+            }
+
+            main.ShutdownSignalThread();
             // Previously we had code that tried to create a new account
             // if login failed because of a "not authorized" message. This
             // call would race against the Multicast thread to create an
@@ -369,15 +449,15 @@ class SignalThread extends Thread
         {
             l.debug("create engine");
 
-            checkState(_tsc == null);
-            checkState(_incomingTunnelSlot == null);
+            checkState(tunnelSessionClient == null);
+            checkState(incomingTunnelSlot == null);
 
-            _main.StartHandlingSessions();
+            main.StartHandlingSessions();
 
-            Preconditions.checkState(_tsc == null);
-            _tsc = new TunnelSessionClient(_main.xmpp_client().jid(), _main.session_manager());
+            Preconditions.checkState(tunnelSessionClient == null);
+            tunnelSessionClient = new TunnelSessionClient(main.xmpp_client().jid(), main.session_manager());
 
-            _incomingTunnelSlot = new TunnelSessionClient_IncomingTunnelSlot()
+            incomingTunnelSlot = new TunnelSessionClient_IncomingTunnelSlot()
             {
                 @Override
                 public void onIncomingTunnel(TunnelSessionClient client, Jid jid, String desc, SWIGTYPE_p_cricket__Session sess)
@@ -385,8 +465,8 @@ class SignalThread extends Thread
                     try {
                         l.info("handle incoming tunnel j:{}", jid);
 
-                        if (_signalThreadListener != null) {
-                            _signalThreadListener.onIncomingTunnel(client, jid, sess);
+                        if (incomingTunnelListener != null) {
+                            incomingTunnelListener.onIncomingTunnel(client, jid, sess);
                         } else {
                             l.warn("no listener for incoming tunnel j:{}", jid);
                         }
@@ -397,9 +477,27 @@ class SignalThread extends Thread
                 }
             };
 
-            _incomingTunnelSlot.connect(_tsc);
+            incomingTunnelSlot.connect(tunnelSessionClient);
 
-            _unicastConnectionServiceListener.onUnicastReady();
+            // notify all the listeners that the signal thread is now ready
+            Collection<ISignalThreadListener> listenersToNotify = getSnapshotOfSignalThreadListenersList();
+            for (ISignalThreadListener listener : listenersToNotify) {
+                listener.onSignalThreadReady();
+            }
+
+            // notify the unicast listener that we're good to go
+            unicastListener.onUnicastReady();
         }
     };
+
+    private Collection<ISignalThreadListener> getSnapshotOfSignalThreadListenersList()
+    {
+        Set<ISignalThreadListener> listenersToNotify;
+
+        synchronized (mxListeners) {
+            listenersToNotify = Sets.newHashSet(signalThreadListeners);
+        }
+
+        return listenersToNotify;
+    }
 }

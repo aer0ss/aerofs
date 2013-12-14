@@ -6,8 +6,8 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,8 +51,8 @@ public final class TestUnicastProxy
         UnicastProxy proxy = new UnicastProxy();
         proxy.setRealUnicast(unicast);
 
-        ExDeviceOffline offline = new ExDeviceOffline("SOMEONE");
-        when(unicast.send(any(DID.class), any(IResultWaiter.class), any(Prio.class), any(byte[][].class), anyObject())).thenThrow(offline);
+        ExDeviceUnavailable unavailable = new ExDeviceUnavailable("SOMEONE");
+        when(unicast.send(any(DID.class), any(IResultWaiter.class), any(Prio.class), any(byte[][].class), anyObject())).thenThrow(unavailable);
 
         DID did = DID.generate();
         IResultWaiter waiter = mock(IResultWaiter.class);
@@ -61,8 +61,8 @@ public final class TestUnicastProxy
 
         try {
             proxy.send(did, waiter, prio, wireChunks, null);
-        } catch (ExDeviceOffline e) {
-            assertThat(e, sameInstance(offline));
+        } catch (ExDeviceUnavailable e) {
+            assertThat(e, sameInstance(unavailable));
         }
 
         verify(unicast).send(did, waiter, prio, wireChunks, null);

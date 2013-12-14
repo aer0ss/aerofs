@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
 import com.aerofs.daemon.event.net.IPulseEvent;
-import com.aerofs.daemon.transport.ExTransport;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.lib.sched.IScheduler;
 import org.slf4j.Logger;
 
@@ -128,7 +128,7 @@ public class PulseHandlerUtil
 
         if (!ev.killed_() && (ev.tries_() >= maxfails)) {
             l.info("d:" + did + " fails > maxfails (" + ev.tries_() + " >= " +  maxfails + ") kill conn and resched ev");
-            unicast.disconnect(did, new ExTransport("pulse timed out"));
+            unicast.disconnect(did, new ExDeviceUnavailable("pulse timed out"));
             ev.markkilled_();
         }
 

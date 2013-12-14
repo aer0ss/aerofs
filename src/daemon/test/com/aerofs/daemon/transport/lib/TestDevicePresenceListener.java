@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.ExDeviceUnreachable;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.rocklog.Defect;
 import com.aerofs.rocklog.RockLog;
@@ -50,7 +50,7 @@ public final class TestDevicePresenceListener
             throws Exception
     {
         devicePresenceListener.onDevicePresenceChanged(DID_0, false);
-        verify(unicast).disconnect(eq(DID_0), any(ExDeviceUnreachable.class));
+        verify(unicast).disconnect(eq(DID_0), any(ExDeviceUnavailable.class));
         verify(pulseManager).stopPulse(DID_0, false);
     }
 

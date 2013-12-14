@@ -4,7 +4,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.ex.ExDeviceOffline;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -61,13 +61,13 @@ final class ARP
     }
 
     /**
-     * @throws ExDeviceOffline if there is no routing information for this peer
+     * @throws ExDeviceUnavailable if there is no routing information for this peer
      */
     ARPEntry getThrows(DID did)
-        throws ExDeviceOffline
+        throws ExDeviceUnavailable
     {
         ARPEntry en = get(did);
-        if (en == null) throw new ExDeviceOffline();
+        if (en == null) throw new ExDeviceUnavailable("no arp entry for " + did);
         return en;
     }
 

@@ -10,17 +10,16 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.EventDispatcher;
-import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
+import com.aerofs.daemon.transport.lib.TransportEventQueue;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.UnicastProxy;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
@@ -30,10 +29,8 @@ import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionSer
 import com.aerofs.daemon.transport.xmpp.multicast.Multicast;
 import com.aerofs.daemon.transport.xmpp.presence.XMPPPresenceProcessor;
 import com.aerofs.daemon.transport.xmpp.signalling.SignallingService;
-import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.ServerStatus;
@@ -53,7 +50,6 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.Set;
 
-import static com.aerofs.daemon.lib.DaemonParam.Zephyr.QUEUE_LENGTH;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupCommonHandlersAndListeners;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupMulticastHandler;
 import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
@@ -68,11 +64,10 @@ public final class Zephyr implements ITransport
     private final String id;
     private final int rank; // FIXME (AG): why does the transport need to know its own preference
 
-    private final BlockingPrioQueue<IEvent> eventQueue = new BlockingPrioQueue<IEvent>(QUEUE_LENGTH);
-    private final EventDispatcher eventDispatcher = new EventDispatcher();
+    private final TransportEventQueue transportEventQueue;
+    private final EventDispatcher dispatcher;
     private final Scheduler scheduler;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
-    private Thread dispatcherThread;
 
     private final PulseManager pulseManager = new PulseManager();
     private final StreamManager streamManager = new StreamManager();
@@ -117,10 +112,13 @@ public final class Zephyr implements ITransport
         // see http://www.igniterealtime.org/community/thread/35976
         SASLAuthentication.supportSASLMechanism("PLAIN", 0);
 
+        this.dispatcher = new EventDispatcher();
+        this.transportEventQueue = new TransportEventQueue(id, this.dispatcher);
+        this.scheduler = new Scheduler(this.transportEventQueue, id + "-sched");
+
         this.id = id;
         this.rank = rank;
 
-        this.scheduler = new Scheduler(eventQueue, id + "-sched");
         this.outgoingEventSink = outgoingEventSink;
 
         this.xmppConnectionService = new XMPPConnectionService(
@@ -140,7 +138,7 @@ public final class Zephyr implements ITransport
         this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
         this.presenceService = new PresenceService();
 
-        XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, this, outgoingEventSink, presenceService);
+        XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, outgoingEventSink, presenceService);
         presenceService.addListener(xmppPresenceProcessor);
 
         UnicastProxy unicastProxy = new UnicastProxy();
@@ -203,7 +201,7 @@ public final class Zephyr implements ITransport
         l.debug("{}: enabling multicast", id());
 
         multicastEnabled = true;
-        setupMulticastHandler(eventDispatcher, multicast);
+        setupMulticastHandler(dispatcher, multicast);
     }
 
     @Override
@@ -213,35 +211,28 @@ public final class Zephyr implements ITransport
     }
 
     @Override
-    public void init_()
+    public void init()
             throws Exception
     {
-        setupCommonHandlersAndListeners(this, eventDispatcher, scheduler, outgoingEventSink, multicast, streamManager, pulseManager, zephyrConnectionService, presenceService);
+        setupCommonHandlersAndListeners(this, dispatcher, scheduler, outgoingEventSink, multicast, streamManager, pulseManager, zephyrConnectionService, presenceService);
         zephyrConnectionService.init();
     }
 
     @Override
-    public void start_()
+    public void start()
     {
-        checkState(dispatcherThread == null, "dispatcher thread already started");
-
-        dispatcherThread = new Thread(TransportThreadGroup.get(), new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                OutArg<Prio> outPrio = new OutArg<Prio>();
-                // noinspection InfiniteLoopStatement
-                while (true) {
-                    IEvent ev = eventQueue.dequeue(outPrio);
-                    eventDispatcher.dispatch_(ev, outPrio.get());
-                }
-            }
-        }, id() + "-eq");
-
-        dispatcherThread.start();
+        transportEventQueue.start();
         xmppConnectionService.start();
         zephyrConnectionService.start();
+    }
+
+    @Override
+    public void stop()
+    {
+        zephyrConnectionService.stop();
+        xmppConnectionService.stop();
+        scheduler.shutdown();
+        transportEventQueue.stop();
     }
 
     @Override
@@ -259,7 +250,7 @@ public final class Zephyr implements ITransport
     @Override
     public IBlockingPrioritizedEventSink<IEvent> q()
     {
-        return eventQueue;
+        return transportEventQueue;
     }
 
     @Override
@@ -280,10 +271,10 @@ public final class Zephyr implements ITransport
         String indent2 = indent + indentUnit;
 
         ps.println(indent + "q");
-        eventQueue.dumpStatMisc(indent2, indentUnit, ps);
-        ps.println(indent + "mcast");
+        transportEventQueue.dumpStatMisc(indent2, indentUnit, ps);
+        ps.println(indent + "xmpp");
         xmppConnectionService.dumpStatMisc(indent2, indentUnit, ps);
-        ps.println(indent + "ucast");
+        ps.println(indent + "unicast");
         zephyrConnectionService.dumpStatMisc(indent2, indentUnit, ps);
     }
 

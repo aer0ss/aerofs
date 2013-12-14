@@ -6,9 +6,15 @@
 package com.aerofs.daemon.transport.jingle;
 
 /**
- * Interface for tasks to be executed by the {@link SignalThread}
+ * Implemented by tasks that will be executed in the libjingle
+ * {@link SignalThread}.
  */
 interface ISignalThreadTask extends Runnable
 {
-    public void error(Exception e);
+    /**
+     * Called when the {@link Runnable#run()} method throws an exception.
+     *
+     * @param e the exception thrown by the task
+     */
+    void error(Exception e);
 }

@@ -19,11 +19,4 @@ public interface IModule extends IStartable
      * module cannot be started and cannot be used
      */
     public void init_() throws Exception;
-
-    /**
-     * Implementation of this method may assume that all other modules it depends on have been
-     * init_()'ed.
-     */
-    @Override
-    public void start_();
 }

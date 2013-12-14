@@ -25,6 +25,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
@@ -32,7 +34,6 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence.Mode;
-import org.jivesoftware.smackx.Form;
 import org.jivesoftware.smackx.muc.DiscussionHistory;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.slf4j.Logger;
@@ -41,7 +42,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -50,16 +50,16 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
 
-    private final Map<SID, MultiUserChat> _mucs = new TreeMap<SID, MultiUserChat>();
-    private final FrequentDefectSender _fds = new FrequentDefectSender();
-    private final Set<SID> _all = new TreeSet<SID>();
-    private final DID _localDid;
-    private final String _xmppTransportId;
-    private final String _xmppServerDomain;
-    private final MaxcastFilterReceiver _maxcastFilterReceiver;
-    private final XMPPConnectionService _xmppConnectionService;
-    private final ITransport _transport;
-    private final IBlockingPrioritizedEventSink<IEvent> _sink;
+    private final FrequentDefectSender frequentDefectSender = new FrequentDefectSender();
+    private final Map<SID, MultiUserChat> mucs = Maps.newTreeMap();
+    private final Set<SID> allStores = Sets.newTreeSet();
+    private final DID localdid;
+    private final String xmppTransportId;
+    private final String xmppServerDomain;
+    private final MaxcastFilterReceiver maxcastFilterReceiver;
+    private final XMPPConnectionService xmppConnectionService;
+    private final ITransport transport;
+    private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
 
     public Multicast(
             DID localDid,
@@ -68,23 +68,23 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
             MaxcastFilterReceiver maxcastFilterReceiver,
             XMPPConnectionService xmppConnectionService,
             ITransport transport,
-            IBlockingPrioritizedEventSink<IEvent> sink)
+            IBlockingPrioritizedEventSink<IEvent> outgoingEventSink)
     {
-        _localDid = localDid;
-        _xmppTransportId = xmppTransportId;
-        _xmppServerDomain = xmppServerDomain;
-        _maxcastFilterReceiver = maxcastFilterReceiver;
-        _xmppConnectionService = xmppConnectionService;
-        _transport = transport;
-        _sink = sink;
+        this.localdid = localDid;
+        this.xmppTransportId = xmppTransportId;
+        this.xmppServerDomain = xmppServerDomain;
+        this.maxcastFilterReceiver = maxcastFilterReceiver;
+        this.xmppConnectionService = xmppConnectionService;
+        this.transport = transport;
+        this.outgoingEventSink = outgoingEventSink;
     }
 
     private void leaveMUC(SID sid) throws XMPPException
     {
         MultiUserChat muc;
         synchronized (this) {
-            _all.remove(sid);
-            muc = _mucs.remove(sid);
+            allStores.remove(sid);
+            muc = mucs.remove(sid);
             if (muc == null) return;
         }
 
@@ -104,70 +104,23 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
             boolean create;
             MultiUserChat muc;
             synchronized (this) {
-                _all.add(sid);
-                muc = _mucs.get(sid);
+                allStores.add(sid);
+                muc = mucs.get(sid);
                 create = muc == null;
             }
 
             if (create) {
-                String roomName = JabberID.sid2muc(sid, _xmppServerDomain);
                 // This has to be called to ensure that the connection is initialized (and thus the
                 // smack static initializers have run) before using MultiUserChat, since
                 // otherwise the MultiUserChat static initializer might deadlock with the
                 // SmackConfiguration's static initializers.
-                XMPPConnection conn = _xmppConnectionService.conn();
+                XMPPConnection conn = xmppConnectionService.conn();
+                String roomName = JabberID.sid2muc(sid, xmppServerDomain);
                 muc = new MultiUserChat(conn, roomName);
-
-                // TODO (AG): consider removing service discovery and simply doing a join,create,join
-
-                try {
-                    l.info("gri {}", sid);
-                    MultiUserChat.getRoomInfo(conn, roomName);
-                } catch (XMPPException e) {
-                    if (e.getXMPPError() != null && e.getXMPPError().getCode() == 404) {
-                        l.info("muc " + roomName + " not exists. create now.");
-
-                        try {
-                            createRoom(muc);
-                        } catch (XMPPException createException) {
-                            if (createException.getMessage().equals("Creation failed - Missing acknowledge of room creation.")) {
-
-                                // [sigh] we have a race condition that gets
-                                // triggered when multiple peers 'simultaneously':
-                                //
-                                // 1. use MultiUserChat.getRoomInfo() to check if the room exists
-                                // 2. ejabberd informs both peers that the room doesn't exist
-                                // 3. both users attempt to use createRoom() to create the room
-                                // 3. only one guy is able to create the room (obviously);
-                                //    the other gets the exception above
-                                //
-                                // when this happens we should try and avoid an
-                                // expensive reconnect loop. so, we ignore this
-                                // error and attempt to join the room below. if there's
-                                // a problem there, we'll throw and destroy the
-                                // connection
-                                //
-                                // unfortunately Smack does _not_ throw an
-                                // XMPPException with a specific error code, so I
-                                // have to compare the exception string above to
-                                // recognize this case.
-                                // Amazing.
-
-                                l.warn("room {} may already exist - attempt join anyways", roomName);
-                            } else {
-                                throw createException;
-                            }
-                        }
-                    } else {
-                        l.error(e.getMessage());
-                        throw e;
-                    }
-                }
-
                 joinRoom(muc);
 
                 synchronized (this) {
-                    _mucs.put(sid, muc);
+                    mucs.put(sid, muc);
                 }
             }
 
@@ -199,8 +152,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
         history.setMaxChars(0);
 
         try {
-            muc.join(JabberID.getMUCRoomNickname(_localDid, _xmppTransportId),
-                    null, history, SmackConfiguration.getPacketReplyTimeout());
+            muc.join(JabberID.getMUCRoomNickname(localdid, xmppTransportId), null, history, SmackConfiguration.getPacketReplyTimeout());
             muc.addMessageListener(new PacketListener()
             {
                 @Override
@@ -214,14 +166,11 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
                         try {
                             recvMessage(msg);
                         } catch (Exception e) {
-                            _fds.logSendAsync("process_ mc from " +
-                                    msg.getFrom() + ": " + XMPPUtilities.getBodyDigest(
-                                    msg.getBody()), e);
+                            frequentDefectSender.logSendAsync("process mc from " + msg.getFrom() + ": " + XMPPUtilities.getBodyDigest(msg.getBody()), e);
                         }
                     }
                 }
             });
-
         } catch (IllegalStateException e) {
             throw new XMPPException(e);
         }
@@ -236,45 +185,24 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
         return at == -1 ? room : room.substring(0, at);
     }
 
-    private void createRoom(MultiUserChat muc) throws XMPPException
-    {
-        l.info("creating " + muc.getRoom());
-
-        try {
-            muc.create(JabberID.getMUCRoomNickname(_localDid, _xmppTransportId));
-
-            // create an instant room using the server's default configuration
-            // see: http://www.igniterealtime.org/builds/smack/docs/latest/documentation/extensions/muc.html
-            // the xmpp server should be set up with the following defaults:
-            // muc#roomconfig_enablelogging: false
-            // muc#roomconfig_persistentroom: true
-            // muc#roomconfig_maxusers: unlimited
-            muc.sendConfigurationForm(new Form(Form.TYPE_SUBMIT));
-        } catch (IllegalStateException e) {
-            throw new XMPPException(e);
-        }
-
-        l.info("created");
-    }
-
     private void recvMessage(Message msg) throws IOException, ExFormatError,
             ExNoResource
     {
         String[] tokens = JabberID.tokenize(msg.getFrom());
-        DID did = JabberID.jid2did(tokens);
-        if (did.equals(_localDid)) return;
+        DID did = JabberID.jid2did(tokens, xmppServerDomain);
+        if (did.equals(localdid)) return;
 
-        checkArgument(JabberID.isMUCAddress(tokens));
+        checkArgument(JabberID.isMUCAddress(tokens, xmppServerDomain));
 
         l.debug("recv mc d:{}", did);
 
         OutArg<Integer> wirelen = new OutArg<Integer>();
-        byte [] bs = XMPPUtilities.decodeBody(did, wirelen, msg.getBody(), _maxcastFilterReceiver);
+        byte [] bs = XMPPUtilities.decodeBody(did, wirelen, msg.getBody(), maxcastFilterReceiver);
 
         // A null byte stream is returned if the packet is to be filtered away
         if (bs == null) return;
 
-        Endpoint ep = new Endpoint(_transport, did);
+        Endpoint ep = new Endpoint(transport, did);
 
         ByteArrayInputStream is = new ByteArrayInputStream(bs);
         recvMessage(ep, is, wirelen.get());
@@ -283,28 +211,28 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
     private void recvMessage(Endpoint ep, ByteArrayInputStream is, int wirelen)
             throws IOException, ExNoResource
     {
-        // NOTE: Assume that ep.did() != _localDid as this is checked in recvMessage(Message msg)
-        _sink.enqueueThrows(new EIMaxcastMessage(ep, is, wirelen), Prio.LO);
+        // NOTE: Assume that ep.did() != localdid as this is checked in recvMessage(Message msg)
+        outgoingEventSink.enqueueThrows(new EIMaxcastMessage(ep, is, wirelen), Prio.LO);
     }
 
     @Override
     public synchronized void xmppServerDisconnected()
     {
-        _mucs.clear();
+        mucs.clear();
     }
 
     @Override
     public void xmppServerConnected(XMPPConnection conn) throws XMPPException
     {
-        // re-register all existing rooms. a copy of the _all array is needed
+        // re-register all existing rooms. a copy of the allStores array is needed
         // as it may get modified by getMUC().
-        // a loop is needed in case more entries are added to "_all" but failed
+        // a loop is needed in case more entries are added to "allStores" but failed
         // to register on the server while we're working
         Set<SID> all = null;
         while (true) {
             synchronized (this) {
-                if (all != null && all.equals(_all)) break;
-                all = new TreeSet<SID>(_all);
+                if (all != null && all.equals(allStores)) break;
+                all = new TreeSet<SID>(allStores);
             }
 
             for (SID sid : all) getMUC(sid);

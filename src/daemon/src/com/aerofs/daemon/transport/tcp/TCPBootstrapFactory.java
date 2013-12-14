@@ -9,6 +9,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
+import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
@@ -42,27 +43,27 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 final class TCPBootstrapFactory
 {
-    private final AddressResolverHandler _addressResolver = new AddressResolverHandler(newSingleThreadExecutor());
-    private final String _transportId;
-    private final UserID _localuser;
-    private final DID _localdid;
-    private final SSLEngineFactory _clientSslEngineFactory;
-    private final SSLEngineFactory _serverSslEngineFactory;
-    private final IUnicastListener _unicastListener;
-    private final RockLog _rockLog;
-    private final TransportStats _stats;
-    private final Timer _timer = new HashedWheelTimer(500, MILLISECONDS);
+    private final AddressResolverHandler addressResolver = new AddressResolverHandler(newSingleThreadExecutor());
+    private final String transportId;
+    private final UserID localuser;
+    private final DID localdid;
+    private final SSLEngineFactory clientSslEngineFactory;
+    private final SSLEngineFactory serverSslEngineFactory;
+    private final IUnicastListener unicastListener;
+    private final RockLog rockLog;
+    private final TransportStats transportStats;
+    private final Timer timer = new HashedWheelTimer(500, MILLISECONDS);
 
-    TCPBootstrapFactory(String transportId, UserID localUser, DID localDID, SSLEngineFactory clientSslEngineFactory, SSLEngineFactory serverSslEngineFactory, IUnicastListener unicastListener, RockLog rockLog, TransportStats stats)
+    TCPBootstrapFactory(String transportId, UserID localuser, DID localdid, SSLEngineFactory clientSslEngineFactory, SSLEngineFactory serverSslEngineFactory, IUnicastListener unicastListener, RockLog rockLog, TransportStats stats)
     {
-        _transportId = transportId;
-        _localuser = localUser;
-        _localdid = localDID;
-        _clientSslEngineFactory = clientSslEngineFactory;
-        _serverSslEngineFactory = serverSslEngineFactory;
-        _unicastListener = unicastListener;
-        _rockLog = rockLog;
-        _stats = stats;
+        this.transportId = transportId;
+        this.localuser = localuser;
+        this.localdid = localdid;
+        this.clientSslEngineFactory = clientSslEngineFactory;
+        this.serverSslEngineFactory = serverSslEngineFactory;
+        this.unicastListener = unicastListener;
+        this.rockLog = rockLog;
+        this.transportStats = stats;
     }
 
     ClientBootstrap newClientBootstrap(ClientSocketChannelFactory channelFactory, final ChannelTeardownHandler clientChannelTeardownHandler)
@@ -73,18 +74,17 @@ final class TCPBootstrapFactory
             @Override
             public ChannelPipeline getPipeline() throws Exception
             {
-                ClientHandler clientHandler = new ClientHandler(_unicastListener);
+                ClientHandler clientHandler = new ClientHandler(unicastListener);
 
-                return Channels.pipeline(
-                        _addressResolver,
-                        newStatsHandler(_stats),
-                        newSslHandler(_clientSslEngineFactory),
+                return Channels.pipeline(addressResolver,
+                        newStatsHandler(transportStats),
+                        newSslHandler(clientSslEngineFactory),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
-                        newCNameVerificationHandler(clientHandler, _localuser, _localdid),
-                        newDiagnosticsHandler(_transportId, _rockLog, _timer),
+                        newCNameVerificationHandler(clientHandler, localuser, localdid),
+                        newDiagnosticsHandler(transportId, rockLog, timer),
                         clientHandler,
                         clientChannelTeardownHandler);
             }
@@ -100,23 +100,24 @@ final class TCPBootstrapFactory
             final ChannelTeardownHandler serverChannelTeardownHandler)
     {
         ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
+        bootstrap.setParentHandler(new ShouldKeepAcceptedChannelHandler());
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
             public ChannelPipeline getPipeline() throws Exception
             {
-                ServerHandler serverHandler = new ServerHandler(_unicastListener, serverHandlerListener);
+                ServerHandler serverHandler = new ServerHandler(unicastListener, serverHandlerListener);
 
                 return Channels.pipeline(
-                        _addressResolver,
-                        newStatsHandler(_stats),
-                        newSslHandler(_serverSslEngineFactory),
+                        addressResolver,
+                        newStatsHandler(transportStats),
+                        newSslHandler(serverSslEngineFactory),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
-                        newCNameVerificationHandler(serverHandler, _localuser, _localdid),
-                        newDiagnosticsHandler(_transportId, _rockLog, _timer),
+                        newCNameVerificationHandler(serverHandler, localuser, localdid),
+                        newDiagnosticsHandler(transportId, rockLog, timer),
                         serverHandler,
                         tcpProtocolHandler,
                         protocolHandler,

@@ -4,29 +4,51 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelSink;
+import org.jboss.netty.channel.group.ChannelGroup;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
 
-class JingleClientChannelFactory implements ChannelFactory
+import static com.google.common.base.Preconditions.checkState;
+
+/**
+ * {@code ChannelFactory} implementation that creates {@link JingleClientChannel} instances.
+ */
+final class JingleClientChannelFactory implements ChannelFactory
 {
-    private final ChannelSink _sink;
+    private final ChannelGroup clientChannelGroup = new DefaultChannelGroup();
+    private final ChannelSink clientChannelSink;
+    private final SignalThread signalThread;
+    private final JingleChannelWorker channelWorker;
 
-    public JingleClientChannelFactory(SignalThread signalThread)
+    private volatile boolean stopped;
+
+    public JingleClientChannelFactory(SignalThread signalThread, JingleChannelWorker channelWorker)
     {
-        _sink = new JingleClientChannelSink(signalThread);
+        this.signalThread = signalThread;
+        this.channelWorker = channelWorker;
+        this.clientChannelSink = new JingleClientChannelSink(signalThread);
     }
 
     @Override
     public Channel newChannel(ChannelPipeline pipeline)
     {
-        return new JingleClientChannel(null, this, pipeline, _sink);
+        checkState(!stopped);
+
+        JingleClientChannel channel = new JingleClientChannel(signalThread, channelWorker, null, this, pipeline, clientChannelSink);
+        clientChannelGroup.add(channel);
+
+        return channel;
     }
 
     @Override
     public void shutdown()
     {
+        stopped = true;
+        clientChannelGroup.close().awaitUninterruptibly();
     }
 
     @Override
     public void releaseExternalResources()
     {
+        shutdown();
     }
 }

@@ -57,10 +57,10 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
         DID getRemoteDID();
     }
 
-    private final ITransport _transport;
-    private final IBlockingPrioritizedEventSink<IEvent> _sink;
-    private final StreamManager _streamManager;
-    private final ChannelMode _channelMode;
+    private final ITransport transport;
+    private final IBlockingPrioritizedEventSink<IEvent> sink;
+    private final StreamManager streamManager;
+    private final ChannelMode channelMode;
 
     public ChannelTeardownHandler(ITransport transport, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager streamManager, ChannelMode channelMode)
     {
@@ -69,10 +69,10 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
                    || channelMode == ChannelMode.TWOWAY,
                       "unrecognized channel mode:%s", channelMode);
 
-        _transport = transport;
-        _sink = sink;
-        _streamManager = streamManager;
-        _channelMode = channelMode;
+        this.transport = transport;
+        this.sink = sink;
+        this.streamManager = streamManager;
+        this.channelMode = channelMode;
     }
 
     @Override
@@ -99,9 +99,9 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
         if (attachment != null) {
             DID did = ((ChannelDIDProvider) attachment).getRemoteDID();
 
-            l.debug("{}: teardown streams for d:{}", _transport.id(), did);
+            l.debug("{}: teardown streams for d:{}", transport.id(), did);
 
-            TPUtil.sessionEnded(new Endpoint(_transport, did), _sink, _streamManager, _channelMode.closeOutbound, _channelMode.closeInbound);
+            TPUtil.sessionEnded(new Endpoint(transport, did), sink, streamManager, channelMode.closeOutbound, channelMode.closeInbound);
         }
     }
 

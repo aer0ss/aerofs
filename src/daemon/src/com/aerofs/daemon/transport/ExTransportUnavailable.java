@@ -4,16 +4,16 @@
 
 package com.aerofs.daemon.transport;
 
-public final class ExDeviceDisconnected extends ExTransport
+public final class ExTransportUnavailable extends ExTransport
 {
     private static final long serialVersionUID = 1L;
 
-    public ExDeviceDisconnected(String message)
+    public ExTransportUnavailable(String message)
     {
         super(message);
     }
 
-    public ExDeviceDisconnected(String message, Throwable cause)
+    public ExTransportUnavailable(String message, Throwable cause)
     {
         super(message, cause);
     }

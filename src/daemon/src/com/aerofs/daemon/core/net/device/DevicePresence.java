@@ -67,6 +67,22 @@ public class DevicePresence implements IDumpStatMisc
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
 
+        addListener_(new IDevicePresenceListener()
+        {
+            @Override
+            public void deviceOnline_(DID did)
+            {
+                l.info(">>>> POTENTIALLY AVAILABLE:{}", did);
+
+            }
+
+            @Override
+            public void deviceOffline_(DID did)
+            {
+                l.info(">>>> UNAVAILABLE:{}", did);
+            }
+        });
+
         Dumpables.add("dp", this);
     }
 
@@ -152,7 +168,7 @@ public class DevicePresence implements IDumpStatMisc
 
         if (dev.isBeingPulsed_(tp)) return;
 
-        l.info("d:{} t:{} start pulse", did, tp);
+        l.info("d:{} {} start pulse", did, tp);
 
         boolean wasFormerlyAvailable = dev.isAvailable_();
         removeDIDFromStores_(did, dev.pulseStarted_(tp));

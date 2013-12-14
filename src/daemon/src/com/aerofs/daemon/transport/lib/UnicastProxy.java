@@ -6,8 +6,9 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExDeviceOffline;
 
 import javax.annotation.Nullable;
 
@@ -22,7 +23,7 @@ public final class UnicastProxy implements IUnicast
 
     @Override
     public Object send(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
-            throws ExDeviceOffline
+            throws ExTransportUnavailable, ExDeviceUnavailable
     {
         return unicast.send(did, wtr, pri, bss, cke);
     }

@@ -68,7 +68,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
          */
         public boolean resume_()
         {
-            l.debug("resume " + _thd.getName());
+            l.trace("resume " + _thd.getName());
             return unblockWithThrowable_(null);
         }
 
@@ -87,7 +87,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
             Preconditions.checkState(_l.isHeldByCurrentThread());
 
             if (_running) {
-                l.debug("already running");
+                l.trace("already running");
                 return false;
             } else {
                 _running = true;
@@ -118,7 +118,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
          */
         boolean park_(Cat cat, long timeout)
         {
-            l.debug("pause {}@{} {}: {}", _prio, cat,
+            l.trace("pause {}@{} {}: {}", _prio, cat,
                     (timeout == FOREVER ? "forever" : timeout), _pauseReason);
 
             boolean ret = true;
@@ -212,7 +212,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
         final String name = _threadNamePool.isEmpty() ? THREAD_NAME_PREFIX
                 + _total : _threadNamePool.remove();
 
-        l.debug("new: {} ({})", name, _total);
+        l.trace("new: {} ({})", name, _total);
 
         Thread thd = new Thread(_threadGroup, new Runnable() {
             @Override
@@ -250,7 +250,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
                         }
                     }
 
-                    l.debug("{} reclaimed", name);
+                    l.trace("{} reclaimed", name);
                     _threadNamePool.offer(name);
                     _total--;
 
@@ -318,7 +318,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
     @Override
     public void prePause_(TCB tcb, Token tk, String reason) throws ExAborted
     {
-        l.debug("p-pause {} {}", tcb._prio, reason);
+        l.trace("p-pause {} {}", tcb._prio, reason);
         Preconditions.checkState(_l.isHeldByCurrentThread());
         Preconditions.checkState(_paused.size() < _total);
         Preconditions.checkArgument(!reason.isEmpty());
@@ -377,7 +377,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
                 && _total - _paused.size() >= DaemonParam.TC_RECLAIM_HI_WATERMARK) {
             _pendingQuits = _total - _paused.size()
                     - DaemonParam.TC_RECLAIM_LO_WATERMARK;
-            l.debug("time to reclaim. target: {}", _pendingQuits);
+            l.trace("time to reclaim. target: {}", _pendingQuits);
             for (int i = 0; i < _pendingQuits; i++) {
                 _sched.schedule(EV_QUIT, DaemonParam.TC_RECLAIM_DELAY);
             }

@@ -3,9 +3,10 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.lib.DaemonParam.Jingle;
 import com.aerofs.daemon.link.ILinkStateListener;
-import com.aerofs.daemon.transport.ExDeviceDisconnected;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
+import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.lib.handlers.ServerHandler;
@@ -13,21 +14,19 @@ import com.aerofs.daemon.transport.lib.handlers.ServerHandler.IServerHandlerList
 import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandler;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -38,13 +37,15 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Maps.newConcurrentMap;
+import static com.google.common.util.concurrent.Futures.addCallback;
 
 public final class Unicast implements ILinkStateListener, IUnicastInternal, IServerHandlerListener, IDumpStat
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
-    private final ConcurrentMap<DID, ClientHandler> clients = Maps.newConcurrentMap();
-    private final ConcurrentMap<DID, ServerHandler> servers = Maps.newConcurrentMap();
+    private final ConcurrentMap<DID, ClientHandler> clients = newConcurrentMap();
+    private final ConcurrentMap<DID, ServerHandler> servers = newConcurrentMap();
     private final IUnicastCallbacks unicastCallbacks;
     private final TransportStats transportStats;
 
@@ -54,7 +55,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
 
     private Channel serverChannel;
     private volatile boolean paused;
-    private volatile boolean started;
+    private volatile boolean running;
 
     public Unicast(IUnicastCallbacks unicastCallbacks, TransportStats transportStats)
     {
@@ -71,6 +72,11 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
         this.clientBootstrap = clientBootstrap;
     }
 
+    private boolean isServiceAvailable()
+    {
+        return running && !paused;
+    }
+
     public void setUnicastListener(IUnicastListener unicastListener)
     {
         this.unicastListener = unicastListener;
@@ -78,18 +84,32 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
 
     public void start(SocketAddress address)
     {
-        if (started) return;
-
         synchronized (this) {
-            if (started) return;
+            if (running) return;
 
             checkState(serverChannel == null);
             serverChannel = serverBootstrap.bind(address);
 
-            started = true;
+            running = true;
         }
 
         unicastListener.onUnicastReady();
+    }
+
+    public synchronized void stop()
+    {
+        synchronized (this) {
+            if (!running) return;
+
+            pauseAccept();
+
+            running = false;
+        }
+
+        disconnectAll(new ExTransportUnavailable("transport shutting down"));
+
+        serverBootstrap.releaseExternalResources();
+        clientBootstrap.releaseExternalResources();
     }
 
     @Override
@@ -99,50 +119,60 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
             ImmutableSet<NetworkInterface> added,
             ImmutableSet<NetworkInterface> removed)
     {
+        if (!running) return;
+
         boolean becameLinkDown = !previous.isEmpty() && current.isEmpty();
 
+        if (becameLinkDown) {
+            synchronized (this) {
+                pauseAccept();
+            }
+
+            disconnectAll(new ExDeviceUnavailable("link down"));
+        }
+
+        if (previous.isEmpty() && !current.isEmpty()) {
+            synchronized (this) {
+                resumeAccept();
+            }
+        }
+    }
+
+    private void disconnectAll(Exception cause)
+    {
         Set<DID> connectedDIDs = Sets.newHashSet();
         connectedDIDs.addAll(clients.keySet());
         connectedDIDs.addAll(servers.keySet());
 
-        if (becameLinkDown) {
-            pauseAccept();
-
-            // FIXME (AG): REMOVE THIS IMMEDIATELY!
-            // I put this in because this can cause a crash inside jingle
-            // especially because the resource ownership between jingle and signalthread is broken
-            if (unicastCallbacks instanceof Jingle) {
-                return;
-            }
-
-            for (DID did : connectedDIDs) {
-                disconnect(did, new ExDeviceDisconnected("link down"));
-            }
-        }
-
-        if (previous.isEmpty() && !current.isEmpty()) {
-            resumeAccept();
+        for (DID did : connectedDIDs) {
+            disconnect(did, cause);
         }
     }
 
     private void pauseAccept()
     {
-        if (!started) return;
-
         unicastListener.onUnicastUnavailable();
-        serverChannel.setReadable(false);
+        enableChannelAccept(false);
         paused = true;
         l.info("pause unicast accept");
     }
 
     private void resumeAccept()
     {
-        if (!started) return;
-
         paused = false;
-        serverChannel.setReadable(true);
+        enableChannelAccept(true);
         unicastListener.onUnicastReady();
         l.info("resume unicast accept");
+    }
+
+    private void enableChannelAccept(boolean enabled)
+    {
+        serverChannel.setReadable(enabled);
+
+        ChannelHandler handler = serverBootstrap.getParentHandler();
+        if (handler != null) {
+            ((ShouldKeepAcceptedChannelHandler) handler).enableAccept(enabled);
+        }
     }
 
     /**
@@ -154,14 +184,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
         final ServerHandler server = channel.getPipeline().get(ServerHandler.class);
         channel.setAttachment(new DIDWrapper(did));
 
-        // If we have just paused syncing, disconnect.
-        if (paused) {
-            server.disconnect();
-            return;
-        }
-
         ServerHandler old = servers.put(did, checkNotNull(server));
-
         if (old != null) old.disconnect();
 
         channel.getCloseFuture().addListener(new ChannelFutureListener()
@@ -180,6 +203,15 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
                 }
             }
         });
+
+        // if we've paused syncing or have stopped the system, disconnect
+        // NOTE: I do this after setting the close future above so that
+        // all the presence and cleanup logic is reused
+        // I realize that this means that extra work is done, but it's safer than
+        // trying to replicate the necessary steps
+        if (!isServiceAvailable()) {
+            server.disconnect();
+        }
     }
 
     /**
@@ -211,7 +243,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
 
     @Override
     public Object send(final DID did, final @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, Object cookie)
-        throws ExDeviceOffline
+        throws ExTransportUnavailable, ExDeviceUnavailable
     {
         // Use the ClientHandler as the cookie to send the packet if the cookie is present.
         // This is to bind an outgoing stream to a particular connection, needed for the
@@ -224,12 +256,15 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
         // 5. the rest of the chunks in the stream will be sent via the latter link, which violates
         // streams' guarantee of in-order delivery.
 
-        ClientHandler client = (cookie == null) ? clients.get(did) : (ClientHandler) cookie;
-        if (client == null) client = newConnection(did);
+        ClientHandler client;
+        synchronized (this) {
+            client = (cookie == null) ? clients.get(did) : (ClientHandler) cookie;
+            if (client == null) client = newConnection(did);
+        }
 
-        ListenableFuture<Void> future = client.send(bss);
+        ListenableFuture<Void> sendFuture = client.send(bss);
 
-        Futures.addCallback(future, new FutureCallback<Void>()
+        addCallback(sendFuture, new FutureCallback<Void>()
         {
             @Override
             public void onSuccess(Void v)
@@ -254,18 +289,24 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
     }
 
     public void sendControl(DID did, PBTPHeader h)
-            throws ExDeviceOffline
+            throws ExTransportUnavailable, ExDeviceUnavailable
     {
         send(did, null, Prio.LO, TPUtil.newControl(h), null);
     }
 
     /**
      * Creates a new client connected to the specified did
-     * @throws ExDeviceOffline if the arp table doesn't contain an entry for the did
+     *
+     * @throws ExTransportUnavailable if the unicast service is paused or has already been shut down
+     * @throws ExDeviceUnavailable if we cannot find a remote address for the device
      */
     private ClientHandler newConnection(final DID did)
-            throws ExDeviceOffline
+            throws ExTransportUnavailable, ExDeviceUnavailable
     {
+        if (!isServiceAvailable()) {
+            throw new ExTransportUnavailable("transport unavailable running:" + running + " paused:" + paused);
+        }
+
         SocketAddress remoteAddress = unicastCallbacks.resolve(did);
         Channel channel = clientBootstrap.connect(remoteAddress).getChannel();
         channel.setAttachment(new DIDWrapper(did));

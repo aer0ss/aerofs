@@ -8,7 +8,7 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.slf4j.Logger;
 
-public class LoggingRule extends TestWatcher
+public final class LoggingRule extends TestWatcher
 {
     private final Logger l;
 

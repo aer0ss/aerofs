@@ -9,6 +9,8 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.FrameParams;
 import com.aerofs.daemon.transport.lib.IUnicast;
@@ -18,7 +20,6 @@ import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
@@ -104,7 +105,7 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
     }
 
     private void processUnicastControl(PBTPHeader header, Endpoint endpoint)
-            throws ExNoResource, ExProtocolError, ExDeviceOffline
+            throws ExNoResource, ExProtocolError, ExTransportUnavailable, ExDeviceUnavailable
     {
         PBTPHeader reply = null;
 
@@ -138,7 +139,7 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
 
     // FIXME (AG): send on this channel itself when we have bidirectional channels
     private void sendControl(DID did, @Nullable PBTPHeader reply)
-            throws ExDeviceOffline
+            throws ExTransportUnavailable, ExDeviceUnavailable
     {
         if (reply != null) {
             unicast.send(did, null, Prio.LO, TPUtil.newControl(reply), null);

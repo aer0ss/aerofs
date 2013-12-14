@@ -11,20 +11,20 @@ import org.jboss.netty.channel.MessageEvent;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-class SendEvent
+final class SendEvent
 {
-    private final ChannelBuffer _channelBuffer;
-    private final byte[] _bytes;
-    private final ChannelFuture _future;
-    private final Channel _channel;
+    private final ChannelBuffer channelBuffer;
+    private final byte[] bytes;
+    private final ChannelFuture writeFuture;
+    private final Channel channel;
 
     SendEvent(MessageEvent event)
     {
-        _channelBuffer = (ChannelBuffer)event.getMessage();
-        _bytes = getByteArray(_channelBuffer);
-        _channelBuffer.readerIndex(0); // reset the reader index, since we've just read all bytes.
-        _future = checkNotNull(event.getFuture());
-        _channel = event.getChannel();
+        channelBuffer = (ChannelBuffer) event.getMessage();
+        bytes = getByteArray(channelBuffer);
+        channelBuffer.readerIndex(0); // reset the reader index, since we've just read all bytes.
+        writeFuture = checkNotNull(event.getFuture());
+        channel = event.getChannel();
     }
 
     /**
@@ -33,32 +33,32 @@ class SendEvent
      */
     byte[] buffer()
     {
-        return _bytes;
+        return bytes;
     }
 
     int readIndex()
     {
-        return _channelBuffer.readerIndex();
+        return channelBuffer.readerIndex();
     }
 
     void markRead(int bytes)
     {
-        _channelBuffer.skipBytes(bytes);
+        channelBuffer.skipBytes(bytes);
     }
 
     int readableBytes()
     {
-        return _channelBuffer.readableBytes();
+        return channelBuffer.readableBytes();
     }
 
-    ChannelFuture getFuture()
+    ChannelFuture getWriteFuture()
     {
-        return _future;
+        return writeFuture;
     }
 
     Channel getChannel()
     {
-        return _channel;
+        return channel;
     }
 
     /**

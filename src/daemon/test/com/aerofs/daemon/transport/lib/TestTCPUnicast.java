@@ -6,6 +6,8 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.link.LinkStateService;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
@@ -14,7 +16,6 @@ import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
 import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
 import com.aerofs.daemon.transport.tcp.UnicastTCPDevice;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.base.Charsets;
 import org.hamcrest.MatcherAssert;
@@ -85,7 +86,7 @@ public final class TestTCPUnicast
 
     // returns the ClientHandler used to send the packet
     private ClientHandler sendPacketAndWaitForItToBeReceived(UnicastTCPDevice senderDevice, UnicastTCPDevice receiverDevice, byte[] data)
-            throws ExDeviceOffline, InterruptedException, ExecutionException
+            throws ExTransportUnavailable, ExDeviceUnavailable, InterruptedException, ExecutionException
     {
         Waiter waiter = new Waiter();
         ClientHandler clientHandler = (ClientHandler) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TPUtil.newDatagramPayload(data), null);

@@ -2,8 +2,9 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExDeviceOffline;
 
 import javax.annotation.Nullable;
 
@@ -56,6 +57,5 @@ public interface IUnicast
      */
     // FIXME (AG): split this into at least two calls: one for individual packets, another for streams
     // FIXME (AG): this API is confusing. It's unclear that bss already has to be a packet with a PBTPHeader. I would expect this header to be added by Unicast
-    Object send(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
-        throws ExDeviceOffline;
+    Object send(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke) throws ExTransportUnavailable, ExDeviceUnavailable;
 }
