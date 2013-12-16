@@ -122,6 +122,12 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
     {
         l.debug("delete {} {}", this, op);
 
+        // when a folder hierarchy is deleted from the filesystem we will get MAP operations,
+        // however they only make sense for representable objects. For non-representable and
+        // auxiliary objects, the deletion should be APPLY'ed, otherwise we'll end up with
+        // ghost physical objects in the NRO dialog.
+        if (!_path.isRepresentable() && op == PhysicalOp.MAP) op = PhysicalOp.APPLY;
+
         switch (op) {
         case APPLY:
             _fidm.throwIfFIDInconsistent_();
