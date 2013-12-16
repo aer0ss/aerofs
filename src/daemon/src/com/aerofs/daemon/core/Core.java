@@ -122,6 +122,9 @@ public class Core implements IModule
         _tamperingDetection.init_();
         _dlts.run();
 
+        // initialize the transport first
+        _tps.init_();
+
         _nvc.init_();
         _ivc.init_();
 
@@ -131,7 +134,6 @@ public class Core implements IModule
         _ps.init_();
 
         _ss.init_();
-        _tps.init_();
         _stack.init_();
         _aclsub.init_();
         _sssub.init_();

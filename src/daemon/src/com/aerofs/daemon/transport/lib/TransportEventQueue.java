@@ -19,8 +19,6 @@ import java.io.PrintStream;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.google.common.base.Preconditions.checkState;
-
 /**
  * Helper class that manages the core->transport event queue for a transport.
  * <p/>
@@ -92,10 +90,22 @@ public final class TransportEventQueue implements IBlockingPrioritizedEventSink<
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <strong>WARNING:</strong> Since the core can call this method before
+     * the transport event-queue thread has started this method can block indefinitely.
+     * This can happen because this method blocks until the transport event
+     * queue has space; but, if the event-processing thread is not running then
+     * a full queue will never be processed.
+     * <p/>
+     * Proper solution? Don't call this method before starting the transport.
+     */
     @Override
     public void enqueueBlocking(IEvent ev, Prio prio)
     {
-        checkState(running.get());
+        // FIXME (AG): commented out because the core enqueues events before the transport starts
+        // checkState(running.get());
 
         try {
             eventQueue.put(ev);
@@ -108,7 +118,8 @@ public final class TransportEventQueue implements IBlockingPrioritizedEventSink<
     public void enqueueThrows(IEvent ev, Prio prio)
             throws ExNoResource
     {
-        checkState(running.get());
+        // FIXME (AG): commented out because the core enqueues events before the transport starts
+        // checkState(running.get());
 
         boolean enqueued = eventQueue.offer(ev);
         if (!enqueued) {
@@ -119,7 +130,8 @@ public final class TransportEventQueue implements IBlockingPrioritizedEventSink<
     @Override
     public boolean enqueue(IEvent ev, Prio prio)
     {
-        checkState(running.get());
+        // FIXME (AG): commented out because the core enqueues events before the transport starts
+        // checkState(running.get());
 
         return eventQueue.offer(ev);
     }
