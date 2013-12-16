@@ -141,7 +141,8 @@ function build_deb() {
     # it's (as of this writing) better to have 10% larger packages (that add 42
     # seconds to upload) than to have 50% longer build times (that add 60
     # seconds to package_servers).
-    fakeroot << EOF
+    # We set an explicit shell because some users might have SHELL=/bin/zsh
+    fakeroot /bin/bash << EOF
     set -e
     chown -R 0:0 $DEBNAME
     dpkg-deb -Zgzip --build $DEBNAME aerofs-${DEBNAME}.deb
