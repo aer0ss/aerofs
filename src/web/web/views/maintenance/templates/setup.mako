@@ -56,35 +56,37 @@
             <% local.page_scripts = license_page.scripts %>
         %endif
     %elif page == 1:
-        <h3>Step 1 of 5</h3>
+        <h3>Step 1 of 4</h3>
         <%namespace name="hostname_page" file="setup/hostname_page.mako"/>
         <%hostname_page:body/>
         <% local.page_scripts = hostname_page.scripts %>
     %elif page == 2:
-        <h3>Step 2 of 5</h3>
+        <h3>Step 2 of 4</h3>
         <%namespace name="identity_page" file="setup/identity_page.mako"/>
         <%identity_page:body/>
         <% local.page_scripts = identity_page.scripts %>
     %elif page == 3:
-        <h3>Step 3 of 5</h3>
+        <h3>Step 3 of 4</h3>
         <%namespace name="email_page" file="setup/email_page.mako"/>
         <%email_page:body/>
         <% local.page_scripts = email_page.scripts %>
     %elif page == 4:
-        <h3>Step 4 of 5</h3>
+        <h3>Step 4 of 4</h3>
         <%namespace name="cert_page" file="setup/cert_page.mako"/>
         <%cert_page:body/>
         <% local.page_scripts = cert_page.scripts %>
     %elif page == 5:
-        <h3>Step 5 of 5</h3>
-        <%namespace name="audit_page" file="setup/audit_page.mako"/>
-        <%audit_page:body/>
-        <% local.page_scripts = audit_page.scripts %>
-    %elif page == 6:
         <h3>Sit back and relax</h3>
         <%namespace name="apply_page" file="setup/apply_and_create_user_page.mako"/>
         <%apply_page:body/>
         <% local.page_scripts = apply_page.scripts %>
+
+    ## This page is hidden from the setup workflow
+    %elif page == 6:
+        <h3>Step 5 of 5</h3>
+        <%namespace name="audit_page" file="setup/audit_page.mako"/>
+        <%audit_page:body/>
+        <% local.page_scripts = audit_page.scripts %>
     %endif
 </div>
 
