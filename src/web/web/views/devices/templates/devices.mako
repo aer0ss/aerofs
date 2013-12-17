@@ -136,7 +136,7 @@
                 title: "This device hasn't been registered with the system."});
 
             $('.last_seen_service_down_label').tooltip({
-                title: "This service is temporarily available."});
+                title: "The service is temporarily unavailable."});
 
             ## Stop editing on Escape keypress and submit on Enter keypress
             $('.name_input').keyup(function (e) {
