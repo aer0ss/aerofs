@@ -102,6 +102,11 @@ class transient::services {
     # Sanity
     # --------------
 
+    file {"/opt/sanity/probes/devman.sh":
+        source => "puppet:///modules/transient/probes/devman.sh",
+        require => Package["aerofs-sanity"],
+    }
+
     file {"/opt/sanity/probes/ejabberd.sh":
         source => "puppet:///modules/transient/probes/ejabberd.sh",
         require => Package["aerofs-sanity"],
