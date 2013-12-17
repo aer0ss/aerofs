@@ -1,8 +1,10 @@
+from datetime import datetime
 import logging
 from pyramid.security import authenticated_userid
 
 from pyramid.view import view_config
-from pyramid.httpexceptions import HTTPNoContent, HTTPFound
+from pyramid.httpexceptions import HTTPNoContent, HTTPFound, HTTPInternalServerError
+import requests
 
 from web.util import get_rpc_stub
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
@@ -67,6 +69,13 @@ def team_server_devices(request):
     return _devices(request, devices, ts_user, _("Team Servers"), True, False)
 
 def _devices(request, devices, user, page_heading, are_team_servers, show_add_mobile_device):
+
+    try:
+        last_seen_nullable = _get_last_seen(devices)
+    except Exception as e:
+        log.error('get_last_seen failed. use null values: {}'.format(e))
+        last_seen_nullable = None
+
     return {
         'url_param_user': URL_PARAM_USER,
         'url_param_device_id': _URL_PARAM_DEVICE_ID,
@@ -76,9 +85,102 @@ def _devices(request, devices, user, page_heading, are_team_servers, show_add_mo
         'page_heading': page_heading,
         'user': user,
         'devices': devices,
+        # The value is None if the devman service throws
+        'last_seen_nullable': last_seen_nullable,
         'are_team_servers': are_team_servers,
         'show_add_mobile_device': show_add_mobile_device and is_mobile_supported(request.registry.settings),
     }
+
+
+# See aerofs/src/devman/README.txt for the API spec
+_DEVMAN_URL = 'http://localhost:9020'
+_devman_polling_interval = None
+
+def _get_devman_polling_interval():
+    """
+    Return the polling interval of the devman service.
+    """
+    global _devman_polling_interval
+    if not _devman_polling_interval:
+        r = requests.get(_DEVMAN_URL + '/polling_interval')
+        _throw_on_devman_error(r)
+        _devman_polling_interval = int(r.text)
+    return _devman_polling_interval
+
+
+def _get_last_seen(devices):
+    """
+    Call the devman service to retrieve last seen time and location for the list of
+    devices.
+    @return a dict of:
+
+        { "<device_id>": { "time": "Just Now", "ip": "1.2.3.4" }, ... }
+
+        Devices that haven't been seen before are abscent from the map.
+    """
+
+    ret = {}
+    for device in devices:
+        did = device.device_id.encode('hex')
+        r = requests.get(_DEVMAN_URL + '/devices/' + did)
+        # The device is never seen. skip
+        if r.status_code == 404: continue
+        _throw_on_devman_error(r)
+
+        json = r.json()
+        ret[did] = {
+            'time': _pretty_timestamp(json['last_seen_time'] / 1000),
+            'ip': json['ip_address']
+        }
+
+    return ret
+
+
+def _pretty_timestamp(timestamp):
+    """
+    Format the timestamp beautifully
+    @param timestamp the given timestamp in seconds
+
+    http://stackoverflow.com/questions/1551382/user-friendly-time-format-in-python
+    """
+
+    diff = datetime.now() - datetime.fromtimestamp(timestamp)
+    second_diff = diff.seconds
+    day_diff = diff.days
+
+    if day_diff < 0:
+        return ''
+
+    if day_diff == 0:
+        if second_diff < _get_devman_polling_interval():
+            return "just now"
+        if second_diff < 60:
+            return str(second_diff) + " seconds ago"
+        if second_diff < 120:
+            return "a minute ago"
+        if second_diff < 3600:
+            return str(second_diff / 60) + " minutes ago"
+        if second_diff < 7200:
+            return "an hour ago"
+        if second_diff < 86400:
+            return str(second_diff / 3600) + " hours ago"
+    if day_diff == 1:
+        return "yesterday"
+    if day_diff < 7:
+        return str(day_diff) + " days ago"
+    if day_diff < 31:
+        return str(day_diff / 7) + " weeks ago"
+    if day_diff < 365:
+        return str(day_diff / 30) + " months ago"
+    return str(day_diff / 365) + " years ago"
+
+
+def _throw_on_devman_error(r):
+    if not r.ok:
+        msg = 'devman returns {}: {}'.format(r.status_code, r.text)
+        log.error(msg)
+        raise HTTPInternalServerError(msg)
+
 
 @view_config(
     route_name = 'json.rename_device',
