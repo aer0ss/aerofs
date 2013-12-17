@@ -21,8 +21,8 @@ Interface:
 
 Examples:
 
-    GET http://transient.transient.com:9020/devices/155aa68bc35e426f9535619fb1d89d14
+    GET http://<host>:9020/devices/155aa68bc35e426f9535619fb1d89d14
         Returns: {"last_seen_time": 1363304610, "ip_address": 50.196.168.145}
 
-    GET http://transient.transient.com:9020/polling_interval
+    GET http://<host>:9020/polling_interval
         Returns: 300

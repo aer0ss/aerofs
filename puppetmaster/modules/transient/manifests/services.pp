@@ -20,10 +20,9 @@ class transient::services {
 
     # --------------
     # Devman
-    # Disabled for now until we actually need the service for the "Last seen" feature.
-    # Reenable when needed.
     # --------------
-    #include devman
+
+    include devman
 
     # --------------
     # Servlets
