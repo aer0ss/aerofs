@@ -34,4 +34,4 @@ logging:
 
 polling:
     initialDelayInSeconds: 10
-    intervalInSeconds: 300
+    intervalInSeconds: 60
