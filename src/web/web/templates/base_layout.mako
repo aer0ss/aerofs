@@ -9,22 +9,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="P2P file sharing and file sync lets you create your own hybrid and private cloud. Secure, unlimited data transfer for large or sensitive files on Windows, Mac, Linux, and Android.">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>
-        ## This title is recommended by Beth to maximize keyword matching for SEO
-        Private and Secure File Sharing and File Sync | AeroFS
+        ## See http://moz.com/learn/seo/title-tag for info on title tags
+        ## Important details: 
+        ## - titles should be <70 characters total
+        ## - should not be too similar page to page (triggers "repeat content")
+        ## - if the brand is young (e.g. not known), focus on keywords in the front
+
+
         ## The following code requires _every_ page to define a page title.
         ##
         ## Place the title definition to the top of the file:
         ## <%! page_title = "About Us" %>
         ## And remember to capitalize initials.
         %if len(self.attr.page_title) != 0:
-            | ${self.attr.page_title}
+            ${self.attr.page_title} |
         %endif
+            AeroFS
     </title>
+
+    <%block name="meta_tags"/>
 
     ## fav and touch icons
     <link rel="shortcut icon" href="${request.static_path('web:static/img/favicon.ico')}">

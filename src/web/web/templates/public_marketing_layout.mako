@@ -19,6 +19,11 @@
     }
 </style>
 
+<%block name="meta_tags">
+    ## descriptions should be ~<=155 characters in length
+    <meta name="description" content="Private cloud file sync and share. AeroFS enables secure, unlimited data transfer for large and sensitive files on Windows, Mac, Linux, and Android." />
+</%block>
+
 <%block name="top_navigation_bar_mobile">
         <li><a href="${request.route_path('product_overview')}">Product</a></li>
         <li><a href="${request.route_path('solutions_overview')}">Solutions</a></li>
