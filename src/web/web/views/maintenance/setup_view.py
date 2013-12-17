@@ -135,7 +135,7 @@ def _setup_common(request, conf, license_page_only):
         # This parameter is used by finalize
         'url_param_license_shasum': URL_PARAM_KEY_LICENSE_SHASUM,
         # This parameter is used by SMTP & LDAP verification code
-        'restored_from_backup': request.session.get(_SESSION_KEY_RESTORED, True)
+        'restored_from_backup': request.session.get(_SESSION_KEY_RESTORED, False)
     }
 
 
