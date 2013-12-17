@@ -9,6 +9,12 @@
     {{form.hidden_tag()}}
     <p>
         {{ render_field(form.email) }}
+        {{ render_field(form.first_name) }}
+        {{ render_field(form.last_name) }}
+        {{ render_field(form.company_name) }}
+        {{ render_field(form.phone_number) }}
+        {{ render_field(form.job_title) }}
+        {{ render_field(form.accept_eula) }}
     </p>
     {{ submit_button("Sign Up") }}
 </form>

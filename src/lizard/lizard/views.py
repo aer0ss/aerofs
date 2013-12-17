@@ -56,13 +56,13 @@ def logout():
     flash(u"You have logged out successfully")
     return redirect(url_for("index"))
 
-@app.route("/request_signup_code", methods=["GET", "POST"])
+@app.route("/request_signup", methods=["GET", "POST"])
 def signup_request_page():
     """
-    GET /request_signup_code - shows form for signing up
-    POST /request_signup_code <email in body>
+    GET /request_signup - shows form for signing up
+    POST /request_signup
     """
-    form = forms.InviteForm()
+    form = forms.SignupForm()
     if form.validate_on_submit():
         # If email already in Admin table, noop (but return success).
         # We don't want to leak that an account bound to an email exists by
@@ -85,6 +85,11 @@ def signup_request_page():
             record = models.UnboundSignup()
             record.email=form.email.data
             record.signup_code=signup_code
+            record.first_name = form.first_name.data
+            record.last_name = form.last_name.data
+            record.company_name = form.company_name.data
+            record.phone_number = form.phone_number.data
+            record.job_title = form.job_title.data
             db.session.add(record)
             db.session.commit()
         emails.send_verification_email(form.email.data, record.signup_code)
@@ -107,24 +112,29 @@ def signup_completion_page():
         # return to the "enter your email so we can verify it" page
         return redirect(url_for("signup_request_page"))
 
-    code = models.UnboundSignup.query.filter_by(signup_code=user_signup_code).first()
-    if not code:
+    signup = models.UnboundSignup.query.filter_by(signup_code=user_signup_code).first()
+    if not signup:
         # This signup code was invalid.
         return redirect(url_for("signup_request_page"))
 
-    form = forms.SignupForm()
+    form = forms.CompleteSignupForm()
     if form.validate_on_submit():
         # Create a new Customer named `company`
         cust = models.Customer()
-        cust.name = form.company_name.data
+        cust.name = signup.company_name
         db.session.add(cust)
 
         # Create a new Admin with the right
-        # `name`, `customer_id`, `salt`, `pw_hash`
+        # `first_name`, `last_name`, `customer_id`,
+        # `phone_number`, `job_title`,
+        # `salt`, `pw_hash`
         admin = models.Admin()
         admin.customer = cust
-        admin.email = code.email
-        admin.name = form.name.data
+        admin.email = signup.email
+        admin.first_name = signup.first_name
+        admin.last_name = signup.last_name
+        admin.phone_number = signup.phone_number
+        admin.job_title = signup.job_title
         # generate a random salt for this user
         salt = scrypt.generate_random_salt()
         admin.salt = salt
@@ -134,9 +144,9 @@ def signup_completion_page():
 
         # Delete any invite codes for that user from the database; they can no
         # longer accept an invitation from a different organization.
-        db.session.query(models.BoundInvite).filter(models.BoundInvite.email==code.email).delete()
+        db.session.query(models.BoundInvite).filter(models.BoundInvite.email==signup.email).delete()
         # Delete the signup code from the database, as it is consumed
-        db.session.delete(code)
+        db.session.delete(signup)
 
         # Commit.
         db.session.commit()
@@ -147,15 +157,17 @@ def signup_completion_page():
             flash(u"Login failed for {}: probably marked inactive?")
 
         # TODO: also remove the flashed password before deploying to production
-        flash(u"Created user {} ({} from company {} pw: {}, signup code: {})".format(
+        flash(u"Created user {} ({} {} from company {} pw: {}, signup code: {})".format(
             admin.email,
-            admin.name,
+            admin.first_name,
+            admin.last_name,
             cust.name,
             form.password.data,
             user_signup_code))
         return redirect(url_for("index"))
     return render_template("complete_signup.html",
-            form=form)
+            form=form,
+            record=signup)
 
 @app.route("/users/edit", methods=["GET", "POST"])
 @login.login_required
@@ -164,7 +176,8 @@ def edit_preferences():
     form = forms.PreferencesForm()
     if form.validate_on_submit():
         # Update name
-        user.name = form.name.data
+        user.first_name = form.first_name.data
+        user.last_name = form.last_name.data
         if len(form.password.data) > 0:
             # Always generate a new salt when updating password.
             salt = scrypt.generate_random_salt()
@@ -179,7 +192,8 @@ def edit_preferences():
         db.session.commit()
         flash(u'Saved changes.')
         return redirect(url_for("edit_preferences"))
-    form.name.data = user.name
+    form.first_name.data = user.first_name
+    form.last_name.data = user.last_name
     form.security_emails.data = user.notify_security
     form.release_emails.data = user.notify_release
     form.maintenance_emails.data = user.notify_maintenance
@@ -234,14 +248,16 @@ def accept_organization_invite():
         return redirect(url_for("index"))
     customer = models.Customer.query.get(invite.customer_id)
 
-    form = forms.AcceptForm()
+    form = forms.AcceptInviteForm()
     if form.validate_on_submit():
-        # Create a new Admin with the right
-        # `name`, `customer_id`, `salt`, `pw_hash`
+        # Create a new Admin with the right fields
         admin = models.Admin()
         admin.customer = customer
         admin.email = invite.email
-        admin.name = form.name.data
+        admin.first_name = form.first_name.data
+        admin.last_name = form.last_name.data
+        admin.phone_number = form.phone_number.data
+        admin.job_title = form.job_title.data
         # generate a random salt for this user
         salt = scrypt.generate_random_salt()
         admin.salt = salt
@@ -265,6 +281,7 @@ def accept_organization_invite():
         return redirect(url_for("index"))
     return render_template("accept_invite.html",
             form=form,
+            invite=invite,
             customer=customer)
 
 @app.route("/dashboard", methods=["GET"])

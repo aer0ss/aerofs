@@ -87,6 +87,12 @@ class UnboundSignup(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     signup_code = db.Column(db.String(_SIGNUP_CODE_LENGTH), index=True, unique=True, nullable=False)
     email = db.Column(db.Unicode(length=_EMAIL_MAX_LEN), index=True, nullable=False)
+    first_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+    last_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+    company_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+    # We allow these to be null or empty
+    phone_number = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
+    job_title = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
 
 class BoundInvite(db.Model):
     # A model that represents an email address that a customer has specified
@@ -103,9 +109,15 @@ class Admin(db.Model, TimeStampedMixin):
     # password, belongs to a particular customer, and has preferences.
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
+    # Required accounting fields
     email = db.Column(db.Unicode(length=_EMAIL_MAX_LEN), index=True, unique=True, nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
-    name = db.Column(db.Unicode(_USER_STRING_MAX_LEN), nullable=False)
+    first_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+    last_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+
+    # Optional
+    phone_number = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
+    job_title = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
 
     # Login credentials (per-user random salt, hash)
     # scrypt ftw
