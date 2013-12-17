@@ -14,6 +14,7 @@ def test_suite():
     import unittests.password_reset
     import unittests.maintenance
     import unittests.settings
+    import unittests.oauth
 
 
     suite = unittest.TestSuite()
@@ -30,5 +31,6 @@ def test_suite():
     suite.addTest(unittests.org_settings.test_suite())
     suite.addTest(unittests.maintenance.test_suite())
     suite.addTest(unittests.settings.test_suite())
+    suite.addTest(unittests.oauth.test_suite())
 
     return suite

@@ -20,8 +20,6 @@ import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 
 public interface AuthorizationRequestRepository
 {
-    AuthorizationRequest findByAuthState(String authState);
-
     AuthorizationRequest findByAuthorizationCode(String authorizationCode);
 
     AuthorizationRequest save(AuthorizationRequest authReq);

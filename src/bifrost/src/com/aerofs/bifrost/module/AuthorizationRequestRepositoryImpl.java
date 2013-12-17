@@ -13,12 +13,6 @@ import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 public class AuthorizationRequestRepositoryImpl implements AuthorizationRequestRepository
 {
     @Override
-    public AuthorizationRequest findByAuthState(String authState)
-    {
-        return _dao.findByAuthState(authState);
-    }
-
-    @Override
     public AuthorizationRequest findByAuthorizationCode(String authCode)
     {
         return _dao.findByAuthCode(authCode);

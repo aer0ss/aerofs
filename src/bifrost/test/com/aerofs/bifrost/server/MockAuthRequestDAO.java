@@ -17,7 +17,6 @@ import java.util.Map;
  */
 public class MockAuthRequestDAO extends AuthorizationRequestDAO
 {
-    private Map<String, AuthorizationRequest> m_state = new HashMap<String, AuthorizationRequest>();
     private Map<String, AuthorizationRequest> m_code = new HashMap<String, AuthorizationRequest>();
 
     @Inject
@@ -29,13 +28,9 @@ public class MockAuthRequestDAO extends AuthorizationRequestDAO
     @Override
     public AuthorizationRequest save(AuthorizationRequest s)
     {
-        m_state.put(s.getAuthState(), s);
         m_code.put(s.getAuthorizationCode(), s);
         return s;
     }
-
-    @Override
-    public AuthorizationRequest findByAuthState(String authState) { return m_state.get(authState); }
 
     @Override
     public AuthorizationRequest findByAuthCode(String authCode) { return m_code.get(authCode); }
@@ -43,7 +38,6 @@ public class MockAuthRequestDAO extends AuthorizationRequestDAO
     @Override
     public void delete(AuthorizationRequest authorizationRequest)
     {
-        m_state.remove(authorizationRequest.getAuthState());
         m_code.remove(authorizationRequest.getAuthorizationCode());
     }
 }

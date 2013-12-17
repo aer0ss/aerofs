@@ -16,10 +16,8 @@ import com.aerofs.bifrost.module.ClientRepositoryImpl;
 import com.aerofs.bifrost.module.ResourceServerRepositoryImpl;
 import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
 import com.aerofs.bifrost.oaaas.auth.AbstractUserConsentHandler;
-import com.aerofs.bifrost.oaaas.auth.AuthenticationFilter;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
 import com.aerofs.bifrost.oaaas.auth.OAuth2ValidatorImpl;
-import com.aerofs.bifrost.oaaas.auth.UserConsentFilter;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.bifrost.oaaas.model.Client;
@@ -29,6 +27,7 @@ import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.aerofs.bifrost.oaaas.resource.AuthorizeResource;
 import com.aerofs.bifrost.oaaas.resource.ClientsResource;
 import com.aerofs.bifrost.oaaas.resource.TokenResource;
 import com.aerofs.bifrost.oaaas.resource.VerifyResource;
@@ -72,17 +71,20 @@ public class Bifrost extends Service
 
         SessionFactory sessionFactory = injector.getInstance(SessionFactory.class);
         _trans = new TransactionalWrapper(sessionFactory,
-                ImmutableSet.of("/token", "/authorize", "/clients"),    // read-write
-                ImmutableSet.of("/tokeninfo", "/tokenlist"));           // read-only
-
-        addRequestFilter(AuthenticationFilter.class);
-        addRequestFilter(UserConsentFilter.class);
+                ImmutableSet.of( // read-write
+                        "/token",
+                        "/clients",
+                        "/authorize"),
+                ImmutableSet.of( // read-only
+                        "/tokeninfo",
+                        "/tokenlist"));
     }
 
     @Override
     protected Set<Class<?>> singletons()
     {
         return ImmutableSet.of(
+                AuthorizeResource.class,
                 VerifyResource.class,
                 TokenResource.class,
                 ClientsResource.class

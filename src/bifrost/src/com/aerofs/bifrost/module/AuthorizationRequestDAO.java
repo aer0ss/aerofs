@@ -24,24 +24,11 @@ public class AuthorizationRequestDAO extends AbstractDAO<AuthorizationRequest>
         return persist(s);
     }
 
-    public AuthorizationRequest findByAuthState(String authState)
-    {
-        AuthorizationRequest result = uniqueResult(
-                criteria().add(Restrictions.eq("authState", authState)));
-        if (result != null) { result.decodePrincipal(); }
-        return result;
-    }
-
     public AuthorizationRequest findByAuthCode(String authCode)
     {
         AuthorizationRequest result = uniqueResult(
                 criteria().add(Restrictions.eq("authorizationCode", authCode)));
         if (result != null) { result.decodePrincipal(); }
         return result;
-    }
-
-    public void delete(AuthorizationRequest authorizationRequest)
-    {
-        currentSession().delete(authorizationRequest);
     }
 }

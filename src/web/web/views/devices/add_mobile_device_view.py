@@ -20,7 +20,7 @@ MAGIC_BYTE = chr(188)
 def is_mobile_supported(settings):
     """
     Utility function that returns whether the 'add mobile device' view is supported
-    @param settings: settings dictionnary (request.registry.settings)
+    @param settings: settings dictionary (request.registry.settings)
     """
     return is_private_deployment(settings)
 

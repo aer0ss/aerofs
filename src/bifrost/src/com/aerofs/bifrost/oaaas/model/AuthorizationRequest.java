@@ -24,6 +24,7 @@ import javax.persistence.*;
 import javax.validation.ConstraintValidatorContext;
 import javax.validation.constraints.NotNull;
 
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.bifrost.oaaas.auth.principal.PrincipalUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -45,9 +46,6 @@ public class AuthorizationRequest extends AbstractEntity
   @Column
   @NotNull
   private String responseType;
-
-  @Transient
-  private String clientId;
 
   @Transient
   private AuthenticatedPrincipal principal;
@@ -74,25 +72,23 @@ public class AuthorizationRequest extends AbstractEntity
   private String state;
 
   @Column(unique = true)
-  @NotNull
-  private String authState;
-
-  @Column(unique = true)
   private String authorizationCode;
 
   public AuthorizationRequest() {
     super();
   }
 
-  public AuthorizationRequest(String responseType, String clientId, String redirectUri, Set<String> requestedScopes, String state,
-      String authState) {
+  public AuthorizationRequest(String responseType, Client client, String redirectUri,
+          Set<String> requestedScopes, String state, AuthenticatedPrincipal principal)
+  {
     super();
     this.responseType = responseType;
-    this.clientId = clientId;
+    this.client = client;
     this.redirectUri = redirectUri;
     this.requestedScopes = requestedScopes;
     this.state = state;
-    this.authState = authState;
+    this.authorizationCode = UniqueID.generate().toStringFormal();
+    setPrincipal(principal);  // use the setter because it does encoding and stuff
   }
 
   @PreUpdate
@@ -125,21 +121,6 @@ public class AuthorizationRequest extends AbstractEntity
    */
   public void setResponseType(String responseType) {
     this.responseType = responseType;
-  }
-
-  /**
-   * @return the clientId
-   */
-  public String getClientId() {
-    return clientId;
-  }
-
-  /**
-   * @param clientId
-   *          the clientId to set
-   */
-  public void setClientId(String clientId) {
-    this.clientId = clientId;
   }
 
   /**
@@ -200,21 +181,6 @@ public class AuthorizationRequest extends AbstractEntity
    */
   public void setState(String state) {
     this.state = state;
-  }
-
-  /**
-   * @return the authState
-   */
-  public String getAuthState() {
-    return authState;
-  }
-
-  /**
-   * @param authState
-   *          the authState to set
-   */
-  public void setAuthState(String authState) {
-    this.authState = authState;
   }
 
   /**

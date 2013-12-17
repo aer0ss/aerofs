@@ -118,8 +118,7 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
   }
 
   protected Client validateClient(AuthorizationRequest authorizationRequest) {
-    String clientId = authorizationRequest.getClientId();
-    Client client = StringUtils.isBlank(clientId) ? null : clientRepository.findByClientId(clientId);
+    Client client = authorizationRequest.getClient();
     if (client == null) {
       throw new ValidationResponseException(UNKNOWN_CLIENT_ID);
     }

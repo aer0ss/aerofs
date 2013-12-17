@@ -21,8 +21,6 @@ package com.aerofs.bifrost.oaaas.resource;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
-import com.aerofs.bifrost.oaaas.auth.AbstractUserConsentHandler;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
 import com.aerofs.bifrost.oaaas.auth.ValidationResponseException;
 import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
@@ -41,7 +39,6 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.sun.jersey.api.core.HttpContext;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +53,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -64,7 +60,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.BEARER;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_AUTHORIZATION_CODE;
@@ -80,7 +75,6 @@ import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.U
 @Path("/")
 public class TokenResource
 {
-
     public static final String BASIC_REALM = "Basic realm=\"OAuth2 Secure\"";
 
     public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
@@ -101,94 +95,6 @@ public class TokenResource
 
     @Inject
     private SPBlockingClient.Factory spFactory;
-
-    private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
-
-    @GET
-    @Path("/authorize")
-    public Response authorizeCallbackGet(@Context HttpContext context)
-    {
-        return authorizeCallback(context);
-    }
-
-    /**
-     * Entry point for the authorize call which needs to return an authorization code or (implicit
-     * grant) an access token
-     *
-     * @return Response the response
-     */
-    @POST
-    @Produces(MediaType.TEXT_HTML)
-    @Path("/authorize")
-    public Response authorizeCallback(@Context HttpContext context)
-    {
-        return doProcess(context);
-    }
-
-    /**
-     * Called after the user has given consent
-     *
-     * @return Response the response
-     */
-    @POST
-    @Produces(MediaType.TEXT_HTML)
-    @Path("/consent")
-    public Response consentCallback(@Context HttpContext context)
-    {
-        return doProcess(context);
-    }
-
-    private Response doProcess(HttpContext request)
-    {
-        AuthorizationRequest authReq = findAuthorizationRequest(request);
-        if (authReq == null) {
-            return serverError("No valid auth_state in the Request");
-        }
-        processScopes(authReq, request);
-        if (authReq.getResponseType().equals(OAuth2Validator.IMPLICIT_GRANT_RESPONSE_TYPE)) {
-            AccessToken token = createAccessToken(authReq, true);
-            return sendImplicitGrantResponse(authReq, token);
-        } else {
-            return sendAuthorizationCodeResponse(authReq);
-        }
-    }
-
-    /*
-     * In the user consent filter the scopes are (possible) set on the Request
-     */
-    @SuppressWarnings("unchecked")
-    private void processScopes(AuthorizationRequest authReq, HttpContext context)
-    {
-        if (authReq.getClient().isSkipConsent()) {
-            // return the scopes in the authentication request since the requested scopes are stored in the
-            // authorizationRequest.
-            authReq.setGrantedScopes(authReq.getRequestedScopes());
-        } else {
-            Set<String> scopes = (Set<String>)context.getProperties()
-                    .get(AbstractUserConsentHandler.GRANTED_SCOPES);
-            authReq.setGrantedScopes(scopes != null && !scopes.isEmpty() ? scopes : null);
-        }
-    }
-
-    private AccessToken createAccessToken(AuthorizationRequest request, boolean isImplicitGrant)
-    {
-        Client client = request.getClient();
-        long expireDuration = client.getExpireDuration();
-        long expires = (
-                expireDuration == 0L ? 0L : (System.currentTimeMillis() + (1000 * expireDuration)));
-        String refreshToken = (client.isUseRefreshTokens() && !isImplicitGrant) ? getTokenValue(
-                true) : null;
-        AuthenticatedPrincipal principal = request.getPrincipal();
-        AccessToken token = new AccessToken(getTokenValue(false), principal, client, expires,
-                request.getGrantedScopes(), refreshToken);
-        return accessTokenRepository.save(token);
-    }
-
-    private AuthorizationRequest findAuthorizationRequest(HttpContext context)
-    {
-        String authState = (String)context.getProperties().get(AbstractAuthenticator.AUTH_STATE);
-        return authorizationRequestRepository.findByAuthState(authState);
-    }
 
     @GET
     @Path("/tokenlist")
@@ -298,6 +204,25 @@ public class TokenResource
 
         return Response.ok().entity(response).build();
 
+    }
+
+    private AccessToken createAccessToken(AuthorizationRequest request, boolean isImplicitGrant)
+    {
+        Client client = request.getClient();
+        long expires = client.getExpireDuration() == 0 ?
+                0L : (System.currentTimeMillis() + (1000 * client.getExpireDuration()));
+        String refreshToken = (client.isUseRefreshTokens() && !isImplicitGrant) ?
+                getTokenValue(true) : null;
+        AuthenticatedPrincipal principal = request.getPrincipal();
+        return accessTokenRepository.save(
+                new AccessToken(
+                    getTokenValue(false),
+                    principal,
+                    client,
+                    expires,
+                    request.getGrantedScopes(),
+                    refreshToken)
+        );
     }
 
     private AuthorizationRequest authorizationCodeToken(AccessTokenRequest accessTokenRequest)
@@ -466,7 +391,7 @@ public class TokenResource
 
     private Response serverError(String msg)
     {
-        LOG.warn(msg);
+        l.warn(msg);
         return Response.serverError().build();
     }
 

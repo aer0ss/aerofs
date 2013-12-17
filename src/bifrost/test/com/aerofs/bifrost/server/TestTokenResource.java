@@ -109,15 +109,24 @@ public class TestTokenResource extends BifrostTest
     @Test
     public void shouldGetTokenForOAuthAccessCode() throws Exception
     {
-        // First, get an auth code from the authorization endpoint...
-        String authState = oauthBegin();
+        // make any nonce valid
+        when(_spClient.authorizeMobileDevice(anyString(), anyString())).thenReturn(
+                AuthorizeMobileDeviceReply.newBuilder()
+                        .setUserId("test1@b.c")
+                        .setOrgId("2")
+                        .setIsOrgAdmin(true)
+                        .build());
+
+        // get an auth code from the authorization endpoint
         Response response = given()
-                .formParam("j_username", "foo")
-                .formParam("j_password", "bar")
-                .formParam("auth_state", authState)
+                .formParam("response_type", "code")
+                .formParam("client_id", CLIENTID)
+                .formParam("nonce", "noooooonce")
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("state", "echoechoechoechoecho")
                 .post(AUTH_URL);
 
-        assertEquals(response.getStatusCode(), 303);
+        assertEquals(302, response.getStatusCode());
         Map<String, String> q = extractQuery(response.getHeader("Location"));
         assertTrue(q.containsKey("code"));
         assertTrue(q.get("code").length() > 0);
@@ -133,6 +142,17 @@ public class TestTokenResource extends BifrostTest
         String token = from(tokenResponse).get("access_token");
         assertNotNull(token);
         assertFalse(token.isEmpty());
+
+        // trying the same auth code again should fail
+        expect()
+                .statusCode(400)
+        .given()
+                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("client_id", CLIENTID)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code", q.get("code"))
+                .post(TOKEN_URL);
     }
 
     /** Positive test case but using client_secret form-param allowed by OAuth standard */
