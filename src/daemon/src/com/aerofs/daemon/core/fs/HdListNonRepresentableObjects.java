@@ -41,7 +41,11 @@ public class HdListNonRepresentableObjects extends AbstractHdIMC<EIListNonRepres
         ImmutableList.Builder<PBNonRepresentableObject> bd = ImmutableList.builder();
 
         for (NonRepresentableObject nro : _ps.listNonRepresentableObjects_()) {
-            ResolvedPath path = _ds.resolve_(nro.soid);
+            ResolvedPath path = _ds.resolveNullable_(nro.soid);
+            // there was a bug LinkedStorage that prevented NROs from being deleted
+            // in reaction to a local deletion of the parent folder so we have to
+            // ignore any leftover NRO that do not correspond to existing objects
+            if (path == null || path.isInTrash()) continue;
             bd.add(PBNonRepresentableObject.newBuilder()
                     .setPath(path.toPB())
                     .setReason(reason(path, nro.conflict))

@@ -16,6 +16,7 @@ import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -59,15 +60,13 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
 
         switch (op) {
         case APPLY:
-            _s.try_(this, t, new IPhysicalOperation()
-            {
-                @Override
-                public void run_()
-                        throws IOException
-                {
-                    _f.createNewFile();
-                }
-            });
+            _s._rh.try_(this, t, new IPhysicalOperation() {
+                    @Override
+                    public void run_() throws IOException
+                    {
+                        _f.createNewFile();
+                    }
+                });
             TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
                 @Override
                 public void run_() throws IOException
@@ -98,7 +97,9 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
     public void move_(ResolvedPath path, KIndex kidx, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
-        LinkedFile lf = _s.newFile_(path, kidx, PathType.Destination);
+        LinkedFile lf = _s.newFile_(path, kidx,
+                op == PhysicalOp.APPLY ? PathType.Destination : PathType.Source);
+
         l.debug("move {} -> {} {}", this, lf, op);
 
         switch (op) {
@@ -149,6 +150,9 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
         l.debug("update {} {} {}", _sokid, soid, _path);
         final String newName;
         SOKID sokid = new SOKID(soid.sidx(), soid.oid(), _sokid.kidx());
+
+        _s._rh.updateSOID_(_sokid.soid(), soid, t);
+
         // if the physical filename contains the OID, rename it to use the new canonical OID
         // conflict branches and non-representable objects are the only such cases at this time
         if (!_sokid.kidx().isMaster()) {

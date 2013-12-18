@@ -9,6 +9,7 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -173,6 +174,52 @@ public class NRODatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             _pswUpdateConflicts.close();
+            throw e;
+        }
+    }
+
+    // for migration
+    private final PreparedStatementWrapper _pswUpdateSIndex = new PreparedStatementWrapper();
+    public void updateSIndex_(SOID oldSOID, SIndex sidx, Trans t) throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswUpdateSIndex.get();
+            if (ps == null) {
+                _pswUpdateSIndex.set(ps = c().prepareStatement("update " + T_NRO
+                        + " set " + C_NRO_SIDX + "=?"
+                        + " where " + C_NRO_SIDX + "=? and " + C_NRO_OID + "=?"));
+            }
+
+            ps.setInt(1, sidx.getInt());
+            ps.setInt(2, oldSOID.sidx().getInt());
+            ps.setBytes(3, oldSOID.oid().getBytes());
+
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            _pswUpdateSIndex.close();
+            throw e;
+        }
+    }
+
+    // for aliasing
+    private final PreparedStatementWrapper _pswUpdateOID = new PreparedStatementWrapper();
+    public void updateOID_(SOID oldSOID, OID newOID, Trans t) throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswUpdateOID.get();
+            if (ps == null) {
+                _pswUpdateOID.set(ps = c().prepareStatement("update " + T_NRO
+                        + " set " + C_NRO_OID + "=?"
+                        + " where " + C_NRO_SIDX + "=? and " + C_NRO_OID + "=?"));
+            }
+
+            ps.setBytes(1, newOID.getBytes());
+            ps.setInt(2, oldSOID.sidx().getInt());
+            ps.setBytes(3, oldSOID.oid().getBytes());
+
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            _pswUpdateOID.close();
             throw e;
         }
     }

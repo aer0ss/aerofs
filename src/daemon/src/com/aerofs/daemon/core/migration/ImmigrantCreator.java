@@ -213,11 +213,20 @@ public class ImmigrantCreator
                 if (oaFrom.soid().oid().isRoot() || oaFrom.soid().oid().isTrash()) return;
 
                 if (_sid == null) _sid = _sidx2sid.get_(pathParent.to.soid().sidx());
+
+                // The use and abuse of PhysicalOp in Aliasing and migration has been a major
+                // source of grief when doing changes in the core. We really need to come up
+                // with better semantics.
+                // In this case we should not use MAP when deleting because this would try to
+                // delete NROs/conflicts that don't actually exist as they've been renamed to
+                // reflect the SOID change.
+                PhysicalOp realOp = op == PhysicalOp.MAP ? PhysicalOp.NOP : op;
+
                 if (oaFrom.isAnchor()) {
                     // NB: to properly leave the store we must not keep track of the emigration
-                    _od.delete_(oaFrom.soid(), op, t);
+                    _od.delete_(oaFrom.soid(), realOp, t);
                 } else {
-                    _od.deleteAndEmigrate_(oaFrom.soid(), op, _sid, t);
+                    _od.deleteAndEmigrate_(oaFrom.soid(), realOp, _sid, t);
                 }
             }
         });

@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SOID;
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
@@ -53,15 +54,13 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
 
         switch (op) {
         case APPLY:
-            _s.try_(this, t, new IPhysicalOperation()
-            {
-                @Override
-                public void run_()
-                        throws IOException
-                {
-                    _f.mkdir();
-                }
-            });
+            _s._rh.try_(this, t, new IPhysicalOperation() {
+                    @Override
+                    public void run_() throws IOException
+                    {
+                        _f.mkdir();
+                    }
+                });
 
             TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
                 @Override
@@ -86,7 +85,8 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
     public void move_(ResolvedPath to, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
-        LinkedFolder lf = _s.newFolder_(to, PathType.Destination);
+        LinkedFolder lf = _s.newFolder_(to,
+                op == PhysicalOp.APPLY ? PathType.Destination : PathType.Source);
         l.debug("move {} -> {} {}", this, lf, op);
 
         switch (op) {
@@ -131,7 +131,20 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
             // ACL updates are likely to be processed before the event leaves the buffer and thus to
             // try, and fail, to delete an already deleted folder.
             final boolean exists = _f.exists();
-            _f.deleteOrThrowIfExist();
+            if (_path.isRepresentable()) {
+                _f.deleteOrThrowIfExist();
+            } else {
+                // non-representable folders cannot contain "non-scanned" objects
+                // 1. we *can* safely recursively delete children
+                // 2. we *must* recursively delete children when the requested op was MAP
+                //    because the caller won't have done it for us (once again we observe
+                //    the akwardness of the whole PhysicalOp concept that not only leaks
+                //    implementation behavior in the logical layer but does so in such a
+                //    broken way that it often generate subtle bugs.
+                // TODO: refactor logical/physical interface as part of upcoming scalability work
+                // TLDR: correctness first, cleanup later
+                _f.deleteOrThrowIfExistRecursively();
+            }
 
             TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
                 @Override
@@ -165,6 +178,9 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
     public void updateSOID_(SOID soid, Trans t) throws IOException, SQLException
     {
         l.debug("update {} {} {}", _soid, soid, _path);
+
+        _s._rh.updateSOID_(_soid, soid, t);
+
         if (!_path.isRepresentable()) {
             String newName = LinkedPath.makeAuxFileName(soid);
             InjectableFile to = _f.getParentFile().newChild(newName);
