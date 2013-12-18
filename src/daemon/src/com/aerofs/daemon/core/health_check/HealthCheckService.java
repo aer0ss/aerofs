@@ -29,7 +29,7 @@ public final class HealthCheckService implements IStartable
     private static final class CPWConstants
     {
         private static final long INITIAL_DELAY = DEFAULT_INITIAL_DELAY;
-        private static final long INTERVAL = 20 * DEFAULT_INTERVAL;
+        private static final long INTERVAL = (long) (1.5 * DEFAULT_INTERVAL);
     }
 
     //
