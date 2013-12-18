@@ -509,7 +509,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     @Override
     public synchronized void sendSignallingMessageFailed(DID did, byte[] failedmsg, Exception cause)
     {
-        l.warn("d:{} ->sig fail err:", did, cause);
+        l.warn("d:{} ->sig fail err:{}", did, cause.getMessage());
         disconnectChannel(did, new ExDeviceUnavailable("failed to send zephyr handshake to " + did, cause));
     }
 
