@@ -126,8 +126,8 @@ echo '+--------------------------'
 echo '| ' $RELEASE_VERSION $MODE
 echo '+--------------------------'
 
-call exec_prepublish_checks $MODE $RELEASE_VERSION
 upload_map
+call exec_prepublish_checks $MODE $RELEASE_VERSION
 lock_release_server
 upload_version_to_release_server
 if is_public ; then
