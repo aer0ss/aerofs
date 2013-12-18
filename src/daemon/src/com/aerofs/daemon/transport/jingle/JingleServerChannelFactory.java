@@ -25,7 +25,7 @@ class JingleServerChannelFactory implements ServerChannelFactory
     {
         this.signalThread = signalThread;
         this.channelWorker = channelWorker;
-        this.serverChannelSink = new JingleServerChannelSink(channelWorker);
+        this.serverChannelSink = new JingleServerChannelSink();
     }
 
     @Override
@@ -33,7 +33,7 @@ class JingleServerChannelFactory implements ServerChannelFactory
     {
         checkState(!stopped);
 
-        JingleServerChannel channel = new JingleServerChannel(signalThread, channelWorker, this, pipeline, serverChannelSink);
+        JingleServerChannel channel = new JingleServerChannel(signalThread, channelWorker, channelWorker, this, pipeline, serverChannelSink);
         serverChannelGroup.add(channel);
 
         return channel;

@@ -37,6 +37,7 @@ class JingleServerChannel extends AbstractServerChannel implements IIncomingTunn
     private final AtomicInteger interestOps = new AtomicInteger(Channel.OP_READ_WRITE);
     private final ChannelConfig channelConfig = new DefaultServerChannelConfig();
     private final SignalThread signalThread;
+    private final JingleChannelWorker channelWorker;
     private final JingleChannelWorker acceptedChannelWorker;
 
     private volatile JingleAddress localAddress;
@@ -45,6 +46,7 @@ class JingleServerChannel extends AbstractServerChannel implements IIncomingTunn
      * Constructor.
      *
      * @param signalThread libjingle signal thread singleton
+     * @param channelWorker {@code JingleChannelWorker} that will handle all incoming events for the server channel
      * @param acceptedChannelWorker {@code JingleChannelWorker} that will handle all incoming events for accepted jingle channels
      * @param factory the factory which created this channel
      * @param pipeline the pipeline which is going to be attached to this channel
@@ -52,6 +54,7 @@ class JingleServerChannel extends AbstractServerChannel implements IIncomingTunn
      */
     protected JingleServerChannel(
             SignalThread signalThread,
+            JingleChannelWorker channelWorker,
             JingleChannelWorker acceptedChannelWorker,
             ChannelFactory factory,
             ChannelPipeline pipeline,
@@ -60,6 +63,7 @@ class JingleServerChannel extends AbstractServerChannel implements IIncomingTunn
         super(factory, pipeline, sink);
 
         this.signalThread = signalThread;
+        this.channelWorker = channelWorker;
         this.acceptedChannelWorker = acceptedChannelWorker;
 
         signalThread.setIncomingTunnelListener(this);
@@ -144,6 +148,23 @@ class JingleServerChannel extends AbstractServerChannel implements IIncomingTunn
     public SocketAddress getRemoteAddress()
     {
         return null;
+    }
+
+    void execute(final ChannelFuture future, final Runnable task)
+    {
+        channelWorker.submitChannelTask(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try {
+                    task.run();
+                    future.setSuccess();
+                } catch (Exception e) {
+                    future.setFailure(e);
+                }
+            }
+        });
     }
 
     @Override

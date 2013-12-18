@@ -13,7 +13,6 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.MessageEvent;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.jboss.netty.channel.Channels.fireChannelBound;
 import static org.jboss.netty.channel.Channels.fireChannelClosedLater;
 import static org.jboss.netty.channel.Channels.fireChannelUnboundLater;
@@ -28,13 +27,6 @@ import static org.jboss.netty.channel.Channels.future;
  */
 class JingleServerChannelSink extends AbstractChannelSink
 {
-    private final JingleChannelWorker channelWorker;
-
-    JingleServerChannelSink(JingleChannelWorker channelWorker)
-    {
-        this.channelWorker = channelWorker;
-    }
-
     @Override
     public void eventSunk(ChannelPipeline pipeline, ChannelEvent e)
             throws Exception
@@ -51,22 +43,15 @@ class JingleServerChannelSink extends AbstractChannelSink
     public ChannelFuture execute(ChannelPipeline pipeline, final Runnable task)
     {
         Channel channel = pipeline.getChannel();
-        checkArgument(channel instanceof JingleServerChannel, "channel:%s", channel.getClass().getSimpleName());
+        ChannelFuture executeFuture = future(channel);
 
-        final ChannelFuture executeFuture = future(channel);
-        channelWorker.submitChannelTask(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    task.run();
-                    executeFuture.setSuccess();
-                } catch (Exception e) {
-                    executeFuture.setFailure(e);
-                }
-            }
-        });
+        if (channel instanceof JingleServerChannel) {
+            JingleServerChannel serverChannel = (JingleServerChannel) channel;
+            serverChannel.execute(executeFuture, task);
+        } else {
+            JingleClientChannel clientChannel = (JingleClientChannel) channel;
+            clientChannel.execute(executeFuture, task);
+        }
 
         return executeFuture;
     }
