@@ -21,7 +21,7 @@ public class AuditorTest extends AbstractTest
     protected int _port;
     private Injector _injector;
 
-    protected final static String AUDIT_URL = "/audit";
+    protected final static String AUDIT_URL = "/event";
 
     @Before
     public void setUp() throws Exception

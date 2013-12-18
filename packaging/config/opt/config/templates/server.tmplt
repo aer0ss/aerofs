@@ -48,9 +48,9 @@ openid.idp.user.email={{ openid_idp_user_email }}
 openid.idp.user.name.first={{ openid_idp_user_name_first }}
 openid.idp.user.name.last={{ openid_idp_user_name_last }}
 
-base.audit.service.host={{ audit_service_host }}
-base.audit.service.port.publish={{ audit_service_port_publish }}
-base.audit.service.port.subscribe={{ audit_service_port_subscribe }}
+base.audit.service.host={{ base_host }}
+base.audit.service.port=9300
+base.audit.service.path=/event
 base.audit.downstream_host={{ audit_downstream_host }}
 base.audit.downstream_port={{ audit_downstream_port }}
 base.audit.downstream_ssl_enabled={{ audit_downstream_ssl_enabled }}

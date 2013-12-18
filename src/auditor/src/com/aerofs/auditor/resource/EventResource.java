@@ -4,9 +4,13 @@
 
 package com.aerofs.auditor.resource;
 
+import com.aerofs.auditor.server.Downstream;
+import com.aerofs.base.ex.ExExternalServiceUnavailable;
+import com.aerofs.lib.log.LogUtil;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.inject.Inject;
 import com.sun.jersey.api.core.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +32,9 @@ public class EventResource
 {
     private static Logger l = LoggerFactory.getLogger(EventResource.class);
 
+    @Inject
+    private Downstream.IAuditChannel _auditChannel;
+
     /**
      * Endpoint that accepts auditable events.
      *
@@ -44,11 +51,12 @@ public class EventResource
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/audit")
+    @Path("/event")
     public Response audit(@Context HttpContext context, Map<String, Object> contents)
     {
         // let's make sure the required elements were provided...
-        if ((!contents.containsKey("event"))
+        if ((contents == null)
+                || (!contents.containsKey("event"))
                 || (!contents.containsKey("timestamp"))
                 || (!contents.containsKey("topic"))) {
             return Response.status(400)
@@ -58,7 +66,14 @@ public class EventResource
 
         String parsed = _gson.toJson(contents);
         l.info("R: {}", parsed);
-        return Response.ok().build();
+
+        try {
+            _auditChannel.doSend(parsed);
+            return Response.ok().build();
+        } catch (ExExternalServiceUnavailable esu) {
+            l.warn("External svc unavailable", LogUtil.suppress(esu));
+            return Response.status(500).build();
+        }
     }
 
     /**

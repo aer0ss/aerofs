@@ -202,13 +202,28 @@ public class BaseParam
         /**
          * Connection timeout in milliseconds.
          */
-        public static final int CONN_TIMEOUT =
+        public static final int                 CONN_TIMEOUT =
                 getIntegerProperty(             "base.audit.service.conn.timeout", 10 * (int)C.SEC);
 
         /**
          * Read timeout in milliseconds.
          */
-        public static final int READ_TIMEOUT =
+        public static final int                 READ_TIMEOUT =
                 getIntegerProperty(             "base.audit.service.read.timeout", 10 * (int)C.SEC);
+
+        // ----
+        // Downstream channel config
+
+        public static String                    CHANNEL_HOST =
+                getStringProperty(              "base.audit.downstream_host", null);
+
+        public static int                       CHANNEL_PORT =
+                getIntegerProperty(             "base.audit.downstream_port", 0);
+
+        public static boolean                   CHANNEL_SSL =
+                getBooleanProperty(             "base.audit.downstream_ssl_enabled", false);
+
+//        public static final X509Certificate     CHANNEL_CERT =
+//                getCertificateProperty(         "base.audit.downstream_certificate", null);
     }
 }

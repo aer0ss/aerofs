@@ -52,6 +52,7 @@ public class AuditClient
     // have that available for the lib or or client-side components.
     public AuditClient setHttpClient(@Nullable AuditHttpClient httpClient)
     {
+        l.info("Audit client set {}", httpClient);
         _client = httpClient;
         return this;
     }

@@ -2047,6 +2047,10 @@ public class SPService implements ISPService
                 user, cred.toByteArray(), _sqlTrans, Authenticator.CredentialFormat.TEXT);
 
         l.info("SI: cred auth ok {}", user.id().getString());
+        _auditClient.event(AuditTopic.USER, "signin")
+                .add("user", user)
+                .publishBlocking();
+
         return user;
     }
 

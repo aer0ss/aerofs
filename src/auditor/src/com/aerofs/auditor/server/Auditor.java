@@ -73,8 +73,8 @@ public class Auditor extends Service
             protected void configure()
             {
                 bind(Configuration.class).to(AuditorConfiguration.class);
+                bind(Downstream.IAuditChannel.class).toInstance(Downstream.create());
             }
         });
     }
 }
-
