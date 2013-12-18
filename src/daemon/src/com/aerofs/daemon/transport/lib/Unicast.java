@@ -6,11 +6,11 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
-import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.lib.handlers.ServerHandler;
 import com.aerofs.daemon.transport.lib.handlers.ServerHandler.IServerHandlerListener;
+import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.Prio;
@@ -347,13 +347,11 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
         PBTransport tp = checkNotNull(template.getTransport(0));
 
         // get the PBTransport builder
-        int lastBuilderIdx = builder.getTransportBuilderList().size();
-        checkState(lastBuilderIdx >= 1);
-        PBTransport.Builder tpbuilder = builder.getTransportBuilder(lastBuilderIdx - 1);
+        PBTransport.Builder tpBuilder = PBTransport.newBuilder();
 
         // Add global bytes sent / received stats
-        tpbuilder.setBytesIn(transportStats.getBytesReceived());
-        tpbuilder.setBytesOut(transportStats.getBytesSent());
+        tpBuilder.setBytesIn(transportStats.getBytesReceived());
+        tpBuilder.setBytesOut(transportStats.getBytesSent());
 
         // Add stats about individual connections
         if (tp.getConnectionCount() != 0) {
@@ -367,10 +365,10 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
                 long sent = (client != null) ? client.getPipeline().get(IOStatsHandler.class).getBytesSentOnChannel() : 0;
                 long rcvd = (server != null) ? server.getPipeline().get(IOStatsHandler.class).getBytesReceivedOnChannel() : 0;
 
-                tpbuilder.addConnection(did + " : sent: " + Long.toString(sent) + ", rcvd: " + Long.toString(rcvd));
+                tpBuilder.addConnection(did + " : sent: " + Long.toString(sent) + ", rcvd: " + Long.toString(rcvd));
             }
         }
 
-        builder.setTransport(lastBuilderIdx, tpbuilder);
+        builder.addTransport(tpBuilder);
     }
 }

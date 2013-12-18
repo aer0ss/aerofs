@@ -36,9 +36,17 @@ public class HdPauseOrResumeSyncing extends AbstractHdIMC<EIPauseOrResumeSyncing
             TCB tcb = tk.pseudoPause_("lss-trigger");
             try {
                 if (ev._pause) {
+                    l.debug("initiating pause sync");
+
                     _lss.markLinksDown();
+
+                    l.debug("completed pause sync");
                 } else {
+                    l.debug("initiating resume sync");
+
                     _lss.markLinksUp();
+
+                    l.debug("completed resume sync");
                 }
             } finally {
                 tcb.pseudoResumed_();
