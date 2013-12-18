@@ -19,8 +19,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 //
 public final class HealthCheckService implements IStartable
 {
-    private static final long DEFAULT_INITIAL_DELAY = 3 * C.SEC;
-    private static final long DEFAULT_INTERVAL = 3 * C.MIN;
+    private static final long DEFAULT_INITIAL_DELAY = 30 * C.SEC;
+    private static final long DEFAULT_INTERVAL = 30 * C.MIN;
 
     //
     // constants for the core progress watcher
