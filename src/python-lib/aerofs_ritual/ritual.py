@@ -321,6 +321,12 @@ class _RitualServiceWrapper(object):
     def create_seed_file(self, sid):
         self._service.create_seed_file(sid)
 
+    def list_non_representable_objects(self):
+        r = {}
+        for o in self._service.list_non_representable_objects().objects:
+            r[convert.pbpath_to_absolute(o.path)] = o.reason
+        return r
+
     def shutdown(self, max_attempts=50):
         try:
             # Make sure setup is finished before requesting shutdown
