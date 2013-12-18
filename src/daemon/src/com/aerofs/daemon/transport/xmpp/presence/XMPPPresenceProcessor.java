@@ -42,7 +42,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
 {
     private static final Logger l = Loggers.getLogger(XMPPPresenceProcessor.class);
 
-    private final Multimap<DID, SID> multicastReachableDevices = TreeMultimap.create(); // TODO (AG): should be SID => DID*
+    private final Multimap<DID, SID> multicastReachableDevices = TreeMultimap.create(); // protected by 'this' TODO (AG): should be SID => DID*
     private final DID localdid;
     private final String xmppServerDomain;
     private final IMulticastListener multicastListener;
@@ -73,9 +73,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
             {
                 if (packet instanceof Presence) {
                     try {
-                        synchronized (XMPPPresenceProcessor.this) {
-                            processPresence((Presence)packet);
-                        }
+                        processPresence((Presence)packet);
                     } catch (Exception e) {
                         l.warn("{}: fail process presence from {}:", transportId, packet.getFrom(), suppress(e, ExFormatError.class));
                     }
@@ -103,7 +101,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
      * @return true if the packet was processed, false otherwise
      * @throws ExFormatError if any required field cannot be parsed
      */
-    synchronized boolean processPresenceForUnitTests(Presence presence)
+    boolean processPresenceForUnitTests(Presence presence)
             throws ExFormatError
     {
         return processPresence(presence);
@@ -111,6 +109,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
 
     // return 'true' if processed, 'false' otherwise
     // the return aids in unit tests
+    // lock must _not_ be held while notifying listeners!
     private boolean processPresence(Presence presence)
             throws ExFormatError
     {
@@ -132,21 +131,35 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         l.debug("process presence d:{} s:{}", did, sid);
 
         if (presence.isAvailable()) {
-            if (!multicastReachableDevices.containsKey(did)) {
+
+            boolean newDid;
+            synchronized (this) { // this lock should _only_ be around modifications to multicastReachableDevices
+                newDid = !multicastReachableDevices.containsKey(did);
+                multicastReachableDevices.put(did, sid);
+            }
+
+            if (newDid) {
                 l.info("{}: recv online presence d:{}", transportId, did);
                 multicastListener.onDeviceReachable(did);
             }
-            multicastReachableDevices.put(did, sid);
         } else {
-            boolean removed = multicastReachableDevices.remove(did, sid);
 
-            // apparently this DID, SID pair doesn't exist
-            // since it doesn't we'll bail early to avoid sending spurious notifications
-            if (!removed) {
-                return true;
+            boolean removedDid;
+            synchronized (this) {  // this lock should _only_ be around modifications to multicastReachableDevices
+                // always remove the did->sid pair first
+                // and _then_ check whether the did was completely removed
+                boolean removedMapping = multicastReachableDevices.remove(did, sid);
+
+                // apparently this DID, SID pair doesn't exist
+                // since it doesn't we'll bail early to avoid sending spurious notifications
+                if (!removedMapping) {
+                    return true;
+                }
+
+                removedDid = !multicastReachableDevices.containsKey(did);
             }
 
-            if (!multicastReachableDevices.containsKey(did)) {
+            if (removedDid) {
                 l.info("{}: recv offline presence d:{}", transportId, did);
                 multicastListener.onDeviceUnreachable(did);
             }
@@ -157,11 +170,15 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     }
 
     @Override
-    public synchronized void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
+    public void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
     {
         if (isPotentiallyAvailable) return;
 
-        Collection<SID> previouslyOnlineStores = multicastReachableDevices.removeAll(did);
+        Collection<SID> previouslyOnlineStores;
+        synchronized (this) { // this lock should _only_ be around modifications to multicastReachableDevices
+            previouslyOnlineStores = multicastReachableDevices.removeAll(did);
+        }
+
         if (previouslyOnlineStores != null && !previouslyOnlineStores.isEmpty()) {
             outgoingEventSink.enqueueBlocking(new EIPresence(transport, false, did, previouslyOnlineStores), LO);
         }
