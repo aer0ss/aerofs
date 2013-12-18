@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# Test if wget of the specified URL returns okay, i.e. HTTP 200.
+# Expects the URL to (if using HTTPS) have a certificate signed
+# by the CA identified by the certificate /etc/ssl/certs/AeroFS_CA.pem.
+#
+# exit 1 if bad arguments
+# exit the exit code of 'wget <url>'
+
+usage()
+{
+    echo "usage: $0 <url> [<timeout>=3]"
+}
+
+if [ $# -ne 1 ] && [ $# -ne 2 ]
+then
+    usage
+    exit 1
+fi
+
+if [ x"$1" == x ]; then
+    usage
+    exit 2
+fi
+
+timeout=3
+if [ ! -z "$2" ]
+then
+    timeout=$2
+fi
+
+wget --ca-certificate=/etc/ssl/certs/AeroFS_CA.pem --timeout=$timeout --no-cache -q -O /dev/null "$1"

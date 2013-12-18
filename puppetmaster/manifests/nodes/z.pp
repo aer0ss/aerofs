@@ -55,7 +55,7 @@ node "z.arrowfs.org" inherits default {
     "rocklog url http://rocklog.aerofs.com/",
     "web url http://www.aerofs.com",
     "sv url https://sv.aerofs.com/sv_beta/sv",
-    "sp url https://sp.aerofs.com/sp",
+    "sp url-internalcert https://sp.aerofs.com/sp",
     "verkehr port verkehr.aerofs.com 443",
     "zephyr checkzephyr zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
