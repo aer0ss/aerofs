@@ -7,7 +7,6 @@
 #
 class servlet {
     include nginx
-    include servlet::nginx_config
 
     $metrics = hiera("metrics")
     class{"servlet::base":

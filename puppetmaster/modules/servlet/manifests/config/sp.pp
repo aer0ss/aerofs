@@ -6,6 +6,7 @@ class servlet::config::sp(
     $mysql_endpoint
 ) {
     include servlet::sp
+    include servlet::nginx_config_sp
 
     # N.B. this is needed by context-footer.xml.erb
     $databases = [
