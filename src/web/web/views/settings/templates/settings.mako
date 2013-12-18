@@ -84,7 +84,7 @@
                 $('#fullname-form').serialize()
             )
             .done(function() {
-                showSuccessMessage("Your name is updated.");
+                showSuccessMessage("Your name has been updated.");
             })
             .fail(showErrorMessageFromResponse)
             .always(function() {
