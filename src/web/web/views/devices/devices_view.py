@@ -14,12 +14,12 @@ from add_mobile_device_view import is_mobile_supported
 log = logging.getLogger(__name__)
 
 # URL param keys
-_URL_PARAM_DEVICE_ID = 'device_id' # the value is a HEX encoded device id
+_URL_PARAM_DEVICE_ID = 'device_id'  # the value is a HEX encoded device id
 _URL_PARAM_DEVICE_NAME = 'device_name'
 
 @view_config(
-    route_name = 'my_devices',
-    permission = 'user',
+    route_name='my_devices',
+    permission='user',
     renderer='devices.mako'
 )
 def my_devices(request):
@@ -31,13 +31,14 @@ def my_devices(request):
     devices = sp.list_user_devices(user).device
 
     if len(devices) == 0:
-        raise HTTPFound(request.route_path('download', _query={'msg_type':'no_device'}))
+        raise HTTPFound(request.route_path('download', _query={'msg_type': 'no_device'}))
 
     return _devices(request, devices, user, _("My devices"), False, True)
 
+
 @view_config(
-    route_name = 'user_devices',
-    permission = 'admin',
+    route_name='user_devices',
+    permission='admin',
     renderer='devices.mako'
 )
 def user_devices(request):
@@ -49,11 +50,13 @@ def user_devices(request):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    return _devices(request, devices, user, _("${name}'s devices", {'name': full_name}), False, False)
+    return _devices(request, devices, user, _("${name}'s devices", {'name': full_name}), False,
+                    False)
+
 
 @view_config(
-    route_name = 'team_server_devices',
-    permission = 'admin',
+    route_name='team_server_devices',
+    permission='admin',
     renderer='devices.mako'
 )
 def team_server_devices(request):
@@ -64,12 +67,13 @@ def team_server_devices(request):
     devices = sp.list_user_devices(ts_user).device
 
     if len(devices) == 0:
-        raise HTTPFound(request.route_path('download_team_server', _query={'msg_type':'no_device'}))
+        raise HTTPFound(request.route_path('download_team_server',
+                                           _query={'msg_type': 'no_device'}))
 
     return _devices(request, devices, ts_user, _("Team Servers"), True, False)
 
-def _devices(request, devices, user, page_heading, are_team_servers, show_add_mobile_device):
 
+def _devices(request, devices, user, page_heading, are_team_servers, show_add_mobile_device):
     try:
         last_seen_nullable = _get_last_seen(devices)
     except Exception as e:
@@ -88,13 +92,15 @@ def _devices(request, devices, user, page_heading, are_team_servers, show_add_mo
         # The value is None if the devman service throws
         'last_seen_nullable': last_seen_nullable,
         'are_team_servers': are_team_servers,
-        'show_add_mobile_device': show_add_mobile_device and is_mobile_supported(request.registry.settings),
+        'show_add_mobile_device': show_add_mobile_device and is_mobile_supported(
+            request.registry.settings),
     }
 
 
 # See aerofs/src/devman/README.txt for the API spec
 _DEVMAN_URL = 'http://localhost:9020'
 _devman_polling_interval = None
+
 
 def _get_devman_polling_interval():
     """
@@ -124,7 +130,9 @@ def _get_last_seen(devices):
         did = device.device_id.encode('hex')
         r = requests.get(_DEVMAN_URL + '/devices/' + did)
         # The device is never seen. skip
-        if r.status_code == 404: continue
+        if r.status_code == 404:
+            continue
+
         _throw_on_devman_error(r)
 
         json = r.json()
@@ -183,10 +191,10 @@ def _throw_on_devman_error(r):
 
 
 @view_config(
-    route_name = 'json.rename_device',
-    renderer = 'json',
-    permission = 'user',
-    request_method = 'POST'
+    route_name='json.rename_device',
+    renderer='json',
+    permission='user',
+    request_method='POST'
 )
 def json_rename_device(request):
     _ = request.translate
@@ -199,11 +207,12 @@ def json_rename_device(request):
     sp.set_user_preferences(user, None, None, device_id, device_name)
     return HTTPNoContent()
 
+
 @view_config(
-    route_name = 'json.unlink_device',
-    renderer = 'json',
-    permission = 'user',
-    request_method = 'POST'
+    route_name='json.unlink_device',
+    renderer='json',
+    permission='user',
+    request_method='POST'
 )
 def json_unlink_device(request):
     _ = request.translate
@@ -215,11 +224,12 @@ def json_unlink_device(request):
     sp.unlink_device(device_id, False)
     return HTTPNoContent()
 
+
 @view_config(
-    route_name = 'json.erase_device',
-    renderer = 'json',
-    permission = 'user',
-    request_method = 'POST'
+    route_name='json.erase_device',
+    renderer='json',
+    permission='user',
+    request_method='POST'
 )
 def json_erase_device(request):
     _ = request.translate
@@ -230,6 +240,7 @@ def json_erase_device(request):
     # Erase: True.
     sp.unlink_device(device_id, True)
     return HTTPNoContent()
+
 
 def _get_device_id_from_request(request, action):
     """
