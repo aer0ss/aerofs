@@ -40,7 +40,7 @@ public class TestExceptions extends AbstractRestTest
     public void shouldReturn40OnIllegalArgumentException() throws Exception
     {
         doThrow(new IllegalArgumentException())
-                .when(acl).checkThrows_(any(UserID.class), any(SIndex.class), any(Role.class));
+                .when(acl).checkThrows_(any(UserID.class), any(SIndex.class), any(Permissions.class));
 
         givenAcces()
         .expect()

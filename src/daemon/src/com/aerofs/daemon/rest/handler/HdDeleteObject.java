@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.rest.handler;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -12,8 +12,8 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIDeleteObject;
-import com.aerofs.daemon.rest.util.AccessChecker;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
+import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
@@ -27,11 +27,11 @@ public class HdDeleteObject extends AbstractHdIMC<EIDeleteObject>
 {
     private final TransManager _tm;
     private final ObjectDeleter _od;
-    private final AccessChecker _access;
+    private final RestObjectResolver _access;
     private final EntityTagUtil _etags;
 
     @Inject
-    public HdDeleteObject(AccessChecker access, TransManager tm, ObjectDeleter od,
+    public HdDeleteObject(RestObjectResolver access, TransManager tm, ObjectDeleter od,
             EntityTagUtil etags)
     {
         _tm = tm;
@@ -43,7 +43,7 @@ public class HdDeleteObject extends AbstractHdIMC<EIDeleteObject>
     @Override
     protected void handleThrows_(EIDeleteObject ev, Prio prio) throws Exception
     {
-        OA from = _access.checkObject_(ev._object, ev._user, Role.EDITOR);
+        OA from = _access.resolveWithPermissions_(ev._object, ev._user, Permissions.EDITOR);
 
         EntityTag etag = _etags.etagForObject(from.soid());
 

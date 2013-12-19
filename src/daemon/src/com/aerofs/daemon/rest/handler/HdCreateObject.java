@@ -1,6 +1,6 @@
 package com.aerofs.daemon.rest.handler;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
@@ -11,9 +11,9 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EICreateObject;
-import com.aerofs.daemon.rest.util.AccessChecker;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.MetadataBuilder;
+import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.rest.api.Error;
@@ -26,14 +26,14 @@ import java.net.URI;
 
 public class HdCreateObject extends AbstractHdIMC<EICreateObject>
 {
-    private final AccessChecker _acces;
+    private final RestObjectResolver _acces;
     private final ObjectCreator _oc;
     private final TransManager _tm;
     private final MetadataBuilder _mb;
     private final EntityTagUtil _etags;
 
     @Inject
-    public HdCreateObject(AccessChecker access, ObjectCreator oc, TransManager tm,
+    public HdCreateObject(RestObjectResolver access, ObjectCreator oc, TransManager tm,
             MetadataBuilder mb, EntityTagUtil etags)
     {
         _acces = access;
@@ -46,7 +46,7 @@ public class HdCreateObject extends AbstractHdIMC<EICreateObject>
     @Override
     protected void handleThrows_(EICreateObject ev, Prio prio) throws Exception
     {
-        OA oaParent = _acces.checkObject_(ev._parent, ev._user, Role.EDITOR);
+        OA oaParent = _acces.resolveWithPermissions_(ev._parent, ev._user, Permissions.EDITOR);
 
         Trans t = _tm.begin_();
         SOID soid;

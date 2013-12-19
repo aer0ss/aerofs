@@ -7,6 +7,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.rest.api.Error;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.rest.api.Error.Type;
@@ -60,7 +61,7 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
 
     protected ResponseBuilder handleException(Exception e)
     {
-        if (e instanceof ExNotFound) {
+        if (e instanceof ExNotFound || e instanceof ExNotDir) {
             return Response
                     .status(Status.NOT_FOUND)
                     .entity(new Error(Type.NOT_FOUND, e.getMessage()));

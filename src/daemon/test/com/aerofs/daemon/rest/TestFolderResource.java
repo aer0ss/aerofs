@@ -1,6 +1,6 @@
 package com.aerofs.daemon.rest;
 
-import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -106,7 +106,7 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn403WhenViewerTriesToCreate() throws Exception
     {
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(user, mds.root().soid().sidx(), Role.EDITOR);
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(user, mds.root().soid().sidx(), Permissions.EDITOR);
 
         givenAcces()
                 .contentType(ContentType.JSON)
