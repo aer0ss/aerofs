@@ -41,7 +41,7 @@ port zephyr.aerofs.com 443
 url https://aerofs.com/login
 url https://sv.aerofs.com/sv_beta/sv
 url-internal-ssl https://sp.aerofs.com/sp
-url https://sss.aerofs.com/syncstat
+url-internal-ssl https://sss.aerofs.com/syncstat
 
 if [ $SUCCESS == TRUE ]; then
     exit 0
