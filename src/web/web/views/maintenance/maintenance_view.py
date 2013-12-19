@@ -72,7 +72,7 @@ def maintenance_mode(request):
 
 @view_config(
     route_name='toggle_maintenance_mode',
-    permission=NO_PERMISSION_REQUIRED,
+    permission='maintain',
     renderer='toggle_maintenance_mode.mako'
 )
 def toggle_maintenance_mode(request):
