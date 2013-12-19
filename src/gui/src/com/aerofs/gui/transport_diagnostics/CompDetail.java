@@ -5,7 +5,7 @@
 package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.gui.transport_diagnostics.CompTransports.Transport;
-import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
+import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.common.base.Preconditions;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -41,7 +41,7 @@ public class CompDetail extends Group implements ISelectionChangedListener
     @Override
     public void setData(Object data)
     {
-        Preconditions.checkArgument(data == null || data instanceof GetTransportDiagnosticsReply);
+        Preconditions.checkArgument(data == null || data instanceof TransportDiagnostics);
 
         super.setData(data);
 
@@ -50,10 +50,10 @@ public class CompDetail extends Group implements ISelectionChangedListener
             _compJingle.setData(null);
             _compZephyr.setData(null);
         } else {
-            GetTransportDiagnosticsReply reply = (GetTransportDiagnosticsReply) data;
-            _compTCP.setData(reply.hasTcpDiagnostics() ? reply.getTcpDiagnostics() : null);
-            _compJingle.setData(reply.hasJingleDiagnostics() ? reply.getJingleDiagnostics() : null);
-            _compZephyr.setData(reply.hasZephyrDiagnostics() ? reply.getZephyrDiagnostics() : null);
+            TransportDiagnostics transportDiagnostics = (TransportDiagnostics) data;
+            _compTCP.setData(transportDiagnostics.hasTcpDiagnostics() ? transportDiagnostics.getTcpDiagnostics() : null);
+            _compJingle.setData(transportDiagnostics.hasJingleDiagnostics() ? transportDiagnostics.getJingleDiagnostics() : null);
+            _compZephyr.setData(transportDiagnostics.hasZephyrDiagnostics() ? transportDiagnostics.getZephyrDiagnostics() : null);
         }
     }
 

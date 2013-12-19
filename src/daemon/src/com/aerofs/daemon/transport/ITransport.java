@@ -5,7 +5,7 @@ import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
+import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 
 /**
  * Implemented by classes that provide a message transport mechanism.
@@ -74,5 +74,5 @@ public interface ITransport extends ITransferStat, IDumpStat, IDumpStatMisc
      *
      * @param transportDiagnostics message builder that should be populated with the diagnostics
      */
-    void dumpDiagnostics(GetTransportDiagnosticsReply.Builder transportDiagnostics);
+    void dumpDiagnostics(TransportDiagnostics.Builder transportDiagnostics);
 }

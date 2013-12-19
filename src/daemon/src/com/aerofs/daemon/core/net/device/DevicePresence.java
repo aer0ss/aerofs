@@ -6,7 +6,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -18,19 +17,20 @@ import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.sched.ExponentialRetry;
+import com.aerofs.proto.Diagnostics;
+import com.aerofs.proto.Diagnostics.DeviceDiagnostics;
+import com.aerofs.proto.Diagnostics.Store.Builder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,7 +41,7 @@ import java.util.concurrent.Callable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class DevicePresence implements IDumpStatMisc
+public class DevicePresence
 {
     private static final Logger l = Loggers.getLogger(DevicePresence.class);
 
@@ -72,18 +72,16 @@ public class DevicePresence implements IDumpStatMisc
             @Override
             public void deviceOnline_(DID did)
             {
-                l.info(">>>> POTENTIALLY AVAILABLE:{}", did);
+                l.info("DPE +{}", did); // device presence edge
 
             }
 
             @Override
             public void deviceOffline_(DID did)
             {
-                l.info(">>>> UNAVAILABLE:{}", did);
+                l.info("DPE -{}", did); // device presence edge
             }
         });
-
-        Dumpables.add("dp", this);
     }
 
     public void addListener_(IDevicePresenceListener listener)
@@ -277,13 +275,7 @@ public class DevicePresence implements IDumpStatMisc
         }
     }
 
-    public Device getOPMDeviceThrows_(DID did) throws ExDeviceOffline
-    {
-        Device dev = getOPMDevice_(did);
-        if (dev == null) throw new ExDeviceOffline();
-        return dev;
-    }
-
+    // FIXME (AG): this is not an OPM
     /**
      * OPM = online potential member
      * @return null if the device is not online
@@ -328,24 +320,40 @@ public class DevicePresence implements IDumpStatMisc
         }, 0);
     }
 
-    @Override
-    public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
+    public DeviceDiagnostics dumpDiagnostics()
     {
-        ps.println(indent + "opm");
-        for (Entry<SIndex, OPMDevices> en : _sidx2opm.entrySet()) {
-            SIndex sidx = en.getKey();
-            Store s = _sidx2s.getNullable_(sidx);
-            ps.print(indent + indentUnit + sidx);
-            if (s == null) ps.print("? ");
-            else ps.print(": ");
+        DeviceDiagnostics.Builder diagnosticsBuilder = DeviceDiagnostics.newBuilder();
 
-            for (Device dev : en.getValue().getAll_().values()) ps.print(dev.did());
-            ps.println();
+        // start by adding all the store information
+        for (Entry<SIndex, OPMDevices> entry : _sidx2opm.entrySet()) {
+            Builder storeBuilder = Diagnostics.Store.newBuilder();
+
+            // first, add an entry for the sidx=>sid mapping
+
+            SIndex sidx = entry.getKey();
+            storeBuilder.setStoreIndex(sidx.getInt());
+
+            SID sid = _sidx2sid.getNullable_(sidx);
+            if (sid != null) {
+                storeBuilder.setSid(sid.toPB());
+            } else {
+                storeBuilder.setSid(ByteString.EMPTY);
+            }
+
+            // then, add all the dids that 'have' that sidx
+            for (DID did : entry.getValue().getAll_().keySet()) {
+                storeBuilder.addAvailableOnDids(did.toPB());
+            }
+
+            // once we're done, add the entry into the top-level message
+            diagnosticsBuilder.addStores(storeBuilder);
         }
 
-        ps.println(indent + "dev");
-        for (Device dev : _did2dev.values()) {
-            dev.dumpStatMisc(indent + indentUnit, indentUnit, ps);
+        // then, add all the device information
+        for (Device device : _did2dev.values()) {
+            diagnosticsBuilder.addDevices(device.dumpDiagnostics());
         }
+
+        return diagnosticsBuilder.build();
     }
 }

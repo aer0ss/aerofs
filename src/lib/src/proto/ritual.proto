@@ -197,8 +197,8 @@ service RitualService {
     // Dump daemon statistics (for internal use only)
     rpc DumpStats(DumpStatsCall) returns(DumpStatsReply);
 
-    // Dump transport diagnostics
-    rpc GetTransportDiagnostics(Void) returns (GetTransportDiagnosticsReply);
+    // Dump diagnostics
+    rpc GetDiagnostics(Void) returns (GetDiagnosticsReply);
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -624,8 +624,7 @@ message TestGetAliasObjectReply {
     repeated bytes oid = 1;
 }
 
-message GetTransportDiagnosticsReply {
-    optional TCPDiagnostics tcp_diagnostics = 1;
-    optional JingleDiagnostics jingle_diagnostics = 2;
-    optional ZephyrDiagnostics zephyr_diagnostics = 3;
+message GetDiagnosticsReply {
+    optional DeviceDiagnostics device_diagnostics = 1;
+    optional TransportDiagnostics transport_diagnostics = 2;
 }

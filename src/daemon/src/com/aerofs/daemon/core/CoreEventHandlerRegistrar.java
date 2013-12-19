@@ -7,6 +7,7 @@ package com.aerofs.daemon.core;
 import com.aerofs.daemon.core.admin.HdCreateSeedFile;
 import com.aerofs.daemon.core.admin.HdDeleteACL;
 import com.aerofs.daemon.core.admin.HdDeleteRevision;
+import com.aerofs.daemon.core.admin.HdDumpDiagnostics;
 import com.aerofs.daemon.core.admin.HdDumpStat;
 import com.aerofs.daemon.core.admin.HdExportConflict;
 import com.aerofs.daemon.core.admin.HdExportFile;
@@ -24,7 +25,6 @@ import com.aerofs.daemon.core.admin.HdPauseOrResumeSyncing;
 import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
 import com.aerofs.daemon.core.admin.HdSetExpelled;
-import com.aerofs.daemon.core.admin.HdTransportDiagnostics;
 import com.aerofs.daemon.core.admin.HdUpdateACL;
 import com.aerofs.daemon.core.fs.HdCreateObject;
 import com.aerofs.daemon.core.fs.HdDeleteBranch;
@@ -54,6 +54,7 @@ import com.aerofs.daemon.core.test.HdTestGetAliasObject;
 import com.aerofs.daemon.event.admin.EICreateSeedFile;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.admin.EIDeleteRevision;
+import com.aerofs.daemon.event.admin.EIDumpDiagnostics;
 import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.daemon.event.admin.EIExportFile;
@@ -75,7 +76,6 @@ import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
-import com.aerofs.daemon.event.admin.EITransportDiagnostics;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
@@ -125,7 +125,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     @Inject HdExportConflict _hdExportConflict;
     @Inject HdGetTransferStat _hdGetTransferStat;
     @Inject HdDumpStat _hdDumpStat;
-    @Inject HdTransportDiagnostics _hdTransportDiagnostics;
+    @Inject HdDumpDiagnostics _hdDumpDiagnostics;
     @Inject HdReloadConfig _hdReloadConfig;
     @Inject HdPauseOrResumeSyncing _hdPauseOrResumeSyncing;
     @Inject HdUpdateACL _hdUpdateACL;
@@ -170,7 +170,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 // admin events
                 .setHandler_(EIReloadConfig.class, _hdReloadConfig)
                 .setHandler_(EIDumpStat.class, _hdDumpStat)
-                .setHandler_(EITransportDiagnostics.class, _hdTransportDiagnostics)
+                .setHandler_(EIDumpDiagnostics.class, _hdDumpDiagnostics)
                 .setHandler_(EIShareFolder.class, _hdShareFolder)
                 .setHandler_(EIJoinSharedFolder.class, _hdJoinSharedFolder)
                 .setHandler_(EILeaveSharedFolder.class, _hdLeaveSharedFolder)

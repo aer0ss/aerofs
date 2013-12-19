@@ -34,7 +34,7 @@ import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.PBDumpStat.Builder;
-import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
+import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -229,9 +229,9 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         }
     }
 
-    public GetTransportDiagnosticsReply dumpDiagnostics()
+    public TransportDiagnostics dumpDiagnostics()
     {
-        GetTransportDiagnosticsReply.Builder diagnostics = GetTransportDiagnosticsReply.newBuilder();
+        TransportDiagnostics.Builder diagnostics = TransportDiagnostics.newBuilder();
         for (ITransport transport : availableTransports.keySet()) {
             transport.dumpDiagnostics(diagnostics);
         }

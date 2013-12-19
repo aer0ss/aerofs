@@ -77,7 +77,7 @@ public class NSL
     {
         Device dev = _dp.getOPMDevice_(did);
         if (dev != null) {
-            Endpoint ep = new Endpoint(dev.getPreferedTransport_(), did);
+            Endpoint ep = new Endpoint(dev.getPreferredTransport_(), did);
             sendUnicast_(ep, type, rpcid, bs);
             return ep;
         } else {

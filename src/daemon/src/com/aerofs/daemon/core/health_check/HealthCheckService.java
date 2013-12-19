@@ -62,14 +62,14 @@ public final class HealthCheckService implements IStartable
 
     private final CoreProgressWatcher _coreProgressWatcher;
     private final DeadlockDetector _deadlockDetector;
-    private final TransportDiagnosticsDumper _transportDiagnosticsDumper;
+    private final DiagnosticsDumper _diagnosticsDumper;
 
     @Inject
-    public HealthCheckService(CoreProgressWatcher coreProgressWatcher, DeadlockDetector deadlockDetector, TransportDiagnosticsDumper transportDiagnosticsDumper)
+    public HealthCheckService(CoreProgressWatcher coreProgressWatcher, DeadlockDetector deadlockDetector, DiagnosticsDumper diagnosticsDumper)
     {
         _coreProgressWatcher = coreProgressWatcher;
         _deadlockDetector = deadlockDetector;
-        _transportDiagnosticsDumper = transportDiagnosticsDumper;
+        _diagnosticsDumper = diagnosticsDumper;
     }
 
     @Override
@@ -79,6 +79,6 @@ public final class HealthCheckService implements IStartable
 
         _healthCheckExecutor.scheduleAtFixedRate(_coreProgressWatcher, CPWConstants.INITIAL_DELAY, CPWConstants.INTERVAL, MILLISECONDS);
         _healthCheckExecutor.scheduleAtFixedRate(_deadlockDetector, DLDConstants.INITIAL_DELAY, DLDConstants.INTERVAL, MILLISECONDS);
-        _healthCheckExecutor.scheduleAtFixedRate(_transportDiagnosticsDumper, TDDConstants.INITIAL_DELAY, TDDConstants.INTERVAL, MILLISECONDS);
+        _healthCheckExecutor.scheduleAtFixedRate(_diagnosticsDumper, TDDConstants.INITIAL_DELAY, TDDConstants.INTERVAL, MILLISECONDS);
     }
 }

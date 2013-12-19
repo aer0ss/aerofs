@@ -3,14 +3,15 @@ package com.aerofs.daemon.core.net.device;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.proto.Diagnostics;
+import com.aerofs.proto.Diagnostics.Transport;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
-import java.io.PrintStream;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,6 +21,36 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import static com.google.common.base.Preconditions.checkState;
+
+// FIXME (AG): Remove sidx management from this class
+//
+// this class should simply be a mapping from Device to 'available transports'
+// sidcs should be managed by DevicePresence
+// a major complication in making this work is the interaction defining which stores are 'available'
+// especially in the face of interleaved pulsing and online/offline events
+// technically, DevicePresence should simply have the following map:
+// did => sid*, where sid is a union of all the sids 'available' on each transport
+// while intellectually appealing, this _cannot_ currently work because of the
+// way multicast is implemented in jingle and zephyr
+//
+// to explain, consider the following case for device D1:
+// tcp online: S1, S2, S3
+// jingle online: S1, S2
+// tcp begins pulsing
+//
+// what stores are available on D1?
+//
+// the logical answer would be "S1, S2, S3", since stores are _transport independent_
+// and we still have a connection via jingle to that device. unfortunately, because
+// both jingle and zephyr use multicast chatrooms for each store, any multicast messages
+// sent to S3 on D1 via jingle are dropped.
+//
+// until we can fix this, the combination of DevicePresence and Device will be substantially
+// more complicated than they 'could' be. it's also possible that we will miss
+// opportunities to communicate with devices about stores simply because of a quirk
+// in our underlying multicast system
 
 /**
  * State transition:
@@ -33,11 +64,7 @@ import java.util.TreeMap;
  *  when pulses is stoped:  comes online:   goes to true online
  *                          goes offline:   goes to offline
  */
-
-/**
- * FIXME (AG): a lot of the logic in here is simpler if we avoid filtering sidcs on state changes
- */
-public class Device implements Comparable<Device>, IDumpStatMisc
+public class Device implements Comparable<Device>
 {
     private final DID _did;
 
@@ -71,7 +98,7 @@ public class Device implements Comparable<Device>, IDumpStatMisc
     }
 
     @Override
-    public int compareTo(Device o)
+    public int compareTo(@Nonnull Device o)
     {
         return _did.compareTo(o._did);
     }
@@ -253,19 +280,30 @@ public class Device implements Comparable<Device>, IDumpStatMisc
     /**
      * TODO use device-specific preferences instead of static preference
      */
-    @Nonnull public ITransport getPreferedTransport_()
+    public @Nonnull ITransport getPreferredTransport_()
+    {
+        ITransport preferredTransport = getPreferredTransport();
+
+        if (preferredTransport == null) {
+            // this method shouldn't get called if the device is offline on all
+            // transports. this may not be a valid assumption because the daemon
+            // might contact an offline peer, but so far so good
+            throw SystemUtil.fatalWithReturn("got on offline device");
+        }
+
+        return preferredTransport;
+    }
+
+    private @Nullable ITransport getPreferredTransport()
     {
         for (Entry<ITransport, TransportState> en : _tpsAvailable.entrySet()) {
             if (!en.getValue()._isBeingPulsed) {
-                assert !en.getValue()._sidcsAvailable.isEmpty();
+                checkState(!en.getValue()._sidcsAvailable.isEmpty());
                 return en.getKey();
             }
         }
 
-        // this method shouldn't get called if the device is offline on all the
-        // transport. this may not be a valid assumption because the daemon
-        // might contact an offline peer, but so far so good
-        throw SystemUtil.fatalWithReturn("gpt on offline device");
+        return null;
     }
 
     /**
@@ -277,7 +315,7 @@ public class Device implements Comparable<Device>, IDumpStatMisc
      */
     public int getPreferenceUtility_()
     {
-        return getPreferedTransport_().rank();
+        return getPreferredTransport_().rank();
     }
 
     @Override
@@ -286,18 +324,40 @@ public class Device implements Comparable<Device>, IDumpStatMisc
         return _did.toString();
     }
 
-    @Override
-    public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
+    public @Nullable Diagnostics.Device dumpDiagnostics()
     {
-        ps.print(indent + _did + ": ");
-        for (Entry<ITransport, TransportState> en : _tpsAvailable.entrySet()) {
-            TransportState ten = en.getValue();
-            if (ten._isBeingPulsed) {
-                ps.print("(" + en.getKey() + ten._sidcsAvailable.size() + ") ");
-            } else {
-                ps.print("" + en.getKey() + ten._sidcsAvailable.size() + " ");
-            }
+        Diagnostics.Device.Builder deviceBuilder = Diagnostics.Device.newBuilder();
+
+        deviceBuilder.setDid(did().toPB());
+
+        ITransport preferredTransport = getPreferredTransport();
+        if (preferredTransport != null) {
+            deviceBuilder.setPreferredTransportId(preferredTransport.id());
         }
-        ps.println();
+
+        for (Entry<ITransport, TransportState> entry: _tpsAvailable.entrySet()) {
+            TransportState transportState = entry.getValue();
+
+            Diagnostics.Transport.Builder transportBuilder = Diagnostics.Transport.newBuilder();
+
+            // id
+            transportBuilder.setId(entry.getKey().id());
+
+            // is the transport being pulsed or not
+            if (transportState._isBeingPulsed) {
+                transportBuilder.setState(Transport.TransportState.PULSING);
+            } else {
+                transportBuilder.setState(Transport.TransportState.POTENTIALLY_AVAILABLE);
+            }
+
+            // what sidcs are 'available' on this transport
+            for (SIndex sidx : transportState._sidcsAvailable) {
+                transportBuilder.addKnownStoreIndexes(sidx.getInt());
+            }
+
+            deviceBuilder.addAvailableTransports(transportBuilder);
+        }
+
+        return deviceBuilder.build();
     }
 }
