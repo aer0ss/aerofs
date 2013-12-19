@@ -45,10 +45,10 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     // When we receive a reply, we dequeue the future and set it with the reply.
     // So this only works because the server guarantees to process the requests and send the
     // replies in order.
-    private final Queue<UncancellableFuture<byte[]>> _pendingReads = newArrayDeque();
+    private final Queue<UncancellableFuture<byte[]>> _pendingReads = newArrayDeque(); // protected by 'this'
 
     // Hold writes until we are connected to the server
-    private final Queue<byte[]> _pendingWrites = newArrayDeque();
+    private final Queue<byte[]> _pendingWrites = newArrayDeque(); // protected by 'this'
     private final Timer _timer = getGlobalTimer();
     private final long _timeoutDuration;
 
@@ -155,7 +155,11 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
     {
-        final UncancellableFuture<byte[]> readFuture = _pendingReads.poll();
+        UncancellableFuture<byte[]> readFuture;
+
+        synchronized (this) {
+            readFuture = _pendingReads.poll();
+        }
 
         // If replyFuture is null, we received a reply with no previous query
         if (readFuture == null) {
