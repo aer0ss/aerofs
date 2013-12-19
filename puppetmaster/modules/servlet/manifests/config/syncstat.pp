@@ -8,7 +8,7 @@ class servlet::config::syncstat(
     $cacert_location
 ) {
     include servlet::syncstat
-    include servlet::nginx_config
+    include servlet::nginx_config_syncstat
 
     # N.B. this is needed by context-footer.xml.erb
     $databases = [
