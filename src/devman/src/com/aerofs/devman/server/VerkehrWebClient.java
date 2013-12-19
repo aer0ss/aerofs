@@ -64,7 +64,10 @@ public class VerkehrWebClient
     {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
         conn.setRequestMethod("GET");
+        conn.setReadTimeout(500);
+        conn.setConnectTimeout(500);
 
         BufferedReader rd = null;
 
@@ -76,6 +79,8 @@ public class VerkehrWebClient
             if (rd != null) {
                 rd.close();
             }
+
+            conn.disconnect();
         }
     }
 
@@ -102,7 +107,7 @@ public class VerkehrWebClient
 
                 result.add(odi);
             } catch (FileNotFoundException e) {
-                l.warn("Connection " + connection + " not found (must have gone offline). Continue anyway");
+                l.warn("Connection " + connection + " not found (must have gone offline).");
             }
        }
 
