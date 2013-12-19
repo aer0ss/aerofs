@@ -25,7 +25,7 @@ class SettingsViewTest(TestBase):
 
     def _call(self, token):
         requests.delete = Mock()
-        from web.views.settings.settings_view import json_delete_access_token
+        from web.views.settings.access_tokens_view import json_delete_access_token
         request = self.create_dummy_request({
             'access_token': token
         })
