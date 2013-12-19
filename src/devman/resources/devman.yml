@@ -29,8 +29,8 @@ logging:
         timeZone: UTC
 
     loggers:
-        "com.aerofs.devman.server.VerkehrPuller": DEBUG
-        "com.aerofs.devman.server.VerkehrWebClient": DEBUG
+        "com.aerofs.devman.server.VerkehrPuller": WARN
+        "com.aerofs.devman.server.VerkehrWebClient": WARN
 
 polling:
     initialDelayInSeconds: 10
