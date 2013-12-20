@@ -47,6 +47,27 @@
     </%self:_side_bar>
 </%def>
 
+## This side bar doesn't come with the "Next Steps" marketing plugs.
+<%def name="developers_side_bar()">
+    <%self:_side_bar>
+        <%def name="exclude_next_steps_items()"></%def>
+        <%def name="menu_title()">Developer Home</%def>
+        <%def name="main_items()">
+            <%self:_developers_items highlight_current_item="True"/>
+        </%def>
+    </%self:_side_bar>
+
+    ${caller.body()}
+
+    <div class="alert alert-success">
+        API access is available for the AeroFS <strong>Private Cloud only</strong>.
+        <a href="${request.route_path('private_cloud_signup')}">Click here</a>
+        to request for a developer license for free.
+    </div>
+</%def>
+
+<%def name="api_doc_url()">/docs/api</%def>
+
 <%!
     def sub_item(text):
         return '<span style="margin-left: 12px; font-size: 95%">' + text + '</span>'
@@ -91,6 +112,20 @@
     ${_render_items(items, highlight_current_item)}
 </%def>
 
+<%def name="_developers_items(highlight_current_item=False)">
+    <%
+        items = [
+            ('Overview', 'developers_overview'),
+            ('Getting Started', 'developers_getting_started'),
+            ('Consistency Policies', 'developers_consistency'),
+            ('Publish Your App', 'developers_publish'),
+##            ('Security Guide', 'developers_security'),
+        ]
+    %>
+    ${_render_items(items, highlight_current_item)}
+    <li><a href="${api_doc_url()}">API Reference</a></li>
+</%def>
+
 ## @items a list of tuples of (title, route).
 <%def name="_render_items(items, highlight_current_item)">
     %for item in items:
@@ -105,31 +140,34 @@
     %endfor
 </%def>
 
+## Define exclude_next_steps_items in the caller to hide the "Next steps" block
 <%def name="_side_bar()">
-    <div class="accordion side-bar-accordion" id="left-side-bar0">
-        <div class="accordion-group">
-            <div class="accordion-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="#left-side-bar0" href="#collapse0">
-                    Next Steps <span class="accordion-down-arrow">&nbsp; &#x25BE;</span>
-                </a>
-            </div>
-            <div id="collapse0" class="accordion-body collapse in">
-                <div class="accordion-inner">
-                    <ul class="nav nav-list left-nav">
-                        <li>
-                            <a class="sign-up-text-highlight" href="${request.route_path('pricing')}">
-                                <i class="icon-circle-arrow-right"></i> Sign Up Now</a>
-                        </li>
-                        <li>
-                            <a href="${request.route_path('demo_videos')}">
-                                <i class="icon-film"></i> Watch Demos
-                            </a>
-                        </li>
-                    </ul>
+    %if not hasattr(caller, 'exclude_next_steps_items'):
+        <div class="accordion side-bar-accordion" id="left-side-bar0">
+            <div class="accordion-group">
+                <div class="accordion-heading">
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#left-side-bar0" href="#collapse0">
+                        Next Steps <span class="accordion-down-arrow">&nbsp; &#x25BE;</span>
+                    </a>
+                </div>
+                <div id="collapse0" class="accordion-body collapse in">
+                    <div class="accordion-inner">
+                        <ul class="nav nav-list left-nav">
+                            <li>
+                                <a class="sign-up-text-highlight" href="${request.route_path('pricing')}">
+                                    <i class="icon-circle-arrow-right"></i> Sign Up Now</a>
+                            </li>
+                            <li>
+                                <a href="${request.route_path('demo_videos')}">
+                                    <i class="icon-film"></i> Watch Demos
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    %endif
 
     ## Generate the main menu only if main_items() is defined
     %if hasattr(caller, 'main_items'):

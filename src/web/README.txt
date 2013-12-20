@@ -11,6 +11,10 @@ Set up your system using development/setup.sh (run without args for usage
 information). After setup has completed, run the web server using
 development/run.sh.
 
+N.B. the process needs write permissions to /var/log/web/web.log and
+/var/log is owned by root by default on OSX. Create that directory
+and chown it before running run.sh
+
 Known issues:
     - Sign in does not work when running in prod mode (cookie issue).
 
