@@ -17,6 +17,7 @@ log = logging.getLogger(__name__)
 _URL_PARAM_DEVICE_ID = 'device_id'  # the value is a HEX encoded device id
 _URL_PARAM_DEVICE_NAME = 'device_name'
 
+
 @view_config(
     route_name='my_devices',
     permission='user',
@@ -75,7 +76,7 @@ def team_server_devices(request):
 
 def _devices(request, devices, user, page_heading, are_team_servers, show_add_mobile_device):
     try:
-        last_seen_nullable = _get_last_seen(devices)
+        last_seen_nullable = _get_last_seen(_get_devman_url(request.registry.settings), devices)
     except Exception as e:
         log.error('get_last_seen failed. use null values: {}'.format(e))
         last_seen_nullable = None
@@ -98,23 +99,28 @@ def _devices(request, devices, user, page_heading, are_team_servers, show_add_mo
 
 
 # See aerofs/src/devman/README.txt for the API spec
-_DEVMAN_URL = 'http://localhost:9020'
 _devman_polling_interval = None
 
 
-def _get_devman_polling_interval():
+def _get_devman_url(settings):
+    # In private deployment, we get the URL from the configuration service. In prod, use the
+    # default.
+    return settings.get("base.devman.url", "http://sp.aerofs.com:9020")
+
+
+def _get_devman_polling_interval(devman_url):
     """
     Return the polling interval of the devman service.
     """
     global _devman_polling_interval
     if not _devman_polling_interval:
-        r = requests.get(_DEVMAN_URL + '/polling_interval')
+        r = requests.get(devman_url + '/polling_interval')
         _throw_on_devman_error(r)
         _devman_polling_interval = int(r.text)
     return _devman_polling_interval
 
 
-def _get_last_seen(devices):
+def _get_last_seen(devman_url, devices):
     """
     Call the devman service to retrieve last seen time and location for the list of
     devices.
@@ -128,7 +134,7 @@ def _get_last_seen(devices):
     ret = {}
     for device in devices:
         did = device.device_id.encode('hex')
-        r = requests.get(_DEVMAN_URL + '/devices/' + did)
+        r = requests.get(devman_url + '/devices/' + did)
         # The device is never seen. skip
         if r.status_code == 404:
             continue
@@ -137,14 +143,15 @@ def _get_last_seen(devices):
 
         json = r.json()
         ret[did] = {
-            'time': _pretty_timestamp(json['last_seen_time'] / 1000),
+            'time': _pretty_timestamp(_get_devman_polling_interval(devman_url),
+                                      json['last_seen_time'] / 1000),
             'ip': json['ip_address']
         }
 
     return ret
 
 
-def _pretty_timestamp(timestamp):
+def _pretty_timestamp(polling_interval, timestamp):
     """
     Format the timestamp beautifully
     @param timestamp the given timestamp in seconds
@@ -160,7 +167,7 @@ def _pretty_timestamp(timestamp):
         return ''
 
     if day_diff == 0:
-        if second_diff < _get_devman_polling_interval():
+        if second_diff < polling_interval:
             return "just now"
         if second_diff < 60:
             return str(second_diff) + " seconds ago"
