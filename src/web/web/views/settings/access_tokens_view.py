@@ -5,7 +5,7 @@ import requests
 
 from pyramid.view import view_config
 from web import util
-from web.views.oauth import flash_error_for_bifrost_response, BIFROST_URL, \
+from web.oauth import flash_error_for_bifrost_response, BIFROST_URL, \
     is_builtin_client_id, raise_error_for_bifrost_response, is_valid_access_token
 
 log = logging.getLogger(__name__)
