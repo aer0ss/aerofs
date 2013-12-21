@@ -4,6 +4,7 @@
 
 package com.aerofs.auditor.server;
 
+import com.aerofs.auditor.server.Downstream.IAuditChannel;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
@@ -41,6 +42,9 @@ public class TestDownstream extends AbstractTest
     @Before
     public void startListener()
     {
+        ReconnectingClientHandler.init();
+        ReconnectingClientHandler.resetDelay();
+
         Audit.CHANNEL_HOST = "localhost";
         Audit.AUDIT_ENABLED = true;
         _handler = new LineServerHandler();
@@ -51,18 +55,17 @@ public class TestDownstream extends AbstractTest
 
         ServerBootstrap bootstrap = new ServerBootstrap(factory);
 
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+        bootstrap.setPipelineFactory(new ChannelPipelineFactory()
+        {
             @Override
             public ChannelPipeline getPipeline()
             {
                 return Channels.pipeline(
                         new DelimiterBasedFrameDecoder(1024, false, Delimiters.lineDelimiter()),
-                        new StringDecoder(CharsetUtil.UTF_8),
-                        _handler);
+                        new StringDecoder(CharsetUtil.UTF_8), _handler);
             }
         });
 
-        bootstrap.setOption("child.tcpNoDelay", true);
         bootstrap.setOption("child.keepAlive", true);
 
         _serverChannel = bootstrap.bind(new InetSocketAddress(0));
@@ -76,65 +79,104 @@ public class TestDownstream extends AbstractTest
             _serverChannel.close().awaitUninterruptibly();
             _serverChannel = null;
         }
+    }
+
+    @After
+    public void resetConfigs()
+    {
+        ReconnectingClientHandler.quiesce();
         Audit.CHANNEL_HOST = null;
         Audit.CHANNEL_PORT = 0;
     }
 
     @Test
-    public void testStreamFraming() throws Exception
+    public void streamShouldFrameMessages() throws Exception
     {
         String testValue = "{\"This is a thing right\":\"Yep\"}";
         Downstream.IAuditChannel iAuditChannel = Downstream.create();
+
+        waitForConnectState(iAuditChannel, true);
+
         iAuditChannel.doSend(testValue);
-        _handler.waitForMessages(1);
-
-        for (String msg : _handler.recd) {
-            Assert.assertEquals(testValue + "\n", msg);
-        }
+        _handler.waitForMessage(testValue);
     }
 
     @Test
-    public void testReconnect() throws Exception
+    public void streamShouldReconnect() throws Exception
     {
         Downstream.IAuditChannel chan = Downstream.create();
+
         // prime the pump; make sure channel is ok:
+        waitForConnectState(chan, true);
         chan.doSend(_testValue);
-        _handler.waitForMessages(1);
-        Assert.assertEquals(_testValue + '\n', _handler.recd.remove());
+        _handler.waitForMessage(_testValue);
 
-        // shut down channel from server side
+        // shut down channel from server side, and block for client disconnect:
         chan.doSend("bye");
-        _handler.waitForMessages(1);
-        Assert.assertEquals("bye\n", _handler.recd.remove());
+        _handler.waitForMessage("bye");
 
-        // give it a few seconds to detect the failure & reconnect
-        chan.doSend(_testValue);
+        // the initial reconnect is not synchronous, it's on a 1-ms delay.
+        // therefore let's give this guy a moment before we try a send.
+        ThreadUtil.sleepUninterruptable(100);
 
-        // because of how we tore down the server, sends will fail for a while before we
-        // get the channel shutdown notification & reconnect
-        for (int i=0; i<30; i++) {
-            Thread.sleep(C.SEC / 10);
-            try {
-                chan.doSend(_testValue);
-                break;
-            } catch (ExExternalServiceUnavailable expected) { }
-        }
-
-        // check that subsequent sends reconnect automatically:
-        _handler.waitForMessages(1);
-        Assert.assertEquals(_testValue + '\n', _handler.recd.remove());
+        // check that subsequent sends are queued behind immediate reconnect automatically:
+        waitForConnectState(chan, true);
+        chan.doSend(_testValue + " 2 ");
+        _handler.waitForMessage(_testValue + " 2 ");
     }
 
     @Test
-    public void testCannotConnect() throws Exception
+    public void streamShouldDetectDisconnect() throws Exception
     {
         Downstream.IAuditChannel chan = Downstream.create();
-        stopListener();
 
-        try {
-            chan.doSend(_testValue);
-            Assert.fail("send should fail");
-        } catch (ExExternalServiceUnavailable expected) { }
+        // prime the pump; make sure channel starts off ok:
+        chan.doSend(_testValue);
+        _handler.waitForMessage(_testValue);
+
+        // shut down channel from server side:
+        stopListener();
+        chan.doSend("bye");
+        _handler.waitForMessage("bye");
+
+        // give it a few tries to detect the failure ... buffers eh?
+        int attempts = 0;
+        while (attempts < 50) {
+            chan.doSend("Are you gone yet?");
+            ThreadUtil.sleepUninterruptable(C.SEC / 10);
+            if (!chan.isConnected()) return;
+            attempts++;
+        }
+
+        Assert.fail("Timed out waiting for channel to detect disconnect");
+    }
+
+    @Test
+    public void streamShouldRetryConnect() throws Exception
+    {
+        stopListener();
+        Downstream.IAuditChannel chan = Downstream.create();
+        ThreadUtil.sleepUninterruptable(1 * C.SEC);
+        Assert.assertTrue(ReconnectingClientHandler.getNextDelay() > 100L);
+    }
+
+    @Test
+    public void streamShouldHaveRetryLimit() throws Exception
+    {
+        ReconnectingClientHandler.resetDelay();
+        do {
+        } while (ReconnectingClientHandler.getNextDelay() != ReconnectingClientHandler.MAX_DELAY_MS);
+        Assert.assertEquals(ReconnectingClientHandler.getNextDelay(), ReconnectingClientHandler.MAX_DELAY_MS);
+    }
+
+    @Test
+    public void streamShouldDetectConnectFailure() throws Exception
+    {
+        stopListener();
+        Downstream.IAuditChannel chan = Downstream.create();
+
+        Assert.assertTrue(!chan.isConnected());
+        chan.doSend("hi"); // no exception from this guy, async...
     }
 
     // A simple server handler that records line-delimited messages received for later checking
@@ -161,20 +203,35 @@ public class TestDownstream extends AbstractTest
         }
 
         /**
-         * Block until "expected" messages have arrived, or 2.5 seconds, whichever is sooner.
+         * Block until the expected message has arrived, or 5 seconds, whichever is sooner.
          */
-        public void waitForMessages(int expected)
+        public void waitForMessage(String expected)
         {
             int attempts = 0;
-            while ((attempts < 25) && (recd.size() < expected)) {
+            while ((attempts < MAX_ATTEMPTS) && (recd.size() < 1)) {
                 attempts++;
-                ThreadUtil.sleepUninterruptable(C.SEC / 10);
+                ThreadUtil.sleepUninterruptable(DELAY);
             }
-            Assert.assertEquals(expected, recd.size());
+            Assert.assertEquals(1, recd.size());
+            Assert.assertEquals(expected + '\n', recd.remove());
         }
+    }
+
+    private void waitForConnectState(IAuditChannel channel, boolean expected)
+    {
+        int attempts=0;
+        while (attempts < MAX_ATTEMPTS) {
+            if (channel.isConnected() == expected) return;
+            attempts++;
+            ThreadUtil.sleepUninterruptable(DELAY);
+        }
+        Assert.fail("Still " + (expected? "not" : "")
+                + " connected after " + (DELAY * attempts) + "uS.");
     }
 
     private Channel             _serverChannel;
     private LineServerHandler   _handler;
     private final String        _testValue = "{\"This is a thing amirite\":\"Yep\"}";
+    private static final long   DELAY = C.SEC / 10;
+    private static final long   MAX_ATTEMPTS = 50;
 }

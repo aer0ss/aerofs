@@ -6,13 +6,10 @@ package com.aerofs.auditor.server;
 
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
-import com.aerofs.lib.log.LogUtil;
 import com.google.common.base.Strings;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
@@ -23,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
-import static org.jboss.netty.buffer.ChannelBuffers.*;
+import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 /**
  * Class to manage downstream connections. Currently only a simple JSON stream is supported.
@@ -50,69 +47,29 @@ public class Downstream
          * Send the given message, or throw an exception if it cannot be delivered.
          */
         void doSend(String message) throws ExExternalServiceUnavailable;
+
+        /**
+         * Best-effort state of the underlying channel implementation.
+         */
+        boolean isConnected();
     }
 
     /**
      * A simple write-only service, newline-delimited docs. Appropriate for single-line JSON
      * or similar.
+     *
+     * TODO: netty doesn't seem to provide queuing of undeliverable messages, so I guess
+     * we need one...
      */
-    static class NewLineDelimitedStream implements IAuditChannel, ChannelFutureListener
+    static class NewLineDelimitedStream implements IAuditChannel, IConnectNotifier
     {
-        /**
-         * A purely synchronous send interface. This sends the given message, with a
-         * newline delimiter added, to the remote system. The call blocks for the write()
-         * to complete. If the write does not complete, ExExternalServiceUnavailable is thrown.
-         */
-        @Override
-        public void doSend(String message) throws ExExternalServiceUnavailable
+        NewLineDelimitedStream()
         {
-            // TODO: configure maximum write timeout
-            ChannelFuture writeFuture = Channels.write(
-                    getChannelOrThrow(),
-                    wrappedBuffer(message.getBytes(), DELIM))
-                        .awaitUninterruptibly();
+            final ClientBootstrap   bootstrap;
+            ChannelFactory          factory;
+            InetSocketAddress       addr;
 
-            if (!writeFuture.isSuccess()) {
-                l.warn("write failed", LogUtil.suppress(writeFuture.getCause()));
-                throw new ExExternalServiceUnavailable("write failed");
-            }
-        }
-
-        /**
-         *  ChannelFutureListener op called when channel close is detected.
-         */
-        @Override
-        public void operationComplete(ChannelFuture channelFuture) throws Exception
-        {
-            synchronized (this) {
-                l.info("Received channel closed notification");
-                _channel = null;
-            }
-        }
-
-        // safely handle re-connect if the channel was torn down
-        private Channel getChannelOrThrow() throws ExExternalServiceUnavailable
-        {
-            Channel retval = _channel;
-            // careful here, we can do this part un-synchronized when the channel is non-null...
-            try {
-                return (retval == null) ? connectOrThrow() : retval;
-            } catch (Exception e) {
-                l.warn("Error connecting downstream", e);
-                throw new ExExternalServiceUnavailable("Cannot connect to downstream svc");
-            }
-        }
-
-        /**
-         * safely connect if _channel is invalid. return immediately if _channel is okay.
-         */
-        private synchronized Channel connectOrThrow() throws ExExternalServiceUnavailable
-        {
-            if (_channel != null && _channel.isOpen()) { return _channel; }
-
-            ClientBootstrap     bootstrap;
-            Channel             channel;
-            ChannelFactory      factory;
+            addr = new InetSocketAddress(Audit.CHANNEL_HOST, Audit.CHANNEL_PORT);
 
             factory = new NioClientSocketChannelFactory(
                     Executors.newCachedThreadPool(),
@@ -120,27 +77,48 @@ public class Downstream
 
             bootstrap = new ClientBootstrap(factory);
             bootstrap.setOption("keepAlive", true);
-            bootstrap.setOption("child.tcpNoDelay", true);
-            bootstrap.setOption("child.keepAlive", true);
+            bootstrap.setOption("tcpNoDelay", true);
+            bootstrap.setOption("remoteAddress", addr);
             bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
                 @Override
                 public ChannelPipeline getPipeline()
                 {
-                    return Channels.pipeline(new FinalUpstreamEventHandler());
+                    return Channels.pipeline(
+                            new ReconnectingClientHandler(bootstrap, NewLineDelimitedStream.this));
                 }
             });
 
-            InetSocketAddress addr = new InetSocketAddress(Audit.CHANNEL_HOST, Audit.CHANNEL_PORT);
             l.info("Creating channel for {}", addr.toString());
 
-            channel = bootstrap.connect(addr).awaitUninterruptibly().getChannel();
-            channel.setReadable(false);
-            channel.getCloseFuture().addListener(this);
+            // bootstrap the initial client connection...
+            _channel = bootstrap.connect().getChannel();
+        }
 
-            l.info("Connected json channel");
+        /**
+         * A simple send interface. This sends the given message, with a
+         * newline delimiter added, to the remote system. The call is unable to block for
+         * write completion. However, if the write fails or is cancelled, we will respond by
+         * tearing down the channel. A subsequent send will cause reconnect.
+         *
+         * ExExternalServiceUnavailable is thrown for an immediate failure from the channel.
+         */
+        @Override
+        public void doSend(String message) throws ExExternalServiceUnavailable
+        {
+            Channels.write(_channel, wrappedBuffer(message.getBytes(), DELIM));
+        }
 
-            // do this assignment last so we won't update _channel if any connect step fails
-            return _channel = channel;
+        @Override
+        public boolean isConnected()
+        {
+            return _channel.isConnected();
+        }
+
+        @Override
+        public void channelConnected(Channel c)
+        {
+            l.info("channel-connected notification {}", c);
+            _channel = c;
         }
 
         private static final byte[] DELIM = new byte[] { '\n' };
@@ -152,5 +130,8 @@ public class Downstream
     {
         @Override
         public void doSend(String message) { l.warn("no downstream: {}", message);}
+
+        @Override
+        public boolean isConnected() { return true; }
     }
 }
