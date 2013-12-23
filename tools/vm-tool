@@ -13,7 +13,7 @@ readonly AEROFS_ROOT=$(cd "${BASH_SOURCE[0]%/*}"/.. && pwd )
 #
 function do_in
 {
-    typeset _wd=$PWD
+    typeset _wd="$PWD"
     cd $1
     shift
     set +e
@@ -21,7 +21,7 @@ function do_in
     "$@";
 
     typeset retval=$?
-    cd $_wd
+    cd "$_wd"
 
     #FIXME: set -e only if $- had an e in it
     set -e
