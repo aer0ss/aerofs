@@ -31,6 +31,15 @@
             AeroFS
     </title>
 
+    ## canonical URL to be indexed by search engines. Prevents situations where search engines
+    ## attempt to index http://www.aerofs.com, https://www.aerofs.com, and http(s)://aerofs.com
+    ## resulting in "duplicate content" and devaluing each page...
+
+    ## using www.aerofs.com instead of just aerofs.com because most people linking in to us from other sources use
+    ## www.aerofs.com, so the domain authority of www.aerofs.com is already higher than aerofs.com
+    %if not is_private_deployment(request.registry.settings):
+        <link rel="canonical" href="https://www.aerofs.com${request.current_route_path()}" />
+    %endif
     <%block name="meta_tags"/>
 
     ## fav and touch icons
