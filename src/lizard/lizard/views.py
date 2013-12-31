@@ -27,19 +27,19 @@ def login_page():
         admin = models.Admin.query.filter_by(email=form.email.data).first()
         if not admin:
             # This user doesn't exist.
-            flash(u"Email or password is incorrect")
+            flash(u"Email or password is incorrect", 'error')
         elif not scrypt.check_password_hash(form.password.data, admin.pw_hash, admin.salt):
             # The password was wrong.
-            flash(u"Email or password is incorrect")
+            flash(u"Email or password is incorrect", 'error')
         else:
             # Successful login.
             login_success = login.login_user(admin, remember=False)
             # TODO: handle inactive users more clearly?  not sure what UX to expose in that case.
             if login_success:
-                #flash(u"Login completed for {}:{}".format(form.email.data, form.password.data))
+                #flash(u"Login completed for {}:{}".format(form.email.data, form.password.data), 'success')
                 pass
             else:
-                flash(u"Login failed for {}: probably marked inactive?".format(admin.email))
+                flash(u"Login failed for {}: probably marked inactive?".format(admin.email), 'error')
             next_url = request.args.get('next') or url_for("index")
             # sanitize next_url to ensure that it's relative.  Avoids user
             # redirection attacks where you log in and then get redirected to an
@@ -53,7 +53,7 @@ def login_page():
 @app.route("/logout")
 def logout():
     login.logout_user()
-    flash(u"You have logged out successfully")
+    flash(u"You have logged out successfully", 'success')
     return redirect(url_for("index"))
 
 @app.route("/request_signup", methods=["GET", "POST"])
@@ -163,7 +163,8 @@ def signup_completion_page():
             admin.last_name,
             cust.name,
             form.password.data,
-            user_signup_code))
+            user_signup_code),
+            'success')
         return redirect(url_for("index"))
     return render_template("complete_signup.html",
             form=form,
@@ -190,7 +191,7 @@ def edit_preferences():
         # Save to DB
         db.session.add(user)
         db.session.commit()
-        flash(u'Saved changes.')
+        flash(u'Saved changes.', 'success')
         return redirect(url_for("edit_preferences"))
     form.first_name.data = user.first_name
     form.last_name.data = user.last_name
@@ -213,7 +214,7 @@ def invite_to_organization():
         email = form.email.data
         # Verify that the email is not already in the Admin table
         if models.Admin.query.filter_by(email=form.email.data).first():
-            flash(u'That user is already a member of an organization')
+            flash(u'That user is already a member of an organization', 'error')
             return redirect(url_for("dashboard"))
         # Either this user has been invited to the organization already or hasn't.
         # If she has been invited before, we probably want to resend her email
@@ -231,9 +232,9 @@ def invite_to_organization():
         # Send the invite email
         emails.send_invite_email(record.email, customer, record.invite_code)
 
-        flash(u'Invited {} to join {}'.format(email, customer.name))
+        flash(u'Invited {} to join {}'.format(email, customer.name), 'success')
         return redirect(url_for('dashboard'))
-    flash(u'Sorry, that was an invalid email.')
+    flash(u'Sorry, that was an invalid email.', 'error')
     return redirect(url_for('dashboard'))
 
 @app.route('/users/accept', methods=["GET", "POST"])
@@ -276,7 +277,7 @@ def accept_organization_invite():
         # Log user in.
         login_success = login.login_user(admin, remember=True)
         if not login_success:
-            flash(u"Login failed for {}: probably marked inactive?")
+            flash(u"Login failed for {}: probably marked inactive?", 'error')
 
         return redirect(url_for("index"))
     return render_template("accept_invite.html",
