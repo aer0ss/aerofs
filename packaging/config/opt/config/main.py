@@ -181,6 +181,11 @@ def set_license_file():
     except:
         return Response("License file was not signed by a trusted authority.\n", status=400)
 
+    # Verify that if the license has an expiry date, that that date is
+    # currently in the future (that is, that the new license is currently valid)
+    if not new_license_info.is_currently_valid():
+        return Response("New license file is no longer valid.\n", status=400)
+
     # If there already exists an installed license file, ensure that the new
     # one is issued to the same license_customer_id.
     if os.path.exists(LICENSE_FILE_PATH):
@@ -202,11 +207,6 @@ def set_license_file():
         if old_license_info.issue_date() > new_license_info.issue_date():
             return Response("New license file was issued before the current license file.\n" +
                             "Cowardly refusing to downgrade license.\n", status=400)
-
-    # Verify that if the license has an expiry date, that that date is
-    # currently in the future (that is, that the new license is currently valid)
-    if not new_license_info.is_currently_valid():
-        return Response("New license file is no longer valid.\n", status=400)
 
     # The new license is okay.  Persist it.
     # Ensure license directory exists.
