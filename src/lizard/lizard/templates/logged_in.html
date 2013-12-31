@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% from "_formhelpers.html" import submit_button %}
+
+{% block additional_nav_pills %}
+<li class="pull-right">
+    <form action="{{ url_for('logout') }}" method="post" name="logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        {{ submit_button("Logout") }}
+    </form>
+</li>
+{% endblock %}
