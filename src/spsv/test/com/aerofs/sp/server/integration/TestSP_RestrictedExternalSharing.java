@@ -12,7 +12,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.sharing_rules.AbstractExSharingRules.DetailedDescription.Type;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
-import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.lib.SharedFolder;

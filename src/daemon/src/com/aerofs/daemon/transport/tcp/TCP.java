@@ -35,7 +35,6 @@ import com.aerofs.daemon.transport.tcp.ARP.IARPVisitor;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;

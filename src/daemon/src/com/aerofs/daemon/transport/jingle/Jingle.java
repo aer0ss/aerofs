@@ -31,7 +31,6 @@ import com.aerofs.daemon.transport.xmpp.presence.XMPPPresenceProcessor;
 import com.aerofs.j.Jid;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Diagnostics.JingleDevice;

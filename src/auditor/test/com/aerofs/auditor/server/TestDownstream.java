@@ -8,7 +8,6 @@ import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -28,7 +27,6 @@ import org.jboss.netty.util.CharsetUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;

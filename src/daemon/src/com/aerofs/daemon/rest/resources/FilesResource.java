@@ -41,7 +41,6 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.io.InputStream;
 
 @Path(Service.VERSION + "/files")
 @Produces(MediaType.APPLICATION_JSON)

@@ -8,7 +8,6 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 public class RitualNotificationSystemConfiguration
