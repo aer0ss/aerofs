@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * Doing SOID->Path resolution requires walking up the OID hierarchy
  *
@@ -27,7 +29,7 @@ public class ResolvedPath extends Path
     {
         super(sid, elems);
         soids = ImmutableList.copyOf(oids);
-        Preconditions.checkState(soids.size() == elems.size());
+        checkState(soids.size() == elems.size());
     }
 
     /**
@@ -66,7 +68,7 @@ public class ResolvedPath extends Path
 
     public ResolvedPath parent()
     {
-        Preconditions.checkState(!isEmpty());
+        checkState(!isEmpty());
         return new ResolvedPath(sid(),
                 soids.subList(0, soids.size() - 1),
                 Arrays.asList(elements()).subList(0, soids.size() - 1));
@@ -74,6 +76,10 @@ public class ResolvedPath extends Path
 
     public ResolvedPath substituteLastSOID(SOID soid)
     {
+        if (isEmpty()) {
+            checkState(soid.oid().isRoot());
+            return this;
+        }
         return new ResolvedPath(sid(),
                 ImmutableList.<SOID>builder()
                         .addAll(soids.subList(0, soids.size() - 1))

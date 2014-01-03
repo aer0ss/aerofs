@@ -132,7 +132,7 @@ public class ImmigrantCreator
      * @return the new SOID of the root object
      */
     public SOID createImmigrantRecursively_(ResolvedPath pathFromParent, final SOID soidFromRoot,
-            SOID soidToRootParent, final String toRootName, final PhysicalOp op, final Trans t)
+            final SOID soidToRootParent, final String toRootName, final PhysicalOp op, final Trans t)
             throws ExStreamInvalid, IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir
     {
         assert !soidFromRoot.sidx().equals(soidToRootParent.sidx());
@@ -155,7 +155,8 @@ public class ImmigrantCreator
                 // any physical trace of the former anchor disappears
                 if (oaFrom.soid().oid().isRoot()) return pathParent;
 
-                SOID soidToParent = pathParent.to.soid();
+                SOID soidToParent = pathParent.to.isEmpty()
+                        ? soidToRootParent : pathParent.to.soid();
                 SOID soidTo = new SOID(soidToParent.sidx(), migratedOID(oaFrom.soid().oid()));
                 String name = soidFromRoot.equals(oaFrom.soid()) ? toRootName : oaFrom.name();
 
@@ -212,7 +213,11 @@ public class ImmigrantCreator
             {
                 if (oaFrom.soid().oid().isRoot() || oaFrom.soid().oid().isTrash()) return;
 
-                if (_sid == null) _sid = _sidx2sid.get_(pathParent.to.soid().sidx());
+                if (_sid == null) {
+                    _sid = pathParent.to.isEmpty()
+                            ? pathParent.to.sid()
+                            : _sidx2sid.get_(pathParent.to.soid().sidx());
+                }
 
                 // The use and abuse of PhysicalOp in Aliasing and migration has been a major
                 // source of grief when doing changes in the core. We really need to come up
