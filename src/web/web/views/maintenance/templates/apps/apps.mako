@@ -88,7 +88,6 @@
 
         function deleteApp(clientID, $deleteButton) {
             $.post('${request.route_path('json_delete_app')}', {
-                ${self.csrf.token_param()}
                 'client_id': clientID
             }).done(function () {
                 showSuccessMessage('The application is deleted.');

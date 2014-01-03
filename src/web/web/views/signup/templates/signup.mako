@@ -131,7 +131,6 @@
                 form.setAttribute("action", "${request.route_path('login')}");
 
                 var params = {
-                    ${self.csrf.token_param()}
                     ## redirect to the install page right after signing up
                     "${url_param_next}": "${request.route_path('download',
                         _query={'msg_type': 'signup'})}",

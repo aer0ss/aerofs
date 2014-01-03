@@ -75,7 +75,6 @@
 
         function deleteAccessToken(token, $deleteButton) {
             $.post('${request.route_path('json_delete_access_token')}', {
-                ${self.csrf.token_param()}
                 'access_token': token
             }).done(function () {
                 showSuccessMessage('The application is removed.');

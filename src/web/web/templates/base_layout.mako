@@ -1,4 +1,4 @@
-<%namespace name="csrf" file="csrf.mako" import="token_input, token_param"
+<%namespace name="csrf" file="csrf.mako" import="token_input"
         inheritable="True"/>
 
 <%! from web.util import is_private_deployment %>
@@ -11,6 +11,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="${request.session.get_csrf_token()}" />
 
     <title>
         ## See http://moz.com/learn/seo/title-tag for info on title tags
@@ -139,6 +140,7 @@
     <script src="${request.static_path('web:static/js/jquery.easing.1.3.js')}"></script>
     <script src="${request.static_path('web:static/js/bootstrap.min.js')}"></script>
     <script src="${request.static_path('web:static/js/aerofs.js')}"></script>
+    <script src="${request.static_path('web:static/js/csrf.js')}"></script>
 
     <%
         from web.util import get_last_flash_message_and_empty_queue

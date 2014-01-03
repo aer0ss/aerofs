@@ -390,9 +390,6 @@
                         store_id: modalSID(),
                         permissions: permissions,
                         suppress_sharing_rules_warnings: suppressSharingRulesWarnings
-                    },
-                    {
-                        ${self.csrf.token_header()}
                     }
                 ).done(function() {
                     modalUserAndPermissionsList()[email].permissions = permissions;
@@ -429,9 +426,6 @@
                         {
                             user_id: email,
                             store_id: modalSID()
-                        },
-                        {
-                            ${self.csrf.token_header()}
                         }
                     )
                     .done(function(response) {
@@ -496,9 +490,6 @@
                         store_id: sid,
                         folder_name: name,
                         suppress_sharing_rules_warnings: suppressSharingRulesWarnings
-                    },
-                    {
-                        ${self.csrf.token_header()}
                     }
                 ).done(function() {
                     showSuccessMessage('Invitation has been sent.');

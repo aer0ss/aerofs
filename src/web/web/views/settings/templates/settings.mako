@@ -66,9 +66,8 @@
         function sendPasswordResetEmail() {
             $('#reset-password-modal').modal('show');
 
-            $.post('${request.route_path('json_send_password_reset_email')}', {
-                ${self.csrf.token_param()}
-            }).done(function() {
+            $.post('${request.route_path('json_send_password_reset_email')}', { }
+            ).done(function() {
                 console.log("sent password reset email successful");
             }).fail(function(xhr) {
                 ## Ignore errors as if the email is lost in transit.

@@ -23,7 +23,6 @@
 
         function enqueueBootstrapTaskImpl(task, onComplete, onFailure, retry) {
             $.post('${request.route_path('json_enqueue_bootstrap_task')}', {
-                ${csrf.token_param()}
                 task: task
             }).done(function(resp) {
                 var eid = resp['execution_id'];

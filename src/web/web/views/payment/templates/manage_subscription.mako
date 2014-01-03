@@ -193,7 +193,6 @@
         ## This method follows the contract defined by inputCreditCardInfo()
         function updateCreditCard(token, done, always) {
             $.post("${request.route_path('json.update_credit_card')}", {
-                ${self.csrf.token_param()}
                 "${url_param_stripe_card_token}": token
             }).done(function() {
                 ## Reload the page to refresh the current payment method.
@@ -222,7 +221,6 @@
             var $btn = $("#chance-button");
             $btn.attr("disabled", "disabled");
             $.post("${request.route_path('json.cancel_subscription')}", {
-                ${self.csrf.token_param()}
                 "${url_param_feedback}": $("#feedback").val(),
                 "${url_param_chance}": 1
             }).done(function () {
@@ -239,7 +237,6 @@
             var $btn = $("#cancel-button");
             $btn.attr("disabled", "disabled");
             $.post("${request.route_path('json.cancel_subscription')}", {
-                ${self.csrf.token_param()}
                 "${url_param_feedback}": $("#feedback").val()
             }).done(function () {
                 $("#cancel-subscription-feedback-modal").modal("hide");

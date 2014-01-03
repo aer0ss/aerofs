@@ -113,15 +113,14 @@ function disableEsapingFromModal($modal) {
 
 // add convenience method to POST raw JS objects as JSON bodies
 $.extend({
-    postJSON: function(url, data, headers) {
+    postJSON: function(url, data) {
         return $.ajax({
             type: "POST",
             url: url,
             data: JSON.stringify(data),
             dataType: "json",
             contentType: "application/json; charset=utf-8",
-            processData: false,
-            headers: headers
+            processData: false
         });
     }
 })

@@ -163,7 +163,6 @@
             $("#join-team-model-confirm").click(function() {
                 $.post("${request.route_path('json.accept_team_invitation')}",
                     {
-                        ${self.csrf.token_param()}
                         "${url_param_org_id}": $acceptTeamInviteButton.data('org-id')
                     }
                 )
@@ -193,7 +192,6 @@
                 var $this = $(this);
                 $.post("${request.route_path('json.ignore_team_invitation')}",
                     {
-                        ${self.csrf.token_param()}
                         "${url_param_org_id}": $(this).data('org-id')
                     }
                 )
@@ -210,7 +208,6 @@
                 var $this = $(this);
                 $.post("${request.route_path('json.accept_folder_invitation')}",
                     {
-                        ${self.csrf.token_param()}
                         "${url_param_share_id}": $this.data('share-id')
                     }
                 )
@@ -228,7 +225,6 @@
                 var $this = $(this);
                 $.post("${request.route_path('json.ignore_folder_invitation')}",
                     {
-                        ${self.csrf.token_param()}
                         "${url_param_share_id}": $(this).data('share-id')
                     }
                 )

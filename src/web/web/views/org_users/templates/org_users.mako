@@ -145,7 +145,6 @@
             var email = $.trim($('#invite_user_email').val());
 
             $.post("${request.route_path('json.invite_user')}", {
-                ${self.csrf.token_param()}
                 "${url_param_user}": email
             }).done(function(data) {
                 showSuccessMessage("The invitation has been sent.");
@@ -187,7 +186,6 @@
 
         function removeInvitation(user, link) {
             $.post("${request.route_path('json.delete_org_invitation')}", {
-                    ${self.csrf.token_param()}
                     "${url_param_user}": user
                 }
             )
@@ -206,7 +204,6 @@
         ## link: the jquery object of the calling link
         function toggleAdmin(user, becomeAdmin, newLinkText, $link) {
             $.post("${request.route_path('json.set_auth_level')}", {
-                    ${self.csrf.token_param()}
                     "${url_param_user}": user,
                     "${url_param_level}": becomeAdmin ? ${admin_level} : ${user_level}
                 }
@@ -235,7 +232,6 @@
             modal.find("#confirm_remove_user").off().on('click', function() {
                 modal.modal('hide');
                 $.post("${request.route_path('json.remove_user')}", {
-                        ${self.csrf.token_param()}
                         "${url_param_user}": user
                     }
                 )
@@ -255,7 +251,6 @@
             modal.find("#confirm_deactivate").off().on('click', function() {
                 modal.modal('hide');
                 $.post("${request.route_path('json.deactivate_user')}", {
-                        ${self.csrf.token_param()}
                         "${url_param_user}": user,
                         "${url_param_erase_devices}": $('#erase_devices').is(':checked')
                     }

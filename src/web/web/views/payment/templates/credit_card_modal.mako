@@ -160,7 +160,6 @@
         function inputCreditCardInfoAndCreateStripeCustomer(callback) {
             inputCreditCardInfo(function(token, done, always) {
                 $.post("${request.route_path('json.create_stripe_customer')}", {
-                    ${csrf.token_param()}
                     "${url_param_stripe_card_token}": token
                 }).done(function() {
                     ## retry inviting after the Stripe customer ID is set

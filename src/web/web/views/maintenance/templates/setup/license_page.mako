@@ -205,7 +205,6 @@
             }
 
             doPost("${request.route_path('json_set_license')}", {
-                ${csrf.token_param()}
                 'license': license
             }, next, enableNavButtons);
         }

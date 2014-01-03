@@ -318,7 +318,7 @@ ${common.render_previous_button()}
 
         function finalize() {
             doPost("${request.route_path('json_setup_finalize')}",
-                { ${csrf.token_param()} }, pollForWebServerReadiness);
+                { }, pollForWebServerReadiness);
         }
 
         ########
