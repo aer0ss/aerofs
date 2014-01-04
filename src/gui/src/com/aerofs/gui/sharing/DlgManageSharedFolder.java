@@ -17,6 +17,8 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Composite;
 
+import javax.annotation.Nullable;
+
 public class DlgManageSharedFolder extends AeroFSDialog
 {
     private final Path _path;
@@ -56,7 +58,7 @@ public class DlgManageSharedFolder extends AeroFSDialog
 
         _compManageUsers = new CompManageUsers(tabFolder, _path, new ILoadListener() {
             @Override
-            public void loaded(int membersCounts, Permissions localUserPermissions)
+            public void loaded(int membersCounts, @Nullable Permissions localUserPermissions)
             {
                 tbtmManage.setText("Members (" + membersCounts + ")");
             }

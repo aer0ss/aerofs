@@ -77,7 +77,8 @@ public class CompUserList extends Composite
     public interface ILoadListener
     {
         // this method is called within the GUI thread
-        void loaded(int memberCount, Permissions localUserPermissions);
+        // N.B. local user permissions may be null, e.g. Team Server
+        void loaded(int memberCount, @Nullable Permissions localUserPermissions);
     }
 
     private ILoadListener _listener;

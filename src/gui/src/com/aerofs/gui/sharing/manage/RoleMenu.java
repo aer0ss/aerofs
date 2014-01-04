@@ -31,7 +31,7 @@ public class RoleMenu
 
         if (shouldShowUpdateACLMenuItems(selfPermissions)) {
             for (final Permissions r : Permissions.ROLE_NAMES.keySet()) {
-                if (subjectPermissions != r) {
+                if (!subjectPermissions.equals(r)) {
                     MenuItem mi = new MenuItem(_menu, SWT.PUSH);
                     mi.setText("Set as " + r.roleName());
                     mi.addSelectionListener(new SelectionAdapter() {
@@ -110,8 +110,8 @@ public class RoleMenu
      */
     private boolean shouldShowUpdateACLMenuItems(Permissions selfPermissions)
     {
-        return L.isMultiuser()                          // Team Server only
-                || selfPermissions.covers(Permission.MANAGE);  // regular client
+        return L.isMultiuser()                                  // Team Server only
+                || selfPermissions.covers(Permission.MANAGE);   // regular client
     }
 
     public void setRoleChangeListener(RoleChangeListener listener)

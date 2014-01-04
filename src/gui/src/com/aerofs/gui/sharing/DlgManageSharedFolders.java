@@ -479,13 +479,14 @@ public class DlgManageSharedFolders extends AeroFSDialog
             if (valid) {
                 _userList.setLoadListener(new ILoadListener() {
                     @Override
-                    public void loaded(int membersCount, Permissions localUserPermissions)
+                    public void loaded(int membersCount, @Nullable Permissions localUserPermissions)
                     {
                         // gray out invite button when not admin, except on Team Server where
                         // the ACL check is slightly more complicated...
                         // FIXME: TS needs effective ACL
-                        boolean admin = (localUserPermissions.covers(Permission.MANAGE))
-                                || L.isMultiuser();
+                        boolean admin = L.isMultiuser() ||
+                                (localUserPermissions != null
+                                        && localUserPermissions.covers(Permission.MANAGE));
                         _btnPlus.setGrayed(!admin);
                         _btnPlus.setEnabled(admin);
                         if (invite) {
