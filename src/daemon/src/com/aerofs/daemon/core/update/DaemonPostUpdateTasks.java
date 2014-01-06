@@ -7,6 +7,7 @@ import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.rocklog.RockLog;
 
 import javax.inject.Inject;
 
@@ -23,7 +24,7 @@ public class DaemonPostUpdateTasks
 
     @Inject
     public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw,  CfgLocalUser cfgUser,
-            InjectableDriver dr)
+            InjectableDriver dr, RockLog rocklog)
     {
         _cfgDB = cfgDB;
 
@@ -67,7 +68,8 @@ public class DaemonPostUpdateTasks
             new DPUTAddTamperingDetectionTable(dbcw),
             new DPUTCaseSensitivityHellYeah(dbcw, dr),
             new DPUTMigrateHistoryToHex(),
-            new DPUTUpdateACLFromDiscreteRolesToFlags(dbcw)
+            new DPUTUpdateACLFromDiscreteRolesToFlags(dbcw),
+            new DPUTUpdateNROForAliasedAndMigrated(dbcw, rocklog)
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 

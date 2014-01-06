@@ -180,6 +180,23 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
         _nroCount.put(sid, n);
     }
 
+    void updateSOID_(SOID oldSOID, SOID newSOID, Trans t) throws SQLException
+    {
+        if (oldSOID.sidx().equals(newSOID.sidx())) {
+            // aliasing
+            l.debug("update oid {} {}", oldSOID, newSOID.oid());
+            _nrodb.updateOID_(oldSOID, newSOID.oid(), t);
+            _nrodb.updateConflicts_(oldSOID, newSOID.oid(), t);
+        } else if (oldSOID.oid().equals(newSOID.oid())) {
+            // migration
+            l.debug("update sidx {} {}", oldSOID, newSOID.sidx());
+            _nrodb.updateSIndex_(oldSOID, newSOID.sidx(), t);
+        } else {
+            // unsupported, should not ever happen
+            Preconditions.checkArgument(false, "soid update " + oldSOID + " -> " + newSOID);
+        }
+    }
+
     /**
      * Attemps to perform an operation (create, move, ...) on a given destination object
      * and work around filesystem limitations as required by converting

@@ -13,7 +13,7 @@ import java.sql.Statement;
 
 public class LinkedStorageSchema implements ISchema
 {
-    static final String
+    public static final String
             // Non-representable objects
             T_NRO               = "nro",
             C_NRO_SIDX          = "nro_s",

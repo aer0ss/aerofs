@@ -80,4 +80,10 @@ public class ResolvedPath extends Path
                         .add(soid).build(),
                 Arrays.asList(elements()));
     }
+
+    public boolean isInTrash()
+    {
+        for (SOID soid : soids) if (soid.oid().isTrash()) return true;
+        return false;
+    }
 }

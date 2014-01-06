@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.ds;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.aerofs.base.Loggers;
@@ -34,7 +33,6 @@ import com.aerofs.lib.id.*;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -173,32 +171,9 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
 
     private final IDataReader<SOID, OA> _readerOA =
         new IDataReader<SOID, OA>() {
-
-            // A set of SOIDs visited to resolve each OA query. We want to avoid losing
-            // information upon StackOverflowErrors in the DirectoryService, so crash if duplicate
-            // SOIDs are visited (i.e. a cycle exists)
-            // N.B. use a Linked HashMap to maintain the ordering in which SOIDs were added
-            // (keeping ancestral relationships)
-            private final Map<SOID, OA> _soidAncestorChain = Maps.newLinkedHashMap();
-
-            @Override
-            @Nullable public OA read_(final SOID soid) throws SQLException
+            @Override @Nullable public OA read_(final SOID soid) throws SQLException
             {
-                OA oa = _mdb.getOA_(soid);
-                if (oa == null) return null;
-
-                try {
-                    // Should never visit the same SOID twice on the same DirectoryService query
-                    OA oldOA = _soidAncestorChain.put(soid, oa);
-                    assert oldOA == null : oldOA + " " + _soidAncestorChain;
-
-                    return oa;
-                } finally {
-                    OA oaRemoved = _soidAncestorChain.remove(soid);
-                    if (oaRemoved == null) {
-                        _fds.logSendAsync(soid + " not in set: " + _soidAncestorChain);
-                    }
-                }
+                return _mdb.getOA_(soid);
             }
         };
 

@@ -103,6 +103,8 @@ public class MasterFIDMaintainer implements IFIDMaintainer
                 }
             }
 
+            l.debug("{} {} {} {}", _soid, _ds.getOA_(_soid).fid(), mfmTo._soid, fid);
+
             // Fallible assertion (see above). It asserts that the FID is unchanged from the source
             // logical object to the target physical object.
             falliblyAssert(fid.equals(_ds.getOA_(_soid).fid()));

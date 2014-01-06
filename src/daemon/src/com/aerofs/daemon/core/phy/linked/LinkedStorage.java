@@ -61,7 +61,7 @@ public class LinkedStorage implements IPhysicalStorage
     private final IStores _stores;
     private final IMapSIndex2SID _sidx2sid;
     private final LinkedRevProvider _revProvider;
-    private final RepresentabilityHelper _rh;
+    final RepresentabilityHelper _rh;
 
     private final TransLocal<Boolean> _tlUseHistory = new TransLocal<Boolean>() {
         @Override
@@ -321,15 +321,13 @@ public class LinkedStorage implements IPhysicalStorage
         if (isPhysicallyEquivalent(from._path, to._path)) {
             TransUtil.moveWithRollback_(from._f, to._f, t);
         } else {
-            try_(to, t, new IPhysicalOperation()
-            {
-                @Override
-                public void run_()
-                        throws IOException
-                {
-                    TransUtil.moveWithRollback_(from._f, to._f, t);
-                }
-            });
+            _rh.try_(to, t, new IPhysicalOperation() {
+                    @Override
+                    public void run_() throws IOException
+                    {
+                        TransUtil.moveWithRollback_(from._f, to._f, t);
+                    }
+                });
         }
     }
 
@@ -337,12 +335,6 @@ public class LinkedStorage implements IPhysicalStorage
     {
         return from.virtual != null && to.virtual != null
                 && _lrm.isPhysicallyEquivalent_(from.virtual, to.virtual);
-    }
-
-    void try_(AbstractLinkedObject dest, Trans t, IPhysicalOperation op)
-            throws SQLException, IOException
-    {
-        _rh.try_(dest, t, op);
     }
 
     void onDeletion_(AbstractLinkedObject o, Trans t) throws SQLException, IOException
