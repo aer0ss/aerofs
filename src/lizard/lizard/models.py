@@ -74,6 +74,10 @@ class Customer(db.Model, TimeStampedMixin):
     # the bills.
     admins = db.relationship("Admin", backref="customer", lazy="dynamic")
 
+    # A customer may have a list of emails that have been invited to become
+    # admins, but have not yet been verified yet.
+    pending_invites = db.relationship("BoundInvite", backref="customer", lazy="dynamic")
+
     def __repr__(self):
         return "<Customer '{}'>".format(self.name)
 
@@ -83,15 +87,37 @@ class UnboundSignup(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     signup_code = db.Column(db.String(_SIGNUP_CODE_LENGTH), index=True, unique=True, nullable=False)
     email = db.Column(db.Unicode(length=_EMAIL_MAX_LEN), index=True, nullable=False)
+    first_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+    last_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+    company_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+    # We allow these to be null or empty
+    phone_number = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
+    job_title = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
+
+class BoundInvite(db.Model):
+    # A model that represents an email address that a customer has specified
+    # should be added to the list of admins, but the email hasn't been verified
+    # yet, so they're not a proper user yet.
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    # This is the random string that we use to verify email address ownership
+    invite_code = db.Column(db.String(_SIGNUP_CODE_LENGTH), index=True, unique=True, nullable=False)
+    email = db.Column(db.Unicode(length=_EMAIL_MAX_LEN), index=True, nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
 
 class Admin(db.Model, TimeStampedMixin):
     # An Admin represents a user that can log in with an email address and
     # password, belongs to a particular customer, and has preferences.
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
+    # Required accounting fields
     email = db.Column(db.Unicode(length=_EMAIL_MAX_LEN), index=True, unique=True, nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
-    name = db.Column(db.Unicode(_USER_STRING_MAX_LEN), nullable=False)
+    first_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+    last_name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
+
+    # Optional
+    phone_number = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
+    job_title = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
 
     # Login credentials (per-user random salt, hash)
     # scrypt ftw

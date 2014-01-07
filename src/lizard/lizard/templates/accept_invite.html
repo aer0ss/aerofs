@@ -1,22 +1,23 @@
 {% extends "base.html" %}
+
 {% from "_formhelpers.html" import render_field, submit_button %}
 
-{% block title %} Sign up for AeroFS Private Cloud {% endblock %}
-
 {% block content %}
-<div class="header"><h1>Sign up for AeroFS Private Cloud</h1></div>
+<h1>Accept your invitation to manage {{ customer.name }}</h1>
 <form action="" method="post" name="login">
     {{form.hidden_tag()}}
     <p>
-        {{ render_field(form.email) }}
+        Email: {{ invite.email }}
+    </p>
+    <p>
         {{ render_field(form.first_name) }}
         {{ render_field(form.last_name) }}
-        {{ render_field(form.company_name) }}
         {{ render_field(form.phone_number) }}
         {{ render_field(form.job_title) }}
+        {{ render_field(form.password) }}
         {{ render_field(form.accept_eula) }}
     </p>
-    {{ submit_button("Sign Up") }}
+    {{ submit_button("Accept Invitation") }}
 </form>
 {% endblock %}
 
