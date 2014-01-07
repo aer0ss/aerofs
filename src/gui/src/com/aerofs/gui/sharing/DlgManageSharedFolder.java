@@ -45,7 +45,7 @@ public class DlgManageSharedFolder extends AeroFSDialog
         fillLayout.marginHeight = 12;
         shell.setLayout(fillLayout);
 
-        TabFolder tabFolder = new TabFolder(shell, SWT.NONE);
+        final TabFolder tabFolder = new TabFolder(shell, SWT.NONE);
 
         TabItem tbtmInvite = new TabItem(tabFolder, SWT.NONE);
         tbtmInvite.setText("Invite Others");
@@ -61,9 +61,29 @@ public class DlgManageSharedFolder extends AeroFSDialog
             public void loaded(int membersCounts, @Nullable Permissions localUserPermissions)
             {
                 tbtmManage.setText("Members (" + membersCounts + ")");
+
+                // On OS X Mavericks, changing the text as above does not refresh the tab's text.
+                // Hence, it's necessary to force a refresh here.
+                forceTabFolderRefresh(tabFolder);
             }
         });
 
         tbtmManage.setControl(_compManageUsers);
+    }
+
+    /**
+     * I've tried various ways to force a refresh. Unfortunately, the only way I've found that
+     * works on OS X Mavericks is to actually changing the size of the tab folder. Hence the ritual
+     * dance.
+     *
+     * TODO: consider moving this to GUIUtil if we need it in more than one place.
+     */
+    private void forceTabFolderRefresh(TabFolder tab)
+    {
+        int w = tab.getSize().x;
+        int h = tab.getSize().y;
+
+        tab.setSize(w + 1, h); // using w + 1 to ensure it is a valid value.
+        tab.setSize(w, h);
     }
 }
