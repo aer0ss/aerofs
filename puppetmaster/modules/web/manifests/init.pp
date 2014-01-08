@@ -32,7 +32,7 @@ class web (
         content => template("web/aerofs.ini.erb"),
         owner => root,
         group => root,
-        mode => "755",
+        mode => "644",
         require => Package["aerofs-web"],
         notify => Service["uwsgi"]
     }
