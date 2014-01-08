@@ -2,7 +2,9 @@
 
 @interface AeroUtils : NSObject
 
-+(BOOL) swizzleClassMethod:(SEL)m1 fromClass:(Class)c1 withMethod:(SEL)m2 fromClass:(Class)c2;
-+(BOOL) swizzleInstanceMethod:(SEL)m1 fromClass:(Class)c1 withMethod:(SEL)m2 fromClass:(Class)c2;
++ (BOOL)swizzleClassMethod:(SEL)targetSel fromClass:(Class)targetClass withMethod:(SEL)newSel fromClass:(Class)otherClass;
++ (BOOL)swizzleInstanceMethod:(SEL)targetSel fromClass:(Class)targetClass withMethod:(SEL)newSel fromClass:(Class)otherClass;
 
 @end
+
+IMP replace_method(Class cls, SEL sel, IMP imp);
