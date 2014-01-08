@@ -79,16 +79,16 @@ public class SharedFolderNotificationEmailer
 
         StringBuilder roleChanges = new StringBuilder();
         describePermissionChange(roleChanges, oldPermissions.bitmask() & ~newPermissions.bitmask(),
-                "You are no longer allowed to ");
+                "- You are no longer allowed to ");
         describePermissionChange(roleChanges, newPermissions.bitmask() & ~oldPermissions.bitmask(),
-                "You are now allowed to ");
+                "- You are now allowed to ");
 
         String title = " Your role in the folder " + Util.quote(sf.getName()) + " has changed";
         String body = "\n" +
                 "This email is a confirmation that " +
                 (changer.id().isTeamServerID() ? "an organization admin" : "a folder owner (" + nfChanger.nameOnly() + ")") +
                 " has changed your role in the folder from " + oldPermissions.roleName() + " to " +
-                newPermissions.roleName() + " :\n" +
+                newPermissions.roleName() + ":\n" +
                 roleChanges + "\n" +
                 "If you'd like to find out more about the different " + L.brand() + " roles, " +
                 // Whitespace required after URL for autolinker. TODO (WW) fix this!
