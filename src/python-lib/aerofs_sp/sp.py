@@ -53,3 +53,6 @@ class _SPServiceWrapper(object):
 
     def get_mobile_access_code(self):
         return self._service.get_mobile_access_code().accessCode
+
+    def add_user_to_whitelist(self, userid):
+        return self._service.add_user_to_whitelist()

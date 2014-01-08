@@ -37,6 +37,7 @@ import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
+import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Common.PBPermissions;
@@ -2504,6 +2505,48 @@ public class SPService implements ISPService
         return createReply(ListSharedFoldersReply.newBuilder()
                 .addAllSharedFolder(pbFolders)
                 .build());
+    }
+
+    @Override
+    public ListenableFuture<Void> addUserToWhitelist(final String userEmail)
+            throws Exception
+    {
+        User caller = _sessionUser.getUser();
+        User user = _factUser.createFromExternalID(userEmail);
+
+        l.debug("{} add {} to whitelist", caller.id().getString(), user.id().getString());
+
+        _sqlTrans.begin();
+
+        caller.throwIfNotAdmin();  // throws ExNoPerm
+        user.throwIfNotFound();  // throws ExNotFound
+
+        user.setWhitelisted(true);
+
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> removeUserFromWhitelist(final String userEmail)
+            throws Exception
+    {
+        User caller = _sessionUser.getUser();
+        User user = _factUser.createFromExternalID(userEmail);
+
+        l.debug("{} remove {} from whitelist", caller.id().getString(), user.id().getString());
+
+        _sqlTrans.begin();
+
+        caller.throwIfNotAdmin();  // throws ExNoPerm
+        user.throwIfNotFound();  // throws ExNotFound
+
+        user.setWhitelisted(false);
+
+        _sqlTrans.commit();
+
+        return createVoidReply();
     }
 
     @Override

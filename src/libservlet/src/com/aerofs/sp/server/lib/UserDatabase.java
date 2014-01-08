@@ -55,6 +55,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_WHITELISTED;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 import static com.aerofs.sp.server.lib.SPSchema.T_SIGNUP_CODE;
@@ -241,6 +242,17 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
+    public boolean isWhitelisted(UserID userID)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryUser(userID, C_USER_WHITELISTED);
+        try {
+            return rs.getBoolean(1);
+        } finally {
+            rs.close();
+        }
+    }
+
     /**
      * List all devices belonging to a the provided user.
      */
@@ -292,6 +304,17 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setInt(1, authLevel.ordinal());
         ps.setString(2, userId.getString());
         Util.verify(ps.executeUpdate() == 1);
+    }
+
+    public void setWhitelisted(UserID userID, boolean whitelisted)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(updateWhere(T_USER,
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", C_USER_WHITELISTED));
+
+        ps.setBoolean(1, whitelisted);
+        ps.setString(2, userID.getString());
+        ps.executeUpdate();
     }
 
     public void setName(UserID userId, FullName fullName)

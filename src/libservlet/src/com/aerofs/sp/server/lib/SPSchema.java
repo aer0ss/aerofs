@@ -17,6 +17,7 @@ public final class SPSchema
             C_USER_CREDS                    = "u_hashed_passwd",
             C_USER_ACL_EPOCH                = "u_acl_epoch",
             C_USER_DEACTIVATED              = "u_deactivated",
+            C_USER_WHITELISTED              = "u_whitelisted",
 
             // (eric) made the columns match the SQL names here, easier to autocomplete in IDE
             // when the prefix used here matches that in the SQL schema

@@ -33,12 +33,12 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
 {
     static final String INTERNAL_ADDRESSES = "abc.*|.*xyz";
 
-    // the user ids that match the white list
+    // the user ids that match the internal email pattern
     User internalUser1 = factUser.create(UserID.fromInternal("abc@adf"));
     User internalUser2 = factUser.create(UserID.fromInternal("xocjaxyz"));
     User internalUser3 = factUser.create(UserID.fromInternal("xyz"));
 
-    // the user ids that don't match the white list
+    // the user ids that don't match the internal email pattern
     User externalUser1 = factUser.create(UserID.fromInternal("haabc@adf"));
     User externalUser2 = factUser.create(UserID.fromInternal("xyza"));
     User externalUser3 = factUser.create(UserID.fromInternal("xyzabc"));
@@ -46,6 +46,9 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     SID sid = SID.generate();
     // This user is an internal user
     User internalSharer = factUser.create(UserID.fromInternal("abc"));
+
+    // This user is internal but has been whitelisted by an admin
+    User whitelistedUser = factUser.create(UserID.fromInternal("abcdef@g"));
 
     @Before
     public void setup()
@@ -68,6 +71,14 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
 
         sqlTrans.begin();
         saveUser(internalSharer);
+        saveUser(internalUser1);
+        saveUser(internalUser2);
+        saveUser(internalUser3);
+        saveUser(externalUser1);
+        saveUser(externalUser2);
+        saveUser(externalUser3);
+        saveUser(whitelistedUser);
+        whitelistedUser.setWhitelisted(true);
         sqlTrans.commit();
     }
 
@@ -104,7 +115,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     {
         // create the internal user
         sqlTrans.begin();
-        saveUser(internalUser1);
         sqlTrans.commit();
 
         shareFolder(internalSharer, sid, internalUser1, Permissions.allOf(Permission.WRITE,
@@ -133,11 +143,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     public void shouldAllowFolderCreatorAsExternalUserToAddViewersAndOwner()
             throws Exception
     {
-        // create the external user
-        sqlTrans.begin();
-        saveUser(externalUser1);
-        sqlTrans.commit();
-
         shareFolder(externalUser1, sid, internalUser2, Permissions.allOf());
         shareFolder(externalUser1, sid, externalUser3, Permissions.allOf(Permission.WRITE,
                 Permission.MANAGE));
@@ -149,11 +154,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     public void shouldAllowSharerAsExternalUserToAddViewersAndOwner()
             throws Exception
     {
-        // create the external user
-        sqlTrans.begin();
-        saveUser(externalUser1);
-        sqlTrans.commit();
-
         shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf(
                 Permission.WRITE, Permission.MANAGE));
         joinSharedFolder(externalUser1, sid);
@@ -175,10 +175,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     public void shouldDisallowFolderCreaterAsExternalUserToAddEditors()
             throws Exception
     {
-        sqlTrans.begin();
-        saveUser(externalUser1);
-        sqlTrans.commit();
-
         try {
             shareFolder(externalUser1, sid, internalUser1, Permissions.allOf(Permission.WRITE));
             fail();
@@ -192,11 +188,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     public void shouldAllowSharerAsExternalUserToAddExternalEditor()
             throws Exception
     {
-        // create the external user
-        sqlTrans.begin();
-        saveUser(externalUser1);
-        sqlTrans.commit();
-
         shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf(
                 Permission.WRITE, Permission.MANAGE));
         joinSharedFolder(externalUser1, sid);
@@ -207,12 +198,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     @Test
     public void shouldDisallowSharerAsExternalUserToAddInternalEditor() throws Exception
     {
-        // create the external user
-        sqlTrans.begin();
-        saveUser(externalUser1);
-        sqlTrans.commit();
-
-
         try {
             shareFolder(externalUser1, sid, internalUser1, Permissions.allOf(Permission.WRITE));
             fail();
@@ -243,11 +228,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     public void shouldAllowSharerAsInternalUserToAddExternalEditors()
             throws Exception
     {
-        // create the external user
-        sqlTrans.begin();
-        saveUser(internalUser1);
-        sqlTrans.commit();
-
         shareFolder(internalSharer, sid, internalUser1, Permissions.allOf(Permission.WRITE,
                 Permission.MANAGE));
         joinSharedFolder(internalUser1, sid);
@@ -330,6 +310,29 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void shouldNotConvertWhitelistedEditorToViewerWhenConvertingInternalFolderToExternal()
+            throws Exception
+    {
+        // create an internal folder
+        shareFolder(internalSharer, sid, whitelistedUser, Permissions.allOf(Permission.WRITE));
+        SharedFolder sf = factSharedFolder.create(sid);
+
+        // make sure user is an editor
+        sqlTrans.begin();
+        assertEquals(sf.getPermissionsNullable(whitelistedUser), Permissions.allOf(Permission.WRITE));
+        sqlTrans.commit();
+
+        // convert the folder to an external folder
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf());
+
+        // make sure user isn't converted to viewer
+        sqlTrans.begin();
+        assertEquals(sf.getPermissionsNullable(whitelistedUser),
+                Permissions.allOf(Permission.WRITE));
+        sqlTrans.commit();
+    }
+
+    @Test
     public void shouldWarnWhenAddingExternalEditorInExternalFolder()
             throws Exception
     {
@@ -392,6 +395,15 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void shouldAllowSettingWhitelistedUserAsEditorInExternalFolder()
+        throws Exception
+    {
+        // make an external folder
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf());
+        shareFolderSuppressWarnings(internalSharer, sid, whitelistedUser, Permissions.allOf(Permission.WRITE));
+    }
+
+    @Test
     public void shouldWarnWhenAddingExternalOwnerToInternalFolder()
             throws Exception
     {
@@ -449,12 +461,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     public void shouldWarnWhenSettingOwnerInExternalFolder()
             throws Exception
     {
-        sqlTrans.begin();
-        saveUser(externalUser1);
-        saveUser(externalUser2);
-        saveUser(internalUser1);
-        sqlTrans.commit();
-
         // make an external folder
         shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf());
         joinSharedFolder(externalUser1, sid);
@@ -513,12 +519,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     public void shouldAllowSettingOwnerInExternalFolder()
             throws Exception
     {
-        sqlTrans.begin();
-        saveUser(externalUser1);
-        saveUser(externalUser2);
-        saveUser(internalUser1);
-        sqlTrans.commit();
-
         // make an external folder
         shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf());
         joinSharedFolder(externalUser1, sid);
@@ -550,12 +550,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     public void shouldAllowSettingViewerInExternalFolder()
             throws Exception
     {
-        sqlTrans.begin();
-        saveUser(externalUser1);
-        saveUser(externalUser2);
-        saveUser(internalUser1);
-        sqlTrans.commit();
-
         // make an external folder
         shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf(
                 Permission.WRITE, Permission.MANAGE));

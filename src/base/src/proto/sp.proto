@@ -624,6 +624,22 @@ service SPService {
     // Throws:
     //   ExNoPerm if the caller does not have the required privileges for any store inquired
     rpc ListSharedFolders(ListSharedFoldersCall) returns (ListSharedFoldersReply);
+
+    // Adds user to sharer whitelist.
+    //
+    // Required Auth Level: admin
+    // Throws:
+    //   ExNoPerm if the current user isn't an admin of her organization
+    //   ExNotFound if the specified user doesn't exist
+    rpc AddUserToWhitelist(AddUserToWhitelistCall) returns (Void);
+
+    // Removes user from sharer whitelist
+    //
+    // Required Auth Level: admin
+    // Throws:
+    //   ExNoPerm if the current user isn't an admin of her organization
+    //   ExNotFound if the specified user doesn't exist
+    rpc RemoveUserFromWhitelist(RemoveUserFromWhitelistCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1163,4 +1179,12 @@ message DeactivateUserCall {
 
 message DeactivateUserReply {
     required PBStripeData stripe_data = 1;
+}
+
+message AddUserToWhitelistCall {
+    required string user_email = 1;
+}
+
+message RemoveUserFromWhitelistCall {
+    required string user_email = 1;
 }

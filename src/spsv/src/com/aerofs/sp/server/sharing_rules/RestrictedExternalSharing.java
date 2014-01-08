@@ -81,8 +81,11 @@ public class RestrictedExternalSharing implements ISharingRules
         }
 
         // prevent granting write access to an externally shared folder to internal users
-        // TODO: whitelist
-        if (isExternalFolder && !isExternalUser && newPermissions.covers(Permission.WRITE)) {
+        if (isExternalFolder
+                && !isExternalUser
+                && !sharee.isWhitelisted()
+                && newPermissions.covers(Permission.WRITE))
+        {
             _warnings.add(new DetailedDescription(Type.WARNING_DOWNGRADE,
                     getFullNames(externalMembers)));
             return newPermissions.minus(Permission.WRITE);
@@ -133,8 +136,7 @@ public class RestrictedExternalSharing implements ISharingRules
             throws SQLException, ExNoAdminOrOwner, ExNotFound, IOException, MessagingException
     {
         for (UserPermissionsAndState urs : sf.getAllUsersRolesAndStates()) {
-            if (urs._user.id().isTeamServerID()) continue;
-            // TODO: whitelist
+            if (urs._user.id().isTeamServerID() || urs._user.isWhitelisted()) continue;
             if (urs._permissions.covers(Permission.WRITE)) {
                 _shouldBumpEpoch = true;
                 sf.revokePermission(urs._user, Permission.WRITE);

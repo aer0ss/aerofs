@@ -198,6 +198,12 @@ public class User
         return _f._udb.getLevel(_id);
     }
 
+    public boolean isWhitelisted()
+            throws SQLException, ExNotFound
+    {
+        return _f._udb.isWhitelisted(_id);
+    }
+
     public boolean isAdmin()
             throws SQLException, ExNotFound
     {
@@ -211,6 +217,12 @@ public class User
         _f._udb.setLevel(_id, auth);
 
         if (!auth.covers(AuthorizationLevel.ADMIN)) getOrganization().throwIfNoAdmin();
+    }
+
+    public void setWhitelisted(boolean whitelisted)
+            throws SQLException
+    {
+        _f._udb.setWhitelisted(_id, whitelisted);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
