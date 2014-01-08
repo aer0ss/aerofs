@@ -174,7 +174,7 @@ public class AuthorizeResource
         String sep = redirectUri.contains("?") ? "&" : "?";
         String location = redirectUri + sep + "error=" + URLEncoder.encode(error, "UTF-8");
         if (errorDescription != null) {
-            location = location + "&errorDescription=" + URLEncoder.encode(errorDescription, "UTF-8");
+            location = location + "&error_description=" + URLEncoder.encode(errorDescription, "UTF-8");
         }
         if (state != null) {
             location = location + "&state=" + URLEncoder.encode(state, "UTF-8");
