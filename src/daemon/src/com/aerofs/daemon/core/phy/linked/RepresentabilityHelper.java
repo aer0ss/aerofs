@@ -192,8 +192,11 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
             l.debug("update sidx {} {}", oldSOID, newSOID.sidx());
             _nrodb.updateSIndex_(oldSOID, newSOID.sidx(), t);
         } else {
-            // unsupported, should not ever happen
-            Preconditions.checkArgument(false, "soid update " + oldSOID + " -> " + newSOID);
+            // anchor demotion (migration)
+            l.debug("update soid {} {}", oldSOID, newSOID);
+            _nrodb.updateOID_(oldSOID, newSOID.oid(), t);
+            _nrodb.updateConflicts_(oldSOID, newSOID.oid(), t);
+            _nrodb.updateSIndex_(new SOID(oldSOID.sidx(), newSOID.oid()), newSOID.sidx(), t);
         }
     }
 
