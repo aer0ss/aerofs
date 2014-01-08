@@ -72,18 +72,9 @@ def get_mobile_access_code(request):
 
     # Return the access code in the appropriate format
     if token_format == 'qrcode':
-
-        # `qrcode` is a pure python library. This makes it easy to install, but it's also incredibly slow (I suspect
-        # something is really unoptimized because it takes about a second for a version 20 code)
-        # However, for small code sizes, the speed is acceptable (~120ms).
-        #
-        # Should we need a fast library, I've published `fastqrcode` on pypi: https://pypi.python.org/pypi/fastqrcode/
-        # Problem is, it's a wrapper around libqrencode, but Ubuntu currently ships an outdated version (3 year old)
-        # of libqrencode that isn't compatible with fastqrencode. So for ease of install, I'm reverting to `qrcode`.
-        # Sigh...
         qr = qrcode.QRCode(
             error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=3,
+            box_size=6,
             border=4,
         )
         qr.add_data(code)

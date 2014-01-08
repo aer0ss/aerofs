@@ -1,24 +1,39 @@
 <%inherit file="dashboard_layout.mako"/>
-<%! page_title = "Add Mobile Device" %>
+<%! page_title = "AeroFS for Mobile Devices" %>
 
-<h2>Add Mobile Device</h2>
+<h2>AeroFS for Mobile Devices</h2>
+<p>Ready to set up AeroFS on your mobile device?</p>
 
-<p>Ready to set up AeroFS on your iPhone or iPad?</p>
-<ol>
-    <li>Install the app from the App Store.</li>
-    <li>Launch the app and follow the instructions there.</li>
-    <li>When instructed, come back to this page and use the buttons below to generate an access code for your device:</li>
-</ol>
+<h4>1. Get the app</h4>
+<div class="row">
+    <div class="span2" style="text-align: center;">
+        <a href="https://itunes.apple.com/us/app/aerofs-for-private-cloud/id778103731?mt=8" target="_blank">
+            <img alt="AeroFS on the App Store" src="https://linkmaker.itunes.apple.com/htmlResources/assets/en_us//images/web/linkmaker/badge_appstore-lrg.png"/>
+        </a>
+    </div>
+    <div class="span2" style="text-align: center;">
+        <em style="line-height: 40px;">Android: coming soon</em>
+        ## TODO: Use this when we release the Android app for Private Cloud
+        ##<a href="https://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
+        ##  <img alt="AeroFS on Google Play" src="https://developer.android.com/images/brand/en_generic_rgb_wo_45.png" />
+        ##</a>
+    </div>
+</div>
+<br>
+
+<h4>2. Launch the app and scan the QR code</h4>
+<p>Launch the app. When instructed, use the button below to generate a QR code for your device:</p>
 <p>
-
-<a href="#" onclick="getQRCode();   return false;" class="btn btn-primary btn-lg" role="button" style="margin:0 16px 16px 0;">Get QR Code</a>
-<a href="#" onclick="getTextCode(); return false;" class="btn btn-primary btn-lg" role="button" style="margin:0 16px 16px 0;">Get Text Code</a>
-
+    <a href="#" onclick="getQRCode(); return false;" class="btn btn-primary btn-lg" role="button">Get QR Code</a>
+</p>
 <div id="result"></div>
 
 
 <%block name="scripts">
     <script type="text/javascript">
+
+        var countdownTimer;
+        var expirationDate;
 
         function getQRCode() {
             ## Create a new image
@@ -28,26 +43,15 @@
                 showErrorMessage(getInternalErrorText());
                 console.log("failed to load: " + $(this).attr('src'));
             });
-            showResult(img);
+
+            expirationDate = Date.now() + 3 * 60 * 1000
+            var countdown = $('<p>Valid for <span id="timer">03:00</span></p>');
+
+            $('#result').empty();
+            countdown.appendTo('#result');
+            img.appendTo('#result');
+            doCountdown();
         }
-
-        function getTextCode() {
-
-            $.ajax({
-                'url': '${textcode_url}',
-                'type': 'GET',
-                'success': function (code) {
-                    ## Create a new textarea
-                    var textarea = $('<textarea>');
-                    textarea.attr('readonly', true).attr('rows', 6).attr('cols', 40).addClass('span5').text(code);
-                    showResult(textarea);
-                },
-                'error': showErrorMessageFromResponse
-            });
-        }
-
-        var countdownTimer;
-        var expirationDate;
 
         ## pads a number with a leading zero if needed
         function pad(n) {
@@ -64,18 +68,5 @@
                 $('#result').empty();
             }
         }
-
-        function showResult(code) {
-            $('#result').empty();
-
-            expirationDate = Date.now() + 3 * 60 * 1000
-            var countdown = $('<p>Valid for <span id="timer">03:00</span></p>');
-
-            countdown.appendTo('#result');
-            code.appendTo('#result');
-
-            doCountdown();
-        }
-
     </script>
 </%block>

@@ -74,7 +74,11 @@
                 AeroFS Desktop
             </a></li>
 
-            %if not is_private_deployment(request.registry.settings):
+            %if is_private_deployment(request.registry.settings):
+                <li><a href="${request.route_path('add_mobile_device')}">
+                    Mobile Apps
+                </a></li>
+            %else:
                 <li><a href="http://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
                     Android App
                 </a></li>

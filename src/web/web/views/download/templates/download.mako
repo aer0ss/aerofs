@@ -106,15 +106,14 @@
         ${avail1 | n} and ${avail2 | n}.
     %else:
         ${avail1 | n}, ${avail2 | n}, and
-        <a href="https://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">Android</a>.
+        %if show_add_mobile_device:
+            <a href="${request.route_path('add_mobile_device')}">mobile devices</a>.
+        %else:
+            <a href="https://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">Android</a>.
+        %endif
     %endif
 </p>
 
-%if show_add_mobile_device:
-    <p>
-        Got the AeroFS iOS app from the App Store? <a href="${request.route_path('add_mobile_device')}">Register your iOS device</a>
-    </p>
-%endif
 
 ## Descriptions
 <div class="top-divider description-block">
