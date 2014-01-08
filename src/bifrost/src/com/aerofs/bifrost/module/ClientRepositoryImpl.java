@@ -4,9 +4,9 @@
 
 package com.aerofs.bifrost.module;
 
-import com.google.inject.Inject;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
+import com.google.inject.Inject;
 import org.hibernate.Query;
 
 import java.util.List;

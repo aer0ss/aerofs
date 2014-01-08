@@ -19,7 +19,6 @@ import org.hibernate.service.jdbc.connections.internal.DatasourceConnectionProvi
 import org.hibernate.service.jdbc.connections.spi.ConnectionProvider;
 
 import javax.sql.DataSource;
-
 import java.util.Collections;
 import java.util.Properties;
 

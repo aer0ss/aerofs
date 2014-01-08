@@ -4,10 +4,10 @@
 
 package com.aerofs.bifrost.module;
 
+import com.aerofs.bifrost.oaaas.model.Client;
 import com.google.inject.Inject;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
-import com.aerofs.bifrost.oaaas.model.Client;
 
 /**
  * DAO to query and update Client instances.

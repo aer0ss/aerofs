@@ -16,7 +16,8 @@
 
 package com.aerofs.bifrost.oaaas.model;
 
-import java.util.Set;
+import com.google.common.collect.Sets;
+import org.hibernate.validator.constraints.Email;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -32,9 +33,7 @@ import javax.persistence.UniqueConstraint;
 import javax.validation.ConstraintValidatorContext;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-
-import com.google.common.collect.Sets;
-import org.hibernate.validator.constraints.Email;
+import java.util.Set;
 
 /**
  * Representation of the server hosting the protected resources, capable of

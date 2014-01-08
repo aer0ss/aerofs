@@ -4,11 +4,11 @@
 
 package com.aerofs.bifrost.module;
 
+import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.google.inject.Inject;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
-import com.aerofs.bifrost.oaaas.model.AccessToken;
 
 import java.util.List;
 

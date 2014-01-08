@@ -4,9 +4,9 @@
 
 package com.aerofs.bifrost.module;
 
-import com.google.inject.Inject;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
+import com.google.inject.Inject;
 
 /**
  */

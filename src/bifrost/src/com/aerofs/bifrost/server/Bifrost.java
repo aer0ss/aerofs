@@ -9,20 +9,16 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.bifrost.common.DefaultUncaughtExceptionHandler;
-import com.aerofs.bifrost.login.FormAuthenticator;
 import com.aerofs.bifrost.module.AccessTokenRepositoryImpl;
 import com.aerofs.bifrost.module.AuthorizationRequestRepositoryImpl;
 import com.aerofs.bifrost.module.ClientRepositoryImpl;
 import com.aerofs.bifrost.module.ResourceServerRepositoryImpl;
-import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
-import com.aerofs.bifrost.oaaas.auth.AbstractUserConsentHandler;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
 import com.aerofs.bifrost.oaaas.auth.OAuth2ValidatorImpl;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
-import com.aerofs.bifrost.oaaas.noop.NoopUserConsentHandler;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
@@ -165,8 +161,6 @@ public class Bifrost extends Service
                 // OAuth validators and authenticators
                 //
                 bind(OAuth2Validator.class).to(OAuth2ValidatorImpl.class);
-                bind(AbstractAuthenticator.class).to(FormAuthenticator.class);
-                bind(AbstractUserConsentHandler.class).to(NoopUserConsentHandler.class);
             }
         });
     }

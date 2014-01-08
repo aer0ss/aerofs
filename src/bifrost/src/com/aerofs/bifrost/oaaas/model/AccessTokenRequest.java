@@ -18,9 +18,8 @@
  */
 package com.aerofs.bifrost.oaaas.model;
 
-import java.util.List;
-
 import javax.ws.rs.core.MultivaluedMap;
+import java.util.List;
 
 /**
  * Representation of the AccessToken request defined in the <a

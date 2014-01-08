@@ -15,19 +15,30 @@
  */
 package com.aerofs.bifrost.oaaas.auth;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.inject.Inject;
-
-import org.apache.commons.lang.StringUtils;
 import com.aerofs.bifrost.oaaas.model.AccessTokenRequest;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
+import org.apache.commons.lang.StringUtils;
 
-import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.*;
+import javax.inject.Inject;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.CLIENT_CREDENTIALS_NOT_PERMITTED;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.IMPLICIT_GRANT_NOT_PERMITTED;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.IMPLICIT_GRANT_REDIRECT_URI;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.INVALID_GRANT_REFRESH_TOKEN;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.REDIRCT_URI_NOT_VALID;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.REDIRECT_URI_FRAGMENT_COMPONENT;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.REDIRECT_URI_REQUIRED;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.SCOPE_NOT_VALID;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.UNKNOWN_CLIENT_ID;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.UNSUPPORTED_GRANT_TYPE;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.UNSUPPORTED_RESPONSE_TYPE;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.VALID;
 
 /**
  * Implementation of {@link OAuth2Validator}

@@ -4,9 +4,9 @@
 
 package com.aerofs.bifrost.module;
 
-import com.google.inject.Inject;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
+import com.google.inject.Inject;
 
 import java.util.List;
 

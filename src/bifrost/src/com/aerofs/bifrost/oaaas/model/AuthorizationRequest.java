@@ -18,18 +18,32 @@
  */
 package com.aerofs.bifrost.oaaas.model;
 
-import java.util.Set;
-
-import javax.persistence.*;
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.constraints.NotNull;
-
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.bifrost.oaaas.auth.principal.PrincipalUtils;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
-import com.aerofs.oauth.AuthenticatedPrincipal;
+
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.PostLoad;
+import javax.persistence.PostPersist;
+import javax.persistence.PostUpdate;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.validation.ConstraintValidatorContext;
+import javax.validation.constraints.NotNull;
+import java.util.Set;
 
 /**
  * A representation of an <a

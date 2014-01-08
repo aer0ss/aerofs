@@ -18,17 +18,21 @@
  */
 package com.aerofs.bifrost.oaaas.resource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
-import com.aerofs.oauth.VerifyTokenResponse;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.aerofs.oauth.VerifyTokenResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;

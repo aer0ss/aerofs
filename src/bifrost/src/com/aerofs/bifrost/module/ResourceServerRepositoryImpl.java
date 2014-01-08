@@ -4,9 +4,9 @@
 
 package com.aerofs.bifrost.module;
 
-import com.google.inject.Inject;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.google.inject.Inject;
 
 /**
  */

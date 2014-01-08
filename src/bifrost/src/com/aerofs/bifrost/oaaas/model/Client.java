@@ -16,17 +16,28 @@
 
 package com.aerofs.bifrost.oaaas.model;
 
+import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
+import com.google.common.collect.Maps;
+
+import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.validation.ConstraintValidatorContext;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.persistence.*;
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.constraints.NotNull;
-
-import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
-import com.google.common.collect.Maps;
 
 /**
  * Represents a Client as defined by the OAuth 2 specification:

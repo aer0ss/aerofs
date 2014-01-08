@@ -18,11 +18,18 @@
  */
 package com.aerofs.bifrost.oaaas.model;
 
+import com.aerofs.bifrost.oaaas.model.validation.AbstractEntityValid;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import com.aerofs.bifrost.oaaas.model.validation.AbstractEntityValid;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.validation.ConstraintValidatorContext;
 import java.io.Serializable;
 import java.util.Date;

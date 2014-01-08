@@ -4,10 +4,10 @@
 
 package com.aerofs.bifrost.module;
 
+import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.google.inject.Inject;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
-import com.aerofs.bifrost.oaaas.model.ResourceServer;
 
 /**
  * DAO to query and update ResourceServer instances.

@@ -18,10 +18,10 @@
  */
 package com.aerofs.bifrost.oaaas.model.validation;
 
+import com.aerofs.bifrost.oaaas.model.AbstractEntity;
+
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
-
-import com.aerofs.bifrost.oaaas.model.AbstractEntity;
 
 /**
  * {@link ConstraintValidator} that validates {@link com.aerofs.bifrost.oaaas.model.AbstractEntity} by calling
