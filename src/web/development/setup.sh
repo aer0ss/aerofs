@@ -4,24 +4,14 @@ set -e -u
 cd $(dirname "${BASH_SOURCE[0]}")
 DEV_ROOT=$(pwd)
 SRC_ROOT="$DEV_ROOT"/../..
+ENV="$HOME/env"
 
 # Create virtualenv
-virtualenv $HOME/env
+virtualenv "$ENV"
 
 # Install web's dependencies in virtualenv
-$HOME/env/bin/pip install --requirement ${SRC_ROOT}/web/requirements.txt
-EASY_INSTALL_PTH=$HOME/env/lib/python2.7/site-packages/easy-install.pth
+"$ENV/bin/pip" install --requirement ${SRC_ROOT}/web/requirements.txt
 
-add_for_dev() {
-	# $1 is path to folder
-	# $2 is .egg-link path
-	echo "$1" > "$2"
-	echo "." >> "$2"
-	grep "$1" "$EASY_INSTALL_PTH" > /dev/null || echo "$1" >> "$EASY_INSTALL_PTH"
-}
-
-# make the development copy of python-lib available within the virtualenv
-add_for_dev "$SRC_ROOT/python-lib" $HOME/env/lib/python2.7/site-packages/aerofs-py-lib.egg-link
-
-# make the development copy of web available within the virtualenv
-add_for_dev "$SRC_ROOT/web" $HOME/env/lib/python2.7/site-packages/web.egg-link
+# Install links for python-lib and web
+"$ENV/bin/pip" install --editable "$SRC_ROOT/python-lib"
+"$ENV/bin/pip" install --editable "$SRC_ROOT/web"
