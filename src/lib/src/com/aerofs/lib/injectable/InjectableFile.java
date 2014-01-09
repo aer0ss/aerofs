@@ -12,8 +12,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -276,17 +274,7 @@ public class InjectableFile
      */
     public @Nullable String[] list()
     {
-        String[] l = winSafe().list();
-        // Since OSX automatically converts files to NFD, but the rest of the world uses NFC,
-        // Java on OSX automatically converts file paths to NFC, but we care about the actual
-        // representation.  Ideally we'd write our own path handling, but for now, it's safe to
-        // just convert all paths to NFD on OSX.
-        if (l != null && _factory._osutil.getOSFamily() == OSFamily.OSX) {
-            for (int i = 0; i < l.length ; i++) {
-                l[i] = Normalizer.normalize(l[i], Form.NFD);
-            }
-        }
-        return l;
+        return winSafe().list();
     }
 
     public String getName()

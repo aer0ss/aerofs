@@ -327,11 +327,13 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public boolean isInvalidFileName(String name)
     {
-        // NB: OSX normalizes filenames to NFD so we treat any non-NFD filenames as inherently
-        // Non-Representable to avoid unintended renaming upon scan
+        // NB: OSX normalizes filenames to NFD so we can only allow a single normalization form
+        // and must treat all others as inherently non-representable. NFC offers maximum
+        // interoperability as it is used by default on Windows and Linux
+        // see also DPUTFixNormalizationOSX and OSXNotifier
         return name.length() > 255
                 || INVALID_FILENAME_CHARS.matcher(name).find()
-                || !Normalizer.isNormalized(name, Form.NFD);
+                || !Normalizer.isNormalized(name, Form.NFC);
     }
 
     @Override
@@ -341,8 +343,8 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
             return S.INVALID_TOO_LONG;
         } else if (INVALID_FILENAME_CHARS.matcher(name).find()) {
             return S.INVALID_FORBIDDEN_CHARACTERS;
-        } else if (!Normalizer.isNormalized(name, Form.NFD)) {
-            return S.INVALID_NON_NFD;
+        } else if (!Normalizer.isNormalized(name, Form.NFC)) {
+            return S.INVALID_NON_NFC;
         }
         return null;
     }
