@@ -53,7 +53,10 @@ public class DownloadDeadlockResolver
         _mdiff = mdiff;
     }
 
-    public void resolveDeadlock_(final List<DependencyEdge> cycle, IDownloadContext cxt)
+    /**
+     * @return whether the dependency cycle was broken
+     */
+    public boolean resolveDeadlock_(final List<DependencyEdge> cycle, IDownloadContext cxt)
             throws Exception
     {
         // Cycles that are currently unsupported, those with:
@@ -62,7 +65,7 @@ public class DownloadDeadlockResolver
         assert cycle.size() > 1;
         for (DependencyEdge dependency : cycle) {
             DependencyType type = dependency.type();
-            assert !type.equals(DependencyType.UNSPECIFIED) : cycle;
+            if (type.equals(DependencyType.UNSPECIFIED)) return false;
         }
 
         // First detect the type of download cycle, then if it corresponds, break the cycle
@@ -79,7 +82,7 @@ public class DownloadDeadlockResolver
         if (ncDependency != null) {
             // resolve by renaming the local conflict OID
             breakDependencyByRenaming_(ncDependency, cycle, cxt);
-            return;
+            return true;
         }
 
         // Case 2: chain of parental dependencies with one name conflict
@@ -87,11 +90,11 @@ public class DownloadDeadlockResolver
         if (ncDependency != null) {
             // resolve by renaming the local child OID.
             breakDependencyByRenaming_(ncDependency, cycle, cxt);
-            return;
+            return true;
         }
 
         // If execution reaches this point, the two prior cases don't apply for this cycle
-        assert false: cycle;
+        return false;
     }
 
     /**

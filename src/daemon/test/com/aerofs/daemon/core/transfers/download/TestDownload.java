@@ -382,16 +382,17 @@ public class TestDownload extends AbstractDownloadTest
         doThrow(new ExDependsOn(new OCID(child.oid(), child.cid()), DependencyType.PARENT))
                 .when(gcr).processReply_(eq(parent), anyDM(), anyDC());
 
-        doAnswer(new Answer<Void>() {
+        when(ddr.resolveDeadlock_(anyListOf(DependencyEdge.class), anyDC()))
+                .thenAnswer(new Answer<Boolean>() {
             @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
+            public Boolean answer(InvocationOnMock invocation) throws Throwable
             {
                 // simulate deadlock resolution...
                 doNothing().when(gcr).processReply_(eq(child), anyDM(), anyDC());
                 doNothing().when(gcr).processReply_(eq(parent), anyDM(), anyDC());
-                return null;
+                return true;
             }
-        }).when(ddr).resolveDeadlock_(anyListOf(DependencyEdge.class), anyDC());
+        });
 
         dl(child).download_();
 

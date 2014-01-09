@@ -127,18 +127,26 @@ class Download
             try {
                 try {
                     deps.addEdge_(edge);
+                    try {
+                        assert !resolved.contains(edge.dst) : edge.dst + " " + this;
 
-                    assert !resolved.contains(edge.dst) : edge.dst + " " + this;
+                        new Download(_f, edge.dst, _f._factTo.create_(did), this)
+                                .download_();
 
-                    new Download(_f, edge.dst, _f._factTo.create_(did), this)
-                            .download_();
-
-                    assert resolved.contains(edge.dst) : edge.dst + " " + this;
-                    l.info("dep solved");
+                        assert resolved.contains(edge.dst) : edge.dst + " " + this;
+                        l.info("dep solved");
+                    } finally {
+                        deps.removeEdge_(edge);
+                    }
                 } catch (ExDownloadDeadlock e) {
-                    _f._ddr.resolveDeadlock_(e._cycle, this);
-                } finally {
-                    deps.removeEdge_(edge);
+                    // rethrow if cycle cannot be broken
+                    // rationale: transient cycles have been encountered during emigration
+                    // The daemon is killed and restarted which burns CPU/disk (scanning files,
+                    // re-establishing network connections, ...) and the short downtime is enough
+                    // to cause the occasional CI failure.
+                    // TODO: figure out how to prevent such transient cycles from appearing
+                    // (investigate race-conditions or restructure emigration)
+                    if (!_f._ddr.resolveDeadlock_(e._cycle, this)) throw e;
                 }
             } catch (Exception e) {
                 l.info("dep error {} {}", edge.dst, e);
