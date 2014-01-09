@@ -217,9 +217,12 @@ def invite_to_organization():
             flash(u'That user is already a member of an organization', 'error')
             return redirect(url_for("dashboard"))
         # Either this user has been invited to the organization already or hasn't.
-        # If she has been invited before, we probably want to resend her email
-        # invitation because she lost the first one.
-        # If she hasn't, we need to generate a BoundInvite and email it to her.
+        # (Since multiple organizations may attempt to invite the same user, we
+        # need to filter on both email and org id in the query here.)
+        # If she has been invited before (record is not None), we probably want
+        # to resend her email invitation because she lost the first one.
+        # If she hasn't (record is None), we need to generate a BoundInvite and
+        # email it to her.
         record = models.BoundInvite.query.filter_by(email=email, customer_id=customer.id).first()
         if not record:
             invite_code = base64.urlsafe_b64encode(os.urandom(30))
