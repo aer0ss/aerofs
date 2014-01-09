@@ -34,9 +34,9 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.ServerStatus;
+import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
 import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
-import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jivesoftware.smack.SASLAuthentication;
@@ -279,7 +279,7 @@ public final class Zephyr implements ITransport
     }
 
     @Override
-    public void dumpDiagnostics(GetTransportDiagnosticsReply.Builder transportDiagnostics)
+    public void dumpDiagnostics(TransportDiagnostics.Builder transportDiagnostics)
     {
         transportDiagnostics.setZephyrDiagnostics(getDiagnostics());
     }

@@ -41,7 +41,7 @@ import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
 import com.aerofs.proto.Diagnostics.TCPDevice;
 import com.aerofs.proto.Diagnostics.TCPDiagnostics;
-import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
+import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.rocklog.RockLog;
@@ -361,7 +361,7 @@ public class TCP implements ITransport, IUnicastCallbacks
     }
 
     @Override
-    public void dumpDiagnostics(GetTransportDiagnosticsReply.Builder transportDiagnostics)
+    public void dumpDiagnostics(TransportDiagnostics.Builder transportDiagnostics)
     {
         transportDiagnostics.setTcpDiagnostics(getDiagnostics());
     }

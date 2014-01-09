@@ -9,7 +9,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
-import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
+import com.aerofs.proto.Ritual.GetDiagnosticsReply;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
@@ -93,7 +93,7 @@ public class DlgTransportDiagnostics extends AeroFSDialog
         getShell().setSize(840, 600);
     }
 
-    private class RefreshTask implements FutureCallback<GetTransportDiagnosticsReply>
+    private class RefreshTask implements FutureCallback<GetDiagnosticsReply>
     {
         private final GUI _gui;
         private final Widget _widget;
@@ -110,18 +110,22 @@ public class DlgTransportDiagnostics extends AeroFSDialog
 
         public void run()
         {
-            Futures.addCallback(_provider.getNonBlockingClient().getTransportDiagnostics(), this);
+            Futures.addCallback(_provider.getNonBlockingClient().getDiagnostics(), this);
         }
 
         @Override
-        public void onSuccess(final GetTransportDiagnosticsReply reply)
+        public void onSuccess(final GetDiagnosticsReply reply)
         {
             _gui.safeAsyncExec(_widget, new Runnable()
             {
                 @Override
                 public void run()
                 {
-                    _widget.setData(reply);
+                    // we only support transport diagnostics
+                    // if the transport diagnostics don't exist, then
+                    // getTransportDiagnostics() will return null, which is
+                    // handled properly by the underlying component
+                    _widget.setData(reply.getTransportDiagnostics());
                 }
             });
         }

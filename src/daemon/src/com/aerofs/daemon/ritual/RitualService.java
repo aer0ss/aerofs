@@ -18,6 +18,7 @@ import com.aerofs.daemon.core.phy.linked.linker.event.EITestPauseOrResumeLinker;
 import com.aerofs.daemon.event.admin.EICreateSeedFile;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.admin.EIDeleteRevision;
+import com.aerofs.daemon.event.admin.EIDumpDiagnostics;
 import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.daemon.event.admin.EIExportFile;
@@ -40,7 +41,6 @@ import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
-import com.aerofs.daemon.event.admin.EITransportDiagnostics;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
@@ -69,18 +69,17 @@ import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Ritual.CreateSeedFileReply;
-import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.aerofs.proto.Ritual.DumpStatsReply;
 import com.aerofs.proto.Ritual.ExportConflictReply;
 import com.aerofs.proto.Ritual.ExportFileReply;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetActivitiesReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
+import com.aerofs.proto.Ritual.GetDiagnosticsReply;
 import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
 import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.GetTransferStatsReply;
-import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.proto.Ritual.IRitualService;
 import com.aerofs.proto.Ritual.LinkRootReply;
 import com.aerofs.proto.Ritual.ListConflictsReply;
@@ -94,6 +93,7 @@ import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.ListUserRootsReply;
 import com.aerofs.proto.Ritual.PBBranch;
+import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.TestGetAliasObjectReply;
@@ -139,11 +139,10 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<GetTransportDiagnosticsReply> getTransportDiagnostics()
+    public ListenableFuture<GetDiagnosticsReply> getDiagnostics()
             throws Exception
     {
-        // FIXME (AG): really, I can call Transports.dumpDiagnostics directly
-        EITransportDiagnostics ev = new EITransportDiagnostics(Core.imce());
+        EIDumpDiagnostics ev = new EIDumpDiagnostics(Core.imce());
         ev.execute(PRIO);
         return createReply(ev.getDiagnostics_());
     }

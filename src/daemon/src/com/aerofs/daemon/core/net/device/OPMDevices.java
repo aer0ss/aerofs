@@ -12,18 +12,14 @@ import java.util.Map;
 
 import static com.google.common.collect.Maps.newTreeMap;
 
+// FIXME (AG): we should simply store this set directly inside a store
+// There was an old comment here claiming that we couldn't because the store
+// had to differentiate between confirmed and unconfirmed members, but in practice
+// no such distinction is made.
 /**
  * OPM = online potential member
  * <p/>
- * Represents the set of devices which are potential members for a store
- * <p/>
- * We can't store OPM devices in a {@link com.aerofs.daemon.core.store.Store},
- * because the transport layer may incorrectly report a device as belonging to a store.
- * Since Store objects should only store confirmed member devices, presence for
- * non-confirmed devices would be lost. This is unacceptable, since a non-member can
- * have its status elevated to that of a member in the future. Ideally, the transport should
- * not report presence for non-member devices. In practice this is hard due to concurrency
- * and implementation details with the transport
+ * Represents the set of devices which are <em>potential</em> members for a store
  */
 public class OPMDevices
 {

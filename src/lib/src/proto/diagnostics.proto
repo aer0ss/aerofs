@@ -8,8 +8,10 @@ option java_package = "com.aerofs.proto";
 // IOW: do _not_ use the lite-runtime to generate objects
 //
 
+//-----------------------------------------------------------------------------
 //
 // general diagnostics
+// FIXME (AG): dumpstat and dumpstatmisc are slowly being subsumbed and superceded by the diagnostics messages below
 //
 
 message PBDumpStat {
@@ -31,9 +33,49 @@ message PBDumpStat {
     optional string misc = 15;
 }
 
+//-----------------------------------------------------------------------------
+//
+// device diagnostics (core's perception of devices)
+//
+
+message DeviceDiagnostics {
+    repeated Store stores = 1;
+    repeated Device devices = 2;
+}
+
+message Store {
+    required uint64 store_index = 1;
+    required bytes sid = 2;
+    repeated bytes available_on_dids = 3;
+}
+
+message Device {
+    required bytes did = 1;
+    repeated Transport available_transports = 2; // if it's empty, then this device is 'offline' (probably a bug)
+    optional string preferred_transport_id = 3;
+}
+
+message Transport {
+    enum TransportState {
+        POTENTIALLY_AVAILABLE = 1;
+        PULSING = 2;
+    }
+
+    required string id = 1;
+    required TransportState state = 2;
+    repeated uint64 known_store_indexes = 3;
+}
+
+//-----------------------------------------------------------------------------
 //
 // transport diagnostics messages and types
 //
+
+message TransportDiagnostics {
+    optional TCPDiagnostics tcp_diagnostics = 1;
+    optional JingleDiagnostics jingle_diagnostics = 2;
+    optional ZephyrDiagnostics zephyr_diagnostics = 3;
+}
 
 message TCPDiagnostics {
     required PBInetSocketAddress listening_address = 1;

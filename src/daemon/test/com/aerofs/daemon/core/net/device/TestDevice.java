@@ -50,7 +50,7 @@ public class TestDevice extends AbstractTest
     {
         putTp1AndTp2Online();
 
-        assertEquals("checking tp1 is the best", _tp1, _dev.getPreferedTransport_());
+        assertEquals("checking tp1 is the best", _tp1, _dev.getPreferredTransport_());
     }
 
     @Test
@@ -60,7 +60,7 @@ public class TestDevice extends AbstractTest
 
         _dev.pulseStarted_(_tp1);
 
-        assertEquals("checking tp2 is the best", _tp2, _dev.getPreferedTransport_());
+        assertEquals("checking tp2 is the best", _tp2, _dev.getPreferredTransport_());
     }
 
     @Test
@@ -71,7 +71,7 @@ public class TestDevice extends AbstractTest
         _dev.pulseStarted_(_tp1);
         _dev.pulseStopped_(_tp1);
 
-        assertEquals("checking tp1 is the best", _tp1, _dev.getPreferedTransport_());
+        assertEquals("checking tp1 is the best", _tp1, _dev.getPreferredTransport_());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class TestDevice extends AbstractTest
         _dev.pulseStopped_(_tp1);
         _dev.online_(_tp1, _tp1sids);
 
-        assertEquals("checking tp1 is the best", _tp1, _dev.getPreferedTransport_());
+        assertEquals("checking tp1 is the best", _tp1, _dev.getPreferredTransport_());
     }
 
     @Test

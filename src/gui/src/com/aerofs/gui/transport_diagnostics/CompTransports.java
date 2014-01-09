@@ -5,7 +5,7 @@
 package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.gui.Images;
-import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
+import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -61,11 +61,11 @@ public class CompTransports extends Composite
     @Override
     public void setData(Object data)
     {
-        Preconditions.checkArgument(data == null || data instanceof GetTransportDiagnosticsReply);
+        Preconditions.checkArgument(data == null || data instanceof TransportDiagnostics);
 
         super.setData(data);
 
-        _provider.setData((GetTransportDiagnosticsReply) data);
+        _provider.setData((TransportDiagnostics) data);
         _tableViewer.refresh();
     }
 
@@ -103,7 +103,7 @@ public class CompTransports extends Composite
 
         }
 
-        public void setData(GetTransportDiagnosticsReply reply)
+        public void setData(TransportDiagnostics reply)
         {
             if (_deviceCounts == null) {
                 _deviceCounts = Maps.newEnumMap(Transport.class);
