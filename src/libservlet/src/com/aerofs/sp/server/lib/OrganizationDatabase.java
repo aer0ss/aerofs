@@ -33,6 +33,7 @@ import java.util.Set;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_WHITELISTED;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
@@ -229,6 +230,23 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         psLU.setInt(3, offset);
 
         ResultSet rs = psLU.executeQuery();
+        try {
+            return usersResultSet2List(rs);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public List<UserID> listWhitelistedUsers(OrganizationID orgId)
+        throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+                T_USER,
+                C_USER_ORG_ID + "=? and " + C_USER_WHITELISTED + "=1" + andActiveNonTeamServerUser(),
+                C_USER_ID));
+        ps.setInt(1, orgId.getInt());
+
+        ResultSet rs = ps.executeQuery();
         try {
             return usersResultSet2List(rs);
         } finally {

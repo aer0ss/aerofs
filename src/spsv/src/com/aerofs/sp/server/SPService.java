@@ -37,7 +37,6 @@ import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
-import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Common.PBPermissions;
@@ -73,6 +72,7 @@ import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListSharedFoldersReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
+import com.aerofs.proto.Sp.ListWhitelistedUsersReply;
 import com.aerofs.proto.Sp.MobileAccessCode;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
@@ -2547,6 +2547,26 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<ListWhitelistedUsersReply> listWhitelistedUsers()
+            throws Exception
+    {
+        User caller = _sessionUser.getUser();
+
+        l.debug("list whitelisted users: {}", caller.id().getString());
+
+        ListWhitelistedUsersReply.Builder builder = ListWhitelistedUsersReply.newBuilder();
+
+        _sqlTrans.begin();
+        caller.throwIfNotAdmin();  // throws ExNoPerm
+        for (User user : caller.getOrganization().listWhitelistedUsers()) {
+            builder.addUser(user2pb(user)).build();
+        }
+        _sqlTrans.commit();
+
+        return createReply(builder.build());
     }
 
     @Override

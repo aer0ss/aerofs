@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 
 public class Organization
 {
@@ -182,6 +183,16 @@ public class Organization
     {
         Builder<User> builder = ImmutableList.builder();
         for (UserID userID : _f._odb.listUsers(_id, offset, maxResults)) {
+            builder.add(_f._factUser.create(userID));
+        }
+        return builder.build();
+    }
+
+    public ImmutableList<User> listWhitelistedUsers()
+            throws SQLException
+    {
+        Builder<User> builder = ImmutableList.builder();
+        for (UserID userID : _f._odb.listWhitelistedUsers(_id)) {
             builder.add(_f._factUser.create(userID));
         }
         return builder.build();

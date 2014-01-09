@@ -640,6 +640,13 @@ service SPService {
     //   ExNoPerm if the current user isn't an admin of her organization
     //   ExNotFound if the specified user doesn't exist
     rpc RemoveUserFromWhitelist(RemoveUserFromWhitelistCall) returns (Void);
+
+    // List users that have been added to the sharer whitelist
+    //
+    // Required Auth Level: admin
+    // Throws:
+    //   ExNoPerm if the current user isn't an admin of her organization
+    rpc ListWhitelistedUsers(Void) returns (ListWhitelistedUsersReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1187,4 +1194,8 @@ message AddUserToWhitelistCall {
 
 message RemoveUserFromWhitelistCall {
     required string user_email = 1;
+}
+
+message ListWhitelistedUsersReply {
+    repeated PBUser user = 1;
 }
