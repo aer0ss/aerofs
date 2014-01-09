@@ -64,5 +64,8 @@ class LocalAuthority implements IAuthority
     @Override
     public boolean canAuthenticate(UserID userID) { return true; }
 
+    @Override
+    public String toString() { return "Credential"; }
+
     private AddressPattern _internalAddressPattern = new AddressPattern();
 }

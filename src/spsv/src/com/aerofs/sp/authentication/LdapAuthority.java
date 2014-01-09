@@ -4,6 +4,9 @@
 
 package com.aerofs.sp.authentication;
 
+import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.AuditClient.AuditTopic;
+import com.aerofs.audit.client.AuditHttpClient;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
@@ -61,6 +64,9 @@ public class LdapAuthority implements IAuthority
      */
     public LdapAuthority(LdapConfiguration cfg) { _cfg = cfg; }
 
+    @Override
+    public String toString() { return "LDAP"; }
+
     /**
      * Test the LDAP connection.
      */
@@ -84,7 +90,13 @@ public class LdapAuthority implements IAuthority
         trans.begin();
         // Save the user record in the database with an empty password (which cannot be used to sign
         // in)
-        if (!user.exists()) user.save(new byte[0], fullName);
+        if (!user.exists()) {
+            _auditClient.event(AuditTopic.USER, "user.org.provision")
+                    .add("user", user.id())
+                    .add("authority", this)
+                    .publish();
+            user.save(new byte[0], fullName);
+        }
         trans.commit();
     }
 
@@ -360,4 +372,6 @@ public class LdapAuthority implements IAuthority
     volatile private LDAPConnectionPool _pool = null;
     private SearchScope                 _scope = SearchScope.SUB;
     private LdapConfiguration           _cfg;
+    private AuditClient                 _auditClient = new AuditClient()
+                                            .setHttpClient(AuditHttpClient.create());
 }

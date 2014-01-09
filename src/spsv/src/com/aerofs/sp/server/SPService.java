@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
@@ -98,10 +99,11 @@ import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.Authenticator;
+import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
+import com.aerofs.sp.authentication.IAuthority;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
-import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
@@ -746,6 +748,12 @@ public class SPService implements ISPService
 
         _sqlTrans.commit();
 
+        _auditClient.event(AuditTopic.USER, "user.org.authorization")
+                .add("admin_user", requester.id())
+                .add("target_user", subject.id())
+                .add("new_level", newAuth)
+                .publish();
+
         return createVoidReply();
     }
 
@@ -906,6 +914,16 @@ public class SPService implements ISPService
         _deviceRegistrationEmailer.sendDeviceCertifiedEmail(user.id().getString(), firstName,
                 osFamily, deviceName, device.id());
 
+        // see also: registerTeamServerDevice for a similar-structured event
+        _auditClient.event(AuditTopic.DEVICE, "device.certify")
+                .add("user", user.id())
+                .add("device_id", device.id())
+                .add("device_type", "Desktop Client")
+                .add("os_family", osFamily)
+                .add("os_name", osName)
+                .add("device_name", deviceName)
+                .publish();
+
         return createReply(reply);
     }
 
@@ -1013,6 +1031,15 @@ public class SPService implements ISPService
         _deviceRegistrationEmailer.sendTeamServerDeviceCertifiedEmail(user.id().getString(),
                 firstName, osFamily, deviceName, device.id());
 
+        _auditClient.event(AuditTopic.DEVICE, "device.certify")
+                .add("user", user.id())
+                .add("device_id", device.id())
+                .add("device_type", "Team Server")
+                .add("device_name", deviceName)
+                .add("os_family", osFamily)
+                .add("os_name", osName)
+                .publish();
+
         return createReply(reply);
     }
 
@@ -1079,8 +1106,16 @@ public class SPService implements ISPService
         for (SubjectPermissions srp : srps) {
             User sharee = _factUser.create(srp._subject);
             Permissions actualPermissions = rules.onUpdatingACL(sf, sharee, srp._permissions);
-            emailers.add(createFolderInvitationAndEmailer(sf, sharer, sharee, actualPermissions, note,
-                    folderName));
+            emailers.add(
+                    createFolderInvitationAndEmailer(sf, sharer, sharee, actualPermissions, note,
+                            folderName));
+
+            _auditClient.event(AuditTopic.SHARING, "folder.invite")
+                    .add("folder", folderName)
+                    .add("sharer", sharer.id())
+                    .add("target", sharee.id())
+                    .add("role", actualPermissions.roleName())
+                    .publish();
         }
 
         if (!suppressSharingRulesWarnings) rules.throwIfAnyWarningTriggered();
@@ -1195,6 +1230,14 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
         joinSharedFolderImpl(external, user, sf);
+
+        Permissions perm = sf.getPermissionsNullable(user);
+        _auditClient.event(AuditTopic.SHARING, "folder.join")
+                .add("user", user.id())
+                .add("user_type", external ? "external" : "internal")
+                .add("folder", sf.getName())
+                .add("role", perm == null ? "?" : perm.roleName())
+                .publish();
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -1294,7 +1337,13 @@ public class SPService implements ISPService
             publishACLs_(users);
         }
 
+        _auditClient.event(AuditTopic.SHARING, "folder.leave")
+                .add("user", user.id())
+                .add("folder", sf.getName())
+                .publish();
+
         _sqlTrans.commit();
+
 
         return createVoidReply();
     }
@@ -1383,6 +1432,10 @@ public class SPService implements ISPService
             _requestToSignUpEmailer.sendAlreadySignedUpEmail(user.id().getString());
         }
 
+        _auditClient.event(AuditTopic.USER, "user.account.request")
+                .add("email", emailAddress)
+                .publish();
+
         return createVoidReply();
     }
 
@@ -1451,6 +1504,11 @@ public class SPService implements ISPService
         if (invite.exists()) throw new ExAlreadyInvited();
 
         _factOrgInvite.save(inviter, invitee, org, signUpCode);
+        _auditClient.event(AuditTopic.USER, "user.org.invite")
+                .add("inviter", inviter.id())
+                .add("invitee", invitee.id())
+                .add("organization", org.id())
+                .publish();
 
         return _factInvitationEmailer.createOrganizationInvitationEmailer(inviter, invitee);
     }
@@ -1481,6 +1539,11 @@ public class SPService implements ISPService
         publishACLs_(users);
 
         _sqlTrans.commit();
+        _auditClient.event(AuditTopic.USER, "user.org.accept")
+                .add("user", accepter.id())
+                .add("previous_org", orgOld.id())
+                .add("new_org", orgNew.id())
+                .publish();
 
         return createReply(AcceptOrganizationInvitationReply.newBuilder().setStripeData(sd).build());
     }
@@ -1564,7 +1627,14 @@ public class SPService implements ISPService
 
         PBStripeData sd = getStripeData(admin.getOrganization());
 
+        _auditClient.event(AuditTopic.USER, "user.org.remove")
+                .add("admin_user", admin.id())
+                .add("target_user", user.id())
+                .add("organization", admin.getOrganization().id())
+                .publish();
+
         _sqlTrans.commit();
+
 
         return createReply(RemoveUserFromOrganizationReply.newBuilder().setStripeData(sd).build());
     }
@@ -1593,6 +1663,12 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         device.addCertificate(cert);
         _sqlTrans.commit();
+
+        _auditClient.event(AuditTopic.DEVICE, "device.recertify")
+                .add("user", user.id())
+                .add("device", device.id())
+                .add("device_type", "Desktop Client")
+                .publish();
 
         return createReply(RecertifyDeviceReply.newBuilder()
                 .setCert(cert.toString())
@@ -1630,6 +1706,12 @@ public class SPService implements ISPService
         device.addCertificate(cert);
 
         _sqlTrans.commit();
+
+        _auditClient.event(AuditTopic.DEVICE, "user.device.recertify")
+                .add("user", user.id())
+                .add("device", device.id())
+                .add("device_type", "Team Server")
+                .publish();
 
         return createReply(RecertifyDeviceReply.newBuilder()
                     .setCert(cert.toString())
@@ -1747,6 +1829,14 @@ public class SPService implements ISPService
 
             _sfnEmailer.sendRoleChangedNotificationEmail(sf, user, subject, oldPermissions, role);
 
+            _auditClient.event(AuditTopic.SHARING, "folder.permission.update")
+                    .add("target_user", subject.id())
+                    .add("admin_user", user.id())
+                    .add("new_role", role)
+                    .add("old_role", oldPermissions)
+                    .add("folder", sf.getName())
+                    .publish();
+
             // always call publishACLs_() as the last step of the transaction
             publishACLs_(affectedUsers);
         }
@@ -1765,8 +1855,16 @@ public class SPService implements ISPService
 
         User subject = _factUser.createFromExternalID(subjectString);
 
+
         _sqlTrans.begin();
         sf.throwIfNoPrivilegeToChangeACL(user);
+
+        _auditClient.event(AuditTopic.SHARING, "folder.permission.delete")
+                .add("target_user", subject.id())
+                .add("admin_user", user.id())
+                .add("folder", sf.getName())
+                .publish();
+
         // always call this method as the last step of the transaction
         publishACLs_(sf.removeUser(subject));
         _sqlTrans.commit();
@@ -1844,6 +1942,10 @@ public class SPService implements ISPService
         _passwordManagement.sendPasswordResetEmail(_factUser.createFromExternalID(userIdString));
         _sqlTrans.commit();
 
+        _auditClient.event(AuditTopic.USER, "user.password.reset.request")
+                .add("user", userIdString)
+                .publish();
+
         return createVoidReply();
     }
 
@@ -1853,8 +1955,12 @@ public class SPService implements ISPService
         throws Exception
     {
         _sqlTrans.begin();
-        _passwordManagement.resetPassword(password_reset_token, new_credentials);
+        User user = _passwordManagement.resetPassword(password_reset_token, new_credentials);
         _sqlTrans.commit();
+
+        _auditClient.event(AuditTopic.USER, "user.password.reset")
+                .add("user", user.id())
+                .publish();
 
         return createVoidReply();
     }
@@ -1865,9 +1971,13 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        _passwordManagement.changePassword(_sessionUser.getUser().id(), old_credentials,
-                new_credentials);
+        User user = _passwordManagement.changePassword(
+                _sessionUser.getUser().id(), old_credentials, new_credentials);
         _sqlTrans.commit();
+
+        _auditClient.event(AuditTopic.USER, "user.password.change")
+                .add("user", user.id())
+                .publish();
 
         return createVoidReply();
     }
@@ -1892,6 +2002,9 @@ public class SPService implements ISPService
 
         if (user.exists()) {
             if (!user.isCredentialCorrect(shaedSP)) {
+                _auditClient.event(AuditTopic.USER, "user.password.error")
+                        .add("user", user.id())
+                        .publish();
                 throw new ExBadCredential("Password doesn't match the existing account");
             }
             // If the user already exists and the password matches the existing password, we do an
@@ -1911,6 +2024,14 @@ public class SPService implements ISPService
         publishACLs_(users);
 
         _sqlTrans.commit();
+
+        _auditClient.event(AuditTopic.USER, "user.org.signup")
+                .add("user", user.id())
+                .add("first_name", firstName)
+                .add("last_name", lastName)
+                .add("organization", orgID)
+                .add("is_admin", !joinExistingOrg) // TODO: is this valid? right?
+                .publish();
 
         return createReply(SignUpWithCodeReply.newBuilder()
                 .setOrgId(orgID.toHexString())
@@ -1995,14 +2116,18 @@ public class SPService implements ISPService
         // user is an external user (or if local_credential signin is used, or if
         // the mode is Hybrid Cloud).
         // Review after January 2014
-        _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans,
-                Authenticator.CredentialFormat.LEGACY);
+        IAuthority authority = _authenticator.authenticateUser(
+                user, credentials.toByteArray(), _sqlTrans, CredentialFormat.LEGACY);
 
         // Set the session cookie.
         _sessionUser.setUser(user);
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
 
+        _auditClient.event(AuditTopic.USER, "user.signin")
+                .add("user", user.id())
+                .add("authority", authority)
+                .publish();
         return createVoidReply();
     }
 
@@ -2035,7 +2160,8 @@ public class SPService implements ISPService
     }
 
     /**
-     * Check the given username and credentials. Throw an exception if
+     * Check the given username and credentials. Throw an exception if the user/credential
+     * pair is not valid.
      * @param userId user identifier to check
      * @param cred credentials in cleartext
      * @return User object if authentication succeeds
@@ -2044,13 +2170,14 @@ public class SPService implements ISPService
     private User authByCredentials(String userId, ByteString cred) throws Exception
     {
         User user = _factUser.createFromExternalID(userId);
-        _authenticator.authenticateUser(
-                user, cred.toByteArray(), _sqlTrans, Authenticator.CredentialFormat.TEXT);
+        IAuthority authority = _authenticator.authenticateUser(
+                user, cred.toByteArray(), _sqlTrans, CredentialFormat.TEXT);
 
         l.info("SI: cred auth ok {}", user.id().getString());
-        _auditClient.event(AuditTopic.USER, "signin")
-                .add("user", user)
-                .publishBlocking();
+        _auditClient.event(AuditTopic.USER, "user.signin")
+                .add("user", user.id())
+                .add("authority", authority)
+                .publish();
 
         return user;
     }
@@ -2124,6 +2251,13 @@ public class SPService implements ISPService
 
         // Important: recall that IdentitySessionManager speaks seconds, not milliseconds,
         // due to the underlying key-expiration technology.
+        int timeoutSec = 180;
+
+        _auditClient.event(AuditTopic.DEVICE, "device.mobile.code")
+                .add("user", _sessionUser.getUser().id())
+                .add("timeout", timeoutSec)
+                .publish();
+
         return createReply(MobileAccessCode.newBuilder()
                 .setAccessCode(_identitySessionManager.createDeviceAuthorizationNonce(
                         _sessionUser.getUser(), 180))
@@ -2156,6 +2290,9 @@ public class SPService implements ISPService
         {
             // TODO: can't easily unit-test this case until we can delete users
             l.warn("Authorized device nonce {} has invalid user {}", nonce, user.id().getString());
+            _auditClient.event(AuditTopic.USER, "device.mobile.error")
+                    .add("user", user.id())
+                    .publish();
             throw new ExBadCredential("Authorized user does not exist.");
         }
 
@@ -2169,6 +2306,13 @@ public class SPService implements ISPService
 
         l.info("SI: authorized device for {}", user.id().getString());
 
+        _auditClient.event(AuditTopic.DEVICE, "device.certify")
+                .add("user", user.id())
+                .add("device_type", "Mobile App")
+                .add("device_id", deviceInfo)
+//                .add("os_family", "unknown") // FIXME: hardcode iOS? Get this from somewhere?
+//                .add("os_name", "unknown")   // FIXME: hardcode iOS? Get this from somewhere?
+                .publish();
         return reply;
     }
 
@@ -2222,6 +2366,11 @@ public class SPService implements ISPService
 
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
+
+        _auditClient.event(AuditTopic.USER, "user.signin")
+                .add("user", attrs.getEmail())
+                .add("authority", "OpenId")
+                .publish();
 
         return createReply(OpenIdSessionAttributes.newBuilder()
                 .setUserId(attrs.getEmail())
@@ -2289,6 +2438,11 @@ public class SPService implements ISPService
 
         unlinkDeviceImplementation(device, erase);
 
+        _auditClient.event(AuditTopic.DEVICE, erase ? "device.erase" : "device.unlink")
+                .add("admin_user", user.id())
+                .add("device", device.id())
+                .add("owner", device.getOwner().id())
+                .publish();
         _sqlTrans.commit();
 
         return createVoidReply();

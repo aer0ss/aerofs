@@ -6,6 +6,7 @@ package com.aerofs.audit.client;
 
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.log.LogUtil;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import org.slf4j.Logger;
@@ -69,7 +70,7 @@ public class AuditHttpClient
             submitEvent(conn, content);
             readResponse(conn);
         } catch (IOException e) {
-            l.warn("audit submit err", e);
+            l.warn("audit submit err", LogUtil.suppress(e));
             throw e;
         } finally {
             if (conn != null) {

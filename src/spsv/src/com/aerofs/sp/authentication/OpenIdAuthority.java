@@ -53,5 +53,8 @@ class OpenIdAuthority implements IAuthority
     @Override
     public boolean managesLocalCredential() { return false; }
 
+    @Override
+    public String toString() { return "OpenId"; }
+
     private AddressPattern _internalAddressPattern = new AddressPattern();
 }

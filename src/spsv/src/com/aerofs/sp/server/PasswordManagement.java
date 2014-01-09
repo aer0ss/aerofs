@@ -64,7 +64,7 @@ public class PasswordManagement
     /**
      * Reset the password given a password-reset token and new cleartext credentials.
      */
-    public void resetPassword(String passwordResetToken, ByteString newCredentials)
+    public User resetPassword(String passwordResetToken, ByteString newCredentials)
             throws SQLException, ExNotFound, IOException, MessagingException,
             GeneralSecurityException
     {
@@ -77,11 +77,12 @@ public class PasswordManagement
         _db.deletePasswordResetToken(passwordResetToken);
         l.info("Reset " + userId + "'s Password");
         _passwordResetEmailer.sendPasswordResetConfirmation(user.id());
+        return user;
     }
 
     // FIXME: update to use server-side SCrypt; must be updated along with CmdPassword
     // TODO (WW) move it to the User class
-    public void changePassword(UserID userId, ByteString old_credentials,
+    public User changePassword(UserID userId, ByteString old_credentials,
             ByteString new_credentials)
             throws ExNotFound, IOException, SQLException, ExNoPerm
     {
@@ -91,5 +92,6 @@ public class PasswordManagement
                 SPParam.getShaedSP(old_credentials.toByteArray()),
                 SPParam.getShaedSP(new_credentials.toByteArray()));
         l.info(userId + "'s Password was successfully changed");
+        return user;
     }
 }

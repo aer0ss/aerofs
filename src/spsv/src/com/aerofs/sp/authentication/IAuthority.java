@@ -13,9 +13,9 @@ import com.aerofs.sp.server.lib.user.User;
 import java.sql.SQLException;
 
 /**
- * An authority is a class that can authenticate a user/credential pair.
+ * An authority is an object that can authenticate a user/credential pair.
  */
-interface IAuthority
+public interface IAuthority
 {
     // FIXME: Remove "format" arg when we drop support for client-side SCrypt. Review January 2014
     // Ok; I don't like the transaction interface being passed in here, it feels like poor

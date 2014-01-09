@@ -64,16 +64,16 @@ public class Authenticator
      * @throws ExExternalServiceUnavailable if the authority is misconfigured or all
      * authorities are unable to reach external authorities.
      */
-    public void authenticateUser(User user, byte[] credential,
+    public IAuthority authenticateUser(User user, byte[] credential,
             IThreadLocalTransaction<SQLException> trans, CredentialFormat format)
             throws Exception
     {
         for (IAuthority auth : _authorities) {
             if (auth.canAuthenticate(user.id())) {
-                l.info("Auth using {} for {}", auth.toString(), user); // FIXME: debug
+                l.debug("Auth using {} for {}", auth, user);
                 auth.authenticateUser(user, credential, trans, format);
                 l.info("auth ok {}", user);
-                return;
+                return auth;
             }
         }
         l.warn("No authority can handle {}", user.id());

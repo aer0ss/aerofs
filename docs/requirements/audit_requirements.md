@@ -219,48 +219,60 @@ Events related to files, including files transferred between AeroFS clients
 
 Events related to the creation, management, and roles of users.
 
- - User sends an AeroFS invitation to an email address.
+ - `user.account.request (email)` : Request a signup code for email address.
 
- - User signs up for AeroFS account.
+ - `user.org.invite (inviter, invitee, organization)` : User sends an AeroFS invitation to an email address.
 
- - User promoted to organization admin, or demoted to normal user.
+ - `user.org.accept (user, previous_org, new_org)` : User accepts an organization invite
 
- - User requests password reset email.
+ - `user.org.remove (admin_user, target_user, organization)` : User is removed from an organization (not currently possible in private cloud).
+ 	
+ - `user.org.signup (user, first_name, last_name, organization)` : User signs up from invitation.
 
- - User resets password.
+ - `user.org.provision (user, authority)` : Auto-provisioned user signed in to AeroFS for the first time. `authority` is the type of the identity-authenticating authority.
 
- - Web signin (User, source address)
+ - `user.org.permissions (admin_user, target_user, new_level)` : User permission level changed (promoted to organization admin or demoted to normal user).
 
- - Received invalid credential information
+ - `user.password.reset.request (user)` : User requests password reset email.
+
+ - `user.password.reset (user)` : User resets password.
+
+ - `user.password.change (user)` : User changes password.
+
+ - `user.signin (user, authority)` : User signed in to the AeroFS Appliance. `authority` indicates which identity-authentication type was used; it will be one of "Credential", "LDAP", or "OpenId" depending on the appliance configuration and user account type.
+
+ - `user.password.error (user)` : Received invalid credential information
 
 
 ##### Sharing
 
 Events related to folder sharing in AeroFS.
 
- - User sends a share invitation to an internal or external user (Inviter, Invitee, Share, Role)
+ - `folder.invite (folder, sharer, target, role)` : User sends a share invitation to an internal or external user
 
- - User accepts a share invitation (User, Share, Inviter, Role)
+ - `folder.join (folder, user, user_type {external | internal})` : User accepts a share invitation
 
- - Shared-folder owner changes a User's role for a folder  (Admin, Target, Share, Old Role, New Role)
+ - `folder.permission.update (admin_user, target_user, old_role, new_role, folder)` : Shared-folder owner changes a User's role for a folder
 
- - User leaves/removed from a shared folder (Admin, User, Share, Role)
+ - `folder.leave (user, folder)` : User leaves shared folder
+
+ - `folder.permission.delete (admin_user, target_user, folder)` : User is removed from a shared folder (Admin, User, Share, Role)
 
 
 ##### Device Management
 
-Events related to device certification
+Events related to device certification and decomissioning.
 
- - Request access code for mobile device (User, Mobile device id)
+ - `device.mobile.code (user, timeout)` : Request a one-time access code for authenticating a mobile device.
 
- - Mobile device authentication occurs (User, Mobile device id)
+ - `device.mobile.authenticate (user, device)` : User authenticates a mobile device using a one-time access code.
 
- - New device certification (Device ID, User)
+ - `device.certify (user, device_id, device_type, os_family, os_name, device_name)` : A new device successfully certified with AeroFS. Device certification requires User privilege, and will be associated with that User. `device_type` will be one of "Desktop Client", "Team Server", or "Mobile App". Some fields may not be populated for mobile devices.
 
- - Device recertification (Device ID, User)
+ - `device.recertify (user, device, device_type)` : Device recertification. Device_type is "Team Server" or "Desktop"
 
- - Device is unlinked (Admin, Owner, Device ID)
+ - `device.unlink (admin_user, device, owner)` : Device "device" owned by "owner" is unlinked by user "admin_user".
 
- - Device is remote-erased by an admin (Admin, Owner, Device ID)
+ - `device.erase (admin_user, device, owner)` : Device "device" owned by "owner" is remote-erased by user "admin_user".
 
- - Received invalid certificate information from a device.
+ - `device.mobile.error (user)` : Tried to authorize a mobile device with an invalid device authorization code.
