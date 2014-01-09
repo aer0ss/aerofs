@@ -7,6 +7,7 @@ import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.rocklog.RockLog;
 
 import javax.inject.Inject;
@@ -23,8 +24,8 @@ public class DaemonPostUpdateTasks
     private final IDaemonPostUpdateTask[] _tasks;
 
     @Inject
-    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw,  CfgLocalUser cfgUser,
-            InjectableDriver dr, RockLog rocklog)
+    public DaemonPostUpdateTasks(IOSUtil osutil, CfgDatabase cfgDB, CoreDBCW dbcw,
+            CfgLocalUser cfgUser, InjectableDriver dr, RockLog rocklog)
     {
         _cfgDB = cfgDB;
 
@@ -69,7 +70,8 @@ public class DaemonPostUpdateTasks
             new DPUTCaseSensitivityHellYeah(dbcw, dr),
             new DPUTMigrateHistoryToHex(),
             new DPUTUpdateACLFromDiscreteRolesToFlags(dbcw),
-            new DPUTUpdateNROForAliasedAndMigrated(dbcw, rocklog)
+            new DPUTUpdateNROForAliasedAndMigrated(dbcw, rocklog),
+            new DPUTFixNormalizationOSX(osutil, dbcw, dr, rocklog)
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 

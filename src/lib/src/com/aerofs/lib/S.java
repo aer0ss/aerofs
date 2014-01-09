@@ -104,7 +104,7 @@ public class S
             INVALID_TOO_LONG                = "Filename too long",
             INVALID_FORBIDDEN_CHARACTERS    = "Forbidden characters",
             INVALID_RESERVED_NAME           = "Reserved filename",
-            INVALID_NON_NFD                 = "Non-NFD characters",
+            INVALID_NON_NFC                 = "Non-NFC characters",
             INVALID_TRAILING_SPACE_PERIOD   = "Trailing space or period",
 
             // transfers dialog

@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
 /**
  * Probes properties of physical filesystem
@@ -17,14 +18,22 @@ public class FileSystemProber
 
     private final InjectableFile.Factory _factFile;
 
+    public enum FileSystemProperty
+    {
+        CaseInsensitive,
+        NormalizationInsensitive
+    }
+
     @Inject
     public FileSystemProber(InjectableFile.Factory factFile)
     {
         _factFile = factFile;
     }
 
-    public boolean isCaseSensitive(String auxRoot) throws IOException
+    public EnumSet<FileSystemProperty> probe(String auxRoot) throws IOException
     {
+        EnumSet<FileSystemProperty> props = EnumSet.noneOf(FileSystemProperty.class);
+
         try {
             // ensure probe directory is clean
             InjectableFile d = _factFile.create(auxRoot, AuxFolder.PROBE._name);
@@ -33,9 +42,19 @@ public class FileSystemProber
 
             // probe case-sensitivity
             _factFile.create(d, "cs").createNewFile();
-            return !_factFile.create(d, "CS").exists();
+            if (_factFile.create(d, "CS").exists()) {
+                props.add(FileSystemProperty.CaseInsensitive);
+            }
+
+            // probe normalization-sensitivity (NFC/NFD)
+            _factFile.create(d, "\u00e9").createNewFile();
+            if (_factFile.create(d, "e\u0301").exists()) {
+                props.add(FileSystemProperty.NormalizationInsensitive);
+            }
+
+            return props;
         } catch (IOException e) {
-            l.error("failed to determine case-sensitivity of filesystem");
+            l.error("failed to probe filesystem properties");
             throw e;
         }
     }

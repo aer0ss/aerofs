@@ -90,14 +90,17 @@ public class OSXNotifier implements INotifier, FSEventListener
 
         // OSX uses a variant of Normal Form D therefore @param{name} can be in NFD.
         // @see{http://developer.apple.com/library/mac/#qa/qa1173/_index.html}
-        // Java helpfully tries to ease interoperability by normalizing this to NFC when you
-        // File.list(), but we actually care about having the proper platform encoding.
-        // Ideally, we wouldn't do normalization here, but then we'd have to write our own native
-        // code to retrieve the platform-encoded filenames, as well as determine if a logical
-        // filename is a valid platform-normalized string.
-        if (!Normalizer.isNormalized(name, Form.NFD)) {
-            name = Normalizer.normalize(name, Form.NFD);
-        }
+        // However most other platforms use NFC by default (hence Java helpfully normalizing
+        // the result of File.list() to NFC)
+        // Because OSX is unicode-normalizing (and crucially not normalization-preserving)
+        // we cannot use the same "contextual NRO" logic that smoothes case-insensitivity
+        // considerations. Instead we need to arbitrarily pick one normal form as the only
+        // representable one on OSX.
+        // A naive choice would be to pick NFD to stay as close to the actual filesystem
+        // contents. That would however lead to a terrible UX when syncing between OSX
+        // and non-OSX devices. It would also cause a number of issues in devices installed
+        // prior to this change.
+        name = Normalizer.normalize(name, Form.NFC);
         b._batch.add(name);
         if (recurse) b._recurse = true;
     }

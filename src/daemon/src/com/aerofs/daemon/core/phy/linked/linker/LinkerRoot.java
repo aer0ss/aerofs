@@ -10,6 +10,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.phy.linked.FileSystemProber;
+import com.aerofs.daemon.core.phy.linked.FileSystemProber.FileSystemProperty;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -22,7 +23,10 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 /**
@@ -79,7 +83,7 @@ public class LinkerRoot
     private final Factory _f;
     private final ScanSessionQueue _ssq;
 
-    private final boolean _caseSensitive;
+    private final EnumSet<FileSystemProperty> _properties;
 
     private LinkerRoot(Factory f, SID sid, String absRootAnchor) throws IOException
     {
@@ -88,7 +92,7 @@ public class LinkerRoot
         _absRootAnchor = absRootAnchor;
         _ssq = _f._factSSQ.create_(this);
         _og = new OIDGenerator(sid, absRootAnchor);
-        _caseSensitive = _f._prober.isCaseSensitive(absAuxRoot());
+        _properties = _f._prober.probe(absAuxRoot());
     }
 
     public SID sid()
@@ -123,13 +127,19 @@ public class LinkerRoot
 
     boolean isPhysicallyEquivalent(String a, String b)
     {
-        return _caseSensitive ? a.equals(b) : a.equalsIgnoreCase(b);
+        if (_properties.contains(FileSystemProperty.NormalizationInsensitive)) {
+            a = Normalizer.normalize(a, Form.NFC);
+            b = Normalizer.normalize(b, Form.NFC);
+        }
+        return _properties.contains(FileSystemProperty.CaseInsensitive)
+                ? a.equalsIgnoreCase(b)
+                : a.equals(b);
     }
 
     @Override
     public String toString()
     {
-        return "LinkerRoot(" + _sid + ", " + _absRootAnchor + ", " + _caseSensitive + ")";
+        return "LinkerRoot(" + _sid + ", " + _absRootAnchor + ", " + _properties + ")";
     }
 
     public void mightDelete_(String absPath)
