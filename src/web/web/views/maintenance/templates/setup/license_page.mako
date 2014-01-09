@@ -18,7 +18,7 @@
 
         <p class="text-error"><strong>
             Your license expired on ${current_config['license_valid_until']}.
-            Please upload a new license file to proceed.<br />
+            Please upload a new license file to proceed.
             <a href="mailto:support@aerofs.com">Contact us</a> to renew your
             license.
         </strong></p>
@@ -45,7 +45,7 @@
         ${upload_license_button.button('license-file', '')}
 
         <p class="muted"><small>You should have received
-            a license file from AeroFS along with this appliance.<br />If not,
+            a license file from AeroFS along with this appliance. If not,
             please <a href="mailto:support@aerofs.com">contact us</a> to request
             a license.</small></p>
 

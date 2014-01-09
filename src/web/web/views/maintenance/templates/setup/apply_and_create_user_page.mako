@@ -42,7 +42,9 @@ ${common.render_previous_button()}
     <div class="modal-body">
         <p>System configuration is complete.</p>
 
-        %if is_configuration_initialized:
+        <% first_user_created = is_configuration_initialized or restored_from_backup %>
+
+        %if first_user_created:
             ## It's a reconfiguration. Do nothing. Write something here otherwise
             ## the renderer would complain.
             <!---->
@@ -58,7 +60,7 @@ ${common.render_previous_button()}
 
     </div>
     <div class="modal-footer">
-        %if is_configuration_initialized:
+        %if first_user_created:
             <a href="${request.route_path('dashboard_home')}" class="btn btn-primary">Close</a>
         %elif current_config['lib.authenticator'] == 'local_credential':
             <a href="#" class="btn btn-primary" id="start-create-user-btn"
