@@ -24,8 +24,10 @@
         <dd>${render_license_field('license_seats')}</dd>
     </dl>
 
-    <h4>Upload new license file:</h4>
-    <input id="license-file" type="file">
+    <h4>Update your license:</h4>
+    <p><a href="mailto:support@aerofs.com">Contact us</a> to request a new license.</p>
+    <p><input id="license-file" type="file"></p>
+
     <hr />
     ${common.render_next_button()}
 </form>
