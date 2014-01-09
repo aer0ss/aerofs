@@ -119,7 +119,7 @@ public class DaemonProgram implements IProgram
         Daemon d = injDaemon.getInstance(Daemon.class);
 
         // TODO (HB): control Rest service through GUI
-        // NB: he RestService MUST be started AFTER creation of the Daemon instance or Guice
+        // NB: the RestService MUST be started AFTER creation of the Daemon instance or Guice
         // throws a fit
         if (Cfg.user().isAeroFSUser() || PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             injCore.getInstance(RestService.class).start();

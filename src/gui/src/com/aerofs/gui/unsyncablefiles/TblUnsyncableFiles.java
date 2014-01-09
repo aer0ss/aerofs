@@ -89,7 +89,7 @@ public class TblUnsyncableFiles extends Composite
         _tableViewer.addPostSelectionChangedListener(listener);
     }
 
-    class FilenameProvider extends PathLabelProvider
+    private class FilenameProvider extends PathLabelProvider
     {
         public FilenameProvider(TableViewerColumn column)
         {

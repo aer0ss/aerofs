@@ -14,6 +14,8 @@ import com.aerofs.sp.common.SharedFolderState;
 
 import javax.annotation.Nonnull;
 
+import static com.aerofs.gui.GUIUtil.aggregateComparisonResults;
+import static com.aerofs.gui.GUIUtil.compare;
 import static com.aerofs.sp.common.SharedFolderState.JOINED;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.trim;
@@ -87,36 +89,22 @@ public class SharedFolderMember
                 compareByLabel(this, that));
     }
 
-    /**
-     * This is intended to be used to aggregate comparison results. The intention is to use it like:
-     *
-     * aggregateComparisonResults(comparison1, comparison2, comparison3)
-     *
-     * which will, in effect, compare two objects using a series of comparisons where the earlier
-     * comparisons have priorities over the later comparisons.
-     */
-    private int aggregateComparisonResults(int... values)
-    {
-        for (int value : values) if (value != 0) return value;
-        return 0; // if we are here, all values must be 0
-    }
-
     // local user < non-local users
     private static int compareByIsLocalUser(SharedFolderMember a, SharedFolderMember b)
     {
-        return compareHelper(a.isLocalUser(), b.isLocalUser());
+        return compare(a.isLocalUser(), b.isLocalUser());
     }
 
     // joined members < pending members | left members
     private static int compareByState(SharedFolderMember a, SharedFolderMember b)
     {
-        return compareHelper(a._state == JOINED, b._state == JOINED);
+        return compare(a._state == JOINED, b._state == JOINED);
     }
 
     // members with names < members with only emails (hasn't signed up)
     private static int compareByHavingNames(SharedFolderMember a, SharedFolderMember b)
     {
-        return compareHelper(a.hasName(), b.hasName());
+        return compare(a.hasName(), b.hasName());
     }
 
     // alphabetical order of the label
@@ -129,14 +117,6 @@ public class SharedFolderMember
     private static int compareByRole(SharedFolderMember a, SharedFolderMember b)
     {
         return a._permissions.compareTo(b._permissions);
-    }
-
-    // true < false
-    private static int compareHelper(boolean a, boolean b)
-    {
-        if (a && !b) return -1;
-        else if (b && !a) return 1;
-        else return 0;
     }
 
     @Override

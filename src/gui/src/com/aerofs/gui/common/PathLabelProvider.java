@@ -4,61 +4,35 @@
 
 package com.aerofs.gui.common;
 
-import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
-import com.aerofs.ui.UIUtil;
-import com.google.common.collect.Maps;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.program.Program;
+import org.eclipse.swt.widgets.TableColumn;
 
-import java.util.Map;
+import static com.aerofs.gui.GUIUtil.shortenText;
 
-import static com.aerofs.ui.UIUtil.isSystemFile;
-
-/**
- * Features:
- * - Produces text based on path.
- * - Shortens text based on column width, refreshes on resize.
- * - Produces images based on file type, self-manages image cache and the disposal of.
- */
 public class PathLabelProvider extends ColumnLabelProvider
 {
-    private final TableViewerColumn _column;
-
+    private final TableColumn _column;
     private final GC _gc;
-    private final Map<Program, Image> _iconCache;
+    private final PathInfoProvider _provider;
 
-    public PathLabelProvider(TableViewerColumn column)
+    public PathLabelProvider(final TableViewerColumn column)
     {
-        _column = column;
+        _column = column.getColumn();
+        _gc = new GC(_column.getParent());
+        _provider = new PathInfoProvider(_column);
 
-        _gc = new GC(_column.getColumn().getParent());
-        _iconCache = Maps.newHashMap();
-
-        _column.getColumn().addControlListener(new ControlAdapter()
+        _column.addControlListener(new ControlAdapter()
         {
             @Override
             public void controlResized(ControlEvent e)
             {
-                _column.getViewer().refresh();
-            }
-        });
-
-        _column.getColumn().addDisposeListener(new DisposeListener()
-        {
-            @Override
-            public void widgetDisposed(DisposeEvent disposeEvent)
-            {
-                for (Image image : _iconCache.values()) image.dispose();
-                _iconCache.clear();
+                column.getViewer().refresh();
             }
         });
     }
@@ -71,16 +45,12 @@ public class PathLabelProvider extends ColumnLabelProvider
     @Override
     public String getText(Object element)
     {
-        Path path = getPathNullable(element);
-        String text = path == null ? "" : UIUtil.getPrintablePath(path.last());
-        return GUIUtil.shortenText(_gc, text, _column.getColumn(), true);
+        return shortenText(_gc, _provider.getFilename(getPathNullable(element)), _column, true);
     }
 
     @Override
     public Image getImage(Object element)
     {
-        Path path = getPathNullable(element);
-        return path == null || isSystemFile(path.toPB())
-                ? Images.get(Images.ICON_METADATA) : Images.getFileIcon(path.last(), _iconCache);
+        return _provider.getFileIcon(getPathNullable(element));
     }
 }
