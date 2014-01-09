@@ -3,7 +3,14 @@
         # proxies to Tomcat, the container for SyncStat.
         proxy_pass http://127.0.0.1:8080;
         client_max_body_size 4096m;
-        proxy_read_timeout 60;
+        # when syncstat has many requests queued up, tomcat takes a long time
+        # to process the request. Setting proxy_read_timeout to a low value
+        # causes nginx to drop requests and tomcat end up doing unnecessary
+        # work. Hence it's been set to a high value.
+        #
+        # see puppetmaster/modules/servlet/manifests/.nginx_config_syncstat.pp
+        # for the corresponding change for the production environment.
+        proxy_read_timeout 300;
         proxy_send_timeout 60;
         proxy_set_header Verify $ssl_client_verify;
         proxy_set_header Serial $ssl_client_serial;

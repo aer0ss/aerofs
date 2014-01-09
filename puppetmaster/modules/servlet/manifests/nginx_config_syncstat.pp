@@ -2,7 +2,15 @@
 # N.B. This class is only used by the public deployment.
 #
 class servlet::nginx_config_syncstat (
-        $proxy_read_timeout = "60",
+        # when syncstat has many requests queued up, tomcat takes a long time
+        # to process the request. Setting proxy_read_timeout to a low value
+        # causes nginx to drop requests and tomcat end up doing unnecessary
+        # work. Hence it's been set to a high value.
+        #
+        # see packaging/syncstat/etc/nginx/backends-available/aerofs-syncstat
+        # for the corresponding change for local production and private
+        # deployment.
+        $proxy_read_timeout = "300",
         $proxy_send_timeout = "60",
     ) {
 
