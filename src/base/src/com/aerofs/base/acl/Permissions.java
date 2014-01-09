@@ -25,7 +25,7 @@ public class Permissions implements Comparable<Permissions>
         // NB: the order of these values is used to sort Roles
         //
         // See docs/design/acl.md for more details
-        MANAGE(PBPermission.MANAGE, "manager members"),
+        MANAGE(PBPermission.MANAGE, "manage members"),
         WRITE(PBPermission.WRITE, "modify files");
 
         private static final int ALL = union(Arrays.asList(values()));
