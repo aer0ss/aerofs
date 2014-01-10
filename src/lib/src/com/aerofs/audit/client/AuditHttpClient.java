@@ -20,7 +20,7 @@ import java.net.URL;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 
-public class AuditHttpClient
+class AuditHttpClient implements IAuditorClient
 {
     private static final Logger l = Loggers.getLogger(AuditHttpClient.class);
 
@@ -28,7 +28,7 @@ public class AuditHttpClient
      * Create an HTTP client for the auditor service. This client is configured by BaseParam.Audit.
      * TODO: expose internal and external versions of this (public URL versus internal URL)
      */
-    public static AuditHttpClient create()
+    public static IAuditorClient create()
     {
         if (Audit.AUDIT_ENABLED) {
             try {
@@ -51,13 +51,14 @@ public class AuditHttpClient
      * may throw an unchecked exception.
      * Success does not guarantee the client can connect to an audit service.
      */
-    private AuditHttpClient(URL url) { _svcUrl = url; }
+    AuditHttpClient(URL url) { _svcUrl = url; }
 
     /**
-     * Submit an auditable event synchronously.
+     * Submit an event to the auditor.
      *
      * <strong>IMPORTANT:</strong> you can do multiple {@code submit} calls simultaneously
      */
+    @Override
     public void submit(String content) throws IOException
     {
         int contentLength = content.length();

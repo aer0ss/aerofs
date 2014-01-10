@@ -6,7 +6,7 @@ package com.aerofs.sp.authentication;
 
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
-import com.aerofs.audit.client.AuditHttpClient;
+import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
@@ -373,5 +373,5 @@ public class LdapAuthority implements IAuthority
     private SearchScope                 _scope = SearchScope.SUB;
     private LdapConfiguration           _cfg;
     private AuditClient                 _auditClient = new AuditClient()
-                                            .setHttpClient(AuditHttpClient.create());
+                                            .setAuditorClient(AuditorFactory.create());
 }

@@ -1,7 +1,7 @@
 package com.aerofs.sp.server.listeners;
 
 import com.aerofs.audit.client.AuditClient;
-import com.aerofs.audit.client.AuditHttpClient;
+import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
@@ -104,7 +104,7 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         admin.start();
         ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);
 
-        AuditClient auditClient = new AuditClient().setHttpClient(AuditHttpClient.create());
+        AuditClient auditClient = new AuditClient().setAuditorClient(AuditorFactory.create());
         ctx.setAttribute(AUDIT_CLIENT_ATTRIBUTE, auditClient);
 
         // Set up the user session objects.

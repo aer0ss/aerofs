@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.analytics.Analytics;
@@ -92,7 +93,13 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // Some subclasses will add custom mocking to the verkehr objects.
     @Mock protected VerkehrPublisher verkehrPublisher;
     @Mock protected VerkehrAdmin verkehrAdmin;
-    @Spy protected AuditClient auditClient = new AuditClient();
+    @Spy protected AuditClient auditClient = new AuditClient()
+            .setAuditorClient(new IAuditorClient() {
+                @Override
+                public void submit(String content) throws IOException {
+                    System.out.println(content);
+                }
+            });
 
     protected SPActiveUserSessionTracker userSessionTracker =
             new SPActiveUserSessionTracker();

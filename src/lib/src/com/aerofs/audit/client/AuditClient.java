@@ -27,6 +27,8 @@ import java.util.Map;
  *
  * Embedded objects and arrays are supported.
  */
+// FIXME: I want to explicitly support add(String, User) but we can't see User from here
+// (i hate that users say .add("user", user.id()) )
 public class AuditClient
 {
     Logger l = LoggerFactory.getLogger(AuditClient.class);
@@ -41,19 +43,20 @@ public class AuditClient
     }
 
     /**
-     * Explicitly configure the audit client class with an HTTP client.
+     * Explicitly configure the auditor client (used to transmit the AuditableEvent to the
+     * Auditor server, which may deliver it to downstream collection points).
      * Note the client choice encapsulates implementation and address information.
-     * TODO: extract a minimal useful http client interface
      *
-     * If httpClient is null, the audit service will short-circuit event creation and publishing.
+     * If auditorClient is null, or this method is not called,
+     * the audit service will short-circuit all event creation and publishing.
      */
     // Commentary:
     // [SIGH], manual DI. I would rather do this with @Inject but it doesn't look like we
     // have that available for the lib or or client-side components.
-    public AuditClient setHttpClient(@Nullable AuditHttpClient httpClient)
+    public AuditClient setAuditorClient(@Nullable IAuditorClient auditorClient)
     {
-        l.info("Audit client set {}", httpClient);
-        _client = httpClient;
+        l.info("Audit client set {}", auditorClient);
+        _client = auditorClient;
         return this;
     }
 
@@ -163,7 +166,7 @@ public class AuditClient
         @Override public String getPayload() { return ""; }
     }
 
-    AuditHttpClient                 _client = null;
+    IAuditorClient _client = null;
     private DummyAuditableEvent     _dummyAuditableEvent = new DummyAuditableEvent();
 
     private static final Gson       _gson = new GsonBuilder()
