@@ -10,6 +10,8 @@ import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.StorageType;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
@@ -50,6 +52,8 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
+        // the NRO table is only present for LINKED storage
+        if (Cfg.storageType() != StorageType.LINKED) return;
         DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
             @Override
             public void run_(Statement s) throws SQLException
