@@ -404,4 +404,25 @@ public class TestFileResource extends AbstractRestTest
         .when().post("/v0.10/files");
     }
 
+    @Test
+    public void shouldReturn409WhenAlreadyExists() throws Exception
+    {
+        whenCreate(Type.FILE, "", "foo.txt");
+
+        givenAcces()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
+        .expect()
+                .statusCode(201)
+        .when().post("/v0.10/files");
+
+        givenAcces()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
+        .expect()
+                .statusCode(409)
+                .body("type", equalTo(com.aerofs.rest.api.Error.Type.CONFLICT.toString()))
+        .when().post("/v0.10/files");
+    }
+
 }
