@@ -2,8 +2,9 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.daemon.core.audit;
+package com.aerofs.daemon.core.activity;
 
+import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -11,7 +12,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableSet;
@@ -20,7 +20,9 @@ import org.slf4j.Logger;
 
 import java.sql.SQLException;
 
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.*;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.COMPLETED_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.CONTENT_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.OUTBOUND_VALUE;
 
 /**
  *
@@ -51,8 +53,9 @@ public class OutboundEventLogger
 
     public void log_(int type, SOID soid, DID to) throws SQLException
     {
-        // TODO: only log outbound events if auditing is enabled
-        if (!PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) return;
+        if (!Audit.AUDIT_ENABLED) {
+            return;
+        }
 
         Path path = _ds.resolveNullable_(soid);
         if (path == null) {

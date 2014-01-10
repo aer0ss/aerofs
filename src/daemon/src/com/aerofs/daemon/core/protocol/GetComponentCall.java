@@ -8,7 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.audit.OutboundEventLogger;
+import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.net.RPC;
@@ -45,7 +45,7 @@ import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBGetComCall;
 import com.aerofs.proto.Core.PBGetComCall.Builder;
 
-import static com.aerofs.daemon.core.audit.OutboundEventLogger.*;
+import static com.aerofs.daemon.core.activity.OutboundEventLogger.*;
 
 // TODO NAK for this and other primitives
 

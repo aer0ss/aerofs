@@ -1,7 +1,9 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.daemon.IModule;
 import com.aerofs.daemon.core.acl.ACLNotificationSubscriber;
+import com.aerofs.daemon.core.activity.ClientAuditEventReporter;
 import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.db.TamperingDetection;
 import com.aerofs.daemon.core.first_launch.FirstLaunch;
@@ -55,6 +57,7 @@ public class Core implements IModule
     private final CoreDBSetup _dbsetup;
     private final TamperingDetection _tamperingDetection;
     private final HealthCheckService _hcs;
+    private final ClientAuditEventReporter _caer;
     private final DaemonLaunchTasks _dlts;
 
     @Inject
@@ -81,6 +84,7 @@ public class Core implements IModule
             TamperingDetection tamperingDetection,
             IStores ss,
             HealthCheckService hcs,
+            ClientAuditEventReporter caer,
             DaemonLaunchTasks dlts)
     {
         _imce2core = imce.imce();
@@ -105,6 +109,7 @@ public class Core implements IModule
         _dbsetup = dbsetup;
         _tamperingDetection = tamperingDetection;
         _hcs = hcs;
+        _caer = caer;
         _dlts = dlts;
     }
 
@@ -132,6 +137,13 @@ public class Core implements IModule
         // LinkerRootMap to be initialized and that is the responsibility of the Linker
         _linker.init_();
         _ps.init_();
+
+        // this service should not be enabled
+        // unless auditing is allowed for this
+        // installation
+        if (Audit.AUDIT_ENABLED) {
+            _caer.init_();
+        }
 
         _ss.init_();
         _stack.init_();
@@ -218,6 +230,14 @@ public class Core implements IModule
 
     private void startAll_()
     {
+        // audit service
+        // this service should not be started
+        // unless auditing is allowed for this
+        // installation
+        if (Audit.AUDIT_ENABLED) {
+            _caer.start_();
+        }
+
         // transports
 
         _tps.start_();

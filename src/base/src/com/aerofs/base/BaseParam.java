@@ -225,5 +225,14 @@ public class BaseParam
 
 //        public static final X509Certificate     CHANNEL_CERT =
 //                getCertificateProperty(         "base.audit.downstream_certificate", null);
+
+        // ----
+        // Audit log posting
+
+        public static final int                START_POSTING_AUDIT_EVENTS_AFTER =
+                getIntegerProperty(            "base.audit.post.delay.initial",  30 * (int) C.SEC);
+
+        public static final int                AUDIT_POSTING_INTERVAL =
+                getIntegerProperty(            "base.audit.post.interval",  30 * (int) C.SEC);
     }
 }

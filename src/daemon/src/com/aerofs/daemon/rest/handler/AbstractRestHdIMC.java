@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.rest.handler;
 
-import com.aerofs.daemon.core.audit.ActivityLog;
+import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.AbstractRestEBIMC;

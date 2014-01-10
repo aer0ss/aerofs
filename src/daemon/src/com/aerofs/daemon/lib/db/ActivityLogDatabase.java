@@ -4,6 +4,29 @@
 
 package com.aerofs.daemon.lib.db;
 
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.db.AbstractDBIterator;
+import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+
+import javax.annotation.Nullable;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.Set;
+
 import static com.aerofs.daemon.lib.db.CoreSchema.C_AL_DIDS;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_AL_IDX;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_AL_OID;
@@ -14,30 +37,6 @@ import static com.aerofs.daemon.lib.db.CoreSchema.C_AL_TIME;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_AL_TYPE;
 import static com.aerofs.daemon.lib.db.CoreSchema.T_AL;
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.db.AbstractDBIterator;
-import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.base.id.OID;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 
 /**
  * When possible, use the ActivityLog class which provides a high-level wrapper for this
@@ -148,6 +147,30 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
         } catch (SQLException e) {
             DBUtil.close(_psGA);
             _psGA = null;
+            throw detectCorruption(e);
+        }
+    }
+
+    private PreparedStatement _psGT;
+    @Override
+    public IDBIterator<ActivityRow> getActivitiesAfterIndex_(long idxStart)
+            throws SQLException
+    {
+        try {
+            if (_psGT == null) _psGT = c().prepareStatement(
+                    "select " + C_AL_IDX + "," + C_AL_SIDX + "," + C_AL_OID + "," +
+                    C_AL_TYPE + "," + C_AL_PATH + "," + C_AL_PATH_TO + "," + C_AL_DIDS + "," +
+                    C_AL_TIME + " from " + T_AL + " where " + C_AL_IDX + ">? order by " + C_AL_IDX +
+                    " asc");
+
+            _psGT.setLong(1, idxStart);
+            ResultSet rs = _psGT.executeQuery();
+
+            return new DBIterActivityRow(rs);
+
+        } catch (SQLException e) {
+            DBUtil.close(_psGT);
+            _psGT = null;
             throw detectCorruption(e);
         }
     }

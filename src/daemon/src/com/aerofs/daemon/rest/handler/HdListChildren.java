@@ -3,7 +3,7 @@ package com.aerofs.daemon.rest.handler;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.audit.OutboundEventLogger;
+import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import static com.aerofs.daemon.core.audit.OutboundEventLogger.META_REQUEST;
+import static com.aerofs.daemon.core.activity.OutboundEventLogger.META_REQUEST;
 
 public class HdListChildren extends AbstractRestHdIMC<EIListChildren>
 {

@@ -27,6 +27,7 @@ final class DiagnosticsDumper implements Runnable
 
     private static final Logger l = Loggers.getLogger(DiagnosticsDumper.class);
 
+    private final Object _locker = new Object();
     private final CoreQueue _q;
     private final DevicePresence _dp;
     private final Transports _tps;
@@ -91,17 +92,17 @@ final class DiagnosticsDumper implements Runnable
             @Override
             public void handle_()
             {
-                synchronized (deviceDiagnostics) {
+                synchronized (_locker) {
                     deviceDiagnostics.set(_dp.dumpDiagnostics());
-                    deviceDiagnostics.notifyAll();
+                    _locker.notifyAll();
                 }
             }
         }, Prio.LO);
 
-        synchronized (deviceDiagnostics) {
+        synchronized (_locker) {
             if(deviceDiagnostics.get() == null) {
                 try {
-                    deviceDiagnostics.wait(MAX_DEVICE_DIAGNOSTICS_WAIT_TIME);
+                    _locker.wait(MAX_DEVICE_DIAGNOSTICS_WAIT_TIME);
                 } catch (InterruptedException e) {
                     l.warn("interrupted during wait for device diagnostics dump");
                 }
