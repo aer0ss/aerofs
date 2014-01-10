@@ -184,7 +184,6 @@ public class OSUtilWindows implements IOSUtil
      */
     public static boolean isInvalidWin32FileName(String name)
     {
-        Preconditions.checkState(!name.isEmpty());
         return name.length() > 255 || INVALID_FILENAME_CHARS.matcher(name).find();
     }
 
