@@ -27,6 +27,8 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.rocklog.Defect;
+import com.aerofs.rocklog.Defect.Priority;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 
@@ -131,6 +133,13 @@ public abstract class AbstractTestMightCreate extends AbstractTest
                 return args[0].equals(args[1]);
             }
         });
+
+        Defect d = mock(Defect.class);
+        when(d.addData(anyString(), anyObject())).thenReturn(d);
+        when(d.setException(any(Exception.class))).thenReturn(d);
+        when(d.setMessage(anyString())).thenReturn(d);
+        when(d.setPriority(any(Priority.class))).thenReturn(d);
+        when(rocklog.newDefect(anyString())).thenReturn(d);
 
         when(osutil.isInvalidFileName(anyString())).thenReturn(false);
         mc = new MightCreate(il, ds, dr, sfti, mcop, lrm, new AcceptAll(),

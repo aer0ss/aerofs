@@ -13,11 +13,13 @@ import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtilLinux;
+import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +29,8 @@ import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -137,15 +141,33 @@ public class TestMightCreate extends AbstractMightCreateTest
     }
 
     @Test
-    public void shouldPropagateDriverException() throws Exception
+    public void shouldIgnoreFileIfGetFIDThrowsExFileNotFound() throws Exception
     {
         PathCombo pc = new PathCombo(absRootAnchor, mkpath("foo"));
         when(dr.getFIDAndType(eq(pc._absPath))).thenThrow(new ExFileNotFound(pc._path));
 
-        try {
-            mc.mightCreate_(pc, delBuffer, og, t);
-            fail();
-        } catch (ExFileNotFound e) {}
+        assertEquals(Result.IGNORED, mc.mightCreate_(pc, delBuffer, og, t));
+        verify(rocklog).newDefect("mc.fid.notfound");
+    }
+
+    @Test
+    public void shouldIgnoreFileIfGetFIDThrowsExFileNoPerm() throws Exception
+    {
+        PathCombo pc = new PathCombo(absRootAnchor, mkpath("foo"));
+        when(dr.getFIDAndType(eq(pc._absPath))).thenThrow(new ExFileNoPerm(new File(pc._absPath)));
+
+        assertEquals(Result.IGNORED, mc.mightCreate_(pc, delBuffer, og, t));
+        verify(rocklog).newDefect("mc.fid.noperm");
+    }
+
+    @Test
+    public void shouldIgnoreFileIfGetFIDThrowsException() throws Exception
+    {
+        PathCombo pc = new PathCombo(absRootAnchor, mkpath("foo"));
+        when(dr.getFIDAndType(eq(pc._absPath))).thenThrow(new IOException("foo"));
+
+        assertEquals(Result.IGNORED, mc.mightCreate_(pc, delBuffer, og, t));
+        verify(rocklog).newDefect("mc.fid.exception");
     }
 
     @Test
