@@ -36,7 +36,7 @@
 
 ## The license doesn't exist (i.e. initial setup)
 %else:
-    <form method="post" onsubmit="submitForm(restore); return false;">
+    <form method="post" onsubmit="$('#confirm-firewall-modal').modal('show'); return false;">
         ${csrf.token_input()}
         <h3>Welcome!</h3>
 
@@ -70,6 +70,30 @@
     <button class="btn pull-right" id="continue-btn" type="submit">Continue</button>
 </%def>
 
+<%modal:modal>
+    <%def name="id()">confirm-firewall-modal</%def>
+    <%def name="title()">Firewall rules</%def>
+
+    <p>The following ports need to be open for AeroFS desktop clients and Team
+        Servers to connect to the appliance:</p>
+    <ul>
+        <li>TCP ports: 80, 443, 3478, 4433, 5222, 8084, 8888, and 29438.</li>
+        <li>UDP port: 3478.</li>
+    </ul>
+
+    <p>If you have corporate firewalls or VPNs, please configure them to
+        unblock these ports.</p>
+    <p><a target="_blank"
+        href="https://support.aerofs.com/entries/22661589-Things-to-know-before-deploying-AeroFS-Private-Cloud">
+        Read more about network requirements</a>.</p>
+
+    <%def name="footer()">
+        <a class="btn" href="#" data-dismiss="modal">Cancel</a>
+        <a class="btn btn-primary" onclick="submitForm(restore); return false;">
+            I've unblocked the ports. Continue</a>
+    </%def>
+</%modal:modal>
+
 <%progress_modal:html>
     <p>Please wait while the system restores from the backup file...</p>
     Depending on the backup file size, this may take a while.
@@ -93,6 +117,7 @@
     ${upload_license_button.scripts('license-file', 'continue-btn')}
     ${submit_scripts('license-file')}
 
+    ## Enable the restore-from-backup function if it's a initial setup.
     %if not is_license_present:
         <script>
             $(document).ready(function() {
@@ -174,9 +199,9 @@
 
 <%def name="submit_scripts(license_file_input_id)">
     <script>
-        ## postLicenseUpload a callback function after the license file is uploaded.
-        ## Required signature: post_license_file_upload(onSuccess, onFailure).
-        ## May be null
+        ## @param postLicenseUpload a callback function after the license file
+        ##  is uploaded. May be null. Expected signature:
+        ##      postLicenseUpload(onSuccess, onFailure).
         function submitForm(postLicenseUpload) {
             ## Go to the next page if no license file is specified. This is
             ## needed for license_authorized_page.mako to skip license upload if
