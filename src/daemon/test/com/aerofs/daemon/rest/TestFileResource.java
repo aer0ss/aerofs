@@ -3,11 +3,16 @@ package com.aerofs.daemon.rest;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.rest.api.CommonMetadata;
 import com.google.common.io.ByteStreams;
+import com.google.common.util.concurrent.SettableFuture;
+import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.response.Response;
 import org.junit.Assert;
 import org.junit.Before;
@@ -383,4 +388,20 @@ public class TestFileResource extends AbstractRestTest
         Assert.assertArrayEquals(Arrays.copyOfRange(FILE_CONTENT, 3, FILE_CONTENT.length),
                 ByteStreams.toByteArray(m.getBodyPart(1).getInputStream()));
     }
+
+    @Test
+    public void shouldCreateFile() throws Exception
+    {
+        SettableFuture<SOID> soid = whenCreate(Type.FILE, "", "foo.txt");
+
+        givenAcces()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
+        .expect()
+                .statusCode(201)
+                .body("id", equalToFutureObject(soid))
+                .body("name", equalTo("foo.txt"))
+        .when().post("/v0.10/files");
+    }
+
 }
