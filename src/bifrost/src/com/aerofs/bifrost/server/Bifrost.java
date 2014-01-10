@@ -53,7 +53,6 @@ public class Bifrost extends Service
 {
     static
     {
-        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
         Loggers.init();
     }
 
@@ -97,6 +96,8 @@ public class Bifrost extends Service
 
     public static void main(String[] args) throws Exception
     {
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
+
         Properties extra = new Properties();
         if (args.length > 0) extra.load(new FileInputStream(args[0]));
 

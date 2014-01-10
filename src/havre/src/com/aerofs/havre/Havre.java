@@ -38,18 +38,6 @@ public class Havre
 {
     static {
         Loggers.init();
-
-        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler()
-        {
-            @Override
-            public void uncaughtException(Thread t, Throwable e)
-            {
-                System.err.println("uncaught exception thd:" + t.getName()
-                        + " err:" + e + " - kill system");
-                e.printStackTrace(System.err);
-                System.exit(1);
-            }
-        });
     }
 
     private static final Logger l = Loggers.getLogger(Havre.class);
@@ -94,6 +82,18 @@ public class Havre
 
     public static void main(String[] args) throws Exception
     {
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler()
+        {
+            @Override
+            public void uncaughtException(Thread t, Throwable e)
+            {
+                System.err.println("uncaught exception thd:" + t.getName()
+                        + " err:" + e + " - kill system");
+                e.printStackTrace(System.err);
+                System.exit(1);
+            }
+        });
+
         Properties extra = new Properties();
         if (args.length > 0) extra.load(new FileInputStream(args[0]));
 
