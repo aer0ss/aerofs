@@ -15,6 +15,8 @@ import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ex.ExFileNoPerm;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.rocklog.RockLog;
@@ -130,9 +132,27 @@ public class MightCreate
             return Result.IGNORED;
         }
 
-        FIDAndType fnt = _dr.getFIDAndType(pcPhysical._absPath);
+        FIDAndType fnt = null;
+        try {
+            fnt = _dr.getFIDAndType(pcPhysical._absPath);
+            // TODO: report to UI if FID null (symlink or special file)
+        } catch (ExFileNoPerm e) {
+            // TODO: report to UI
+            l.warn("no perm {}", pcPhysical);
+            _rocklog.newDefect("mc.fid.noperm")
+                    .send();
+        } catch (ExFileNotFound e) {
+            l.warn("not found {}", pcPhysical);
+            _rocklog.newDefect("mc.fid.notfound")
+                    .send();
+        } catch (Exception e) {
+            l.warn("could not determine fid {}", pcPhysical);
+            _rocklog.newDefect("mc.fid.exception")
+                    .setException(e)
+                    .send();
+        }
 
-        // OS-specific files should be ignored
+        // ignore files for which we cannot get an FID
         if (fnt == null) return Result.IGNORED;
 
         SOID parent = _ds.resolveNullable_(pcPhysical._path.removeLast());
@@ -162,6 +182,7 @@ public class MightCreate
         //       after a full scan happened, the other devices will see one of the other
         //       hard linked object appear only after another full scan.
         if (sourcePath != null && detectHardLink_(sourcePath, targetPath, fnt._fid)) {
+            // TODO: report to UI
             l.info("ignore hardlink {}<->{}",
                     ObfuscatingFormatters.obfuscatePath(sourcePath),
                     ObfuscatingFormatters.obfuscatePath(targetPath));
