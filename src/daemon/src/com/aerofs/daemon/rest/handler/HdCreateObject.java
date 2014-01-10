@@ -6,7 +6,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.util.RestObject;
@@ -14,7 +13,6 @@ import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.MetadataBuilder;
 import com.aerofs.daemon.rest.util.RestObjectResolver;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.rest.api.Error;
 import com.aerofs.restless.Service;
@@ -24,29 +22,22 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.net.URI;
 
-public class HdCreateObject extends AbstractHdIMC<EICreateObject>
+public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
 {
-    private final RestObjectResolver _acces;
     private final ObjectCreator _oc;
-    private final TransManager _tm;
-    private final MetadataBuilder _mb;
-    private final EntityTagUtil _etags;
 
     @Inject
     public HdCreateObject(RestObjectResolver access, ObjectCreator oc, TransManager tm,
             MetadataBuilder mb, EntityTagUtil etags)
     {
-        _acces = access;
+        super(access, etags, mb, tm);
         _oc = oc;
-        _tm = tm;
-        _mb = mb;
-        _etags = etags;
     }
 
     @Override
-    protected void handleThrows_(EICreateObject ev, Prio prio) throws Exception
+    protected void handleThrows_(EICreateObject ev) throws Exception
     {
-        OA oaParent = _acces.resolveWithPermissions_(ev._parent, ev._user, Permissions.EDITOR);
+        OA oaParent = _access.resolveWithPermissions_(ev._parent, ev._user, Permissions.EDITOR);
 
         Trans t = _tm.begin_();
         SOID soid;

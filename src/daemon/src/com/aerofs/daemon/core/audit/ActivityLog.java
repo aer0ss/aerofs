@@ -1,9 +1,11 @@
-package com.aerofs.daemon.core;
+package com.aerofs.daemon.core.audit;
 
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.CREATION_VALUE;
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.DELETION_VALUE;
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATION_VALUE;
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.OUTBOUND_VALUE;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -12,6 +14,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
@@ -102,6 +105,11 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
         _aldb = aldb;
     }
 
+    public static boolean isOutbound(ActivityRow ar)
+    {
+        return (ar._type & OUTBOUND_VALUE) != 0;
+    }
+
     private ActivityEntry getEntry_(SOID soid, Trans t)
     {
         Map<SOID, ActivityEntry> map = _tlMap.get(t);
@@ -125,6 +133,31 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
         if (en._path == null) en._path = path;
 
         return en;
+    }
+
+    /**
+     * Multiple core threads can be running concurrently by releasing the core lock tmeporarily.
+     *
+     * We want to automatically associate a mobile DID on behalf of which a request is made so
+     * that all transaction can be tagged with that DID to preserve the audit trail without
+     * requiring all code starting a transaction to be aware of the mobile DID from which the
+     * request may have originated.
+     *
+     * Hence the use of a thread local. See {@link com.aerofs.daemon.rest.handler.AbstractRestHdIMC}
+     * for the actual usage pattern.
+     */
+    private final static ThreadLocal<DID> _tlOrigin = new ThreadLocal<DID>();
+
+    /**
+     * When doing a modification on behalf of an REST API client we want to tag activity log entries
+     * with the mobile DID / app ID associated with the OAuth token authorizing the operation
+     *
+     * NB: this assumes that the request executes in a single core thread.
+     */
+    public static void onBehalfOf(DID did)
+    {
+        checkState((_tlOrigin.get() == null) != (did == null));
+        _tlOrigin.set(did);
     }
 
     @Override
@@ -192,6 +225,8 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
 
     private void committing_(Map<SOID, ActivityEntry> map, Trans t) throws SQLException
     {
+        DID origin = _tlOrigin.get();
+
         for (Entry<SOID, ActivityEntry> en : map.entrySet()) {
             ActivityEntry ae = en.getValue();
 
@@ -201,6 +236,12 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
 
             // the assertion may fail if placed _before_ the above test
             assert ae._path != null;
+
+            // if the trans was made on behalf of a mobile device, at the DID to the set
+            if (origin != null) {
+                // TODO: check that the set of DIDs only contain the local device?
+                ae._dids.add(origin);
+            }
 
             // remove the movement activity if the path is not changed. this may happen if, say,
             // the object is moved to a new location and back to the old one during the transaction.

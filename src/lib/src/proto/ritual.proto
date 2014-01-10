@@ -479,10 +479,18 @@ message GetActivitiesCall {
 message GetActivitiesReply {
 
     enum ActivityType {
+        option allow_alias = true;
+
+        // inbound activities: {CREATION, MODIFICATION, MOVEMENT, DELETION}+
         CREATION = 0x1;
         MODIFICATION = 0x2;
         MOVEMENT = 0x4;
         DELETION = 0x8;
+
+        // outbound activities: TRANSFER | {COMPLETED, CONTENT}*
+        OUTBOUND = 0x10;
+        COMPLETED = 0x01;
+        CONTENT = 0x02;
     }
 
     message PBActivity {

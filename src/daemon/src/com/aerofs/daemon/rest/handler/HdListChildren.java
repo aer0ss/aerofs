@@ -3,15 +3,17 @@ package com.aerofs.daemon.rest.handler;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.audit.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
+import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.daemon.rest.util.EntityTagUtil;
+import com.aerofs.daemon.rest.util.MetadataBuilder;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
 import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.daemon.rest.util.MimeTypeDetector;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -27,25 +29,29 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-public class HdListChildren extends AbstractHdIMC<EIListChildren>
+import static com.aerofs.daemon.core.audit.OutboundEventLogger.META_REQUEST;
+
+public class HdListChildren extends AbstractRestHdIMC<EIListChildren>
 {
-    private final RestObjectResolver _access;
     private final DirectoryService _ds;
     private final IMapSIndex2SID _sidx2sid;
     private final MimeTypeDetector _detector;
+    private final OutboundEventLogger _eol;
 
     @Inject
-    public HdListChildren(RestObjectResolver access, DirectoryService ds, IMapSIndex2SID sidx2sid,
-            MimeTypeDetector detector)
+    public HdListChildren(RestObjectResolver access, EntityTagUtil etags, MetadataBuilder mb,
+            TransManager tm, DirectoryService ds, IMapSIndex2SID sidx2sid,
+            MimeTypeDetector detector, OutboundEventLogger eol)
     {
-        _access = access;
+        super(access, etags, mb, tm);
         _ds = ds;
         _sidx2sid = sidx2sid;
         _detector = detector;
+        _eol = eol;
     }
 
     @Override
-    protected void handleThrows_(EIListChildren ev, Prio prio) throws ExNotFound, SQLException
+    protected void handleThrows_(EIListChildren ev) throws ExNotFound, SQLException
     {
         OA oa = _access.resolveFollowsAnchor_(ev._object, ev._user);
 
@@ -88,6 +94,9 @@ public class HdListChildren extends AbstractHdIMC<EIListChildren>
         // code?) in the request headers but it is outside the scope of the first iteration.
         Collections.sort(files, File.BY_NAME);
         Collections.sort(folders, Folder.BY_NAME);
+
+        // NB: technically we're sending meta about all the children, should we log them too?
+        _eol.log_(META_REQUEST, oa.soid(), ev._did);
 
         ev.setResult_(new ChildrenList(ev._object.toStringFormal(), folders, files));
     }
