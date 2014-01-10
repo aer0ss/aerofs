@@ -4,37 +4,43 @@
 <%namespace name="common" file="backup_common.mako"/>
 <%namespace file="modal.mako" name="modal"/>
 
-<h2>Upgrade your AeroFS Appliance</h2>
+<div class="page-block">
+    <h2>Upgrade your AeroFS Appliance</h2>
 
-<p>This appliance is running version <strong>${current_version}</strong>.
-    You may check the latest release notes
-    <a href="https://support.aerofs.com/entries/23864878" target="_blank">here</a>.
+    <p>This appliance is running version <strong>${current_version}</strong>.
+        You may check the latest release notes
+        <a href="https://support.aerofs.com/entries/23864878" target="_blank">here</a>.
 
     <p>To upgrade the appliance to a new version, please follow these steps:</p>
 
-<ol>
-    <li>
-        Click "Create Backup File" below to create and download a backup file.
-    </li>
-    <li>
-        Shut down this appliance and bring up a new appliance.
-    </li>
-    <li>
-        Configure any of the required network parameters for the new appliance.
-    </li>
-    <li>
-        Select the restore option during the first setup step.
-    </li>
-</ol>
+    <ol>
+        <li>
+            Click "Create Backup File" below to create and download a backup file.
+        </li>
+        <li>
+            Shut down this appliance and bring up a new appliance.
+        </li>
+        <li>
+            Configure any of the required network parameters for the new appliance.
+        </li>
+        <li>
+            Select the restore option during the first setup step.
+        </li>
+    </ol>
+</div>
 
-<hr/>
+<div class="page-block">
+    <p class="alert alert-success"><strong>Note</strong>: when the upgrade is
+        complete, all AeroFS clients and Team Servers will automatically update
+        to the new version within one hour.</p>
+</div>
 
-<p>
+<div class="page-block">
     <button class="btn btn-primary"
             onclick="backup(); return false;">
         Create Backup File
     </button>
-</p>
+</div>
 
 <%modal:modal>
     <%def name="id()">shutdown-modal</%def>
