@@ -26,5 +26,16 @@
         <li><a href="#" onclick="removeFromTeam('${email}', '${devices_url}', $(this)); return false;">Remove from Organization</a></li>
     %endif
 
+    <%
+        publisher_link_text = "Remove as Publisher"  # text displayed for a publisher
+        not_publisher_link_text = "Add as Publisher"  # text displayed for a non-publisher
+    %>
+    %if use_restricted:
+        <li><a href="#" onclick="
+                togglepublisher('${email}', '${publisher_link_text}', '${not_publisher_link_text}', $(this));
+                return false;
+            ">${publisher_link_text if is_publisher else not_publisher_link_text}</a></li>
+    %endif
+
     <li><a href="#" onclick="deactivate('${email}', $(this)); return false;">Delete User</a></li>
 </%def>

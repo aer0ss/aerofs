@@ -134,6 +134,11 @@
             $('.tooltip_admin').tooltip({placement: 'top', 'title' : 'An admin has access to ' +
                     'administrative functions for your organization: provision Team Servers, manage users and shared ' +
                     'folders, add/remove other admins, manage payment, and so on.'});
+            $('.tooltip_publisher').tooltip({placement: 'top', 'title' :
+                    'A publisher is a user in your organization who can be made ' +
+                    'an editor of externally shared folders. Since you have ' +
+                    'enabled restricted external sharing, users in your organization ' +
+                    'cannot edit externally shared folders by default.'});
         }
 
         ## done and always are callbacks for AJAX success and completion. They can be undefined.
@@ -217,6 +222,27 @@
 
                 ## update the link text
                 $link.html(becomeAdmin ? adminLinkText : userLinkText);
+            })
+            .fail(showErrorMessageFromResponse);
+        }
+
+        ## Toggles a user's publisher status
+        ##
+        ## user: the user id
+        ## publisherLinkText: link text for a publisher
+        ## notpublisherLinkText: link text for a non-publisher
+        ## link: the jquery object of the calling link
+        function togglepublisher(user, publisherLinkText, notpublisherLinkText, $link) {
+            var toPublisher = ($link.html() === notpublisherLinkText);
+            var route = toPublisher ?
+                "${request.route_path('json.make_publisher')}" :
+                "${request.route_path('json.remove_publisher')}"
+
+            $.post(route, {"${url_param_user}": user})
+            .done(function() {
+                showSuccessMessage(toPublisher ? "The user is now a publisher" : "The user is no longer a publisher");
+                $link.closest('tr').find('.publisher_label').toggleClass('hidden', !toPublisher);
+                $link.html(toPublisher ? publisherLinkText : notpublisherLinkText);
             })
             .fail(showErrorMessageFromResponse);
         }

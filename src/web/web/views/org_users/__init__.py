@@ -8,3 +8,5 @@ def includeme(config):
     config.add_route('json.delete_org_invitation', 'users/invitations/delete')
     config.add_route('json.remove_user', 'users/remove')
     config.add_route('json.deactivate_user', 'users/deactivate')
+    config.add_route('json.make_publisher', 'users/make_publisher')
+    config.add_route('json.remove_publisher', 'users/remove_publisher')

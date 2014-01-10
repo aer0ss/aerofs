@@ -182,6 +182,9 @@ def is_audit_enabled(settings):
     return is_audit_allowed(settings) and \
            str2bool(settings.get('base.audit.enabled', False))
 
+def is_restricted_external_sharing_enabled(settings):
+    return str2bool(settings.get('sharing_rules.restrict_external_sharing', False))
+
 def is_configuration_initialized(settings):
     """
     Return whether the configuration is initialized. Always return Rrue in

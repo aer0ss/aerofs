@@ -7,7 +7,7 @@ from pyramid.renderers import render
 from aerofs_sp.gen.common_pb2 import PBException
 from web import util
 from web.sp_util import exception2error
-from web.util import error_on_invalid_email, get_rpc_stub, is_private_deployment, str2bool
+from web.util import error_on_invalid_email, get_rpc_stub, is_private_deployment, str2bool, is_restricted_external_sharing_enabled
 from web.views.payment import stripe_util
 from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 
@@ -54,11 +54,21 @@ def json_list_org_users(request):
     sp = get_rpc_stub(request)
     reply = sp.list_organization_members(count, offset)
 
+    use_restricted = is_restricted_external_sharing_enabled(request.registry.settings)
+    if use_restricted:
+        wl_reply = sp.list_whitelisted_users()
+        publishers = set([u.user_email for u in wl_reply.user])
+    else:
+        # if restricted external sharing is not being used, pretend the list
+        # of publishers is empty so all of the labels are hidden
+        publishers = set()
+
     data = [{
                 'name': _render_full_name(ul.user, session_user),
-                'label': _render_label(ul.level),
+                'label': _render_label(ul.level, ul.user.user_email in publishers),
                 'email': markupsafe.escape(ul.user.user_email),
-                'options': _render_user_options_link(request, ul, session_user)
+                'options': _render_user_options_link(request, ul, session_user,
+                    ul.user.user_email in publishers if use_restricted else None)
             } for ul in reply.user_and_level]
 
     return {
@@ -68,11 +78,15 @@ def json_list_org_users(request):
         'aaData': data
     }
 
-def _render_label(level):
-    hidden = '' if level == ADMIN else 'hidden'
-    return '<span class="admin_label label {} tooltip_admin">admin</span>'.format(hidden)
+def _render_label(level, is_publisher):
+    admin_hidden = '' if level == ADMIN else 'hidden'
+    publisher_hidden = '' if is_publisher else 'hidden'
+    return '''
+    <span class="admin_label label label-info {} tooltip_admin">admin</span>
+    <span class="publisher_label label label-info {} tooltip_publisher">publisher</span>
+    '''.format(admin_hidden, publisher_hidden)
 
-def _render_user_options_link(request, user_and_level, session_user):
+def _render_user_options_link(request, user_and_level, session_user, is_publisher):
     user = user_and_level.user
     user_is_session_user = (user.user_email == session_user)
 
@@ -93,6 +107,8 @@ def _render_user_options_link(request, user_and_level, session_user):
                                         'email': user.user_email,
                                         'is_admin': (user_and_level.level == ADMIN),
                                         'is_private': is_private_deployment(request.registry.settings),
+                                        'is_publisher': is_publisher,
+                                        'use_restricted': is_publisher is not None,
         }, request=request)
 
 
@@ -174,13 +190,13 @@ def json_remove_user(request):
     stripe_util.update_stripe_subscription(stripe_data)
     return HTTPOk()
 
-
 @view_config(
     route_name = 'json.deactivate_user',
     renderer = 'json',
     permission = 'admin',
     request_method = 'POST'
 )
+
 def json_deactivate_user(request):
     user = request.params[URL_PARAM_USER]
     erase_devices = str2bool(request.params[URL_PARAM_ERASE_DEVICES])
@@ -188,3 +204,28 @@ def json_deactivate_user(request):
     stripe_data = sp.deactivate_user(user, erase_devices).stripe_data
     stripe_util.update_stripe_subscription(stripe_data)
     return HTTPOk()
+
+@view_config(
+    route_name = 'json.make_publisher',
+    renderer = 'json',
+    permission = 'admin',
+    request_method = 'POST'
+)
+def json_make_publisher(request):
+    user = request.params[URL_PARAM_USER]
+    sp = get_rpc_stub(request)
+    sp.add_user_to_whitelist(user)
+    return HTTPOk()
+
+@view_config(
+    route_name = 'json.remove_publisher',
+    renderer = 'json',
+    permission = 'admin',
+    request_method = 'POST'
+)
+def json_remove_publisher(request):
+    user = request.params[URL_PARAM_USER]
+    sp = get_rpc_stub(request)
+    sp.remove_user_from_whitelist(user)
+    return HTTPOk()
+
