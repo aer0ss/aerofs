@@ -11,16 +11,16 @@
 </div>
 
 <%def name="items_for_other_users()">
-    <%
-        become_admin = 'false' if is_admin else 'true'
-        currentText = "Add as Admin"
-        newText = "Remove as Admin"
-        # swap currentText and newText if user already is an admin
-        if is_admin: newText, currentText = currentText, newText
-    %>
     <li class="divider"></li>
 
-    <li><a href="#" onclick="toggleAdmin('${email}', ${become_admin}, '${newText}', $(this)); return false;">${currentText}</a></li>
+    <%
+        admin_link_text = "Remove as Admin"  # text displayed for an admin
+        user_link_text = "Add as Admin"      # text displayed for a user
+    %>
+    <li><a href="#" onclick="
+            toggleAdmin('${email}', '${admin_link_text}', '${user_link_text}', $(this));
+            return false;
+        ">${admin_link_text if is_admin else user_link_text}</a></li>
 
     %if not is_private:  ## We do not support removing users on enterprise deployment
         <li><a href="#" onclick="removeFromTeam('${email}', '${devices_url}', $(this)); return false;">Remove from Organization</a></li>

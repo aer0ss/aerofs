@@ -199,10 +199,11 @@
         ## Toggles an user between ADMIN and USER level
         ##
         ## user: the user id
-        ## becomeAdmin: true to make the user an admin, false to make it a regular user
-        ## newLinkText: the new text that should be displayed in the link if the change was successful
+        ## adminLinkText: link text for an admin
+        ## userLinkText: link text for a user
         ## link: the jquery object of the calling link
-        function toggleAdmin(user, becomeAdmin, newLinkText, $link) {
+        function toggleAdmin(user, adminLinkText, userLinkText, $link) {
+            var becomeAdmin = ($link.html() === userLinkText);
             $.post("${request.route_path('json.set_auth_level')}", {
                     "${url_param_user}": user,
                     "${url_param_level}": becomeAdmin ? ${admin_level} : ${user_level}
@@ -214,13 +215,8 @@
                 ## toggle the 'admin' label in the user row
                 $link.closest('tr').find('.admin_label').toggleClass('hidden', !becomeAdmin);
 
-                ## replace the onclick handler of the link to do the opposite operation now
-                ## note: trust me, doing link[0].onclick is the best way to do it. Do not use .click() or .on('click'),
-                ## as this will cause the dropdown menu to stay open (as well as other problems)
-                $link[0].onclick = function() { toggleAdmin(user, !becomeAdmin, $link.html(), $link); return false; };
-
                 ## update the link text
-                $link.html(newLinkText);
+                $link.html(becomeAdmin ? adminLinkText : userLinkText);
             })
             .fail(showErrorMessageFromResponse);
         }
