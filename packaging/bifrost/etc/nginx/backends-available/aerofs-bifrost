@@ -1,6 +1,6 @@
 location /auth/ {
     # block anything not matching the following whitelist
-    if ($uri !~ ^/auth/(authorize|token|tokeninfo)/?$) { return 404; }
+    if ($uri !~ ^/auth/(authorize|token(/[a-f0-9]+)?|tokeninfo)/?$) { return 404; }
     # proxy to Bifrost, the OAuth server, stripping the /auth/ uri prefix
     rewrite /auth/(.+) /$1 break;
     proxy_pass http://127.0.0.1:8700;
