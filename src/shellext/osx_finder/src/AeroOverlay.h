@@ -10,7 +10,6 @@
     AeroIconPair* dlIcon;
     AeroIconPair* ulIcon;
     AeroIconPair* isIcon;
-    AeroIconPair* psIcon;
     AeroIconPair* osIcon;
     AeroIconPair* cfIcon;
 }

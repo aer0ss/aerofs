@@ -11,7 +11,6 @@
 typedef enum {
     NONE,
     OUT_SYNC,
-    PARTIAL_SYNC,
     IN_SYNC,
     DOWNLOADING,
     UPLOADING,

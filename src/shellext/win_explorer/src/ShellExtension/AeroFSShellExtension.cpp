@@ -164,7 +164,7 @@ static int overlayForStatus(const PBPathStatus& status) {
 	if (status.flags() & PBPathStatus_Flag_CONFLICT)	return O_Conflict;
 	switch (status.sync()) {
 		case PBPathStatus_Sync_OUT_SYNC:				return O_OutSync;
-		case PBPathStatus_Sync_PARTIAL_SYNC:			return O_PartialSync;
+		case PBPathStatus_Sync_PARTIAL_SYNC:			return O_InSync;
 		case PBPathStatus_Sync_IN_SYNC:					return O_InSync;
 		default: break;
 	}

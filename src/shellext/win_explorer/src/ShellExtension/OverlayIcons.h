@@ -90,17 +90,6 @@ public:
 };
 
 class
-	__declspec(uuid("882108B4-26E6-4926-BC70-EA1D738D5DEB"))
-	__declspec(novtable)
-PartialSyncOverlay : public OverlayBase<PartialSyncOverlay>
-{
-public:
-	static wchar_t* name();
-	Overlay overlayType() const;
-	int overlayIcon() const;
-};
-
-class
 	__declspec(uuid("882108B5-26E6-4926-BC70-EA1D738D5DEB"))
 	__declspec(novtable)
 OutSyncOverlay : public OverlayBase<OutSyncOverlay>
@@ -125,6 +114,5 @@ public:
 OBJECT_ENTRY_AUTO(__uuidof(DownloadOverlay), DownloadOverlay)
 OBJECT_ENTRY_AUTO(__uuidof(UploadOverlay), UploadOverlay)
 OBJECT_ENTRY_AUTO(__uuidof(InSyncOverlay), InSyncOverlay)
-OBJECT_ENTRY_AUTO(__uuidof(PartialSyncOverlay), PartialSyncOverlay)
 OBJECT_ENTRY_AUTO(__uuidof(OutSyncOverlay), OutSyncOverlay)
 OBJECT_ENTRY_AUTO(__uuidof(ConflictOverlay), ConflictOverlay)

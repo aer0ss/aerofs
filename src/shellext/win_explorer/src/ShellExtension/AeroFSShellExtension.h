@@ -24,7 +24,6 @@ class PathStatusNotification;
 enum Overlay {
 	O_None,
 	O_InSync,
-	O_PartialSync,
 	O_OutSync,
 	O_Uploading,
 	O_Downloading,

@@ -129,23 +129,6 @@ int InSyncOverlay::overlayIcon() const
 	return IDI_IN_SYNC_OVERLAY;
 }
 
-/// Partial Sync Overlay ///
-
-wchar_t * PartialSyncOverlay::name()
-{
-	return L"4_AeroFSShellExtension";
-}
-
-Overlay PartialSyncOverlay::overlayType() const
-{
-	return O_PartialSync;
-}
-
-int PartialSyncOverlay::overlayIcon() const
-{
-	return IDI_PARTIAL_SYNC_OVERLAY;
-}
-
 /// Out Sync Overlay ///
 
 wchar_t * OutSyncOverlay::name()

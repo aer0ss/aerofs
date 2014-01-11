@@ -16,7 +16,6 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
     [ulIcon release];
     [cfIcon release];
     [isIcon release];
-    [psIcon release];
     [osIcon release];
 
     [super dealloc];
@@ -37,7 +36,6 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
     cfIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"conflict_overlay" ofType:@"icns"]];
 
     isIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"in_sync_overlay" ofType:@"icns"]];
-    psIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"partial_sync_overlay" ofType:@"icns"]];
     osIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"out_of_sync_overlay" ofType:@"icns"]];
 
     // Swizzlle methods
@@ -69,7 +67,6 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
     Overlay status = [[AeroFinderExt instance] overlayForPath:path];
     switch (status) {
         case IN_SYNC:       result = isIcon; break;
-        case PARTIAL_SYNC:  result = psIcon; break;
         case OUT_SYNC:      result = osIcon; break;
         case DOWNLOADING:   result = dlIcon; break;
         case UPLOADING:     result = ulIcon; break;
