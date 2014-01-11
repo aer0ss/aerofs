@@ -82,8 +82,8 @@ def _render_label(level, is_publisher):
     admin_hidden = '' if level == ADMIN else 'hidden'
     publisher_hidden = '' if is_publisher else 'hidden'
     return '''
-    <span class="admin_label label label-info {} tooltip_admin">admin</span>
-    <span class="publisher_label label label-info {} tooltip_publisher">publisher</span>
+    <span class="admin_label label {} tooltip_admin">admin</span>
+    <span class="publisher_label label label-warning {} tooltip_publisher">publisher</span>
     '''.format(admin_hidden, publisher_hidden)
 
 def _render_user_options_link(request, user_and_level, session_user, is_publisher):
