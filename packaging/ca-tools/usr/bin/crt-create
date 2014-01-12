@@ -1,5 +1,23 @@
 #!/bin/bash
 
+function valid_ip()
+{
+    local  ip=$1
+    local  stat=1
+
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
+    then
+        OIFS=$IFS
+        IFS='.'
+        ip=($ip)
+        IFS=$OIFS
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        stat=$?
+    fi
+    return $stat
+}
+
 CA_HOST="joan.aerofs.com"
 
 if [ $# -ne 1 ] && [ $# -ne 2 ]
@@ -40,10 +58,32 @@ openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
 
 echo ">>> Generating CSR"
 
-openssl req -new \
+echo "[ req ]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+prompt = no
+
+[ req_distinguished_name ]
+C = US
+ST = CA
+L = SF
+O = aerofs.com
+CN = $SERVER_NAME
+
+[ v3_req ]" > openssl.cnf
+
+if valid_ip $SERVER_NAME
+then
+    echo "subjectAltName = @alt_names
+
+[ alt_names ]
+IP.1 = $SERVER_NAME" >> openssl.cnf
+fi
+
+openssl req -new -reqexts v3_req \
     -key "$SERVER_PKCS8_KEY_FILENAME" \
     -out "$SERVER_CSR_FILENAME" \
-    -subj "/C=US/ST=CA/L=SF/O=aerofs.com/OU=na/CN=$SERVER_NAME"
+    -config openssl.cnf
 
 echo ">>> Submitting request to CA"
 
