@@ -114,8 +114,19 @@
         </div>
 
         ## Message bar
-        <div class="container">
-            <div id="message_bar" class="span6 offset3 message_container"></div>
+        <div id="flash-msg-wrap">
+            <span id="flash-msg-success" class="flash-msg" style="display: none">
+            </span>
+            <span id="flash-msg-error" class="flash-msg" style="display: none">
+                <table>
+                    <tr><td id="flash-msg-error-body">
+                    </td>
+                    <td id="flash-msg-error-close">
+                        <a class="close" onclick="fadeOutErrorMessage(); return false">
+                            &times;</a>
+                    </td></tr>
+                </table>
+            </span>
         </div>
 
         ## Main body

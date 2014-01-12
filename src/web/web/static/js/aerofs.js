@@ -1,44 +1,33 @@
 // HTML code is allowed in the message
 function showErrorMessage(message) {
-    cancelSlideUpTimer();
-    var $bar = $("#message_bar");
-    $bar.slideUp("normal", "easeInOutBack", function() {
-        $bar.empty();
-        $bar.append($('<div></div>')
-            .addClass('flash_message error_message')
-            .html(normalize(message)));
-        $bar.slideDown("normal", "easeInOutBack", function() {
-            delayedSlideUp($bar);
-        });
-    });
+    hideAllMessages();
+    $('#flash-msg-error-body').html(normalize(message));
+    $("#flash-msg-error").fadeIn();
 }
+
+var successMessageTimer;
 
 // HTML code is allowed in the message
 function showSuccessMessage(message) {
-    cancelSlideUpTimer();
-    var $bar = $("#message_bar");
-    $bar.slideUp("normal", "easeInOutBack", function() {
-        $bar.empty();
-        $bar.append($('<div></div>')
-            .addClass('flash_message success_message')
-            .html(normalize(message)));
-        $bar.slideDown("normal", "easeInOutBack", function() {
-            delayedSlideUp($bar);
-        });
-    });
-}
+    hideAllMessages();
+    var $msg = $("#flash-msg-success");
+    $msg.html(normalize(message));
+    $msg.fadeIn();
 
-var slideUpTimer;
-
-function cancelSlideUpTimer() {
-    if (slideUpTimer) window.clearTimeout(slideUpTimer);
-}
-
-// Slide the bar up in 8 seconds
-function delayedSlideUp($bar) {
-    slideUpTimer = window.setTimeout(function() {
-        $bar.slideUp("normal", "easeInOutBack");
+    // Fade out the message in 8 seconds
+    successMessageTimer = window.setTimeout(function() {
+        $msg.fadeOut();
     }, 8000);
+}
+
+function hideAllMessages() {
+    $("#flash-msg-success").hide(0);
+    $("#flash-msg-error").hide(0);
+    if (successMessageTimer) window.clearTimeout(successMessageTimer);
+}
+
+function fadeOutErrorMessage() {
+    $("#flash-msg-error").fadeOut();
 }
 
 function normalize(message) {

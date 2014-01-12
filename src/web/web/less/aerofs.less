@@ -195,35 +195,49 @@ div.input_container.submit {
 ////////
 // Messages
 
-#message_bar {
-    position: fixed;
-    top: 0;
+#flash-msg-wrap {
+  width: 100%;
+  height: 0;
+  left: 0;
+  top: 0;
+  text-align: center;
+  position: fixed;
+  // Leave sufficient margin to avoid covering the top navigation bar.
+  margin-top: 46px;
+  // Bootstrap's modals have pretty big z-index. Use a bigger index here to
+  // avoid the message being covered by modals.
+  z-index: 100000;
 }
 
-div.message_container {
-    display: none;
-    // Bootstrap's modals have pretty big z-index. Use a bigger index here to
-    // avoid the message being covered by modals.
-    z-index: 100000;
+.flash-msg {
+  // A block-level element is necessary to apply max-width
+  display: inline-block;
+  max-width: 550px;
+  text-align: left;
+  padding: 4px 17px;
+  border-radius: @inputBorderRadius;
 }
 
-div.flash_message {
-    padding: 8px;
-    text-align: center;
-    border-top-right-radius: 0;
-    border-top-left-radius: 0;
-    border-bottom-right-radius: @inputBorderRadius * 2;
-    border-bottom-left-radius: @inputBorderRadius * 2;
+#flash-msg-success {
+  color: darken(@successMessageColor, 50%);
+  background-color: @successMessageColor;
+  border: 1px solid darken(@successMessageColor, 50%);
 }
 
-div.error_message {
-    background-color: @errorMessageColor;
-    margin: 0 auto;    // for center alignment
+#flash-msg-error {
+  color: darken(@errorMessageColor, 50%);
+  background-color: @errorMessageColor;
+  border: 1px solid darken(@errorMessageColor, 50%);
 }
 
-div.success_message {
-    background-color: @successMessageColor;
-    margin: 0 auto;    // for center alignment
+#flash-msg-error td {
+  padding: 0;
+}
+
+#flash-msg-error td#flash-msg-error-close {
+  vertical-align: top;
+  padding-left: 10px;
+  padding-top: 3px;
 }
 
 div.jumbo_banner {
