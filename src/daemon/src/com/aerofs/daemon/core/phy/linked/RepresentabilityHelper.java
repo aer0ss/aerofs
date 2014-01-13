@@ -25,6 +25,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -158,7 +159,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
     {
         int total = 0;
         for (LinkerRoot r : _lrm.getAllRoots_()) {
-            // initialize NRO counter the first time a notificaiton is sent
+            // initialize NRO counter the first time a notification is sent
             if (_nroCount.get(r.sid()) == null) {
                 updateCount_(r.sid());
             }
@@ -168,16 +169,39 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
                 .sendNotification(Notifications.newNROCountNotification(total));
     }
 
+    private static class NROCounter implements Function<SOID, Void> {
+        int n = 0;
+        @Override
+        public @Nullable Void apply(@Nullable SOID soid)
+        {
+            ++n;
+            return null;
+        }
+    }
+
     private void updateCount_(SID sid)
     {
-        String[] children = _factFile.create(_lrm.auxRoot_(sid), AuxFolder.NON_REPRESENTABLE._name).list();
-        int n = 0;
-        if (children != null) {
-            for (String child : children) {
-                if (LinkedPath.soidFromFileNameNullable(child) != null) ++n;
+        NROCounter c = new NROCounter();
+        forNonRepresentableObjects_(sid, c);
+        _nroCount.put(sid, c.n);
+    }
+
+    void forNonRepresentableObjects_(SID sid, Function<SOID, Void> c)
+    {
+        String absPath = Util.join(_lrm.auxRoot_(sid), AuxFolder.NON_REPRESENTABLE._name);
+        String[] children = _factFile.create(absPath).list();
+        if (children == null) return;
+        for (String child : children) {
+            SOID soid = LinkedPath.soidFromFileNameNullable(child);
+            // guard against invalid files messing up the count
+            if (soid == null) continue;
+            try {
+                OA oa = _mdb.getOA_(soid);
+                if (oa != null && !oa.isExpelled() && isNonRepresentable(oa)) c.apply(soid);
+            } catch (SQLException e) {
+                l.error("could not determine nro status {}", soid, e);
             }
         }
-        _nroCount.put(sid, n);
     }
 
     void updateSOID_(SOID oldSOID, SOID newSOID, Trans t) throws SQLException

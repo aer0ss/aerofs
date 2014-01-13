@@ -23,8 +23,8 @@ import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableCollection.Builder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
@@ -46,6 +46,8 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;
+
+import javax.annotation.Nullable;
 
 public class LinkedStorage implements IPhysicalStorage
 {
@@ -209,28 +211,25 @@ public class LinkedStorage implements IPhysicalStorage
     public ImmutableCollection<NonRepresentableObject> listNonRepresentableObjects_()
             throws IOException, SQLException
     {
-        ImmutableCollection.Builder<NonRepresentableObject> bd = ImmutableList.builder();
+        final ImmutableCollection.Builder<NonRepresentableObject> bd = ImmutableList.builder();
 
         for (LinkerRoot r : _lrm.getAllRoots_()) {
-            String nro = Util.join(r.absAuxRoot(), AuxFolder.NON_REPRESENTABLE._name);
-            listNonRepresentableObjects_(nro, bd);
+            _rh.forNonRepresentableObjects_(r.sid(), new Function<SOID, Void>() {
+                @Override
+                public @Nullable Void apply(@Nullable SOID soid)
+                {
+                    try {
+                        bd.add(new NonRepresentableObject(soid, _rh.conflict(soid)));
+                    } catch (SQLException e) {
+                        l.error("could not determine conflict status {}", soid, e);
+                    }
+                    return null;
+                }
+            });
         }
 
         return bd.build();
     }
-
-    private void listNonRepresentableObjects_(String absPath, Builder<NonRepresentableObject> bd)
-            throws IOException, SQLException
-    {
-        String[] children = new File(absPath).list();
-        for (String child : children) {
-            SOID soid = LinkedPath.soidFromFileNameNullable(child);
-            if (soid != null) {
-                bd.add(new NonRepresentableObject(soid, _rh.conflict(soid)));
-            }
-        }
-    }
-
 
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException
     {
