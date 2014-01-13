@@ -80,14 +80,27 @@
         <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}" ></script>
         <script src="{{ url_for('static', filename='js/aerofs.js') }}" ></script>
 
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=True) %}
+        {# TODO: this could use some cleaning up.  In particular, it would be
+        nice for this to not generate JS blocks, but simply add a piece of DOM
+        that the JS would interact with unconditionally. #}
             {% if messages %}
-                <script type="text/javascript">
-                    $(document).ready(function() {
-                        {# Only show the last message #}
-                        showErrorMessage("{{ messages[-1] }}");
-                    });
-                </script>
+                {% for category, message in messages %}
+                    {% if category == "error" %}
+                        <script type="text/javascript">
+                            $(document).ready(function() {
+                                showErrorMessage("{{ message }}");
+                            });
+                        </script>
+                    {% endif %}
+                    {% if category == "success" %}
+                        <script type="text/javascript">
+                            $(document).ready(function() {
+                                showSuccessMessage("{{ message }}");
+                            });
+                        </script>
+                    {% endif %}
+                {% endfor %}
             {% endif %}
         {% endwith %}
 
