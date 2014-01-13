@@ -34,6 +34,12 @@ class enterprise-network-config {
         group  => "root",
         mode   => "644",
     }
+    # Upstream Ubuntu Enterprise Cloud images started splitting config out into
+    # eth0.cfg.  When we add our networking magic, we get invalid confs, so
+    # throw theirs out for now.
+    file {"/etc/network/interfaces.d/eth0.cfg":
+        ensure => absent,
+    }
     file {"/usr/local/sbin/network-mapper":
         source => "puppet:///modules/enterprise-network-config/network-mapper",
         ensure => present,
