@@ -9,9 +9,14 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.Exceptions;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.aerofs.labeling.L;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.sv.common.EmailCategory;
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -46,18 +51,21 @@ public abstract class AbstractEmailSender
     private final String _username;
     private final String _password;
     private final boolean _enable_tls;
+    private final @Nullable String _certificate;
 
     /**
      * @param host when using local mail relay, set this to localhost.
+     * @param certificate explicitly-configured certificate (optional, used for self-signed certs)
      */
     public AbstractEmailSender(String host, String port, String username, String password,
-            boolean enable_tls)
+            boolean enable_tls, @Nullable String certificate)
     {
         _host = host;
         _port = port;
         _username = username;
         _password = password;
         _enable_tls = enable_tls;
+        _certificate = certificate;
     }
 
     // SMTP command timeout, expressed in milliseconds.
@@ -106,6 +114,22 @@ public abstract class AbstractEmailSender
             props.put("mail.smtp.starttls.required", Boolean.toString(_enable_tls));
             props.put("mail.smtp.host", _host);
             props.put("mail.smtp.auth", Boolean.toString(!isEmptyCredentials()));
+            if (_enable_tls && !Strings.isNullOrEmpty(_certificate)) {
+                // explicitly-configured certificate, used for self-signed or otherwise
+                // unliked-by-javax-mail servers.
+                try {
+                    // SSLEngineFactory is a convenient path to building the TrustManager;
+                    // it will wrap access to the normal X509 path plus allow the explicit cert
+                    SSLEngineFactory factory = new SSLEngineFactory(Mode.Client, Platform.Desktop,
+                            null, new StringBasedCertificateProvider(_certificate), null);
+                    props.put("mail.smtp.ssl.socketFactory",
+                            factory.getSSLContext().getSocketFactory());
+                } catch (Exception e) {
+                    // we can go on without the custom socket factory, it may fail to send mail
+                    // due to security exception, which will be reported to the caller
+                    l.warn("Failed creating a custom SSL Socket Factory", e);
+                }
+            }
         }
 
         return Session.getInstance(props);

@@ -41,9 +41,9 @@ public class AsyncEmailSender extends AbstractEmailSender
             TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(EMAIL_QUEUE_SIZE));
 
     private AsyncEmailSender(String host, String port, String username, String password,
-            boolean useTls)
+            boolean useTls, String certificate)
     {
-        super(host, port, username, password, useTls);
+        super(host, port, username, password, useTls, certificate);
     }
 
     /**
@@ -68,7 +68,9 @@ public class AsyncEmailSender extends AbstractEmailSender
         String password = getStringProperty("email.sender.public_password",
                                         p.getProperty("password", ""));
         boolean useTls = getBooleanProperty("email.sender.public_enable_tls", true);
-        return new AsyncEmailSender(host, port, username, password, useTls);
+        String cert = getStringProperty("email.sender.public_cert", "");
+
+        return new AsyncEmailSender(host, port, username, password, useTls, cert);
     }
 
     /**
@@ -82,8 +84,7 @@ public class AsyncEmailSender extends AbstractEmailSender
         String port     = p.getProperty("internal_port", "25");
         String username = p.getProperty("internal_username", "");
         String password = p.getProperty("internal_password", "");
-        boolean useTls  = true;
-        return new AsyncEmailSender(host, port, username, password, useTls);
+        return new AsyncEmailSender(host, port, username, password, true, null);
     }
 
     /**
