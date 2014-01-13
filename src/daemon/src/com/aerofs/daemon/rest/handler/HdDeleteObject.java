@@ -47,7 +47,7 @@ public class HdDeleteObject extends AbstractHdIMC<EIDeleteObject>
 
         EntityTag etag = _etags.etagForObject(from.soid());
 
-        if (ev._ifMatch != null && !ev._ifMatch.matches(etag)) {
+        if (ev._ifMatch.isValid() && !ev._ifMatch.matches(etag)) {
             ev.setResult_(Response.status(Status.PRECONDITION_FAILED)
                     .entity(new Error(Type.CONFLICT,
                             "Delete operation failed due to a concurrent update.")));
