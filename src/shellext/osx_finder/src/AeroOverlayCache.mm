@@ -54,7 +54,6 @@ struct AeroOverlayCachePrivate {
     delete d->cache;
     delete d->forward;
     delete d;
-    [super dealloc];
 }
 
 - (id)initWithLimit:(int)limit

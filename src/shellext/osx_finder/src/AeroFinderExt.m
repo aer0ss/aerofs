@@ -43,17 +43,6 @@ static Overlay overlayForStatus(PBPathStatus* status)
 @synthesize contextMenu;
 @synthesize sidebarIcon;
 
-- (void) dealloc
-{
-    [socket release];
-    [overlay release];
-    [contextMenu release];
-    [sidebarIcon release];
-    [statusCache release];
-    [rootAnchor release];
-    [userId release];
-    [super dealloc];
-}
 
 /**
  * This is the handler of our "fake" Apple Script event.
@@ -71,7 +60,6 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
 
     NSAppleEventDescriptor* desc = [[NSAppleEventDescriptor alloc] initWithAEDescNoCopy: event];
     int portNumber = [[desc descriptorForKeyword:PORT_KEYWORD] int32Value];
-    [desc release];
 
     if (portNumber <=0) {
         NSLog(@"Warning: AeroFS didn't specify which port it's listening to, using default.");
@@ -257,7 +245,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     }
 
     BOOL isDir = NO;
-    NSFileManager* fileManager = [[[NSFileManager alloc] init] autorelease];
+    NSFileManager* fileManager = [[NSFileManager alloc] init];
     [fileManager fileExistsAtPath:path isDirectory:&isDir];
     if (isDir) {
         flags |= Directory;
@@ -271,14 +259,12 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     NSAssert(![path hasSuffix:@"/"], @"setRootAnchorPath: anchor root can't have trailing slash");
     NSLog(@"AeroFS: Finder Extension initialized with root anchor: %@", path);
 
-    [rootAnchor autorelease];
     rootAnchor = [path copy];
     [self clearCache];
 }
 
 -(void) setUserId:(NSString*)user
 {
-    [userId autorelease];
     userId = [user copy];
 }
 

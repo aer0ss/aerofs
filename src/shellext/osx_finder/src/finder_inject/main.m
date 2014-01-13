@@ -6,42 +6,42 @@ bool waitUntilFinderIsRunning(void);
 
 int main(int argc, char *argv[])
 {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    @autoreleasepool {
 
-    if (!waitUntilFinderIsRunning()) {
-        NSLog(@"AeroFS: timed out while waiting for the Finder to run");
-        // but there's no reason not to try to inject it anyway, so let's go ahead and try
+        if (!waitUntilFinderIsRunning()) {
+            NSLog(@"AeroFS: timed out while waiting for the Finder to run");
+            // but there's no reason not to try to inject it anyway, so let's go ahead and try
+        }
+
+        // Get the port number from the command line
+        int portNumber = 0;
+        if (argc>=2) {
+            portNumber = atoi(argv[1]);
+        }
+
+        // Create an Apple Event targeting the Finder
+        // Note: there is a bug introduced in Mountain Lion that will make the AESendMessage call below hang and timeout if we use the Finder's bundle id
+        // to deliver the event. However, using the process id works fine.
+        // This is the same bug that prevents the "Show In Finder" functionality from working. Unfortunately, for that case we can't do anything since it
+        // needs to be fixed by Apple. A workaround for it is to log out / log in or run "sudo killall -KILL appleeventsd" in the terminal
+        // See: http://www.openradar.me/12424662
+        // and: http://brian-webster.tumblr.com/post/32830692042/a-workaround-for-aesendmessage-hanging-on-os-x-10-8-2
+        NSRunningApplication* runningApplication = [[NSRunningApplication runningApplicationsWithBundleIdentifier:FINDER_BUNDLE_ID] lastObject];
+        pid_t pid = [runningApplication processIdentifier];
+        NSAppleEventDescriptor* finder = [[NSAppleEventDescriptor alloc] initWithDescriptorType:typeKernelProcessID bytes:&pid length:sizeof(pid)];
+
+        // Send the Finder a kASAppleScriptSuite / kGetAEUT event.
+        // This will load the scripting additions into the Finder and make sure it's synchronized with the contents of the scripting additions folder.
+        // See:  http://developer.apple.com/library/mac/#qa/qa1070/_index.html
+        NSAppleEventDescriptor* refresh = [NSAppleEventDescriptor appleEventWithEventClass:kASAppleScriptSuite eventID:kGetAEUT targetDescriptor:finder returnID:kAutoGenerateReturnID transactionID:kAnyTransactionID];
+        AESendMessage([refresh aeDesc], NULL, kAEWaitReply | kAENeverInteract | kAEDontRecord, kAEDefaultTimeout);
+
+        // Now send our own 'aeroload' event with the portnumber
+        NSAppleEventDescriptor* aeroLoad = [NSAppleEventDescriptor appleEventWithEventClass:INJECT_EVENT_CLASS eventID:INJECT_EVENT_ID targetDescriptor:finder returnID:kAutoGenerateReturnID transactionID:kAnyTransactionID];
+        [aeroLoad setParamDescriptor:[NSAppleEventDescriptor descriptorWithInt32:portNumber] forKeyword:PORT_KEYWORD];
+        AESendMessage([aeroLoad aeDesc], NULL, kAENoReply | kAENeverInteract | kAEDontRecord, kAEDefaultTimeout);
+
     }
-
-    // Get the port number from the command line
-    int portNumber = 0;
-    if (argc>=2) {
-        portNumber = atoi(argv[1]);
-    }
-
-    // Create an Apple Event targeting the Finder
-    // Note: there is a bug introduced in Mountain Lion that will make the AESendMessage call below hang and timeout if we use the Finder's bundle id
-    // to deliver the event. However, using the process id works fine.
-    // This is the same bug that prevents the "Show In Finder" functionality from working. Unfortunately, for that case we can't do anything since it
-    // needs to be fixed by Apple. A workaround for it is to log out / log in or run "sudo killall -KILL appleeventsd" in the terminal
-    // See: http://www.openradar.me/12424662
-    // and: http://brian-webster.tumblr.com/post/32830692042/a-workaround-for-aesendmessage-hanging-on-os-x-10-8-2
-    NSRunningApplication* runningApplication = [[NSRunningApplication runningApplicationsWithBundleIdentifier:FINDER_BUNDLE_ID] lastObject];
-    pid_t pid = [runningApplication processIdentifier];
-    NSAppleEventDescriptor* finder = [[NSAppleEventDescriptor alloc] initWithDescriptorType:typeKernelProcessID bytes:&pid length:sizeof(pid)];
-
-    // Send the Finder a kASAppleScriptSuite / kGetAEUT event.
-    // This will load the scripting additions into the Finder and make sure it's synchronized with the contents of the scripting additions folder.
-    // See:  http://developer.apple.com/library/mac/#qa/qa1070/_index.html
-    NSAppleEventDescriptor* refresh = [NSAppleEventDescriptor appleEventWithEventClass:kASAppleScriptSuite eventID:kGetAEUT targetDescriptor:finder returnID:kAutoGenerateReturnID transactionID:kAnyTransactionID];
-    AESendMessage([refresh aeDesc], NULL, kAEWaitReply | kAENeverInteract | kAEDontRecord, kAEDefaultTimeout);
-
-    // Now send our own 'aeroload' event with the portnumber
-    NSAppleEventDescriptor* aeroLoad = [NSAppleEventDescriptor appleEventWithEventClass:INJECT_EVENT_CLASS eventID:INJECT_EVENT_ID targetDescriptor:finder returnID:kAutoGenerateReturnID transactionID:kAnyTransactionID];
-    [aeroLoad setParamDescriptor:[NSAppleEventDescriptor descriptorWithInt32:portNumber] forKeyword:PORT_KEYWORD];
-    AESendMessage([aeroLoad aeDesc], NULL, kAENoReply | kAENeverInteract | kAEDontRecord, kAEDefaultTimeout);
-
-    [pool release];
 
     return 0;
 }

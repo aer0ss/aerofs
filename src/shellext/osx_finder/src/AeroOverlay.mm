@@ -11,13 +11,6 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
     NSDictionary* _icons;
 }
 
-- (void) dealloc
-{
-    [_icons release];
-    _icons = nil;
-    [super dealloc];
-}
-
 -(id)init
 {
     self = [super init];
@@ -38,8 +31,8 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
     NSBundle* aerofsBundle = [NSBundle bundleForClass:[self class]];
     _icons = [[NSMutableDictionary alloc] initWithCapacity:iconNames.count];
     for (NSNumber* key in iconNames) {
-        NSImage* icon = [[[NSImage alloc] initWithContentsOfFile:
-                [aerofsBundle pathForResource:[iconNames objectForKey:key] ofType:@"icns"]] autorelease];
+        NSImage* icon = [[NSImage alloc] initWithContentsOfFile:
+                [aerofsBundle pathForResource:[iconNames objectForKey:key] ofType:@"icns"]];
         if (icon) [((NSMutableDictionary*)_icons) setObject:icon forKey:key];
     }
 

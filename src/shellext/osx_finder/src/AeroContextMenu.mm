@@ -85,7 +85,7 @@ void doChangeContextMenu(NSMenu* menu, id browserVC)
 
     int flags = [[AeroFinderExt instance] flagsForPath:path];
 
-    NSMenu* submenu = [[[NSMenu alloc] init] autorelease];
+    NSMenu* submenu = [[NSMenu alloc] init];
 
     int idx = 0;
 

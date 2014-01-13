@@ -29,7 +29,6 @@ static BOOL shouldReconnectIfDisconnected = NO;
 -(void) dealloc
 {
     [self disconnect];
-    [super dealloc];
 }
 
 -(void) connectToServerOnPort:(UInt16) thePort
@@ -55,7 +54,6 @@ static BOOL shouldReconnectIfDisconnected = NO;
     shouldReconnectIfDisconnected = NO;
     [socket setDelegate:nil];
     [socket disconnect];
-    [socket release];
     socket = nil;
 }
 

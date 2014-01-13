@@ -13,11 +13,6 @@ static void aero_TSidebarItemCell_setImage(TSidebarItemCell* self, SEL sel, NSIm
 @implementation AeroSidebarIcon
 @synthesize sidebarImage = _sidebarImage;
 
-- (void)dealloc
-{
-    [_sidebarImage release];
-    [super dealloc];
-}
 
 - (id)init
 {
@@ -31,7 +26,6 @@ static void aero_TSidebarItemCell_setImage(TSidebarItemCell* self, SEL sel, NSIm
             NSImage* image = [[NSImage alloc] initWithContentsOfFile:[aerofsBundle pathForResource:@"sidebar" ofType:@"tiff"]];
             [image setTemplate:YES];
             _sidebarImage = [[NSSidebarImage alloc] initWithSourceImage:image];
-            [image release];
 
             // Note: we can't use method swizzling here because Dropbox does something stupid that
             // makes it impossible for any other app to perform swizzling if they swizzle first.
