@@ -1,20 +1,11 @@
-#import <Cocoa/Cocoa.h>
-
-@class AeroIconPair;
+#import <Foundation/Foundation.h>
 
 /**
  * AeroOverlay manages the overlay icons
  */
-@interface AeroOverlay : NSObject {
-@private
-    AeroIconPair* dlIcon;
-    AeroIconPair* ulIcon;
-    AeroIconPair* isIcon;
-    AeroIconPair* osIcon;
-    AeroIconPair* cfIcon;
-}
+@interface AeroOverlay : NSObject
 
--(NSImage*) iconForPath:(NSString*)path flipped:(BOOL)flipped;
+- (NSImage*)iconForPath:(NSString*)path;
 
 @end
 

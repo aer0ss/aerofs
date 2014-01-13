@@ -4,20 +4,17 @@
 #import "AeroFinderExt.h"
 #import "FinderTypes.h"
 #import "AeroUtils.h"
-#import "AeroIconPair.h"
 
 void drawOverlayForNode(const TFENode* fenode, NSRect rect);
 
-@implementation AeroOverlay
+@implementation AeroOverlay {
+    NSDictionary* _icons;
+}
 
 - (void) dealloc
 {
-    [dlIcon release];
-    [ulIcon release];
-    [cfIcon release];
-    [isIcon release];
-    [osIcon release];
-
+    [_icons release];
+    _icons = nil;
     [super dealloc];
 }
 
@@ -29,22 +26,29 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
     }
 
     // Load the icons
+
+    NSDictionary* iconNames = @{
+            @(DOWNLOADING) : @"download_overlay",
+            @(UPLOADING)   : @"upload_overlay",
+            @(CONFLICT)    : @"conflict_overlay",
+            @(IN_SYNC)     : @"in_sync_overlay",
+            @(OUT_SYNC)    : @"out_of_sync_overlay"
+    };
+
     NSBundle* aerofsBundle = [NSBundle bundleForClass:[self class]];
+    _icons = [[NSMutableDictionary alloc] initWithCapacity:iconNames.count];
+    for (NSNumber* key in iconNames) {
+        NSImage* icon = [[[NSImage alloc] initWithContentsOfFile:
+                [aerofsBundle pathForResource:[iconNames objectForKey:key] ofType:@"icns"]] autorelease];
+        if (icon) [((NSMutableDictionary*)_icons) setObject:icon forKey:key];
+    }
 
-    dlIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"download_overlay" ofType:@"icns"]];
-    ulIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"upload_overlay" ofType:@"icns"]];
-    cfIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"conflict_overlay" ofType:@"icns"]];
-
-    isIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"in_sync_overlay" ofType:@"icns"]];
-    osIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"out_of_sync_overlay" ofType:@"icns"]];
-
-    // Swizzlle methods
+    // Swizzle methods
     [AeroUtils swizzleInstanceMethod:@selector(layerForType:) fromClass:NSClassFromString(@"IKIconCell")
                           withMethod:@selector(aero_IKIconCell_layerForType:) fromClass:[AeroOverlaySwizzledMethods class]];
 
     [AeroUtils swizzleInstanceMethod:@selector(drawIconWithFrame:) fromClass:NSClassFromString(@"TListViewIconAndTextCell")
                           withMethod:@selector(aero_TListViewIconAndTextCell_drawIconWithFrame:) fromClass:[AeroOverlaySwizzledMethods class]];
-
 
     // OS X 10.9
     if ([(NSClassFromString(@"TDimmableIconImageView")) instancesRespondToSelector:@selector(drawRect:)]) {
@@ -55,26 +59,14 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
     return self;
 }
 
--(NSImage*) iconForPath:(NSString*)path flipped:(BOOL)flipped
+- (NSImage*)iconForPath:(NSString*)path
 {
     if (![[AeroFinderExt instance] isUnderRootAnchor:path]) {
         return nil;
     }
 
-    //NSLog(@"overlay pull: %@ [%@]", path, [NSThread callStackSymbols]);
-
-    AeroIconPair* result = nil;
     Overlay status = [[AeroFinderExt instance] overlayForPath:path];
-    switch (status) {
-        case IN_SYNC:       result = isIcon; break;
-        case OUT_SYNC:      result = osIcon; break;
-        case DOWNLOADING:   result = dlIcon; break;
-        case UPLOADING:     result = ulIcon; break;
-        case CONFLICT:      result = cfIcon; break;
-        default: break;
-    }
-
-    return flipped ? [result flipped] : [result icon];
+    return [_icons objectForKey:@(status)];
 }
 
 @end
@@ -120,13 +112,13 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
         CALayer* overlay = [CALayer layer];
         overlay.frame = NSRectToCGRect(imageFrame);
 
-        NSImage* icon = [[[AeroFinderExt instance] overlay] iconForPath:path flipped:NO];
+        NSImage* icon = [[[AeroFinderExt instance] overlay] iconForPath:path];
         overlay.contents = (id) [icon CGImageForProposedRect:&imageFrame context:nil hints:nil];
         [result addSublayer:overlay];
 
         return result;
-    } @catch (NSException* exception) {
-        NSLog(@"AeroFS: Exception in aero_IKIconCell_layerForType: %@", exception);
+    } @catch (NSException* ex) {
+        NSLog(@"AeroFS: Exception in aero_IKIconCell_layerForType: %@ %@", ex, [ex callStackSymbols]);
         return nil;
     }
 }
@@ -152,8 +144,8 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
         NSRect imageFrame = [_self imageRectForBounds: NSRectFromCGRect(frame)];
         drawOverlayForNode(fenode, imageFrame);
     }
-    @catch (NSException* exception) {
-        NSLog(@"AeroFS: Exception in aero_TListViewIconAndTextCell_drawIconWithFrame: %@", exception);
+    @catch (NSException* ex) {
+        NSLog(@"AeroFS: Exception in aero_TListViewIconAndTextCell_drawIconWithFrame: %@ %@", ex, [ex callStackSymbols]);
     }
 }
 
@@ -177,8 +169,8 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect);
         TFENode fenode = [rowView node];
         drawOverlayForNode(&fenode, dirtyRect);
     }
-    @catch (NSException* exception) {
-        NSLog(@"AeroFS: Exception in aero_TDimmableIconImageView_drawRect: %@", exception);
+    @catch (NSException* ex) {
+        NSLog(@"AeroFS: Exception in aero_TDimmableIconImageView_drawRect: %@ %@", ex, [ex callStackSymbols]);
     }
 }
 
@@ -188,12 +180,9 @@ void drawOverlayForNode(const TFENode* fenode, NSRect rect)
     id finode = FINodeFromFENode(fenode);
     NSString* path = [[finode previewItemURL] path];
 
-    NSImage* icon = [[[AeroFinderExt instance] overlay] iconForPath:path flipped:YES];
-
     // Draw the overlay
-    NSGraphicsContext* nsgc = [NSGraphicsContext currentContext];
-    CGContextRef context = (CGContextRef) [nsgc graphicsPort];
-    CGContextDrawImage(context, NSRectToCGRect(rect), [icon CGImageForProposedRect:&rect context:nil hints:nil]);
+    NSImage* icon = [[[AeroFinderExt instance] overlay] iconForPath:path];
+    [icon drawInRect:rect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0 respectFlipped:YES hints:nil];
 }
 
 @end

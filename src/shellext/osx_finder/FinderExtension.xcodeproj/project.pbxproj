@@ -21,7 +21,6 @@
 		1640B45F1455C4AD0049B1B6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1640B45E1455C4AD0049B1B6 /* Cocoa.framework */; };
 		1640B4611455C4C90049B1B6 /* ScriptingBridge.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1640B4601455C4C90049B1B6 /* ScriptingBridge.framework */; };
 		1644252A14648FE500DE4546 /* FinderTypes.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1644252714648FE500DE4546 /* FinderTypes.mm */; };
-		1644252E146AE85700DE4546 /* AeroIconPair.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1644252C146AE85700DE4546 /* AeroIconPair.mm */; };
 		1658CC92145E9FD4005476FE /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC91145E9FD3005476FE /* QuartzCore.framework */; };
 		1658CC97145F2D9C005476FE /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC96145F2D9C005476FE /* Quartz.framework */; };
 		16692664150AD6450072DA1E /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 16692663150AD6450072DA1E /* AsyncSocket.m */; };
@@ -96,8 +95,6 @@
 		1640B45E1455C4AD0049B1B6 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		1640B4601455C4C90049B1B6 /* ScriptingBridge.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ScriptingBridge.framework; path = System/Library/Frameworks/ScriptingBridge.framework; sourceTree = SDKROOT; };
 		1644252714648FE500DE4546 /* FinderTypes.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = FinderTypes.mm; path = src/FinderTypes.mm; sourceTree = SOURCE_ROOT; };
-		1644252C146AE85700DE4546 /* AeroIconPair.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroIconPair.mm; path = src/AeroIconPair.mm; sourceTree = SOURCE_ROOT; };
-		1644252D146AE85700DE4546 /* AeroIconPair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroIconPair.h; path = src/AeroIconPair.h; sourceTree = SOURCE_ROOT; };
 		1658CC91145E9FD3005476FE /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		1658CC96145F2D9C005476FE /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
 		16692661150AD6350072DA1E /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AsyncSocket.h; path = 3rd_party/cocoaasyncsocket/AsyncSocket.h; sourceTree = SOURCE_ROOT; };
@@ -253,8 +250,6 @@
 				16088EE61451C42C00CDFCDC /* AeroContextMenu.mm */,
 				16A99D60145B296600C3EA3D /* AeroOverlay.h */,
 				16A99D5F145B296600C3EA3D /* AeroOverlay.mm */,
-				1644252C146AE85700DE4546 /* AeroIconPair.mm */,
-				1644252D146AE85700DE4546 /* AeroIconPair.h */,
 				16088EE81451C42C00CDFCDC /* AeroUtils.h */,
 				16088EE51451C42C00CDFCDC /* AeroUtils.mm */,
 				16026EEE145849670078E542 /* AeroSocket.h */,
@@ -460,7 +455,6 @@
 				16026EEF145849670078E542 /* AeroSocket.m in Sources */,
 				16A99D61145B296600C3EA3D /* AeroOverlay.mm in Sources */,
 				1644252A14648FE500DE4546 /* FinderTypes.mm in Sources */,
-				1644252E146AE85700DE4546 /* AeroIconPair.mm in Sources */,
 				16692664150AD6450072DA1E /* AsyncSocket.m in Sources */,
 				16F60E9E153F6F2B00A25339 /* Shellext.pb.m in Sources */,
 				F341E7741612683D0055FC6D /* Path_status.pb.m in Sources */,
