@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% from "_formhelpers.html" import submit_button %}
+{% macro render_navpill(route, label) %}
+<li class="pull-right{% if request.path == url_for(route) %} active{% endif %}"><a href="{{ url_for(route) }}">{{ label }}</a></li>
+{% endmacro %}
+
+{# due to the pull-right logic, pills are listed from right to left here #}
+{% block additional_nav_pills %}
+<li class="pull-right">
+    <form action="{{ url_for('logout') }}" method="post" name="logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        {{ submit_button("Logout") }}
+    </form>
+</li>
+{{ render_navpill('edit_preferences', 'Preferences') }}
+{{ render_navpill('dashboard', 'Dashboard') }}
+{% endblock %}

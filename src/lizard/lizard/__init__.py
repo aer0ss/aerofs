@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from flask.ext.login import LoginManager
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CsrfProtect
 from migrate.versioning import api
 from migrate.exceptions import DatabaseAlreadyControlledError
 
@@ -18,6 +19,10 @@ if 'CONFIG_EXTRA' in os.environ:
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login_page'
+
+# CSRF protection from WTForms
+csrf = CsrfProtect()
+csrf.init_app(app)
 
 # Database stuff
 db = SQLAlchemy(app)

@@ -50,7 +50,7 @@ def login_page():
     return render_template("login.html",
             form=form)
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 def logout():
     login.logout_user()
     flash(u"You have logged out successfully", 'success')
