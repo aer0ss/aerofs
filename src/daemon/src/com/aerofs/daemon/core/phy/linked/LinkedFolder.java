@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SOID;
-import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalFolder;

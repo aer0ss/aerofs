@@ -16,7 +16,6 @@ import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalFile;
