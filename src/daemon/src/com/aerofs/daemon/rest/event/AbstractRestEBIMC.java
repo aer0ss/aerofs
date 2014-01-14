@@ -4,6 +4,8 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
@@ -23,6 +25,7 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
     private static final Logger l = Loggers.getLogger(AbstractRestEBIMC.class);
 
     public final UserID _user;
+    public final DID _did;
 
     private Object _result;
 
@@ -30,6 +33,8 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
     {
         super(imce);
         _user = user;
+        // TODO: extract mobile DID from OAuth token
+        _did = new DID(UniqueID.ZERO);
     }
 
     public void setResult_(Object result)

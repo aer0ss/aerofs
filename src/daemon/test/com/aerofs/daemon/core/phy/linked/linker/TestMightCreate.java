@@ -19,7 +19,6 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtilLinux;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +34,6 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.eq;

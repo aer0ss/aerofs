@@ -8,6 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
+import com.aerofs.daemon.core.audit.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.net.RPC;
@@ -44,6 +45,8 @@ import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBGetComCall;
 import com.aerofs.proto.Core.PBGetComCall.Builder;
 
+import static com.aerofs.daemon.core.audit.OutboundEventLogger.*;
+
 // TODO NAK for this and other primitives
 
 // we split the code for this protocol primitive into classes due to complexity
@@ -65,9 +68,10 @@ public class GetComponentCall
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
     private CfgLocalUser _cfgLocalUser;
+    private OutboundEventLogger _oel;
 
     @Inject
-    public void inject_(NSL nsl, LocalACL lacl, IPhysicalStorage ps,
+    public void inject_(NSL nsl, LocalACL lacl, IPhysicalStorage ps, OutboundEventLogger oel,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
             IEmigrantTargetSIDLister emc, GCCSendContent sendContent, MapAlias2Target a2t,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser)
@@ -80,6 +84,7 @@ public class GetComponentCall
         _pvc = pvc;
         _nvc = nvc;
         _emc = emc;
+        _oel = oel;
         _sendContent = sendContent;
         _a2t = a2t;
         _sidx2sid = sidx2sid;
@@ -226,10 +231,12 @@ public class GetComponentCall
         }
     }
 
-    public void sendReply_(DigestedMessage msg, SOCKID k)
+    private void sendReply_(DigestedMessage msg, SOCKID k)
         throws Exception
     {
         l.debug("send to {} for {}", msg.ep(), k);
+
+        _oel.log_(k.cid().isMeta() ? META_REQUEST : CONTENT_REQUEST, k.soid(), msg.did());
 
         Version vLocal = _nvc.getLocalVersion_(k);
 
@@ -251,6 +258,8 @@ public class GetComponentCall
         } else {
             SystemUtil.fatal("unsupported CID: " + k.cid());
         }
+
+        if (k.cid().isContent()) _oel.log_(CONTENT_COMPLETION, k.soid(), msg.did());
     }
 
     /* TODO

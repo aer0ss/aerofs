@@ -1,21 +1,22 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.daemon.core.audit.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.stream.MultipartStream;
 import com.aerofs.daemon.rest.stream.SimpleStream;
+import com.aerofs.daemon.rest.util.MetadataBuilder;
 import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.HttpStatus;
 import com.aerofs.daemon.rest.util.MimeTypeDetector;
 import com.aerofs.daemon.rest.util.Ranges;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.KIndex;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
@@ -30,22 +31,24 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.Set;
 
-public class HdFileContent extends AbstractHdIMC<EIFileContent>
+import static com.aerofs.daemon.core.audit.OutboundEventLogger.*;
+
+public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
 {
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
-    private final RestObjectResolver _access;
-    private final EntityTagUtil _etags;
     private final MimeTypeDetector _detector;
+    private final OutboundEventLogger _oel;
 
     @Inject
-    public HdFileContent(RestObjectResolver access, DirectoryService ds, IPhysicalStorage ps,
-            MimeTypeDetector detector, EntityTagUtil etags)
+    public HdFileContent(RestObjectResolver access, EntityTagUtil etags, MetadataBuilder mb,
+            TransManager tm, DirectoryService ds, IPhysicalStorage ps,
+            MimeTypeDetector detector, OutboundEventLogger oel)
     {
+        super(access, etags, mb, tm);
         _ds = ds;
         _ps = ps;
-        _etags = etags;
-        _access = access;
+        _oel = oel;
         _detector = detector;
     }
 
@@ -56,7 +59,7 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
       and partial content requests
      */
     @Override
-    protected void handleThrows_(EIFileContent ev, Prio prio) throws ExNotFound, SQLException
+    protected void handleThrows_(EIFileContent ev) throws ExNotFound, SQLException
     {
         final OA oa = _access.resolve_(ev._object, ev._user);
         if (!oa.isFile()) throw new ExNotFound();
@@ -70,6 +73,8 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
             return;
         }
 
+        _oel.log_(CONTENT_REQUEST, oa.soid(), ev._did);
+
         // build range list for partial request, honoring If-Range header
         RangeSet<Long> ranges = Ranges.parseRanges(ev._rangeset, ev._ifRange, etag, ca.length());
 
@@ -77,6 +82,8 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(ca.mtime()));
 
         IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
+
+        // TODO: send CONTENT_COMPLETION from ContentStream
 
         ev.setResult_(ranges != null
                 ? partialContent(bd, pf, ca, ranges)
