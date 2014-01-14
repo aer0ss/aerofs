@@ -10,11 +10,11 @@
 		</data>
 		<key>Resources/conflict_overlay.icns</key>
 		<data>
-		3w1b4ELWIKjrtiknA19KCkt3Gdw=
+		BV//kA46A+hlC7NEzaczpr4p4dI=
 		</data>
 		<key>Resources/download_overlay.icns</key>
 		<data>
-		qkteyzeGReXUFTxHYhPlW3rCLvw=
+		ERwPL5ZcZdyVr1GdqFX9w6eV//c=
 		</data>
 		<key>Resources/en.lproj/InfoPlist.strings</key>
 		<dict>
@@ -27,19 +27,15 @@
 		</dict>
 		<key>Resources/finder_inject</key>
 		<data>
-		kj7bcfSXRiGTYCtjts8Dix3DqDI=
+		0CFIX5yTSye3oaPqDTC/rGmqHTw=
 		</data>
 		<key>Resources/in_sync_overlay.icns</key>
 		<data>
-		DaVmqmFGljaenckvCJdY7UwzJyI=
+		n1+Exv2CUsQMBZ7sTu8tbG+MVPc=
 		</data>
 		<key>Resources/out_of_sync_overlay.icns</key>
 		<data>
-		QnnIZu0yXu5ePhqibePuHC0pvFI=
-		</data>
-		<key>Resources/partial_sync_overlay.icns</key>
-		<data>
-		v5c2PbN7fFrH1WbjK6B7S311kzY=
+		LkSF7Z/fCEq/xMICnIvK9AvRVIk=
 		</data>
 		<key>Resources/sidebar.tiff</key>
 		<data>
@@ -47,7 +43,7 @@
 		</data>
 		<key>Resources/upload_overlay.icns</key>
 		<data>
-		FuXaPRJbW54vX45g+Hdb7aTsEH0=
+		PVYUyWl/ci/KF1AKx49yI2f4AJc=
 		</data>
 	</dict>
 	<key>rules</key>
