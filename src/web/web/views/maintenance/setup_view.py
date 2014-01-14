@@ -47,6 +47,7 @@ _SMTP_VERIFICATION_SMTP_PORT = "email_sender_public_port"
 _SMTP_VERIFICATION_SMTP_USERNAME = "email_sender_public_username"
 _SMTP_VERIFICATION_SMTP_PASSWORD = "email_sender_public_password"
 _SMTP_VERIFICATION_SMTP_ENABLE_TLS = "email_sender_public_enable_tls"
+_SMTP_VERIFICATION_SMTP_CERT = "email_sender_public_cert"
 
 # LDAP verification servlet URL.
 _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
@@ -291,6 +292,7 @@ def _parse_email_request(request):
         # the way that JavaScript's .serialize() works, apparently. So, we use the presence
         # of the param as its value.
         enable_tls = 'email-sender-public-enable-tls' in request.params
+        smtp_cert = request.params['email-sender-public-cert']
     else:
         host = 'localhost'
         port = '25'
@@ -298,13 +300,14 @@ def _parse_email_request(request):
         password = ''
         # The server ignores this flag if mail relay is localhost.
         enable_tls = False
+        smtp_cert = ''
 
     support_address = request.params['base-www-support-email-address']
-    return host, port, username, password, enable_tls, support_address
+    return host, port, username, password, enable_tls, smtp_cert, support_address
 
 
 def _send_verification_email(from_email, to_email, code, host, port,
-                             username, password, enable_tls):
+                             username, password, enable_tls, smtp_cert):
     payload = {
         _SMTP_VERIFICATION_FROM_EMAIL: from_email,
         _SMTP_VERIFICATION_TO_EMAIL: to_email,
@@ -313,7 +316,8 @@ def _send_verification_email(from_email, to_email, code, host, port,
         _SMTP_VERIFICATION_SMTP_PORT: port,
         _SMTP_VERIFICATION_SMTP_USERNAME: username,
         _SMTP_VERIFICATION_SMTP_PASSWORD: password,
-        _SMTP_VERIFICATION_SMTP_ENABLE_TLS: enable_tls
+        _SMTP_VERIFICATION_SMTP_ENABLE_TLS: enable_tls,
+        _SMTP_VERIFICATION_SMTP_CERT: smtp_cert
     }
 
     return requests.post(_SMTP_VERIFICATION_URL, data=payload)
@@ -326,7 +330,7 @@ def _send_verification_email(from_email, to_email, code, host, port,
     request_method='POST'
 )
 def json_verify_smtp(request):
-    host, port, username, password, enable_tls, support_address = _parse_email_request(request)
+    host, port, username, password, enable_tls, smtp_cert, support_address = _parse_email_request(request)
 
     verify_code = request.params['verification-code']
     verify_email = request.params['verification-to-email']
@@ -336,7 +340,7 @@ def json_verify_smtp(request):
 
     r = _send_verification_email(support_address, verify_email,
                                  verify_code, host, port,
-                                 username, password, enable_tls)
+                                 username, password, enable_tls, smtp_cert)
 
     if r.status_code != 200:
         log.error("send stmp verification email returns {}".format(r.status_code))
@@ -352,7 +356,7 @@ def json_verify_smtp(request):
     request_method='POST'
 )
 def json_setup_email(request):
-    host, port, username, password, enable_tls, support_address = _parse_email_request(request)
+    host, port, username, password, enable_tls, smtp_cert, support_address = _parse_email_request(request)
 
     configuration = Configuration()
     configuration.set_external_property('support_address',   support_address)
@@ -361,6 +365,7 @@ def json_setup_email(request):
     configuration.set_external_property('email_user',        username)
     configuration.set_external_property('email_password',    password)
     configuration.set_external_property('email_enable_tls',  enable_tls)
+    configuration.set_external_property('email_cert',        _format_pem(smtp_cert))
 
     return {}
 

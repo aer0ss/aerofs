@@ -17,6 +17,7 @@ email.sender.public_port={{ email_port }}
 email.sender.public_username={{ email_user }}
 email.sender.public_password={{ email_password }}
 email.sender.public_enable_tls={{ email_enable_tls }}
+email.sender.public_cert={{ email_cert }}
 
 server.browser.certificate={{ browser_cert }}
 server.browser.key={{ browser_key }}

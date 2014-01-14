@@ -78,13 +78,20 @@
                 </div>
 
                 <label for="email-sender-public-enable-tls" class="checkbox">
-                    <input id="email-sender-public-enable-tls" name="email-sender-public-enable-tls" type="checkbox"
+                    <input id="email-sender-public-enable-tls" name="email-sender-public-enable-tls" type="checkbox" onchange="toggleCertificate(this)"
                         %if str2bool(current_config['email.sender.public_enable_tls']):
                             checked
                         %endif
                     >Use STARTTLS encryption
                 </label>
             </div>
+                <div id="certificate-options"
+                    %if not str2bool(current_config['email.sender.public_enable_tls']):
+                        class="hide"
+                    %endif
+                >
+                    ${certificate_options()}
+                </div>
         </label>
 
         <p style="margin-top: 8px">AeroFS sends emails to users for various purposes such as sign up verification and folder invitations. A functional email server is required.</p>
@@ -166,6 +173,15 @@
     </div>
 </div>
 
+<%def name="certificate_options()">
+    <label for="email-sender-public-cert">Server certificate for StartTLS (optional):</label>
+    <textarea rows="4" id="email-sender-public-cert" name="email-sender-public-cert"
+            class="public-host-options input-block-level"
+            >${current_config['email.sender.public_cert'].replace('\\n', '\n')}</textarea>
+            ## Also see setup_view.py:_format_pem() for the reversed convertion.
+    <div class="input-footnote">This setting is not required if your mail server
+            certificate is signed by a common certificate authority.</div>
+</%def>
 <%def name="scripts()">
     <script src="${request.static_path('web:static/js/purl.js')}"></script>
 
@@ -190,6 +206,14 @@
             $('#public-host-options').show();
         }
 
+        function toggleCertificate(obj) {
+            if (obj.checked) {
+                $('#certificate-options').show();
+            } else {
+                $('#certificate-options').hide();
+            }
+        }
+
         var serializedData;
         function submitForm() {
             serializedData = $('form').serialize();
@@ -209,18 +233,21 @@
             var username = $("#email-sender-public-username").val();
             var password = $("#email-sender-public-password").val();
             var enable_tls = $("#email-sender-public-enable-tls").is(':checked');
+            var certificate = $("#email-sender-public-cert").val();
 
             var current_host = "${current_config['email.sender.public_host']}";
             var current_port = "${current_config['email.sender.public_port']}";
             var current_username = "${current_config['email.sender.public_username']}";
             var current_password = "${current_config['email.sender.public_password']}";
             var current_enable_tls = ${str(str2bool(current_config['email.sender.public_enable_tls'])).lower()};
+            var current_certificate = "${current_config['email.sender.public_cert']}";
             var remoteOptsChanged = remote && (
                     host != current_host ||
                     port != current_port ||
                     username != current_username ||
                     password != current_password ||
-                    enable_tls != current_enable_tls);
+                    enable_tls != current_enable_tls ||
+                    certificate != current_certificate);
 
             ## Only enable smtp verification modal if something has changed.
             var restored = ${str(restored_from_backup).lower()};
@@ -287,3 +314,4 @@
         }
     </script>
 </%def>
+
