@@ -62,7 +62,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     }
 
     private static final String URL =
-            getStringProperty("lib.sss.url", "https://sss.aerofs.com/syncstat");
+            getStringProperty("daemon.sss.url", "https://sss.aerofs.com/syncstat");
 
     @Inject
     SyncStatusConnection(CfgLocalUser user, TokenManager tokenManager,

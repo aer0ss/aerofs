@@ -164,8 +164,8 @@ public class SPServlet extends AeroServlet
         _sqlConProvider.init_(dbResourceName);
         migrate();
 
-        String redisHost = REDIS.ADDRESS.getHostName();
-        int redisPort = REDIS.ADDRESS.getPort();
+        String redisHost = REDIS.AOF_ADDRESS.getHostName();
+        int redisPort = REDIS.AOF_ADDRESS.getPort();
         _jedisConProvider.init_(redisHost, (short) redisPort);
 
         PooledSQLConnectionProvider erConProvider = new PooledSQLConnectionProvider();

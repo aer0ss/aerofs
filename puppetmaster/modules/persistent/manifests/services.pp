@@ -57,8 +57,13 @@ class persistent::services (
     # Redis
     # --------------
 
-    # Redis in AOF (append only file) mode.
+    # Redis in AOF (append only file) mode. Used by SP.
     class {'redis::aof':
+        redis_bindaddr => $redis_bind_address,
+    }
+
+    # Redis in diskstore mode. Used by sync status.
+    class {'redis::diskstore':
         redis_bindaddr => $redis_bind_address,
     }
 

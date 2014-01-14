@@ -5,10 +5,10 @@ import com.aerofs.lib.LibParam.REDIS;
 public class RedisConfiguration
 {
     public String getHost() {
-        return REDIS.ADDRESS.getHostName();
+        return REDIS.AOF_ADDRESS.getHostName();
     }
 
     public int getPort() {
-        return REDIS.ADDRESS.getPort();
+        return REDIS.AOF_ADDRESS.getPort();
     }
 }

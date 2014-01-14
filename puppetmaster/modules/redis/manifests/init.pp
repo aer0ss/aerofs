@@ -7,17 +7,17 @@ class redis {
         ]
     }
 
-    file{"/etc/init.d/redis-server":
-        ensure => link,
-        target => "/lib/init/upstart-job",
-        require => Package["aerofs-redis-server"],
+    # Ensure the default redis configuration file is absent (since we create our
+    # own custom conf files).
+    file {"/etc/redis/redis.conf" :
+        ensure => absent,
+        require => Package["aerofs-redis-server"]
     }
 
-    service { "redis-server":
-        ensure  => running,
-        provider => upstart,
-        enable  => true,
-        require => File["/etc/init.d/redis-server"],
+    # Ditto wrt upstart related files.
+    file {"/etc/init/redis-server.conf" :
+        ensure => absent,
+        require => Package["aerofs-redis-server"]
     }
 
     # System-related config.
@@ -30,9 +30,6 @@ class redis {
 
     # Variables for inherited class templates.
     $redis_database_dir = "/data/redis"
-    $redis_pidfile = "/run/redis.pid"
-    $redis_logfile = "/var/log/redis/redis.log"
-    $redis_port = 6379
     $redis_loglevel = "notice"
     $redis_bindaddr = "all"
 }

@@ -22,7 +22,6 @@ api.daemon.port=0
 base.www.support_email_address={{ support_address }}
 
 base.mixpanel.url=
-lib.sss.url=
 lib.rocklog.url=
 lib.sv.url=
 lib.notifications.enabled=false

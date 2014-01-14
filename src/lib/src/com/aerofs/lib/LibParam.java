@@ -227,9 +227,11 @@ public class LibParam extends BaseParam
 
     public static class REDIS
     {
-        // TODO (MP) rename to lib.redis.address (keeping name for bloomberg compatibility).
-        public static final InetSocketAddress ADDRESS = getAddressProperty("sp.redis.address",
-                InetSocketAddress.createUnresolved("localhost", 6379));
+        public static final InetSocketAddress DISKSTORE_ADDRESS =
+                InetSocketAddress.createUnresolved("localhost", 6380);
+
+        public static final InetSocketAddress AOF_ADDRESS =
+                InetSocketAddress.createUnresolved("localhost", 6379);
     }
 
     /**
