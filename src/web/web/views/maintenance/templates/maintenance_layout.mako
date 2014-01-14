@@ -28,6 +28,7 @@
             <%
                 links = [
                     ('status', _("Service Status")),
+                    ('logs', _("Server Logs")),
                     ('toggle_maintenance_mode', _("Maintenance")),
                     ('upgrade_appliance', _("Upgrade")),
                     ('backup_appliance', _("Backup")),

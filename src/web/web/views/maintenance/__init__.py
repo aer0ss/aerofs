@@ -28,6 +28,8 @@ routes = {
     'maintenance_login',
     'maintenance_login_submit',
     'backup_appliance',
+    'logs',
+    'download_logs',
     # 'apps' is already taken by the access token management page
     'registered_apps',
     'register_app',
@@ -44,6 +46,7 @@ routes = {
     # to access maintenance tools directly.
     'manage'
 }
+
 
 def includeme(config):
     add_routes(config, routes)

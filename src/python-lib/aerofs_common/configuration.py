@@ -7,6 +7,7 @@ ROOT_URL = "http://localhost:5434"
 SERVER_URL = ROOT_URL + "/server"
 SET_URL = ROOT_URL + "/set"
 
+
 class Configuration(object):
     """
     Class that fetches and manages configuration.
@@ -14,19 +15,20 @@ class Configuration(object):
 
     def fetch_and_populate(self, configuration):
         """
-        Fetch and populate the configuration values specified by the configuration
-        URL and store those values in the passed configuration dictionary.
+        Fetch and populate the configuration values specified by the
+        configuration URL and store those values in the passed configuration
+        dictionary.
 
-        Params:
-            configuration:
-                A dictionary that we will use to store the configuration values
-                pulled from the server.
+        @param configuration a dictionary that we will use to store the
+            configuration values pulled from the server.
         """
 
-        # Pull down configuration values and store them in our temporary dictionary.
+        # Pull down configuration values and store them in our temporary
+        # dictionary.
         res = requests.get(SERVER_URL)
         if not res.ok:
-            raise IOError("Couldn't reach configuration server: {}".format(res.status_code))
+            raise IOError("Couldn't reach configuration server: {}".format(
+                res.status_code))
 
         sio = StringIO(res.text)
         try:

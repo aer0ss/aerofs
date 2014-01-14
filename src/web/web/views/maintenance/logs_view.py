@@ -1,0 +1,66 @@
+##
+## The view related to log file colllection
+##
+from datetime import datetime
+from pyramid.response import Response
+import logging
+from pyramid.view import view_config
+from aerofs_common.configuration import Configuration
+
+log = logging.getLogger(__name__)
+
+# The path is defined in BootstrapParam.java
+LOG_ARCHIVE_PATH = '/opt/bootstrap/public/logs.zip'
+
+
+@view_config(
+    route_name='logs',
+    permission='maintain',
+    renderer='logs.mako'
+)
+def logs(request):
+
+    # Log the customer ID so we can retrieve the information easily when the
+    # user sends us appliance logs. Do not read the value from
+    # request.registry.settings since it may not be populated before the
+    # appliance is fully configured.
+    properties = {}
+    Configuration().fetch_and_populate(properties)
+    log.info("customer id: {}".format(properties.get('customer_id', 'unknown')))
+
+    return {}
+
+
+@view_config(
+    route_name='download_logs',
+    permission='maintain',
+    request_method='GET'
+)
+def download_logs(request):
+    """
+    Return the log archive as the response. Call this method once archiving of
+    log files is done.
+    """
+
+    # Use no prefix to discourage users from opening the file
+    return get_file_download_response(LOG_ARCHIVE_PATH, 'application/zip',
+                               'aerofs-appliance-logs_', '.zip')
+
+
+def get_file_download_response(file_system_path, mime_type, name_prefix,
+                               name_suffix):
+    """
+    Return the HTTP Response for the browser to download the file specified in
+    the path. The file name is name_prefix + <current time> + name_suffix.
+
+    Also see
+    http://docs.pylonsproject.org/projects/pyramid_cookbook/en/latest/static_assets/files.html
+    for alternatives to send file content as responses.
+    """
+    # The browser will use this name as the name for the downloaded file
+    name = '{}{}{}'.format(name_prefix,
+                           datetime.today().strftime('%Y%m%d-%H%M%S'),
+                           name_suffix)
+    f = open(file_system_path)
+    return Response(content_type=mime_type, app_iter=f,
+                    content_disposition='attachment; filename={}'.format(name))

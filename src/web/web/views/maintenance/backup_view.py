@@ -1,9 +1,8 @@
-from datetime import datetime
 import logging
-from pyramid.response import Response
 
 from pyramid.view import view_config
 from web.version import get_current_version
+from web.views.maintenance.logs_view import get_file_download_response
 
 log = logging.getLogger(__name__)
 
@@ -29,19 +28,17 @@ def upgrade_appliance(request):
     }
 
 @view_config(
-    route_name = 'download_backup_file',
+    route_name='download_backup_file',
     permission='maintain',
-    request_method = 'GET'
+    request_method='GET'
 )
 def download_backup_file(request):
     """
-    Return the backup file's content as the response.
-    Call this method once backup is done.
-
-    Also see http://docs.pylonsproject.org/projects/pyramid_cookbook/en/latest/static_assets/files.html for alternatives to send file content as responses.
+    Return the backup file's content as the response. Call this method once
+    backup is done.
     """
-    # The browser will use this name as the name for the downloaded file
-    name = 'aerofs-backup_{}'.format(datetime.today().strftime('%Y%m%d-%H%M%S'))
-    f = open(BACKUP_FILE_PATH)
-    return Response(content_type='application/x-compressed', app_iter=f,
-                    content_disposition='attachment; filename={}'.format(name))
+
+    # Use no prefix to discourage users from opening the file
+    return get_file_download_response(BACKUP_FILE_PATH,
+                                      'application/octet-stream',
+                                      'aerofs-backup_', '')
