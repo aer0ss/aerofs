@@ -8,8 +8,8 @@ node "z.arrowfs.org" inherits default {
 
   hipchat::periodic{"@all STANDUP TIME":
     from => "Annoying duck",
-    hour => "12",
-    minute => "45",
+    hour => "10",
+    minute => "15",
     color => "purple"
   }
 
