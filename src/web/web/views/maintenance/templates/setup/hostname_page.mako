@@ -1,6 +1,6 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="modal" file="../modal.mako"/>
-<%namespace name="common" file="common.mako"/>
+<%namespace name="common" file="setup_common.mako"/>
 
 <form method="POST" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}

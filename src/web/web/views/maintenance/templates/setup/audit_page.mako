@@ -1,5 +1,5 @@
 <%namespace name="csrf" file="../csrf.mako"/>
-<%namespace name="common" file="common.mako"/>
+<%namespace name="common" file="setup_common.mako"/>
 
 <%! from web.util import str2bool %>
 

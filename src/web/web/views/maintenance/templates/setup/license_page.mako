@@ -8,7 +8,7 @@
 <%namespace name="spinner" file="../spinner.mako"/>
 <%namespace name="progress_modal" file="../progress_modal.mako"/>
 <%namespace name="upload_license_button" file="../upload_license_button.mako"/>
-<%namespace name="common" file="common.mako"/>
+<%namespace name="common" file="setup_common.mako"/>
 
 ## The license exists but expired
 %if is_license_present:

@@ -1,5 +1,5 @@
 <%namespace name="csrf" file="../csrf.mako"/>
-<%namespace name="common" file="common.mako"/>
+<%namespace name="common" file="setup_common.mako"/>
 <%namespace name="spinner" file="../spinner.mako"/>
 <%namespace name="progress_modal" file="../progress_modal.mako"/>
 

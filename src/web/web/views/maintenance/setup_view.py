@@ -86,7 +86,7 @@ def _get_configuration():
     route_name='setup',
     # Should not require permission. See docs/design/pyramid_auth.md.
     permission=NO_PERMISSION_REQUIRED,
-    renderer='setup.mako'
+    renderer='setup/setup.mako'
 )
 def setup(request):
     conf = _get_configuration()
@@ -102,7 +102,7 @@ def setup(request):
 @view_config(
     route_name='setup_authorized',
     permission='maintain',
-    renderer='setup.mako',
+    renderer='setup/setup.mako',
 )
 def setup_authorized(request):
     return _setup_common(request, _get_configuration(), False)

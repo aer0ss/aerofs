@@ -3,7 +3,7 @@
 ## See docs/design/pyramid_auth.md, setup() in setup.py, and setup.mako.
 
 <%namespace name="csrf" file="../csrf.mako"/>
-<%namespace name="common" file="common.mako"/>
+<%namespace name="common" file="setup_common.mako"/>
 <%namespace name="license_page" file="license_page.mako"/>
 
 <form method="post" onsubmit="submitForm(); return false;">
