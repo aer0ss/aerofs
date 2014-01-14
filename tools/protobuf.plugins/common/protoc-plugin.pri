@@ -3,7 +3,6 @@ ROOT_PATH = $$PWD/..
 TEMPLATE = app
 CONFIG -= qt                # Do not use Qt
 CONFIG -= app_bundle        # Do not create an app bundle on OS X
-DESTDIR = $$ROOT_PATH/bin   # Put the compiled executable in the bin folder
 
 INCLUDEPATH += \
     $$ROOT_PATH \
