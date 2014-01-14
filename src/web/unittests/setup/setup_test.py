@@ -27,15 +27,9 @@ class SetupTest(TestBase):
         self.assertEqual(_get_default_support_email(hostname),
                          'support@' + expected)
 
-    def test__json_setup_hostname__should_disallow_ip(self):
+    def test__json_setup_hostname__should_disallow_invalid_ip(self):
         try:
-            self._call_setup_hostname('1.2.3.4')
-            self.fail()
-        except HTTPBadRequest:
-            pass
-
-        try:
-            self._call_setup_hostname('1.2')
+            self._call_setup_hostname('666.666.666.666')
             self.fail()
         except HTTPBadRequest:
             pass
