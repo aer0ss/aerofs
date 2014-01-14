@@ -85,7 +85,9 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
 
 -(id) init
 {
-    NSLog(@"AeroFS: Loading Finder Extension...");
+    NSBundle* bundle = [NSBundle bundleForClass:[self class]];
+    NSString* version = [[bundle infoDictionary] objectForKey:(NSString*)kCFBundleVersionKey];
+    NSLog(@"AeroFS: Loading Finder Extension v%@...", version);
 
     self = [super init];
     if (!self) {
@@ -245,8 +247,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     }
 
     BOOL isDir = NO;
-    NSFileManager* fileManager = [[NSFileManager alloc] init];
-    [fileManager fileExistsAtPath:path isDirectory:&isDir];
+    [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir];
     if (isDir) {
         flags |= Directory;
     }

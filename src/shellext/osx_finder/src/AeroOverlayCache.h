@@ -24,8 +24,8 @@ struct AeroOverlayCachePrivate;
 - (id)init;
 - (id)initWithLimit:(int)limit;
 
-- (NSUInteger)countLimit;
-- (void)setCountLimit:(NSUInteger)limit;
+- (int)countLimit;
+- (void)setCountLimit:(int)limit;
 
 - (void)clear;
 - (int)overlayForPath:(NSString*)path;

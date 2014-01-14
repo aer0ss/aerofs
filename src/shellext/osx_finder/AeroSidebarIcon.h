@@ -2,8 +2,8 @@
 
 @class NSSidebarImage;
 
-@interface AeroSidebarIcon : NSObject {
-    NSSidebarImage* _sidebarImage;
-}
+@interface AeroSidebarIcon : NSObject
+
 @property (readonly) NSSidebarImage* sidebarImage;
+
 @end

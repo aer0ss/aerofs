@@ -65,12 +65,12 @@ struct AeroOverlayCachePrivate {
     return self;
 }
 
-- (NSUInteger)countLimit
+- (int)countLimit
 {
-    return (NSUInteger)d->cache->limit();
+    return d->cache->limit();
 }
 
-- (void)setCountLimit:(NSUInteger)limit
+- (void)setCountLimit:(int)limit
 {
     @synchronized (self) {
         d->cache->setLimit(limit);

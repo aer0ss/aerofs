@@ -10,8 +10,9 @@ static IMP gOriginalSetImage;
 // Our new implementation
 static void aero_TSidebarItemCell_setImage(TSidebarItemCell* self, SEL sel, NSImage* image);
 
+static Class TSidebarItemCellClass;
+
 @implementation AeroSidebarIcon
-@synthesize sidebarImage = _sidebarImage;
 
 
 - (id)init
@@ -30,7 +31,8 @@ static void aero_TSidebarItemCell_setImage(TSidebarItemCell* self, SEL sel, NSIm
             // Note: we can't use method swizzling here because Dropbox does something stupid that
             // makes it impossible for any other app to perform swizzling if they swizzle first.
             // See comment below for more information.
-            gOriginalSetImage = replace_method(NSClassFromString(@"TSidebarItemCell"),
+            TSidebarItemCellClass = NSClassFromString(@"TSidebarItemCell");
+            gOriginalSetImage = replace_method(TSidebarItemCellClass,
                     @selector(setImage:), (IMP)aero_TSidebarItemCell_setImage);
         }
     }
@@ -60,22 +62,17 @@ void aero_TSidebarItemCell_setImage(TSidebarItemCell* self, SEL sel, NSImage* im
         // 2. Or [setImage:] was implemented in TSidebarItemCell, in which case we just have to call
         // gOriginalSetImage(). This would be the case if, for example, another Finder extension
         // like Dropbox's has previously done the exact same thing as what we are doing here.
-        if (gOriginalSetImage) {
-            gOriginalSetImage(self, @selector(setImage:), image);
-        } else {
+        if (!gOriginalSetImage) {
+            // Case 1. (Normal case)
             // Does the equivalent of `[super setImage:image]`
-            //
-            // Note that it might be tempting here to write: objc_msgSendSuper(&super, sel, image);
-            // This would be bad, because if our method was swizzled, then `sel` would point to
-            // a different selector name (like: `dropbox_setImage:`), and objc_msgSendSuper would
-            // throw an exception because that selector wouldn't be defined by any superclass.
-            // And yes, this is exactly how Dropbox is f***ing up everybody else.
-            struct objc_super super = {self, class_getSuperclass(object_getClass(self))};
+            struct objc_super super = {self, [TSidebarItemCellClass superclass]};
             objc_msgSendSuper(&super, @selector(setImage:), image);
+        } else {
+            // Case 2. (Dropbox or some other app is also swizzling this method)
+            gOriginalSetImage(self, @selector(setImage:), image);
         }
-
-    } @catch (NSException* exception) {
-        NSLog(@"AeroFS: Exception in aero_TSidebarItemCell_setImage : %@", exception);
+    } @catch (NSException* ex) {
+        NSLog(@"AeroFS: Exception in aero_TSidebarItemCell_setImage : %@ %@", ex, [ex callStackSymbols]);
     }
 }
 

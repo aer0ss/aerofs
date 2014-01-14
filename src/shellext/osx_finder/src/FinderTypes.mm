@@ -2,6 +2,8 @@
 
 id FINodeFromFENode(const TFENode* node)
 {
+    if (!node) return nil;
+
     TFENodeVector nodeVec;
     nodeVec.push_back(*node);
 
