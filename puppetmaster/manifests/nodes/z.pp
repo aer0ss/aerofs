@@ -43,6 +43,8 @@ node "z.arrowfs.org" inherits default {
     "sv df90 pagerduty@sv.aerofs.com 22 /data",
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
     "x df90 pagerduty@x.aerofs.com 22 /dev/sda"
+    "sss-root df90 pagerduty@sss.aerofs.com 22 /dev/xvda1"
+    "sss-data df90 pagerduty@sss.aerofs.com 22 /dev/xvdb"
   ]:
     hour => "14",
     minute => "0",
@@ -56,6 +58,7 @@ node "z.arrowfs.org" inherits default {
     "web url http://www.aerofs.com",
     "sv url https://sv.aerofs.com/sv_beta/sv",
     "sp url-internalcert https://sp.aerofs.com/sp",
+    "sss url-internalcert https://sss.aerofs.com/syncstat",
     "verkehr port verkehr.aerofs.com 443",
     "zephyr checkzephyr zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",

@@ -273,7 +273,8 @@ public class SPServlet extends AeroServlet
     }
 
     /**
-     * GET is used only to report server status
+     * This used by various server sanity checking probes (pagerduty in public deployment and the
+     * sanity checker service in private deployment).
      */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
