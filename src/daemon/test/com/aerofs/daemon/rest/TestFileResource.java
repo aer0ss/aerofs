@@ -4,6 +4,8 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
+import com.aerofs.daemon.core.mock.logical.MockDS.MockDSFile;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.lib.Path;
@@ -27,6 +29,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
 
+import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.mockito.Matchers.eq;
@@ -423,6 +426,86 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(409)
                 .body("type", equalTo(com.aerofs.rest.api.Error.Type.CONFLICT.toString()))
         .when().post("/v0.10/files");
+    }
+
+    @Test
+    public void shouldMoveFile() throws Exception
+    {
+        // create file
+        MockDSFile file = mds.root().file("foo.txt");
+        SOID fileId = file.soid();
+
+        // create folder
+        MockDSDir dir = mds.root().dir("myFolder");
+        SOID folderId = dir.soid();
+
+        // move file into folder
+        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
+        final String newFileName = "foo1.txt";
+        SettableFuture<SOID> newFileId = whenMove("foo.txt", "myFolder", newFileName);
+        givenAcces()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, folderId.oid()).toStringFormal(),
+                        newFileName)))
+        .expect()
+                .statusCode(200)
+                .body("id", equalToFutureObject(newFileId))
+                .body("name", equalTo(newFileName))
+        .when()
+            .put("/v0.10/files/" + fileIdStr);
+
+        assertEquals("Object id has changed", fileId, newFileId.get());
+    }
+
+    @Test
+    public void shouldReturn409WhenMoveConflict() throws Exception
+    {
+        // create first file
+        MockDSFile file = mds.root().file("foo.txt");
+        SOID fileId = file.soid();
+        // create second file
+        MockDSFile file2 = mds.root().file("boo.txt");
+        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
+        whenMove("foo.txt", "", "boo.txt");
+        givenAcces()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "boo.txt")))
+        .expect()
+                .statusCode(409)
+                .body("type", equalTo(com.aerofs.rest.api.Error.Type.CONFLICT.toString()))
+        .when()
+                .put("/v0.10/files/" + fileIdStr);
+    }
+
+    @Test
+    public void shouldReturn404MovingNonExistingFile() throws Exception
+    {
+        givenAcces()
+            .contentType(ContentType.JSON)
+            .body(json(CommonMetadata.child(object("").toStringFormal(), "test.txt")))
+        .expect()
+            .statusCode(404)
+            .body("type", equalTo("NOT_FOUND"))
+        .when()
+            .put("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404MovingToNonExistingParrent() throws Exception
+    {
+        // create file
+        MockDSFile file = mds.root().file("foo.txt");
+        SOID fileId = file.soid();
+        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
+        givenAcces()
+            .contentType(ContentType.JSON)
+            .body(json(CommonMetadata.child(object("").toStringFormal(), "test")))
+        .expect()
+            .statusCode(404)
+            .body("type", equalTo("NOT_FOUND"))
+        .when()
+            .put("/v0.10/files/" + fileIdStr);
     }
 
 }

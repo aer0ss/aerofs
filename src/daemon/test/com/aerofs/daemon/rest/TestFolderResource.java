@@ -4,6 +4,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -15,6 +16,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.jayway.restassured.http.ContentType;
 import org.junit.Test;
 
+import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -106,7 +108,8 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn403WhenViewerTriesToCreate() throws Exception
     {
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(user, mds.root().soid().sidx(), Permissions.EDITOR);
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(
+                user, mds.root().soid().sidx(), Permissions.EDITOR);
 
         givenAcces()
                 .contentType(ContentType.JSON)
@@ -123,7 +126,8 @@ public class TestFolderResource extends AbstractRestTest
     {
         givenAcces()
                 .contentType(ContentType.JSON)
-                .body(json(CommonMetadata.child(new RestObject(rootSID, OID.generate()).toStringFormal(), "foo")))
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, OID.generate()).toStringFormal(), "foo")))
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -171,4 +175,92 @@ public class TestFolderResource extends AbstractRestTest
         .when().log().everything()
                 .post("/v0.10/folders");
     }
+
+    @Test
+    public void shouldMoveFolder() throws Exception
+    {
+        // create first folder
+        MockDSDir d = mds.root().dir("foo");
+        SOID firstSoid = d.soid();
+
+        // create second folder
+        MockDSDir d2 = mds.root().dir("boo");
+        SOID secondSoid = d2.soid();
+
+        // move foo into boo and rename it to moo
+        String firstFolderIdStr = new RestObject(rootSID, firstSoid.oid()).toStringFormal();
+        final String newFolderName = "moo";
+        SettableFuture<SOID> newObjectId = whenMove("foo", "boo", newFolderName);
+        givenAcces()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, secondSoid.oid()).toStringFormal(), newFolderName)))
+        .expect()
+                .statusCode(200)
+                .body("id", equalToFutureObject(newObjectId))
+                .body("name", equalTo(newFolderName))
+        .when()
+                .put("/v0.10/folders/" + firstFolderIdStr);
+
+        assertEquals("Object id has changed", firstSoid, newObjectId.get());
+    }
+
+    @Test
+    public void shouldReturn409WhenMoveConflict() throws Exception
+    {
+        // create first folder
+        MockDSDir d = mds.root().dir("foo");
+        SOID firstSoid = d.soid();
+
+        String newFolderName = "boo";
+        // create second folder
+        MockDSDir d2 = mds.root().dir(newFolderName);
+        SOID secondSoid = d2.soid();
+
+        // move foo into root and rename it to boo
+        String firstFolderIdStr = new RestObject(rootSID, firstSoid.oid()).toStringFormal();
+
+        whenMove("foo", "", newFolderName);
+
+        givenAcces()
+            .contentType(ContentType.JSON)
+            .body(json(CommonMetadata.child(object("").toStringFormal(), newFolderName)))
+        .expect()
+            .statusCode(409)
+            .body("type", equalTo(Error.Type.CONFLICT.toString()))
+        .when()
+            .put("/v0.10/folders/" + firstFolderIdStr);
+    }
+
+    @Test
+    public void shouldReturn404MovingNonExistingDir() throws Exception
+    {
+        givenAcces()
+            .contentType(ContentType.JSON)
+            .body(json(CommonMetadata.child(object("").toStringFormal(), "test")))
+        .expect()
+            .statusCode(404)
+            .body("type", equalTo("NOT_FOUND"))
+        .when()
+            .put("/v0.10/folders/" + new RestObject(rootSID, OID.generate()).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404MovingToNonExistingParrent() throws Exception
+    {
+        // create folder
+        MockDSDir d = mds.root().dir("foo");
+        SOID soid = d.soid();
+        String folderIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        givenAcces()
+            .contentType(ContentType.JSON)
+            .body(json(CommonMetadata.child(object("").toStringFormal(), "test")))
+        .expect()
+            .statusCode(404)
+            .body("type", equalTo("NOT_FOUND"))
+        .when()
+            .put("/v0.10/folders/" + folderIdStr);
+    }
+
+
 }

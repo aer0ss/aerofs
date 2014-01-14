@@ -172,7 +172,7 @@ public class MockDS
 
     }
 
-    private SOID resolve(Path path)
+    public SOID resolve(Path path)
     {
         MockDSRoot r = _roots.get(path.sid());
         if (r == null) return null;

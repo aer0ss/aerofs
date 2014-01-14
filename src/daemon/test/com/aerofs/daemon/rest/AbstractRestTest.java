@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
@@ -38,6 +39,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.havre.Havre;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
@@ -140,6 +142,7 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock ObjectCreator oc;
     protected @Mock ObjectMover om;
     protected @Mock ObjectDeleter od;
+    protected @Mock ImmigrantCreator ic;
 
     protected  @Mock OutboundEventLogger oel;
 
@@ -303,6 +306,7 @@ public class AbstractRestTest extends AbstractTest
                 bind(ObjectMover.class).toInstance(om);
                 bind(ObjectDeleter.class).toInstance(od);
                 bind(OutboundEventLogger.class).toInstance(oel);
+                bind(ImmigrantCreator.class).toInstance(ic);
                 bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));
             }
         });
@@ -408,7 +412,8 @@ public class AbstractRestTest extends AbstractTest
         return new EqualFutureObject(soid);
     }
 
-    protected SettableFuture<SOID> whenCreate(Type type, String parent, String name) throws Exception
+    protected SettableFuture<SOID> whenCreate(Type type, String parent, String name)
+            throws Exception
     {
         SOID p = ds.resolveThrows_(Path.fromString(rootSID, parent));
         final SettableFuture<SOID> soid = SettableFuture.create();
@@ -428,4 +433,39 @@ public class AbstractRestTest extends AbstractTest
 
         return soid;
     }
+
+    protected SettableFuture<SOID> whenMove(String objectName, String parentName, String newName)
+            throws Exception
+    {
+        final SOID parentSoid = ds.resolveThrows_(Path.fromString(rootSID, parentName));
+        final SOID objectSoid = ds.resolveThrows_(Path.fromString(rootSID, objectName));
+        final SettableFuture<SOID> soid = SettableFuture.create();
+        when(ic.move_(eq(objectSoid), eq(parentSoid), eq(newName), eq(PhysicalOp.APPLY), eq(t)))
+                .thenAnswer(new Answer<Object>()
+                {
+                    @Override
+                    public Object answer(InvocationOnMock invocation)
+                            throws Throwable
+                    {
+                        Object[] args = invocation.getArguments();
+                        SOID objectSoid = (SOID)args[0];
+                        String pathFrom = ds.resolve_(objectSoid).toStringRelative();
+                        String parenPath = ds.resolve_((SOID)args[1]).toStringRelative();
+                        String pathTo = parenPath.length() == 0 ? (String)args[2] :
+                                Util.join(parenPath, (String)args[2]);
+                        if (mds.resolve(new Path(rootSID, pathTo.split("/"))) == null) {
+                        // does not exist yet
+                            mds.move(pathFrom, pathTo, t);
+                            soid.set(objectSoid);
+                            return objectSoid;
+                        } else { // already exists
+                            throw new ExAlreadyExist();
+                        }
+
+                    }
+                });
+
+        return soid;
+    }
+
 }

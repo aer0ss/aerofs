@@ -134,7 +134,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
             throws ExNotFound, SQLException
     {
         OA oa = getOANullable_(soid);
-        if (oa == null) throw new ExNotFound(soid.toString());
+        if (oa == null) throw new ExNotFound("" + soid.toString());
         return oa;
     }
 
