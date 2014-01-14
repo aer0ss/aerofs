@@ -15,7 +15,7 @@ from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
 from web.auth import is_admin
 from web.sp_util import exception2error
-from web.util import get_rpc_stub, parse_rpc_error_exception
+from web.util import get_rpc_stub, parse_rpc_error_exception, is_restricted_external_sharing_enabled
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException
@@ -126,6 +126,7 @@ def _shared_folders(datatables_paginate, request,
         # variables
         'session_user': authenticated_userid(request),
         'is_admin': is_admin(request),
+        'use_restricted': is_restricted_external_sharing_enabled(request.registry.settings),
         'datatables_paginate': datatables_paginate == DatatablesPaginate.YES,
         # N.B. can't use "page_title" as the variable name. base_layout.mako
         # defines a global variable using the same name.

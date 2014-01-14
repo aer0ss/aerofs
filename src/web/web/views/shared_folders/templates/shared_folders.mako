@@ -146,9 +146,12 @@
 
             var DEFAULT_ROLE = 1;
             var ROLES = [
-                { "name": "Owner",  "permissions": ["MANAGE", "WRITE"] },
-                { "name": "Editor", "permissions": ["WRITE"] },
-                { "name": "Viewer", "permissions": [] }
+                { "name": "Owner",   "permissions": ["MANAGE", "WRITE"] },
+                { "name": "Editor",  "permissions": ["WRITE"] },
+            %if use_restricted:
+                { "name": "Manager", "permissions": ["MANAGE"] },
+            %endif
+                { "name": "Viewer",  "permissions": [] }
             ];
 
             function roleDescription(permissions) {
@@ -187,7 +190,7 @@
 
             function roleMenuText(role) {
                 ## TODO: hardcoded width seems like a terrible idea, at the very least make it relative to font-size
-                return '<div style="display: inline-block; width: 65px">' + role.name + "</div>"
+                return '<div style="display: inline-block; width: 70px">' + role.name + "</div>"
                         + roleDescription(role.permissions);
             }
 
