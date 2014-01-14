@@ -389,11 +389,6 @@ public class CLI implements IUI {
     }
 
     @Override
-    public void removeAllProgresses()
-    {
-    }
-
-    @Override
     public boolean areNotificationsClickable()
     {
         return false;

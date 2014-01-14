@@ -1,6 +1,5 @@
 package com.aerofs.gui.tray;
 
-import java.util.ArrayList;
 import java.util.TreeMap;
 
 import com.aerofs.base.Loggers;
@@ -36,39 +35,33 @@ public class Progresses {
     public void removeProgress(Object obj)
     {
         Progress prog = (Progress) obj;
-        l.debug("remove progress: " + prog.getTooltip());
+        l.debug("remove progress: " + prog._tooltip);
 
         if (_ti.isDisposed()) return;
 
         boolean last;
         if (!_progs.isEmpty()) {
-            last = _progs.lastKey().equals(prog.getId());
-            _progs.remove(prog.getId());
+            last = _progs.lastKey().equals(prog._id);
+            _progs.remove(prog._id);
         } else {
             last = false;   // the value doesn't matter
         }
 
         if (_progs.isEmpty()) {
             _ti.setToolTipText(DEFAULT_TOOLTIP);
-            _ti.setSpin(false);
-
         } else if (last) {
             setProgressToolTipText(_progs.lastEntry().getValue());
-            _ti.setSpin(true);
         }
     }
 
     public void removeAllProgresses()
     {
-        // make a copy to avoid concurrent modification error
-        for (Progress prog : new ArrayList<Progress>(_progs.values())) {
-            removeProgress(prog);
-        }
+        _progs.clear();
     }
 
     private void setProgressToolTipText(Progress prog)
     {
-        _ti.setToolTipText(TOOLTIP_PREFIX + " | " + prog.getTooltip());
+        _ti.setToolTipText(TOOLTIP_PREFIX + " | " + prog._tooltip);
     }
 
     /**
@@ -84,13 +77,24 @@ public class Progresses {
 
         if (_ti.isDisposed()) return prog;
 
-        _progs.put(prog.getId(), prog);
+        _progs.put(prog._id, prog);
 
         setProgressToolTipText(prog);
-        _ti.setSpin(true);
 
         if (notify) UI.get().notify(MessageType.INFO, msg + "...");
 
         return prog;
+    }
+
+    private static class Progress
+    {
+        public final int _id;
+        public final String _tooltip;
+
+        public Progress(int id, String tooltip)
+        {
+            _id = id;
+            _tooltip = tooltip;
+        }
     }
 }

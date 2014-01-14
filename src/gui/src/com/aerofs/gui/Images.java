@@ -252,15 +252,13 @@ public class Images {
     }
 
     /**
-     * @param index may by 0, 1, 2, ... Ignored if progress == false
      * @return icon name
      */
-    public static String getTrayIconName(boolean isServerOnline, boolean notification, int index)
+    public static String getTrayIconName(boolean isServerOnline, boolean notification)
     {
-        final int TRAY_ICON_COUNT = 14;
         StringBuilder sb = new StringBuilder("tray");
         if (notification) sb.append("n");
-        sb.append(isServerOnline ? index % TRAY_ICON_COUNT : 0);
+        sb.append(0);
         if (!isServerOnline) sb.append("grey");
         return sb.toString();
     }

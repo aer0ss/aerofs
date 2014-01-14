@@ -13,11 +13,9 @@ public class TestImages
     @Test
     public void shouldProduceCorrectTrayIconName()
     {
-        assertEquals(Images.getTrayIconName(true, false, 0), "tray0");
-        assertEquals(Images.getTrayIconName(true, false, 5), "tray5");
-        assertEquals(Images.getTrayIconName(true, false, 15), "tray1");
-        assertEquals(Images.getTrayIconName(false, true, 7), "trayn0grey");
-        assertEquals(Images.getTrayIconName(false, false, 7), "tray0grey");
-        assertEquals(Images.getTrayIconName(true, true, 7), "trayn7");
+        assertEquals(Images.getTrayIconName(true, true), "trayn0");
+        assertEquals(Images.getTrayIconName(true, false), "tray0");
+        assertEquals(Images.getTrayIconName(false, true), "trayn0grey");
+        assertEquals(Images.getTrayIconName(false, false), "tray0grey");
     }
 }

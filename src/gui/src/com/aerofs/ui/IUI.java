@@ -86,8 +86,6 @@ public interface IUI {
      */
     void removeProgress(Object prog);
 
-    void removeAllProgresses();
-
     boolean areNotificationsClickable();
 
     void notify(MessageType mt, String msg);

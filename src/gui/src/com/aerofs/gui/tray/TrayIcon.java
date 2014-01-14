@@ -14,7 +14,6 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
@@ -49,17 +48,12 @@ public class TrayIcon implements ITrayMenuListener
 {
     private static final Logger l = Loggers.getLogger(TrayIcon.class);
 
-    // milliseconds between frames. in testing, libappindicator was unable to
-    // handle anything faster than ~8fps, so give it a longer interval.
-    private final static long ANIMATION_INTERVAL = UbuntuTrayItem.supported() ? 200 : 80;
     private static final ClickEvent TRAY_ICON_DEFAULT_ACTION = new ClickEvent( Action.TRAY_ICON_DEFAULT_ACTION, Source.TASKBAR);
     private static final ClickEvent TRAY_ICON_CLICKED = new ClickEvent(Action.TRAY_ICON, Source.TASKBAR);
 
     private final SystemTray _st;
     private final TrayItem _ti;
     private final UbuntuTrayItem _uti;
-    private Thread _thdSpinning;
-    private int _iconIndex;
 
     // stores what the tooltip would be if the device is online, this is needed because when the
     // device is offline, the offline message takes precedence over other messages.
@@ -119,24 +113,7 @@ public class TrayIcon implements ITrayMenuListener
             if (!OSUtil.isOSX()) _ti.addListener(SWT.Selection, showMenu);
         }
 
-        setSpin(false);
-
         addOnlineStatusListener();
-    }
-
-    public void setSpin(boolean spin)
-    {
-        assert GUI.get().isUIThread();
-
-        if (!spin) {
-            _thdSpinning = null;
-            _iconIndex = 0;
-            refreshTrayIconImage();
-        } else if (_thdSpinning == null) {
-            _iconIndex = 0;
-            refreshTrayIconImage();
-            startAnimation();
-        }
     }
 
     TrayItem getTrayItem()
@@ -147,38 +124,6 @@ public class TrayIcon implements ITrayMenuListener
     private Widget iconImpl()
     {
         return Objects.firstNonNull(_uti, _ti);
-    }
-
-    private void startAnimation()
-    {
-        _thdSpinning = new Thread() {
-            boolean _done = false;
-            Thread _self = this;
-
-            @Override
-            public void run()
-            {
-                while (!_done) {
-                    ThreadUtil.sleepUninterruptable(ANIMATION_INTERVAL);
-
-                    GUI.get().safeExec(iconImpl(), new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            if (_thdSpinning != _self || iconImpl().isDisposed()) {
-                                _done = true;
-                            } else {
-                                _iconIndex++;
-                                refreshTrayIconImage();
-                            }
-                        }
-                    });
-                }
-            }
-        };
-
-        _thdSpinning.setDaemon(true);
-        _thdSpinning.start();
     }
 
     public void dispose()
@@ -258,8 +203,7 @@ public class TrayIcon implements ITrayMenuListener
 
     private void refreshTrayIconImage()
     {
-        String iconName = Images.getTrayIconName(_isOnline, !_notificationReasons.isEmpty(),
-                _iconIndex);
+        String iconName = Images.getTrayIconName(_isOnline, !_notificationReasons.isEmpty());
 
         /*
          * This optimization is necessary to prevent tray icon from flickering at start up.

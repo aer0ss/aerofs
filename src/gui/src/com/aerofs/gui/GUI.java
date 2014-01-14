@@ -630,18 +630,6 @@ public class GUI implements IUI
     }
 
     @Override
-    public void removeAllProgresses()
-    {
-        asyncExec(new Runnable() {
-            @Override
-            public void run()
-            {
-                if (_st != null) _st.getProgs().removeAllProgresses();
-            }
-        });
-    }
-
-    @Override
     public boolean areNotificationsClickable()
     {
         return true;
