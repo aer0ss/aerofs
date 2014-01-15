@@ -5,6 +5,7 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -55,6 +56,12 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
         try {
             soid = _imc.move_(from.soid(), toParent.soid(), ev._newName, PhysicalOp.APPLY, t);
             t.commit_();
+        } catch (ExAlreadyExist e) {
+            ev.setResult_(Response
+                    .status(Status.CONFLICT)
+                    .entity(new Error(Error.Type.CONFLICT,
+                            "Object with this name already exists at this location")));
+            return;
         } finally {
             t.end_();
         }
