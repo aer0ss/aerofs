@@ -87,7 +87,7 @@ public class ClientsResource
             client.setContactName(ncr.getContactName());
             client.setClientId(clientID);
             client.setSecret(secret);
-            client.setScopes(new HashSet<String>(Arrays.asList("readonly")));
+            client.setScopes(new HashSet<String>(Arrays.asList("read", "write")));
             client.getRedirectUris().add(ncr.getRedirectUri());
 
             resourceServer.getClients().add(client);

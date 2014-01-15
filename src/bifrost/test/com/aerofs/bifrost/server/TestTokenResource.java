@@ -242,7 +242,7 @@ public class TestTokenResource extends BifrostTest
                 new AuthenticatedPrincipal(USERNAME),
                 _clientRepository.findByClientId(CLIENTID),
                 0,
-                Sets.newHashSet("readonly"),
+                Sets.newHashSet("read"),
                 "");
         _accessTokenRepository.save(token);
         _session.flush();
