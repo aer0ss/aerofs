@@ -27,7 +27,6 @@ META-INF/services/javax.sound.midi.spi.MidiDeviceProvider
 sun/net
 META-INF/services/javax.sound.sampled.spi.AudioFileWriter
 com/sun/imageio/
-com/sun/servicetag/
 META-INF/services/sun.java2d.pipe.RenderingEngine
 META-INF/services/javax.sound.midi.spi.MidiFileWriter
 sun/rmi
@@ -60,7 +59,6 @@ sun/
 com/sun/jmx/
 com/sun/demo/
 com/sun/imageio/
-com/sun/servicetag/
 com/sun/net/
 com/sun/rmi/
 org/w3c/
