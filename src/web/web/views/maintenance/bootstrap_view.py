@@ -9,11 +9,12 @@ log = logging.getLogger(__name__)
 _URL_PARAM_TASK = 'task'
 _URL_PARAM_EXECUTION_ID = 'execution_id'
 
+
 @view_config(
-    route_name = 'json_enqueue_bootstrap_task',
+    route_name='json_enqueue_bootstrap_task',
     permission='maintain',
-    renderer = 'json',
-    request_method = 'POST'
+    renderer='json',
+    request_method='POST'
 )
 def json_enqueue_bootstrap_task(request):
     task = request.params[_URL_PARAM_TASK]
@@ -23,11 +24,12 @@ def json_enqueue_bootstrap_task(request):
         _URL_PARAM_EXECUTION_ID: eid
     }
 
+
 @view_config(
-    route_name = 'json_get_bootstrap_task_status',
+    route_name='json_get_bootstrap_task_status',
     permission='maintain',
-    renderer = 'json',
-    request_method = 'GET'
+    renderer='json',
+    request_method='GET'
 )
 def json_get_bootstrap_task_status(request):
     """

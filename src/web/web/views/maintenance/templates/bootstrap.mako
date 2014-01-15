@@ -1,7 +1,5 @@
 ## Bootstrap related functions
 
-<%namespace name="csrf" file="csrf.mako"/>
-
 <%def name="scripts()">
     <script>
         ## Enqueue a bootstrap task

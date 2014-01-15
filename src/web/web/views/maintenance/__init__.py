@@ -29,6 +29,7 @@ routes = {
     'maintenance_login_submit',
     'backup_appliance',
     'logs',
+    'logs_auto_download',
     'download_logs',
     # 'apps' is already taken by the access token management page
     'registered_apps',

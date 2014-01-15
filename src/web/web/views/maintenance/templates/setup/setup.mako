@@ -2,6 +2,7 @@
 <%! page_title = "Setup" %>
 
 <%namespace name="maintenance_mode" file="../maintenance_mode.mako"/>
+<%namespace name="error_message" file="../maintenance_error_message.mako"/>
 <%namespace name="common" file="setup_common.mako"/>
 <%namespace name="version" file="../version.mako"/>
 <%namespace name="no_ie" file="../no_ie.mako"/>
@@ -92,6 +93,7 @@
 
 <%block name="scripts">
     <%no_ie:scripts/>
+    <%error_message:scripts/>
     ${common.scripts(page)}
     ${local.page_scripts()}
 </%block>

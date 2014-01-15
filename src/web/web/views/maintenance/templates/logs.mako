@@ -8,10 +8,7 @@
 <p>Logs may be helpful when things go wrong. Click the button below to
     download this appliance's log files.</p>
 
-<p><strong>We are here to help!</strong> Sumbit your logs at
-    <a href="https://support.aerofs.com/anonymous_requests/new" target="_blank">
-    support.aerofs.com</a> with a brief description of the problem. We will
-    get back to you within one business day!</p>
+<p>${common.submit_logs_text(True)}</p>
 
 <hr/>
 

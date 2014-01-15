@@ -1,6 +1,7 @@
 <%inherit file="marketing_layout.mako"/>
 
 <%namespace name="maintenance_mode" file="maintenance_mode.mako"/>
+<%namespace name="error_message" file="maintenance_error_message.mako"/>
 <%namespace name="navigation" file="navigation.mako"/>
 <%namespace name="version" file="version.mako"/>
 <%namespace name="no_ie" file="no_ie.mako"/>
@@ -51,3 +52,7 @@
         ${next.body()}
     </div>
 </div>
+
+<%block name="layout_scripts">
+    <%error_message:scripts/>
+</%block>

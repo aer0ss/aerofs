@@ -5,8 +5,19 @@
 
 <%def name="html()">
     <%progress_modal:html>
-        Compressing log files...
+        Compressing appliance logs...
     </%progress_modal:html>
+</%def>
+
+<%def name="submit_logs_text(open_link_in_new_window)">
+    <strong>We are here to help!</strong> Sumbit your logs at
+    <a href="https://support.aerofs.com/anonymous_requests/new"
+        %if open_link_in_new_window:
+            target="_blank"
+        %endif
+    >
+    support.aerofs.com</a> with a brief description of the problem. We will
+    get back to you within one business day!
 </%def>
 
 <%def name="scripts()">
@@ -29,7 +40,7 @@
         function downloadLogs() {
             console.log("download ready");
             hideProgressModal();
-            ## Since the link serves non-HTML content, the brower will
+            ## Since the link serves non-HTML content, the browser will
             ## start downloading without navigating away from the current page.
             ## Don't use "location.href =". It's not supported by old Firefox.
             window.location.assign('${request.route_path('download_logs')}');

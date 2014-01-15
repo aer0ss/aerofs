@@ -11,7 +11,7 @@
 <%block name="scripts">
     <script type="text/javascript">
         $(document).ready(function() {
-            $("#error_text").text(getInternalErrorText());
+            $("#error_text").html(getInternalErrorText());
         });
     </script>
 </%block>

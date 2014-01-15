@@ -1,7 +1,7 @@
 // HTML code is allowed in the message
 function showErrorMessage(message) {
     hideAllMessages();
-    $('#flash-msg-error-body').html(normalize(message));
+    $('#flash-msg-error-body').html(normalizeMessage(message));
     $("#flash-msg-error").fadeIn();
 }
 
@@ -11,7 +11,7 @@ var successMessageTimer;
 function showSuccessMessage(message) {
     hideAllMessages();
     var $msg = $("#flash-msg-success");
-    $msg.html(normalize(message));
+    $msg.html(normalizeMessage(message));
     $msg.fadeIn();
 
     // Fade out the message in 8 seconds
@@ -30,7 +30,7 @@ function fadeOutErrorMessage() {
     $("#flash-msg-error").fadeOut();
 }
 
-function normalize(message) {
+function normalizeMessage(message) {
     message = message.charAt(0).toUpperCase() + message.slice(1);
     var last = message.slice(-1);
 
@@ -57,9 +57,10 @@ function showErrorMessageFromResponse(xhr) {
 }
 
 function getInternalErrorText() {
-    return "Sorry! An error occurred processing your request. Please refresh" +
-        " the page and try again. If this issue persists contact" +
-        " support@aerofs.com for further assistance."
+    return "Sorry! An error has occurred. Please refresh" +
+        " this page and try again. If this issue persists contact" +
+        " <a href='mailto:support@aerofs.com' target='_blank'>" +
+        "support@aerofs.com</a> for assistance."
 }
 
 function getErrorTypeNullable(xhr) {
@@ -112,4 +113,4 @@ $.extend({
             processData: false
         });
     }
-})
+});

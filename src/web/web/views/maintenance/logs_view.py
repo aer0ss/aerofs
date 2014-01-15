@@ -19,7 +19,21 @@ LOG_ARCHIVE_PATH = '/opt/bootstrap/public/logs.zip'
     renderer='logs.mako'
 )
 def logs(request):
+    _log_customer_id()
+    return {}
 
+
+@view_config(
+    route_name='logs_auto_download',
+    permission='maintain',
+    renderer='logs_auto_download.mako'
+)
+def logs_auto_download(request):
+    _log_customer_id()
+    return {}
+
+
+def _log_customer_id():
     # Log the customer ID so we can retrieve the information easily when the
     # user sends us appliance logs. Do not read the value from
     # request.registry.settings since it may not be populated before the
@@ -27,8 +41,6 @@ def logs(request):
     properties = {}
     Configuration().fetch_and_populate(properties)
     log.info("customer id: {}".format(properties.get('customer_id', 'unknown')))
-
-    return {}
 
 
 @view_config(
