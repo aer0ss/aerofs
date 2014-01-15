@@ -260,8 +260,11 @@ def json_setup_audit(request):
 def json_setup_hostname(request):
     hostname = request.params['base.host.unified']
 
-    if hostname == "localhost":
-        error("Localhost is not an acceptable name. Please configure your DNS.")
+    # disallow IP ranges 127
+    local_ips = re.compile("^127.\d{1,3}.\d{1,3}.\d{1,3}$")
+
+    if hostname == "localhost" or local_ips.match(hostname):
+        error("Localhost is not allowed.")
     elif not _is_hostname_resolvable(hostname):
         error("Unable to resolve " + hostname + ". Please check your settings.")
 
@@ -288,9 +291,9 @@ def _parse_email_request(request):
         port = request.params['email-sender-public-port']
         username = request.params['email-sender-public-username']
         password = request.params['email-sender-public-password']
-        # N.B. if a checkbox is unchecked, its value is not included in the request. This is
-        # the way that JavaScript's .serialize() works, apparently. So, we use the presence
-        # of the param as its value.
+        # N.B. if a checkbox is unchecked, its value is not included in the
+        # request. This is the way that JavaScript's .serialize() works,
+        # apparently. So, we use the presence of the param as its value.
         enable_tls = 'email-sender-public-enable-tls' in request.params
         smtp_cert = request.params['email-sender-public-cert']
     else:
@@ -330,7 +333,8 @@ def _send_verification_email(from_email, to_email, code, host, port,
     request_method='POST'
 )
 def json_verify_smtp(request):
-    host, port, username, password, enable_tls, smtp_cert, support_address = _parse_email_request(request)
+    host, port, username, password, enable_tls, smtp_cert, support_address = \
+        _parse_email_request(request)
 
     verify_code = request.params['verification-code']
     verify_email = request.params['verification-to-email']
@@ -356,7 +360,8 @@ def json_verify_smtp(request):
     request_method='POST'
 )
 def json_setup_email(request):
-    host, port, username, password, enable_tls, smtp_cert, support_address = _parse_email_request(request)
+    host, port, username, password, enable_tls, smtp_cert, support_address = \
+        _parse_email_request(request)
 
     configuration = Configuration()
     configuration.set_external_property('support_address',   support_address)

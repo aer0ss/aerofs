@@ -5,19 +5,15 @@
 <form method="POST" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
 
-    <h4>Hostname:</h4>
-    <%
-        val = current_config['base.host.unified']
-        if not val: val = 'share.'
-    %>
+    <h4>This appliance's hostname:</h4>
     ## current_config is a template parameter
-    <input class="input-block-level" id="base-host-unified" name="base.host.unified" type="text" value="${val}" />
+    <input class="input-block-level" id="base-host-unified" name="base.host.unified" type="text"/>
 
-    <p>This is your AeroFS Appliance's hostname. We recommend using <code>share.*</code> as the
-        hostname. For example, ACME Corporation may choose <code>share.acme.com</code>.</p>
-    <p>You need to configure the hostname's DNS entry to point to the IP assigned to the appliance.
-        If you're using VirtualBox, get the the IP from the appliance's console. If you're using
-        OpenStack, configure a floating IP for this instance.</p>
+    <p>We recommend using <strong>share.*</strong> as the
+        hostname. For example, ACME Inc. may choose <strong>share.acme.com</strong>.
+        You need to configure your DNS server to point the hostname to this appliance's IP
+        address.</p>
+    <p>Changing the hostname in the future ${might_require_reinstall()}</p>
     <hr />
     ${common.render_next_button()}
     ${common.render_previous_button()}
@@ -32,17 +28,32 @@
         <a href="#" class="btn btn-danger"
            onclick="confirmHostnameChange(); return false;">Proceed</a>
     </%def>
-    Are you sure you want to change the hostname? Depending on your DNS setup,
-    it might require users to reinstall AeroFS desktop apps and logout of mobile apps.
-    <a href="https://support.aerofs.com/entries/22711364" target="_blank">Read more</a>.
+    Are you sure you want to change the hostname? It ${might_require_reinstall()}
 </%modal:modal>
 
+<%def name="might_require_reinstall()">
+    might require users to reinstall AeroFS desktop apps and logout of mobile apps.
+    <a href="https://support.aerofs.com/entries/22711364" target="_blank">Read more</a>.
+</%def>
+
 <%def name="scripts()">
+    <script src="${request.static_path('web:static/js/purl.js')}"></script>
     <script>
         $(document).ready(function() {
-            $('#base-host-unified').focus();
             disableEsapingFromModal($('div.modal'));
+            populateAndFocusHostname();
         });
+
+        function populateAndFocusHostname() {
+            var current = "${current_config.get('base.host.unified', '')}";
+            if (!current) {
+                ## Use the current page's hostname
+                current = $.url().attr('host');
+            }
+
+            ## Set the value, select the whole text, and place focus.
+            $('#base-host-unified').val(current).select().focus();
+        }
 
         function submitForm() {
             disableNavButtons();

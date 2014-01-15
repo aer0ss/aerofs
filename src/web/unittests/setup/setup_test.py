@@ -41,6 +41,13 @@ class SetupTest(TestBase):
         except HTTPBadRequest:
             pass
 
+    def test__json_setup_hostname__should_disallow_local_ips(self):
+        try:
+            self._call_setup_hostname('127.1.2.3')
+            self.fail()
+        except HTTPBadRequest:
+            pass
+
     def _call_setup_hostname(self, hostname):
         json_setup_hostname(self.create_dummy_request({
             'base.host.unified': hostname

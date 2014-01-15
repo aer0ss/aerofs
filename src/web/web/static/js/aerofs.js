@@ -1,8 +1,12 @@
 // HTML code is allowed in the message
-function showErrorMessage(message) {
+function showErrorMessageUnnormalized(message) {
     hideAllMessages();
-    $('#flash-msg-error-body').html(normalizeMessage(message));
+    $('#flash-msg-error-body').html(message);
     $("#flash-msg-error").fadeIn();
+}
+
+function showErrorMessage(message) {
+    showErrorMessageUnnormalized(normalizeMessage(message));
 }
 
 var successMessageTimer;

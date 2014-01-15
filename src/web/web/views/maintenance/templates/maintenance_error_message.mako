@@ -8,9 +8,8 @@
 <%def name="scripts()">
     <script>
         $(document).ready(function() {
-            var original = showErrorMessage;
             showErrorMessage = function(message) {
-                original(normalizeMessage(message) +
+                showErrorMessageUnnormalized(normalizeMessage(message) +
                     "<div class='footnote' style='margin-top: 10px'>" +
                         "If you need more information, " +
                         "<a href='${request.route_path('logs_auto_download')}' target='_blank'>" +
