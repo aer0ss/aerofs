@@ -190,6 +190,7 @@ public class CoreSchema implements ISchema
             C_EPOCH_ACL         = "ep_ep",     // acl epoch
             C_EPOCH_SYNC_PULL   = "ep_s",      // sync status pull epoch (server-issued)
             C_EPOCH_SYNC_PUSH   = "ep_a",      // index of last local activity pushed to server
+            C_EPOCH_AUDIT_PUSH  = "ep_dp",     // index of last activity log entry pushed to the auditor
 
             // Activity Log Table. See IActivityLogDatabase.ActivityRow for field details.
             T_AL             = "ao",
@@ -501,23 +502,33 @@ public class CoreSchema implements ISchema
                 "primary key (" + C_ACL_SIDX + "," + C_ACL_SUBJECT + ")" +
                 ")" + dbcw.charSet());
 
+        // NOTE: although auditing is disabled in
+        // hybrid installations, it's OK to create
+        // an additional column for it.
+        // this simplifies the code here and imposes
+        // no cost. Moreover, this allows us to
+        // use the identical db schema across installation
+        // types
         s.executeUpdate(
                 "create table " + T_EPOCH + " (" +
-                        C_EPOCH_ACL + dbcw.longType() + " not null," +
-                        C_EPOCH_SYNC_PULL + dbcw.longType() + " not null," +
-                        C_EPOCH_SYNC_PUSH + dbcw.longType() + " not null" +
+                        C_EPOCH_ACL        + dbcw.longType() + " not null," +
+                        C_EPOCH_SYNC_PULL  + dbcw.longType() + " not null," +
+                        C_EPOCH_SYNC_PUSH  + dbcw.longType() + " not null," +
+                        C_EPOCH_AUDIT_PUSH + dbcw.longType() + " not null" +
                         ")" + dbcw.charSet());
         s.executeUpdate(
                 "insert into " + T_EPOCH +
                         " (" +
                             C_EPOCH_ACL + "," +
                             C_EPOCH_SYNC_PULL + "," +
-                            C_EPOCH_SYNC_PUSH +
+                            C_EPOCH_SYNC_PUSH + "," +
+                            C_EPOCH_AUDIT_PUSH +
                         ")" +
                         " values("+
                             LibParam.INITIAL_ACL_EPOCH + "," +
                             LibParam.INITIAL_SYNC_PULL_EPOCH + "," +
-                            LibParam.INITIAL_SYNC_PUSH_EPOCH +
+                            LibParam.INITIAL_SYNC_PUSH_EPOCH + "," +
+                            LibParam.INITIAL_AUDIT_PUSH_EPOCH +
                         ")");
 
         createStoreTables(s, dbcw);

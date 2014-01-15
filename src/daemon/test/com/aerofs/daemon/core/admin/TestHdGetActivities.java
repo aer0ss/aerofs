@@ -37,7 +37,7 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.aerofs.daemon.core.audit.ActivityLog;
+import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.event.admin.EIGetActivities;

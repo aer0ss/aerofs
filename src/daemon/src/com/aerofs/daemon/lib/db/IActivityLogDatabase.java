@@ -4,16 +4,15 @@
 
 package com.aerofs.daemon.lib.db;
 
-import java.sql.SQLException;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOID;
+
+import javax.annotation.Nullable;
+import java.sql.SQLException;
+import java.util.Set;
 
 /**
  * This database records past syncing activities. When possible, use the ActivityLog class which
@@ -29,6 +28,8 @@ public interface IActivityLogDatabase
      */
     void insertActivity_(SOID soid, int activites, Path path, @Nullable Path pathTo, Set<DID> dids,
             Trans t) throws SQLException;
+
+
 
     public static class ActivityRow
     {
@@ -71,4 +72,13 @@ public interface IActivityLogDatabase
      * @param idxLast set to Long.MAX_VALUE to return all the activities
      */
     IDBIterator<ActivityRow> getActivities_(long idxLast) throws SQLException;
+
+    /**
+     * Return all the activities with indices greater than {@code idxStart}.
+     * Activities are sorted in ascending order.
+     * @param idxStart positive integer after which to return activity log rows;
+     * set to 0 to return all the activities
+     */
+    IDBIterator<ActivityRow> getActivitiesAfterIndex_(long idxStart)
+                    throws SQLException;
 }

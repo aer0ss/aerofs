@@ -1,19 +1,7 @@
-package com.aerofs.daemon.core.audit;
+package com.aerofs.daemon.core.activity;
 
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.CREATION_VALUE;
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.DELETION_VALUE;
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATION_VALUE;
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.OUTBOUND_VALUE;
-import static com.google.common.base.Preconditions.checkState;
-
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -28,14 +16,25 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+
+import javax.annotation.Nullable;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.CREATION_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.DELETION_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATION_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.OUTBOUND_VALUE;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class records and retrieves local activity history. See GetActivities in Ritual API for
@@ -261,5 +260,13 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
     public IDBIterator<ActivityRow> getActivites_(long idxLast) throws SQLException
     {
         return _aldb.getActivities_(idxLast);
+    }
+
+    /**
+     * See the method of the same name in IActivityLogDatabase for detail.
+     */
+    public IDBIterator<ActivityRow> getActivitesAfterIndex_(long idxStart) throws SQLException
+    {
+        return _aldb.getActivitiesAfterIndex_(idxStart);
     }
 }

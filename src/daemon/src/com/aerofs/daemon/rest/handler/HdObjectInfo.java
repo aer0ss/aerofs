@@ -1,7 +1,7 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.daemon.core.audit.OutboundEventLogger;
+import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
@@ -14,7 +14,7 @@ import com.google.inject.Inject;
 import javax.ws.rs.core.Response;
 import java.sql.SQLException;
 
-import static com.aerofs.daemon.core.audit.OutboundEventLogger.*;
+import static com.aerofs.daemon.core.activity.OutboundEventLogger.*;
 
 public class HdObjectInfo extends AbstractRestHdIMC<EIObjectInfo>
 {

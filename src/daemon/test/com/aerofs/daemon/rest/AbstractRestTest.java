@@ -14,7 +14,7 @@ import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.acl.LocalACL;
-import com.aerofs.daemon.core.audit.OutboundEventLogger;
+import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.mock.logical.MockDS;

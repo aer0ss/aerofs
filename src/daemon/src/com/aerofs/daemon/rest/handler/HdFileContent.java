@@ -1,7 +1,7 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.daemon.core.audit.OutboundEventLogger;
+import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -31,7 +31,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.Set;
 
-import static com.aerofs.daemon.core.audit.OutboundEventLogger.*;
+import static com.aerofs.daemon.core.activity.OutboundEventLogger.*;
 
 public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
 {

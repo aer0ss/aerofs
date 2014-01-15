@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.admin;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.audit.ActivityLog;
+import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.DID2User;

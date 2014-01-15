@@ -71,7 +71,8 @@ public class DaemonPostUpdateTasks
             new DPUTMigrateHistoryToHex(),
             new DPUTUpdateACLFromDiscreteRolesToFlags(dbcw),
             new DPUTUpdateNROForAliasedAndMigrated(dbcw, rocklog),
-            new DPUTFixNormalizationOSX(osutil, dbcw, dr, rocklog)
+            new DPUTFixNormalizationOSX(osutil, dbcw, dr, rocklog),
+            new DPUTUpdateEpochTableAddAuditColumn(dbcw)
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 
