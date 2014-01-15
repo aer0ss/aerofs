@@ -2,7 +2,8 @@
 
 id FINodeFromFENode(const TFENode* node)
 {
-    if (!node) return nil;
+    // [NSArray FINodesFromFENodeVector] dereferences node->fNodeRef and expects it to be non-nil
+    if (!node || !node->fNodeRef) return nil;
 
     TFENodeVector nodeVec;
     nodeVec.push_back(*node);
