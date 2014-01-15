@@ -233,5 +233,5 @@ public class TestDownstream extends AbstractTest
     private LineServerHandler   _handler;
     private final String        _testValue = "{\"This is a thing amirite\":\"Yep\"}";
     private static final long   DELAY = C.SEC / 10;
-    private static final long   MAX_ATTEMPTS = 50;
+    private static final long   MAX_ATTEMPTS = 450;
 }
