@@ -372,6 +372,6 @@ public class LdapAuthority implements IAuthority
     volatile private LDAPConnectionPool _pool = null;
     private SearchScope                 _scope = SearchScope.SUB;
     private LdapConfiguration           _cfg;
-    private AuditClient                 _auditClient = new AuditClient()
-                                            .setAuditorClient(AuditorFactory.create());
+    private AuditClient                 _auditClient = new AuditClient().setAuditorClient(
+                                                AuditorFactory.createUnauthenticated());
 }

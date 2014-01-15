@@ -52,7 +52,8 @@ public class EventResource
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/event")
-    public Response audit(@Context HttpContext context, Map<String, Object> contents)
+    @SuppressWarnings("unused")
+    public Response event(@Context HttpContext context, Map<String, Object> contents)
     {
         // let's make sure the required elements were provided...
         if ((contents == null)

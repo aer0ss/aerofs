@@ -73,7 +73,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
     private final ActivityLog _activityLog;
     private final IMapSIndex2SID _sidxTosid;
     private final SimpleDateFormat _dateFormat;
-    private final AuditClient _auditClient = new AuditClient(); // FIXME (AG): are we setting up a global audit client somewhere? Should this be injected?
+    private final AuditClient _auditClient = new AuditClient();
 
     private boolean running = false;
     private long lastActivityLogIndex;

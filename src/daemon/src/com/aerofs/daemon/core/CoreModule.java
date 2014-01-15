@@ -156,6 +156,6 @@ public class CoreModule extends AbstractModule
     @Provides
     public IAuditorClient provideAuditorClient()
     {
-        return AuditorFactory.create();
+        return AuditorFactory.createAuthenticated();
     }
 }

@@ -104,8 +104,8 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         admin.start();
         ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);
 
-        AuditClient auditClient = new AuditClient().setAuditorClient(AuditorFactory.create());
-        ctx.setAttribute(AUDIT_CLIENT_ATTRIBUTE, auditClient);
+        ctx.setAttribute(AUDIT_CLIENT_ATTRIBUTE, new AuditClient()
+                .setAuditorClient(AuditorFactory.createUnauthenticated()));
 
         // Set up the user session objects.
         ctx.setAttribute(SESSION_USER_TRACKER, _userSessionTracker);

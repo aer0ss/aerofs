@@ -14,4 +14,10 @@ location /audit {
     proxy_set_header DName $ssl_client_s_dn;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    # This field indicates to the backend that the request comes via
+    # the nginx proxy, and requires client authentication (using the
+    # mutual-certificate-authentication mechanism).
+    # See also: HttpCertAuthenticator.java in the auditor module.
+    proxy_set_header AeroFS-Auth-Required true;
 }

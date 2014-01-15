@@ -4,6 +4,7 @@
 
 package com.aerofs.auditor.server;
 
+import com.aerofs.auditor.resource.HttpRequestAuthenticator;
 import com.aerofs.auditor.resource.EventResource;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.Loggers;
@@ -17,6 +18,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import org.jboss.netty.channel.ChannelPipeline;
 
 import java.io.FileInputStream;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -42,6 +44,14 @@ public class Auditor extends Service
     {
         // this weird invocation is necessary to confuse ImmutableSet.copyOf() with one element
         return ImmutableSet.copyOf(new Class<?>[]{EventResource.class});
+    }
+
+    @Override
+    public ChannelPipeline getSpecializedPipeline()
+    {
+        ChannelPipeline p = super.getSpecializedPipeline();
+        p.addBefore("jersey", "exec", new HttpRequestAuthenticator());
+        return p;
     }
 
     public static void main(String[] args) throws Exception

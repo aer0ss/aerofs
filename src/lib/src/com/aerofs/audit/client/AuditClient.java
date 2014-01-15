@@ -31,6 +31,9 @@ import java.util.Map;
 // (i hate that users say .add("user", user.id()) )
 public class AuditClient
 {
+    public final static String HEADER_UID = "AeroFS-UserID";
+    public final static String HEADER_DID = "AeroFS-DeviceID";
+
     Logger l = LoggerFactory.getLogger(AuditClient.class);
 
     /** The general topic this audit belongs to. */

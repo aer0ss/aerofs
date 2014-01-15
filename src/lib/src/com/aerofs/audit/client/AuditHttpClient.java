@@ -4,52 +4,25 @@
 
 package com.aerofs.audit.client;
 
-import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.log.LogUtil;
-import com.google.common.net.HttpHeaders;
-import com.google.common.net.MediaType;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 
-class AuditHttpClient implements IAuditorClient
+abstract class AuditHttpClient implements IAuditorClient
 {
     private static final Logger l = Loggers.getLogger(AuditHttpClient.class);
 
     /**
-     * Create an HTTP client for the auditor service. This client is configured by BaseParam.Audit.
-     * TODO: expose internal and external versions of this (public URL versus internal URL)
-     */
-    public static IAuditorClient create()
-    {
-        if (Audit.AUDIT_ENABLED) {
-            try {
-                l.info("Enabling connection to audit server at {}:{}/{}",
-                        Audit.SERVICE_HOST, Audit.SERVICE_PORT, Audit.SERVICE_EVENT_PATH);
-                return new AuditHttpClient(new URL(
-                        "http", Audit.SERVICE_HOST, Audit.SERVICE_PORT, Audit.SERVICE_EVENT_PATH));
-            } catch (MalformedURLException mue) {
-                l.error("Misconfigured audit service URL. Auditing is DISABLED.");
-            }
-        }
-        l.info("Audit service is disabled.");
-        return null;
-    }
-
-    /**
-     * Instantiate a client that can submit audit events to the service, using the configuration
-     * information from LibParam.Audit.
-     * If the configuration is broken (does not form a valid URL) this constructor
-     * may throw an unchecked exception.
-     * Success does not guarantee the client can connect to an audit service.
+     * Instantiate a client that can submit audit events to the service.
+     *
+     * Success does not guarantee the client will be able to connect.
      */
     AuditHttpClient(URL url) { _svcUrl = url; }
 
@@ -81,19 +54,10 @@ class AuditHttpClient implements IAuditorClient
         }
     }
 
-    private static HttpURLConnection getConnection(URL url) throws IOException
-    {
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-        conn.setUseCaches(true);
-        conn.setConnectTimeout(Audit.CONN_TIMEOUT);
-        conn.setReadTimeout(Audit.READ_TIMEOUT);
-        conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
-        conn.setDoOutput(true);
-        conn.connect();
-
-        return conn;
-    }
+    /**
+     * Return an appropriate connection instance for the requested type.
+     */
+    abstract HttpURLConnection getConnection(URL url) throws IOException;
 
     private static void submitEvent(HttpURLConnection conn, String content) throws IOException
     {
@@ -115,20 +79,7 @@ class AuditHttpClient implements IAuditorClient
             l.warn("event submission failed: " + code);
             throw new IOException("event submission failed:" + code);
         }
-
         // TODO: we currently don't even bother checking for response body, because we don't care
-        // Two things to think about:
-        // - make sure this doesn't leak resources when readFully() is not invoked
-        // - error response returns a json doc that we just drop on the floor.
-    }
-
-    private static void closeSilently(InputStream stream)
-    {
-        try {
-            stream.close();
-        } catch (IOException e) {
-            // ignored
-        }
     }
 
     private URL _svcUrl;

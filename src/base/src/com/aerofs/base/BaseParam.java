@@ -171,7 +171,7 @@ public class BaseParam
          *  1. Our license allows us to use the audit feature, AND
          *  2. The user has enabled auditing during the setup process.
          */
-        public static boolean                   AUDIT_ENABLED = AUDIT_ALLOWED &&
+        public static boolean                   AUDIT_ENABLED =
                 getBooleanProperty(             "base.audit.enabled", false);
 
         /**
@@ -193,11 +193,11 @@ public class BaseParam
                 getStringProperty(              "base.audit.service.path", "/event");
 
         /**
-         * URL for public access to the audit REST service.
-         * TODO: Not currently exposed.
+         * URL for public (i.e. client) access to the audit REST service.
          */
-//        public static final String              SERVICE_EVENT_URL =
-//                getStringProperty(              "https://sp.aerofs.com:9300/audit/event";
+        public static final URL                 PUBLIC_EVENT_URL =
+                getUrlProperty(                 "base.audit.public.url",
+                                                "https://unified.syncfs.com/audit/event");
 
         /**
          * Connection timeout in milliseconds.
