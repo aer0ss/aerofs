@@ -25,6 +25,21 @@
         <!--[if lt IE 9]>
         <script src="{{ url_for('static', filename='js/html5.js') }}"></script>
         <![endif]-->
+
+        {#
+        Segment.IO - Put in the header rather than footer as required by Segment.IO
+        Snippet taken from https://segment.io/libraries/analytics.js/
+
+        SEGMENTIO_API_KEY is the public key that should be used by the JS, not
+        to be confused with SEGMENTIO_SECRET_KEY, which is the secret key that
+        should be used only by the backend.
+        #}
+        {% if "SEGMENTIO_API_KEY" in config %}
+        <script type="text/javascript">
+        window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(a){return function(){var t=Array.prototype.slice.call(arguments);return t.unshift(a),window.analytics.push(t),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(a){var t=document.createElement("script");t.type="text/javascript",t.async=!0,t.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+a+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n)},window.analytics.SNIPPET_VERSION="2.0.6",
+        window.analytics.load("{{ config['SEGMENTIO_API_KEY'] }}");
+        </script>
+        {% endif %}
     </head>
     <body>
         {# See base_layout.mako for comments on the layout #}

@@ -10,9 +10,13 @@ SQLAlchemy==0.8.4
 Tempita==0.5.1
 WTForms==1.0.5
 Werkzeug==0.9.4
+analytics-python==0.4.4
 decorator==3.4.0
 itsdangerous==0.23
 pbr==0.5.23
+python-dateutil==2.2
+requests==2.2.0
 scrypt==0.6.1
+six==1.5.2
 sqlalchemy-migrate==0.8.2
 wsgiref==0.1.2

@@ -3,8 +3,9 @@ import os
 
 from flask import render_template, flash, redirect, request, url_for
 from flask.ext import scrypt, login
+import markupsafe
 
-from lizard import app, db, emails, forms, login_manager, models
+from lizard import app, analytics_client, db, emails, forms, login_manager, models
 
 @login_manager.user_loader
 def load_user(userid):
@@ -151,6 +152,29 @@ def signup_completion_page():
 
         # Commit.
         db.session.commit()
+
+        # Submit analytics tracking thing.
+        context = {
+                'providers': {
+                    'Salesforce': 'true'
+                    },
+                'Salesforce': {
+                    'object': 'Lead',
+                    'lookup': { 'email': markupsafe.escape(admin.email) }
+                    }
+                }
+        analytics_client.identify(admin.email,
+                {
+                    'email': markupsafe.escape(admin.email),
+                    'firstName': markupsafe.escape(admin.first_name),
+                    'lastName': markupsafe.escape(admin.last_name),
+                    'company': markupsafe.escape(admin.customer.name),
+                    'title': markupsafe.escape(admin.job_title),
+                    'phone': markupsafe.escape(admin.phone_number),
+                },
+                context=context,
+                )
+        analytics_client.track(markupsafe.escape(admin.email), "Signed Up For Private Cloud");
 
         # Log user in.
         login_success = login.login_user(admin, remember=True)
