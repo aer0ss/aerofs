@@ -1,6 +1,6 @@
-from lizard import db
-
 import datetime
+
+from lizard import db
 
 # Maximum length of a valid email address, in bytes, including null terminator
 # "restricts the entire email address to be no more than 254 characters"

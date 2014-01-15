@@ -1,9 +1,10 @@
-from flask import render_template, flash, redirect, request, url_for
-from flask.ext import scrypt, login
-from lizard import app, db, emails, forms, login_manager, models
-
 import base64
 import os
+
+from flask import render_template, flash, redirect, request, url_for
+from flask.ext import scrypt, login
+
+from lizard import app, db, emails, forms, login_manager, models
 
 @login_manager.user_loader
 def load_user(userid):

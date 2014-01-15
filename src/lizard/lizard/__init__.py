@@ -8,12 +8,10 @@ from migrate.versioning import api
 from migrate.exceptions import DatabaseAlreadyControlledError
 
 app = Flask(__name__)
+# Base configuration.
 app.config.from_object('config')
-# Also load overrides from a file referred to by an environment variable, if
-# present.  Allows for dev settings to override production ones for local
-# development.
-if 'CONFIG_EXTRA' in os.environ:
-    app.config.from_envvar('CONFIG_EXTRA')
+# Deployment-specific configuration.
+app.config.from_object('additional_config')
 
 # Login manager.  Flask-login does session management.
 login_manager = LoginManager()
