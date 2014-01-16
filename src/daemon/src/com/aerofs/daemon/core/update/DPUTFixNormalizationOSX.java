@@ -237,31 +237,37 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
 
     private ResolvedPath resolve(@Nonnull OA oa) throws SQLException
     {
+        return resolve(_sdb, _siddb, _mdb, oa);
+    }
+
+    static ResolvedPath resolve(IStoreDatabase sdb, ISIDDatabase siddb, IMetaDatabase mdb,
+            @Nonnull OA oa) throws SQLException
+    {
         List<SOID> soids = Lists.newArrayListWithCapacity(16);
         List<String> elems = Lists.newArrayListWithCapacity(16);
 
         while (true) {
             if (oa.soid().oid().isRoot()) {
-                Set<SIndex> p = _sdb.getParents_(oa.soid().sidx());
+                Set<SIndex> p = sdb.getParents_(oa.soid().sidx());
                 if (L.isMultiuser() || p.isEmpty()) {
                     break;
                 } else {
                     checkState(p.size() == 1, oa.soid().sidx() + " " + p);
                     // parent oid of the root encodes the parent store's sid
                     SOID soidAnchor = new SOID(Iterables.get(p, 0),
-                            SID.storeSID2anchorOID(_siddb.getSID_(oa.soid().sidx())));
+                            SID.storeSID2anchorOID(siddb.getSID_(oa.soid().sidx())));
                     checkState(!soidAnchor.equals(oa.soid()), soidAnchor + " " + oa);
-                    oa = checkNotNull(_mdb.getOA_(soidAnchor));
+                    oa = checkNotNull(mdb.getOA_(soidAnchor));
                 }
             }
 
             soids.add(oa.soid());
             elems.add(oa.name());
             checkState(!oa.parent().equals(oa.soid().oid()), oa);
-            oa = checkNotNull(_mdb.getOA_(new SOID(oa.soid().sidx(), oa.parent())));
+            oa = checkNotNull(mdb.getOA_(new SOID(oa.soid().sidx(), oa.parent())));
         }
 
-        return new ResolvedPath(_siddb.getSID_(oa.soid().sidx()),
+        return new ResolvedPath(siddb.getSID_(oa.soid().sidx()),
                 Lists.reverse(soids), Lists.reverse(elems));
     }
 
@@ -275,22 +281,28 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
         return name;
     }
 
-    private static String auxRoot(SID sid) throws SQLException
+    static String auxRoot(SID sid) throws SQLException
     {
         return Cfg.absAuxRootForPath(Cfg.getRootPathNullable(sid), sid);
     }
 
-    private static String auxPath(SID sid, AuxFolder f, SOID soid) throws SQLException
+    static String auxPath(SID sid, AuxFolder f, SOID soid) throws SQLException
     {
         return Util.join(auxRoot(sid), f._name, LinkedPath.makeAuxFileName(soid));
     }
 
-    private static String nroPath(ResolvedPath path) throws SQLException
+    static String nroPath(ResolvedPath path) throws SQLException
     {
         return auxPath(path.sid(), AuxFolder.NON_REPRESENTABLE, path.soid());
     }
 
     private String physicalPath(ResolvedPath path) throws SQLException
+    {
+        return physicalPath(_osutil, _nrodb, path);
+    }
+
+    static String physicalPath(IOSUtil osutil, NRODatabase nrodb, ResolvedPath path)
+            throws SQLException
     {
         String s = "";
         String[] elems = path.elements();
@@ -298,8 +310,8 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
         // iterate upwards over path components to find the first non-representable object, if any
         for (int i = elems.length - 1; i >= 0; --i) {
             String component = elems[i];
-            boolean nro = _nrodb.isNonRepresentable_(path.soids.get(i));
-            if (nro || _osutil.isInvalidFileName(component)) {
+            boolean nro = nrodb.isNonRepresentable_(path.soids.get(i));
+            if (nro || osutil.isInvalidFileName(component)) {
                 // reached first NRO
                 String base = auxPath(path.sid(), AuxFolder.NON_REPRESENTABLE, path.soids.get(i));
                 return s.isEmpty() ? base : Util.join(base, s);
