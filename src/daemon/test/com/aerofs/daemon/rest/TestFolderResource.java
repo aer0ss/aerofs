@@ -263,6 +263,25 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn403WhenViewerTriesToMove() throws Exception
+    {
+        MockDSDir item = mds.root().dir("foo");
+        SOID soid = item.soid();
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(
+                user, soid.sidx(), Permissions.EDITOR);
+        String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        whenMove("foo", "", "moo");
+        givenAcces()
+            .contentType(ContentType.JSON)
+            .body(json(CommonMetadata.child(object("").toStringFormal(), "moo")))
+        .expect()
+            .statusCode(403)
+            .body("type", equalTo("FORBIDDEN"))
+        .when()
+            .put("/v0.10/folders/" + idStr);
+    }
+
+    @Test
     public void shouldReturn204ForDeleteSuccess() throws Exception
     {
         // create folder
@@ -288,5 +307,22 @@ public class TestFolderResource extends AbstractRestTest
 
     }
 
+    @Test
+    public void shouldReturn403WhenViewerTriesToDelete() throws Exception
+    {
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(
+                user, mds.root().soid().sidx(), Permissions.EDITOR);
+        MockDSDir item = mds.root().dir("foo");
+        SOID soid = item.soid();
+        String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(
+                user, soid.sidx(), Permissions.EDITOR);
+        givenAcces()
+        .expect()
+            .statusCode(403)
+            .body("type", equalTo("FORBIDDEN"))
+        .when()
+            .delete("/v0.10/folders/" + idStr);
+    }
 
 }

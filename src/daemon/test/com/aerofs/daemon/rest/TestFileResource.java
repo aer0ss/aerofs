@@ -1,6 +1,8 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA.Type;
@@ -33,6 +35,7 @@ import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -429,6 +432,21 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn403WhenViewerTriesToCreate() throws Exception
+    {
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(
+                user, mds.root().soid().sidx(), Permissions.EDITOR);
+        givenAcces()
+            .contentType(ContentType.JSON)
+            .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
+        .expect()
+            .statusCode(403)
+            .body("type", equalTo("FORBIDDEN"))
+        .when()
+            .post("/v0.10/files");
+    }
+
+    @Test
     public void shouldMoveFile() throws Exception
     {
         // create file
@@ -509,6 +527,25 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn403WhenViewerTriesToMove() throws Exception
+    {
+        MockDSFile item = mds.root().file("foo.txt");
+        SOID soid = item.soid();
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(
+                user, soid.sidx(), Permissions.EDITOR);
+        String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        whenMove("foo.txt", "", "moo.txt");
+        givenAcces()
+            .contentType(ContentType.JSON)
+            .body(json(CommonMetadata.child(object("").toStringFormal(), "moo.txt")))
+        .expect()
+            .statusCode(403)
+            .body("type", equalTo("FORBIDDEN"))
+        .when()
+            .put("/v0.10/files/" + idStr);
+    }
+
+    @Test
     public void shouldReturn204ForDeleteSuccess() throws Exception
     {
         // create file
@@ -532,6 +569,24 @@ public class TestFileResource extends AbstractRestTest
         .when()
             .delete("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal());
 
+    }
+
+    @Test
+    public void shouldReturn403WhenViewerTriesToDelete() throws Exception
+    {
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(
+                user, mds.root().soid().sidx(), Permissions.EDITOR);
+        MockDSFile item = mds.root().file("foo.txt");
+        SOID soid = item.soid();
+        String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(
+                user, soid.sidx(), Permissions.EDITOR);
+        givenAcces()
+            .expect()
+            .statusCode(403)
+            .body("type", equalTo("FORBIDDEN"))
+        .when()
+            .delete("/v0.10/files/" + idStr);
     }
 
 }
