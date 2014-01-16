@@ -260,11 +260,11 @@ def json_setup_audit(request):
 def json_setup_hostname(request):
     hostname = request.params['base.host.unified']
 
-    # disallow IP ranges 127
+    # disallow the IP range 127/8
     local_ips = re.compile("^127.\d{1,3}.\d{1,3}.\d{1,3}$")
 
     if hostname == "localhost" or local_ips.match(hostname):
-        error("Localhost is not allowed.")
+        error("Local hostnames or IP addresses are not allowed.")
     elif not _is_hostname_resolvable(hostname):
         error("Unable to resolve " + hostname + ". Please check your settings.")
 

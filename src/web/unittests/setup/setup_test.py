@@ -6,6 +6,7 @@ from pyramid.httpexceptions import HTTPBadRequest
 from unittests.test_base import TestBase
 from web.views.maintenance.setup_view import _get_default_support_email, json_setup_hostname
 
+
 class SetupTest(TestBase):
 
     def test__get_default_support_email__should_work_as_expected(self):
