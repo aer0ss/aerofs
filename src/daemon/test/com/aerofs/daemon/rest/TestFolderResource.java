@@ -254,7 +254,8 @@ public class TestFolderResource extends AbstractRestTest
         String folderIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
         givenAcces()
             .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(object("").toStringFormal(), "test")))
+            .body(json(CommonMetadata.child(new RestObject(rootSID,
+                    OID.generate()).toStringFormal(), "test")))
         .expect()
             .statusCode(404)
             .body("type", equalTo("NOT_FOUND"))

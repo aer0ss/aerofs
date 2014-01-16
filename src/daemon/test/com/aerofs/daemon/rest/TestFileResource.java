@@ -518,7 +518,8 @@ public class TestFileResource extends AbstractRestTest
         String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
         givenAcces()
             .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(object("").toStringFormal(), "test")))
+            .body(json(CommonMetadata.child(new RestObject(rootSID,
+                    OID.generate()).toStringFormal(), "test.txt")))
         .expect()
             .statusCode(404)
             .body("type", equalTo("NOT_FOUND"))
