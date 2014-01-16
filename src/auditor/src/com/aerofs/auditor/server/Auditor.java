@@ -29,16 +29,6 @@ public class Auditor extends Service
     static
     {
         Loggers.init();
-        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-            private static final int UNCAUGHT_EXCEPTION_EXIT_CODE = 99;
-            @Override
-            public void uncaughtException(Thread thread, Throwable throwable)
-            {
-                l.error("uncaught exception thd:{} err:{} - kill system",
-                        thread.getName(), throwable, throwable);
-                System.exit(UNCAUGHT_EXCEPTION_EXIT_CODE);
-            }
-        });
     }
 
     @Inject
@@ -56,6 +46,8 @@ public class Auditor extends Service
 
     public static void main(String[] args) throws Exception
     {
+        setDefaultExceptionHandler();
+
         Properties extra = new Properties();
         if (args.length > 0) extra.load(new FileInputStream(args[0]));
 
@@ -77,4 +69,18 @@ public class Auditor extends Service
             }
         });
     }
+
+    static private void setDefaultExceptionHandler()
+    {
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable throwable)
+            {
+                l.error("uncaught exception thd:{} err:{}", thread.getName(), throwable, throwable);
+                System.exit(UNCAUGHT_EXCEPTION_EXIT_CODE);
+            }
+        });
+    }
+
+    private static final int UNCAUGHT_EXCEPTION_EXIT_CODE = 99;
 }
