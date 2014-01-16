@@ -262,5 +262,31 @@ public class TestFolderResource extends AbstractRestTest
             .put("/v0.10/folders/" + folderIdStr);
     }
 
+    @Test
+    public void shouldReturn204ForDeleteSuccess() throws Exception
+    {
+        // create folder
+        MockDSDir d = mds.root().dir("foo");
+        SOID soid = d.soid();
+        String folderIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        givenAcces()
+        .expect()
+                .statusCode(204)
+        .when()
+                .delete("/v0.10/folders/" + folderIdStr);
+
+    }
+
+    @Test
+    public void shouldReturn404ForDeleteNonExistent() throws Exception
+    {
+        givenAcces()
+        .expect()
+            .statusCode(404)
+        .when()
+            .delete("/v0.10/folders/" + new RestObject(rootSID, OID.generate()).toStringFormal());
+
+    }
+
 
 }
