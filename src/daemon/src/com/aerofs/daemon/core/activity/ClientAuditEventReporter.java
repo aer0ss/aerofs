@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.activity;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
-import com.aerofs.audit.client.AuditorFactory;
+import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
@@ -19,8 +19,8 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.lib.db.AuditDatabase;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
+import com.aerofs.daemon.lib.db.IAuditDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -31,7 +31,6 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.gson.annotations.SerializedName;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -55,10 +54,10 @@ import static com.google.common.base.Preconditions.checkArgument;
  * every {@link com.aerofs.base.BaseParam.Audit#AUDIT_POSTING_INTERVAL}
  * milliseconds.
  */
-public final class ClientAuditEventReporter
+public final class ClientAuditEventReporter // this can be final because it's not injected anywhere
 {
-    private static final int AUDIT_EVENT_BATCH_SIZE = 10;
-    private static final int MAX_ACTIVITY_LOG_EVENTS_TO_ITERATE_OVER_ON_EACH_RUN = 200;
+    public static final int AUDIT_EVENT_BATCH_SIZE = 50;
+    public static final int MAX_ACTIVITY_LOG_EVENTS_TO_ITERATE_OVER_ON_EACH_RUN = 200;
 
     private static final String LOCAL_EVENT_NAME = "file.notification";
     private static final String REMOTELY_REQUESTED_EVENT_NAME = "file.transfer";
@@ -70,7 +69,7 @@ public final class ClientAuditEventReporter
     private final TokenManager _tokenManager;
     private final Scheduler _scheduler;
     private final TransManager _tm;
-    private final AuditDatabase _auditDatabase;
+    private final IAuditDatabase _auditDatabase;
     private final ActivityLog _activityLog;
     private final IMapSIndex2SID _sidxTosid;
     private final SimpleDateFormat _dateFormat;
@@ -145,9 +144,10 @@ public final class ClientAuditEventReporter
             TokenManager tokenManager,
             CoreScheduler scheduler,
             TransManager tm,
-            AuditDatabase auditDatabase,
+            IMapSIndex2SID sidxTosid,
             ActivityLog activityLog,
-            IMapSIndex2SID sidxTosid)
+            IAuditorClient auditorClient,
+            IAuditDatabase auditDatabase)
     {
         _localdid = localdid.get();
         _hexEncodedLocalDid = localdid.get().toStringFormal();
@@ -159,7 +159,7 @@ public final class ClientAuditEventReporter
         _sidxTosid = sidxTosid;
         _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         _dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        _auditClient.setAuditorClient(AuditorFactory.create());
+        _auditClient.setAuditorClient(auditorClient);
     }
 
     /**
@@ -194,6 +194,32 @@ public final class ClientAuditEventReporter
         running = true;
 
         scheduleReport_(Audit.START_POSTING_AUDIT_EVENTS_AFTER);
+    }
+
+    /**
+     * Report auditable events to the configured {@link com.aerofs.audit.client.AuditClient}.
+     * <p/>
+     * <strong>IMPORTANT:</strong> This call is meant to be used in
+     * a unit test context only. It should <strong>NEVER</strong> be
+     * used in any other situation.
+     *
+     * @throws java.lang.Exception if auditable events could not be generated or reported
+     */
+    void reportEventsForUnitTestOnly_()
+            throws Exception
+    {
+        reportEvents_();
+    }
+
+    /**
+     * Get the index of the last activity log row successfully posted to the auditor.
+     *
+     * @return integer >=0 of the last activity log row successfully posted to the auditor. If
+     * 0 is returned, this means that no events have been posted to the auditor.
+     */
+    long getLastActivityLogIndex_()
+    {
+        return lastActivityLogIndex;
     }
 
     // set the initial index from which
@@ -275,7 +301,7 @@ public final class ClientAuditEventReporter
                     && (reportableEvents.size() < AUDIT_EVENT_BATCH_SIZE)
                     && continueIterating(initialActivityLogIndex, lastActivityLogIndex)) {
                 ActivityRow row = activityRowIterator.get_();
-                boolean isLocalEvent = isLocalEvent(row._type);
+                boolean isLocalEvent = ClientActivity.isLocalActivity(row._type);
 
                 // IMPORTANT: update the last activity log index here
                 // because we may bail early if we don't have to report this event
@@ -294,11 +320,6 @@ public final class ClientAuditEventReporter
         } finally {
             activityRowIterator.close_();
         }
-    }
-
-    private static boolean isLocalEvent(int type)
-    {
-        return type <= 15;
     }
 
     private boolean isSelfGeneratedEvent(Set<DID> sourceDids)
@@ -338,7 +359,7 @@ public final class ClientAuditEventReporter
         event.embed("event_time", _dateFormat.format(row._time));
 
         // file operations
-        event.embed("operations", mapActivityTypeToString(isLocalEvent, row._type));
+        event.embed("operations", ClientActivity.getIndicatedActivities(row._type));
 
         return event;
     }
@@ -346,34 +367,6 @@ public final class ClientAuditEventReporter
     private static PathComponents createPathComponents(Path path)
     {
         return new PathComponents(path.sid().toStringFormal(), path.toStringRelative());
-    }
-
-    private static Set<String> mapActivityTypeToString(boolean isLocalEvent, int type)
-    {
-        Set<String> actions = Sets.newHashSet();
-
-        if (isLocalEvent) {
-            // locally-generated events can be combined
-            if ((type & 0x01) == 0x01) actions.add("create");
-            if ((type & 0x02) == 0x02) actions.add("modify");
-            if ((type & 0x04) == 0x04) actions.add("move");
-            if ((type & 0x08) == 0x08) actions.add("delete");
-        } else {
-            // remotely-requested events are exclusive
-            if ((type ^ 0x10) == 0) {
-                actions.add("meta_request");
-            } else if ((type ^ 0x12) == 0) {
-                actions.add("content_request");
-            } else if ((type ^ 0x13) == 0) {
-                actions.add("content_completed");
-            } else {
-                throw new IllegalArgumentException("unexpected action:" + type);
-            }
-        }
-
-        l.trace(">>>> i:{} t:{}", type, actions);
-
-        return actions;
     }
 
     private void reportToAuditor_(EventBatch eventBatch)

@@ -30,7 +30,6 @@ public interface IActivityLogDatabase
             Trans t) throws SQLException;
 
 
-
     public static class ActivityRow
     {
         // the index of the row in the database. used for paging
@@ -54,7 +53,7 @@ public interface IActivityLogDatabase
         // the time when the activity was logged
         public final long _time;
 
-        ActivityRow(long idx, SOID soid, int type, Path path, Path pathTo, Set<DID> dids, long time)
+        public ActivityRow(long idx, SOID soid, int type, Path path, Path pathTo, Set<DID> dids, long time)
         {
             _idx = idx;
             _soid = soid;

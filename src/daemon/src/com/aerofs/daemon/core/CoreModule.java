@@ -1,5 +1,7 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.audit.client.AuditorFactory;
+import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.daemon.core.db.TamperingDetectionSchema;
@@ -17,6 +19,7 @@ import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.ACLDatabase;
 import com.aerofs.daemon.lib.db.ActivityLogDatabase;
 import com.aerofs.daemon.lib.db.AliasDatabase;
+import com.aerofs.daemon.lib.db.AuditDatabase;
 import com.aerofs.daemon.lib.db.CollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.CollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.CoreSchema;
@@ -25,6 +28,7 @@ import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IAliasDatabase;
+import com.aerofs.daemon.lib.db.IAuditDatabase;
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
@@ -101,6 +105,7 @@ public class CoreModule extends AbstractModule
         bind(IDID2UserDatabase.class).to(DID2UserDatabase.class);
         bind(IUserAndDeviceNameDatabase.class).to(UserAndDeviceNameDatabase.class);
         bind(ISyncStatusDatabase.class).to(SyncStatusDatabase.class);
+        bind(IAuditDatabase.class).to(AuditDatabase.class);
         bind(IAnalyticsPlatformProperties.class).to(DesktopAnalyticsProperties.class);
 
         // we use multibindings to allow splitting DB schemas cleanly, only setting up
@@ -146,5 +151,11 @@ public class CoreModule extends AbstractModule
     public IOSUtil provideIOSUtil()
     {
         return OSUtil.get();
+    }
+
+    @Provides
+    public IAuditorClient provideAuditorClient()
+    {
+        return AuditorFactory.create();
     }
 }
