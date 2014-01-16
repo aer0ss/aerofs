@@ -105,7 +105,8 @@ public class VerifyResource {
                         token.getClient().getName(),
                         token.getScopes(),
                         token.getExpires(),
-                        token.getPrincipal()))
+                        token.getPrincipal(),
+                        token.getMdid()))
                 .build();
     }
 

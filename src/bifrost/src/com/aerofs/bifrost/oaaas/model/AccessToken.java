@@ -18,6 +18,7 @@
  */
 package com.aerofs.bifrost.oaaas.model;
 
+import com.aerofs.base.id.MDID;
 import com.aerofs.bifrost.oaaas.auth.principal.PrincipalUtils;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.base.Preconditions;
@@ -83,6 +84,9 @@ public class AccessToken extends AbstractEntity
     @Column @NotNull
     private String owner;
 
+    @Column @NotNull
+    private String mdid;
+
     public AccessToken(String token, AuthenticatedPrincipal principal, Client client, long expires,
             Set<String> scopes, String refreshToken)
     {
@@ -95,6 +99,7 @@ public class AccessToken extends AbstractEntity
         this.expires = expires;
         this.scopes = ImmutableSet.copyOf(scopes);
         this.refreshToken = refreshToken;
+        this.mdid = MDID.generate().toStringFormal();
         invariant();
     }
 
@@ -242,5 +247,10 @@ public class AccessToken extends AbstractEntity
     public String getOwner()
     {
         return owner;
+    }
+
+    public String getMdid()
+    {
+        return mdid;
     }
 }

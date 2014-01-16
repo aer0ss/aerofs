@@ -14,21 +14,26 @@ public class VerifyTokenResponse {
     public final AuthenticatedPrincipal principal;
     public final Long expiresIn;
     public final String error;
+    public final String mdid;
 
-    public VerifyTokenResponse(String error) {
+    public VerifyTokenResponse(String error)
+    {
         this.audience = null;
         this.scopes = null;
         this.principal = null;
         this.expiresIn = null;
+        this.mdid = null;
         this.error = error;
     }
 
     public VerifyTokenResponse(String audience, Set<String> scopes, Long expiresIn,
-            AuthenticatedPrincipal principal) {
+            AuthenticatedPrincipal principal, String mdid)
+    {
         this.audience = audience;
         this.scopes = scopes;
         this.principal = principal;
         this.expiresIn = expiresIn;
+        this.mdid = mdid;
         this.error = null;
     }
 }
