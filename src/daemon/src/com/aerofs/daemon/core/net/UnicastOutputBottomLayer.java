@@ -35,15 +35,21 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         private final TokenManager _tokenManager;
         private final Transports _tps;
         private final OutgoingStreams _outgoingStreams;
+        private final TransferStatisticsManager _tsm;
 
         @Inject
-        public Factory(Transports tps, TokenManager tokenManager, CoreDeviceLRU dlru,
-                OutgoingStreams oss)
+        public Factory(
+                Transports tps,
+                TokenManager tokenManager,
+                CoreDeviceLRU dlru,
+                OutgoingStreams oss,
+                TransferStatisticsManager tsm)
         {
             _tps = tps;
             _tokenManager = tokenManager;
             _dlru = dlru;
             _outgoingStreams = oss;
+            _tsm = tsm;
         }
 
         public UnicastOutputBottomLayer create_()
@@ -79,7 +85,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         stream.waitIfTooManyChunks_();
 
         IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
-        EOBeginStream ev = new EOBeginStream(streamId, stream, ep.did(), bs, imce);
+        EOBeginStream ev = new EOBeginStream(streamId, stream, ep.did(), bs, ep.tp(), imce, _f._tsm);
         try {
             CoreIMC.enqueueBlocking_(ev, tk);
         } catch (Exception e) {
@@ -89,8 +95,8 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     }
 
     @Override
-    public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, Endpoint ep,
-            Token tk) throws Exception
+    public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, Endpoint ep, Token tk)
+            throws Exception
     {
         _f._dlru.addDevice_(ep.did());
 
@@ -100,7 +106,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         stream.waitIfTooManyChunks_();
 
         IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
-        EOChunk ev = new EOChunk(streamId, stream, seq, ep.did(), bs, imce);
+        EOChunk ev = new EOChunk(streamId, stream, seq, ep.did(), bs, ep.tp(), imce, _f._tsm);
 
         CoreIMC.enqueueBlocking_(ev, _f._tokenManager);
     }

@@ -7,11 +7,13 @@ package com.aerofs.daemon.core.health_check;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Diagnostics.DeviceDiagnostics;
+import com.aerofs.proto.Diagnostics.TransferDiagnostics;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -21,6 +23,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.aerofs.lib.JsonFormat.prettyPrint;
 
+/**
+ * Dumps core and transport diagnositcs whenever {@link DiagnosticsDumper#run()}
+ * is called. This class is executed on a fixed schedule <strong>outside</strong>
+ * the core lock by {@link com.aerofs.daemon.core.health_check.HealthCheckService}.
+ *
+ * @see com.aerofs.daemon.core.health_check.HealthCheckService
+ */
 final class DiagnosticsDumper implements Runnable
 {
     private static final long MAX_DEVICE_DIAGNOSTICS_WAIT_TIME = 2 * C.SEC;
@@ -30,13 +39,15 @@ final class DiagnosticsDumper implements Runnable
     private final Object _locker = new Object();
     private final CoreQueue _q;
     private final DevicePresence _dp;
+    private final TransferStatisticsManager _tsm;
     private final Transports _tps;
 
     @Inject
-    DiagnosticsDumper(CoreQueue q, DevicePresence dp, Transports tps)
+    DiagnosticsDumper(CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps)
     {
         _q = q;
         _dp = dp;
+        _tsm = tsm;
         _tps = tps;
     }
 
@@ -45,8 +56,9 @@ final class DiagnosticsDumper implements Runnable
     {
         try {
             l.info("run dd");
-            dumpTransportDiagnostics();
-            dumpDeviceDiagnostics();
+            dumpTransportDiagnostics(); // runs without holding core lock
+            dumpTransferStatistics(); // runs without holding core lock
+            dumpDeviceDiagnostics(); // runs holding core lock
         } catch (Throwable t) {
             l.error("fail dump diagnostics", t);
         }
@@ -70,6 +82,12 @@ final class DiagnosticsDumper implements Runnable
         if (transportDiagnostics.hasZephyrDiagnostics()) {
             l.info("zephyr:{}", prettyPrint(transportDiagnostics.getZephyrDiagnostics()));
         }
+    }
+
+    private void dumpTransferStatistics()
+    {
+        TransferDiagnostics transferDiagnostics = _tsm.getAndReset();
+        l.info("transfer:{}", prettyPrint(transferDiagnostics));
     }
 
     private void dumpDeviceDiagnostics()

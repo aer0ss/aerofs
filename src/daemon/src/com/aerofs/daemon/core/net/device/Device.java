@@ -356,7 +356,7 @@ public class Device implements Comparable<Device>
             Diagnostics.Transport.Builder transportBuilder = Diagnostics.Transport.newBuilder();
 
             // id
-            transportBuilder.setId(entry.getKey().id());
+            transportBuilder.setTransportId(entry.getKey().id());
 
             // is the transport being pulsed or not
             if (transportState._isBeingPulsed) {
