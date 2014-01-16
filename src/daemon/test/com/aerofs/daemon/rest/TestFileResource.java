@@ -508,4 +508,30 @@ public class TestFileResource extends AbstractRestTest
             .put("/v0.10/files/" + fileIdStr);
     }
 
+    @Test
+    public void shouldReturn204ForDeleteSuccess() throws Exception
+    {
+        // create file
+        MockDSFile file = mds.root().file("foo.txt");
+        SOID soid = file.soid();
+        String fileIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        givenAcces()
+        .expect()
+            .statusCode(204)
+        .when()
+            .delete("/v0.10/files/" + fileIdStr);
+
+    }
+
+    @Test
+    public void shouldReturn404ForDeleteNonExistent() throws Exception
+    {
+        givenAcces()
+        .expect()
+            .statusCode(404)
+        .when()
+            .delete("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal());
+
+    }
+
 }
