@@ -6,6 +6,7 @@
 <%namespace name="common" file="setup_common.mako"/>
 <%namespace name="version" file="../version.mako"/>
 <%namespace name="no_ie" file="../no_ie.mako"/>
+<%namespace name="segment_io" file="../segment_io.mako"/>
 
 <%def name="home_url()">
     ${request.route_path('manage')}
@@ -17,6 +18,10 @@
 
 <%block name="top_navigation_bar_desktop">
     <%version:version_top_nav_item_desktop/>
+</%block>
+
+<%block name="tracking_codes">
+    ${segment_io.code('xtw6kl4cml')}
 </%block>
 
 <%block name="css">
@@ -96,4 +101,9 @@
     <%error_message:scripts/>
     ${common.scripts(page)}
     ${local.page_scripts()}
+
+##  This is an example how events can be tracked
+##    <script>
+##        ${common.track('On Setup Page {}'.format(page))}
+##    </script>
 </%block>

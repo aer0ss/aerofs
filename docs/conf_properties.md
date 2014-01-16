@@ -186,6 +186,10 @@ The file server.properties contains properties used only by AeroFS servers. Ther
 be sensitive information stored in this file such as service credentials,
 AeroFS clients should not be able to access this file.
 
+    web.track_appliance_setup=true
+
+Whether to track the progress of AeroFS Appliance setup.
+
     last_smtp_verification_email=
 
 Internal use only. This property remembers the last email address the user used to send SMTP

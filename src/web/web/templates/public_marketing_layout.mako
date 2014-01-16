@@ -102,8 +102,10 @@
 </%def>
 
 <%block name="page_view_tracker">
-    ## We only track marketing page views
-    if (analytics) analytics.page("${self.attr.page_title}");
+    <script>
+        ## We only track marketing page views
+        if (analytics) analytics.page("${self.attr.page_title}");
+    </script>
 </%block>
 
 <%block name="footer">

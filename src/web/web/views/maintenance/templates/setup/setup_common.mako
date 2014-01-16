@@ -26,6 +26,40 @@
         Next ></button>
 </%def>
 
+## Track an event into Segment.io. Usage:
+##
+##  <script>
+##      ...
+##      ${track('Completed Foo')}
+##      ...
+##  </script>
+##
+<%def name="track(event)">
+    <%
+        from web.util import str2bool
+        track = current_config['web.track_appliance_setup']
+        # The default is True, if the property is absent
+        track = True if not track else str2bool(track)
+    %>
+
+    %if track:
+        <%
+            from web.version import get_current_version
+            customer_id = current_config['customer_id']
+            if not customer_id: customer_id = 'unknown customer'
+        %>
+        analytics.identify("${customer_id}");
+        analytics.track("${event}", {
+            ## Even though we identify the session using the customer id
+            ## (see above), the analytics tool may not expose it to us.
+            ## Hence we attach the id as a property.
+            customer_id: "${customer_id}",
+            ## The appliance's version
+            version: "${get_current_version()}"
+        });
+    %endif
+</%def>
+
 <%def name="scripts(page)">
     <script>
         function hideAllModals() {

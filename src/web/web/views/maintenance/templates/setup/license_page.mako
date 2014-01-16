@@ -44,11 +44,13 @@
 
         ${upload_license_button.button('license-file', '')}
 
-        <p class="muted"><small>You should have received
+        <p class="footnote">You should have received
             a license file from AeroFS along with this appliance. If not,
             please <a href="mailto:support@aerofs.com">contact us</a> to request
-            a license. <a target="_blank" href="https://support.aerofs.com/entries/25408319-What-happens-if-my-Private-Cloud-license-expires-">
-        What happens if the license expires?</a></small></p>
+            a license.</p>
+
+        <p class="footnote"><a target="_blank" href="https://support.aerofs.com/entries/25408319-What-happens-if-my-Private-Cloud-license-expires-">
+        What happens if the license expires?</a></p>
 
         <hr />
 

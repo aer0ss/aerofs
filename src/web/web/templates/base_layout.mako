@@ -1,5 +1,6 @@
 <%namespace name="csrf" file="csrf.mako" import="token_input"
         inheritable="True"/>
+<%namespace name="segment_io" file="segment_io.mako"/>
 
 <%! from web.util import is_private_deployment %>
 
@@ -70,28 +71,21 @@
 
     ## Le HTML5 shim, for IE6-8 support of HTML5 elements
     <!--[if lt IE 9]>
-    <script src="${request.static_path('web:static/js/html5.js')}"></script>
+        <script src="${request.static_path('web:static/js/html5.js')}"></script>
     <![endif]-->
 
-    %if not is_private_deployment(request.registry.settings):
-        ${tracking_codes()}
-    % else:
-        ## Set the global analytics object to `false` so that we can do `if (analytics)` to check if mixpanel is enabled
-        <script>window.analytics = false;</script>
-    %endif
+    <%block name="tracking_codes">
+        %if not is_private_deployment(request.registry.settings):
+            ${segment_io.code(request.registry.settings['segmentio.api_key'])}
+            <script src="//cdn.optimizely.com/js/29642448.js"></script>
+        % else:
+            ## Set the global analytics object to `false` so that we can do `if (analytics)` to check if mixpanel is enabled
+            <script>window.analytics = false;</script>
+        %endif
+    </%block>
 
-    <script><%block name="page_view_tracker"/></script>
+    <%block name="page_view_tracker"/>
 </head>
-
-<%def name="tracking_codes()">
-    ## Segment.IO - Put in the header rather than footer as required by Segment.IO
-    <script type="text/javascript">
-        window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(a){return function(){var t=Array.prototype.slice.call(arguments);return t.unshift(a),window.analytics.push(t),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(a){var t=document.createElement("script");t.type="text/javascript",t.async=!0,t.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+a+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n)},window.analytics.SNIPPET_VERSION="2.0.6",
-        window.analytics.load("${request.registry.settings['segmentio.api_key']}");
-    </script>
-
-    <script src="//cdn.optimizely.com/js/29642448.js"></script>
-</%def>
 
 <body>
     ## this wrapper is used to keep the footer at the bottom, even if the content
@@ -170,7 +164,7 @@
     %>
 
     %if ret:
-        <script type="text/javascript">
+        <script>
             $(document).ready(function() {
                 ## No need to encode message texts here. jQuery will do the job for
                 ## us in show*Message() methods.
