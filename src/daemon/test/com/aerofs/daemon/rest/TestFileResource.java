@@ -31,7 +31,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.mockito.Matchers.eq;
@@ -483,7 +483,7 @@ public class TestFileResource extends AbstractRestTest
         MockDSFile file = mds.root().file("foo.txt");
         SOID fileId = file.soid();
         // create second file
-        MockDSFile file2 = mds.root().file("boo.txt");
+        mds.root().file("boo.txt");
         String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
         whenMove("foo.txt", "", "boo.txt");
         givenAcces()

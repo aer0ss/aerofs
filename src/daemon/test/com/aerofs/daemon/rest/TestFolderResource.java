@@ -16,7 +16,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.jayway.restassured.http.ContentType;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -214,8 +214,7 @@ public class TestFolderResource extends AbstractRestTest
 
         String newFolderName = "boo";
         // create second folder
-        MockDSDir d2 = mds.root().dir(newFolderName);
-        SOID secondSoid = d2.soid();
+        mds.root().dir(newFolderName);
 
         // move foo into root and rename it to boo
         String firstFolderIdStr = new RestObject(rootSID, firstSoid.oid()).toStringFormal();
