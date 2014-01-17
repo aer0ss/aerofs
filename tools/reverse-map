@@ -1,0 +1,96 @@
+#!/usr/bin/python
+#
+# Reverse map a single string:
+#
+# $ python reverse-map.py /71d60cd0/d3d8f7b6/f2e88c90/146f3ea3/20b8ff21
+# /home/d3d8f7b6/AeroFS/ref/20b8ff21
+#
+# Reverse map a log file, given a defect map file
+#
+# $ cat defect-818584/daemon.log | python reverse-map.py -f defect-818584/name3758872731124740232map > defect-818584/daemon.log.re
+
+import base64
+import binascii
+import os
+import re
+import sys
+
+pwd = os.path.dirname(os.path.realpath(__file__))
+
+NAME_MAP_DIR = os.path.join(pwd, "namemaps")
+
+def crc(string):
+    return "%08x" % (binascii.crc32(string) & 0xffffffff)
+
+def add_word_to_map(d, word):
+    c = crc(word)
+    d[c] = word
+    d[c.lstrip("0")] = word
+
+def add_word_variants_to_map(d, line):
+    # For each word, we add its CRC and its CRC without leading zeroes
+    # to the map
+    add_word_to_map(d, line)
+    # We do the same for each word under regular capitalization rules,
+    # since dictionary files are pretty common
+    add_word_to_map(d, line.capitalize())
+    # We should do the same with aliased names while we're at it
+    add_word_to_map(d, line + " (2)")
+    add_word_to_map(d, line.capitalize() + " (2)")
+
+def add_file_to_map(d, filepath):
+    # filepath refers to a file with a bunch of newline-separated filenames.
+    # Yes, that means we don't support newlines in filenames.  Deal with it.
+    with open(filepath) as f:
+        for l in f:
+            line = l.strip()
+            add_word_variants_to_map(d, line)
+
+def add_aerofs_name_file_to_map(d, filepath):
+    with open(filepath) as f:
+        for l in f:
+            c, b64name = l.strip().split()
+            d[c] = base64.b64decode(b64name)
+
+def add_name_map_files_to_map(d):
+    files = [os.path.join(NAME_MAP_DIR, f) for f in os.listdir(NAME_MAP_DIR)]
+    for f in files:
+        add_aerofs_name_file_to_map(d, f)
+
+def build_map():
+    d = {}
+    add_file_to_map(d, "/usr/share/dict/words")
+    return d
+
+# Avoid compiling the regex multiple times
+prog = re.compile("[0-9a-f]{8}")
+def apply_reverse_map(mapping, line):
+    start = 0
+    end = len(line)
+    output = []
+    for m in prog.finditer(line):
+        output.append(line[start:m.start()])
+        key = m.group(0)
+        if key in mapping:
+            output.append(mapping[key])
+        else:
+            output.append(key)
+        start = m.end()
+    output.append(line[start:end])
+    return "".join(output)
+
+if __name__ == "__main__":
+    d = build_map()
+    if len(sys.argv) > 1 and sys.argv[1] == "-m":
+        add_name_map_files_to_map(d)
+        sys.argv = sys.argv[1:]
+    if len(sys.argv) > 1 and sys.argv[1] == "-f":
+        add_aerofs_name_file_to_map(d, sys.argv[2])
+        sys.argv = sys.argv[2:]
+    for arg in sys.argv[1:]:
+        print apply_reverse_map(d, arg)
+    if len(sys.argv) == 1:
+        line = sys.stdin.readline()
+        while line != "":
+            print apply_reverse_map(d, line.rstrip())
+            line = sys.stdin.readline()

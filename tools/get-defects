@@ -51,6 +51,25 @@ main()
                 retrace "$TARGET_FOLDER" $i
             fi
         done
+
+        if stat -t "$TARGET_FOLDER/name*map" >/dev/null 2>&1
+        then
+            echo "Reverse map logs for $DEFECT"
+
+            for i in daemon cli gui; do
+                if [ -f "$TARGET_FOLDER/$i.log" ]; then
+                    mv "$TARGET_FOLDER/$i.log" "$TARGET_FOLDER/unmapped.$i.log"
+
+                    cat "$TARGET_FOLDER/unmapped.$i.log" | \
+                        reverse-map -f $(ls "$TARGET_FOLDER/name"*"map") > \
+                        "$TARGET_FOLDER/$i.log"
+                fi
+            done
+        fi
+
+        rm -f "$TARGET_FOLDER/obfuscated"*
+        rm -f "$TARGET_FOLDER/unmapped"*
+        rm -f "$TARGET_FOLDER/name"*"map"
     done
 
     echo "Done"
