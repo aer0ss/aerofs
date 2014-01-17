@@ -93,7 +93,7 @@ final class DiagnosticsDumper implements Runnable
             public void handle_()
             {
                 synchronized (_locker) {
-                    deviceDiagnostics.set(_dp.dumpDiagnostics());
+                    deviceDiagnostics.set(_dp.dumpDiagnostics_());
                     _locker.notifyAll();
                 }
             }

@@ -26,11 +26,14 @@ import com.aerofs.proto.Diagnostics.DeviceDiagnostics;
 import com.aerofs.proto.Diagnostics.Store.Builder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -320,40 +323,98 @@ public class DevicePresence
         }, 0);
     }
 
-    public DeviceDiagnostics dumpDiagnostics()
+    /**
+     * Dump diagnostic information from the {@code DevicePresence} subsystem.
+     *
+     * @return a valid {@link com.aerofs.proto.Diagnostics.DeviceDiagnostics} object
+     * populated with available diagnostics
+     */
+    // this is not the most performant code in the world
+    public DeviceDiagnostics dumpDiagnostics_()
     {
         DeviceDiagnostics.Builder diagnosticsBuilder = DeviceDiagnostics.newBuilder();
 
-        // start by adding all the store information
+        // FIXME (AG): consider alternatives
+        //
+        // get the complete set of sidcs that are available _or_ being pulsed.
+        //
+        // we have to do this as a separate step because
+        // _sidx2opm only contains the sidcs that are available,
+        // which meant that if we had stores that were _only_
+        // on devices being pulsed we will not dump their diagnostic information
+        //
+        // to make the diagnostics more useful we also include information
+        // for these pulsed stores
+        Multimap<SIndex, DID> knownSidcs = TreeMultimap.create();
+
+        for (Device device : _did2dev.values()) {
+            Collection<SIndex> sidcs = device.getAllKnownSidcs_();
+            for (SIndex sidx : sidcs) {
+                knownSidcs.put(sidx, device.did());
+            }
+        }
+
+        // start by adding information for all 'available' stores
         for (Entry<SIndex, OPMDevices> entry : _sidx2opm.entrySet()) {
             Builder storeBuilder = Diagnostics.Store.newBuilder();
 
             // first, add an entry for the sidx=>sid mapping
-
             SIndex sidx = entry.getKey();
             storeBuilder.setStoreIndex(sidx.getInt());
 
-            SID sid = _sidx2sid.getNullable_(sidx);
-            if (sid != null) {
-                storeBuilder.setSid(sid.toPB());
-            } else {
-                storeBuilder.setSid(ByteString.EMPTY);
-            }
+            // remove this from the 'known' set, because we've already
+            // dumped its diagnostic info
+            // NOTE: _all_ the DIDs associated with this sidx are removed
+            // regardless of whether the device is being pulsed or not
+            knownSidcs.removeAll(sidx);
+
+            // add the sidx->sid mapping
+            addSIndexToSIDMapping(sidx, storeBuilder);
 
             // then, add all the dids that 'have' that sidx
-            for (DID did : entry.getValue().getAll_().keySet()) {
-                storeBuilder.addAvailableOnDids(did.toPB());
-            }
+            addKnownDevices(entry.getValue().getAll_().keySet(), storeBuilder);
 
             // once we're done, add the entry into the top-level message
-            diagnosticsBuilder.addStores(storeBuilder);
+            diagnosticsBuilder.addAvailableStores(storeBuilder);
         }
 
-        // then, add all the device information
+        // now, dump information for any remaining sidcs
+        // these are stores that are known to devices but not available (i.e. being pulsed)
+        // don't remove the store from the known set during iteration
+        for (Map.Entry<SIndex, Collection<DID>> entry: knownSidcs.asMap().entrySet()) {
+            Builder storeBuilder = Diagnostics.Store.newBuilder();
+
+            SIndex sidx = entry.getKey();
+            addSIndexToSIDMapping(sidx, storeBuilder);
+            addKnownDevices(entry.getValue(), storeBuilder);
+
+            diagnosticsBuilder.addUnavailableStores(storeBuilder);
+        }
+        knownSidcs.clear(); // just to signal that we're done with this
+
+        // finally, add all the device information
         for (Device device : _did2dev.values()) {
-            diagnosticsBuilder.addDevices(device.dumpDiagnostics());
+            diagnosticsBuilder.addDevices(device.dumpDiagnostics_());
         }
 
         return diagnosticsBuilder.build();
+    }
+
+    private void addSIndexToSIDMapping(SIndex sidx, Builder storeBuilder)
+    {
+        try {
+            SID sid = _sidx2sid.getLocalOrAbsent_(sidx);
+            storeBuilder.setSid(sid.toPB());
+        } catch (SQLException e) {
+            l.error("fail get SID from db for sidx:{}", sidx.getInt(), e);
+            storeBuilder.setSid(ByteString.EMPTY);
+        }
+    }
+
+    private void addKnownDevices(Collection<DID> dids, Builder storeBuilder)
+    {
+        for (DID did : dids) {
+            storeBuilder.addKnownOnDids(did.toPB());
+        }
     }
 }
