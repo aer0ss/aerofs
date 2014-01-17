@@ -7,6 +7,11 @@ class lizard {
         ],
     }
 
+    file{"/opt/lizard/additional_config.py":
+        ensure => present,
+        source => "puppet:///modules/lizard/additional_config.py",
+    }
+
     # Upstart job provided by deb, legacy init integration added here
     file{"/etc/init.d/lizard":
         ensure => link,

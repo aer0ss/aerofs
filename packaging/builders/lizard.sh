@@ -14,7 +14,10 @@ mkdir -p $OPT
 mkdir -p $OPT/state
 # Include requirements for package installation
 cp -a $SOURCE_DIR/requirements.txt $OPT/
-# Include base config (this should probably be provided by puppet?)
+# Include base config.  This contains configuration that is used in both dev
+# and production.  Deployment-specific configuration comes from
+# additional_config.py which is provided by puppet for production use and the
+# repo for development use.
 cp -a $SOURCE_DIR/config.py $OPT/
 # Include entry point script
 cp -a $SOURCE_DIR/entry.py $OPT/
