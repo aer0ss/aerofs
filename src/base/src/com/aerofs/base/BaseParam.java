@@ -233,6 +233,6 @@ public class BaseParam
                 getIntegerProperty(            "base.audit.post.delay.initial",  30 * (int) C.SEC);
 
         public static final int                AUDIT_POSTING_INTERVAL =
-                getIntegerProperty(            "base.audit.post.interval",  30 * (int) C.SEC);
+                getIntegerProperty(            "base.audit.post.interval",  15 * (int) C.SEC);
     }
 }
