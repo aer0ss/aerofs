@@ -31,7 +31,7 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class RestService extends Service
 {
-    public static final Version HIGHEST_SUPPORTED_VERSION = new Version(0, 10);
+    public static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 0);
 
     // Port for the service. 0 to use any available port (default)
     // configurable for firewall-friendliness

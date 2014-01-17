@@ -30,4 +30,6 @@ public interface IPhysicalPrefix
     ContentHash prepare_(Token tk) throws IOException;
 
     void delete_() throws IOException;
+
+    void truncate_(long length) throws IOException;
 }

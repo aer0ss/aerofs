@@ -57,7 +57,7 @@ public class TestExceptions extends AbstractRestTest
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
-                .body("message", equalTo("Invalid parameter: folder_id"))
+                .body("message", equalTo("Invalid path parameter: folder_id"))
         .when().log().everything().get("/v0.9/folders/lolwut");
     }
 

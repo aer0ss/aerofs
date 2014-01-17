@@ -11,13 +11,13 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.stream.MultipartStream;
 import com.aerofs.daemon.rest.stream.SimpleStream;
-import com.aerofs.daemon.rest.util.MetadataBuilder;
-import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
+import com.aerofs.daemon.rest.util.MetadataBuilder;
 import com.aerofs.daemon.rest.util.MimeTypeDetector;
+import com.aerofs.daemon.rest.util.RestObjectResolver;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.restless.util.HttpStatus;
 import com.aerofs.restless.util.Ranges;
-import com.aerofs.lib.id.KIndex;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
@@ -31,7 +31,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.Set;
 
-import static com.aerofs.daemon.core.activity.OutboundEventLogger.*;
+import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_REQUEST;
 
 public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
 {

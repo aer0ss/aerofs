@@ -6,6 +6,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.server.Bifrost;
@@ -99,6 +100,7 @@ import java.util.Collections;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.jayway.restassured.RestAssured.given;
@@ -424,6 +426,16 @@ public class AbstractRestTest extends AbstractTest
         return new RestObject(sid, soid.oid());
     }
 
+    protected String id(OID oid)
+    {
+        return new RestObject(rootSID, oid).toStringFormal();
+    }
+
+    protected String id(SOID soid)
+    {
+        return id(soid.oid());
+    }
+
     protected RequestSpecification givenAccess()
     {
         return given()
@@ -434,6 +446,29 @@ public class AbstractRestTest extends AbstractTest
     {
         return given()
                 .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.RO_TOKEN);
+    }
+
+    protected static Matcher<String> matches(final String regex)
+    {
+        return new BaseMatcher<String>() {
+            final Pattern p = Pattern.compile(regex);
+            @Override
+            public boolean matches(Object o)
+            {
+                return o instanceof String && (p.matcher((String)o).matches());
+            }
+
+            @Override
+            public void describeTo(Description description)
+            {
+                description.appendText("matches(" + regex + ")");
+            }
+        };
+    }
+
+    protected static Matcher<String> anyUUID()
+    {
+        return matches("[0-9a-fA-F]{32}");
     }
 
     protected static String json(Object o) { return _gson.toJson(o); }

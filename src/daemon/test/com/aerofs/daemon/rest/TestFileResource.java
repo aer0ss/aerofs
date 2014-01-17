@@ -1,16 +1,17 @@
 package com.aerofs.daemon.rest;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.mock.logical.MockDS.MockDSFile;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.rest.util.RestObject;
+import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
@@ -30,19 +31,26 @@ import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Date;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -264,7 +272,7 @@ public class TestFileResource extends AbstractRestTest
         byte[] content =
         givenAccess()
                 .header("Accept", "*/*")
-                .header("Range", "bytes=0-1")
+                .header(Names.RANGE, "bytes=0-1")
                 .header("If-Range", CURRENT_ETAG)
         .expect()
                 .statusCode(206)
@@ -284,7 +292,7 @@ public class TestFileResource extends AbstractRestTest
         byte[] content =
         givenAccess()
                 .header("Accept", "*/*")
-                .header("Range", "bytes=0-1")
+                .header(Names.RANGE, "bytes=0-1")
                 .header("If-Range", "\"f00\"")
         .expect()
                 .statusCode(200)
@@ -306,7 +314,7 @@ public class TestFileResource extends AbstractRestTest
         byte[] content =
         givenAccess()
                 .header("Accept", "*/*")
-                .header("Range", "bytes=0-1")
+                .header(Names.RANGE, "bytes=0-1")
                 .header("If-Range", "lolwut")
         .expect()
                 .statusCode(200)
@@ -325,7 +333,7 @@ public class TestFileResource extends AbstractRestTest
         byte[] content =
         givenAccess()
                 .header("Accept", "*/*")
-                .header("Range", "bytes=1-0")
+                .header(Names.RANGE, "bytes=1-0")
                 .header("If-Range", CURRENT_ETAG)
         .expect()
                 .statusCode(200)
@@ -344,7 +352,7 @@ public class TestFileResource extends AbstractRestTest
     {
         givenAccess()
                 .header("Accept", "*/*")
-                .header("Range", "bytes=" + (FILE_CONTENT.length) + "-")
+                .header(Names.RANGE, "bytes=" + (FILE_CONTENT.length) + "-")
         .expect()
                 .statusCode(416)
                 .content(isEmptyString())
@@ -359,7 +367,7 @@ public class TestFileResource extends AbstractRestTest
         byte[] content =
         givenAccess()
                 .header("Accept", "*/*")
-                .header("Range", "bytes=0-2,3-")
+                .header(Names.RANGE, "bytes=0-2,3-")
                 .header("If-Range", CURRENT_ETAG)
         .expect()
                 .statusCode(206)
@@ -380,7 +388,7 @@ public class TestFileResource extends AbstractRestTest
         Response r =
         givenAccess()
                 .header("Accept", "*/*")
-                .header("Range", "bytes=0-1,3-")
+                .header(Names.RANGE, "bytes=0-1,3-")
                 .header("If-Range", CURRENT_ETAG)
         .expect()
                 .statusCode(206)
@@ -477,15 +485,13 @@ public class TestFileResource extends AbstractRestTest
         SettableFuture<SOID> newFileId = whenMove("foo.txt", "myFolder", newFileName);
         givenAccess()
                 .contentType(ContentType.JSON)
-                .body(json(CommonMetadata.child(
-                        new RestObject(rootSID, newParent.oid()).toStringFormal(),
-                        newFileName)))
+                .body(json(CommonMetadata.child(id(newParent.oid()), newFileName)))
         .expect()
                 .statusCode(200)
                 .body("id", equalToFutureObject(newFileId))
                 .body("name", equalTo(newFileName))
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .put("/v0.10/files/" + id(soid));
 
         assertEquals("Object id has changed", soid, newFileId.get());
     }
@@ -501,15 +507,13 @@ public class TestFileResource extends AbstractRestTest
         givenAccess()
                 .header(Names.IF_MATCH, CURRENT_ETAG)
                 .contentType(ContentType.JSON)
-                .body(json(CommonMetadata.child(
-                        new RestObject(rootSID, newParent.oid()).toStringFormal(),
-                        newFileName)))
+                .body(json(CommonMetadata.child(id(newParent), newFileName)))
         .expect()
                 .statusCode(200)
                 .body("id", equalToFutureObject(newFileId))
                 .body("name", equalTo(newFileName))
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .put("/v0.10/files/" + id(soid));
 
         assertEquals("Object id has changed", soid, newFileId.get());
     }
@@ -517,13 +521,12 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn409WhenMoveConflict() throws Exception
     {
-        // create first file
-        MockDSFile file = mds.root().file("foo.txt");
-        SOID fileId = file.soid();
-        // create second file
+        SOID soid = mds.root().file("foo.txt").soid();
+
         mds.root().file("boo.txt");
-        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
+
         whenMove("foo.txt", "", "boo.txt");
+
         givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "boo.txt")))
@@ -531,7 +534,7 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(409)
                 .body("type", equalTo("CONFLICT"))
         .when()
-                .put("/v0.10/files/" + fileIdStr);
+                .put("/v0.10/files/" + id(soid));
     }
 
     @Test
@@ -547,7 +550,7 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(412)
                 .body("type", equalTo("CONFLICT"))
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .put("/v0.10/files/" + id(soid));
     }
 
     @Test
@@ -560,7 +563,7 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal());
+                .put("/v0.10/files/" + id(OID.generate()));
     }
 
     @Test
@@ -577,7 +580,7 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .put("/v0.10/files/" + id(soid));
     }
 
     @Test
@@ -594,7 +597,7 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .put("/v0.10/files/" + id(soid));
     }
 
     @Test
@@ -609,7 +612,7 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .put("/v0.10/files/" + id(soid));
     }
 
     @Test
@@ -621,7 +624,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(204)
         .when()
-                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .delete("/v0.10/files/" + id(soid));
 
         verify(od).delete_(soid, PhysicalOp.APPLY, t);
     }
@@ -636,7 +639,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(204)
         .when()
-                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .delete("/v0.10/files/" + id(soid));
 
         verify(od).delete_(soid, PhysicalOp.APPLY, t);
     }
@@ -651,7 +654,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(412)
         .when()
-                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .delete("/v0.10/files/" + id(soid));
 
         verifyZeroInteractions(od);
     }
@@ -663,7 +666,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
         .when()
-                .delete("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal());
+                .delete("/v0.10/files/" + id(OID.generate()));
 
         verifyZeroInteractions(od);
     }
@@ -680,7 +683,7 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
         .when()
-                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .delete("/v0.10/files/" + id(soid));
 
         verifyZeroInteractions(od);
     }
@@ -695,7 +698,7 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
         .when()
-                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+                .delete("/v0.10/files/" + id(soid));
 
         verifyZeroInteractions(od);
     }
@@ -713,8 +716,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal() +
-                        "/content");
+                .put("/v0.10/files/" + id(soid) + "/content");
 
         assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
     }
@@ -733,8 +735,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal()
-                        + "/content");
+                .put("/v0.10/files/" + id(soid) + "/content");
 
         assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
     }
@@ -750,8 +751,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(412)
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal()
-                        + "/content");
+                .put("/v0.10/files/" + id(soid) + "/content");
     }
 
     @Test
@@ -762,8 +762,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal() +
-                        "/content");
+                .put("/v0.10/files/" + id(OID.generate()) + "/content");
     }
 
     @Test
@@ -778,8 +777,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal() +
-                        "/content");
+                .put("/v0.10/files/" + id(soid) + "/content");
     }
 
     @Test
@@ -792,8 +790,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal() +
-                        "/content");
+                .put("/v0.10/files/" + id(soid) + "/content");
     }
 
     @Test
@@ -809,7 +806,409 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(429)
                 .body("type", equalTo("TOO_MANY_REQUESTS"))
         .when()
-                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal()
-                        + "/content");
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldRejectContentRangeWithoutUnit() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAccess()
+                .header(Names.CONTENT_RANGE, "*/*")
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+                .body("message", equalTo("Invalid header: Content-Range"))
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldRejectInvalidContentRange() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAccess()
+                .header(Names.CONTENT_RANGE, "bytes garbage/moregarbage")
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+                .body("message", equalTo("Invalid header: Content-Range"))
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldRejectIncompleteContentRange() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAccess()
+                .header(Names.CONTENT_RANGE, "bytes 0-/*")
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+                .body("message", equalTo("Invalid header: Content-Range"))
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldObtainUploadIdentifier() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAccess()
+                .header(Names.CONTENT_RANGE, "bytes */*")
+        .expect()
+                .statusCode(200)
+                .header("Upload-ID", anyUUID())
+        .when().log().everything()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldStartChunkedUpload() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
+            @Override
+            public Integer answer(InvocationOnMock invocation) throws Throwable
+            {
+                return baos.size();
+            }
+        });
+
+        givenAccess()
+                .header(Names.CONTENT_RANGE, "bytes 0-" + (FILE_CONTENT.length - 1) + "/*")
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(200)
+                .header("Upload-ID", anyUUID())
+                .header(Names.RANGE, "bytes=0-" + (FILE_CONTENT.length - 1))
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
+    }
+
+    @Test
+    public void shouldRetrieveUploadProgress() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        when(pf.getLength_()).thenReturn(42L);
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE, "bytes */*")
+        .expect()
+                .statusCode(200)
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.RANGE, "bytes=0-41")
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldReturn400WhenCheckingProgressForInvalidID() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE, "bytes */*")
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+                .body("message", equalTo("Invalid upload identifier"))
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldContinueChunkedUpload() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
+            @Override
+            public Integer answer(InvocationOnMock invocation) throws Throwable
+            {
+                return baos.size();
+            }
+        });
+
+        baos.write(FILE_CONTENT);
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE,
+                        "bytes " + FILE_CONTENT.length + "-" + (2 * FILE_CONTENT.length - 1) + "/*")
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(200)
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.RANGE, "bytes=0-" + (2 * FILE_CONTENT.length - 1))
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+
+        assertArrayEquals("Output Does Not match", BaseUtil.concatenate(FILE_CONTENT, FILE_CONTENT),
+                baos.toByteArray());
+    }
+
+    @Test
+    public void shouldConcludeChunkedUpload() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
+            @Override
+            public Integer answer(InvocationOnMock invocation) throws Throwable
+            {
+                return baos.size();
+            }
+        });
+
+        baos.write(FILE_CONTENT);
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE,
+                        "bytes " + FILE_CONTENT.length + "-" + (2 * FILE_CONTENT.length - 1) + "/" +
+                                (2 * FILE_CONTENT.length))
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(200)
+                .header("Upload-ID", nullValue())
+                .header(Names.ETAG, CURRENT_ETAG)
+        .when().log().everything()
+                .put("/v0.10/files/" + id(soid) + "/content");
+
+        verify(ps).apply_(eq(pf), any(IPhysicalFile.class), eq(true), anyLong(), eq(t));
+
+        assertArrayEquals("Output Does Not match", BaseUtil.concatenate(FILE_CONTENT, FILE_CONTENT),
+                baos.toByteArray());
+    }
+
+    @Test
+    public void shouldConcludeChunkedUploadWithEmptyChunk() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
+            @Override
+            public Integer answer(InvocationOnMock invocation) throws Throwable
+            {
+                return baos.size();
+            }
+        });
+
+        baos.write(FILE_CONTENT);
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE, "bytes */" + FILE_CONTENT.length)
+        .expect()
+                .statusCode(200)
+                .header("Upload-ID", nullValue())
+                .header(Names.ETAG, CURRENT_ETAG)
+        .when().log().everything()
+                .put("/v0.10/files/" + id(soid) + "/content");
+
+        verify(ps).apply_(eq(pf), any(IPhysicalFile.class), eq(true), anyLong(), eq(t));
+
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
+    }
+
+    @Test
+    public void shouldAcceptEmptyChunk() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
+            @Override
+            public Integer answer(InvocationOnMock invocation) throws Throwable
+            {
+                return baos.size();
+            }
+        });
+
+        baos.write(FILE_CONTENT);
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE, "bytes */" + (2 * FILE_CONTENT.length))
+        .expect()
+                .statusCode(200)
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.RANGE, "bytes=0-" + (FILE_CONTENT.length - 1))
+        .when().log().everything()
+                .put("/v0.10/files/" + id(soid) + "/content");
+
+        verify(ps, never()).apply_(eq(pf), any(IPhysicalFile.class), eq(true), anyLong(), eq(t));
+
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
+    }
+
+    private static class Buffer extends OutputStream
+    {
+        final byte[] d;
+        int p;
+
+        Buffer(int capacity)
+        {
+            p = 0;
+            d = new byte[capacity];
+        }
+
+        @Override
+        public void write(int b) throws IOException
+        {
+            d[p] = (byte)b;
+            ++p;
+        }
+    }
+
+    @Test
+    public void shouldTruncatePrefix() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        UploadID id = UploadID.generate();
+
+        final Buffer buf = new Buffer(2 * FILE_CONTENT.length);
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(buf);
+        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
+            @Override
+            public Integer answer(InvocationOnMock invocation) throws Throwable
+            {
+                return buf.p;
+            }
+        });
+        doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable
+            {
+                buf.p = (((Long)invocation.getArguments()[0]).intValue());
+                return null;
+            }
+        }).when(pf).truncate_(anyLong());
+
+        buf.p = FILE_CONTENT.length;
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE, "bytes 0-" + (FILE_CONTENT.length - 1) + "/*")
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(200)
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.RANGE, "bytes=0-" + (FILE_CONTENT.length - 1))
+        .when().log().everything()
+                .put("/v0.10/files/" + id(soid) + "/content");
+
+        verify(pf).truncate_(0L);
+
+        assertArrayEquals("Output Does Not match",
+                FILE_CONTENT, Arrays.copyOf(buf.d, FILE_CONTENT.length));
+    }
+
+    @Test
+    public void shouldRejectChunkStartingAtNonZeroOffsetWithMissingUploadID() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        when(pf.getLength_()).thenReturn(42L);
+
+        givenAccess()
+                .header(Names.CONTENT_RANGE, "bytes 100-199/*")
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+                .body("message", equalTo("Missing or invalid Upload-ID"))
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldRejectNonContiguousChunk() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        when(pf.getLength_()).thenReturn(42L);
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE, "bytes 100-" + (99 + FILE_CONTENT.length) + "/*")
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(416)
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.RANGE, "bytes=0-41")
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldRejectInconsistentChunkSize() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
+            @Override
+            public Integer answer(InvocationOnMock invocation) throws Throwable
+            {
+                return baos.size();
+            }
+        });
+
+        baos.write(FILE_CONTENT);
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE,
+                        "bytes " + FILE_CONTENT.length + "-" + (3 * FILE_CONTENT.length) + "/*")
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(400)
+                .header("Upload-ID", id.toStringFormal())
+                .body("type", equalTo("BAD_ARGS"))
+                .body("message", equalTo("Content-Range not consistent with body length"))
+        .when().log().everything()
+                .put("/v0.10/files/" + id(soid) + "/content");
+
+        verify(pf).truncate_(FILE_CONTENT.length);
     }
 }

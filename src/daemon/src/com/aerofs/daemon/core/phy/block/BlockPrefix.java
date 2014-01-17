@@ -70,4 +70,10 @@ class BlockPrefix implements IPhysicalPrefix
     {
         _f.delete();
     }
+
+    @Override
+    public void truncate_(long length) throws IOException
+    {
+        new FileOutputStream(_f.getImplementation()).getChannel().truncate(length).close();
+    }
 }

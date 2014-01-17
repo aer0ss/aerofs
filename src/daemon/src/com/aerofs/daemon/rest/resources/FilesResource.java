@@ -17,14 +17,16 @@ import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
+import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.rest.api.File;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
+import com.aerofs.restless.util.ContentRange;
 import com.aerofs.restless.util.EntityTagSet;
 import com.google.common.base.Preconditions;
-import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -70,28 +72,12 @@ public class FilesResource
     @Produces({MediaType.APPLICATION_OCTET_STREAM, "multipart/byteranges"})
     public Response content(@Auth OAuthToken token,
             @PathParam("file_id") RestObject object,
-            @HeaderParam(HttpHeaders.IF_RANGE) String ifRange,
-            @HeaderParam(HttpHeaders.RANGE) String range,
-            @HeaderParam(HttpHeaders.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
+            @HeaderParam(Names.IF_RANGE) String ifRange,
+            @HeaderParam(Names.RANGE) String range,
+            @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
     {
         EntityTag etIfRange = EntityTagUtil.parse(ifRange);
         return new EIFileContent(_imce, token, object, etIfRange, range, ifNoneMatch).execute();
-    }
-
-    @Since("0.10")
-    @PUT
-    @Path("/{file_id}/content")
-    @Consumes(MediaType.APPLICATION_OCTET_STREAM)
-    public Response upload(@Auth OAuthToken token,
-            @PathParam("file_id") RestObject object,
-            @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
-            InputStream body) throws IOException
-    {
-        try {
-            return new EIFileUpload(_imce, token, object, ifMatch, body).execute();
-        } finally {
-            body.close();
-        }
     }
 
     @Since("0.10")
@@ -108,11 +94,29 @@ public class FilesResource
 
     @Since("0.10")
     @PUT
+    @Path("/{file_id}/content")
+    @Consumes(MediaType.APPLICATION_OCTET_STREAM)
+    public Response upload(@Auth OAuthToken token,
+            @PathParam("file_id") RestObject object,
+            @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
+            @HeaderParam(Names.CONTENT_RANGE) ContentRange range,
+            @HeaderParam("Upload-ID") @DefaultValue("") UploadID ulid,
+            InputStream body) throws IOException
+    {
+        try {
+            return new EIFileUpload(_imce, token, object, ifMatch, ulid, range, body).execute();
+        } finally {
+            body.close();
+        }
+    }
+
+    @Since("0.10")
+    @PUT
     @Path("/{file_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response move(@Auth OAuthToken token,
             @PathParam("file_id") RestObject object,
-            @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
+            @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             File file) throws IOException
     {
         Preconditions.checkArgument(file.parent != null);
@@ -126,7 +130,7 @@ public class FilesResource
     @Consumes(MediaType.APPLICATION_JSON)
     public Response delete(@Auth OAuthToken token,
             @PathParam("file_id") RestObject object,
-            @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
+            @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
             throws IOException
     {
         return new EIDeleteObject(_imce, token, object, ifMatch).execute();

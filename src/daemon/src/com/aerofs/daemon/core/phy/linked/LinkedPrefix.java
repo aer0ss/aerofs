@@ -68,6 +68,12 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
     }
 
     @Override
+    public void truncate_(long length) throws IOException
+    {
+        new FileOutputStream(_f.getImplementation()).getChannel().truncate(length).close();
+    }
+
+    @Override
     public String toString()
     {
         return _f.toString();
