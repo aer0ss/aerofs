@@ -104,7 +104,8 @@
         %>
         <h4>Support email address:</h4>
         <input class="input-block-level" id="base-www-support-email-address" name="base-www-support-email-address" type="text" value=${val}>
-        <p>This email address is used for all "support" links. Set it to an email address
+        <p>This email address is used for all "support" links, e.g.
+            <strong>support@acme.com</strong>. Set it to an email address
             you want users to send support requests to. It is also used as the
             "from" field for emails sent out by the system.</p>
     </div>
@@ -196,6 +197,10 @@
                 $('#verification-code').focus();
                 setEnabled($('#continue-button'), true);
             });
+
+            ## Focus on the support email input if it's empty
+            var $support_email = $('#base-www-support-email-address');
+            if (!$support_email.val()) $support_email.focus();
         });
 
         function localMailServerSelected() {

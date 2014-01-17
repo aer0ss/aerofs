@@ -141,14 +141,28 @@ def _setup_common(request, conf, license_page_only):
 
 
 def _get_default_support_email(hostname):
-    if not hostname:
-        hostname = 'localhost'
+    if not hostname or _is_ipv4_address(hostname):
+        # Return an empty support email address if the hostname is invalid or
+        # it's a IP address. Although we can return 'support@[1.2.3.4]' but this
+        # format is rarely used. See the "Domain Part" section in
+        # http://en.wikipedia.org/wiki/Email_address.
+        return ''
+    else:
+        # Get the hostname excluding the first level (left-most) subdomain. e.g.
+        # given "share.google.com" return "google.com". See the test code for
+        # expected behavior.
+        match = re.search(r'^[^\.]+\.(.+)', hostname)
+        domain = match.group(1) if match else hostname
+        return 'support@{}'.format(domain)
 
-    # Get the hostname excluding the first level (left-most) subdomain. e.g.
-    # given "share.google.com" return "google.com". See the test code for the
-    # exact spec.
-    match = re.search(r'^[^\.]+\.(.+)', hostname)
-    return 'support@{}'.format(match.group(1) if match else hostname)
+
+def _is_ipv4_address(string):
+    import socket
+    try:
+        socket.inet_aton(string)
+        return True
+    except socket.error:
+        return False
 
 
 # ------------------------------------------------------------------------
