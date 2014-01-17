@@ -15,15 +15,22 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.*;
+import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.lib.DelayedScheduler;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -44,7 +51,7 @@ import com.aerofs.proto.Core.PBCore.Type;
 /**
  * This class is responsible for sending and receiving NEW_UPDATE messages
  */
-public class NewUpdates
+public class NewUpdates implements IVersionControlListener
 {
     private static final Logger l = Loggers.getLogger(NewUpdates.class);
 
@@ -58,10 +65,13 @@ public class NewUpdates
     private LocalACL _lacl;
     private CfgLocalUser _cfgLocalUser;
 
+    private final Set<SOCKID> _updated = Sets.newHashSet();
+    private DelayedScheduler _dsNewUpdateMessage;
+
     @Inject
     public void inject_(TransManager tm, NSL nsl, NativeVersionControl nvc, Metrics m,
             MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, LocalACL lacl,
-            CfgLocalUser cfgLocalUser)
+            CfgLocalUser cfgLocalUser, CoreScheduler sched)
     {
         _tm = tm;
         _nsl = nsl;
@@ -72,6 +82,28 @@ public class NewUpdates
         _sid2sidx = sid2sidx;
         _lacl = lacl;
         _cfgLocalUser = cfgLocalUser;
+
+        _nvc.addListener_(this);
+
+        _dsNewUpdateMessage = new DelayedScheduler(sched, DaemonParam.NEW_UPDATE_MESSAGE_DELAY,
+                new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        assert !_updated.isEmpty();
+
+                        try {
+                            // send a NEW_UPDATE message for all the branches that have been updated
+                            // since the last NEW_UPDATE.
+                            send_(_updated);
+                        } catch (Exception e) {
+                            // failed to push.
+                            l.warn("ignored: " + Util.e(e));
+                        }
+
+                        _updated.clear();
+                    }
+                });
     }
 
     public void send_(Collection<SOCKID> ks)
@@ -200,5 +232,28 @@ public class NewUpdates
         } finally {
             t.end_();
         }
+    }
+
+    private final TransLocal<Set<SOCKID>> _tlAdded = new TransLocal<Set<SOCKID>>() {
+        @Override
+        protected Set<SOCKID> initialValue(Trans t)
+        {
+            final Set<SOCKID> s = Sets.newHashSet();
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committed_()
+                {
+                    _updated.addAll(s);
+                    _dsNewUpdateMessage.schedule_();
+                }
+            });
+            return s;
+        }
+    };
+
+    @Override
+    public void localVersionAdded_(SOCKID sockid, Version v, Trans t) throws SQLException
+    {
+        _tlAdded.get(t).add(sockid);
     }
 }
