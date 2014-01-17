@@ -4,11 +4,11 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.MDID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.rest.api.Error;
 import com.aerofs.lib.event.Prio;
@@ -24,22 +24,29 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
 {
     private static final Logger l = Loggers.getLogger(AbstractRestEBIMC.class);
 
-    public final UserID _user;
-    public final DID _did;
+    public final OAuthToken _token;
 
     private Object _result;
 
-    protected AbstractRestEBIMC(IIMCExecutor imce, UserID user)
+    protected AbstractRestEBIMC(IIMCExecutor imce, OAuthToken token)
     {
         super(imce);
-        _user = user;
-        // TODO: extract mobile DID from OAuth token
-        _did = new DID(UniqueID.ZERO);
+        _token = token;
     }
 
     public void setResult_(Object result)
     {
         _result = result;
+    }
+
+    public final UserID user()
+    {
+        return _token.user;
+    }
+
+    public final MDID did()
+    {
+        return _token.did;
     }
 
     public Response execute()

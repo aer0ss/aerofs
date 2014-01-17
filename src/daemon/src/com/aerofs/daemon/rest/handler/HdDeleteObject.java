@@ -37,7 +37,7 @@ public class HdDeleteObject extends AbstractRestHdIMC<EIDeleteObject>
     @Override
     protected void handleThrows_(EIDeleteObject ev) throws Exception
     {
-        OA from = _access.resolveWithPermissions_(ev._object, ev._user, Permissions.EDITOR);
+        OA from = _access.resolveWithPermissions_(ev._object, ev.user(), Permissions.EDITOR);
 
         EntityTag etag = _etags.etagForObject(from.soid());
 

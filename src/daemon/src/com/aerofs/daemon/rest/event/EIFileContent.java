@@ -1,7 +1,7 @@
 package com.aerofs.daemon.rest.event;
 
-import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.util.EntityTagSet;
 
@@ -16,10 +16,10 @@ public class EIFileContent extends AbstractRestEBIMC
     public final EntityTag _ifRange;
     public final String _rangeset;
 
-    public EIFileContent(IIMCExecutor imce, UserID userid, RestObject object,
+    public EIFileContent(IIMCExecutor imce, OAuthToken token, RestObject object,
             @Nullable EntityTag ifRange, @Nullable String rangeset, EntityTagSet ifNoneMatch)
     {
-        super(imce, userid);
+        super(imce, token);
         _object = object;
         _ifRange = ifRange;
         _rangeset = rangeset;

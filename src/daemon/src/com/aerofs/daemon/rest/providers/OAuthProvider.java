@@ -2,8 +2,9 @@ package com.aerofs.daemon.rest.providers;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.oauth.TokenVerifier;
+import com.aerofs.oauth.VerifyTokenResponse;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.aerofs.restless.Auth;
@@ -26,14 +27,13 @@ import java.nio.channels.ClosedChannelException;
 
 /**
  * Jersey injectable provider that validates OAuth access tokens in HTTP requests and extracts an
- * {@link AuthenticatedPrincipal} to make it available as an @Auth-annotated parameter to resource
- * methods.
+ * {@link OAuthToken} to make it available as an @Auth-annotated parameter to resource methods.
  *
  * The actual verification is done by {@link TokenVerifier}, which provides a cache on top of
  * bifrost.
  */
 public class OAuthProvider
-        extends AbstractHttpContextInjectable<AuthenticatedPrincipal>
+        extends AbstractHttpContextInjectable<OAuthToken>
         implements InjectableProvider<Auth, Parameter>
 {
     private final static Logger l = Loggers.getLogger(OAuthProvider.class);
@@ -47,12 +47,12 @@ public class OAuthProvider
     }
 
     @Override
-    public AuthenticatedPrincipal getValue(HttpContext context)
+    public OAuthToken getValue(HttpContext context)
     {
         String auth = context.getRequest().getHeaderValue(HttpHeaders.AUTHORIZATION);
         try {
-            AuthenticatedPrincipal principal = _verifier.getPrincipal(auth);
-            if (principal != null) return principal;
+            VerifyTokenResponse r = _verifier.verifyHeader(auth);
+            if (r != null && r.principal != null) return new OAuthToken(r);
         } catch (Exception e) {
             l.error("failed to verify token", BaseLogUtil.suppress(e,
                     ClosedChannelException.class));
@@ -71,8 +71,8 @@ public class OAuthProvider
     }
 
     @Override
-    public Injectable<AuthenticatedPrincipal> getInjectable(ComponentContext ctx, Auth auth, Parameter param)
+    public Injectable<OAuthToken> getInjectable(ComponentContext ctx, Auth auth, Parameter param)
     {
-        return param.getParameterClass().isAssignableFrom(AuthenticatedPrincipal.class) ? this : null;
+        return param.getParameterClass().isAssignableFrom(OAuthToken.class) ? this : null;
     }
 }

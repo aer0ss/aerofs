@@ -5,9 +5,9 @@
 package com.aerofs.daemon.rest.resources;
 
 import com.aerofs.base.Version;
-import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
@@ -15,7 +15,6 @@ import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.daemon.rest.event.EIDeleteObject;
 import com.aerofs.daemon.rest.event.EIMoveObject;
 import com.aerofs.daemon.rest.util.EntityTagSet;
-import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.rest.api.Folder;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
@@ -54,24 +53,22 @@ public class FoldersResource
     @Since("0.9")
     @GET
     @Path("/{folder_id}")
-    public Response metadata(@Auth AuthenticatedPrincipal principal,
+    public Response metadata(@Auth OAuthToken token,
             @PathParam("folder_id") RestObject object)
     {
-        UserID userid = principal.getUserID();
-        return new EIObjectInfo(_imce, userid, object, Type.FOLDER).execute();
+        return new EIObjectInfo(_imce, token, object, Type.FOLDER).execute();
     }
 
     @Since("0.10")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(@Auth AuthenticatedPrincipal principal,
+    public Response create(@Auth OAuthToken token,
             @Context Version version,
             Folder folder) throws IOException
     {
-        UserID userid = principal.getUserID();
         Preconditions.checkArgument(folder.parent != null);
         Preconditions.checkArgument(folder.name != null);
-        return new EICreateObject(_imce, userid, version, folder.parent, folder.name, true)
+        return new EICreateObject(_imce, token, version, folder.parent, folder.name, true)
                 .execute();
     }
 
@@ -79,15 +76,14 @@ public class FoldersResource
     @PUT
     @Path("/{folder_id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response move(@Auth AuthenticatedPrincipal principal,
+    public Response move(@Auth OAuthToken token,
             @PathParam("folder_id") RestObject object,
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             Folder folder) throws IOException
     {
-        UserID userid = principal.getUserID();
         Preconditions.checkArgument(folder.parent != null);
         Preconditions.checkArgument(folder.name != null);
-        return new EIMoveObject(_imce, userid, object, folder.parent, folder.name, ifMatch)
+        return new EIMoveObject(_imce, token, object, folder.parent, folder.name, ifMatch)
                 .execute();
     }
 
@@ -95,12 +91,11 @@ public class FoldersResource
     @DELETE
     @Path("/{folder_id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response delete(@Auth AuthenticatedPrincipal principal,
+    public Response delete(@Auth OAuthToken token,
             @PathParam("folder_id") RestObject object,
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
             throws IOException
     {
-        UserID userid = principal.getUserID();
-        return new EIDeleteObject(_imce, userid, object, ifMatch).execute();
+        return new EIDeleteObject(_imce, token, object, ifMatch).execute();
     }
 }

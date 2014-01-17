@@ -61,7 +61,7 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
     @Override
     protected void handleThrows_(EIFileContent ev) throws ExNotFound, SQLException
     {
-        final OA oa = _access.resolve_(ev._object, ev._user);
+        final OA oa = _access.resolve_(ev._object, ev.user());
         if (!oa.isFile()) throw new ExNotFound();
 
         final CA ca = oa.caMasterThrows();
@@ -73,7 +73,7 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
             return;
         }
 
-        _oel.log_(CONTENT_REQUEST, oa.soid(), ev._did);
+        _oel.log_(CONTENT_REQUEST, oa.soid(), ev.did());
 
         // build range list for partial request, honoring If-Range header
         RangeSet<Long> ranges = Ranges.parseRanges(ev._rangeset, ev._ifRange, etag, ca.length());

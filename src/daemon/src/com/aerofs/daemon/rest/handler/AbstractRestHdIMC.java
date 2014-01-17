@@ -33,7 +33,7 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
     protected final void handleThrows_(T ev, Prio prio) throws Exception
     {
         try {
-            ActivityLog.onBehalfOf(ev._did);
+            ActivityLog.onBehalfOf(ev.did());
             handleThrows_(ev);
         } finally {
             ActivityLog.onBehalfOf(null);
