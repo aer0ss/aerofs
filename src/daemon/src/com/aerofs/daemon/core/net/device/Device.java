@@ -104,7 +104,22 @@ public class Device implements Comparable<Device>
     }
 
     /**
-     * @return a collection of stores that become online to the device
+     * @return collection of stores that are online
+     * <strong>or</strong> being pulsed for this device
+     */
+    public Collection<SIndex> getAllKnownSidcs_()
+    {
+        Set<SIndex> sidcs = Sets.newHashSet();
+
+        for (TransportState transportState : _tpsAvailable.values()) {
+            sidcs.addAll(transportState._sidcsAvailable);
+        }
+
+        return sidcs;
+    }
+
+    /**
+     * @return collection of stores that become online to the device
      */
     Collection<SIndex> online_(ITransport tp, Collection<SIndex> sidcs)
     {
@@ -324,7 +339,7 @@ public class Device implements Comparable<Device>
         return _did.toString();
     }
 
-    public @Nullable Diagnostics.Device dumpDiagnostics()
+    public @Nullable Diagnostics.Device dumpDiagnostics_()
     {
         Diagnostics.Device.Builder deviceBuilder = Diagnostics.Device.newBuilder();
 

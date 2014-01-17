@@ -38,7 +38,7 @@ public class HdDumpDiagnostics extends AbstractHdIMC<EIDumpDiagnostics>
 
         // start by getting the device presence diagnostics (within the core thread)
 
-        diagnosticsReplyBuilder.setDeviceDiagnostics(_dp.dumpDiagnostics());
+        diagnosticsReplyBuilder.setDeviceDiagnostics(_dp.dumpDiagnostics_());
 
         // then, get the transport diagnostics
         // NOTE: run this without the core lock held, because this method does

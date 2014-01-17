@@ -39,14 +39,15 @@ message PBDumpStat {
 //
 
 message DeviceDiagnostics {
-    repeated Store stores = 1;
-    repeated Device devices = 2;
+    repeated Store available_stores = 1;
+    repeated Store unavailable_stores = 2;
+    repeated Device devices = 3;
 }
 
 message Store {
     required uint64 store_index = 1;
     required bytes sid = 2;
-    repeated bytes available_on_dids = 3;
+    repeated bytes known_on_dids = 3;
 }
 
 message Device {
