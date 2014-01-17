@@ -1,5 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
 # This script retrives defect log files and retrace them
+set -eu
 
 if [ $# -lt 2 ]; then
     echo "usage: $0 [public version] [defect # (multiple, space separated)]"
@@ -20,8 +21,9 @@ retrace()
     FOLDER=$1
     PROGRAM=$2
 
-    sed -i '' 's/^  /   at /g' "$FOLDER/$PROGRAM.log"
-    sed -i '' 's/at at/at/g' "$FOLDER/$PROGRAM.log"
+    LANG=C sed -i '' 's/^  /   at /g' "$FOLDER/$PROGRAM.log"
+    LANG=C sed -i '' 's/at at/at/g' "$FOLDER/$PROGRAM.log"
+
     mv "$FOLDER/$PROGRAM.log" "$FOLDER/obfuscated.$PROGRAM.log"
     ${BASE}/proguard/bin/retrace.sh "$MAP_FILE" "$FOLDER/obfuscated.$PROGRAM.log" > "$FOLDER/$PROGRAM.log"
 }
