@@ -39,8 +39,8 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
     @Override
     protected void handleThrows_(EIMoveObject ev) throws Exception
     {
-        OA from = _access.resolveWithPermissions_(ev._object, ev._user, Permissions.EDITOR);
-        OA toParent = _access.resolveWithPermissions_(ev._newParent, ev._user, Permissions.EDITOR);
+        OA from = _access.resolveWithPermissions_(ev._object, ev.user(), Permissions.EDITOR);
+        OA toParent = _access.resolveWithPermissions_(ev._newParent, ev.user(), Permissions.EDITOR);
 
         EntityTag etag = _etags.etagForObject(from.soid());
 

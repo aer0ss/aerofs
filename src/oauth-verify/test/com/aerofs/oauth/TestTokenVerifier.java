@@ -46,7 +46,7 @@ public class TestTokenVerifier extends AbstractBaseTest
     @Test
     public void shouldFetchOnMiss() throws Exception
     {
-        assertEquals(response, verifier.verify("foo"));
+        assertEquals(response, verifier.verifyToken("foo"));
 
         verify(client).verify("foo", AUTH);
     }
@@ -54,9 +54,9 @@ public class TestTokenVerifier extends AbstractBaseTest
     @Test
     public void shouldNotFetchOnHit() throws Exception
     {
-        assertEquals(response, verifier.verify("foo"));
-        assertEquals(response, verifier.verify("foo"));
-        assertEquals(response, verifier.verify("foo"));
+        assertEquals(response, verifier.verifyToken("foo"));
+        assertEquals(response, verifier.verifyToken("foo"));
+        assertEquals(response, verifier.verifyToken("foo"));
 
         verify(client).verify("foo", AUTH);
     }
@@ -64,9 +64,9 @@ public class TestTokenVerifier extends AbstractBaseTest
     @Test
     public void shouldRefetchWhenRunningOutOfSpace() throws Exception
     {
-        assertEquals(response, verifier.verify("foo"));
-        assertEquals(response, verifier.verify("bar"));
-        assertEquals(response, verifier.verify("foo"));
+        assertEquals(response, verifier.verifyToken("foo"));
+        assertEquals(response, verifier.verifyToken("bar"));
+        assertEquals(response, verifier.verifyToken("foo"));
 
         verify(client, times(2)).verify("foo", AUTH);
         verify(client, times(1)).verify("bar", AUTH);
@@ -75,9 +75,9 @@ public class TestTokenVerifier extends AbstractBaseTest
     @Test
     public void shouldRefetchWhenExpired() throws Exception
     {
-        assertEquals(response, verifier.verify("foo"));
+        assertEquals(response, verifier.verifyToken("foo"));
         when(ticker.read()).thenReturn(2 * C.SEC * C.NSEC_PER_MSEC);
-        assertEquals(response, verifier.verify("foo"));
+        assertEquals(response, verifier.verifyToken("foo"));
 
         verify(client, times(2)).verify("foo", AUTH);
     }

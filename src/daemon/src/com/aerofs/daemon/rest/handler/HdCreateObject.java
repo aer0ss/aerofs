@@ -37,7 +37,7 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
     @Override
     protected void handleThrows_(EICreateObject ev) throws Exception
     {
-        OA oaParent = _access.resolveWithPermissions_(ev._parent, ev._user, Permissions.EDITOR);
+        OA oaParent = _access.resolveWithPermissions_(ev._parent, ev.user(), Permissions.EDITOR);
 
         Trans t = _tm.begin_();
         SOID soid;

@@ -60,7 +60,13 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
     public @Nullable AuthenticatedPrincipal getPrincipal(String authorizationHeader) throws Exception
     {
         String token = accessToken(authorizationHeader);
-        return token == null ? null : verify(token).principal;
+        return token == null ? null : verifyToken(token).principal;
+    }
+
+    public @Nullable VerifyTokenResponse verifyHeader(String authorizationHeader) throws Exception
+    {
+        String token = accessToken(authorizationHeader);
+        return token == null ? null : verifyToken(token);
     }
 
     private final static Pattern BEARER_PATTERN = Pattern.compile("Bearer +([0-9a-zA-Z-._~+/]+=*)");
@@ -73,7 +79,7 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
         return null;
     }
 
-    public VerifyTokenResponse verify(String accessToken) throws Exception
+    public VerifyTokenResponse verifyToken(String accessToken) throws Exception
     {
         try {
             l.debug("verify {}", accessToken);

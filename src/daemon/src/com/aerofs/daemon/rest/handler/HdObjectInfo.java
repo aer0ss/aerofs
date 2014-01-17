@@ -31,10 +31,10 @@ public class HdObjectInfo extends AbstractRestHdIMC<EIObjectInfo>
     @Override
     protected void handleThrows_(EIObjectInfo ev) throws ExNotFound, SQLException
     {
-        OA oa = _access.resolve_(ev._object, ev._user);
+        OA oa = _access.resolve_(ev._object, ev.user());
         if (oa.isDirOrAnchor() != (ev._type == Type.FOLDER)) throw new ExNotFound();
 
-        _eol.log_(META_REQUEST, oa.soid(), ev._did);
+        _eol.log_(META_REQUEST, oa.soid(), ev.did());
 
         ev.setResult_(Response.ok()
                 .entity(_mb.metadata(oa))

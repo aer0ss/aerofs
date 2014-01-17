@@ -53,7 +53,7 @@ public class HdListChildren extends AbstractRestHdIMC<EIListChildren>
     @Override
     protected void handleThrows_(EIListChildren ev) throws ExNotFound, SQLException
     {
-        OA oa = _access.resolveFollowsAnchor_(ev._object, ev._user);
+        OA oa = _access.resolveFollowsAnchor_(ev._object, ev.user());
 
         SIndex sidx = oa.soid().sidx();
         SID sid = _sidx2sid.get_(sidx);
@@ -96,7 +96,7 @@ public class HdListChildren extends AbstractRestHdIMC<EIListChildren>
         Collections.sort(folders, Folder.BY_NAME);
 
         // NB: technically we're sending meta about all the children, should we log them too?
-        _eol.log_(META_REQUEST, oa.soid(), ev._did);
+        _eol.log_(META_REQUEST, oa.soid(), ev.did());
 
         ev.setResult_(new ChildrenList(ev._object.toStringFormal(), folders, files));
     }

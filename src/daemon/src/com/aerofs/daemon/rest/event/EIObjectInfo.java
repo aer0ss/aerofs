@@ -1,7 +1,7 @@
 package com.aerofs.daemon.rest.event;
 
-import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 
 public class EIObjectInfo extends AbstractRestEBIMC
@@ -15,9 +15,9 @@ public class EIObjectInfo extends AbstractRestEBIMC
         FOLDER
     }
 
-    public EIObjectInfo(IIMCExecutor imce, UserID user, RestObject object, Type type)
+    public EIObjectInfo(IIMCExecutor imce, OAuthToken token, RestObject object, Type type)
     {
-        super(imce, user);
+        super(imce, token);
         _object = object;
         _type = type;
     }

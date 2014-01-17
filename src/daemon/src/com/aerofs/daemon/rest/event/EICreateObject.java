@@ -1,8 +1,8 @@
 package com.aerofs.daemon.rest.event;
 
 import com.aerofs.base.Version;
-import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 
 public class EICreateObject extends AbstractRestEBIMC
@@ -12,10 +12,10 @@ public class EICreateObject extends AbstractRestEBIMC
     public final String _name;
     public final boolean _folder;
 
-    public EICreateObject(IIMCExecutor imce, UserID user, Version version,
+    public EICreateObject(IIMCExecutor imce, OAuthToken token, Version version,
             String parent, String name, boolean folder)
     {
-        super(imce, user);
+        super(imce, token);
         _version = version;
         _parent = new RestObject(parent);
         _name = name;
