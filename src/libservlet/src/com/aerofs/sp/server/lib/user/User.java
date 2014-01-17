@@ -480,7 +480,7 @@ public class User
     public void throwIfBadCredential(byte[] shaedSP)
             throws SQLException, ExBadCredential
     {
-        l.warn("SI: " + toString());
+        l.info("SI (cred): " + toString());
 
         try {
             if (!isCredentialCorrect(shaedSP)) {
@@ -513,7 +513,7 @@ public class User
             throw new ExBadCredential();
         }
 
-        l.warn("SI (cert): " + toString() + ":" + device.id().toStringFormal());
+        l.info("SI (cert): " + toString() + ":" + device.id().toStringFormal());
 
         String actualCName = certauth.getCName();
         String expectedCName = BaseSecUtil.getCertificateCName(id(), device.id());
