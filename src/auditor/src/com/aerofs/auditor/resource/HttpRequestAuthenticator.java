@@ -12,7 +12,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.sun.jndi.url.dns.dnsURLContext;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
@@ -64,7 +63,7 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
         HttpRequest req = (HttpRequest)e.getMessage();
 
         try {
-            if (Boolean.parseBoolean(req.getHeader(HEADER_AUTH_REQ))) throwIfInvalidCreds(ctx, req);
+            if (Boolean.parseBoolean(req.getHeader(HEADER_AUTH_REQ))) throwIfInvalidCreds(req);
         } catch (Exception ex) {
             HttpResponseStatus status = (ex instanceof ExBadCredential) ?
                     HttpResponseStatus.UNAUTHORIZED : HttpResponseStatus.BAD_REQUEST;
@@ -81,7 +80,7 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
      * Throw a reasonable exception if the HTTP headers don't meet the identity-verification
      * requirements described above.
      */
-    private void throwIfInvalidCreds(ChannelHandlerContext ctx, HttpRequest req)
+    private void throwIfInvalidCreds(HttpRequest req)
             throws ExBadCredential, IOException, ExFormatError
     {
         String verifyVal = req.getHeader(HEADER_VERIFY);
