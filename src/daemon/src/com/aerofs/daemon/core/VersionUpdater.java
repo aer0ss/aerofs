@@ -2,25 +2,19 @@ package com.aerofs.daemon.core;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Set;
 
 import javax.annotation.Nonnull;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.lib.DelayedScheduler;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.Util;
-import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,44 +29,16 @@ public class VersionUpdater
 {
     private static final Logger l = Loggers.getLogger(VersionUpdater.class);
 
-    // This set remembers all the branches that have been updated since the last NEW_UPDATE message
-    // was sent.
-    private final Set<SOCKID> _updated = Sets.newTreeSet();
-
-    private DelayedScheduler _dsNewUpdateMessage;
-    private NativeVersionControl _nvc;
-    private NewUpdates _nu;
-    private DirectoryService _ds;
-    private IPhysicalStorage _ps;
+    private final NativeVersionControl _nvc;
+    private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
 
     @Inject
-    public void inject_(NewUpdates nu, NativeVersionControl nvc, DirectoryService ds,
-            IPhysicalStorage ps, CoreScheduler sched)
+    public VersionUpdater(NativeVersionControl nvc, DirectoryService ds, IPhysicalStorage ps)
     {
-        _nu = nu;
         _nvc = nvc;
         _ds = ds;
         _ps = ps;
-
-        _dsNewUpdateMessage = new DelayedScheduler(sched, DaemonParam.NEW_UPDATE_MESSAGE_DELAY,
-                new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        assert !_updated.isEmpty();
-
-                        try {
-                            // send a NEW_UPDATE message for all the branches that have been updated
-                            // since the last NEW_UPDATE.
-                            _nu.send_(_updated);
-                        } catch (Exception e) {
-                            // failed to push.
-                            l.warn("ignored: " + Util.e(e));
-                        }
-
-                        _updated.clear();
-                    }
-                });
     }
 
     /**
@@ -113,12 +79,5 @@ public class VersionUpdater
             assert k.kidx().equals(KIndex.MASTER) : k;
             _ds.setCA_(k.sokid(), pf.getLength_(), mtime, null, t);
         }
-
-        _updated.add(k);
-        // TODO (DF) : This doesn't need to happen unless the transaction commits, which
-        // means this should probably be a transaction commit listener or refactored down into
-        // VersionAssistant.  There's no need to re-announce your latest tick if you failed to
-        // download something.
-        _dsNewUpdateMessage.schedule_();
     }
 }
