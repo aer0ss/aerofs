@@ -17,6 +17,7 @@ import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -251,22 +252,30 @@ public class Images {
         return result;
     }
 
-    /**
-     * @return icon name
-     */
-    public static String getTrayIconName(boolean isServerOnline, boolean notification)
+    // FIXME(AT): passing in isWindowsVistaAndUp flag is a bad idea, but mocking OSUtil is hard.
+    @Nonnull
+    public static String getTrayIconName(boolean isOnline, boolean hasNotification,
+            boolean hasProgress, boolean isSynced, boolean isHdpi, boolean isWindowsVistaAndUp)
     {
         StringBuilder sb = new StringBuilder("tray");
-        if (notification) sb.append("n");
-        sb.append(0);
-        if (!isServerOnline) sb.append("grey");
+
+        if (!isOnline) sb.append("_off");
+        if (hasNotification) sb.append("_n");
+
+        if (hasProgress) sb.append("_sip");
+        else if (isSynced) sb.append("_is");
+        else sb.append("_oos");
+
+        if (isWindowsVistaAndUp) sb.append("_win");
+        if (isHdpi) sb.append("@2x");
+
         return sb.toString();
     }
 
     public static Image getTrayIcon(String iconName)
     {
         Image img = get(iconName + ".png");
-        return img != null ? img : get("tray0.png");
+        return img != null ? img : get("tray.png");
     }
 
     /**
