@@ -51,15 +51,19 @@
 
     %if page == 0:
         ## Page 0 must be the license page. See setup_view.py:_setup_common()
-        <%namespace name="license_page" file="license_page.mako"/>
-        <%namespace name="license_authorized_page" file="license_authorized_page.mako"/>
         ## See the logic in setup_view.py:setup()
         %if is_license_present_and_valid:
-            <%license_authorized_page:body/>
-            <% local.page_scripts = license_authorized_page.scripts %>
+            <%namespace name="license_valid_page" file="license_valid_page.mako"/>
+            <%license_valid_page:body/>
+            <% local.page_scripts = license_valid_page.scripts %>
+        %elif is_license_present:
+            <%namespace name="license_expired_page" file="license_expired_page.mako"/>
+            <%license_expired_page:body/>
+            <% local.page_scripts = license_expired_page.scripts %>
         %else:
-            <%license_page:body/>
-            <% local.page_scripts = license_page.scripts %>
+            <%namespace name="license_absent_page" file="license_absent_page.mako"/>
+            <%license_absent_page:body/>
+            <% local.page_scripts = license_absent_page.scripts %>
         %endif
     %elif page == 1:
         <h3>Step 1 of 4</h3>

@@ -1,7 +1,7 @@
 <%inherit file="marketing_layout.mako"/>
 <%! page_title = "Appliance Maintenance" %>
 
-<%namespace name="upload_license_button" file="upload_license_button.mako"/>
+<%namespace name="license_common" file="license_common.mako"/>
 <%namespace name="version" file="version.mako"/>
 <%namespace name="no_ie" file="no_ie.mako"/>
 <%namespace name="csrf" file="csrf.mako"/>
@@ -39,7 +39,7 @@
 <%block name="scripts">
     <%no_ie:scripts/>
 
-    ${upload_license_button.scripts('license-file', 'continue-btn')}
+    ${license_common.scripts('license-file', 'continue-btn')}
 
     <script>
         $(document).ready(function() {

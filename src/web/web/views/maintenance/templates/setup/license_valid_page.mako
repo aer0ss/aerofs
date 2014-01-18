@@ -1,10 +1,6 @@
-## This page is used when the system's license is valid. In this case,
-## updating the license requires authentication.
-## See docs/design/pyramid_auth.md, setup() in setup.py, and setup.mako.
-
 <%namespace name="csrf" file="../csrf.mako"/>
-<%namespace name="common" file="setup_common.mako"/>
-<%namespace name="license_page" file="license_page.mako"/>
+<%namespace name="setup_common" file="setup_common.mako"/>
+<%namespace name="license_common" file="../license_common.mako"/>
 
 <form method="post" onsubmit="submitForm(); return false;">
     <h3>Set up AeroFS Appliance</h3>
@@ -33,7 +29,7 @@
         You can read here what happens if a license expires.</a></p>
 
     <hr />
-    ${common.render_next_button()}
+    ${setup_common.render_next_button()}
 </form>
 
 <%def name='render_license_field(key)'>
@@ -45,5 +41,5 @@
 </%def>
 
 <%def name="scripts()">
-    ${license_page.submit_scripts('license-file')}
+    ${license_common.submit_scripts('license-file')}
 </%def>

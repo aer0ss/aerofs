@@ -1,5 +1,5 @@
 
-<%def name='button(input_id, input_name)'>
+<%def name='big_upload_button(input_id, input_name)'>
     <input id="${input_id}" name="${input_name}" type="file" style="display: none">
     <div class="row-fluid" style="margin-top: 80px; margin-bottom: 50px;">
         <div class="span6 offset3">
@@ -18,7 +18,7 @@
     </div>
 </%def>
 
-<%def name="scripts(input_id, submit_btn_id)">
+<%def name="big_upload_button_script(input_id, submit_btn_id)">
     <script>
         $(document).ready(function() {
             updateLicenseFileUI();
@@ -42,6 +42,45 @@
                 setEnabled($('#${submit_btn_id}'), false)
                     .removeClass('btn-primary');
             }
+        }
+    </script>
+</%def>
+
+<%def name="submit_scripts(license_file_input_id)">
+    <script>
+        ## @param postLicenseUpload a callback function after the license file
+        ##  is uploaded. May be null. Expected signature:
+        ##      postLicenseUpload(onSuccess, onFailure).
+        function submitForm(postLicenseUpload) {
+            ## Go to the next page if no license file is specified. This is
+            ## needed for license_valid_page.mako to skip license upload if
+            ## the license already exists.
+            if (!$('#${license_file_input_id}').val()) gotoNextPage();
+
+            disableNavButtons();
+
+            ## TODO (WW) use multipart/form-data as in maintenance_login.mako
+            var file = document.getElementById('${license_file_input_id}').files[0];
+            var reader = new FileReader();
+            reader.onload = function() {
+                submitLicenseFile(this.result, postLicenseUpload);
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function submitLicenseFile(license, postLicenseUpload) {
+            var next;
+            if (postLicenseUpload) {
+                next = function() {
+                    postLicenseUpload(gotoNextPage, enableNavButtons);
+                };
+            } else {
+                next = gotoNextPage;
+            }
+
+            doPost("${request.route_path('json_set_license')}", {
+                'license': license
+            }, next, enableNavButtons);
         }
     </script>
 </%def>
