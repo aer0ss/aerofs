@@ -10,7 +10,7 @@
 </%def>
 
 <%def name="submit_logs_text(open_link_in_new_window)">
-    <strong>We are here to help!</strong> Sumbit your logs at
+    <strong>We are here to help!</strong> Submit your logs at
     <a href="https://support.aerofs.com/anonymous_requests/new"
         %if open_link_in_new_window:
             target="_blank"

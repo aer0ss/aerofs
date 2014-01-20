@@ -30,16 +30,16 @@ class rocklog {
     }
 
     exec{"get elasticsearch deb":
-        command => "/usr/bin/wget http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.20.4.deb",
+        command => "/usr/bin/wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.10.deb",
         cwd => "/root/",
-        creates => "/root/elasticsearch-0.20.4.deb",
+        creates => "/root/elasticsearch-0.90.10.deb",
         notify => Package["elasticsearch"]
     }
 
     package{ "elasticsearch" :
         provider => dpkg,
         ensure => latest,
-        source => "/root/elasticsearch-0.20.4.deb",
+        source => "/root/elasticsearch-0.90.10.deb",
         require => Exec["get elasticsearch deb"]
     }
 
