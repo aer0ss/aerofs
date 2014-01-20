@@ -1,15 +1,17 @@
 package com.aerofs.restless.netty;
 
 import com.aerofs.base.Loggers;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Queues;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Queue;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * A simple {@link InputStream} implementation that operates on a queue of {@link ChannelBuffer}
@@ -17,6 +19,9 @@ import java.util.Queue;
  *
  * This class can be safely accessed from any thread but may only be used by a single consumer
  * at any given time.
+ *
+ * Closing the stream will discard any currently buffered packet immediately and any new packet
+ * as they arrive.
  */
 public class ChunkedRequestInputStream extends InputStream
 {
@@ -30,7 +35,8 @@ public class ChunkedRequestInputStream extends InputStream
     {
         STREAMING,
         AT_END,
-        FAILED
+        FAILED,
+        CLOSED
     }
 
     private volatile State _state;
@@ -53,13 +59,13 @@ public class ChunkedRequestInputStream extends InputStream
     }
 
     @Override
-    public int read(byte b[]) throws IOException
+    public int read(@Nonnull byte b[]) throws IOException
     {
         return read(b, 0, b.length);
     }
 
     @Override
-    public int read(byte b[], int off, int len) throws IOException
+    public int read(@Nonnull byte b[], int off, int len) throws IOException
     {
         int n = 0;
         while (n < len && hasMore_()) {
@@ -70,13 +76,25 @@ public class ChunkedRequestInputStream extends InputStream
         return n == 0 && len != 0 ? -1 : n;
     }
 
+    @Override
+    public synchronized void close()
+    {
+        _state = State.CLOSED;
+        _current = null;
+        _content.clear();
+        _channel.setReadable(true);
+        notify();
+    }
+
     private boolean hasMore_() throws IOException
     {
+        if(_state == State.CLOSED) throw new IOException("stream closed");
         if (isEmpty(_current)) {
             while (isEmpty(_current = _content.poll())) {
                 synchronized (this) {
+                    if (_state == State.CLOSED) throw new IOException("stream closed");
                     if (_state == State.AT_END) return false;
-                    if (_state == State.FAILED) throw new IOException();
+                    if (_state == State.FAILED) throw new IOException("stream failed");
                     try {
                         _channel.setReadable(true);
                         wait();
@@ -96,7 +114,8 @@ public class ChunkedRequestInputStream extends InputStream
 
     public void offer(ChannelBuffer content)
     {
-        Preconditions.checkState(_state == State.STREAMING);
+        if (_state == State.CLOSED) return;
+        checkState(_state == State.STREAMING);
         _content.offer(content);
         synchronized (this) { notify(); }
         _channel.setReadable(_content.size() < MAX_QUEUED_CHUNKS);
@@ -104,6 +123,7 @@ public class ChunkedRequestInputStream extends InputStream
 
     public synchronized void fail()
     {
+        if (_state == State.CLOSED) return;
         _state = State.FAILED;
         l.info("fail");
         notify();
@@ -111,7 +131,8 @@ public class ChunkedRequestInputStream extends InputStream
 
     public synchronized void end()
     {
-        Preconditions.checkState(_state == State.STREAMING);
+        if (_state == State.CLOSED) return;
+        checkState(_state == State.STREAMING);
         _state = State.AT_END;
         notify();
     }
