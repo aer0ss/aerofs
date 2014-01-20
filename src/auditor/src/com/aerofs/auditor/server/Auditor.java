@@ -12,7 +12,6 @@ import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -24,7 +23,6 @@ import java.io.FileInputStream;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetSocketAddress;
 import java.util.Properties;
-import java.util.Set;
 
 public class Auditor extends Service
 {
@@ -37,20 +35,15 @@ public class Auditor extends Service
     public Auditor(Injector injector, IPrivateKeyProvider kmgr)
     {
         super("auditor", new InetSocketAddress(Audit.SERVICE_PORT), kmgr, injector);
-    }
 
-    @Override
-    protected Set<Class<?>> singletons()
-    {
-        // this weird invocation is necessary to confuse ImmutableSet.copyOf() with one element
-        return ImmutableSet.copyOf(new Class<?>[]{EventResource.class});
+        addResource(EventResource.class);
     }
 
     @Override
     public ChannelPipeline getSpecializedPipeline()
     {
         ChannelPipeline p = super.getSpecializedPipeline();
-        p.addBefore("jersey", "exec", new HttpRequestAuthenticator());
+        p.addBefore(JERSEY_HANLDER, "auth", new HttpRequestAuthenticator());
         return p;
     }
 

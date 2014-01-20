@@ -44,7 +44,6 @@ import org.jboss.netty.channel.ChannelPipeline;
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.util.Properties;
-import java.util.Set;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
@@ -73,24 +72,18 @@ public class Bifrost extends Service
                 ImmutableSet.of( // read-only
                         "/tokeninfo",
                         "/tokenlist"));
-    }
 
-    @Override
-    protected Set<Class<?>> singletons()
-    {
-        return ImmutableSet.of(
-                AuthorizeResource.class,
-                VerifyResource.class,
-                TokenResource.class,
-                ClientsResource.class
-        );
+        addResource(AuthorizeResource.class);
+        addResource(VerifyResource.class);
+        addResource(TokenResource.class);
+        addResource(ClientsResource.class);
     }
 
     @Override
     public ChannelPipeline getSpecializedPipeline()
     {
         ChannelPipeline p = super.getSpecializedPipeline();
-        p.addBefore("jersey", "trans", _trans);
+        p.addBefore(JERSEY_HANLDER, "trans", _trans);
         return p;
     }
 

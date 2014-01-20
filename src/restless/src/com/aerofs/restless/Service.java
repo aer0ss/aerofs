@@ -29,11 +29,13 @@ import org.jboss.netty.handler.codec.http.HttpServerCodec;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 /**
  * Base class for Restless service
@@ -65,7 +67,11 @@ public class Service extends AbstractNettyServer
     public static final String DUMMY_LOCATION = "https://dummy/";
     public static final URI DUMMY_BASE_URI = URI.create(DUMMY_LOCATION);
 
+    public static final String JERSEY_HANLDER = "jersey";
+
     protected final Injector _injector;
+
+    private final Executor _executor;
 
     private final Configuration _config;
     private final ResourceConfig _resources;
@@ -74,9 +80,16 @@ public class Service extends AbstractNettyServer
 
     public Service(String name, InetSocketAddress addr, IPrivateKeyProvider kmgr, Injector injector)
     {
+        this(name, addr, kmgr, injector, null);
+    }
+
+    public Service(String name, InetSocketAddress addr, IPrivateKeyProvider kmgr, Injector injector,
+            @Nullable Executor executor)
+    {
         super(name, addr, kmgr, null);
 
         _injector = injector;
+        _executor = executor;
         _config = injector.getInstance(Configuration.class);
         _application = WebApplicationFactory.createWebApplication();
         _resources = getResourceConfiguration();
@@ -120,7 +133,7 @@ public class Service extends AbstractNettyServer
 
         // name the last handler to allow subclasses to insert handlers before it
         // e.g. an ExecutionHandler or some transaction logic
-        p.addLast("jersey", new JerseyHandler(_application, _config));
+        p.addLast(JERSEY_HANLDER, new JerseyHandler(_application, _executor, _config));
         return p;
     }
 
