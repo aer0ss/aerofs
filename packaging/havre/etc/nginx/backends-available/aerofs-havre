@@ -2,6 +2,12 @@ location /api {
     rewrite /api/(.+) /$1 break;
     # proxies to Havre, the API gateway
     proxy_pass http://127.0.0.1:8083;
+
+    # daemon always use https:// in Location headers
+    # since we use http for the proxy_pass directive
+    # the default nginx redirect does not work
+    proxy_redirect https://127.0.0.1:8083/ /api/;
+
     proxy_cache off;
     proxy_buffering off;
     proxy_cookie_path / /api/;
