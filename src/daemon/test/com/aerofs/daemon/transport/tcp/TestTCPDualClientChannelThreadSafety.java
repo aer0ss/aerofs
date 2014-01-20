@@ -187,7 +187,6 @@ public final class TestTCPDualClientChannelThreadSafety
         final Channel sendingChannel = device0ConnectFuture.getChannel();
         sendingThread = new Thread(new Runnable()
         {
-            @SuppressWarnings("InfiniteLoopStatement")
             @Override
             public void run()
             {

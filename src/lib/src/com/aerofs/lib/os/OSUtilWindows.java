@@ -1,18 +1,14 @@
 package com.aerofs.lib.os;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Map;
-import java.util.regex.Pattern;
-
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.*;
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam.RootAnchor;
+import com.aerofs.lib.OutArg;
+import com.aerofs.lib.S;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.sv.client.SVClient;
@@ -25,6 +21,13 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 

@@ -82,7 +82,6 @@ public final class ClientAuditEventReporter // this can be final because it's no
     // GSON objects
     //
 
-    @SuppressWarnings("unused") // fields are used within gson
     private static class PathComponents
     {
         @SerializedName("sid")
@@ -98,7 +97,6 @@ public final class ClientAuditEventReporter // this can be final because it's no
         }
     }
 
-    @SuppressWarnings("unused") // fields are used within gson
     private static class SOID
     {
         @SerializedName("sid")

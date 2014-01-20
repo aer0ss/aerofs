@@ -156,7 +156,6 @@ public class TestDownstream extends AbstractTest
     public void streamShouldRetryConnect() throws Exception
     {
         stopListener();
-        Downstream.IAuditChannel chan = Downstream.create();
         ThreadUtil.sleepUninterruptable(1 * C.SEC);
         Assert.assertTrue(ReconnectingClientHandler.getNextDelay() > 100L);
     }

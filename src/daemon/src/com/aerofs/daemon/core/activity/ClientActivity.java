@@ -87,7 +87,6 @@ public enum ClientActivity
      * @param activities non-empty list of locally-generated {@code ClientActivity} enums to combine
      * @return integer > 0 representing the combined {@code ClientActivity} enums
      */
-    @SuppressWarnings("unused")
     public static int combineActivities(ClientActivity... activities)
     {
         checkArgument(activities.length >= 1, "invalid number of activities:%s", activities.length);

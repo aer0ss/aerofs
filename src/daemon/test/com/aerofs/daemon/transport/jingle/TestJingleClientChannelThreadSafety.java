@@ -203,7 +203,6 @@ public final class TestJingleClientChannelThreadSafety
 
         sendingThread = new Thread(new Runnable()
         {
-            @SuppressWarnings("InfiniteLoopStatement")
             @Override
             public void run()
             {

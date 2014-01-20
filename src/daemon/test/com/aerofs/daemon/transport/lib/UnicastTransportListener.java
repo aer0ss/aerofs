@@ -13,7 +13,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class UnicastTransportListener extends TransportListener
 {
-    @SuppressWarnings("unused")
     public static final class Received
     {
         public final DID did;

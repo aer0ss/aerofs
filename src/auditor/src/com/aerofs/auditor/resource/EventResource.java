@@ -52,7 +52,6 @@ public class EventResource
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/event")
-    @SuppressWarnings("unused")
     public Response event(@Context HttpContext context, Map<String, Object> contents)
     {
         // let's make sure the required elements were provided...
@@ -88,6 +87,7 @@ public class EventResource
     /**
      *  Result type from the POST endpoint, structured for convenient Gson'ing
      */
+    @SuppressWarnings("unused")
     private static class EventResult
     {
         EventResult(String desc) { result = "error"; description = desc; }

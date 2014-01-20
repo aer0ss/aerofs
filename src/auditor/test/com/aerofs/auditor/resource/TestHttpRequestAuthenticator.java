@@ -7,11 +7,8 @@ package com.aerofs.auditor.resource;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.testlib.TempCert;
 import com.google.gson.JsonObject;
-import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.http.ContentType;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Date;
