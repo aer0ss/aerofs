@@ -81,6 +81,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
+import java.security.Permission;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -162,9 +163,25 @@ public class AbstractRestTest extends AbstractTest
         this.useProxy = useProxy;
     }
 
+    /** Temporary measure, trying to debug a weird "unexpected exit" that is occurring in CI. */
+    private static class TestSecurityManager extends SecurityManager {
+        @Override
+        public void checkExit( final int status ) {
+            SecurityException sec = new SecurityException( "System.exit(" + status + ")!!");
+            sec.printStackTrace();
+            throw sec;
+        }
+        @Override
+        public void checkPermission( final Permission perm ) { }
+        @Override
+        public void checkPermission( final Permission perm, final Object context ) { }
+    }
+
     @BeforeClass
     public static void generateCert()
     {
+        System.setSecurityManager(new TestSecurityManager());
+
         ca = TempCert.generateCA();
         client = TempCert.generateDaemon(user, did, ca);
         RestAssured.keystore(ca.keyStore, TempCert.KS_PASSWD);
@@ -175,6 +192,8 @@ public class AbstractRestTest extends AbstractTest
     {
         ca.cleanup();
         client.cleanup();
+        /* temporary measure debugging CI */
+        System.setSecurityManager(null);
     }
 
     protected MockDS mds;
