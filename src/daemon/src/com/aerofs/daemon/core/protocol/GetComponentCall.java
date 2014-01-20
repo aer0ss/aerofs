@@ -176,7 +176,7 @@ public class GetComponentCall
 
         // TODO (DF): is this a reasonable usage of IPhysicalStorage?
         // I can't tell if prefix files should even track branches
-        IPhysicalPrefix prefix = _ps.newPrefix_(branch);
+        IPhysicalPrefix prefix = _ps.newPrefix_(branch, null);
         long len = prefix.getLength_();
         if (len == 0) return;
 

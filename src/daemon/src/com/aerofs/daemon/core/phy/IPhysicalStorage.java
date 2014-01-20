@@ -26,7 +26,7 @@ public interface IPhysicalStorage
 
     IPhysicalFolder newFolder_(ResolvedPath path) throws SQLException;
 
-    IPhysicalPrefix newPrefix_(SOCKID k) throws SQLException;
+    IPhysicalPrefix newPrefix_(SOCKID k, @Nullable String scope) throws SQLException;
 
     /**
      * Move the completely downloaded prefix in place of the file.

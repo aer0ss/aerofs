@@ -10,11 +10,12 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.daemon.rest.event.EIDeleteObject;
 import com.aerofs.daemon.rest.event.EIFileContent;
+import com.aerofs.daemon.rest.event.EIFileUpload;
 import com.aerofs.daemon.rest.event.EIMoveObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
-import com.aerofs.daemon.rest.util.EntityTagSet;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
+import com.aerofs.daemon.rest.util.EntityTagSet;
 import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.rest.api.File;
@@ -40,6 +41,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
 
 @Path(Service.VERSION + "/files")
 @Produces(MediaType.APPLICATION_JSON)
@@ -74,6 +76,22 @@ public class FilesResource
     {
         EntityTag etIfRange = EntityTagUtil.parse(ifRange);
         return new EIFileContent(_imce, token, object, etIfRange, range, ifNoneMatch).execute();
+    }
+
+    @Since("0.10")
+    @PUT
+    @Path("/{file_id}/content")
+    @Consumes(MediaType.APPLICATION_OCTET_STREAM)
+    public Response upload(@Auth OAuthToken token,
+            @PathParam("file_id") RestObject object,
+            @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
+            InputStream body) throws IOException
+    {
+        try {
+            return new EIFileUpload(_imce, token, object, ifMatch, body).execute();
+        } finally {
+            body.close();
+        }
     }
 
     @Since("0.10")

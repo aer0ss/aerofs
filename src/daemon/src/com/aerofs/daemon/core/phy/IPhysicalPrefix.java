@@ -28,4 +28,6 @@ public interface IPhysicalPrefix
     void moveTo_(IPhysicalPrefix pf, Trans t) throws IOException;
 
     ContentHash prepare_(Token tk) throws IOException;
+
+    void delete_() throws IOException;
 }

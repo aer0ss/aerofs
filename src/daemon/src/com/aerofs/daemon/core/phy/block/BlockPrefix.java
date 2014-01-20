@@ -64,4 +64,10 @@ class BlockPrefix implements IPhysicalPrefix
         if (_hash == null) _hash = _s.prepare_(this, tk);
         return _hash;
     }
+
+    @Override
+    public void delete_() throws IOException
+    {
+        _f.delete();
+    }
 }

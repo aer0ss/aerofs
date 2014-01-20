@@ -106,7 +106,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
 
         boolean wasPresent = (oa.caMasterNullable() != null);
         SOCKID sockid = new SOCKID(soid, CID.CONTENT, KIndex.MASTER);
-        IPhysicalPrefix pp = _ps.newPrefix_(sockid);
+        IPhysicalPrefix pp = _ps.newPrefix_(sockid, null);
 
         ContentHash h;
         Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "import-file");

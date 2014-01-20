@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -144,6 +145,7 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock ObjectMover om;
     protected @Mock ObjectDeleter od;
     protected @Mock ImmigrantCreator ic;
+    protected @Mock VersionUpdater vu;
 
     protected  @Mock OutboundEventLogger oel;
 
@@ -326,6 +328,7 @@ public class AbstractRestTest extends AbstractTest
                 bind(ObjectDeleter.class).toInstance(od);
                 bind(OutboundEventLogger.class).toInstance(oel);
                 bind(ImmigrantCreator.class).toInstance(ic);
+                bind(VersionUpdater.class).toInstance(vu);
                 bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));
             }
         });
