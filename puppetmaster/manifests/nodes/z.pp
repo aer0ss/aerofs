@@ -58,7 +58,10 @@ node "z.arrowfs.org" inherits default {
     "web url http://www.aerofs.com",
     "sv url https://sv.aerofs.com/sv_beta/sv",
     "sp url-internalcert https://sp.aerofs.com/sp",
-    "sss url-internalcert https://sss.aerofs.com/syncstat",
+    # SSS is unstable right now and takes a long time to respond to a simple
+    # GET request. Experiments show that it takes 2-8 seconds for the probe
+    # to finish most of the times, hence the timeout is set to 10 seconds.
+    "sss url-internalcert https://sss.aerofs.com/syncstat 10",
     "verkehr port verkehr.aerofs.com 443",
     "zephyr checkzephyr zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
