@@ -24,24 +24,29 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.Executor;
 
 public class JerseyHandler extends SimpleChannelUpstreamHandler
 {
     private static final Logger l = Loggers.getLogger(JerseyHandler.class);
 
     private final Configuration _config;
+    private final @Nullable Executor _executor;
     private final WebApplication _application;
 
     private ChunkedRequestInputStream _chunkedRequestInputStream;
 
-    public JerseyHandler(WebApplication application, Configuration config)
+    public JerseyHandler(WebApplication application, @Nullable Executor executor,
+            Configuration config)
     {
         _config = config;
+        _executor = executor;
         _application = application;
     }
 
@@ -50,31 +55,50 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
             throws URISyntaxException, IOException
     {
         Channel channel = ctx.getChannel();
+        Object msg = me.getMessage();
         if (_chunkedRequestInputStream != null) {
-            HttpChunk chunk = (HttpChunk)me.getMessage();
+            HttpChunk chunk = (HttpChunk)msg;
             if (chunk.isLast()) {
+                l.debug("last chunk");
                 _chunkedRequestInputStream.end();
                 _chunkedRequestInputStream = null;
             } else {
+                l.debug("chunk {}", chunk.getContent().readableBytes());
                 _chunkedRequestInputStream.offer(chunk.getContent());
             }
-        } else {
-            HttpRequest request = (HttpRequest)me.getMessage();
+        } else if (msg instanceof HttpRequest) {
+            final HttpRequest request = (HttpRequest)msg;
 
-            if (HttpHeaders.is100ContinueExpected(request)) {
-                ctx.getChannel().write(new DefaultHttpResponse(HttpVersion.HTTP_1_1,
-                        HttpResponseStatus.CONTINUE));
-            }
+            // for chunked messages, defer sending 100 Continue to first attempt to read content
+            boolean sendContinue = HttpHeaders.is100ContinueExpected(request);
 
             final InputStream content;
             if (request.isChunked()) {
-                l.info("chunked request {}", request);
-                content = _chunkedRequestInputStream = new ChunkedRequestInputStream(channel);
+                l.debug("chunked request {}", request);
+                content = _chunkedRequestInputStream =
+                        new ChunkedRequestInputStream(channel, sendContinue);
             } else {
-                l.info("simple request {}", request);
+                l.debug("simple request {}", request);
                 content = new ChannelBufferInputStream(request.getContent());
+                if (sendContinue) {
+                    channel.write(new DefaultHttpResponse(HttpVersion.HTTP_1_1,
+                            HttpResponseStatus.CONTINUE));
+                }
             }
-            handleRequest(me.getChannel(), request, content);
+
+            if (_executor != null) {
+                _executor.execute(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        handleRequest(me.getChannel(), request, content);
+                    }
+                });
+            } else {
+                handleRequest(me.getChannel(), request, content);
+            }
+        } else {
+            l.warn("unexpected msg {}", msg);
         }
     }
 

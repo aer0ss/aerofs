@@ -20,17 +20,14 @@ import com.aerofs.restless.Service;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
-import org.jboss.netty.handler.execution.ExecutionHandler;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class RestService extends Service
 {
@@ -40,13 +37,11 @@ public class RestService extends Service
     // configurable for firewall-friendliness
     private static final int PORT = getIntegerProperty("api.daemon.port", 0);
 
-    // use a cached thread pool to free-up I/O threads while the requests sit in the core queue
-    private final Executor _executor = Executors.newCachedThreadPool();
-
     @Inject
     RestService(Injector injector, CfgKeyManagersProvider kmgr)
     {
-        super("rest", new InetSocketAddress(PORT), kmgr, injector);
+        // use a cached thread pool to free-up I/O threads while the requests sit in the core queue
+        super("rest", new InetSocketAddress(PORT), kmgr, injector, newCachedThreadPool());
 
         enableVersioning();
 
@@ -63,14 +58,6 @@ public class RestService extends Service
     protected ServerSocketChannelFactory getServerSocketFactory()
     {
         return ChannelFactories.getServerChannelFactory();
-    }
-
-    @Override
-    public ChannelPipeline getSpecializedPipeline()
-    {
-        ChannelPipeline p = super.getSpecializedPipeline();
-        p.addBefore("jersey", "exec", new ExecutionHandler(_executor));
-        return p;
     }
 
     @Override
