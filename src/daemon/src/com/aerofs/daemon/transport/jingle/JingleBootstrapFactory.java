@@ -14,23 +14,19 @@ import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
 import com.aerofs.daemon.transport.lib.handlers.ServerHandler;
 import com.aerofs.daemon.transport.lib.handlers.ServerHandler.IServerHandlerListener;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
-import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.util.HashedWheelTimer;
 
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
 import static com.aerofs.base.net.NettyUtil.newSslHandler;
-import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newDiagnosticsHandler;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newFrameDecoder;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newLengthFieldPrepender;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newMagicReader;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newMagicWriter;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newStatsHandler;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Creates {@link org.jboss.netty.bootstrap.ServerBootstrap} and
@@ -39,35 +35,28 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 final class JingleBootstrapFactory
 {
-    private final String transportId;
     private final UserID localuser;
     private final DID localdid;
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
     private final IUnicastListener unicastListener;
-    private final RockLog rockLog;
     private final TransportStats transportStats;
     private final JingleChannelWorker channelWorker;
-    private final HashedWheelTimer timer = new HashedWheelTimer(500, MILLISECONDS);
 
     JingleBootstrapFactory(
-            String transportId,
             UserID localuser,
             DID localdid,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IUnicastListener unicastListener,
-            RockLog rockLog,
             TransportStats transportStats,
             JingleChannelWorker channelWorker)
     {
-        this.transportId = transportId;
         this.localuser = localuser;
         this.localdid = localdid;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.unicastListener = unicastListener;
-        this.rockLog = rockLog;
         this.transportStats = transportStats;
         this.channelWorker = channelWorker;
     }
@@ -90,7 +79,6 @@ final class JingleBootstrapFactory
                         newMagicReader(),
                         newMagicWriter(),
                         newCNameVerificationHandler(clientHandler, localuser, localdid),
-                        newDiagnosticsHandler(transportId, rockLog, timer),
                         clientHandler,
                         clientChannelTeardownHandler);
             }
@@ -120,7 +108,6 @@ final class JingleBootstrapFactory
                         newMagicReader(),
                         newMagicWriter(),
                         newCNameVerificationHandler(serverHandler, localuser, localdid),
-                        newDiagnosticsHandler(transportId, rockLog, timer),
                         serverHandler,
                         protocolHandler,
                         serverChannelTeardownHandler);

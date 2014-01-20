@@ -101,7 +101,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     private final ConcurrentMap<DID, Channel> channels = Maps.newConcurrentMap();
 
     ZephyrConnectionService(
-            String id,
             UserID localid,
             DID localdid,
             SSLEngineFactory clientSslEngineFactory,
@@ -112,8 +111,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             TransportProtocolHandler transportProtocolHandler,
             ChannelTeardownHandler channelTeardownHandler,
             TransportStats transportStats,
-            RockLog rockLog,
-            ChannelFactory channelFactory,
+            RockLog rockLog, ChannelFactory channelFactory,
             InetSocketAddress zephyrAddress,
             Proxy proxy)
     {
@@ -121,10 +119,8 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         this.bootstrap = new ClientBootstrap(channelFactory);
         this.bootstrap.setPipelineFactory(
                 new ZephyrClientPipelineFactory(
-                        id,
                         localid,
                         localdid,
-                        rockLog,
                         clientSslEngineFactory,
                         serverSslEngineFactory,
                         transportProtocolHandler,

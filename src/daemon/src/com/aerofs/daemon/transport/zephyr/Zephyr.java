@@ -147,7 +147,6 @@ public final class Zephyr implements ITransport
         ChannelTeardownHandler channelTeardownHandler = new ChannelTeardownHandler(this, outgoingEventSink, streamManager, TWOWAY);
         this.zephyrAddress = zephyrAddress;
         this.zephyrConnectionService = new ZephyrConnectionService(
-                id,
                 localid,
                 localdid,
                 clientSSLEngineFactory,

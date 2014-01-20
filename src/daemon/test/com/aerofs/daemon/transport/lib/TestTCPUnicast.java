@@ -10,7 +10,6 @@ import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
-import com.aerofs.daemon.transport.MockRockLog;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
 import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
@@ -69,11 +68,10 @@ public final class TestTCPUnicast
     {
         Random random = new Random();
         SecureRandom secureRandom = new SecureRandom();
-        MockRockLog mockRockLog = new MockRockLog();
         MockCA mockCA = new MockCA("test-ca", new SecureRandom());
 
-        localDevice = new UnicastTCPDevice(random, secureRandom, linkStateService, mockCA, mockRockLog, new UnicastTransportListener());
-        otherDevice = new UnicastTCPDevice(random, secureRandom, linkStateService, mockCA, mockRockLog, new UnicastTransportListener());
+        localDevice = new UnicastTCPDevice(random, secureRandom, linkStateService, mockCA, new UnicastTransportListener());
+        otherDevice = new UnicastTCPDevice(random, secureRandom, linkStateService, mockCA, new UnicastTransportListener());
 
         when(localDevice.unicastCallbacks.resolve(otherDevice.did)).thenReturn(otherDevice.listeningAddress);
         when(otherDevice.unicastCallbacks.resolve(localDevice.did)).thenReturn(localDevice.listeningAddress);

@@ -83,9 +83,7 @@ public final class UnicastZephyrDevice
         ChannelTeardownHandler twowayChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.SERVER);
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);
-        unicast = new ZephyrConnectionService(
-                transportId,
-                userID,
+        unicast = new ZephyrConnectionService(userID,
                 did,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory,
