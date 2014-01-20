@@ -10,7 +10,6 @@ from web.views.maintenance.setup_view import _get_default_support_email, json_se
 class SetupTest(TestBase):
 
     def test__get_default_support_email__should_work_as_expected(self):
-        self._verify_default_support_email('', 'localhost')
         self._verify_default_support_email('a', 'a')
         self._verify_default_support_email('haha', 'haha')
         self._verify_default_support_email('.a', '.a')
