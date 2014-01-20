@@ -15,7 +15,7 @@
     <div class="control-group">
         <label class="control-label" for="redirect_uri">Redirect URI:</label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="redirect_uri" name="redirect_uri">
+            <input type="text" class="input-xlarge" id="redirect_uri" name="redirect_uri" required>
         </div>
     </div>
     <div class="control-group">
