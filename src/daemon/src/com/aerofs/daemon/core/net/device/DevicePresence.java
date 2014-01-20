@@ -358,21 +358,15 @@ public class DevicePresence
         for (Entry<SIndex, OPMDevices> entry : _sidx2opm.entrySet()) {
             Builder storeBuilder = Diagnostics.Store.newBuilder();
 
-            // first, add an entry for the sidx=>sid mapping
+            // add the store information
             SIndex sidx = entry.getKey();
-            storeBuilder.setStoreIndex(sidx.getInt());
+            addStore(sidx, entry.getValue().getAll_().keySet(), storeBuilder);
 
             // remove this from the 'known' set, because we've already
             // dumped its diagnostic info
             // NOTE: _all_ the DIDs associated with this sidx are removed
             // regardless of whether the device is being pulsed or not
             knownSidcs.removeAll(sidx);
-
-            // add the sidx->sid mapping
-            addSIndexToSIDMapping(sidx, storeBuilder);
-
-            // then, add all the dids that 'have' that sidx
-            addKnownDevices(entry.getValue().getAll_().keySet(), storeBuilder);
 
             // once we're done, add the entry into the top-level message
             diagnosticsBuilder.addAvailableStores(storeBuilder);
@@ -385,8 +379,7 @@ public class DevicePresence
             Builder storeBuilder = Diagnostics.Store.newBuilder();
 
             SIndex sidx = entry.getKey();
-            addSIndexToSIDMapping(sidx, storeBuilder);
-            addKnownDevices(entry.getValue(), storeBuilder);
+            addStore(sidx, entry.getValue(), storeBuilder);
 
             diagnosticsBuilder.addUnavailableStores(storeBuilder);
         }
@@ -400,21 +393,23 @@ public class DevicePresence
         return diagnosticsBuilder.build();
     }
 
-    private void addSIndexToSIDMapping(SIndex sidx, Builder storeBuilder)
+    private void addStore(SIndex sidx, Collection<DID> devices, Builder storeBuilder)
     {
         try {
+            // get the SID for this SIndex (will always exist)
             SID sid = _sidx2sid.getLocalOrAbsent_(sidx);
+
+            // then, add an entry for the sidx=>sid mapping
+            storeBuilder.setStoreIndex(sidx.getInt());
             storeBuilder.setSid(sid.toPB());
+
+            // finally, add all the dids that 'have' that sidx
+            for (DID did : devices) {
+                storeBuilder.addKnownOnDids(did.toPB());
+            }
         } catch (SQLException e) {
             l.error("fail get SID from db for sidx:{}", sidx.getInt(), e);
             storeBuilder.setSid(ByteString.EMPTY);
-        }
-    }
-
-    private void addKnownDevices(Collection<DID> dids, Builder storeBuilder)
-    {
-        for (DID did : dids) {
-            storeBuilder.addKnownOnDids(did.toPB());
         }
     }
 }
