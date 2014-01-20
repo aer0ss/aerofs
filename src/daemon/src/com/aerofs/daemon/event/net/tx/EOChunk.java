@@ -2,28 +2,44 @@ package com.aerofs.daemon.event.net.tx;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.IOutgoingStreamFeedback;
+import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.daemon.transport.ITransport;
 
 //N.B. streams are always at background priority to allow atomic messages go first
 //
-public class EOChunk extends AbstractEBIMC implements IOutputBuffer {
+public class EOChunk extends AbstractEBIMC implements IOutputBuffer
+{
+    private final IOutgoingStreamFeedback _stream;
+    private final String _transportId;
+    private final TransferStatisticsManager _tsm;
 
     public final StreamID _streamId;
     public final int _seq; // TODO remove it. see IUnicastOutputLayer.sendOutgoingStream_'s comment
     public final byte[] _bs;
     public final DID _did;
-    private final IOutgoingStreamFeedback _stream;
 
-    public EOChunk(StreamID streamId, IOutgoingStreamFeedback stream, int seq, DID did, byte[] bs, IIMCExecutor imce)
+    public EOChunk(
+            StreamID streamId,
+            IOutgoingStreamFeedback stream,
+            int seq,
+            DID did,
+            byte[] bs,
+            ITransport tp,
+            IIMCExecutor imce,
+            TransferStatisticsManager tsm)
     {
         super(imce);
+
         _streamId = streamId;
         _stream = stream;
         _seq = seq;
         _bs = bs;
         _did = did;
+        _transportId = tp.id();
+        _tsm = tsm;
 
         // Technically we should only call this when EOChunk actually is enqueued
         _stream.incChunkCount();
@@ -40,6 +56,7 @@ public class EOChunk extends AbstractEBIMC implements IOutputBuffer {
     {
         super.okay();
         _stream.decChunkCount();
+        _tsm.markTransferred(_transportId, _bs.length);
     }
 
     @Override
@@ -48,6 +65,7 @@ public class EOChunk extends AbstractEBIMC implements IOutputBuffer {
         super.error(e);
         _stream.decChunkCount();
         _stream.setFirstFailedChunk(this);
+        _tsm.markErrored(_transportId, _bs.length);
     }
 
     @Override

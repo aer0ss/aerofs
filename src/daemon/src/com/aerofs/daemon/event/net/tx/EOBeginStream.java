@@ -2,8 +2,10 @@ package com.aerofs.daemon.event.net.tx;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.IOutgoingStreamFeedback;
+import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.daemon.transport.ITransport;
 
 /* steps to send streams:
  *
@@ -25,9 +27,16 @@ import com.aerofs.daemon.lib.id.StreamID;
 
 public class EOBeginStream extends EOChunk
 {
-    public EOBeginStream(StreamID streamId, IOutgoingStreamFeedback stream, DID did, byte[] bs, IIMCExecutor imce)
+    public EOBeginStream(
+            StreamID streamId,
+            IOutgoingStreamFeedback stream,
+            DID did,
+            byte[] bs,
+            ITransport tp,
+            IIMCExecutor imce,
+            TransferStatisticsManager tsm)
     {
-        super(streamId, stream, 0, did, bs, imce);
+        super(streamId, stream, 0, did, bs, tp, imce, tsm);
     }
 
     @Override

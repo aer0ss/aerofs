@@ -15,6 +15,7 @@ import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.event.net.EOUpdateStores;
@@ -62,6 +63,7 @@ public final class TransportResource extends ExternalResource
     private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(DaemonParam.QUEUE_LENGTH_DEFAULT);
     private final ClientSocketChannelFactory clientSocketChannelFactory = new NioClientSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2, 2);
     private final ServerSocketChannelFactory serverSocketChannelFactory = new NioServerSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2);
+    private final TransferStatisticsManager transferStatisticsManager = new TransferStatisticsManager();
     private final TransportType transportType;
     private final String transportId;
     private final LinkStateService linkStateService;
@@ -235,6 +237,6 @@ public final class TransportResource extends ExternalResource
             streamID = new StreamID(random.nextInt());
         }
 
-        return new TransportOutputStream(did, streamID, transport.q(), new FakeIMCExecutor());
+        return new TransportOutputStream(did, streamID, transport, transport.q(), new FakeIMCExecutor(), transferStatisticsManager);
     }
 }
