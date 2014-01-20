@@ -15,7 +15,6 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.MockCA;
-import com.aerofs.daemon.transport.MockRockLog;
 import com.aerofs.daemon.transport.PrivateKeyProvider;
 import com.aerofs.daemon.transport.TransportReader;
 import com.aerofs.daemon.transport.lib.IUnicastCallbacks;
@@ -63,7 +62,12 @@ public final class UnicastTCPDevice
 
     // interesting...this is practically all the wiring in TCP
     // TODO (AG): find some way to extract this so that we can start up only the unicast/multicast side and use this inside the real transport
-    public UnicastTCPDevice(Random random, SecureRandom secureRandom, LinkStateService linkStateService, MockCA mockCA, MockRockLog mockRockLog, UnicastTransportListener transportListener)
+    public UnicastTCPDevice(
+            Random random,
+            SecureRandom secureRandom,
+            LinkStateService linkStateService,
+            MockCA mockCA,
+            UnicastTransportListener transportListener)
             throws Exception
     {
         this.transportListener = transportListener;
@@ -86,7 +90,7 @@ public final class UnicastTCPDevice
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
         SSLEngineFactory serverSSLEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
-        tcpBootstrapFactory =  new TCPBootstrapFactory(transportId, userID, did, clientSSLEngineFactory, serverSSLEngineFactory, unicastListener, mockRockLog.getRockLog(), transportStats);
+        tcpBootstrapFactory =  new TCPBootstrapFactory(userID, did, clientSSLEngineFactory, serverSSLEngineFactory, unicastListener, transportStats);
 
         unicast = new Unicast(unicastCallbacks, transportStats);
         linkStateService.addListener(unicast, sameThreadExecutor());

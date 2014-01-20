@@ -128,7 +128,7 @@ public class TCP implements ITransport, IUnicastCallbacks
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager, unicast);
-        TCPBootstrapFactory bsFact = new TCPBootstrapFactory(this.id, localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, rockLog, transportStats);
+        TCPBootstrapFactory bsFact = new TCPBootstrapFactory(localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, transportStats);
         ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, unicast, tcpProtocolHandler, protocolHandler, serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bsFact.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);

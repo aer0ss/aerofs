@@ -143,9 +143,9 @@ public class Jingle implements ITransport, IUnicastCallbacks
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, this.outgoingEventSink, streamManager, pulseManager, unicast);
-        JingleBootstrapFactory bsFact = new JingleBootstrapFactory(this.id, localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, rockLog, transportStats, channelWorker);
-        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(signalThread, unicast, protocolHandler, serverChannelTeardownHandler);
-        ClientBootstrap clientBootstrap = bsFact.newClientBootstrap(signalThread, clientChannelTeardownHandler);
+        JingleBootstrapFactory bootstrapFactory = new JingleBootstrapFactory(localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, transportStats, channelWorker);
+        ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(signalThread, unicast, protocolHandler, serverChannelTeardownHandler);
+        ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(signalThread, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
 
         // process presence messages that come via XMPP

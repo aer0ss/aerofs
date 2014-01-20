@@ -8,13 +8,10 @@ import com.aerofs.base.C;
 import com.aerofs.base.net.MagicHeader.ReadMagicHeaderHandler;
 import com.aerofs.base.net.MagicHeader.WriteMagicHeaderHandler;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.transport.lib.handlers.DiagnosticsHandler;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.lib.LibParam;
-import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
-import org.jboss.netty.util.Timer;
 
 import java.nio.ByteBuffer;
 
@@ -67,10 +64,5 @@ public abstract class BootstrapFactoryUtil
     public static IOStatsHandler newStatsHandler(TransportStats stats)
     {
         return new IOStatsHandler(stats);
-    }
-
-    public static DiagnosticsHandler newDiagnosticsHandler(String transportId, RockLog rockLog, Timer timer)
-    {
-        return new DiagnosticsHandler(transportId, rockLog, timer);
     }
 }
