@@ -84,7 +84,6 @@ public class CLI implements IUI {
         _thd = Thread.currentThread();
     }
 
-
     public static CLI get()
     {
         return (CLI) UI.get();
@@ -93,9 +92,11 @@ public class CLI implements IUI {
     @Override
     public void show(final MessageType mt, final String msg)
     {
-        exec(new Runnable() {
+        exec(new Runnable()
+        {
             @Override
-            public void run() {
+            public void run()
+            {
                 _out.println(mt2hdr(mt) + msg);
             }
         });
@@ -376,16 +377,15 @@ public class CLI implements IUI {
     }
 
     @Override
-    public Object addProgress(String msg, boolean notify)
+    public void addProgress(String message, boolean notify)
     {
-        show(MessageType.INFO, msg + "...");
-        return null;
+        show(MessageType.INFO, message + "...");
     }
 
     @Override
-    public void removeProgress(Object prog)
+    public void removeProgress(String message)
     {
-        assert prog == null;
+
     }
 
     @Override

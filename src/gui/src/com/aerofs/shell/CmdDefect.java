@@ -32,8 +32,9 @@ public class CmdDefect implements IShellCommand<ShProgram>
 
         boolean cpuIssue = message.toLowerCase().contains("cpu");
 
-        Object prog = UI.get().addProgress(cpuIssue ? "Sampling " + L.product() +
-                " CPU usage" : "Submitting", true);
+        String progress = cpuIssue ? "Sampling " + L.product() + " CPU usage" : "Submitting";
+
+        UI.get().addProgress(progress, true);
 
         if (cpuIssue) logThreads(ritual, l);
 
@@ -53,7 +54,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
             UI.get().notify(MessageType.ERROR, "Failed to submit the " +
                         "problem " + ErrorMessages.e2msgDeprecated(e) + ". Please try again.");
         } finally {
-            UI.get().removeProgress(prog);
+            UI.get().removeProgress(progress);
         }
     }
 

@@ -18,7 +18,6 @@ import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.text.StrSubstitutor;

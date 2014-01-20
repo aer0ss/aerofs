@@ -1,100 +1,79 @@
+/*
+ * Copyright (c) Air Computing Inc., 2014.
+ */
+
 package com.aerofs.gui.tray;
 
-import java.util.TreeMap;
+import com.google.common.collect.Lists;
 
-import com.aerofs.base.Loggers;
-import com.aerofs.labeling.L;
-import com.aerofs.ui.UI;
-import org.slf4j.Logger;
+import java.util.List;
 
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.os.OSUtil;
-import com.aerofs.ui.IUI.MessageType;
-
-public class Progresses {
-    private static final Logger l = Loggers.getLogger(Progresses.class);
-
-    private static final String TOOLTIP_PREFIX = L.product();
-    private static final String DEFAULT_TOOLTIP =
-            TOOLTIP_PREFIX + " " + Cfg.ver() +
-            (OSUtil.isOSX() ? "" : "\nDouble click to open " + L.product() + " folder");
-
-    private final TreeMap<Integer, Progress> _progs =
-        new TreeMap<Integer, Progress>();
-
-    private int _lastProgressID;
-    private final TrayIcon _ti;
-
-    Progresses(SystemTray st)
+/**
+ * This class is WIP. The long term goal is to have it directly accessible from UIGlobals and used
+ * in both GUI and CLI.
+ */
+public class Progresses
+{
+    /**
+     * The callback will be made from the thread that triggers the callback, and each listener is
+     * responsible for switching the thread context to the desired context (e.g. GUI).
+     */
+    public interface ProgressUpdatedListener
     {
-        _ti = st.getIcon();
+        // called when the progress was added and notify was true
+        void onProgressAdded(Progresses progresses, String message);
 
-        _ti.setToolTipText(DEFAULT_TOOLTIP);
+        // called whenever progresses have changed including after a progress is added
+        void onProgressChanged(Progresses progresses);
     }
 
-    public void removeProgress(Object obj)
+    private final List<String> _progresses = Lists.newLinkedList();
+    private final List<ProgressUpdatedListener> _listeners = Lists.newLinkedList();
+
+    public List<String> getProgresses()
     {
-        Progress prog = (Progress) obj;
-        l.debug("remove progress: " + prog._tooltip);
+        return _progresses;
+    }
 
-        if (_ti.isDisposed()) return;
+    public void addProgress(String message, boolean notify)
+    {
+        _progresses.add(0, message);
+        if (notify) notifyListenersOnProgressAdded(message);
+        notifyListenersOnProgressChanged();
+    }
 
-        boolean last;
-        if (!_progs.isEmpty()) {
-            last = _progs.lastKey().equals(prog._id);
-            _progs.remove(prog._id);
-        } else {
-            last = false;   // the value doesn't matter
-        }
-
-        if (_progs.isEmpty()) {
-            _ti.setToolTipText(DEFAULT_TOOLTIP);
-        } else if (last) {
-            setProgressToolTipText(_progs.lastEntry().getValue());
-        }
+    public void removeProgress(String message)
+    {
+        if (_progresses.remove(message)) notifyListenersOnProgressChanged();
     }
 
     public void removeAllProgresses()
     {
-        _progs.clear();
+        _progresses.clear();
+        notifyListenersOnProgressChanged();
     }
 
-    private void setProgressToolTipText(Progress prog)
+    public void addListener(ProgressUpdatedListener listener)
     {
-        _ti.setToolTipText(TOOLTIP_PREFIX + " | " + prog._tooltip);
+        _listeners.add(listener);
     }
 
-    /**
-     * All progresses will be destroyed next time daemon crashes.
-     * @param msg optional message shown as tooltip. may be null
-     * @param notify whether to show a balloon with the message on it
-     *
-     * @return a Progress object which must be passed into removeProgress later on
-     */
-    public Object addProgress(String msg, boolean notify)
+    public void removeListener(ProgressUpdatedListener listener)
     {
-        Progress prog = new Progress(_lastProgressID++, msg + "...");
-
-        if (_ti.isDisposed()) return prog;
-
-        _progs.put(prog._id, prog);
-
-        setProgressToolTipText(prog);
-
-        if (notify) UI.get().notify(MessageType.INFO, msg + "...");
-
-        return prog;
+        _listeners.remove(listener);
     }
 
-    private static class Progress
+    private void notifyListenersOnProgressChanged()
     {
-        public final int _id;
-        public final String _tooltip;
+        for (ProgressUpdatedListener listener : _listeners) {
+            listener.onProgressChanged(this);
+        }
+    }
 
-        public Progress(int id, String tooltip)
-        {
-            _id = id;
-            _tooltip = tooltip;
+    private void notifyListenersOnProgressAdded(String message)
+    {
+        for (ProgressUpdatedListener listener : _listeners) {
+            listener.onProgressAdded(this, message);
         }
     }
 }

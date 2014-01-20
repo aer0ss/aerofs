@@ -32,7 +32,7 @@ public class TransferTrayMenuSection extends DynamicTrayMenuComponent
                                          // ongoing transfers - line 1
     private MenuItem _transferStats2;    // menu item used to display information about
                                          // ongoing transfers - line 2
-    private Object _transferProgress;    // non-null if transfer is in progress
+    private String _transferProgress;    // non-null if transfer is in progress
     private Menu _lastMenu;
 
     private AbstractListener _handleClick = new AbstractListener(null)
@@ -139,7 +139,8 @@ public class TransferTrayMenuSection extends DynamicTrayMenuComponent
 
         if (transferring) {
             if (_transferProgress == null) {
-                _transferProgress = GUI.get().addProgress(S.LBL_TRANSFERRING, false);
+                _transferProgress = S.LBL_TRANSFERRING;
+                GUI.get().addProgress(_transferProgress, false);
             }
         } else {
             if (_transferProgress != null) {

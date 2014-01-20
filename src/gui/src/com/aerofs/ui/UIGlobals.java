@@ -4,6 +4,7 @@ import com.aerofs.base.analytics.Analytics;
 import com.aerofs.controller.Setup;
 import com.aerofs.gui.TransferState;
 import com.aerofs.gui.shellext.ShellextService;
+import com.aerofs.gui.tray.Progresses;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ritual.RitualBlockingClient;
@@ -59,6 +60,8 @@ public final class UIGlobals
             new RitualNotificationSystemConfiguration());
     // FIXME (AT): TransferState is meant for just GUI, not CLI
     private static final TransferState s_ts = new TransferState(s_rnc);
+    // TODO (AT): meant for both GUI and CLI, currently on used for GUI
+    private static final Progresses s_progress = new Progresses();
 
     private static final SanityPoller s_rap = new SanityPoller();
     private static final InfoCollector s_ic = new InfoCollector();
@@ -71,6 +74,8 @@ public final class UIGlobals
     public static RitualNotificationClient rnc() { return s_rnc; }
 
     public static TransferState ts() { return s_ts; }
+
+    public static Progresses progresses() { return s_progress; }
 
     public static SanityPoller rap() { return s_rap; }
 

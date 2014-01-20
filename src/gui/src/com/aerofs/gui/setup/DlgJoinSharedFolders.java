@@ -236,7 +236,8 @@ public class DlgJoinSharedFolders extends AeroFSDialog
             return;
         }
 
-        Object prog = UI.get().addProgress("Joining folders", true);
+        String progress = "Joining folders";
+        UI.get().addProgress(progress, true);
         try {
             for (PBFolderInvitation inv : invitations) {
                 try {
@@ -248,7 +249,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                 }
             }
         } finally {
-            UI.get().removeProgress(prog);
+            UI.get().removeProgress(progress);
         }
     }
 

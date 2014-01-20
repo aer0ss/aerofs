@@ -8,6 +8,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
+import com.aerofs.gui.tray.Progresses.ProgressUpdatedListener;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
@@ -24,6 +25,8 @@ import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UIGlobals;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import org.eclipse.swt.SWT;
@@ -43,6 +46,7 @@ import java.lang.reflect.Method;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 public class TrayIcon implements ITrayMenuListener
 {
@@ -51,20 +55,23 @@ public class TrayIcon implements ITrayMenuListener
     private static final ClickEvent TRAY_ICON_DEFAULT_ACTION = new ClickEvent( Action.TRAY_ICON_DEFAULT_ACTION, Source.TASKBAR);
     private static final ClickEvent TRAY_ICON_CLICKED = new ClickEvent(Action.TRAY_ICON, Source.TASKBAR);
 
+    private static final String TOOLTIP_PREFIX = L.product();
+    private static final String DEFAULT_TOOLTIP = TOOLTIP_PREFIX + " " + Cfg.ver() +
+            (OSUtil.isOSX() ? "" : "\nDouble click to open " + L.product() + "folder");
+
     private final SystemTray _st;
     private final TrayItem _ti;
     private final UbuntuTrayItem _uti;
 
-    // stores what the tooltip would be if the device is online, this is needed because when the
-    // device is offline, the offline message takes precedence over other messages.
-    private String _tooltip;
     private boolean _isOnline;
+    private String _tooltip;
+    private String _iconName;
+
+    private final ProgressListener _progressListener = new ProgressListener();
 
     // TrayIcon needs to have its own RNC to prevent a race condition between registering listener
     // and starting the client leading to the tray icon missing notifications.
     private RitualNotificationClient _rnc;
-
-    private String _iconName;
 
     TrayIcon(SystemTray st)
     {
@@ -114,6 +121,7 @@ public class TrayIcon implements ITrayMenuListener
         }
 
         addOnlineStatusListener();
+        UIGlobals.progresses().addListener(_progressListener);
     }
 
     TrayItem getTrayItem()
@@ -128,6 +136,9 @@ public class TrayIcon implements ITrayMenuListener
 
     public void dispose()
     {
+        UIGlobals.progresses().removeListener(_progressListener);
+        UIGlobals.progresses().removeAllProgresses();
+
         if (_ti != null) _ti.dispose();
         if (_uti != null) _uti.dispose();
         _rnc.stop();
@@ -139,18 +150,25 @@ public class TrayIcon implements ITrayMenuListener
         return _uti.isDisposed();
     }
 
-    /**
-     * HACK ALERT (AT): the intended tooltip text logic is to use the server offline tooltip
-     *   if the server status is offline and to use the previously set tooltip otherwise.
-     *   The method to achieve this is whenever tooltip is set, it checks the server status.
-     *   And whenever server status change, it calls setToolTipText(_tooltip).
-     */
-    public void setToolTipText(String str)
+    public void updateToolTipText()
     {
+        checkState(GUI.get().isUIThread());
+
         if (_ti != null) {
-            _tooltip = str;
-            _ti.setToolTipText(_isOnline ? _tooltip : S.SERVER_OFFLINE_TOOLTIP);
+            String tooltip = getToolTipText();
+            if (!tooltip.equals(_tooltip)) {
+                _tooltip = tooltip;
+                _ti.setToolTipText(_tooltip);
+            }
         }
+    }
+
+    private String getToolTipText()
+    {
+        return !_isOnline ? S.SERVER_OFFLINE_TOOLTIP :
+                !UIGlobals.progresses().getProgresses().isEmpty() ?
+                        TOOLTIP_PREFIX + " | " + UIGlobals.progresses().getProgresses().get(0) :
+                DEFAULT_TOOLTIP;
     }
 
     @Override
@@ -333,12 +351,35 @@ public class TrayIcon implements ITrayMenuListener
                     public void run()
                     {
                         _isOnline = isOnline;
-                        setToolTipText(_tooltip);
+                        updateToolTipText();
                         refreshTrayIconImage();
                     }
                 });
             }
         });
         _rnc.start();
+    }
+
+    private class ProgressListener implements ProgressUpdatedListener
+    {
+        @Override
+        public void onProgressAdded(Progresses progresses, String message)
+        {
+            if (isDisposed()) return;
+            GUI.get().notify(MessageType.INFO, message + "...");
+        }
+
+        @Override
+        public void onProgressChanged(Progresses progresses)
+        {
+            GUI.get().safeAsyncExec(iconImpl(), new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    updateToolTipText();
+                }
+            });
+        }
     }
 }

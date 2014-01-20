@@ -601,32 +601,15 @@ public class GUI implements IUI
     }
 
     @Override
-    public Object addProgress(final String msg, final boolean notify)
+    public void addProgress(String message, boolean notify)
     {
-        final InOutArg<Object> ret = new InOutArg<Object>(null);
-        exec(new Runnable() {
-            @Override
-            public void run()
-            {
-                if (_st != null) ret.set(_st.getProgs().addProgress(msg, notify));
-            }
-        });
-        return ret.get();
+        UIGlobals.progresses().addProgress(message, notify);
     }
 
     @Override
-    public void removeProgress(final Object prog)
+    public void removeProgress(final String message)
     {
-        if (prog == null) return;
-
-        asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                if (_st != null) _st.getProgs().removeProgress(prog);
-            }
-        });
+        UIGlobals.progresses().removeProgress(message);
     }
 
     @Override

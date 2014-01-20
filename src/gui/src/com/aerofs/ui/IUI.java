@@ -71,20 +71,23 @@ public interface IUI {
     void timerExec(long delay, Runnable runnable);
 
     /**
-     * Add a progress status. It causes the GUI tray icon to animate or CLI to
-     * print out a message. Multiple progresses can be added. The tray icon stops
-     * animation only when the last progress is removed.
+     * Add a progress status.
      *
-     * @param msg the method adds "..." to the end of the message
+     * The CLI always prints out the message.
+     *
+     * The GUI shows a balloon with the message if {@paramref notify} is true.
+     *
+     * It also affects the GUI tray icon tooltip.
+     *
+     * @param message the method adds "..." to the end of the message
      * @param notify show notification with the same massage
-     * @return an object to pass to removeProgress
      */
-    Object addProgress(String msg, boolean notify);
+    void addProgress(String message, boolean notify);
 
     /**
-     * @param prog the return value from addProgress
+     * @param message the corresponding message used in addProgress().
      */
-    void removeProgress(Object prog);
+    void removeProgress(String message);
 
     boolean areNotificationsClickable();
 

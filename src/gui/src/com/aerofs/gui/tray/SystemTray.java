@@ -10,13 +10,11 @@ public class SystemTray
 {
     private final TrayIcon _icon;
     private final Balloons _bm;
-    private final Progresses _progs;
     private final ITrayMenu _menu;
 
     public SystemTray(IMenuProvider menuProvider)
     {
         _icon = new TrayIcon(this);
-        _progs = new Progresses(this);
         _bm = new Balloons(_icon);
         _menu = menuProvider.createMenu(_icon, UbuntuTrayItem.supported() ?
                 RebuildDisposition.REBUILD : RebuildDisposition.REUSE);
@@ -38,12 +36,6 @@ public class SystemTray
         _bm.dispose();
         if (_menu != null) _menu.dispose();
         _icon.dispose();
-        _progs.removeAllProgresses();
-    }
-
-    public Progresses getProgs()
-    {
-        return _progs;
     }
 
     public void enableMenu()

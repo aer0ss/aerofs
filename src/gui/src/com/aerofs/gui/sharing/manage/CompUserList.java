@@ -18,7 +18,6 @@ import com.aerofs.proto.Ritual;
 import com.aerofs.proto.Sp;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.proto.Sp.PBSharedFolderState;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
@@ -214,7 +213,7 @@ public class CompUserList extends Composite
      */
     private void setState(@Nonnull Map<UserID, SharedFolderMember> members, Permissions localUserPermissions, Path path)
     {
-        checkState(UI.isGUI());
+        checkState(GUI.get().isUIThread());
         checkNotNull(members);
 
         _members = members;
@@ -231,7 +230,7 @@ public class CompUserList extends Composite
      */
     private void setState(String errorMessage)
     {
-        checkState(UI.isGUI());
+        checkState(GUI.get().isUIThread());
 
         _members.clear();
         _localUserPermissions = null;
