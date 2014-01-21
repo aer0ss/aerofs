@@ -72,7 +72,8 @@ public class DaemonPostUpdateTasks
             new DPUTUpdateACLFromDiscreteRolesToFlags(dbcw),
             new DPUTUpdateNROForAliasedAndMigrated(dbcw, rocklog),
             new DPUTFixNormalizationOSX(osutil, dbcw, dr, rocklog),
-            new DPUTUpdateEpochTableAddAuditColumn(dbcw)
+            new DPUTUpdateEpochTableAddAuditColumn(dbcw),
+            new DPUTFixCNROsOnOSX(osutil, dbcw),
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 
