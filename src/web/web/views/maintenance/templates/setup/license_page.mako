@@ -158,6 +158,12 @@
             }
 
             function restore(onSuccess, onFailure) {
+
+                ## hide the firewall modal if present.
+                ## TODO (WW) regiter a global handler to close all the modals
+                ## before opening a new one.
+                $('#confirm-firewall-modal').modal('hide');
+
                 ## Skip the step if the backup control is not present or the file is not
                 ## specified
                 if (!$('#backup-file').val()) {
