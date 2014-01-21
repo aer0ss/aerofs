@@ -45,6 +45,7 @@ import java.util.Random;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.concurrent.Executors.newCachedThreadPool;
+import static org.mockito.Mockito.mock;
 
 public final class TransportResource extends ExternalResource
 {
@@ -63,7 +64,7 @@ public final class TransportResource extends ExternalResource
     private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(DaemonParam.QUEUE_LENGTH_DEFAULT);
     private final ClientSocketChannelFactory clientSocketChannelFactory = new NioClientSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2, 2);
     private final ServerSocketChannelFactory serverSocketChannelFactory = new NioServerSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2);
-    private final TransferStatisticsManager transferStatisticsManager = new TransferStatisticsManager();
+    private final TransferStatisticsManager transferStatisticsManager = mock(TransferStatisticsManager.class);
     private final TransportType transportType;
     private final String transportId;
     private final LinkStateService linkStateService;

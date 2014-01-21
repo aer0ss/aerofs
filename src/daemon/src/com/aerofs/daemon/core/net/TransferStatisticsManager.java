@@ -13,7 +13,7 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-public final class TransferStatisticsManager
+public class TransferStatisticsManager
 {
     private static class TransferStatistics
     {
