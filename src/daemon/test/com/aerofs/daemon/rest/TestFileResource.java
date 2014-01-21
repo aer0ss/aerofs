@@ -27,13 +27,16 @@ import org.mockito.stubbing.Answer;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -588,6 +591,54 @@ public class TestFileResource extends AbstractRestTest
             .body("type", equalTo("FORBIDDEN"))
         .when()
             .delete("/v0.10/files/" + idStr);
+    }
+
+    @Test
+    public void shouldUploadContent() throws Exception
+    {
+        MockDSFile file = mds.root().file("foo.txt");
+        SOID fileId = file.soid();
+        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
+        byte[] content = BaseUtil.string2utf("Sample file content");
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+        givenAcces()
+            .content(content)
+        .expect()
+            .statusCode(200)
+        .when()
+            .put("/v0.10/files/" + fileIdStr + "/content");
+        assertArrayEquals("Output Does Not match", content, baos.toByteArray());
+    }
+
+    @Test
+    public void shouldReturn404WhenUploadToNonExistingFile() throws Exception
+    {
+        String fileIdStr = new RestObject(rootSID, OID.generate()).toStringFormal();
+        byte[] content = BaseUtil.string2utf("Sample file content");
+        givenAcces()
+            .content(content)
+        .expect()
+            .statusCode(404)
+        .when()
+            .put("/v0.10/files/" + fileIdStr + "/content");
+    }
+
+    @Test
+    public void shouldReturn403WhenViewerTriesToUpload() throws Exception
+    {
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(
+                user, mds.root().soid().sidx(), Permissions.EDITOR);
+        MockDSFile file = mds.root().file("foo.txt");
+        SOID fileId = file.soid();
+        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
+        byte[] content = BaseUtil.string2utf("Sample file content");
+        givenAcces()
+            .content(content)
+        .expect()
+            .statusCode(403)
+        .when()
+            .put("/v0.10/files/" + fileIdStr + "/content");
     }
 
 }
