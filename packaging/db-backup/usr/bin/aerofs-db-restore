@@ -65,10 +65,10 @@ then
 fi
 
 echo ">>> Restoring redis database..."
-service redis-server stop 1>/dev/null 2>/dev/null
-rm -f /data/redis/*
+service redis-aof stop 1>/dev/null 2>/dev/null
+rm -f /data/redis/redis.*
 cp -a aerofs-db-backup/redis.aof /data/redis
-service redis-server start 1>/dev/null 2>/dev/null
+service redis-aof start 1>/dev/null 2>/dev/null
 
 echo ">>> Restoring mysql database..."
 mysql < aerofs-db-backup/mysql.dump
