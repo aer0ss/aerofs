@@ -25,6 +25,7 @@ import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
+import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -32,6 +33,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
@@ -47,10 +49,12 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
+import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -99,6 +103,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -140,12 +145,15 @@ public class AbstractRestTest extends AbstractTest
 
     protected @Mock Token tk;
     protected @Mock TokenManager tokenManager;
+    protected @Mock TCB tcb;
 
     protected @Mock ObjectCreator oc;
     protected @Mock ObjectMover om;
     protected @Mock ObjectDeleter od;
     protected @Mock ImmigrantCreator ic;
     protected @Mock VersionUpdater vu;
+
+    protected @Mock IPhysicalPrefix pf;
 
     protected  @Mock OutboundEventLogger oel;
 
@@ -228,6 +236,9 @@ public class AbstractRestTest extends AbstractTest
         mds = new MockDS(rootSID, ds, sm, sm);
         mds.root();  // setup sid<->sidx mapping for root..
 
+        when(ps.newPrefix_(any(SOCKID.class), anyString())).thenReturn(pf);
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(ByteStreams.nullOutputStream());
+
         when(localUser.get()).thenReturn(user);
         when(localDID.get()).thenReturn(did);
 
@@ -241,6 +252,7 @@ public class AbstractRestTest extends AbstractTest
         when(tm.begin_()).thenReturn(t);
         when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
         when(nvc.getVersionHash_(any(SOID.class))).thenReturn(VERSION_HASH);
 
