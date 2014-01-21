@@ -51,7 +51,7 @@ public class SyncStatusLabelProvider extends ColumnLabelProvider
     {
         throwOnInvalidElement(element);
         return element instanceof SyncStatusEntry
-                ? ((SyncStatusEntry)element).getDisplayName()
+                ? ((SyncStatusEntry)element)._displayName
                 : (String)element;
     }
 
@@ -97,9 +97,9 @@ public class SyncStatusLabelProvider extends ColumnLabelProvider
     private String getToolTipText(SyncStatusEntry entry)
     {
         switch (entry._status) {
-        case IN_SYNC:       return "Synced to " + entry.getDisplayName();
-        case IN_PROGRESS:   return "Syncing to " + entry.getDisplayName() + " is in progress";
-        case OFFLINE:       return entry.getDisplayName() + " is currently offline";
+        case IN_SYNC:       return "Synced to " + entry._userID;
+        case IN_PROGRESS:   return "Syncing to " + entry._userID + " is in progress";
+        case OFFLINE:       return entry._userID + " is currently offline";
         }
 
         throw new IllegalArgumentException("Invalid sync status value.");

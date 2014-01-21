@@ -46,9 +46,9 @@ public class CmdSyncStatus implements IShellCommand<ShProgram> {
         }
 
         for (PBSyncStatus pbs : reply.getStatusList()) {
-            String usr = pbs.getUserName();
-            String dev = pbs.hasDeviceName() ? pbs.getDeviceName() : "N/A";
-            s.out().println(usr + " " + dev + " " + pbs.getStatus());
+            String userID = pbs.getUserID();
+            String displayName = pbs.getDisplayName();
+            s.out().println(userID + " " + displayName + " " + pbs.getStatus());
         }
     }
 

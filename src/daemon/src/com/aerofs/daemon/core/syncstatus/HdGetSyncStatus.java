@@ -117,12 +117,13 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
             Status status = presenceAwareStatus(did, e.getValue());
             DeviceInfo info = deviceInfo.get(did);
             if (info == null) continue;
-            if (info.owner._userId.equals(_localUser.get())) {
+            UserID userID = info.owner._userId;
+            if (userID.equals(_localUser.get())) {
                 result.add(PBSyncStatus.newBuilder()
-                        .setUserName(info.owner.getName())
-                        .setDeviceName(info.deviceName != null ? info.deviceName : did
-                                .toStringFormal())
                         .setStatus(status)
+                        .setUserID(userID.getString())
+                        .setDisplayName(info.deviceName != null ? info.deviceName
+                                : did.toStringFormal())
                         .build());
             } else {
                 aggregated.put(info.owner._userId,
@@ -132,10 +133,12 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
 
         // second round add aggregated foreign devices to result
         for (Entry<UserID, Status> e : aggregated.entrySet()) {
-            FullName fn = _didinfo.getUserNameNullable_(e.getKey());
+            UserID userID = e.getKey();
+            FullName fn = _didinfo.getUserNameNullable_(userID);
             result.add(PBSyncStatus.newBuilder()
-                    .setUserName(fn != null ? fn.getString() : e.getKey().getString())
                     .setStatus(e.getValue())
+                    .setUserID(userID.getString())
+                    .setDisplayName(fn != null ? fn.getString() : userID.getString())
                     .build());
         }
 

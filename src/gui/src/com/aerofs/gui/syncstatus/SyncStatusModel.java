@@ -67,8 +67,7 @@ public class SyncStatusModel
 
     private SyncStatusEntry createEntryFromPB(PBSyncStatus pb)
     {
-        return new SyncStatusEntry(pb.getUserName(),
-                pb.hasDeviceName() ? pb.getDeviceName() : "Unknown Device",
+        return new SyncStatusEntry(pb.getUserID(), pb.getDisplayName(),
                 createSyncStatusFromPB(pb.getStatus()));
     }
 
@@ -90,25 +89,20 @@ public class SyncStatusModel
 
     public class SyncStatusEntry
     {
-        private final String        _username;
-        private final String        _deviceName;
-        public  final SyncStatus    _status;
+        public final String         _userID;
+        public final String         _displayName;
+        public final SyncStatus     _status;
 
-        private SyncStatusEntry(String username, String deviceName, SyncStatus status)
+        private SyncStatusEntry(String userID, String displayName, SyncStatus status)
         {
-            _username = username;
-            _deviceName = deviceName;
+            _userID = userID;
+            _displayName = displayName;
             _status = status;
         }
 
         public boolean isLocalUser()
         {
-            return _localUser.get().getString().equals(_username);
-        }
-
-        public String getDisplayName()
-        {
-            return isLocalUser() ? _deviceName : _username;
+            return _localUser.get().getString().equals(_userID);
         }
     }
 

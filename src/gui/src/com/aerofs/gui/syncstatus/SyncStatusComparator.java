@@ -65,8 +65,8 @@ public class SyncStatusComparator extends ViewerComparator
     private int compareByDisplayName(Object element1, Object element2)
     {
         if (element1 instanceof SyncStatusEntry && element2 instanceof SyncStatusEntry) {
-            return ((SyncStatusEntry)element1).getDisplayName()
-                    .compareTo(((SyncStatusEntry)element2).getDisplayName());
+            return ((SyncStatusEntry)element1)._displayName
+                    .compareTo(((SyncStatusEntry)element2)._displayName);
         } else {
             return 0; // incomparable
         }

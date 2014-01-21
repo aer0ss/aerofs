@@ -608,8 +608,9 @@ message PBSyncStatus {
     }
 
     required Status status = 1;
-    required string user_name = 2;
-    optional string device_name = 3;    // only present for devices of the current user
+    required string userID = 2;         // the userID/email of the user.
+    required string display_name = 3;   // for devices of the current user, the device's name
+                                        // for devices of another user, the user's first & lastname.
 }
 
 ////////
