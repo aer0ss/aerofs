@@ -2,6 +2,7 @@
 set -e -u
 
 SOURCE_DIR=../src/web
+API_SOURCE_DIR=../docs/user_docs/api
 OUTPUT_DIR=build/web
 mkdir -p $OUTPUT_DIR
 
@@ -22,6 +23,12 @@ mkdir -p $OUTPUT_DIR/var/log/web
 # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
 mkdir -p $OPT
 cp -a $SOURCE_DIR/web $OPT/
+# Build and copy the api doc site
+mkdir -p $OPT/docs/api
+pushd $API_SOURCE_DIR
+jekyll build
+popd
+cp -a $API_SOURCE_DIR/_site/* $OPT/docs/api/
 # Also include stuff needed for package installation
 cp -a $SOURCE_DIR/requirements.txt $OPT/
 # Include the wsgi application file that uwsgi will run

@@ -1,6 +1,9 @@
     location /static {
         root /opt/web/web;
     }
+    location /docs {
+        alias /opt/web/docs/;
+    }
     location / {
         # redirect /developer, /apps, and /app to /developers
         rewrite /developer(/.*)?$ /developers$1 permanent;
