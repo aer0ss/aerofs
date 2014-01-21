@@ -38,6 +38,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import javax.annotation.Nullable;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -131,17 +132,7 @@ public class MockDS
                     throws Throwable
             {
                 Object[] args = invocation.getArguments();
-                SOID soid = (SOID)args[0];
-                final BitVector bv = (BitVector)args[1];
-                when(_ds.getSyncStatus_(eq(soid))).thenAnswer(new Answer<BitVector>()
-                {
-                    @Override
-                    public BitVector answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        return new BitVector(bv);
-                    }
-                });
+                mockSyncStatus_((SOID)args[0], (BitVector)args[1]);
                 return null;
             }
         }).when(_ds).setSyncStatus_(
@@ -154,22 +145,43 @@ public class MockDS
                     throws Throwable
             {
                 Object[] args = invocation.getArguments();
-                SOID soid = (SOID)args[0];
-                final CounterVector cv = (CounterVector)args[1];
-                when(_ds.getAggregateSyncStatus_(eq(soid))).thenAnswer(new Answer<CounterVector>()
-                {
-                    @Override
-                    public CounterVector answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        return new CounterVector(cv);
-                    }
-                });
+                mockAggregateSyncStatus_((SOID)args[0], (CounterVector)args[1]);
                 return null;
             }
         }).when(_ds).setAggregateSyncStatus_(any(SOID.class), any(CounterVector.class),
                 any(Trans.class));
 
+    }
+
+    private void mockSyncStatus_(SOID soid, final BitVector bv) throws SQLException
+    {
+        when(_ds.getSyncStatus_(eq(soid))).thenAnswer(new Answer<BitVector>() {
+            @Override
+            public BitVector answer(InvocationOnMock invocation) throws Throwable
+            {
+                return new BitVector(bv);
+            }
+        });
+        when(_ds.getRawSyncStatus_(eq(soid))).thenAnswer(new Answer<BitVector>() {
+            @Override
+            public BitVector answer(InvocationOnMock invocation) throws Throwable
+            {
+                return new BitVector(bv);
+            }
+        });
+    }
+
+    private void mockAggregateSyncStatus_(SOID soid, final CounterVector cv) throws SQLException
+    {
+        when(_ds.getAggregateSyncStatus_(eq(soid))).thenAnswer(new Answer<CounterVector>()
+        {
+            @Override
+            public CounterVector answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                return new CounterVector(cv);
+            }
+        });
     }
 
     public SOID resolve(Path path)
@@ -331,14 +343,18 @@ public class MockDS
             Path oldPath = getPath();
             MockDSDir oldParent = _parent;
 
+            if (newParent != oldParent) {
+                _parent.remove(this);
+            }
+
+            // must change name after removing from parent
             _name = newName;
             when(_oa.name()).thenReturn(newName);
 
             if (newParent != oldParent) {
-                _parent.remove(this);
+                newParent.add(this);
                 _parent = newParent;
                 when(_oa.parent()).thenReturn(_parent.soid().oid());
-                _parent.add(this);
             }
 
             Path newPath = getPath();
@@ -347,6 +363,7 @@ public class MockDS
                 for (IDirectoryServiceListener listener : listeners)
                     listener.objectDeleted_(_soid, oldParent.soid().oid(), oldPath, t);
 
+                // TODO: recursively set expelled flag
                 if (_parent._oa.isExpelled() && !_oa.isExpelled()) {
                     when(_oa.isExpelled()).thenReturn(true);
                 }
@@ -377,8 +394,7 @@ public class MockDS
         public BitVector ss(BitVector newStatus) throws Exception
         {
             BitVector oldStatus = _ds.getSyncStatus_(_soid);
-            when(_ds.getSyncStatus_(eq(_soid))).thenReturn(new BitVector(newStatus));
-            when(_ds.getRawSyncStatus_(eq(_soid))).thenReturn(new BitVector(newStatus));
+            mockSyncStatus_(_soid, new BitVector(newStatus));
             return oldStatus;
         }
     }
@@ -473,7 +489,7 @@ public class MockDS
 
         public MockDSFile ss(boolean... sstat) throws Exception
         {
-            when(_ds.getSyncStatus_(eq(_soid))).thenReturn(new BitVector(sstat));
+            mockSyncStatus_(_soid, new BitVector(sstat));
             return this;
         }
 
@@ -574,13 +590,13 @@ public class MockDS
 
         public MockDSDir ss(boolean... sstat) throws Exception
         {
-            when(_ds.getSyncStatus_(eq(_soid))).thenReturn(new BitVector(sstat));
+            mockSyncStatus_(_soid, new BitVector(sstat));
             return this;
         }
 
         public MockDSDir agss(int... agsstat) throws Exception
         {
-            when(_ds.getAggregateSyncStatus_(eq(_soid))).thenReturn(new CounterVector(agsstat));
+            mockAggregateSyncStatus_(_soid, new CounterVector(agsstat));
             return this;
         }
 
@@ -623,7 +639,7 @@ public class MockDS
 
         void remove(MockDSObject child) throws Exception
         {
-            _children.remove(child._name);
+            Preconditions.checkState(_children.remove(child._name) == child, "%s %s", child._name, _children);
             mockChildren();
         }
 
