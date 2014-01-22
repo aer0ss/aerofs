@@ -10,7 +10,6 @@ import com.aerofs.havre.EndpointConnector;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFutureNotifier;

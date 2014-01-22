@@ -192,6 +192,7 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     @Override
     public synchronized void tunnelClosed(TunnelAddress addr, TunnelHandler handler)
     {
+        l.info("tunnel closed {} {}", addr, handler);
         UserDevices connectedDevices = _endpointsByUser.get(addr.user);
         if (connectedDevices != null) connectedDevices.remove_(addr.did, handler);
     }

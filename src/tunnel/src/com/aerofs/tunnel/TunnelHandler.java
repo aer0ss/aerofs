@@ -1,5 +1,6 @@
 package com.aerofs.tunnel;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
@@ -121,6 +122,12 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     }
 
     @Override
+    public String toString()
+    {
+        return "Tunnel(" + _addr + ", " + _channel + ", " + _provider + ")";
+    }
+
+    @Override
     public void onPeerVerified(UserID user, DID did)
     {
         Preconditions.checkState(_addr == null);
@@ -130,7 +137,8 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
-        l.warn("exception in tunnel channel {}: {}", e.getChannel(), e.getCause());
+        l.warn("tunnel exception {} ", this,
+                BaseLogUtil.suppress(e.getCause(), ClosedChannelException.class));
         if (_channel != null && _channel.isConnected()) _channel.close();
     }
 
@@ -148,7 +156,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
 
         // heartbeat reception
         if (type == MSG_BEAT) {
-            l.info("recvd beat on {}", _channel);
+            l.info("tunnel beat recv {}", this);
             return;
         }
 
@@ -168,7 +176,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
 
         switch (type) {
         case MSG_CLOSE:
-            l.info("close msg on {}", _channel);
+            l.info("tunnel close msg {}", this);
             writeMsg(MSG_CLOSED, connectionId);
             // noinspection fallthrough
         case MSG_CLOSED:
@@ -177,12 +185,12 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             break;
         case MSG_SUSPEND:
             // mark channel as not writable
-            l.info("suspend {}", _channel);
+            l.info("tunnel suspend {}", this);
             client.fireInterestChanged(client.getInterestOps() | Channel.OP_WRITE);
             break;
         case MSG_RESUME:
             // mark channel as  writable
-            l.info("resume {}", _channel);
+            l.info("tunnel resume {}", this);
             client.fireInterestChanged(client.getInterestOps() & ~Channel.OP_WRITE);
             break;
         case MSG_PAYLOAD:
@@ -199,6 +207,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     {
         Preconditions.checkState(_channel == null);
         _channel = ctx.getChannel();
+        l.info("tunnel connect {}", this);
         if (_listener != null) _listener.tunnelOpen(_addr, this);
     }
 
@@ -218,7 +227,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e)
     {
-        l.debug("disconnect {}", this);
+        l.info("tunnel disconnect {}", this);
         _provider.foreach(new Function<VirtualChannel, Void>() {
             @Override
             public Void apply(VirtualChannel c)
@@ -234,7 +243,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
     {
-        l.debug("close {}", this);
+        l.info("tunnel close {}", this);
         Preconditions.checkState(_provider.isEmpty());
     }
 
@@ -244,7 +253,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
         if (e.getState() == IdleState.READER_IDLE) {
             e.getChannel().close();
         } else if (e.getState() == IdleState.WRITER_IDLE) {
-            l.info("send beat on {}", _channel);
+            l.info("tunnel beat send {}", this);
             e.getChannel().write(BEAT);
         }
     }
@@ -263,7 +272,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             _channel.write(new Fragmenter(header, payload))
                     .addListener(new ChannelFutureNotifier(future));
         } else {
-            l.warn("ignore write {} -> {}", virtualChannel, _channel);
+            l.warn("ignore write {} -> {}", virtualChannel, this);
             future.setFailure(new ClosedChannelException());
         }
     }
@@ -303,7 +312,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
                         }
                     });
         } catch (ClosedChannelException e) {
-            l.warn("ignore write {} -> {}", virtualChannel, _channel);
+            l.warn("ignore write {} -> {}", virtualChannel, this);
             future.setFailure(e);
         }
     }
@@ -320,7 +329,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             // fire when receiving ack (MSG_CLOSED)
             // tunnelChannel.fireDisconnected();
         } catch (ClosedChannelException e) {
-            l.warn("ignore disconnect {} -> {}", virtualChannel, _channel);
+            l.warn("ignore disconnect {} -> {}", virtualChannel, this);
             future.setSuccess();
         }
     }

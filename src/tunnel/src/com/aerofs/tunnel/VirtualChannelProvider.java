@@ -33,6 +33,12 @@ public class VirtualChannelProvider
         _pipelineFactory = pipelineFactory;
     }
 
+    @Override
+    public String toString()
+    {
+        return "vc:" + _connections.size();
+    }
+
     public VirtualChannel get(int connectionId)
     {
         VirtualChannel c = _connections.get(connectionId);
