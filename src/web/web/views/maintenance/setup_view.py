@@ -224,7 +224,10 @@ def _is_data_collection_enabled(conf):
     # To be safe for the customers, use False as the default
     enabled = False if not enabled else str2bool(enabled)
 
-    # TODO (WW) enable only for trial users.
+    if enabled:
+        # enable only for trial licenses. By default don't enable it, which is
+        # required for older licenses without the trial flag.
+        enabled = str2bool(conf.get('license_is_trial', False))
 
     return enabled
 
