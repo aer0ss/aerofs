@@ -61,8 +61,8 @@
 
     <div class="alert alert-success">
         API access is available for the AeroFS <strong>Private Cloud only</strong>.
-        <a href="${request.route_path('private_cloud_signup')}">Click here</a>
-        to request for a developer license for free.
+        <a href="${request.route_path('developers_signup')}">Click here</a>
+        to request a developer license for free.
     </div>
 </%def>
 
