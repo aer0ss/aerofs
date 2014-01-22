@@ -148,7 +148,7 @@
             $.post("${request.route_path('json_setup_set_data_collection')}", {
                 enable: enable
             }).done(onSuccess).fail(function(xhr) {
-                showErrorMessageFromResponse(xhr);
+                showAndTrackErrorMessageFromResponse(xhr);
                 onFailure();
             });
         }
@@ -188,7 +188,7 @@
                     onFailure();
                 });
             }).fail(function(xhr) {
-                showErrorMessageFromResponse(xhr);
+                showAndTrackErrorMessageFromResponse(xhr);
                 $progress.modal('hide');
                 onFailure();
             });

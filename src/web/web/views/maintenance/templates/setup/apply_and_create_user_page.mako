@@ -147,7 +147,7 @@ ${common.render_previous_button()}
             initializeModals();
 
             if (window.location.search.indexOf(andFinalizeParam) != -1) {
-                ${common.trackInitialTrialSetup('Apply Page Reloaded')}
+                ${common.trackInitialTrialSetup('Last Page Reloaded')}
                 $('#finalizing-modal').modal('show');
                 finalize();
             }
@@ -288,7 +288,7 @@ ${common.render_previous_button()}
                     } else if (xhr.status == 400 || xhr.status == 500) {
                         window.clearInterval(bootstrapPollInterval);
                         hideAllModals();
-                        showErrorMessageFromResponse(xhr);
+                        showAndTrackErrorMessageFromResponse(xhr);
                     }
                 });
 
@@ -356,7 +356,7 @@ ${common.render_previous_button()}
                     if (xhr.status != 403 && xhr.status != 0) {
                         window.clearInterval(interval);
                         hideAllModals();
-                        showErrorMessageFromResponse(xhr);
+                        showAndTrackErrorMessageFromResponse(xhr);
                     }
                 });
             }, 1000);
@@ -389,7 +389,7 @@ ${common.render_previous_button()}
                 $('#email-sent-modal').modal('show');
                 $('#email-sent-address').text($('#create-user-email').val());
             })
-            .fail(showErrorMessageFromResponse);
+            .fail(showAndTrackErrorMessageFromResponse);
         }
     </script>
 </%def>

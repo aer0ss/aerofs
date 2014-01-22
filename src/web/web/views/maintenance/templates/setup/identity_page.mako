@@ -346,7 +346,7 @@
                     post(done, onError);
                 })
                 .error(function (xhr) {
-                    showErrorMessageFromResponse(xhr);
+                    showAndTrackErrorMessageFromResponse(xhr);
                     onError();
                 });
             } else {
@@ -365,7 +365,7 @@
                     $('form').serialize())
             .done(done)
             .error(function (xhr) {
-                showErrorMessageFromResponse(xhr);
+                showAndTrackErrorMessageFromResponse(xhr);
                 error();
             });
         }
@@ -378,7 +378,7 @@
             });
 
             if (hasEmptyRequiredField) {
-                showErrorMessage("Please fill all the fields before proceeding.");
+                showAndTrackErrorMessage("Please fill all the fields before proceeding.");
                 return false;
             }
 

@@ -66,7 +66,7 @@
             var v = document.getElementById(elementID).value;
             if (v == null || v == "") {
                 enableNavButtons();
-                showErrorMessage(message);
+                showAndTrackErrorMessage(message);
                 return false;
             }
 
@@ -80,7 +80,7 @@
                 onSuccess(response);
             }).fail(function (xhr) {
                 if (onFailure) onFailure();
-                showErrorMessageFromResponse(xhr);
+                showAndTrackErrorMessageFromResponse(xhr);
             });
         }
 
@@ -108,5 +108,20 @@
             setEnabled($("#${_next_button_id()}"), true);
             setEnabled($("#${_prev_button_id()}"), true);
         }
+
+        ##########
+        ## Tracking related code
+
+        function showAndTrackErrorMessage(message) {
+            ${trackInitialTrialSetup('Error on Page {}'.format(page))}
+            showErrorMessage(message);
+        }
+
+        function showAndTrackErrorMessageFromResponse(xhr) {
+            ${trackInitialTrialSetup('Error on Page {}'.format(page))}
+            showErrorMessageFromResponse(xhr);
+        }
+
+        ${trackInitialTrialSetup('Visited Page {}'.format(page))}
     </script>
 </%def>

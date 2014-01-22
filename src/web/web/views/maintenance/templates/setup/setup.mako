@@ -105,8 +105,4 @@
     <%error_message:scripts/>
     ${common.scripts(page)}
     ${local.page_scripts()}
-
-    <script>
-        ${common.trackInitialTrialSetup('On Setup Page {}'.format(page))}
-    </script>
 </%block>

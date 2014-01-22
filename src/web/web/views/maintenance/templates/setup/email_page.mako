@@ -309,7 +309,7 @@
                 doPost("${request.route_path('json_setup_email')}",
                     serializedData, showVerificationSuccessModal, hideAllModals);
             } else {
-                showErrorMessage("The verification code you provided was not correct.");
+                showAndTrackErrorMessage("The verification code you provided was not correct.");
             }
         }
 
