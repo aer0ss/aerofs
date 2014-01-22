@@ -5,7 +5,7 @@
 
 <%def name="html()">
     <%progress_modal:html>
-        Compressing appliance logs...
+        Compressing appliance logs. This process might take some time.
     </%progress_modal:html>
 </%def>
 
