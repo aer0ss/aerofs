@@ -7,6 +7,7 @@ import com.aerofs.havre.EndpointConnector;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
+import org.jboss.netty.util.Timer;
 
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
@@ -20,13 +21,15 @@ import java.net.InetSocketAddress;
  */
 public class HttpProxyServer extends AbstractNettyServer
 {
+    private final Timer _timer;
     private final EndpointConnector _connector;
     private final Authenticator _auth;
 
-    public HttpProxyServer(InetSocketAddress addr, @Nullable IPrivateKeyProvider key,
+    public HttpProxyServer(InetSocketAddress addr, @Nullable IPrivateKeyProvider key, Timer timer,
             Authenticator auth, EndpointConnector connector) {
         super("http_proxy", addr, key, null);
         _auth = auth;
+        _timer = timer;
         _connector = connector;
     }
 
@@ -35,6 +38,6 @@ public class HttpProxyServer extends AbstractNettyServer
     {
         return Channels.pipeline(
                 new HttpServerCodec(),
-                new HttpRequestProxyHandler(_auth, _connector, _allChannels));
+                new HttpRequestProxyHandler(_timer, _auth, _connector, _allChannels));
     }
 }

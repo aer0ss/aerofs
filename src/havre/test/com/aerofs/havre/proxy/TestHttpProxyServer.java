@@ -15,6 +15,7 @@ import com.jayway.restassured.RestAssured;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,7 @@ public class TestHttpProxyServer extends AbstractBaseTest
     @Before
     public void setUp()
     {
-        proxy = new HttpProxyServer(new InetSocketAddress(0), null, auth, connector);
+        proxy = new HttpProxyServer(new InetSocketAddress(0), null, new HashedWheelTimer(), auth, connector);
         proxy.start();
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = proxy.getListeningPort();

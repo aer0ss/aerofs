@@ -94,7 +94,7 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
     {
         try {
             l.debug("cache miss: {}", accessToken);
-            return _client.verify(accessToken, _auth).get();
+            return _client.verify(accessToken, _auth).get(2, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             throw rethrowCause(e);
         }

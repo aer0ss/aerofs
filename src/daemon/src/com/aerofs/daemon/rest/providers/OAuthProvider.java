@@ -52,7 +52,10 @@ public class OAuthProvider
         String auth = context.getRequest().getHeaderValue(HttpHeaders.AUTHORIZATION);
         try {
             VerifyTokenResponse r = _verifier.verifyHeader(auth);
-            if (r != null && r.principal != null) return new OAuthToken(r);
+            if (r != null && r.principal != null) {
+                l.info("verified");
+                return new OAuthToken(r);
+            }
         } catch (Exception e) {
             l.error("failed to verify token", BaseLogUtil.suppress(e,
                     ClosedChannelException.class));

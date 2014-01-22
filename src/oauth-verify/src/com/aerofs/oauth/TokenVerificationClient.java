@@ -148,7 +148,7 @@ public class TokenVerificationClient
 
     private void write(final VerifyTokenRequest<VerifyTokenResponse> req)
     {
-        l.info("write {}", req.accessToken);
+        l.info("write {}", req);
         _channel.write(req).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture cf) throws Exception

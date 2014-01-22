@@ -23,6 +23,7 @@ import org.jboss.netty.handler.codec.http.CookieDecoder;
 import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
@@ -30,11 +31,19 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.timeout.IdleState;
+import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
+import org.jboss.netty.handler.timeout.IdleStateEvent;
+import org.jboss.netty.handler.timeout.IdleStateHandler;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.nio.channels.ClosedChannelException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Relay HTTP requests upstream (i.e. from downstream caller to upstream host)
@@ -50,6 +59,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 {
     private static final Logger l = Loggers.getLogger(HttpRequestProxyHandler.class);
 
+    private final Timer _timer;
     private final Authenticator _auth;
     private final EndpointConnector _endpoints;
     private final ChannelGroup _channelGroup;
@@ -59,8 +69,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     private Channel _downstream;
     private Channel _upstream;
 
-    public HttpRequestProxyHandler(Authenticator auth, EndpointConnector endpoints, ChannelGroup channelGroup)
+    public HttpRequestProxyHandler(Timer timer, Authenticator auth, EndpointConnector endpoints,
+            ChannelGroup channelGroup)
     {
+        _timer = timer;
         _auth = auth;
         _endpoints = endpoints;
         _channelGroup = channelGroup;
@@ -146,6 +158,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         return _endpoints.connect(_principal, did, strictConsistency, version,
                 Channels.pipeline(
                         new HttpClientCodec(),
+                        new IdleStateHandler(_timer, 5, 30, 0, TimeUnit.SECONDS),
                         new HttpResponseProxyHandler()
                 ));
     }
@@ -221,11 +234,25 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         response.addHeader(Names.SET_COOKIE, encoder.encode());
     }
 
-    private class HttpResponseProxyHandler extends SimpleChannelUpstreamHandler
+    private class HttpResponseProxyHandler extends IdleStateAwareChannelHandler
     {
+        AtomicLong _expectedResponses = new AtomicLong();
+        AtomicBoolean _streamingChunks = new AtomicBoolean();
+
         @Override
-        public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent me)
-                throws Exception
+        public void writeRequested(ChannelHandlerContext ctx, MessageEvent me)
+        {
+            Object msg = me.getMessage();
+            if (msg instanceof HttpRequest) {
+                l.info("expect resp {}", _expectedResponses.incrementAndGet());
+            } else {
+                l.warn("unexpected message {}", msg);
+            }
+            ctx.sendDownstream(me);
+        }
+
+        @Override
+        public void messageReceived(ChannelHandlerContext ctx, MessageEvent me)
         {
             if (!_downstream.isConnected()) return;
 
@@ -234,16 +261,50 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             Object m = me.getMessage();
             if (m instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse)m;
+                int status = response.getStatus().getCode();
 
                 // add server id
                 addCookie(response, COOKIE_SERVER, _endpoints.device(upstream).toStringFormal());
+
+                // do not count 1xx provisional responses
+                if (status < 100 || status >= 200) updateExpectations(response);
+            } else if (m instanceof HttpChunk) {
+                updateExpectations((HttpChunk)m);
             }
 
             _downstream.write(m);
         }
 
+        private void updateExpectations(HttpResponse response)
+        {
+            if (_streamingChunks.get()) {
+                l.warn("new response before end of previous chunk stream");
+            }
+
+            if (_expectedResponses.get() <= 0) {
+                l.warn("unexpected upstream response {}", response);
+                return;
+            }
+
+            _streamingChunks.set(response.isChunked());
+            if (!response.isChunked()) _expectedResponses.decrementAndGet();
+        }
+
+        private void updateExpectations(HttpChunk chunk)
+        {
+            if (_expectedResponses.get() <= 0 || !_streamingChunks.get()) {
+                l.warn("unexpected upstream chunk {}", chunk.getContent().readableBytes());
+                return;
+            }
+
+            if (chunk.isLast()) {
+                _expectedResponses.decrementAndGet();
+                _streamingChunks.set(false);
+            }
+        }
+
         @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
+        public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
         {
             l.warn("exception on upstream channel {} {}", e.getChannel(), e.getCause());
             if (!(e.getCause() instanceof ClosedChannelException)) {
@@ -264,8 +325,36 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         {
             l.info("upstream channel closed {} {} {}", cse.getChannel(),
                     _upstream.isReadable(), _upstream.isWritable());
-            if (_downstream.isConnected()) _downstream.close();
+
+            // NB: only close downstream if there were missing responses
+            // otherwise it is safe to keep downstream open and pick a new
+            // upstream to service the next request
+            if (_downstream.isConnected() && _expectedResponses.get() > 0) {
+                _downstream.close();
+            }
+            // avoid forwarding any response Netty may stil deliver
             ctx.getPipeline().remove(this);
+        }
+
+        @Override
+        public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
+        {
+            if (e.getState() == IdleState.READER_IDLE) {
+                l.info("read idle {}", _expectedResponses.get());
+                if (_expectedResponses.get() > 0) {
+                    // close connection if requests remain unanswered for too long
+                    _upstream.close();
+                    if (_streamingChunks.get()) {
+                        _downstream.close();
+                    } else {
+                        sendError(_downstream, HttpResponseStatus.GATEWAY_TIMEOUT);
+                    }
+                }
+            } else if (e.getState() == IdleState.WRITER_IDLE) {
+                l.info("write idle {}");
+                // close upstream connection if no requests have been forwarded during the last 30s
+                _upstream.close();
+            }
         }
     }
 }

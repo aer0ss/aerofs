@@ -53,6 +53,7 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
     {
         ResponseBuilder bd;
         try {
+            l.info("exec {}", this);
             execute(Prio.LO);
             bd = response();
         } catch (RuntimeException e) {

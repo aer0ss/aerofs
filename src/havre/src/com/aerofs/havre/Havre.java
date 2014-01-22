@@ -58,7 +58,7 @@ public class Havre
         _tunnel = new TunnelServer(new InetSocketAddress(TUNNEL_HOST, TUNNEL_PORT),
                 tunnelKey, cacert, user, did, timer, c);
         _proxy = new HttpProxyServer(new InetSocketAddress(PROXY_HOST, PROXY_PORT),
-                proxyKey, new OAuthAuthenticator(timer, cacert), c);
+                proxyKey, timer, new OAuthAuthenticator(timer, cacert), c);
     }
 
     public void start()
