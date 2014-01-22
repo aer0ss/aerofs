@@ -26,7 +26,7 @@
             ${csrf.token_input()}
             <input type="hidden" name="${url_param_next}" value="${next}">
 
-            ${upload_license_button.button('license-file', url_param_license)}
+            ${license_common.big_upload_button('license-file', url_param_license)}
 
             <p>
                 <button class="btn" id="continue-btn" type="submit" style="width: 180px">
@@ -39,7 +39,7 @@
 <%block name="scripts">
     <%no_ie:scripts/>
 
-    ${license_common.scripts('license-file', 'continue-btn')}
+    ${license_common.big_upload_button_script('license-file', 'continue-btn')}
 
     <script>
         $(document).ready(function() {
