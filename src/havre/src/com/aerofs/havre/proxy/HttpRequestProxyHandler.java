@@ -10,7 +10,10 @@ import com.aerofs.havre.EndpointConnector;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFutureNotifier;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
@@ -157,8 +160,8 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
         return _endpoints.connect(_principal, did, strictConsistency, version,
                 Channels.pipeline(
+                        new IdleStateHandler(_timer, 10, 30, 0, TimeUnit.SECONDS),
                         new HttpClientCodec(),
-                        new IdleStateHandler(_timer, 5, 30, 0, TimeUnit.SECONDS),
                         new HttpResponseProxyHandler()
                 ));
     }
@@ -236,8 +239,9 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
     private class HttpResponseProxyHandler extends IdleStateAwareChannelHandler
     {
-        AtomicLong _expectedResponses = new AtomicLong();
-        AtomicBoolean _streamingChunks = new AtomicBoolean();
+        private final AtomicBoolean _closeIfIdle = new AtomicBoolean();
+        private final AtomicLong _expectedResponses = new AtomicLong();
+        private final AtomicBoolean _streamingChunks = new AtomicBoolean();
 
         @Override
         public void writeRequested(ChannelHandlerContext ctx, MessageEvent me)
@@ -342,15 +346,27 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             if (e.getState() == IdleState.READER_IDLE) {
                 l.info("read idle {}", _expectedResponses.get());
                 if (_expectedResponses.get() > 0) {
+                    // 2 strikes: we may get a read timeout immediately after the request
+                    // is sent because the read timeout is not reset when a message is sent
+                    // This makes the timeout effectively a random number between 10s and 20s
+                    if (_closeIfIdle.compareAndSet(false, true)) return;
+
                     // close connection if requests remain unanswered for too long
+                    // to prevent bad state buildup
                     _upstream.close();
                     if (_streamingChunks.get()) {
                         _downstream.close();
                     } else {
                         sendError(_downstream, HttpResponseStatus.GATEWAY_TIMEOUT);
+                        _downstream.write(ChannelBuffers.EMPTY_BUFFER)
+                                .addListener(ChannelFutureNotifier.CLOSE);
                     }
+                } else {
+                    _closeIfIdle.set(false);
                 }
             } else if (e.getState() == IdleState.WRITER_IDLE) {
+                if (_expectedResponses.get() > 0) return;
+
                 l.info("write idle {}");
                 // close upstream connection if no requests have been forwarded during the last 30s
                 _upstream.close();
