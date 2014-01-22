@@ -147,6 +147,7 @@ ${common.render_previous_button()}
             initializeModals();
 
             if (window.location.search.indexOf(andFinalizeParam) != -1) {
+                ${common.trackInitialTrialSetup('Apply Page Reloaded')}
                 $('#finalizing-modal').modal('show');
                 finalize();
             }
@@ -201,6 +202,8 @@ ${common.render_previous_button()}
         ## Step 1: kick off the configuration process.
 
         function apply() {
+            ${common.trackInitialTrialSetup('Clicked Apply Button')}
+
             ## Show the progress modal
             $('#${progress_modal.id()}').modal('show');
 
@@ -338,6 +341,7 @@ ${common.render_previous_button()}
                         window.clearInterval(interval);
                         hideAllModals();
                         $('#success-modal').modal('show');
+                        trackSuccessAndDisableDataCollection();
                     } else {
                         console.log("uwsgi still reloading");
                         ## TODO (WW) add timeout?
@@ -356,6 +360,20 @@ ${common.render_previous_button()}
                     }
                 });
             }, 1000);
+        }
+
+        function trackSuccessAndDisableDataCollection() {
+            ## Report the last event and then disable data collection. You may
+            ## ask, why not use is_configuration_initialized() to disable data
+            ## collection? It's because before this page reloads itself the
+            ## system may mark configuration as initialized, and thus disable
+            ## tracking too early.
+            ##
+            ## Call the methods below asynchronously. Ignore errors
+            ${common.trackInitialTrialSetup('Completed Setup')}
+            $.post("${request.route_path('json_setup_set_data_collection')}", {
+                enable: false
+            });
         }
 
         function createUser() {

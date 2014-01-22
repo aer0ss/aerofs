@@ -55,7 +55,7 @@ function showErrorMessageFromResponse(xhr) {
                 window.location.search + window.location.hash));
     } else {
         showErrorMessage(getInternalErrorText());
-        console.log("status: " + xhr.status +
+        console.log("show error message. status: " + xhr.status +
             " statusText: " + xhr.statusText + " responseText: " + xhr.responseText);
     }
 }

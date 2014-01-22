@@ -26,23 +26,19 @@
         Next ></button>
 </%def>
 
-## Track an event into Segment.io. Usage:
+## Log an event into Segment.io. Available only during the initial setup with
+## a trial license. The function is a no-op in other cases. Usage:
 ##
 ##  <script>
 ##      ...
-##      ${track('Completed Foo')}
+##      ${trackInitialTrialSetup('Completed Foo')}
 ##      ...
 ##  </script>
 ##
-<%def name="track(event)">
-    <%
-        from web.util import str2bool
-        track = current_config['web.track_appliance_setup']
-        # The default is True, if the property is absent
-        track = True if not track else str2bool(track)
-    %>
-
-    %if track:
+## Note that the availability is determined at page rendering time.
+##
+<%def name="trackInitialTrialSetup(event)">
+    %if enable_data_collection:
         <%
             from web.version import get_current_version
             customer_id = current_config['customer_id']
@@ -69,7 +65,8 @@
         function verifyPresence(elementID, message) {
             var v = document.getElementById(elementID).value;
             if (v == null || v == "") {
-                displayError(message);
+                enableNavButtons();
+                showErrorMessage(message);
                 return false;
             }
 
@@ -110,11 +107,6 @@
         function enableNavButtons() {
             setEnabled($("#${_next_button_id()}"), true);
             setEnabled($("#${_prev_button_id()}"), true);
-        }
-
-        function displayError(error) {
-            enableNavButtons();
-            showErrorMessage(error);
         }
     </script>
 </%def>

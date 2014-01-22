@@ -124,6 +124,7 @@ def _setup_common(request, conf, license_page_only):
         'page': page,
         'current_config': conf,
         'is_configuration_initialized': is_configuration_initialized(conf),
+        'enable_data_collection': _is_data_collection_enabled(conf),
         # The following two parameters are used by welcome_and_license.mako
         'is_license_present': is_license_present(conf),
         'is_license_present_and_valid': is_license_present_and_valid(conf),
@@ -212,6 +213,36 @@ def json_get_license_shasum_from_session(request):
     return {
         'shasum': get_license_shasum_from_session(request)
     }
+
+
+# ------------------------------------------------------------------------
+# Data collection
+# ------------------------------------------------------------------------
+
+def _is_data_collection_enabled(conf):
+    enabled = conf['web.enable_appliance_setup_data_collection']
+    # To be safe for the customers, use False as the default
+    enabled = False if not enabled else str2bool(enabled)
+
+    # TODO (WW) enable only for trial users.
+
+    return enabled
+
+
+@view_config(
+    route_name='json_setup_set_data_collection',
+    # We call this method before the user uploads the license, so it can't
+    # require permission.
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='json',
+    request_method='POST'
+)
+def json_setup_set_data_collection(request):
+    enable = request.params['enable']
+    log.info("appliance setup data collection: {}".format(enable))
+    config = Configuration()
+    config.set_external_property('enable_appliance_setup_data_collection',
+                                 enable)
 
 
 # ------------------------------------------------------------------------

@@ -186,9 +186,9 @@ The file server.properties contains properties used only by AeroFS servers. Ther
 be sensitive information stored in this file such as service credentials,
 AeroFS clients should not be able to access this file.
 
-    web.track_appliance_setup=true
+    web.enable_appliance_setup_data_collection=false
 
-Whether to track the progress of AeroFS Appliance setup.
+Whether to track the progress of initial AeroFS Appliance setup with a trial license.
 
     last_smtp_verification_email=
 

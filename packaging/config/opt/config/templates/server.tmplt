@@ -58,7 +58,7 @@ base.audit.downstream_port={{ audit_downstream_port }}
 base.audit.downstream_ssl_enabled={{ audit_downstream_ssl_enabled }}
 base.audit.downstream_certificate={{ audit_downstream_certificate }}
 
-web.track_appliance_setup={{ track_appliance_setup }}
+web.enable_appliance_setup_data_collection={{ enable_appliance_setup_data_collection }}
 
 {# This section will be filled with all key-value pairs stored in the
  # license-info file inside the license file.  On first boot, it will be empty;

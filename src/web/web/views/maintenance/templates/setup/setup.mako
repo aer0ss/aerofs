@@ -106,8 +106,7 @@
     ${common.scripts(page)}
     ${local.page_scripts()}
 
-##  This is an example how events can be tracked
-##    <script>
-##        ${common.track('On Setup Page {}'.format(page))}
-##    </script>
+    <script>
+        ${common.trackInitialTrialSetup('On Setup Page {}'.format(page))}
+    </script>
 </%block>

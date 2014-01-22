@@ -8,6 +8,7 @@ routes = {
     'setup',
     'setup_authorized',
     'json_set_license',
+    'json_setup_set_data_collection',
     'json_setup_audit',
     'json_setup_hostname',
     'json_setup_email',

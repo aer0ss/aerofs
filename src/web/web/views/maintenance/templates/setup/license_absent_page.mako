@@ -27,12 +27,21 @@
         <input id="backup-file" name="backup-file" type="file" style="display: none">
 
         <label class="checkbox">
-            <input type="checkbox" id="backup-file-check"> Restore
+            <input type="checkbox" id="backup-file-check" /> Restore
                 <span id="backup-file-name"></span>
         </label>
         <button class="btn" id="backup-file-change"
                 onclick="$('#backup-file').click(); return false;">Change</button>
         <button class="btn pull-right" id="continue-btn" type="submit">Continue</button>
+    </div>
+
+    <div class="form-inline invisible" style="margin-top: 10px">
+        <label class="checkbox">
+            <input type="checkbox" id="data-collection" />
+            Allow AeroFS to collect setup experience for trial users.
+            <a href="https://support.aerofs.com/entries/25712809-Setup-experience-data-collection-for-Private-Cloud-trial-users"
+               target="_blank">Read more.</a>
+        </label>
     </div>
 </form>
 
@@ -56,7 +65,7 @@
     <%def name="footer()">
         <a class="btn" href="#" data-dismiss="modal">Cancel</a>
         <a class="btn btn-primary"
-            onclick="$('#confirm-firewall-modal').modal('hide'); submitForm(restore); return false;">
+            onclick="$('#confirm-firewall-modal').modal('hide'); submitForm(preSumbit); return false;">
             I've unblocked the ports. Continue</a>
     </%def>
 </%modal:modal>
@@ -121,17 +130,39 @@
                     'an appliance from backup');
         }
 
-        function restore(onSuccess, onFailure) {
-            ## hide the firewall modal if present.
+        function preSumbit(onSuccess, onFailure) {
+            ## hide the firewall modal if open.
             ## TODO (WW) regiter a global handler to close all the modals
             ## before opening a new one. Also close error and success messages.
             $('#confirm-firewall-modal').modal('hide');
 
+            setDataCollection(function() {
+                restoreFromBackup(onSuccess, onFailure);
+            }, onFailure);
+        }
+
+        function setDataCollection(onSuccess, onFailure) {
+            var enable = $('#data-collection').is(':checked');
+            console.log("set data collection: " + enable);
+
+            $.post("${request.route_path('json_setup_set_data_collection')}", {
+                enable: enable
+            }).done(onSuccess).fail(function(xhr) {
+                showErrorMessageFromResponse(xhr);
+                onFailure();
+            });
+        }
+
+        function restoreFromBackup(onSuccess, onFailure) {
+
             ## Skip the step if the backup file is not specified
             if (!$('#backup-file').val()) {
+                console.log("no backup specified. skip");
                 onSuccess();
                 return;
             }
+
+            console.log("restore from backup");
 
             var $progress = $('#${progress_modal.id()}');
             $progress.modal('show');

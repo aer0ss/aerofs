@@ -187,7 +187,7 @@ def is_restricted_external_sharing_enabled(settings):
 
 def is_configuration_initialized(settings):
     """
-    Return whether the configuration is initialized. Always return Rrue in
+    Return whether the configuration is initialized. Always return True in
     public deployment.
     """
     return not is_private_deployment(settings) or \
