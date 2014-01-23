@@ -159,6 +159,49 @@ class Admin(db.Model, TimeStampedMixin):
         # Required for Flask-Login integration.
         return self.email
 
+class License(db.Model, TimeStampedMixin):
+    __tablename__ = "license"
+
+    # state: Which queue is this license in?
+    # PENDING: will be in the next license request bundle
+    # ON_HOLD: will not be in the next license request bundle, waiting for user to justify request
+    # FILLED:  License has been issued and the binary blob sits in LicenseIssued.
+    #          You can find a LicenseIssued with license_request_id matching this id.
+    # IGNORED: This request is being permanently ignored.
+    # DO NOT REORDER THESE STATES.  THEY ARE AN ENUMERATION AND STORED IN THE DB.
+    class LicenseState(object):
+        PENDING = 0
+        ON_HOLD = 1
+        FILLED  = 2
+        IGNORED = 3
+        states = {
+                   0: "PENDING",
+                   1: "ON_HOLD",
+                   2: "FILLED",
+                   3: "IGNORED",
+                   }
+    states = LicenseState()
+
+    # This id should be randomized to make sure that we don't leak license
+    # issue counts through the license id.
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Which customer is this license for?
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+
+    # Is this license waiting to be issued?  issued already?  on hold for some reason? etc.
+    state = db.Column(db.Integer, default=states.PENDING, nullable=False)
+
+    # License parameters.
+    seats = db.Column(db.Integer, nullable=False)
+    expiry_date = db.Column(db.DateTime, nullable=False)
+    is_trial = db.Column(db.Boolean, nullable=False)
+    allow_audit = db.Column(db.Boolean, default=False, nullable=False)
+
+    # The license data itself.  Null unless state == FILLED.
+    blob = db.Column(db.LargeBinary)
+
 # Each class with create_date/modify_date autoupdate magic must register here
 Customer.register()
 Admin.register()
+License.register()
