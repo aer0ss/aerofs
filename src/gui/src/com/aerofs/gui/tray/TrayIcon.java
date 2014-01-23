@@ -117,6 +117,10 @@ public class TrayIcon implements ITrayMenuListener
             // On non-OSX platforms, also show the menu the user left-click on the icon
             // This happen by default on OSX
             if (!OSUtil.isOSX()) _ti.addListener(SWT.Selection, showMenu);
+
+            // On OSX, we need to set the "highlight image". This is just the regular tray icon
+            // with its colors inverted.
+            if (OSUtil.isOSX()) _ti.setHighlightImage(Images.getTrayIcon("tray_inverted"));
         }
 
         updateToolTipText();
