@@ -52,7 +52,7 @@ main()
             fi
         done
 
-        if stat -t "$TARGET_FOLDER/name*map" >/dev/null 2>&1
+        if [ ! -z "$(ls $TARGET_FOLDER/name*map 2>/dev/null)" ]
         then
             echo "Reverse map logs for $DEFECT"
 
