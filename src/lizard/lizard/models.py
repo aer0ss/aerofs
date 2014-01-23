@@ -78,6 +78,9 @@ class Customer(db.Model, TimeStampedMixin):
     # admins, but have not yet been verified yet.
     pending_invites = db.relationship("BoundInvite", backref="customer", lazy="dynamic")
 
+    # A customer may have many licenses and license requests in the pipeline.
+    licenses = db.relationship("License", backref="customer", lazy="dynamic")
+
     def __repr__(self):
         return "<Customer '{}'>".format(self.name)
 

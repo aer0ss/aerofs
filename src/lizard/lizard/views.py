@@ -1,4 +1,5 @@
 import base64
+import datetime
 import os
 
 from flask import Blueprint, render_template, flash, redirect, request, url_for
@@ -152,6 +153,17 @@ def signup_completion_page():
         db.session.query(models.BoundInvite).filter(models.BoundInvite.email==signup.email).delete()
         # Delete the signup code from the database, as it is consumed
         db.session.delete(signup)
+
+        # Create a new License request for the customer that just signed up
+        l = models.License()
+        l.customer = cust
+        l.state = models.License.LicenseState.PENDING
+        l.seats = 30 # Default to 30 seat trial licenses
+        e = datetime.datetime.today().date() + datetime.timedelta(days=32)
+        l.expiry_date = datetime.datetime(year=e.year, month=e.month, day=e.day)
+        l.is_trial = True
+        l.allow_audit = False
+        db.session.add(l)
 
         # Commit.
         db.session.commit()
