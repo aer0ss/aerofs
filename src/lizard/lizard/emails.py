@@ -27,7 +27,7 @@ def _make_email_message(email_address, subject, text_body, html_body):
     return msg
 
 def _verification_email_for(email_address, signup_code):
-    signup_url = url_for('signup_completion_page', signup_code=signup_code, _external=True)
+    signup_url = url_for('.signup_completion_page', signup_code=signup_code, _external=True)
     print u"will email verification to {}, link {}".format(email_address, signup_url)
 
     text_body = render_template("signup_email.txt", signup_url=signup_url)
@@ -36,7 +36,7 @@ def _verification_email_for(email_address, signup_code):
             text_body, html_body)
 
 def _invite_email_for(email_address, company, invite_code):
-    invite_url = url_for('accept_organization_invite', invite_code=invite_code, _external=True)
+    invite_url = url_for('.accept_organization_invite', invite_code=invite_code, _external=True)
     print u"will email invite to {}, link {}".format(email_address, invite_url)
 
     text_body = render_template("invite_email.txt",

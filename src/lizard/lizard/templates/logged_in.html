@@ -7,11 +7,11 @@
 {# due to the pull-right logic, pills are listed from right to left here #}
 {% block additional_nav_pills %}
 <li class="pull-right">
-    <form action="{{ url_for('logout') }}" method="post" name="logout">
+    <form action="{{ url_for('.logout') }}" method="post" name="logout">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         {{ submit_button("Logout") }}
     </form>
 </li>
-{{ render_navpill('edit_preferences', 'Preferences') }}
-{{ render_navpill('dashboard', 'Dashboard') }}
+{{ render_navpill('.edit_preferences', 'Preferences') }}
+{{ render_navpill('.dashboard', 'Dashboard') }}
 {% endblock %}

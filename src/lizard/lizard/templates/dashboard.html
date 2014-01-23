@@ -45,7 +45,7 @@
         </tbody>
     </table>
     <h4>Invite another admin</h4>
-    <form action="{{ url_for('invite_to_organization') }}" method="post" name="invite">
+    <form action="{{ url_for('.invite_to_organization') }}" method="post" name="invite">
     {{ form.hidden_tag() }}
     <p>{{ render_field(form.email) }}</p>
     {{ submit_button("Invite") }}

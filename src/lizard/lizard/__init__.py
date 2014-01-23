@@ -54,4 +54,7 @@ analytics_client = analytics.client.Client(secret=surrogate_key,
                                            send=segmentio_enabled)
 print app.config
 
-from lizard import emails, forms, models, views
+from lizard import views
+
+# include main views
+app.register_blueprint(views.blueprint, url_prefix="")

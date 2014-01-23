@@ -1,11 +1,14 @@
 import base64
 import os
 
-from flask import render_template, flash, redirect, request, url_for
+from flask import Blueprint, render_template, flash, redirect, request, url_for
 from flask.ext import scrypt, login
 import markupsafe
 
-from lizard import app, analytics_client, db, emails, forms, login_manager, models
+from lizard import app, analytics_client, db, login_manager
+from . import emails, forms, models
+
+blueprint = Blueprint('public_views', __name__, template_folder='templates')
 
 @login_manager.user_loader
 def load_user(userid):
@@ -13,16 +16,16 @@ def load_user(userid):
 
 # This page is also a temporary stopgap - will be replaced with other pages
 # later, but for now, helps with testing
-@app.route('/', methods=['GET'])
-@app.route('/index', methods=['GET'])
+@blueprint.route('/', methods=['GET'])
+@blueprint.route('/index', methods=['GET'])
 def index():
     user = login.current_user
     if user.is_anonymous():
         return render_template("index.html")
     else:
-        return redirect(url_for("dashboard"))
+        return redirect(url_for(".dashboard"))
 
-@app.route('/login', methods=['GET', 'POST'])
+@blueprint.route('/login', methods=['GET', 'POST'])
 def login_page():
     form = forms.LoginForm()
     if form.validate_on_submit():
@@ -42,23 +45,23 @@ def login_page():
                 pass
             else:
                 flash(u"Login failed for {}: probably marked inactive?".format(admin.email), 'error')
-            next_url = request.args.get('next') or url_for("index")
+            next_url = request.args.get('next') or url_for(".index")
             # sanitize next_url to ensure that it's relative.  Avoids user
             # redirection attacks where you log in and then get redirected to an
             # evil site.
             if not next_url.startswith('/'):
-                next_url = url_for("index")
+                next_url = url_for(".index")
             return redirect(next_url)
     return render_template("login.html",
             form=form)
 
-@app.route("/logout", methods=["POST"])
+@blueprint.route("/logout", methods=["POST"])
 def logout():
     login.logout_user()
     flash(u"You have logged out successfully", 'success')
-    return redirect(url_for("index"))
+    return redirect(url_for(".index"))
 
-@app.route("/request_signup", methods=["GET", "POST"])
+@blueprint.route("/request_signup", methods=["GET", "POST"])
 def signup_request_page():
     """
     GET /request_signup - shows form for signing up
@@ -70,7 +73,7 @@ def signup_request_page():
         # We don't want to leak that an account bound to an email exists by
         # returning an error.
         if models.Admin.query.filter_by(email=form.email.data).first():
-            return redirect(url_for("signup_request_done"))
+            return redirect(url_for(".signup_request_done"))
         # If email already in UnboundSignup, just fetch that record.
         record = models.UnboundSignup.query.filter_by(email=form.email.data).first()
         # Otherwise:
@@ -95,15 +98,15 @@ def signup_request_page():
             db.session.add(record)
             db.session.commit()
         emails.send_verification_email(form.email.data, record.signup_code)
-        return redirect(url_for("signup_request_done"))
+        return redirect(url_for(".signup_request_done"))
     return render_template("request_signup.html",
             form=form)
 
-@app.route("/request_signup_done", methods=["GET"])
+@blueprint.route("/request_signup_done", methods=["GET"])
 def signup_request_done():
     return render_template("request_signup_complete.html")
 
-@app.route("/signup", methods=["GET", "POST"])
+@blueprint.route("/signup", methods=["GET", "POST"])
 def signup_completion_page():
     """
     GET /signup?code=<access_code>
@@ -112,12 +115,12 @@ def signup_completion_page():
     user_signup_code = request.args.get("signup_code", None)
     if not user_signup_code:
         # return to the "enter your email so we can verify it" page
-        return redirect(url_for("signup_request_page"))
+        return redirect(url_for(".signup_request_page"))
 
     signup = models.UnboundSignup.query.filter_by(signup_code=user_signup_code).first()
     if not signup:
         # This signup code was invalid.
-        return redirect(url_for("signup_request_page"))
+        return redirect(url_for(".signup_request_page"))
 
     form = forms.CompleteSignupForm()
     if form.validate_on_submit():
@@ -190,12 +193,12 @@ def signup_completion_page():
             form.password.data,
             user_signup_code),
             'success')
-        return redirect(url_for("index"))
+        return redirect(url_for(".index"))
     return render_template("complete_signup.html",
             form=form,
             record=signup)
 
-@app.route("/users/edit", methods=["GET", "POST"])
+@blueprint.route("/users/edit", methods=["GET", "POST"])
 @login.login_required
 def edit_preferences():
     user = login.current_user
@@ -217,7 +220,7 @@ def edit_preferences():
         db.session.add(user)
         db.session.commit()
         flash(u'Saved changes.', 'success')
-        return redirect(url_for("edit_preferences"))
+        return redirect(url_for(".edit_preferences"))
     form.first_name.data = user.first_name
     form.last_name.data = user.last_name
     form.security_emails.data = user.notify_security
@@ -229,7 +232,7 @@ def edit_preferences():
         user=user
         )
 
-@app.route("/users/invitation", methods=["POST"])
+@blueprint.route("/users/invitation", methods=["POST"])
 @login.login_required
 def invite_to_organization():
     user = login.current_user
@@ -240,7 +243,7 @@ def invite_to_organization():
         # Verify that the email is not already in the Admin table
         if models.Admin.query.filter_by(email=form.email.data).first():
             flash(u'That user is already a member of an organization', 'error')
-            return redirect(url_for("dashboard"))
+            return redirect(url_for(".dashboard"))
         # Either this user has been invited to the organization already or hasn't.
         # (Since multiple organizations may attempt to invite the same user, we
         # need to filter on both email and org id in the query here.)
@@ -261,20 +264,20 @@ def invite_to_organization():
         emails.send_invite_email(record.email, customer, record.invite_code)
 
         flash(u'Invited {} to join {}'.format(email, customer.name), 'success')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('.dashboard'))
     flash(u'Sorry, that was an invalid email.', 'error')
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('.dashboard'))
 
-@app.route('/users/accept', methods=["GET", "POST"])
+@blueprint.route('/users/accept', methods=["GET", "POST"])
 def accept_organization_invite():
     user_invite_code = request.args.get("invite_code", None)
     if not user_invite_code:
         # bogus accept code, send user home
-        return redirect(url_for("index"))
+        return redirect(url_for(".index"))
     invite = models.BoundInvite.query.filter_by(invite_code=user_invite_code).first()
     if not invite:
         # This invite code was invalid.
-        return redirect(url_for("index"))
+        return redirect(url_for(".index"))
     customer = models.Customer.query.get(invite.customer_id)
 
     form = forms.AcceptInviteForm()
@@ -307,13 +310,13 @@ def accept_organization_invite():
         if not login_success:
             flash(u"Login failed for {}: probably marked inactive?", 'error')
 
-        return redirect(url_for("index"))
+        return redirect(url_for(".index"))
     return render_template("accept_invite.html",
             form=form,
             invite=invite,
             customer=customer)
 
-@app.route("/dashboard", methods=["GET"])
+@blueprint.route("/dashboard", methods=["GET"])
 @login.login_required
 def dashboard():
     form = forms.InviteForm()
@@ -324,7 +327,7 @@ def dashboard():
 # FIXME:
 # This is a test page I used to test the behavior of login_required and skip
 # dealing with emails.  It should be removed before first release.
-@app.route("/magic", methods=["GET"])
+@blueprint.route("/magic", methods=["GET"])
 @login.login_required
 def TODO_DELETE_THIS():
     signups = models.UnboundSignup.query.all()
