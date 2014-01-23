@@ -10,6 +10,8 @@ class lizard {
     file{"/opt/lizard/additional_config.py":
         ensure => present,
         source => "puppet:///modules/lizard/additional_config.py",
+        require => Package["aerofs-lizard"],
+        notify => Service["lizard"],
     }
 
     # Upstart job provided by deb, legacy init integration added here
