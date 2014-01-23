@@ -1,0 +1,24 @@
+{% macro render_license_table(licenses) %}
+    <table>
+        <tr>
+            <th>Company</th>
+            <th>License ID</th>
+            <th>State</th>
+            <th>Seats</th>
+            <th>Trial?</th>
+            <th>Audit?</th>
+            <th>Expiry Date</th>
+        </tr>
+        {% for license in licenses %}
+        <tr>
+            <td>{{ license.customer.name }}</td>
+            <td>{{ license.id }}</td>
+            <td>{{ license.state }}</td>
+            <td>{{ license.seats }}</td>
+            <td>{{ license.is_trial }}</td>
+            <td>{{ license.allow_audit }}</td>
+            <td>{{ license.expiry_date }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endmacro %}

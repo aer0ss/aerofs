@@ -1,5 +1,7 @@
+import datetime
+
 from flask.ext.wtf import Form
-from wtforms import TextField, PasswordField, HiddenField, BooleanField
+from wtforms import TextField, PasswordField, HiddenField, BooleanField, IntegerField, DateField
 from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo
 
 class LoginForm(Form):
@@ -47,3 +49,18 @@ class PreferencesForm(Form):
     security_emails = BooleanField("Receive security notifications")
     release_emails = BooleanField("Receive release notifications")
     maintenance_emails = BooleanField("Receive maintenance notifications")
+
+def IsFutureDate(message=None):
+    def _IsFutureDate(form, field):
+        if field.data < datetime.datetime.today().date():
+            raise ValidationError(u"Date must be in the future")
+    return _IsFutureDate
+
+class InternalLicenseRequestForm(Form):
+    # BIG TODO: make this not suck
+    # TODO: make this a dropdown or something?  infer from URL?  something?
+    org_id = IntegerField("Org ID", validators=[InputRequired()])
+    seats = IntegerField("Seats", validators=[InputRequired()])
+    expiry_date = DateField("Expiry Date (YYYY-MM-DD)", validators=[InputRequired(), IsFutureDate() ])
+    is_trial = BooleanField("Trial?")
+    allow_audit = BooleanField("Allow Audit?")

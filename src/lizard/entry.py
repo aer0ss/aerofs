@@ -1,12 +1,17 @@
 # Nothing in particular ties us to cherrypy, but it beats the werkzeug wsgi
 # server hand over fist and is pure-python.
 # We could always run under uwsgi if we wanted to
+import sys
+
 from cherrypy import wsgiserver
 from werkzeug.contrib.fixers import ProxyFix
 
 from lizard import create_app, migrate_database
 
-app = create_app()
+internal = len(sys.argv) > 1 and sys.argv[1] == "internal"
+port = 5001 if internal else 8588
+
+app = create_app(internal)
 
 # We run behind an nginx proxy, so we need to fix up the WSGI environ
 # to use assorted header data to perform external URL construction.
@@ -16,7 +21,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app)
 
 d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
 # TODO: make this localhost if not testing
-server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 8588), d)
+server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', port), d)
 server.shutdown_timeout = .1
 
 if __name__ == "__main__":

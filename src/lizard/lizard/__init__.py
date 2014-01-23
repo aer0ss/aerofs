@@ -36,9 +36,9 @@ def migrate_database(app):
 # Analytics stuff
 analytics_client = AnalyticsClient()
 
-from lizard import views
+from lizard import views, internal_views
 
-def create_app():
+def create_app(internal=False):
     app = Flask(__name__)
     # Base configuration.
     app.config.from_object('config')
@@ -63,7 +63,10 @@ def create_app():
     analytics_client.init_app(app)
 
     # Enable routes
-    app.register_blueprint(views.blueprint, url_prefix="")
+    if internal:
+        app.register_blueprint(internal_views.blueprint, url_prefix="")
+    else:
+        app.register_blueprint(views.blueprint, url_prefix="")
 
     # Return configured app
     return app

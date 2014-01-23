@@ -19,6 +19,19 @@ class lizard::nginx {
         target  => "/etc/nginx/sites-available/aerofs-frontend",
         notify  => Service["nginx"],
     }
+    file {"/etc/nginx/sites-available/lizard-admin":
+        ensure => present,
+        owner  => "root",
+        group  => "root",
+        mode   => "0644",
+        source => "puppet:///modules/lizard/lizard-admin",
+        notify => Service["nginx"],
+    }
+    file {"/etc/nginx/sites-enabled/lizard-admin":
+        ensure  => link,
+        target  => "/etc/nginx/sites-available/lizard-admin",
+        notify  => Service["nginx"],
+    }
     file {"/etc/nginx/certs/browser.key":
         ensure  => present,
         owner   => "root",

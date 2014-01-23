@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_formhelpers.html" import render_field, submit_button %}
+{# TODO: remove this from the repo before making this publically available. #}
+
+{% block title %} Create new license {% endblock %}
+
+{% block content %}
+<div class="header"><h1>make new license request</h1></div>
+<form action="" method="post" name="login">
+    {{form.hidden_tag()}}
+    <p>
+        {{ render_field(form.org_id) }}
+        {{ render_field(form.seats) }}
+        {{ render_field(form.expiry_date) }}
+        {{ render_field(form.is_trial) }}
+        {{ render_field(form.allow_audit) }}
+    </p>
+    {{ submit_button("Create license request") }}
+</form>
+{% endblock %}
