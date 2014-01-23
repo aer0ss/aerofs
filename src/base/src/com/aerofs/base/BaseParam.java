@@ -158,12 +158,6 @@ public class BaseParam
     public static class Audit
     {
         /**
-         * Boolean indicating whether or not the license allows us to use the audit feature.
-         */
-        private static boolean                  AUDIT_ALLOWED =
-                getBooleanProperty(             "license_allow_auditing", false);
-
-        /**
          * Boolean indicating whether or not the audit feature has been enabled.
          *
          * N.B. audit is enabled when both of the following are true:
