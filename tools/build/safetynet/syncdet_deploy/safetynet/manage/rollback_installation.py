@@ -28,6 +28,16 @@ def rollback_installation():
     shutil.copytree(src_app_root, app_root)
     shutil.copytree(src_rt_root, rt_root)
 
+    # Touch the "ignoredbtampering" file in the rtroot.
+    # The daemon detects when the inode number of the database file changes,
+    # because in most cases this indicates that one node in the system was
+    # rolled back in time, which can break the distributed algorithm.
+    # In the unique case of safetynet, however, we roll ALL clients back to a
+    # snapshot at the same time.  This is safe, and as a result, we can safely
+    # disable the DB tampering detection.
+    with open(os.path.join(rt_root, "ignoredbtampering"), "wb") as f:
+        pass
+
 # The timeout is large (5 minutes) because the SafetyNet clients are running in VMs
 # hosted on the same VM host as the CI VMs. Disk I/O becomes unbearably slow
 # at times and this helps avoid transient failures due to this slow down.
