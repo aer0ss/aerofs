@@ -264,7 +264,6 @@ public class Images {
 
         if (hasProgress) sb.append("_sip");
         else if (isSynced) sb.append("_is");
-        else sb.append("_oos");
 
         if (isWindowsVistaAndUp) sb.append("_win");
         if (isHdpi) sb.append("@2x");
