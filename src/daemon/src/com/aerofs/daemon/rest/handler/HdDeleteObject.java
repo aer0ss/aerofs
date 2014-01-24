@@ -5,6 +5,7 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -37,6 +38,7 @@ public class HdDeleteObject extends AbstractRestHdIMC<EIDeleteObject>
     @Override
     protected void handleThrows_(EIDeleteObject ev) throws Exception
     {
+        if (!ev._token.isAllowedToWrite()) throw new ExNoPerm();
         OA from = _access.resolveWithPermissions_(ev._object, ev.user(), Permissions.EDITOR);
 
         EntityTag etag = _etags.etagForObject(from.soid());

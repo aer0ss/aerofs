@@ -6,6 +6,7 @@ package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -39,6 +40,7 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
     @Override
     protected void handleThrows_(EIMoveObject ev) throws Exception
     {
+        if (!ev._token.isAllowedToWrite()) throw new ExNoPerm();
         OA from = _access.resolveWithPermissions_(ev._object, ev.user(), Permissions.EDITOR);
         OA toParent = _access.resolveWithPermissions_(ev._newParent, ev.user(), Permissions.EDITOR);
 
