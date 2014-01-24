@@ -5,13 +5,13 @@
 package com.aerofs.auditor.resource;
 
 import com.aerofs.auditor.server.Downstream;
-import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.lib.log.LogUtil;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.HttpContext;
+import org.jboss.netty.channel.ChannelFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,12 +69,20 @@ public class EventResource
         l.info("R: {}", parsed);
 
         try {
-            _auditChannel.doSend(parsed);
-            return Response.ok().build();
-        } catch (ExExternalServiceUnavailable esu) {
-            l.warn("External svc unavailable", LogUtil.suppress(esu));
-            return Response.status(500).build();
+            ChannelFuture future = _auditChannel.doSend(parsed);
+
+            // I'd rather use a channel listener here, but the overarching constraint is
+            // the synchronous nature of Jersey. We build it this way to avoid trying to
+            // shoehorn async handling in JerseyHandler and friends.
+            // See the use of ExecutionHandler before this handler.
+            // TODO: assert not in io thread
+            if (future.syncUninterruptibly().isSuccess()) {
+                return Response.ok().build();
+            }
+        } catch (Exception e) {
+            l.warn("Downstream svc unavailable", LogUtil.suppress(e));
         }
+        return Response.status(500).build();
     }
 
     /**

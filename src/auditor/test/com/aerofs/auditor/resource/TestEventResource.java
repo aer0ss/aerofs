@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.jayway.restassured.http.ContentType;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.Date;
 
 import static com.jayway.restassured.RestAssured.expect;
@@ -36,6 +37,23 @@ public class TestEventResource extends AuditorTest
 
         expect()
                 .statusCode(200)
+        .given().contentType(ContentType.JSON)
+                .body(postBody.toString())
+                .when().post(AUDIT_URL);
+    }
+
+    @Test
+    public void shouldDetectSendFailure()
+    {
+        JsonObject postBody = getMinimalEvent();
+        postBody.addProperty("hi mom", "there is a space here");
+        postBody.addProperty("a float", 1.234);
+        postBody.addProperty("a bool", true);
+
+        _downstream._failureCause = new IOException("shouldDetectSendFailure");
+
+        expect()
+                .statusCode(500)
         .given().contentType(ContentType.JSON)
                 .body(postBody.toString())
                 .when().post(AUDIT_URL);

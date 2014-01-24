@@ -6,6 +6,7 @@ package com.aerofs.auditor.server;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.log.LogUtil;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -80,7 +81,8 @@ public class ReconnectingClientHandler extends SimpleChannelHandler
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
-        l.warn("Channel {} caught exception", ctx.getChannel(), e.getCause());
+        l.warn("Channel {} caught exception", ctx.getChannel(),
+                LogUtil.suppress(e.getCause(), java.net.SocketException.class));
         ctx.getChannel().close();
     }
 

@@ -4,11 +4,13 @@
 
 package com.aerofs.auditor.server;
 
-import com.aerofs.auditor.resource.HttpRequestAuthenticator;
 import com.aerofs.auditor.resource.EventResource;
+import com.aerofs.auditor.resource.HttpRequestAuthenticator;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
@@ -18,6 +20,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 
 import java.io.FileInputStream;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -44,6 +48,12 @@ public class Auditor extends Service
     {
         ChannelPipeline p = super.getSpecializedPipeline();
         p.addBefore(JERSEY_HANLDER, "auth", new HttpRequestAuthenticator());
+
+        // the magic numbers following are just guesses and have not been well-tuned.
+        // 8: core thread pool size
+        // 1048576: max memory commitments for work queued to get into the pool
+        p.addBefore(JERSEY_HANLDER, "execution", new ExecutionHandler(
+                new OrderedMemoryAwareThreadPoolExecutor(8, 1048576, 1048576), false, true));
         return p;
     }
 

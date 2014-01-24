@@ -10,9 +10,11 @@ import com.google.common.base.Strings;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +48,7 @@ public class Downstream
         /**
          * Send the given message, or throw an exception if it cannot be delivered.
          */
-        void doSend(String message) throws ExExternalServiceUnavailable;
+        ChannelFuture doSend(String message);
 
         /**
          * Best-effort state of the underlying channel implementation.
@@ -99,13 +101,11 @@ public class Downstream
          * newline delimiter added, to the remote system. The call is unable to block for
          * write completion. However, if the write fails or is cancelled, we will respond by
          * tearing down the channel. A subsequent send will cause reconnect.
-         *
-         * ExExternalServiceUnavailable is thrown for an immediate failure from the channel.
          */
         @Override
-        public void doSend(String message) throws ExExternalServiceUnavailable
+        public ChannelFuture doSend(String message)
         {
-            Channels.write(_channel, wrappedBuffer(message.getBytes(), DELIM));
+            return Channels.write(_channel, wrappedBuffer(message.getBytes(), DELIM));
         }
 
         @Override
@@ -125,13 +125,25 @@ public class Downstream
         private Channel _channel;
     }
 
-    /** A no-op stream for systems with no downstream components configured */
+    /**
+     * A no-op stream for systems with no downstream components configured. This class
+     * always returns a successful future.
+     */
     static private class DummyStream implements IAuditChannel
     {
         @Override
-        public void doSend(String message) { l.warn("no downstream: {}", message);}
-
+        public ChannelFuture doSend(String message)
+        {
+            l.warn("no downstream: {}", message);
+            return _future;
+        }
         @Override
         public boolean isConnected() { return true; }
+
+        DummyStream() {
+            _future = new DefaultChannelFuture(null, false);
+            _future.setSuccess();
+        }
+        ChannelFuture _future;
     }
 }

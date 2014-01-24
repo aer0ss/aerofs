@@ -917,7 +917,7 @@ public class SPService implements ISPService
         // see also: registerTeamServerDevice for a similar-structured event
         _auditClient.event(AuditTopic.DEVICE, "device.certify")
                 .add("user", user.id())
-                .add("device_id", device.id())
+                .add("device_id", device.id().toStringFormal())
                 .add("device_type", "Desktop Client")
                 .add("os_family", osFamily)
                 .add("os_name", osName)
@@ -1033,7 +1033,7 @@ public class SPService implements ISPService
 
         _auditClient.event(AuditTopic.DEVICE, "device.certify")
                 .add("user", user.id())
-                .add("device_id", device.id())
+                .add("device_id", device.id().toStringFormal())
                 .add("device_type", "Team Server")
                 .add("device_name", deviceName)
                 .add("os_family", osFamily)
@@ -1666,7 +1666,7 @@ public class SPService implements ISPService
 
         _auditClient.event(AuditTopic.DEVICE, "device.recertify")
                 .add("user", user.id())
-                .add("device", device.id())
+                .add("device", device.id().toStringFormal())
                 .add("device_type", "Desktop Client")
                 .publish();
 
@@ -1709,7 +1709,7 @@ public class SPService implements ISPService
 
         _auditClient.event(AuditTopic.DEVICE, "user.device.recertify")
                 .add("user", user.id())
-                .add("device", device.id())
+                .add("device", device.id().toStringFormal())
                 .add("device_type", "Team Server")
                 .publish();
 
@@ -2440,7 +2440,7 @@ public class SPService implements ISPService
 
         _auditClient.event(AuditTopic.DEVICE, erase ? "device.erase" : "device.unlink")
                 .add("admin_user", user.id())
-                .add("device", device.id())
+                .add("device", device.id().toStringFormal())
                 .add("owner", device.getOwner().id())
                 .publish();
         _sqlTrans.commit();

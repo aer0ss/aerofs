@@ -44,7 +44,7 @@ abstract class AuditHttpClient implements IAuditorClient
             submitEvent(conn, content);
             readResponse(conn);
         } catch (IOException e) {
-            l.warn("audit submit err", LogUtil.suppress(e));
+            l.warn("audit submit err {}", LogUtil.suppress(e));
             throw e;
         } finally {
             if (conn != null) {
@@ -76,7 +76,7 @@ abstract class AuditHttpClient implements IAuditorClient
 
         int code = conn.getResponseCode();
         if (code != HTTP_OK) {
-            l.warn("event submission failed: " + code);
+            l.warn("event submission response " + code);
             throw new IOException("event submission failed:" + code);
         }
         // TODO: we currently don't even bother checking for response body, because we don't care
