@@ -4,7 +4,9 @@
 from cherrypy import wsgiserver
 from werkzeug.contrib.fixers import ProxyFix
 
-from lizard import app, migrate_database
+from lizard import create_app, migrate_database
+
+app = create_app()
 
 # We run behind an nginx proxy, so we need to fix up the WSGI environ
 # to use assorted header data to perform external URL construction.
@@ -18,7 +20,7 @@ server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 8588), d)
 server.shutdown_timeout = .1
 
 if __name__ == "__main__":
-    migrate_database()
+    migrate_database(app)
     try:
         # And run the server.
         server.start()

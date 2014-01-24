@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, flash, redirect, request, url_for
 from flask.ext import scrypt, login
 import markupsafe
 
-from lizard import app, analytics_client, db, login_manager
+from lizard import analytics_client, db, login_manager
 from . import emails, forms, models
 
 blueprint = Blueprint('main', __name__, template_folder='templates')

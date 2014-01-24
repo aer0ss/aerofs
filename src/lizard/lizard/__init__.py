@@ -10,27 +10,16 @@ from migrate.exceptions import DatabaseAlreadyControlledError
 
 from .flask_analytics import AnalyticsClient
 
-app = Flask(__name__)
-# Base configuration.
-app.config.from_object('config')
-# Deployment-specific configuration.
-app.config.from_object('additional_config')
-
 # Login manager.  Flask-login does session management.
 login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login_page'
 
 # CSRF protection from WTForms
 csrf = CsrfProtect()
-csrf.init_app(app)
 
 # Database stuff
-db = SQLAlchemy(app)
-_moddir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_MIGRATE_REPO'] = os.path.join(_moddir, 'migrations')
+db = SQLAlchemy()
 
-def migrate_database():
+def migrate_database(app):
     db_uri = app.config['SQLALCHEMY_DATABASE_URI']
     repo = app.config['SQLALCHEMY_MIGRATE_REPO']
     # If the DB isn't under version control yet, add the migrate_version table
@@ -45,10 +34,36 @@ def migrate_database():
     api.upgrade(db_uri, repo, api.version(repo))
 
 # Analytics stuff
-analytics_client = AnalyticsClient(app)
-print app.config
+analytics_client = AnalyticsClient()
 
 from lizard import views
 
-# include main views
-app.register_blueprint(views.blueprint, url_prefix="")
+def create_app():
+    app = Flask(__name__)
+    # Base configuration.
+    app.config.from_object('config')
+    # Deployment-specific configuration.
+    app.config.from_object('additional_config')
+
+    # Enable plugins:
+    # 1) Flask-Login
+    login_manager.init_app(app)
+    login_manager.login_view = 'login_page'
+
+    # 2) Flask-WTF CSRF protection
+    csrf.init_app(app)
+
+    # 3) Flask-SQLAlchemy
+    db.init_app(app)
+    _moddir = os.path.abspath(os.path.dirname(__file__))
+    app.config['SQLALCHEMY_MIGRATE_REPO'] = os.path.join(_moddir, 'migrations')
+    print app.config
+
+    # 4) SegmentIO
+    analytics_client.init_app(app)
+
+    # Enable routes
+    app.register_blueprint(views.blueprint, url_prefix="")
+
+    # Return configured app
+    return app

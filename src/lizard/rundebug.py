@@ -1,5 +1,6 @@
 #!env/bin/python
-from lizard import app, migrate_database
+from lizard import create_app, migrate_database
 
-migrate_database()
+app = create_app()
+migrate_database(app)
 app.run(debug=True)
