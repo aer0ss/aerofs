@@ -121,6 +121,11 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
         _provider = new VirtualChannelProvider(this, pipelineFactory);
     }
 
+    public TunnelAddress address()
+    {
+        return _addr;
+    }
+
     @Override
     public String toString()
     {
@@ -185,12 +190,12 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             break;
         case MSG_SUSPEND:
             // mark channel as not writable
-            l.info("tunnel suspend {}", this);
+            l.debug("tunnel suspend {}", this);
             client.fireInterestChanged(client.getInterestOps() | Channel.OP_WRITE);
             break;
         case MSG_RESUME:
             // mark channel as  writable
-            l.info("tunnel resume {}", this);
+            l.debug("tunnel resume {}", this);
             client.fireInterestChanged(client.getInterestOps() & ~Channel.OP_WRITE);
             break;
         case MSG_PAYLOAD:
@@ -251,6 +256,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
     {
         if (e.getState() == IdleState.READER_IDLE) {
+            l.warn("tunnel beat missed {}", this);
             e.getChannel().close();
         } else if (e.getState() == IdleState.WRITER_IDLE) {
             l.info("tunnel beat send {}", this);
@@ -341,6 +347,10 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
      */
     public Channel newVirtualChannel(ChannelPipeline pipeline)
     {
+        if (!_channel.isConnected()) {
+            l.error("cannot create virtual channel: tunnel closed {}", this);
+            return null;
+        }
         final VirtualChannel c = new VirtualChannel(this, pipeline);
         _provider.put(c);
         Channels.fireChannelOpen(c);

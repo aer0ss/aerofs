@@ -247,7 +247,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         {
             Object msg = me.getMessage();
             if (msg instanceof HttpRequest) {
-                l.info("expect resp {}", _expectedResponses.incrementAndGet());
+                _expectedResponses.incrementAndGet();
             } else {
                 l.warn("unexpected message {}", msg);
             }

@@ -23,10 +23,13 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import static org.hamcrest.Matchers.isIn;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class TestTunnelEndpointConnector extends AbstractBaseTest
@@ -56,10 +59,11 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
         connectClient(user, did, new Version(1, 0));
     }
 
-    void connectClient(AuthenticatedPrincipal user, DID did, final Version version) throws Exception
+    TunnelHandler connectClient(AuthenticatedPrincipal user, DID did, final Version version) throws Exception
     {
         final TunnelAddress addr = new TunnelAddress(user.getUserID(), did);
         TunnelHandler handler = mock(TunnelHandler.class);
+        when(handler.address()).thenReturn(addr);
         when(handler.newVirtualChannel(any(ChannelPipeline.class)))
                 .thenAnswer(new Answer<Object>() {
                     @Override
@@ -73,6 +77,7 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
                     }
                 });
         connector.tunnelOpen(addr, handler);
+        return handler;
     }
 
     Channel connect(AuthenticatedPrincipal user, DID did, boolean strictMatch, Version version)
@@ -186,5 +191,34 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
     private void assertOneOf(Channel c, DID... dids)
     {
         assertThat(connector.device(c), isIn(dids));
+    }
+
+    @Test
+    public void shouldPickNewestTunnelForDID() throws Exception
+    {
+        DID d0 = DID.generate();
+        TunnelHandler h0 = connectClient(user, d0, new Version(0, 9));
+        TunnelHandler h1 = connectClient(user, d0, new Version(0, 9));
+
+        ChannelPipeline pipeline = Channels.pipeline();
+        Channel c = connector.connect(user, null, false, null, pipeline);
+        assertNotNull(c);
+        verify(h0, never()).newVirtualChannel(pipeline);
+        verify(h1).newVirtualChannel(pipeline);
+    }
+
+    @Test
+    public void shouldNotPickPreviousTunnelForDID() throws Exception
+    {
+        DID d0 = DID.generate();
+        TunnelHandler h0 = connectClient(user, d0, new Version(0, 9));
+        TunnelHandler h1 = connectClient(user, d0, new Version(0, 9));
+        connector.tunnelClosed(h0.address(), h0);
+
+        ChannelPipeline pipeline = Channels.pipeline();
+        Channel c = connector.connect(user, null, false, null, pipeline);
+        assertNotNull(c);
+        verify(h0, never()).newVirtualChannel(pipeline);
+        verify(h1).newVirtualChannel(pipeline);
     }
 }

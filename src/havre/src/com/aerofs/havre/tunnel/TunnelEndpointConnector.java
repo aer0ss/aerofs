@@ -26,11 +26,15 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.Channels;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.channels.ClosedChannelException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.SortedSet;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Keeps track of tunnel connections from any number of {@link com.aerofs.tunnel.TunnelServer} and
@@ -74,10 +78,11 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
 
         // sort by version first for easy filtering of the set of devices base on version bounds
         @Override
-        public int compareTo(UserDevice o)
+        public int compareTo(@Nonnull UserDevice o)
         {
             int c = version.compareTo(o.version);
-            return c != 0 ? c : did.compareTo(o.did);
+            if (c == 0) c = did.compareTo(o.did);
+            return c;
         }
 
         static UserDevice lowest(Version version)
@@ -96,7 +101,9 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
             UserDevice d = new UserDevice(did, version, handler);
 
             _byDID.put(did, d);
-            _byVersion.add(d);
+            // if a matching object is already present, Set.add will not replace it so remove first
+            _byVersion.remove(d);
+            checkState(_byVersion.add(d));
         }
 
         TunnelHandler get_(DID did, @Nullable Version minVersion)
@@ -109,9 +116,17 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
         void remove_(DID did, TunnelHandler handler)
         {
             UserDevice d = _byDID.get(did);
-            if (d.handler == handler) {
+            if (d != null && d.handler == handler) {
                 _byDID.remove(did);
                 _byVersion.remove(d);
+            } else {
+                Iterator<UserDevice> it = _byVersion.iterator();
+                while (it.hasNext()) {
+                    if (it.next().handler == handler) {
+                        it.remove();
+                        break;
+                    }
+                }
             }
         }
 
@@ -129,7 +144,7 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
             SortedSet<UserDevice> candidates = minVersion == null
                     ? _byVersion : _byVersion.tailSet(UserDevice.lowest(minVersion));
 
-            l.info("v: {} cand: {}", minVersion, candidates.size());
+            l.debug("v: {} cand: {}", minVersion, candidates.size());
             return candidates.isEmpty() ? null
                     : Iterables.get(candidates, _random.nextInt(candidates.size())).handler;
         }
@@ -214,7 +229,7 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     private @Nullable TunnelHandler getEndpoint(UserID user, DID did, boolean strictMatch,
             @Nullable Version minVersion)
     {
-        l.info("get {} {} {}", user, did, minVersion);
+        l.debug("get {} {} {}", user, did, minVersion);
         TunnelAddress addr = new TunnelAddress(user, did);
         UserDevices connectedDevices = _endpointsByUser.get(addr.user);
         if (connectedDevices == null || connectedDevices.isEmpty_()) return null;

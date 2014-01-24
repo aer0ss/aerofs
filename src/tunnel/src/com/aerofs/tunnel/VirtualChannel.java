@@ -97,9 +97,20 @@ public class VirtualChannel extends AbstractChannel
         _local = new ConnectionAddress(connectionId);
     }
 
+    @Override
+    public String toString()
+    {
+        return super.toString() + "{" + _tunnel + "}";
+    }
+
     public int getConnectionId()
     {
         return _local.connectionId;
+    }
+
+    public TunnelHandler handler()
+    {
+        return _tunnel;
     }
 
     @Override
