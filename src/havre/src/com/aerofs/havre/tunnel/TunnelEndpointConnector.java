@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.channels.ClosedChannelException;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.SortedSet;
@@ -100,9 +99,8 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
         {
             UserDevice d = new UserDevice(did, version, handler);
 
-            _byDID.put(did, d);
-            // if a matching object is already present, Set.add will not replace it so remove first
-            _byVersion.remove(d);
+            UserDevice prev = _byDID.put(did, d);
+            if (prev != null) _byVersion.remove(prev);
             checkState(_byVersion.add(d));
         }
 
@@ -118,15 +116,7 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
             UserDevice d = _byDID.get(did);
             if (d != null && d.handler == handler) {
                 _byDID.remove(did);
-                _byVersion.remove(d);
-            } else {
-                Iterator<UserDevice> it = _byVersion.iterator();
-                while (it.hasNext()) {
-                    if (it.next().handler == handler) {
-                        it.remove();
-                        break;
-                    }
-                }
+                checkState(_byVersion.remove(d));
             }
         }
 

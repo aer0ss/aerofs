@@ -221,4 +221,18 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
         verify(h0, never()).newVirtualChannel(pipeline);
         verify(h1).newVirtualChannel(pipeline);
     }
+
+    @Test
+    public void shouldPickNewestTunnelForDIDDifferentVersion() throws Exception
+    {
+        DID d0 = DID.generate();
+        TunnelHandler h0 = connectClient(user, d0, new Version(0, 9));
+        TunnelHandler h1 = connectClient(user, d0, new Version(0, 10));
+
+        ChannelPipeline pipeline = Channels.pipeline();
+        Channel c = connector.connect(user, null, false, null, pipeline);
+        assertNotNull(c);
+        verify(h0, never()).newVirtualChannel(pipeline);
+        verify(h1).newVirtualChannel(pipeline);
+    }
 }
