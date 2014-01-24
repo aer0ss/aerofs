@@ -9,7 +9,7 @@ import markupsafe
 from lizard import app, analytics_client, db, login_manager
 from . import emails, forms, models
 
-blueprint = Blueprint('public_views', __name__, template_folder='templates')
+blueprint = Blueprint('main', __name__, template_folder='templates')
 
 @login_manager.user_loader
 def load_user(userid):

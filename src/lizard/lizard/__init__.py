@@ -7,7 +7,8 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CsrfProtect
 from migrate.versioning import api
 from migrate.exceptions import DatabaseAlreadyControlledError
-import analytics.client
+
+from .flask_analytics import AnalyticsClient
 
 app = Flask(__name__)
 # Base configuration.
@@ -44,14 +45,7 @@ def migrate_database():
     api.upgrade(db_uri, repo, api.version(repo))
 
 # Analytics stuff
-segmentio_enabled = "SEGMENTIO_SECRET_KEY" in app.config
-surrogate_key = app.config["SEGMENTIO_SECRET_KEY"] if segmentio_enabled else ""
-analytics_client = analytics.client.Client(secret=surrogate_key,
-                                           flush_at=1,
-                                           log=True,
-                                           log_level=logging.DEBUG,
-                                           async=False,
-                                           send=segmentio_enabled)
+analytics_client = AnalyticsClient(app)
 print app.config
 
 from lizard import views
