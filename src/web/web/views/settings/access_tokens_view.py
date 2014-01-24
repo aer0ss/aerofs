@@ -36,7 +36,7 @@ def get_exactly_one_or_throw_400(params, param):
     renderer='app_authorization.mako',
     request_method='GET'
 )
-def show_authorization_page(request):
+def app_authorization(request):
     client_id = get_exactly_one_or_throw_400(request.params, "client_id")
     user_redirect_uri = get_exactly_one_or_throw_400(request.params, "redirect_uri")
 
