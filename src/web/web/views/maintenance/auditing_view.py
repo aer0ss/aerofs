@@ -76,6 +76,9 @@ def json_setup_audit(request):
         audit_downstream_certificate = \
             request.params['audit-downstream-certificate']
 
+        if not audit_downstream_host or not audit_downstream_port:
+            error('Please specify the hostname and port.')
+
         # TODO (MP) need better sanity checking on downstream system.
 
         # Check the validity of the certificate, if provided.

@@ -8,9 +8,10 @@
 
 <h2>Auditing</h2>
 
-<p class="page-block">AeroFS Auditing allows admins to monitor and track user
-    activities. It streams in real time a wide range of activities and file
-    syncing events to 3rd-party logging systems such as Splunk and ElasticSearch.
+<p class="page-block">Auditing allows admins to monitor and track user activities.
+    The audit log provides a real time stream of a wide range of user activities
+    and file syncing events, to 3rd-party logging systems such as Splunk or
+    ElasticSearch.
     <a href="#" target="_blank">Read more</a>.</p>
 
 <div class="page-block">
@@ -44,9 +45,6 @@
         <label class="radio">
             <input type='radio' id="audit-option-enable" name='audit-enabled'
                     value='true'
-                %if not is_audit_allowed:
-                    disabled
-                %endif
                 %if is_audit_enabled:
                     checked
                 %endif
@@ -63,20 +61,21 @@
         >
             <hr/>
             <h4>Downstream Options</h4>
-            <p>You can specify a downstream service to which we will publish audit
-                events. The events will be encoded in JSON format.</p>
+            <p>Auditing requires a downstream server to which AeroFS will
+                publish audit events. The events will be sent over HTTP(S) in
+                JSON:</p>
 
             <div class="row-fluid">
                 <div class="span8">
-                    <label for="audit-downstream-host">Host (optional):</label>
+                    <label for="audit-downstream-host">Hostname:</label>
                     <input class="input-block-level" id="audit-downstream-host"
-                        name="audit-downstream-host" type="text"
+                        name="audit-downstream-host" type="text" required
                         value="${downstream_host}">
                 </div>
                 <div class="span4">
-                    <label for="audit-downstream-port">Port (optional):</label>
+                    <label for="audit-downstream-port">Port:</label>
                     <input class="input-block-level" id="audit-downstream-port"
-                        name="audit-downstream-port" type="text"
+                        name="audit-downstream-port" type="text" required
                         value="${downstream_port}">
                 </div>
             </div>
