@@ -13,22 +13,22 @@ class web (
         ]
     }
 
-    service{"uwsgi":
-        ensure => running,
-        hasstatus => false,
-        hasrestart => true,
-        require => [
-            Package["aerofs-web"],
-            File["/var/www"]
-        ]
-    }
+    service{"uwsgi":        
+        ensure => running,      
+        hasstatus => false,     
+        hasrestart => true,     
+        require => [        
+            Package["aerofs-web"],      
+            File["/var/www"]        
+            ]
+        }
 
     file{"/var/www":
         ensure => directory,
         owner  => "www-data",
     }
 
-    file{"/etc/uwsgi/apps-enabled/aerofs.ini":
+    file{"/etc/uwsgi/apps-available/aerofs.ini":
         content => template("web/aerofs.ini.erb"),
         owner => root,
         group => root,
@@ -36,5 +36,12 @@ class web (
         require => Package["aerofs-web"],
         notify => Service["uwsgi"]
     }
+
+    file{ "/etc/uwsgi/apps-enabled/aerofs.ini":
+        ensure  => link,
+        target  => "/etc/uwsgi/apps-available/aerofs.ini",
+        require => File["/etc/uwsgi/apps-available/aerofs.ini"],
+    }
+
     logrotate::log{"web": }
 }

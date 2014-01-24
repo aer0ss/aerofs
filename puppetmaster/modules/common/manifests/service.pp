@@ -1,3 +1,9 @@
+# AeroFS Service
+#
+# Defines an AeroFS service that is:
+# - Has an upstart init script
+# - Is managed by upstart
+# - Has a logrotate configuration
 define common::service (
     $service_name = $title
 ) {
@@ -12,6 +18,10 @@ define common::service (
         require => Package["aerofs-${service_name}"],
     }
 
+    logrotate::log{"${service_name}":
+        # intentionally left blank
+    }
+
     service{"${service_name}":
         tag => ['autostart-overridable'],
         enable => true,
@@ -19,6 +29,4 @@ define common::service (
         provider => upstart,
         require => File["/etc/init.d/${service_name}"],
     }
-
-    logrotate::log{"${service_name}": }
 }

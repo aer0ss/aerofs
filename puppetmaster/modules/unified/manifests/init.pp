@@ -95,6 +95,12 @@ class unified {
     }
 
     # --------------
+    # Bunker (Maintenance Panel)
+    # --------------
+
+    include bunker
+
+    # --------------
     # Bootstrap
     # --------------
 
@@ -131,6 +137,11 @@ class unified {
 
     file {"/opt/sanity/probes/nginx.sh":
         source => "puppet:///modules/unified/probes/nginx.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+   file {"/opt/sanity/probes/bunker.sh":
+        source => "puppet:///modules/unified/probes/bunker.sh",
         require => Package["aerofs-sanity"],
     }
 

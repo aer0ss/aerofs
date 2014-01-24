@@ -1,0 +1,8 @@
+name         'aerofs-bunker'
+version      '0.0.1'
+source       'UNKNOWN'
+author       'aerofs'
+license      'Apache License, Version 2.0'
+summary      'AeroFS Maintenance Panel'
+description  'AeroFS Maintenance Panel'
+project_page 'UNKNOWN'
