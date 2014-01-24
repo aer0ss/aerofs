@@ -19,6 +19,8 @@ class Configuration(object):
         configuration URL and store those values in the passed configuration
         dictionary.
 
+        Note: this method does NOT clear the dictionary before populating it.
+
         @param configuration a dictionary that we will use to store the
             configuration values pulled from the server.
         """

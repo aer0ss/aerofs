@@ -28,10 +28,17 @@ def auditing(request):
 
 
 def _is_audit_allowed(settings):
+    """
+    @return whether auditing support is included in the license
+    """
     return str2bool(settings.get('license_allow_auditing', False))
 
 
 def _is_audit_enabled(settings):
+    """
+    @return whether auditing support is included in the license AND the user has
+    enabled auditing.
+    """
     return _is_audit_allowed(settings) and \
         str2bool(settings.get('base.audit.enabled', False))
 
@@ -47,7 +54,11 @@ def json_setup_audit(request):
     N.B. the changes won't take effcts on the system until relevant services are
     restarted.
     """
-    audit_enabled = str2bool(request.params['audit-enabled'])
+
+    # _is_audit_allowed is needed to prevent users from bypassing the front-end
+    # license enforcement and enable auditing by calling this method directly.
+    audit_enabled = _is_audit_allowed(request.registry.settings) and \
+        str2bool(request.params['audit-enabled'])
 
     config = Configuration()
     config.set_external_property('audit_enabled', audit_enabled)
@@ -88,4 +99,11 @@ def json_setup_audit(request):
         config.set_external_property('audit_downstream_certificate',
                                      format_pem(audit_downstream_certificate))
 
+    _refresh_settings(request)
+
     return {}
+
+
+def _refresh_settings(request):
+    conf = Configuration()
+    conf.fetch_and_populate(request.registry.settings)
