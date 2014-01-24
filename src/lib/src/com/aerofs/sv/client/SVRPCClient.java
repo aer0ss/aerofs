@@ -8,6 +8,7 @@ import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.Exceptions;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
 import com.google.common.net.HttpHeaders;
@@ -36,7 +37,7 @@ final class SVRPCClient
 
     SVRPCClient(String svurl)
     {
-        l.debug("set sv:" + svurl);
+        l.debug("set sv:{}", svurl);
 
         this._svurl = svurl;
     }
@@ -56,7 +57,7 @@ final class SVRPCClient
 
         HttpsURLConnection conn = null;
         try {
-            l.debug("start sv rpc conlen:" + contentLength);
+            l.debug("start sv rpc conlen:{}", contentLength);
 
             conn = newSVConnection(_svurl,  contentLength);
             sendSVRequest(conn, svpb, file);
@@ -64,10 +65,10 @@ final class SVRPCClient
 
             l.debug("finish sv rpc");
         } catch (IOException e) {
-            l.warn("fail send err:" + e);
+            l.warn("fail send err", LogUtil.suppress(e));
             throw e;
         } catch (AbstractExWirable e) {
-            l.warn("fail send remote err:" + e);
+            l.warn("fail send remote err", LogUtil.suppress(e));
             throw e;
         } finally {
             if (conn != null) {
@@ -116,7 +117,7 @@ final class SVRPCClient
 
         int code = conn.getResponseCode();
         if (code != HTTP_OK) {
-            l.warn("fail sv call code:" + code);
+            l.warn("fail sv call code {}", code);
             throw new IOException("fail sv call code:" + code);
         }
 

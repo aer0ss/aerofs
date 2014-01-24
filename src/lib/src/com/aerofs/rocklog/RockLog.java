@@ -73,6 +73,7 @@ public class RockLog
 
     boolean rpc(Defect defect)
     {
+        if (_rocklogUrl == null) return false;
         try {
             String url = _rocklogUrl + defect.getURLPath();
             HttpURLConnection rocklogConnection = getRockLogConnection(url);
