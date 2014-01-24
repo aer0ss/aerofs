@@ -14,6 +14,6 @@ The steps are as follows:
 And if you have updated static assets:
 
     cd ~/repos/aerofs
-    ant update_cloudfront
+    ant update_cloudfront -Dmode=PUBLIC
 
 N.B. the last steps requires that you have installed and configured s3cmd.
