@@ -116,7 +116,7 @@ public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
         HttpResponse msg = (HttpResponse)me.getMessage();
         String content = BaseUtil.utf2string(msg.getContent().array());
 
-        l.info("response {}", content);
+        l.debug("response {}", content);
 
         VerifyTokenRequest<T> req = Preconditions.checkNotNull(_requests.peek());
         T response;
@@ -132,7 +132,6 @@ public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
             l.warn("unexpected {}", msg.getStatus());
             req.future.setException(new UnexpectedResponse(msg.getStatus().getCode()));
         }
-        l.info("req processed {}", req);
         // IMPORTANT: dequeue request *AFTER* setting future, to ensure that if an exception
         // occurs before that, the exceptionCaught handler will still be able to set it
         _requests.remove();
@@ -144,16 +143,12 @@ public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
     {
         VerifyTokenRequest<T> req = (VerifyTokenRequest<T>)me.getMessage();
 
-        l.info("writing {}", req);
-
         QueryStringEncoder encoder = new QueryStringEncoder(_path);
         encoder.addParam("access_token", req.accessToken);
         HttpRequest http = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET,
                 encoder.toString());
         http.setHeader(Names.HOST, _host);
         http.setHeader(Names.AUTHORIZATION, req.auth);
-
-        l.info("encoded");
 
         _requests.add(req);
         me.getFuture().addListener(new ChannelFutureListener() {
@@ -167,6 +162,5 @@ public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
             }
         });
         ctx.sendDownstream(new DownstreamMessageEvent(ctx.getChannel(), me.getFuture(), http, null));
-        l.info("sent");
     }
 }
