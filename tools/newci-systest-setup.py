@@ -123,8 +123,8 @@ class ActorPoolServiceException(Exception):
     pass
 
 
-def get_addresses_from_pool_service(actor_data):
-    raw_params = []
+def get_addresses_from_pool_service(actor_data, build_id):
+    actors = []
     for actor in actor_data:
         d = {}
         os = actor.get('os')
@@ -149,7 +149,8 @@ def get_addresses_from_pool_service(actor_data):
                 d['isolated'] = False
             else:
                 raise ValueError('"isolated" must be true or false')
-        raw_params.append(d)
+        actors.append(d)
+    raw_params = {'actors': actors, 'build_id': build_id}
     r = requests.get(POOL_URL, data=json.dumps(raw_params), headers=JSON_HEADERS)
     response = r.json()
     if r.status_code != 200:
@@ -172,11 +173,11 @@ def generate_yaml(args, username, actor_data):
         actor_defaults['aero_password'] = args.password
 
     # Query actor pool service for addresses
-    addresses = get_addresses_from_pool_service(actor_data)
+    addresses = get_addresses_from_pool_service(actor_data, args.build_id)
     while addresses is None:
         sys.stderr.write("Actors weren't available. Trying again in 10s...\n")
         sleep(10)
-        addresses = get_addresses_from_pool_service(actor_data)
+        addresses = get_addresses_from_pool_service(actor_data, args.build_id)
 
     # Reverse addresses so they can be popped in order
     addresses.reverse()
@@ -248,6 +249,8 @@ def main():
         help="Default is ~/syncdet")
     parser.add_argument('--userid', default=None,
         help="AeroFS userid")
+    parser.add_argument('--build-id', default=None, type=int,
+        help="Teamcity build ID")
     args = parser.parse_args()
 
     # Parse the conf file to get actor IP's
