@@ -28,13 +28,14 @@
             <li class="nav-header">My Appliance</li>
             <%
                 links = [
+                    # ('auditing', _("Auditing")),
                     ('status', _("Service Status")),
                     ('logs', _("Server Logs")),
                     ('toggle_maintenance_mode', _("Maintenance")),
                     ('upgrade_appliance', _("Upgrade")),
                     ('backup_appliance', _("Backup")),
                     ('setup', _("Setup")),
-                    ## ('apps', _("Apps")),
+                    # ('apps', _("Apps")),
                 ]
             %>
             %for link in links:

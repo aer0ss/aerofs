@@ -4,7 +4,7 @@
 ##      <%namespace name="progress_modal" file="progress_modal.mako"/>
 ##
 ##      <%progress_modal:html>
-##          Please wait while blah...
+##          Doing something...
 ##      </%progress_modal:html>
 ##
 ##      <%progress_modal:scripts/>

@@ -90,13 +90,6 @@
         <%namespace name="apply_page" file="apply_and_create_user_page.mako"/>
         <%apply_page:body/>
         <% local.page_scripts = apply_page.scripts %>
-
-    ## This page is hidden from the setup workflow
-    %elif page == 6:
-        <h3>Step 5 of 5</h3>
-        <%namespace name="audit_page" file="audit_page.mako"/>
-        <%audit_page:body/>
-        <% local.page_scripts = audit_page.scripts %>
     %endif
 </div>
 

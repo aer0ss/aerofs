@@ -35,9 +35,9 @@
         <button class="btn pull-right" id="continue-btn" type="submit">Continue</button>
     </div>
 
-    <div class="form-inline invisible" style="margin-top: 10px">
+    <div class="form-inline" style="margin-top: 10px">
         <label class="checkbox">
-            <input type="checkbox" id="data-collection" />
+            <input type="checkbox" id="data-collection" checked />
             Allow AeroFS to collect setup experience for trial users.
             <a href="https://support.aerofs.com/entries/25712809-Setup-experience-data-collection-for-Private-Cloud-trial-users"
                target="_blank">Read more.</a>

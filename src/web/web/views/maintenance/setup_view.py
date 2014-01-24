@@ -2,29 +2,31 @@
 
 import logging
 import shutil
-import tempfile
 import os
 import socket
 import re
 from web.util import str2bool
-from subprocess import call, Popen, PIPE
 from pyramid.security import NO_PERMISSION_REQUIRED
 
 import requests
 from pyramid.view import view_config
-from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError, HTTPBadRequest
+from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError, \
+    HTTPBadRequest
 
 import aerofs_common.bootstrap
 from aerofs_common.configuration import Configuration
 from web.error import error
 from web.login_util import remember_license_based_login
-from web.util import is_private_deployment, is_configuration_initialized, \
-     is_audit_allowed, is_audit_enabled
+from web.util import is_private_deployment, is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, \
-     set_license_file_and_attach_shasum_to_session, get_license_shasum_from_session, \
-     URL_PARAM_KEY_LICENSE_SHASUM
+    URL_PARAM_KEY_LICENSE_SHASUM, get_license_shasum_from_session, \
+    set_license_file_and_attach_shasum_to_session
 from backup_view import BACKUP_FILE_PATH
 from web.views.login.login_view import URL_PARAM_EMAIL
+from web.views.maintenance.maintenance_util import write_pem_to_file, \
+    format_pem, is_certificate_formatted_correctly, \
+    get_modulus_of_certificate_file, get_modulus_of_key_file, \
+    is_key_formatted_correctly
 
 log = logging.getLogger(__name__)
 
@@ -128,8 +130,6 @@ def _setup_common(request, conf, license_page_only):
         # The following two parameters are used by welcome_and_license.mako
         'is_license_present': is_license_present(conf),
         'is_license_present_and_valid': is_license_present_and_valid(conf),
-        'is_audit_allowed': is_audit_allowed(conf),
-        'is_audit_enabled': is_audit_enabled(conf),
         # This parameter is used by apply_and_create_user_page.mako
         'url_param_email': URL_PARAM_EMAIL,
         # The following parameter is used by email_page.mako
@@ -246,53 +246,6 @@ def json_setup_set_data_collection(request):
     config = Configuration()
     config.set_external_property('enable_appliance_setup_data_collection',
                                  enable)
-
-
-# ------------------------------------------------------------------------
-# Audit
-# ------------------------------------------------------------------------
-
-@view_config(
-    route_name='json_setup_audit',
-    permission='maintain',
-    renderer='json',
-    request_method='POST'
-)
-def json_setup_audit(request):
-    audit_enabled = str2bool(request.params['audit-enabled'])
-
-    config = Configuration()
-    config.set_external_property('audit_enabled', audit_enabled)
-
-    if audit_enabled:
-        audit_downstream_host = request.params['audit-downstream-host']
-        audit_downstream_port = request.params['audit-downstream-port']
-        audit_downstream_ssl_enabled = str2bool(request.params.get('audit-downstream-ssl-enabled'))
-        audit_downstream_certificate = request.params['audit-downstream-certificate']
-
-        # TODO (MP) need better sanity checking on downstream system.
-
-        # Check the validity of the certificate, if provided.
-        if len(audit_downstream_certificate) > 0:
-            certificate_filename = _write_pem_to_file(audit_downstream_certificate)
-            try:
-                is_certificate_valid = _is_certificate_formatted_correctly(certificate_filename)
-                if not is_certificate_valid:
-                    error("The certificate you provided is invalid.")
-            finally:
-                os.unlink(certificate_filename)
-
-        config.set_external_property('audit_downstream_host', audit_downstream_host)
-        config.set_external_property('audit_downstream_port', audit_downstream_port)
-        config.set_external_property('audit_downstream_ssl_enabled', audit_downstream_ssl_enabled)
-        config.set_external_property('audit_downstream_certificate', _format_pem(audit_downstream_certificate))
-    else:
-        config.set_external_property('audit_downstream_host', '')
-        config.set_external_property('audit_downstream_port', '')
-        config.set_external_property('audit_downstream_ssl_enabled', '')
-        config.set_external_property('audit_downstream_certificate', '')
-
-    return {}
 
 
 # ------------------------------------------------------------------------
@@ -418,7 +371,7 @@ def json_setup_email(request):
     configuration.set_external_property('email_user',        username)
     configuration.set_external_property('email_password',    password)
     configuration.set_external_property('email_enable_tls',  enable_tls)
-    configuration.set_external_property('email_cert',        _format_pem(smtp_cert))
+    configuration.set_external_property('email_cert',        format_pem(smtp_cert))
 
     return {}
 
@@ -426,46 +379,6 @@ def json_setup_email(request):
 # ------------------------------------------------------------------------
 # Certificate
 # ------------------------------------------------------------------------
-
-def _is_certificate_formatted_correctly(certificate_filename):
-    return call(["/usr/bin/openssl", "x509", "-in", certificate_filename, "-noout"]) == 0
-
-
-def _is_key_formatted_correctly(key_filename):
-    return call(["/usr/bin/openssl", "rsa", "-in", key_filename, "-noout"]) == 0
-
-
-def _write_pem_to_file(pem_string):
-    os_handle, filename = tempfile.mkstemp()
-    os.write(os_handle, pem_string)
-    os.close(os_handle)
-    return filename
-
-
-def _get_modulus_helper(cmd):
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = p.communicate()
-    return stdout.split('=')[1]
-
-
-# Expects as input a filename pointing to a valid PEM certtificate file.
-def _get_modulus_of_certificate_file(certificate_filename):
-    cmd = ["/usr/bin/openssl", "x509", "-noout", "-modulus", "-in", certificate_filename]
-    return _get_modulus_helper(cmd)
-
-
-# Expects as input a filename pointing to a valid PEM key file.
-def _get_modulus_of_key_file(key_filename):
-    cmd = ["/usr/bin/openssl", "rsa", "-noout", "-modulus", "-in", key_filename]
-    return _get_modulus_helper(cmd)
-
-
-# Format certificate and key using this function before saving to the
-# configuration service.
-# See also the code in identity_page.mako that convert the string to HTML format.
-def _format_pem(string):
-        return string.strip().replace('\n', '\\n').replace('\r', '')
-
 
 @view_config(
     route_name='json_setup_certificate',
@@ -477,12 +390,12 @@ def json_setup_certificate(request):
     certificate = request.params['server.browser.certificate']
     key = request.params['server.browser.key']
 
-    certificate_filename = _write_pem_to_file(certificate)
-    key_filename = _write_pem_to_file(key)
+    certificate_filename = write_pem_to_file(certificate)
+    key_filename = write_pem_to_file(key)
 
     try:
-        is_certificate_valid = _is_certificate_formatted_correctly(certificate_filename)
-        is_key_valid = _is_key_formatted_correctly(key_filename)
+        is_certificate_valid = is_certificate_formatted_correctly(certificate_filename)
+        is_key_valid = is_key_formatted_correctly(key_filename)
 
         if not is_certificate_valid and not is_key_valid:
             error("The certificate and key you provided is invalid.")
@@ -492,16 +405,16 @@ def json_setup_certificate(request):
             error("The key you provided is invalid.")
 
         # Check that key matches the certificate.
-        certificate_modulus = _get_modulus_of_certificate_file(certificate_filename)
-        key_modulus = _get_modulus_of_key_file(key_filename)
+        certificate_modulus = get_modulus_of_certificate_file(certificate_filename)
+        key_modulus = get_modulus_of_key_file(key_filename)
 
         if certificate_modulus != key_modulus:
             error("The certificate and key you provided do not match each other.")
 
         # All is well - set the external properties.
         configuration = Configuration()
-        configuration.set_external_property('browser_cert', _format_pem(certificate))
-        configuration.set_external_property('browser_key', _format_pem(key))
+        configuration.set_external_property('browser_cert', format_pem(certificate))
+        configuration.set_external_property('browser_key', format_pem(key))
 
         return {}
 
@@ -522,7 +435,7 @@ def json_setup_certificate(request):
 )
 def json_verify_ldap(request):
     cert = request.params['ldap_server_ca_certificate']
-    if cert and not _is_certificate_formatted_correctly(_write_pem_to_file(cert)):
+    if cert and not is_certificate_formatted_correctly(write_pem_to_file(cert)):
         error("The certificate you provided is invalid. "
               "Please provide one in PEM format.")
 
@@ -573,7 +486,7 @@ def _write_ldap_properties(conf, request_params):
         if key == 'ldap_server_ca_certificate':
             cert = request_params[key]
             if cert:
-                conf.set_external_property(key, _format_pem(cert))
+                conf.set_external_property(key, format_pem(cert))
             else:
                 conf.set_external_property(key, '')
         else:

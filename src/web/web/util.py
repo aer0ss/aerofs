@@ -175,13 +175,6 @@ def str2bool(v):
 def is_private_deployment(settings):
     return str2bool(settings.get('config.loader.is_private_deployment', False))
 
-def is_audit_allowed(settings):
-    return str2bool(settings.get('license_allow_auditing', False))
-
-def is_audit_enabled(settings):
-    return is_audit_allowed(settings) and \
-           str2bool(settings.get('base.audit.enabled', False))
-
 def is_restricted_external_sharing_enabled(settings):
     return str2bool(settings.get('sharing_rules.restrict_external_sharing', False))
 

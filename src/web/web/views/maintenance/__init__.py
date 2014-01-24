@@ -9,7 +9,6 @@ routes = {
     'setup_authorized',
     'json_set_license',
     'json_setup_set_data_collection',
-    'json_setup_audit',
     'json_setup_hostname',
     'json_setup_email',
     'json_verify_smtp',
@@ -32,6 +31,8 @@ routes = {
     'logs',
     'logs_auto_download',
     'download_logs',
+    'auditing',
+    'json_set_auditing',
     # 'apps' is already taken by the access token management page
     'registered_apps',
     'register_app',
