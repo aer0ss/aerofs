@@ -1,0 +1,2 @@
+include *.txt *.ini *.cfg *.html
+recursive-include web *.mako *.html

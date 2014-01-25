@@ -22,7 +22,6 @@ from web.license import is_license_present_and_valid, is_license_present, \
     URL_PARAM_KEY_LICENSE_SHASUM, get_license_shasum_from_session, \
     set_license_file_and_attach_shasum_to_session
 from backup_view import BACKUP_FILE_PATH
-from web.views.login.login_view import URL_PARAM_EMAIL
 from web.views.maintenance.maintenance_util import write_pem_to_file, \
     format_pem, is_certificate_formatted_correctly, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \
@@ -131,7 +130,7 @@ def _setup_common(request, conf, license_page_only):
         'is_license_present': is_license_present(conf),
         'is_license_present_and_valid': is_license_present_and_valid(conf),
         # This parameter is used by apply_and_create_user_page.mako
-        'url_param_email': URL_PARAM_EMAIL,
+        'url_param_email': 'email',
         # The following parameter is used by email_page.mako
         'default_support_email': _get_default_support_email(conf['base.host.unified']),
         # This parameter is used by finalize
