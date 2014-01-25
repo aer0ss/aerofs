@@ -44,7 +44,7 @@ node "z.arrowfs.org" inherits default {
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
     "x df90 pagerduty@x.aerofs.com 22 /dev/sda",
     "sss-root df90 pagerduty@sss.aerofs.com 22 /dev/xvda1",
-    "sss-data df90 pagerduty@sss.aerofs.com 22 /dev/xvdb",
+    "sss-data df90 pagerduty@sss.aerofs.com 22 /dev/xvdf",
   ]:
     hour => "14",
     minute => "0",
