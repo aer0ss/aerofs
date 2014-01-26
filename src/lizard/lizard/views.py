@@ -7,7 +7,7 @@ from flask.ext import scrypt, login
 import markupsafe
 
 from lizard import analytics_client, db, login_manager
-from . import emails, forms, models
+from . import appliance, emails, forms, models
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
 
@@ -332,16 +332,16 @@ def accept_organization_invite():
 @login.login_required
 def dashboard():
     form = forms.InviteForm()
+    appliance_version = appliance.latest_appliance_version()
     return render_template("dashboard.html",
             user=login.current_user,
-            form=form)
+            form=form,
+            appliance_version=appliance_version,
+            )
 
-# FIXME:
-# This is a test page I used to test the behavior of login_required and skip
-# dealing with emails.  It should be removed before first release.
-@blueprint.route("/magic", methods=["GET"])
+@blueprint.route("/download_image", methods=["GET"])
 @login.login_required
-def TODO_DELETE_THIS():
-    signups = models.UnboundSignup.query.all()
-    return render_template("magic.html",
-            signups=signups)
+def download_image():
+    version = appliance.latest_appliance_version()
+    # TODO: log that this user has started downloading the OVA.
+    return redirect(appliance.ova_url(version))

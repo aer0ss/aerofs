@@ -9,6 +9,10 @@
     </div>
 </div>
 <div class="span8">
+    <h3>Download</h3>
+    {# TODO: add latest license download link #}
+    {# TODO: note which appliance version the user has downloaded #}
+    <a href="{{ url_for('.download_image') }}">Download appliance image (v{{ appliance_version }})</a>
     <h3>Purchases</h3>
     <table id="order-history">
         {# TODO: add license purchase history #}

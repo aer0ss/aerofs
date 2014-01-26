@@ -13,5 +13,7 @@ if not os.path.exists(csrf_keyfile):
 with open(csrf_keyfile) as f:
     SECRET_KEY = f.read()
 
+RELEASE_VERSION_FILE = os.path.join(basedir, 'state', 'release_version')
+
 # This URI is only good for testing
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'state', 'database.db')
