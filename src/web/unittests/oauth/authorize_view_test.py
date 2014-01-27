@@ -4,7 +4,7 @@ import requests
 from webob.multidict import MultiDict
 from pyramid.httpexceptions import HTTPBadRequest, HTTPFound
 from ..test_base import TestBase
-from web.views.settings.access_tokens_view import show_authorization_page
+from web.views.settings.access_tokens_view import app_authorization
 
 CLIENT_ID = "CLIENT_ID"
 CLIENT_NAME = "CLIENT_NAME"
@@ -52,7 +52,7 @@ class AuthorizeViewTest(TestBase):
 
     def _make_req(self, params):
         request = self.create_dummy_request(MultiDict(params))
-        return show_authorization_page(request)
+        return app_authorization(request)
 
     def test_should_400_if_client_id_or_redirect_uri_is_invalid(self):
         # missing client_id
