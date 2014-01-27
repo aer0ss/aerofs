@@ -42,11 +42,7 @@
                     ${uri}
                 </td>
                 <td>
-                  <div>
-                    <a href="#" onclick="confirmDeletion('${client['client_id']}', $(this));
-                                         return false;">Delete</a>
-                  </div>
-                  <div style="padding-top:10px">
+                  <div style="padding-bottom:10px; white-space:nowrap">
                   <%
                     from json import dumps as jsonify
                     from urllib import quote as urlencode
@@ -60,6 +56,10 @@
                     ## N.B. download= is not present before HTML5
                     <a href="data:'text/json;charset=utf-8,${blob | n}" download="appconfig.json">Download JSON</a>
                     <a href="https://www.aerofs.com/developers/publish"><i class="icon-question-sign tooltip_json_blob"></i></a>
+                  </div>
+                  <div>
+                    <a href="#" onclick="confirmDeletion('${client['client_id']}', $(this));
+                                         return false;">Delete</a>
                   </div>
                 </td>
             </tr>
