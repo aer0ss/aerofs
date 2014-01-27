@@ -81,7 +81,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     }
 
     private static final String COOKIE_SERVER = "server";
-    private static final String HEADER_CONSISTENCY = "X-Aero-Consistency";
+    private static final String HEADER_CONSISTENCY = "Endpoint-Consistency";
 
     private static Map<String, String> getCookies(HttpRequest r)
     {
@@ -168,7 +168,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     private static boolean shouldEnforceStrictConsistency(HttpRequest r)
     {
         String flag = r.getHeader(HEADER_CONSISTENCY);
-        return flag != null && "strict".equals(flag);
+        return flag != null && "strict".equalsIgnoreCase(flag);
     }
 
     private void sendError(Channel downstream, HttpResponseStatus status)
