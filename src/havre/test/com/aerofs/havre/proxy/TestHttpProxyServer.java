@@ -96,7 +96,7 @@ public class TestHttpProxyServer extends AbstractBaseTest
 
         given()
                 .cookie("server", did.toStringFormal())
-                .header("X-Aero-Consistency", "strict")
+                .header("Endpoint-Consistency", "strict")
         .expect()
                 .statusCode(503)
                 .cookie("server", isEmptyString())
