@@ -205,10 +205,11 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     private @Nullable TunnelHandler getEndpoint(AuthenticatedPrincipal principal, DID did,
             boolean strictMatch, @Nullable Version minVersion)
     {
-        TunnelHandler handler = getEndpoint(principal.getUserID(), did, strictMatch, minVersion);
+        // prefer talking to Team Server
+        TunnelHandler handler = getEndpoint(teamServer(principal), did, strictMatch, minVersion);
         return handler != null
                 ? handler
-                : getEndpoint(teamServer(principal), did, strictMatch, minVersion);
+                : getEndpoint(principal.getUserID(), did, strictMatch, minVersion);
     }
 
     private static UserID teamServer(AuthenticatedPrincipal principal)
