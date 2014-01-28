@@ -42,13 +42,17 @@ public class PathInfoProvider
 
     public String getFilename(@Nullable Path path)
     {
-        return path == null ? "" : UIUtil.getPrintablePath(path.last());
+        if (path == null) return "";
+        if (path.isEmpty()) return UIUtil.sharedFolderName(path, "");
+        return UIUtil.getPrintablePath(path.last());
     }
 
     public Image getFileIcon(@Nullable Path path)
     {
-        return path == null || UIUtil.isSystemFile(path.toPB())
-                ? Images.get(Images.ICON_METADATA)
-                : Images.getFileIcon(path.last(), _iconCache);
+        if (path == null || UIUtil.isSystemFile(path.toPB())) {
+            return Images.get(Images.ICON_METADATA);
+        }
+        if (path.isEmpty()) return Images.get(Images.ICON_LOGO32);
+        return Images.getFileIcon(path.last(), _iconCache);
     }
 }
