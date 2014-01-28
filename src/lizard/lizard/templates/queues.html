@@ -1,0 +1,15 @@
+{% extends "admin.html" %}
+{% from "_licensehelper.html" import render_license_table %}
+
+{% block title %}License queues{% endblock %}
+
+{% block content %}
+<div class="header"><h1>License queues</h1></div>
+<h3>PENDING</h3>
+{{ render_license_table(pending) }}
+<h3>ON HOLD</h3>
+{{ render_license_table(on_hold) }}
+<h3>IGNORED</h3>
+{{ render_license_table(ignored) }}
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "admin.html" %}
+
+{% block title %}Licensing admin{% endblock %}
+{% block content %}
+<h1>Licensing Admin</h1>
+<ul>
+    <li><a href="{{ url_for('.all_customers') }}">View customers</a></li>
+    <li><a href="{{ url_for('.queues') }}">License queues</a></li>
+    <li><a href="{{ url_for('.download_license_request_csv') }}">Download license request csv</a></li>
+    <li><a href="{{ url_for('.upload_bundle') }}">Upload license bundle</a></li>
+</ul>
+
+{% endblock %}

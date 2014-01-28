@@ -1,3 +1,7 @@
+{% macro pretty_state(state) %}
+{% if state == 0 %}PENDING{% elif state == 1 %}ON_HOLD{% elif state == 2 %}FILLED{% elif state == 3 %}IGNORED{% else %}UNKNOWN{% endif %}
+{% endmacro %}
+
 {% macro render_license_table(licenses) %}
     <table>
         <tr>
@@ -13,7 +17,7 @@
         <tr>
             <td>{{ license.customer.name }}</td>
             <td>{{ license.id }}</td>
-            <td>{{ license.state }}</td>
+            <td>{{ pretty_state(license.state) }}</td>
             <td>{{ license.seats }}</td>
             <td>{{ license.is_trial }}</td>
             <td>{{ license.allow_audit }}</td>

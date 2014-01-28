@@ -1,6 +1,7 @@
 import datetime
 
 from flask.ext.wtf import Form
+from flask_wtf.file import FileField, FileRequired
 from wtforms import TextField, PasswordField, HiddenField, BooleanField, IntegerField, DateField
 from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo
 
@@ -57,10 +58,10 @@ def IsFutureDate(message=None):
     return _IsFutureDate
 
 class InternalLicenseRequestForm(Form):
-    # BIG TODO: make this not suck
-    # TODO: make this a dropdown or something?  infer from URL?  something?
-    org_id = IntegerField("Org ID", validators=[InputRequired()])
     seats = IntegerField("Seats", validators=[InputRequired()])
     expiry_date = DateField("Expiry Date (YYYY-MM-DD)", validators=[InputRequired(), IsFutureDate() ])
     is_trial = BooleanField("Trial?")
     allow_audit = BooleanField("Allow Audit?")
+
+class InternalLicenseBundleUploadForm(Form):
+    license_bundle = FileField("License bundle:", validators=[FileRequired()])

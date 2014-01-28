@@ -51,6 +51,13 @@ def _invite_email_for(email_address, company, invite_code):
     return _make_email_message(email_address, "You've been invited to help purchase AeroFS Private Cloud",
             text_body, html_body)
 
+def _license_available_email_for(email_address, company):
+    # TODO: Add license email templates when I get them from Erik
+    text_body = "Testing"
+    html_body = "<p>Testing HTML</p>"
+    return _make_email_message(email_address, "Your AeroFS Private Cloud License is ready",
+            text_body, html_body)
+
 def _send_email(email_address, msg):
     s = smtplib.SMTP(SMTP_RELAY)
     try:
@@ -64,4 +71,8 @@ def send_verification_email(email_address, signup_code):
 
 def send_invite_email(email_address, company, invite_code):
     msg = _invite_email_for(email_address, company, invite_code)
+    _send_email(email_address, msg)
+
+def send_license_available_email(email_address, company):
+    msg = _license_available_email_for(email_address, company)
     _send_email(email_address, msg)

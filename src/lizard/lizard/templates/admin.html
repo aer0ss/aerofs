@@ -1,0 +1,7 @@
+{% extends 'adminbase.html' %}
+{% from "_navbarhelpers.html" import render_navpill %}
+
+{% block additional_nav_pills %}
+{{ render_navpill('.all_customers', 'All Customers') }}
+{{ render_navpill('.queues', 'Queues') }}
+{% endblock %}
