@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.unsyncablefiles;
 
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
@@ -14,6 +15,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
+import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -270,7 +272,9 @@ public class DlgRenameFile extends AeroFSDialog
                 public void error(Exception e)
                 {
                     ErrorMessages.show(getShell(), e,
-                            "Sorry, we encountered an error while renaming the file.");
+                            "Sorry, we encountered an error while renaming the file.",
+                            new ErrorMessage(ExAlreadyExist.class,
+                                    "A file with the same name already exists"));
                     setBusyState(false);
                 }
             });
