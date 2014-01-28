@@ -2,8 +2,7 @@ define logrotate::log(
     $filename = "/var/log/${title}/*.log",
     $quantity = 7,
     $frequency = "daily",
-    $compress = true,
-    $size = "512M"
+    $compress = true
 ) {
 
     include logrotate

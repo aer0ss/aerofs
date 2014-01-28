@@ -40,11 +40,6 @@ class logrotate {
         owner => root,
         group => root,
         mode => 755,
-        require => Package["logrotate"],
-    }
-
-    file { "/etc/cron.hourly/logrotate":
-      ensure => "link",
-      target => "/etc/cron.daily/logrotate",
+        require => Package["logrotate"]
     }
 }
