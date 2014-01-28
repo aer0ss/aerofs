@@ -39,13 +39,13 @@ public class DaemonPostUpdateTasks
             new DPUTGetEncodingStats(dbcw),
             new DPUTMigrateRevisionSuffixToBase64(),
             null, // used to be DPUTResetSyncStatus (for redis migation issue)
-            null, // used to be DPUTRestSyncStatus (account for change in vh computation)
-            null, // used to be DPUTRestSyncStatus (account for aliasing related crash)
+            null, // used to be DPUTResetSyncStatus (account for change in vh computation)
+            null, // used to be DPUTResetSyncStatus (account for aliasing related crash)
             new DPUTMorphStoreTables(dbcw),
             new DPUTMigrateS3Schema(dbcw, _cfgDB),
             null, // used to be DPUTBreakSyncStatActivityLogDependency with missing commit()
             new DPUTBreakSyncStatActivityLogDependency(dbcw),
-            new DPUTResetSyncStatus(dbcw), // bug in AggregateSyncStatus.objectMoved_
+            null, // used to be DPUTResetSyncStatus (bug in AggregateSyncStatus.objectMoved_)
             new DPUTMigrateAuxRoot(),
             new DPUTUpdateSIDGeneration(cfgUser, dbcw),
             null,  // used to be DPUTMigrateDeadAnchorsAndEmigratedNames
@@ -74,6 +74,7 @@ public class DaemonPostUpdateTasks
             new DPUTFixNormalizationOSX(osutil, dbcw, dr, rocklog),
             new DPUTUpdateEpochTableAddAuditColumn(dbcw),
             new DPUTFixCNROsOnOSX(osutil, dbcw),
+            new DPUTResetSyncStatus(dbcw),  // bug in AggragateSyncStatus
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 
