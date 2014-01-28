@@ -14,8 +14,14 @@ public class PooledJedisConnectionProvider
 {
     private JedisPool _jedisPool = null;
 
+    // Because of commons pool v1.5.5 bug borrowing object from underlying GenericObjectPool
+    // is not always thread safe: https://issues.apache.org/jira/browse/POOL-184
+    // some jedis related issues:  https://github.com/xetorthio/jedis/issues/407
+    // Making getConnection() synchronized until we upgrade commons-pool to later version
+    // Currently we are using commons-pool v1.5.5 inside jedis-2.2.5.jar
+    //
     @Override
-    public JedisPooledConnection getConnection()
+    public synchronized JedisPooledConnection getConnection()
     {
         // Must call init first.
         assert _jedisPool != null;
