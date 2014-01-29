@@ -133,8 +133,8 @@ public class AbstractRestTest extends AbstractTest
 
     protected @Mock CfgLocalUser localUser;
     protected @Mock CfgLocalDID localDID;
-    protected @Mock CfgKeyManagersProvider kmgr;
-    protected @Mock CfgCACertificateProvider cacert;
+    protected static CfgKeyManagersProvider kmgr;
+    protected static CfgCACertificateProvider cacert;
 
     protected @Mock NativeVersionControl nvc;
 
@@ -157,8 +157,8 @@ public class AbstractRestTest extends AbstractTest
 
     protected  @Mock OutboundEventLogger oel;
 
-    protected @Mock SessionFactory sessionFactory;
-    protected @Mock Session session;
+    protected static SessionFactory sessionFactory;
+    protected static Session session;
 
     private static TempCert ca;
     private static TempCert client;
@@ -188,73 +188,25 @@ public class AbstractRestTest extends AbstractTest
     }
 
     @BeforeClass
-    public static void generateCert()
+    public static void commonSetup() throws Exception
     {
         System.setSecurityManager(new TestSecurityManager());
 
         ca = TempCert.generateCA();
         client = TempCert.generateDaemon(user, did, ca);
         RestAssured.keystore(ca.keyStore, TempCert.KS_PASSWD);
-    }
 
-    @AfterClass
-    public static void cleanupCert()
-    {
-        ca.cleanup();
-        client.cleanup();
-        /* temporary measure debugging CI */
-        System.setSecurityManager(null);
-    }
+        cacert = mock(CfgCACertificateProvider.class);
+        when(cacert.getCert()).thenReturn(ca.cert);
 
-    protected MockDS mds;
-    protected SID rootSID = SID.rootSID(user);
-
-    private RestService service;
-
-    private RestTunnelClient tunnel;
-    private Havre havre;
-    private Bifrost bifrost;
-
-    protected final static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
-    protected final static byte[] VERSION_HASH =
-            BaseSecUtil.newMessageDigestMD5().digest(new byte[0]);
-
-    private static Gson _gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .create();
-
-    private static DateFormat utcFormat(String pattern) {
-        DateFormat dateFormat = new SimpleDateFormat(pattern);
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return dateFormat;
-    }
-
-    @Before
-    public void setUp() throws Exception
-    {
-        mds = new MockDS(rootSID, ds, sm, sm);
-        mds.root();  // setup sid<->sidx mapping for root..
-
-        when(ps.newPrefix_(any(SOCKID.class), anyString())).thenReturn(pf);
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(ByteStreams.nullOutputStream());
-
-        when(localUser.get()).thenReturn(user);
-        when(localDID.get()).thenReturn(did);
-
+        kmgr = mock(CfgKeyManagersProvider.class);
         when(kmgr.getCert()).thenReturn(client.cert);
         when(kmgr.getPrivateKey()).thenReturn(client.key);
 
-        when(cacert.getCert()).thenReturn(ca.cert);
+        sessionFactory = mock(SessionFactory.class);
+        session = mock(Session.class);
 
         when(sessionFactory.openSession()).thenReturn(session);
-
-        when(tm.begin_()).thenReturn(t);
-        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
-        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
-        when(tk.pseudoPause_(anyString())).thenReturn(tcb);
-
-        when(nvc.getVersionHash_(any(SOID.class))).thenReturn(VERSION_HASH);
 
         Properties prop = new Properties();
         prop.setProperty("bifrost.port", "0");
@@ -283,6 +235,66 @@ public class AbstractRestTest extends AbstractTest
         prop.setProperty("havre.oauth.url", bifrostUrl);
         ConfigurationProperties.setProperties(prop);
 
+        // start local gateway
+        havre = new Havre(user, did, kmgr, kmgr, cacert);
+        havre.start();
+    }
+
+    @AfterClass
+    public static void commonCleanup()
+    {
+        havre.stop();
+        bifrost.stop();
+
+        ca.cleanup();
+        client.cleanup();
+        /* temporary measure debugging CI */
+        System.setSecurityManager(null);
+    }
+
+    protected MockDS mds;
+    protected SID rootSID = SID.rootSID(user);
+
+    private RestService service;
+
+    private RestTunnelClient tunnel;
+    private static Havre havre;
+    private static Bifrost bifrost;
+
+    protected final static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+    protected final static byte[] VERSION_HASH =
+            BaseSecUtil.newMessageDigestMD5().digest(new byte[0]);
+
+    private static Gson _gson = new GsonBuilder()
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .create();
+
+    private static DateFormat utcFormat(String pattern) {
+        DateFormat dateFormat = new SimpleDateFormat(pattern);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return dateFormat;
+    }
+
+    @Before
+    public void setUp() throws Exception
+    {
+        mds = new MockDS(rootSID, ds, sm, sm);
+        mds.root();  // setup sid<->sidx mapping for root..
+
+        when(ps.newPrefix_(any(SOCKID.class), anyString())).thenReturn(pf);
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(ByteStreams.nullOutputStream());
+
+        when(localUser.get()).thenReturn(user);
+        when(localDID.get()).thenReturn(did);
+
+        when(tm.begin_()).thenReturn(t);
+        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tk.pseudoPause_(anyString())).thenReturn(tcb);
+
+        when(nvc.getVersionHash_(any(SOID.class))).thenReturn(VERSION_HASH);
+
         // start REST service
         Injector inj = coreInjector();
         service = new RestService(inj, kmgr) {
@@ -290,8 +302,8 @@ public class AbstractRestTest extends AbstractTest
             protected ServerSocketChannelFactory getServerSocketFactory()
             {
                 return new NioServerSocketChannelFactory(
-                        Executors.newCachedThreadPool(),
-                        Executors.newCachedThreadPool());
+                        Executors.newSingleThreadExecutor(),
+                        Executors.newFixedThreadPool(2));
             }
         };
         service.start();
@@ -300,9 +312,6 @@ public class AbstractRestTest extends AbstractTest
         l.info("REST service at {}", RestAssured.port);
 
         if (useProxy) {
-            // start local gateway
-            havre = new Havre(user, did, kmgr, kmgr, cacert);
-            havre.start();
             RestAssured.port = havre.getProxyPort();
 
             l.info("REST gateway at {}", RestAssured.port);
@@ -361,7 +370,7 @@ public class AbstractRestTest extends AbstractTest
         return inj;
     }
 
-    private Injector bifrostInjector() throws Exception
+    private static Injector bifrostInjector() throws Exception
     {
         final SPBlockingClient.Factory factSP = mock(SPBlockingClient.Factory.class);
         SPBlockingClient sp = mock(SPBlockingClient.class);
@@ -388,10 +397,8 @@ public class AbstractRestTest extends AbstractTest
     {
         service.stop();
         if (useProxy) {
-            havre.stop();
             tunnel.stop();
         }
-        bifrost.stop();
     }
 
     protected RestObject object(String path) throws SQLException
