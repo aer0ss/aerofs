@@ -326,4 +326,22 @@ public class TestTunnel extends AbstractBaseTest
         v1.client.getCloseFuture().awaitUninterruptibly();
         v1.server.getCloseFuture().awaitUninterruptibly();
     }
+
+    @Test
+    public void shouldSplitLargePayloads() throws Exception
+    {
+        Tunnel<Channel, TunnelHandler> p = makePhysical();
+        Tunnel<Channel, Channel> v = makeVirtual(p.server);
+
+        ChannelBuffer large = ChannelBuffers.wrappedBuffer(new byte[TunnelHandler.MAX_MESSAGE_SIZE + 1]);
+        large.setByte(0, 0);
+        large.setByte(255, 255);
+        large.setByte(TunnelHandler.MAX_MESSAGE_SIZE, 42);
+
+        v.client.write(large).awaitUninterruptibly();
+
+        ChannelBuffer chunk0 = serverVirtualConnections.messageReceived(v.server).get();
+        ChannelBuffer chunk1 = serverVirtualConnections.messageReceived(v.server).get();
+        assertBufferEquals(large.array(), ChannelBuffers.wrappedBuffer(chunk0, chunk1));
+    }
 }

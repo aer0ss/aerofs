@@ -86,8 +86,8 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     private static final int CONNECTION_FIELD_SIZE = 4;
     private static final int HEADER_SIZE = TYPE_FIELD_SIZE + CONNECTION_FIELD_SIZE;
     private static final int LENGTH_FIELD_SIZE = 2; // bytes
-    private static final int MAX_MESSAGE_SIZE = 32 * C.KB;
-    private static final int MAX_PAYLOAD_SIZE = MAX_MESSAGE_SIZE - HEADER_SIZE;
+    static final int MAX_MESSAGE_SIZE = 32 * C.KB;
+    private static final int MAX_PAYLOAD_SIZE = MAX_MESSAGE_SIZE - HEADER_SIZE - LENGTH_FIELD_SIZE;
     static {
         // Check that the maximum message size is smaller than the maximum number that can be
         // represented using LENGTH_FIELD_SIZE bytes

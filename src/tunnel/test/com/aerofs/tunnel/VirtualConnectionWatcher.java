@@ -7,6 +7,7 @@ package com.aerofs.tunnel;
 import com.aerofs.base.Loggers;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -15,12 +16,14 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.fail;
@@ -35,8 +38,8 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
 
     private class Watcher
     {
-        ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
-        SettableFuture<ChannelBuffer> readFuture;
+        Queue<ChannelBuffer> buffers = Queues.newLinkedBlockingQueue();
+        Queue<SettableFuture<ChannelBuffer>> readFutures = Queues.newLinkedBlockingQueue();
 
         boolean writable;
         SettableFuture<Boolean> interestFuture;
@@ -50,6 +53,14 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
     private final Map<Channel, Watcher> _watchers = Maps.newHashMap();
 
     final ChannelHandler handler = new SimpleChannelUpstreamHandler() {
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
+        {
+            l.error("Exception in virtual channel {}" + ctx.getChannel(), e.getCause());
+            // TODO: ideally fail fast, unfortunately JUnit fail() uses exception
+            // and Netty doesn't like exceptionCaught rethrowing...
+        }
+
         @Override
         public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
         {
@@ -103,14 +114,13 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
                 Watcher w = _watchers.get(ctx.getChannel());
                 Preconditions.checkNotNull(w);
                 msg = (ChannelBuffer)me.getMessage();
-                l.info("message {}: {}", ctx.getChannel(), msg.readableBytes());
-                if (w.readFuture != null && msg.readableBytes() > 0) {
-                    future = w.readFuture;
-                    w.readFuture = null;
-                } else {
-                    future = null;
-                    w.buffer.writeBytes(msg);
+                if (!msg.readable()) {
+                    l.warn("empty message");
+                    return;
                 }
+                l.info("message {}: {}", ctx.getChannel(), msg.readableBytes());
+                future = w.readFutures.poll();
+                if (future == null) w.buffers.add(ChannelBuffers.copiedBuffer(msg));
             }
             if (future != null) future.set(msg);
         }
@@ -120,13 +130,15 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
     {
         synchronized (_watchers) {
             Watcher w = get(c);
-            if (w.buffer.readableBytes() > 0) {
-                Future<ChannelBuffer> f = Futures.immediateFuture(w.buffer);
-                w.buffer = ChannelBuffers.dynamicBuffer();
-                return f;
+            ChannelBuffer msg = w.buffers.poll();
+            if (msg != null) {
+                l.info("read {}", c);
+                return Futures.immediateFuture(msg);
             } else {
-                Preconditions.checkState(w.readFuture == null);
-                return (w.readFuture = SettableFuture.create());
+                l.info("wait {}", c);
+                SettableFuture<ChannelBuffer> future = SettableFuture.create();
+                w.readFutures.add(future);
+                return future;
             }
         }
     }
