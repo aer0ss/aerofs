@@ -10,9 +10,15 @@
 </div>
 <div class="span8">
     <h3>Download</h3>
-    {# TODO: add latest license download link #}
-    {# TODO: note which appliance version the user has downloaded #}
-    <a href="{{ url_for('.download_image') }}">Download appliance image (v{{ appliance_version }})</a>
+    <ul>
+        {% if issued_licenses %}
+        <li><a href="{{ url_for('.download_latest_license') }}">Download your latest license file</a></li>
+        {% else %}
+        <li>You have no license issued yet.</li>
+        {% endif %}
+        {# TODO: note which appliance version the user has downloaded #}
+        <li><a href="{{ url_for('.download_image') }}">Download appliance image (v{{ appliance_version }})</a></li>
+    </ul>
     <h3>Purchases</h3>
     <table id="order-history">
         {# TODO: add license purchase history #}

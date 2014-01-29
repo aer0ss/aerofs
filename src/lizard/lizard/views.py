@@ -2,8 +2,9 @@ import base64
 import datetime
 import os
 
-from flask import Blueprint, render_template, flash, redirect, request, url_for
+from flask import Blueprint, render_template, flash, redirect, request, url_for, Response
 from flask.ext import scrypt, login
+from sqlalchemy import desc
 import markupsafe
 
 from lizard import analytics_client, db, login_manager
@@ -333,9 +334,12 @@ def accept_organization_invite():
 def dashboard():
     form = forms.InviteForm()
     appliance_version = appliance.latest_appliance_version()
+    user = login.current_user
+    issued_licenses = user.customer.licenses.all()
     return render_template("dashboard.html",
-            user=login.current_user,
+            user=user,
             form=form,
+            issued_licenses=issued_licenses,
             appliance_version=appliance_version,
             )
 
@@ -345,3 +349,15 @@ def download_image():
     version = appliance.latest_appliance_version()
     # TODO: log that this user has started downloading the OVA.
     return redirect(appliance.ova_url(version))
+
+@blueprint.route("/download_latest_license", methods=["GET"])
+@login.login_required
+def download_latest_license():
+    user = login.current_user
+    org = user.customer
+    license = org.licenses.filter_by(state=models.License.states.FILLED).order_by(desc(models.License.expiry_date)).first_or_404()
+    r = Response(license.blob,
+            mimetype='application/octet-stream',
+            headers={"Content-Disposition": "attachment; filename=aerofs-private-cloud.license"}
+            )
+    return r
