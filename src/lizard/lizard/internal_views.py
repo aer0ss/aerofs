@@ -49,6 +49,19 @@ def customer_actions(org_id):
     form.is_trial.data = True
     return render_template('customer_actions.html', form=form, customer=customer)
 
+@blueprint.route("/licenses/<int:license_id>", methods=["GET", "POST"])
+def license_actions(license_id):
+    license = models.License.query.get_or_404(license_id)
+    form = forms.InternalLicenseStateForm()
+    if form.validate_on_submit():
+        license.state = getattr(models.License.states, form.state.data)
+        db.session.add(license)
+        db.session.commit()
+        flash(u"Set license {} to state {}".format(license.id, form.state.data), "success")
+        return redirect(url_for(".queues"))
+    form.state.data = models.License.states.states[license.state]
+    return render_template("license_actions.html", form=form, license=license)
+
 @blueprint.route("/all_customers", methods=["GET"])
 def all_customers():
     customers = models.Customer.query.all()

@@ -1,0 +1,43 @@
+{% extends "admin.html" %}
+{% from "_formhelpers.html" import render_field, submit_button %}
+{% from "_licensehelper.html" import pretty_state %}
+
+{% block title %}License view{% endblock %}
+
+{% block content %}
+<div class="header"><h1>License {{ license.id }}</h1></div>
+
+<dl>
+    <dt>Company</dt>
+    <dd>{{ license.customer.name }}</dd>
+    <dt>Company ID</dt>
+    <dd>{{ license.customer.id }}</dd>
+    <dt>License request serial number</dt>
+    <dd>{{ license.id }}</dd>
+    <dt>State</dt>
+    <dd>{{ pretty_state(license) }}</dd>
+    <dt>Seats</dt>
+    <dd>{{ license.seats }}</dd>
+    <dt>Expiry Date</dt>
+    <dd>{{ license.expiry_date }}</dd>
+    <dt>Trial?</dt>
+    <dd>{{ license.is_trial }}</dd>
+    <dt>Audit allowed?</dt>
+    <dd>{{ license.allow_audit }}</dd>
+</dl>
+
+{# There's no good reason to manually change the state of the license once it is FILLED. #}
+{# You'll only confuse the service or break other invariants. #}
+{% if license.state == license.states.FILLED %}
+<p>No state change allowed for FILLED licenses.</p>
+{% else %}
+<h3>Change request state</h3>
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ render_field(form.state) }}
+    </p>
+    {{ submit_button("Change state") }}
+</form>
+{% endif %}
+{% endblock %}

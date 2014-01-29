@@ -2,7 +2,8 @@ import datetime
 
 from flask.ext.wtf import Form
 from flask_wtf.file import FileField, FileRequired
-from wtforms import TextField, PasswordField, HiddenField, BooleanField, IntegerField, DateField
+from wtforms import TextField, PasswordField, HiddenField, BooleanField, \
+        IntegerField, DateField, SelectField
 from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo
 
 class LoginForm(Form):
@@ -65,3 +66,11 @@ class InternalLicenseRequestForm(Form):
 
 class InternalLicenseBundleUploadForm(Form):
     license_bundle = FileField("License bundle:", validators=[FileRequired()])
+
+class InternalLicenseStateForm(Form):
+    # Note: _licensehelper.html has some macros that depend on the name of this field
+    state = SelectField(u'Queue', choices=[
+        ('PENDING', 'PENDING'),
+        ('ON_HOLD', 'ON HOLD'),
+        ('IGNORED', 'IGNORED')
+    ])

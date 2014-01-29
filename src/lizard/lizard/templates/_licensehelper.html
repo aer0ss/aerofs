@@ -1,9 +1,43 @@
-{% macro pretty_state(state) %}
-{% if state == 0 %}PENDING{% elif state == 1 %}ON_HOLD{% elif state == 2 %}FILLED{% elif state == 3 %}IGNORED{% else %}UNKNOWN{% endif %}
+{# we need the whole license rather than just the state itself so we can #}
+{# access the states enum on the license object #}
+{% macro pretty_state(license) %}
+{% if license.state == license.states.PENDING %}PENDING
+{% elif license.state == license.states.ON_HOLD %}ON_HOLD
+{% elif license.state == license.states.FILLED %}FILLED
+{% elif license.state == license.states.IGNORED %}IGNORED
+{% else %}UNKNOWN
+{% endif %}
 {% endmacro %}
 
+
+{% macro license_state_button(license, state, label) %}
+    <form action="{{ url_for('.license_actions', license_id=license.id) }}" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input name="state" type="hidden" value="{{ state }}"></input>
+    <input class="tablebutton" type="submit" value="{{ label }}">
+    </form>
+{% endmacro %}
+
+
+{% macro render_license_state_buttons(license) %}
+{% if license.state == license.states.PENDING %}
+    <td>{{ license_state_button(license, "ON_HOLD", "Hold") }}</td>
+    <td>{{ license_state_button(license, "IGNORED", "Ignore") }}</td>
+{% elif license.state == license.states.ON_HOLD %}
+    <td>{{ license_state_button(license, "PENDING", "Restore") }}</td>
+    <td>{{ license_state_button(license, "IGNORED", "Ignore") }}</td>
+{% elif license.state == license.states.FILLED %}
+{# no actions, but fill the table row anyway #}
+<td></td><td></td>
+{% elif license.state == license.states.IGNORED %}
+    <td>{{ license_state_button(license, "PENDING", "Restore") }}</td>
+    <td>{{ license_state_button(license, "ON_HOLD", "Hold") }}</td>
+{% endif %}
+{% endmacro %}
+
+
 {% macro render_license_table(licenses) %}
-    <table>
+    <table class="license-table">
         <tr>
             <th>Company</th>
             <th>License ID</th>
@@ -12,16 +46,19 @@
             <th>Trial?</th>
             <th>Audit?</th>
             <th>Expiry Date</th>
+            <th colspan="3">Actions</th>
         </tr>
         {% for license in licenses %}
         <tr>
             <td>{{ license.customer.name }}</td>
             <td>{{ license.id }}</td>
-            <td>{{ pretty_state(license.state) }}</td>
+            <td>{{ pretty_state(license) }}</td>
             <td>{{ license.seats }}</td>
-            <td>{{ license.is_trial }}</td>
-            <td>{{ license.allow_audit }}</td>
+            <td>{% if license.is_trial %}Trial{% else %}Full license{% endif %}</td>
+            <td>{% if license.allow_audit %}Auditing allowed{% endif %}</td>
             <td>{{ license.expiry_date }}</td>
+            <td><a href="{{ url_for(".license_actions", license_id=license.id) }}">Details</a></td>
+            {{ render_license_state_buttons(license) }}
         </tr>
         {% endfor %}
     </table>
