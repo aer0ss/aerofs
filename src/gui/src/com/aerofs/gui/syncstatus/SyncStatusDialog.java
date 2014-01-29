@@ -48,7 +48,7 @@ public class SyncStatusDialog extends AeroFSDialog
         lblFilename.setText(provider.getFilename(_path));
 
         lnkHelp.setText("<a>Learn more about Sync Status.</a>");
-        lnkHelp.addSelectionListener(GUIUtil.createUrlLaunchListener(""));
+        lnkHelp.addSelectionListener(GUIUtil.createUrlLaunchListener("https://support.aerofs.com/entries/26242815"));
 
         btnClose.setText(IDialogConstants.CLOSE_LABEL);
         btnClose.addSelectionListener(new SelectionAdapter()
