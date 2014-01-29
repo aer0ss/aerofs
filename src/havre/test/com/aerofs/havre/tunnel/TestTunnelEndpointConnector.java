@@ -35,6 +35,8 @@ import static org.mockito.Mockito.when;
 public class TestTunnelEndpointConnector extends AbstractBaseTest
 {
     protected static final AuthenticatedPrincipal user = newPrincipal("foo@bar.baz");
+    protected static final AuthenticatedPrincipal ts =
+            newPrincipal(OrganizationID.PRIVATE_ORGANIZATION.toTeamServerUserID().getString());
     protected static final DID did = DID.generate();
 
     @Mock EndpointVersionDetector detector;
@@ -234,5 +236,18 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
         assertNotNull(c);
         verify(h0, never()).newVirtualChannel(pipeline);
         verify(h1).newVirtualChannel(pipeline);
+    }
+
+    @Test
+    public void shouldPickTeamServerOverRegularClient() throws Exception
+    {
+        TunnelHandler h0 = connectClient(ts, DID.generate(), new Version(0, 10));
+        TunnelHandler h1 = connectClient(user, did, new Version(0, 10));
+
+        ChannelPipeline pipeline = Channels.pipeline();
+        Channel c = connector.connect(user, null, false, null, pipeline);
+        assertNotNull(c);
+        verify(h0).newVirtualChannel(pipeline);
+        verify(h1, never()).newVirtualChannel(pipeline);
     }
 }
