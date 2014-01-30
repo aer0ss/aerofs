@@ -50,4 +50,4 @@ then
 fi
 
 cd "$MODE_ROOT"
-~/env/bin/pserve $MODE.ini
+~/web-env/bin/pserve $MODE.ini

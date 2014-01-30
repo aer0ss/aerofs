@@ -1,26 +1,21 @@
 #!/bin/bash
 set -e
-MODE_ROOT=$(dirname "${BASH_SOURCE[0]}")/modes
+MODE_ROOT=$(dirname "${BASH_SOURCE[0]}")
 SRC_ROOT=$(dirname "${BASH_SOURCE[0]}")/../..
 
-if [ $# -ne 1 ] && [ $# -ne 2 ]
+if [ $# -ne 1 ] && [ $# -ne 0 ]
 then
-    echo "Usage: $0 <mode> [-q]"
-    echo
-    echo "Available modes: public, private."
+    echo "Usage: $0 [-q]"
     echo
     echo "-q: quick: Skip network reconfiguration in the private mode. Useful when running this script repeatedly."
     echo
     echo "Note:"
-    echo " - If running in private mode, the corresponding development"
-    echo "   system must be running."
+    echo " - local prod must be running."
 
     exit 1
 fi
 
-MODE=$1
-
-if [ "$2" = '-q' ]
+if [ "$1" = '-q' ]
 then
     QUICK=1
 else
@@ -30,7 +25,7 @@ fi
 export STRIPE_PUBLISHABLE_KEY=pk_test_nlFBUMTVShdEAASKB0nZm6xf
 export STRIPE_SECRET_KEY=sk_test_lqV5voHmrJZLom3iybJFSVqK
 
-if [ "$MODE" = "private" ] && [ $QUICK -eq 0 ]
+if [ $QUICK -eq 0 ]
 then
     echo ">>> Configuring your local prod to allow incoming connections..."
     pushd "$SRC_ROOT"/../packaging/bakery/development 1>/dev/null
@@ -50,4 +45,4 @@ then
 fi
 
 cd "$MODE_ROOT"
-~/env/bin/pserve $MODE.ini
+~/bunker-env/bin/pserve development.ini

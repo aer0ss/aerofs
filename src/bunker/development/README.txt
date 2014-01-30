@@ -1,1 +1,5 @@
-see https://github.arrowfs.org/aerofs/aerofs/wiki/Running-the-website-locally on how to use the scripts in this folder to run the Pyramid server on the host computer and point it to your local production VM.
+
+To run bunker locally, run:
+
+$ ./setup.py
+$ ./run.py # or ./run.py -q

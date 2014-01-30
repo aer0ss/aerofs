@@ -14,6 +14,10 @@ def main(global_config, **settings):
     This function returns a Pyramid WSGI application.
     """
 
+    # Some Python functions shared between the web and bunker projects
+    # need this property to behave properly. i.e. util.is_private_deployment()
+    settings['config.loader.is_private_deployment'] = True
+
     # Import template directories from views
     # TODO (WW) don't do this. Use renderer="<module>:templates/foo.mako" instead
     for view in views.__all__:
@@ -39,22 +43,7 @@ def main(global_config, **settings):
     # Static views
     config.add_static_view(settings['static.prefix'], 'static', cache_max_age=3600)
 
-    # Special handling for installer prefix view.
-    installer_prefix = settings['installer.prefix']
-    if installer_prefix == 'static':
-        config.add_static_view('static/installers', 'installer')
-    else:
-        config.add_static_view(installer_prefix, 'installer')
-
-    # Use different home page for private and public deployment
-    if is_private_deployment(settings):
-        # The "/" URL string must be consistent with RequestToSignUpEmailer.java
-        config.add_route('dashboard_home', '/')
-        config.add_route('marketing_home', 'marketing_home')
-    else:
-        # The "home" URL string must be consistent with RequestToSignUpEmailer.java
-        config.add_route('dashboard_home', 'home')
-        config.add_route('marketing_home', '/')
+    config.add_route('maintenance_home', '/')
 
     # Import routes from views
     for view in views.__all__:
