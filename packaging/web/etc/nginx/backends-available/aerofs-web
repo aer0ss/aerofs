@@ -5,10 +5,8 @@
         alias /opt/web/docs/;
     }
     location / {
-        # redirect /developer, /apps, and /app to /developers
+        # redirect /developer to /developers
         rewrite /developer(/.*)?$ /developers$1 permanent;
-        rewrite /apps(/.*)?$ /developers$1 permanent;
-        rewrite /app(/.*)?$ /developers$1 permanent;
 
         # make sure /developers/ doesn't 404
         rewrite /developers/$ /developers;
