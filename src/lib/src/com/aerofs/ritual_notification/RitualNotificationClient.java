@@ -52,7 +52,7 @@ public class RitualNotificationClient extends AbstractNettyReconnectingClient
 
     public void removeListener(IRitualNotificationListener l)
     {
-        _listeners.addListener(l, _executor);
+        _listeners.removeListener(l);
     }
 
     @Override

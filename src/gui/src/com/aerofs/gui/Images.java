@@ -1,6 +1,7 @@
 package com.aerofs.gui;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import org.eclipse.swt.SWT;
@@ -21,6 +22,8 @@ import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus.IN_SYNC;
+import static com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus.OUT_OF_SYNC;
 import static java.lang.Math.PI;
 import static java.lang.Math.abs;
 import static java.lang.Math.cos;
@@ -253,9 +256,11 @@ public class Images {
     }
 
     // FIXME(AT): passing in isWindowsVistaAndUp flag is a bad idea, but mocking OSUtil is hard.
+    // FIXME(AT): too many boolean flags, maybe we should use a single int flag variable instead.
     @Nonnull
     public static String getTrayIconName(boolean isOnline, boolean hasNotification,
-            boolean hasProgress, boolean isSynced, boolean isHdpi, boolean isWindowsVistaAndUp)
+            boolean hasProgress, boolean enableSyncStatus, RootStoreSyncStatus syncStatus,
+            boolean isHdpi, boolean isWindowsVistaAndUp)
     {
         StringBuilder sb = new StringBuilder("tray");
 
@@ -263,7 +268,10 @@ public class Images {
         if (hasNotification) sb.append("_n");
 
         if (hasProgress) sb.append("_sip");
-        else if (isSynced) sb.append("_is");
+        else if (enableSyncStatus) {
+            if (syncStatus == IN_SYNC) sb.append("_is");
+            else if (syncStatus == OUT_OF_SYNC) sb.append("_oos");
+        }
 
         if (isWindowsVistaAndUp) sb.append("_win");
         if (isHdpi) sb.append("@2x");

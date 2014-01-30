@@ -15,6 +15,10 @@ import org.eclipse.swt.widgets.TableColumn;
 
 import static com.aerofs.gui.GUIUtil.shortenText;
 
+/**
+ * Note that this component doesn't support multiuser because
+ * PathInfoProvider doesn't play well with Block Storage.
+ */
 public class PathLabelProvider extends ColumnLabelProvider
 {
     private final TableColumn _column;

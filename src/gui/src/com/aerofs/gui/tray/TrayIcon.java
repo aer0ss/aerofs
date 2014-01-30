@@ -9,6 +9,7 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.tray.Progresses.ProgressUpdatedListener;
+import com.aerofs.gui.tray.RootStoreSyncStatusMonitor.RootStoreSyncStatusListener;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
@@ -17,6 +18,8 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
@@ -59,19 +62,30 @@ public class TrayIcon implements ITrayMenuListener
     private static final String DEFAULT_TOOLTIP = TOOLTIP_PREFIX + " " + Cfg.ver() +
             (OSUtil.isOSX() ? "" : "\nDouble click to open " + L.product() + "folder");
 
+    private final CfgLocalUser _localUser = new CfgLocalUser();
+
     private final SystemTray _st;
     private final TrayItem _ti;
     private final UbuntuTrayItem _uti;
 
     private boolean _isOnline;
+    private RootStoreSyncStatus _syncStatus = RootStoreSyncStatus.UNKNOWN;
+
     private String _tooltip;
     private String _iconName;
 
     private final ProgressListener _progressListener = new ProgressListener();
+    // null if the monitor isn't used.
+    private final @Nullable RootStoreSyncStatusMonitor _syncStatusMonitor;
 
     // TrayIcon needs to have its own RNC to prevent a race condition between registering listener
     // and starting the client leading to the tray icon missing notifications.
     private RitualNotificationClient _rnc;
+
+    public enum RootStoreSyncStatus
+    {
+        IN_SYNC, OUT_OF_SYNC, UNKNOWN
+    }
 
     TrayIcon(SystemTray st)
     {
@@ -123,11 +137,36 @@ public class TrayIcon implements ITrayMenuListener
             if (OSUtil.isOSX()) _ti.setHighlightImage(Images.getTrayIcon("tray_inverted"));
         }
 
-        updateToolTipText();
-        refreshTrayIconImage();
+        _rnc = new RitualNotificationClient(new RitualNotificationSystemConfiguration());
 
         addOnlineStatusListener();
         UIGlobals.progresses().addListener(_progressListener);
+
+        if (L.isMultiuser()) {
+            // Do not monitor root store sync status if we are running the Team Server.
+            // In which case, the status will remain forever UNKNOWN.
+            _syncStatusMonitor = null;
+        } else {
+            _syncStatusMonitor = new RootStoreSyncStatusMonitor(iconImpl(), _rnc,
+                    UIGlobals.ritualClientProvider(), _localUser, new CfgRootSID());
+            _syncStatusMonitor.setListener(new RootStoreSyncStatusListener()
+            {
+                @Override
+                public void onSyncStatusChanged(RootStoreSyncStatus status)
+                {
+                    _syncStatus = status;
+
+                    updateToolTipText();
+                    refreshTrayIconImage();
+                }
+            });
+            _syncStatusMonitor.start();
+        }
+
+        updateToolTipText();
+        refreshTrayIconImage();
+
+        _rnc.start();
     }
 
     TrayItem getTrayItem()
@@ -145,9 +184,11 @@ public class TrayIcon implements ITrayMenuListener
         UIGlobals.progresses().removeListener(_progressListener);
         UIGlobals.progresses().removeAllProgresses();
 
+        if (_syncStatusMonitor != null) _syncStatusMonitor.stop();
+        _rnc.stop();
+
         if (_ti != null) _ti.dispose();
         if (_uti != null) _uti.dispose();
-        _rnc.stop();
     }
 
     public boolean isDisposed()
@@ -231,7 +272,8 @@ public class TrayIcon implements ITrayMenuListener
                 _isOnline,
                 !_notificationReasons.isEmpty(),
                 !UIGlobals.progresses().getProgresses().isEmpty(),
-                false, // TODO: implement hooking into syncstat
+                _localUser.get().isAeroFSUser(),
+                _syncStatus,
                 false, // TODO: implement detecting HDPI
                 OSUtil.isWindows() && !OSUtil.isWindowsXP());
 
@@ -336,7 +378,6 @@ public class TrayIcon implements ITrayMenuListener
 
     public void addOnlineStatusListener()
     {
-        _rnc = new RitualNotificationClient(new RitualNotificationSystemConfiguration());
         _rnc.addListener(new IRitualNotificationListener()
         {
             @Override
@@ -369,7 +410,6 @@ public class TrayIcon implements ITrayMenuListener
                 });
             }
         });
-        _rnc.start();
     }
 
     private class ProgressListener implements ProgressUpdatedListener
