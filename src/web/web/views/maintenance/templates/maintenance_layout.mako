@@ -31,11 +31,11 @@
                     # ('auditing', _("Auditing")),
                     ('status', _("Service Status")),
                     ('logs', _("Server Logs")),
+                    ('registered_apps', _("Registered Apps")),
                     ('toggle_maintenance_mode', _("Maintenance")),
                     ('upgrade_appliance', _("Upgrade")),
                     ('backup_appliance', _("Backup")),
                     ('setup', _("Setup")),
-                    # ('apps', _("Apps")),
                 ]
             %>
             %for link in links:

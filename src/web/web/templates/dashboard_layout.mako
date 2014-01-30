@@ -31,8 +31,10 @@
     <%navigation:marketing_links/>
     <li class="divider"></li>
     <li><a href="${request.route_path('my_devices')}">My Devices</a></li>
+    %if is_private_deployment(request.registry.settings):
+        <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
+    %endif
     <li><a href="${request.route_path('settings')}">Settings</a></li>
-    ## <li><a href="${request.route_path('apps')}">My Apps</a></li>
     <li><a href="${request.route_path('logout')}">Sign out</a></li>
 </%block>
 
@@ -45,10 +47,10 @@
         <ul class="dropdown-menu">
             ## Remember to update top_navigation_bar_mobile() when adding items
             <li><a href="${request.route_path('my_devices')}">My Devices</a></li>
+            %if is_private_deployment(request.registry.settings):
+                <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
+            %endif
             <li><a href="${request.route_path('settings')}">Settings</a></li>
-##            %if is_private_deployment(request.registry.settings):
-##                <li><a href="${request.route_path('apps')}">My Apps</a></li>
-##            %endif
             <li><a href="${request.route_path('logout')}">Sign out</a></li>
         </ul>
     </li>

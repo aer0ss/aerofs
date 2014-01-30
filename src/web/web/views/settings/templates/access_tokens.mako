@@ -38,7 +38,7 @@
     </tbody>
 </table>
 
-<p id="no-clients-label" class="hidden" style="margin-bottom: 40px;">You are not using any AeroFS apps.</p>
+<p id="no-clients-label" class="hidden">You are not using any AeroFS apps.</p>
 
 <%modal:modal>
     <%def name="id()">delete-modal</%def>
