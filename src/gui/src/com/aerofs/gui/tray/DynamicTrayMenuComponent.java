@@ -1,13 +1,14 @@
 package com.aerofs.gui.tray;
 
-import com.aerofs.base.ElapsedTimer;
 import com.aerofs.gui.GUI;
-import com.aerofs.ui.UIParam;
+import com.aerofs.gui.common.RateLimitedTask;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import org.eclipse.swt.widgets.UbuntuTrayItem;
 
 import java.util.List;
+
+import static com.aerofs.ui.UIParam.SLOW_REFRESH_DELAY;
 
 /**
  * Abstract base class for all tray menu components that need to be dynamically
@@ -18,29 +19,19 @@ import java.util.List;
  */
 public abstract class DynamicTrayMenuComponent implements ITrayMenuComponent
 {
-    // We need to refresh slowly on Ubuntu, to avoid making the menu unnavigable
-    private static final long REFRESH_TIME = UIParam.SLOW_REFRESH_DELAY * 2;
-
-    private final long _rate;
-    private ElapsedTimer _timer;
-    private boolean _scheduled;
-
-    private final Runnable _notifier;
-
     private final List<ITrayMenuComponentListener> _listeners = Lists.newArrayList();
 
-    public DynamicTrayMenuComponent()
+    // We need to refresh slowly on Ubuntu, to avoid making the menu unnavigable
+    private final RateLimitedTask _refreshTask = new RateLimitedTask(SLOW_REFRESH_DELAY * 2)
     {
-        _rate = REFRESH_TIME;
-        _timer = new ElapsedTimer();
-        _notifier = new Runnable() {
-            @Override
-            public void run()
-            {
-                refresh();
+        @Override
+        protected void workImpl()
+        {
+            for (ITrayMenuComponentListener listener : _listeners) {
+                listener.onTrayMenuComponentChange();
             }
-        };
-    }
+        }
+    };
 
     /**
      * Force a refresh of the whole menu
@@ -50,13 +41,7 @@ public abstract class DynamicTrayMenuComponent implements ITrayMenuComponent
     protected synchronized void refresh()
     {
         Preconditions.checkState(GUI.get().isUIThread());
-
-        _timer.restart();
-        _scheduled = false;
-
-        for (ITrayMenuComponentListener listener : _listeners) {
-            listener.onTrayMenuComponentChange();
-        }
+        _refreshTask.run();
     }
 
     /**
@@ -70,11 +55,7 @@ public abstract class DynamicTrayMenuComponent implements ITrayMenuComponent
             public void run()
             {
                 if (UbuntuTrayItem.supported()) {
-                    // throttled refresh when using libappindicator
-                    if (!_scheduled) {
-                        _scheduled = true;
-                        GUI.get().timerExec(Math.max(0, _rate - _timer.elapsed()), _notifier);
-                    }
+                    _refreshTask.schedule();
                 } else {
                     // non-throttled async update when not using libappindicator
                     updateInPlace();

@@ -8,6 +8,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
+import com.aerofs.gui.common.RateLimitedTask;
 import com.aerofs.gui.tray.Progresses.ProgressUpdatedListener;
 import com.aerofs.gui.tray.RootStoreSyncStatusMonitor.RootStoreSyncStatusListener;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
@@ -48,6 +49,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Set;
 
+import static com.aerofs.ui.UIParam.SLOW_REFRESH_DELAY;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -266,8 +268,21 @@ public class TrayIcon implements ITrayMenuListener
         });
     }
 
+    private final RateLimitedTask _refreshTask = new RateLimitedTask(SLOW_REFRESH_DELAY)
+    {
+        @Override
+        protected void workImpl()
+        {
+            l.debug("refreshing at time {}", System.nanoTime());
+            if (_uti != null) _uti.setIcon(_iconName, L.product());
+            if (_ti != null) _ti.setImage(Images.getTrayIcon(_iconName));
+        }
+    };
+
     private void refreshTrayIconImage()
     {
+        checkState(GUI.get().isUIThread());
+
         String iconName = Images.getTrayIconName(
                 _isOnline,
                 !_notificationReasons.isEmpty(),
@@ -277,33 +292,12 @@ public class TrayIcon implements ITrayMenuListener
                 false, // TODO: implement detecting HDPI
                 OSUtil.isWindows() && !OSUtil.isWindowsXP());
 
-        /*
-         * This optimization is necessary to prevent tray icon from flickering at start up.
-         *
-         * The root cause is a combination of 3 reasonble things that sums up to a SNAFU:
-         * - we aggressive refresh tray icon whenever the icon state _can_ change.
-         * - at start up, there's a burst of events that requires us to check if the tray icon
-         *   has changed:
-         *   * RNC trying to connect to daemon, who is not up yet, causing the channel to break
-         *     immediately triggering a refresh.
-         *   * when the connection is established, 2-3 notifications come in from initial connect
-         *     casuing the tray icon to refresh.
-         * - since we use asyncExec to refresh, we end up queuing 2-3 refresh requests in a short
-         *   period of time. When the SWT event thread resumes, it refreshes many times in quick
-         *   succession.
-         *
-         * SWT doesn't handle that well even though we are setting it to the same image most of
-         * the times.
-         */
+        // N.B. don't schedule refresh unless the icon actually changed
         if (!iconName.equals(_iconName)) {
+            l.debug("updating icon name from {} to {}", _iconName, iconName);
             _iconName = iconName;
-
-            if (_uti != null) {
-                _uti.setIcon(iconName, L.product());
-            }
-            if (_ti != null) {
-                _ti.setImage(Images.getTrayIcon(iconName));
-            }
+            l.debug("scheduling refresh at time {}", System.nanoTime());
+            _refreshTask.schedule();
         }
     }
 
