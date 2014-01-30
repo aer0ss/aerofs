@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-s3cmd sync --cf-invalidate -P --delete-removed ./web/static/ s3://aerofs.admin_panel/
+PWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+s3cmd sync --cf-invalidate --acl-public --delete-removed --guess-mime-type "$PWD/web/static/" s3://aerofs.admin_panel/
