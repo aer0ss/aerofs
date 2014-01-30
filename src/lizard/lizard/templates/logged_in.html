@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'public.html' %}
 {% from "_formhelpers.html" import submit_button %}
 {% macro render_navpill(route, label) %}
 <li class="pull-right{% if request.path == url_for(route) %} active{% endif %}"><a href="{{ url_for(route) }}">{{ label }}</a></li>
