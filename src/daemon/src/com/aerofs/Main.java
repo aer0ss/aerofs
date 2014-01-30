@@ -154,8 +154,10 @@ public class Main
                             "Please make sure the disk is not full and " + L.product() + " has " +
                             "permission to write to " + appRoot;
                 } else {
-                    msg = "Failed to initialize the configuration subsystem. Please verify " +
-                            "the configuration service is available.";
+                    msg = "Unable to launch: configuration error. Please verify that your " +
+                          L.product() + " Appliance is reachable on the required ports (see " +
+                          "http://ae.ro/1bent79 for details). Contact your systems administrator " +
+                          "if the problem persists.";
                 }
 
                 // This is a workaround for the following problem:
