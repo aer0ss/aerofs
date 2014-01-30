@@ -6,6 +6,7 @@ import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Limit;
 import org.slf4j.Logger;
@@ -334,7 +335,10 @@ abstract class AbstractLimiter implements ILimiter
     protected void addPending_(Outgoing o, Prio p)
             throws ExNoResource
     {
-        if (_q.isFull_()) throw new ExNoResource(name() + ": q full");
+        if (_q.isFull_()) {
+            ExNoResource bwlimited = new ExNoResource(name() + ": q full");
+            throw LogUtil.suppress(bwlimited);
+        }
 
         l.trace("{}: add pnd", name());
         _q.enqueue_(o, p);
