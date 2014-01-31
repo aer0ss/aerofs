@@ -17,6 +17,7 @@ public class Error
         NOT_FOUND,
         CONFLICT,
         INTERNAL_ERROR,
+        TOO_MANY_REQUESTS,
     }
 
     // machine-readable descriptor

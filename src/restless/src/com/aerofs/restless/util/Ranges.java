@@ -1,4 +1,4 @@
-package com.aerofs.daemon.rest.util;
+package com.aerofs.restless.util;
 
 import com.aerofs.base.ex.ExBadArgs;
 import com.google.common.collect.Range;
@@ -44,7 +44,7 @@ public class Ranges
         return ranges;
     }
 
-    private static Range<Long> range(String rangeSpec, long length) throws ExBadArgs
+    static Range<Long> range(String rangeSpec, long length) throws ExBadArgs
     {
         Matcher m = specPattern.matcher(rangeSpec);
         if (!m.matches()) throw new ExBadArgs("Invalid range spec: " + rangeSpec);

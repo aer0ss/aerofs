@@ -7,7 +7,7 @@ package com.aerofs.daemon.rest.event;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
-import com.aerofs.daemon.rest.util.EntityTagSet;
+import com.aerofs.restless.util.EntityTagSet;
 
 public class EIMoveObject extends AbstractRestEBIMC
 {

@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.rest.util;
+package com.aerofs.restless.util;
 
 import com.sun.jersey.core.header.MatchingEntityTag;
 import com.sun.jersey.core.header.reader.HttpHeaderReader;

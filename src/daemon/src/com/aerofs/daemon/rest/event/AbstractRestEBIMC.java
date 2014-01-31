@@ -3,16 +3,19 @@ package com.aerofs.daemon.rest.event;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.MDID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.restless.util.HttpStatus;
 import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.rest.api.Error;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.rest.api.Error.Type;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 
 import javax.ws.rs.core.MediaType;
@@ -86,6 +89,12 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
             return Response
                     .status(Status.BAD_REQUEST)
                     .entity(new Error(Type.BAD_ARGS, e.getMessage()));
+        } else if (e instanceof ExNoResource) {
+            return Response
+                    .status(HttpStatus.TOO_MANY_REQUESTS)
+                    .entity(new Error(Type.TOO_MANY_REQUESTS,
+                            "The server is experiencing load, please try again later."))
+                    .header(Names.RETRY_AFTER, 30);
         } else {
             l.error("internal error", e);
             return Response

@@ -1,4 +1,4 @@
-package com.aerofs.daemon.rest.util;
+package com.aerofs.restless.util;
 
 import javax.ws.rs.core.Response.Status.Family;
 import javax.ws.rs.core.Response.StatusType;
@@ -46,6 +46,27 @@ public class HttpStatus
         public String getReasonPhrase()
         {
             return "Requested Range Not Satisfiable";
+        }
+    };
+
+    // RFC 6585
+    public static final StatusType TOO_MANY_REQUESTS = new StatusType() {
+        @Override
+        public int getStatusCode()
+        {
+            return 429;
+        }
+
+        @Override
+        public Family getFamily()
+        {
+            return Family.CLIENT_ERROR;
+        }
+
+        @Override
+        public String getReasonPhrase()
+        {
+            return "Too Many Requests";
         }
     };
 }
