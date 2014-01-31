@@ -555,7 +555,9 @@ public class User
             // the same private org during signup, and therefore all calls to setOrganization are
             // unuseful.
             setLevel(level);
-            return ImmutableList.of();
+            // always update ACL epoch for Team Servers to make sure they are aware of the creation
+            // of new users
+            return ImmutableList.of(org.id().toTeamServerUserID());
         }
 
         // Delete organization invitation if any

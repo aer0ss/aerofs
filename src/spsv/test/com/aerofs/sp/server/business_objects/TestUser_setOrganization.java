@@ -7,6 +7,7 @@ package com.aerofs.sp.server.business_objects;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -15,11 +16,19 @@ import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 
 import static com.aerofs.sp.server.lib.user.AuthorizationLevel.*;
+
+import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
+import javax.annotation.concurrent.Immutable;
+import java.util.Collection;
+
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -97,10 +106,10 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
         saveUser().setOrganization(user.getOrganization(), ADMIN);
 
         assertEquals(user.getLevel(), ADMIN);
-        // It should not touch ACLs. This optimization is important for private deployments, where
-        // everyone automatically becomes a member of the same private org during signup, and
-        // therefore all calls to setOrganization are unuseful.
-        assertEquals(user.setOrganization(user.getOrganization(), USER).size(), 0);
+        // Always bump TS ACL epoch to make sure it can auto-join root store of the newly
+        // created user immediately
+        assertEquals(ImmutableList.of(user.getOrganization().id().toTeamServerUserID()),
+                user.setOrganization(user.getOrganization(), USER));
         assertEquals(user.getLevel(), USER);
     }
 
@@ -138,8 +147,9 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
         Organization orgNew = admin.getOrganization();
         User tsUserNew = orgNew.getTeamServerUser();
 
-        user.setOrganization(orgNew, AuthorizationLevel.USER);
+        Iterable<UserID> aclBump = user.setOrganization(orgNew, AuthorizationLevel.USER);
 
+        assertThat(aclBump, containsInAnyOrder(user.id(), tsUserOld.id(), tsUserNew.id()));
         assertNull(sfRoot.getPermissionsNullable(tsUserOld));
         assertNull(sf1.getPermissionsNullable(tsUserOld));
         assertNull(sf2.getPermissionsNullable(tsUserOld));
