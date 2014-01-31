@@ -2,13 +2,15 @@
 
 set -e -u
 
+# FIXME: fragile path behavior. This needs to be one level
+# down from repo root, and one level up from build, and
+# also tools. Fix this when less stressed.
+
+HERE=$PWD
 NAME=bunker
-SOURCE_DIR=../src/bunker
-PYTHONLIB_DIR=../src/python-lib
-# specify script dir explicitly so that the
-# output directory is an absolute path
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-OUTPUT_DIR=$SCRIPT_DIR/../build/$NAME
+SOURCE_DIR=$HERE/../src/bunker
+PYTHONLIB_DIR=$HERE/../src/python-lib
+OUTPUT_DIR=$HERE/build/$NAME
 OPT=$OUTPUT_DIR/opt/$NAME
 DEBIAN=$OUTPUT_DIR/DEBIAN
 
