@@ -71,7 +71,7 @@ public final class HealthCheckService implements IStartable
             _minElapsedInterval = interval * 0.8;
 
             checkArgument(_minElapsedInterval > 0);
-            checkArgument(_minElapsedInterval >= interval);
+            checkArgument(_minElapsedInterval <= interval);
         }
 
         @Override
