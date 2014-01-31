@@ -1,6 +1,7 @@
 setup.py
 aerofs_licensing/__init__.py
 aerofs_licensing/license_file.py
+aerofs_licensing/unicodecsv.py
 aerofs_licensing/crypto/__init__.py
 aerofs_licensing/crypto/signer.py
 aerofs_licensing/crypto/util.py
