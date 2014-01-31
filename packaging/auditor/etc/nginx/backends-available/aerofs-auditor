@@ -1,4 +1,4 @@
-location /audit {
+location /audit/ {
     rewrite /audit/(.+) /$1 break;
     # proxies to Auditor event gateway
     proxy_pass http://127.0.0.1:9300;

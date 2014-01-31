@@ -5,7 +5,10 @@
 package com.aerofs.auditor.server;
 
 import com.aerofs.base.BaseParam.Audit;
-import com.aerofs.base.ex.ExExternalServiceUnavailable;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.google.common.base.Strings;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -16,6 +19,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,10 +87,19 @@ public class Downstream
             bootstrap.setOption("remoteAddress", addr);
             bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
                 @Override
-                public ChannelPipeline getPipeline()
+                public ChannelPipeline getPipeline() throws Exception
                 {
-                    return Channels.pipeline(
+                    ChannelPipeline pipeline = Channels.pipeline();
+
+                    if (Audit.CHANNEL_SSL) {
+                        SslHandler ssl = new SslHandler(getSSLEngineFactory().getSSLEngine());
+                        pipeline.addLast("ssl", ssl);
+                        pipeline.addLast("ssl-handshake", new SslHandshake(ssl));
+                    }
+                    pipeline.addLast("clientHandler",
                             new ReconnectingClientHandler(bootstrap, NewLineDelimitedStream.this));
+
+                    return pipeline;
                 }
             });
 
@@ -145,5 +158,19 @@ public class Downstream
             _future.setSuccess();
         }
         ChannelFuture _future;
+    }
+
+    /**
+     * Return an SSL engine factory used to create secure contexts. The factory will be configured
+     * with an explicit certificate if one is set in Audit.CHANNEL_CERT, otherwise the default
+     * trust store is used.
+     */
+    private static SSLEngineFactory getSSLEngineFactory()
+    {
+        return new SSLEngineFactory(
+                Mode.Client, Platform.Desktop, null,
+                (Audit.CHANNEL_CERT.length() > 0) ?
+                        new StringBasedCertificateProvider(Audit.CHANNEL_CERT) : null,
+                null);
     }
 }

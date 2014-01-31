@@ -217,8 +217,8 @@ public class BaseParam
         public static boolean                   CHANNEL_SSL =
                 getBooleanProperty(             "base.audit.downstream_ssl_enabled", false);
 
-//        public static final X509Certificate     CHANNEL_CERT =
-//                getCertificateProperty(         "base.audit.downstream_certificate", null);
+        public static final String              CHANNEL_CERT =
+                getStringProperty(              "base.audit.downstream_certificate", "");
 
         // ----
         // Audit log posting

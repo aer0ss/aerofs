@@ -9,8 +9,6 @@ import com.aerofs.auditor.resource.HttpRequestAuthenticator;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
