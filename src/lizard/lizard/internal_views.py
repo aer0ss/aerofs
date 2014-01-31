@@ -6,6 +6,7 @@ import tarfile
 
 from flask import Blueprint, url_for, render_template, redirect, Response, request, flash
 
+from aerofs_licensing import unicodecsv
 from lizard import db
 from . import emails, forms, models
 
@@ -71,16 +72,16 @@ def all_customers():
 def download_license_request_csv():
     to_add = models.License.query.filter_by(state=models.License.states.PENDING).all()
     s = StringIO()
-    c = csv.DictWriter(s, ["ID", "Company", "Seats", "Expiry Date", "Trial", "Allow Audit"])
+    c = unicodecsv.UnicodeDictWriter(s, ["ID", "Company", "Seats", "Expiry Date", "Trial", "Allow Audit"])
     c.writeheader()
     for row in to_add:
         c.writerow({
-            "ID":row.customer_id,
-            "Company":row.customer.name,
-            "Seats":row.seats,
+            "ID": unicode(row.customer_id),
+            "Company": row.customer.name,
+            "Seats": unicode(row.seats),
             "Expiry Date": row.expiry_date.strftime("%Y-%m-%d"),
-            "Trial":row.is_trial,
-            "Allow Audit":row.allow_audit,
+            "Trial": unicode(row.is_trial),
+            "Allow Audit": unicode(row.allow_audit),
             })
     return Response(s.getvalue(),
                 mimetype='text/csv; charset=utf-8',
@@ -97,7 +98,7 @@ def upload_bundle():
         tarball = tarfile.open(fileobj=blob.stream)
         tarball.list()
         license_index_flo = tarball.extractfile("license-index")
-        index_csv = csv.DictReader(license_index_flo)
+        index_csv = unicodecsv.UnicodeDictReader(license_index_flo)
         just_imported = []
         # The construction here gives safe incremental progress.  You can just
         # keep uploading the same license bundle and it'll ignore the files

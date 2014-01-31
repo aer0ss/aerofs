@@ -13,7 +13,7 @@ import time
 import uuid
 
 from aerofs_licensing.crypto import sign, verify
-from aerofs_licensing import license_file
+from aerofs_licensing import license_file, unicodecsv
 
 # Column order of the data_dir's log CSV
 _LOG_COLUMN_ORDER = ["ID","License Type","Issue Date","Company","Seats","Expiry Date","Trial","Allow Audit"]
@@ -194,7 +194,7 @@ def _load_issued_licenses(data_dir):
             log.write(",".join(_LOG_COLUMN_ORDER) + "\n")
     issued_licenses = []
     with open(issued_licenses_logfile) as log:
-        log_reader = csv.DictReader(log, delimiter=",", quotechar='"')
+        log_reader = unicodecsv.UnicodeDictReader(log, delimiter=",", quotechar='"')
         for row in log_reader:
             issued_licenses.append(row)
     return issued_licenses
@@ -217,7 +217,7 @@ def signbundle_tool(args):
 
         # The index of licenses in this tarball we're building
         license_index_bytesio = BytesIO()
-        license_bundle_index = csv.DictWriter(license_index_bytesio,
+        license_bundle_index = unicodecsv.UnicodeDictWriter(license_index_bytesio,
                 fieldnames=_LICENSE_BUNDLE_FIELDS, extrasaction='ignore')
         license_bundle_index.writeheader()
 
@@ -228,7 +228,7 @@ def signbundle_tool(args):
 
         # if we specify fieldnames, they have to be in the right order, so omit them here
         # and verify that the reader has
-        request_index = csv.DictReader(csv_file)
+        request_index = unicodecsv.UnicodeDictReader(csv_file)
 
         # Double-check that the CSV has all the expected fields
         index_fieldnames = request_index.fieldnames
@@ -256,7 +256,7 @@ def signbundle_tool(args):
                 issued_licenses.append(license_metadata)
                 # also append it to the log
                 with open(os.path.join(data_dir, "index.csv"), 'a') as log:
-                    c = csv.DictWriter(log, fieldnames=_LOG_COLUMN_ORDER, extrasaction='ignore')
+                    c = unicodecsv.UnicodeDictWriter(log, fieldnames=_LOG_COLUMN_ORDER, extrasaction='ignore')
                     c.writerow(license_metadata)
                 match = license_metadata
             elif len(matches) > 1:

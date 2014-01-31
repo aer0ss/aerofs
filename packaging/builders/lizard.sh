@@ -34,5 +34,7 @@ tools/pip-prefetch.sh "../src/lizard/requirements.txt" "$SDIST_CACHE"
 mkdir -p $SDIST
 cp $SDIST_CACHE/* $SDIST/
 
-# Also include the aerofs-lizard package
+# Include aerofs-licensing, upon which lizard depends
+tools/python-buildpackage.sh "../src/licensing" "$SDIST" "$OPT/requirements.txt"
+# Include the aerofs-lizard package
 tools/python-buildpackage.sh "../src/lizard" "$SDIST" "$OPT/requirements.txt"

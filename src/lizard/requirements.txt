@@ -14,6 +14,7 @@ analytics-python==0.4.4
 decorator==3.4.0
 itsdangerous==0.23
 pbr==0.5.23
+pygpgme==0.3
 python-dateutil==2.2
 requests==2.2.0
 scrypt==0.6.1

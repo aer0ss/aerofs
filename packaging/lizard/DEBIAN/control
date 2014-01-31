@@ -4,4 +4,4 @@ Priority: optional
 Maintainer: AeroFS <team@aerofs.com>
 Description: AeroFS private cloud license self-service website
 Architecture: all
-Depends: nginx, python, python-dev, python-virtualenv, python-setuptools, python-pip, gcc
+Depends: nginx, python, python-dev, python-virtualenv, python-setuptools, python-pip, gcc, libgpgme11, libgpgme11-dev
