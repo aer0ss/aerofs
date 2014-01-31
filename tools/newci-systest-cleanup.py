@@ -18,10 +18,14 @@ if __name__ == "__main__":
         sys.exit(1)
 
     contents = yaml.load(open(sys.argv[1], 'r'))
-    addresses = [a.get('address') for a in contents['actors']]
+    try:
+        addresses = [a.get('address') for a in contents['actors']]
+    except TypeError:
+        print 'It looks like there are no actors to free! Exiting happily.'
+        sys.exit(0)
 
     r = requests.post('{}/return'.format(POOL_URL),
                       data=json.dumps(addresses),
                       headers=JSON_HEADERS)
 
-    assert r.status_code == 200
+    assert r.ok
