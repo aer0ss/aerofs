@@ -69,4 +69,23 @@ pushd aerofs
 git checkout -f resource/client/win/jre/lib/security/cacerts
 popd
 
+######################################################################
+#
+# IMPORTANT: OpenJDK build scripts by default do not enable unlimited
+# crypto, which is breaks S3 TeamServer as AES256 is "too strong"
+# for the default security profile.
+#
+# The files currently in master disable all crypto restrictions so
+# the simplest approach is to preserve them.
+#
+# If in doubt, extract and inspect the content of the files (jar xf).
+#
+######################################################################
+
+pushd aerofs
+git checkout -f resource/client/win/jre/lib/security/local_policy.jar
+git checkout -f resource/client/win/jre/lib/security/US_export_policy.jar
+popd
+
+
 popd
