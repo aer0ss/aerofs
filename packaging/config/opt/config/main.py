@@ -106,7 +106,7 @@ def get_template_kv_pairs():
     # Add CA cert, if available
     d = dict(d, **get_ca_cert_as_dict())
     # Add properties from license file
-    d["license_lines"] = "\n".join([ "{}={}".format(k, v) for k, v in current_license_info.iteritems() ])
+    d["license_lines"] = u"\n".join([ u"{}={}".format(k, v) for k, v in current_license_info.iteritems() ])
     return d
 
 # ----------------------------------------------------------------------
