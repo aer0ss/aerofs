@@ -5,7 +5,10 @@ set -e -u
 NAME=bunker
 SOURCE_DIR=../src/bunker
 PYTHONLIB_DIR=../src/python-lib
-OUTPUT_DIR=build/$NAME
+# specify script dir explicitly so that the
+# output directory is an absolute path
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+OUTPUT_DIR=$SCRIPT_DIR/../build/$NAME
 OPT=$OUTPUT_DIR/opt/$NAME
 DEBIAN=$OUTPUT_DIR/DEBIAN
 
@@ -24,13 +27,12 @@ done
 mkdir -p $OUTPUT_DIR/var/log/bunker
 
 # make the directory in which bunker is installed in
-# for all copies, cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+# we use tar to preserve ownership, permissions and follow symlinks
+# consistently on both Linux and OSX
 mkdir -p $OPT
-cp -a -L $SOURCE_DIR/web $OPT/
-# Also include stuff needed for package installation
-cp -a -L $SOURCE_DIR/requirements.txt $OPT/
-# Include the entry point script
-cp -a -L $SOURCE_DIR/entry.py $OPT/
+pushd $SOURCE_DIR
+tar chf - web requirements.txt entry.py | $(cd $OPT; tar xf -)
+popd
 
 # make a folder for bunker to store CSRF tokens in; it'll be writable by www-data
 mkdir -p $OPT/state
