@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 //
@@ -53,6 +54,39 @@ public final class HealthCheckService implements IStartable
     }
 
     //
+    // runner
+    // prevents multiple simultaneous runs
+    //
+
+    private class ServiceRunner implements Runnable
+    {
+        private final Runnable _serviceRunnable;
+        private double _minElapsedInterval;
+
+        private long _lastRunTime;
+
+        private ServiceRunner(Runnable serviceRunnable, long interval)
+        {
+            _serviceRunnable = serviceRunnable;
+            _minElapsedInterval = interval * 0.8;
+
+            checkArgument(_minElapsedInterval > 0);
+            checkArgument(_minElapsedInterval >= interval);
+        }
+
+        @Override
+        public void run()
+        {
+            long currentTime = System.currentTimeMillis();
+
+            if ((currentTime - _lastRunTime) >= _minElapsedInterval) {
+                _serviceRunnable.run();
+                _lastRunTime = System.currentTimeMillis();
+            }
+        }
+    }
+
+    //
     // members
     //
 
@@ -77,8 +111,8 @@ public final class HealthCheckService implements IStartable
     {
         l.info("scheduling health checks");
 
-        _healthCheckExecutor.scheduleAtFixedRate(_coreProgressWatcher, CPWConstants.INITIAL_DELAY, CPWConstants.INTERVAL, MILLISECONDS);
-        _healthCheckExecutor.scheduleAtFixedRate(_deadlockDetector, DLDConstants.INITIAL_DELAY, DLDConstants.INTERVAL, MILLISECONDS);
-        _healthCheckExecutor.scheduleAtFixedRate(_diagnosticsDumper, TDDConstants.INITIAL_DELAY, TDDConstants.INTERVAL, MILLISECONDS);
+        _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_coreProgressWatcher, CPWConstants.INTERVAL), CPWConstants.INITIAL_DELAY, CPWConstants.INTERVAL, MILLISECONDS);
+        _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_deadlockDetector, DLDConstants.INTERVAL), DLDConstants.INITIAL_DELAY, DLDConstants.INTERVAL, MILLISECONDS);
+        _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_diagnosticsDumper, TDDConstants.INTERVAL), TDDConstants.INITIAL_DELAY, TDDConstants.INTERVAL, MILLISECONDS);
     }
 }
