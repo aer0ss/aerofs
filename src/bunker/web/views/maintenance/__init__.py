@@ -17,7 +17,6 @@ routes = {
     'json_verify_ldap',
     'json_upload_backup',
     'json_setup_finalize',
-    'json_is_uwsgi_reloading',
     'json_get_license_shasum_from_session',
 
     # Bootstrap

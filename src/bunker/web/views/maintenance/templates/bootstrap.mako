@@ -2,17 +2,16 @@
 
 <%def name="scripts()">
     <script>
-        ## Enqueue a bootstrap task
+        ## Enqueue a bootstrap task, and wait until it's complete. Show error
+        ## messages on failures.
         ##
-        ## @param onFaiure it will be called with xhr as the parameter
         function runBootstrapTask(task, onComplete, onFailure) {
             enqueueBootstrapTask(task, function(eid) {
                 pollBootstrapTask(eid, onComplete, onFailure);
             }, onFailure);
         }
 
-        ## Enqueue a bootstrap task, and wait until it's complete. Show error
-        ## messages on failures.
+        ## Enqueue a bootstrap task.
         ##
         ## @param onComplete it will be called with execution id as the parameter
         function enqueueBootstrapTask(task, onComplete, onFailure) {

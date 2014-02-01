@@ -4,8 +4,6 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
 from root_factory import RootFactory
 from auth import get_principals
-from license import is_license_present_and_valid
-from util import is_private_deployment, is_configuration_initialized
 import views
 
 

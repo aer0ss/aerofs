@@ -118,13 +118,17 @@
         ## Tracking related code
 
         function showAndTrackErrorMessage(message) {
-            ${trackInitialTrialSetup('Error on Page {}'.format(page))}
+            trackError();
             showErrorMessage(message);
         }
 
         function showAndTrackErrorMessageFromResponse(xhr) {
-            ${trackInitialTrialSetup('Error on Page {}'.format(page))}
+            trackError();
             showErrorMessageFromResponse(xhr);
+        }
+
+        function trackError() {
+            ${trackInitialTrialSetup('Error on Page {}'.format(page))}
         }
 
         ${trackInitialTrialSetup('Visited Page {}'.format(page))}

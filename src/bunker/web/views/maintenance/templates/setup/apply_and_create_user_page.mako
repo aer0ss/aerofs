@@ -183,156 +183,30 @@ ${common.render_previous_button()}
             });
         }
 
-        ########
-        ## There are three steps to setup the system:
-        ##  1. Kick-off the bootstrap process
-        ##  2. Wait by polling until bootstrap is done
-        ##  3. Set configuration_initialized to true (needed for initial setup)
-        ## See step sepcific comments for details.
-
-        ########
-        ## Step 1: kick off the configuration process.
-
         function apply() {
             ${common.trackInitialTrialSetup('Clicked Apply Button')}
 
             ## Show the progress modal
             $('#${progress_modal.id()}').modal('show');
 
-            var poll = function(eid) {
-                pollBootstrap(eid);
-            };
-            enqueueBootstrapTask('apply-config', poll, hideAllModals);
+            runBootstrapTask('apply-config', finalize, function() {
+                ## An error message is already shown by runBootstrapTask()
+                hideAllModals();
+                trackError();
+            });
         }
-
-        ########
-        ## Step 2: wait until the bootstrap process is complete. This step is tricky
-        ## because of two issues:
-        ##
-        ## Issue 1: certificate change in the middle of bootstrap
-        ## ======
-        ##
-        ## the user may uploads a new browser certificates, and part of bootstrap is
-        ## to restart nginx which is a front-end of the uwsgi server. On restart,
-        ## nginx will serve web requests with the new browser cert. This may cause
-        ## subsequent AJAX calls (including the call in finalize() below) to fail
-        ## if:
-        ##
-        ##  1. the new browser cert provided by the user is self-signed, or
-        ##  2. the cert's cname doesn't match the current page's hostname, which is
-        ##     the case at least for initial setup where the IP address is
-        ##     used intead of the hostname.
-        ##
-        ## In both cases, the browser will block AJAX calls, causing $.post() to
-        ## fail with a status code 0. The trick we employ to overcome this issue is
-        ## to reload the current page with the new hostname before proceeding to the
-        ## next step. The reloads allows the browser to 1) warn the user about a
-        ## self-signed cert, and thus gives the user an opportunity to whitelist the
-        ## cert for the browser, 2) use the hostname to match the new cert.
-        ##
-        ## See reloadToFinalize() below for the implementation of the trick.
-        ##
-        ## Issue 2: determinng bootstrap completion
-        ## ======
-        ##
-        ## We rely on json_setup_poll() to tell whether the bootstrap process is
-        ## complete. However, once nginx reloads the certificate, the AJAX call may
-        ## fail with status code 0 until we reload the page (see issue 1).
-        ##
-        ## To workaround, we place nginx restart as the last step of the bootstrap
-        ## process (see manual.tasks), and if we receive status code 0 consecutively
-        ## several times, then we assume the bootstrap is done and it's time to
-        ## reload the page. (The call may occasionally fail with code 0 due to
-        ## restarts of other services.) If nginx restart doesn't cause AJAX calls to
-        ## fail, we use normal returns from json_setup_poll() to determine
-        ## completion.
-        ##
-        ## TODO (WW) a better alternative?
-
-        function pollBootstrap(eid) {
-            ## the number of consecutive status-code-0 responses. See comments above
-            var statusZeroCount = 0;
-            var bootstrapPollInterval = window.setInterval(function() {
-                $.get('${request.route_path('json_get_bootstrap_task_status')}', {
-                    execution_id: eid
-                }).done(function (response) {
-                    statusZeroCount = 0;
-                    if (response['status'] == 'success') {
-                        console.log("poll complete");
-                        window.clearInterval(bootstrapPollInterval);
-                        finalize();
-                    } else {
-                        console.log("poll incomplete");
-                        ## TODO (WW) add timeout?
-                    }
-                }).fail(function (xhr) {
-                    console.log("status: " + xhr.status + " statusText: " + xhr.statusText);
-                    if (xhr.status == 0) {
-                        if (statusZeroCount++ == 10) finalize();
-
-                    ## 400: aerofs specific error code, 500: internal server errors.
-                    ## Because we are restarting nginx, the browser may throw
-                    ## arbitrary codes. It's not safe to catch all error conditions.
-                    } else if (xhr.status == 400 || xhr.status == 500) {
-                        window.clearInterval(bootstrapPollInterval);
-                        hideAllModals();
-                        showAndTrackErrorMessageFromResponse(xhr);
-                    }
-                });
-
-            }, 1000);
-        }
-
-        ########
-        ## Step 3: finalize the process
-        ##
-        ## This step marks the system as initialized, so that browsing the AeroFS
-        ## Web site will no longer be redirected to the setup page. This step can't
-        ## be merged with step 2, because finalizing has to be done *after* boostrap
-        ## completes. If in the middle of the bootstrap, nginx reload causes AJAX
-        ## calls to fail (see comments in step 2), we will not be able to call the
-        ## server to finalize until the page is reloaded.
 
         function finalize() {
             console.log("finalizing...");
-            doPost("${request.route_path('json_setup_finalize')}",
-                { }, pollForWebServerReadiness);
-        }
-
-        ########
-        ## Last, wait until uwsgi finishes reloading, which is caused by
-        ## json_setup_finalize(). See that method for detail.
-        function pollForWebServerReadiness() {
-            var interval = window.setInterval(function() {
-                $.get('${request.route_path('json_is_uwsgi_reloading')}')
-                .done(function(resp) {
-                    var reloading = resp['reloading'];
-                    console.log("uwsgi reloading: " + reloading);
-
-                    if (!reloading) {
-                        console.log("uwsgi reloaded successfully");
-                        window.clearInterval(interval);
-                        hideAllModals();
-                        $('#success-modal').modal('show');
-                        trackSuccessAndDisableDataCollection();
-                    } else {
-                        console.log("uwsgi still reloading");
-                        ## TODO (WW) add timeout?
-                    }
-                }).fail(function(xhr, textStatus, errorThrown) {
-                    console.log("error from is_uwsgi_reloding(): " + xhr.status +
-                            " " + xhr.readyState + " " + xhr.statusText +
-                            " " + textStatus + " " + errorThrown);
-
-                    ## Ignore 403 and 0's. We'll see this when uwsgi is reloading.
-                    ## For more details see bootstrap.mako.
-                    if (xhr.status != 403 && xhr.status != 0) {
-                        window.clearInterval(interval);
-                        hideAllModals();
-                        showAndTrackErrorMessageFromResponse(xhr);
-                    }
-                });
-            }, 1000);
+            $.post("${request.route_path('json_setup_finalize')}")
+            .done(function() {
+                hideAllModals();
+                $('#success-modal').modal('show');
+                trackSuccessAndDisableDataCollection();
+            }).fail(function(xhr) {
+                hideAllModals();
+                showAndTrackErrorMessageFromResponse(xhr);
+            });
         }
 
         function trackSuccessAndDisableDataCollection() {

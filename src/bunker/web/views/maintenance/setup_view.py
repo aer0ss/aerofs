@@ -17,7 +17,7 @@ from web.error import error
 from web.login_util import remember_license_based_login
 from web.util import is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, \
-    URL_PARAM_KEY_LICENSE_SHASUM, get_license_shasum_from_session, \
+    get_license_shasum_from_session, \
     set_license_file_and_attach_shasum_to_session
 from backup_view import BACKUP_FILE_PATH
 from maintenance_util import write_pem_to_file, \
@@ -55,10 +55,6 @@ _LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
 # ------------------------------------------------------------------------
 # Other
 # ------------------------------------------------------------------------
-
-# Bit used to indicate whether or not UWSGI is reloading. Used by the front end to reliably detect
-# UWSGI reload completion.
-_UWSGI_RELOADING = False
 
 # The value of this session key indicates whether the current setup session is a
 # restore from a backup file.
@@ -518,7 +514,6 @@ def json_upload_backup(request):
 # Finalize
 # ------------------------------------------------------------------------
 
-#noinspection PyUnusedLocal
 @view_config(
     route_name='json_setup_finalize',
     permission='maintain',
@@ -528,35 +523,4 @@ def json_upload_backup(request):
 def json_setup_finalize(request):
     log.warn("finalizing configuration...")
     aerofs_common.bootstrap.enqueue_task_set("set-configuration-initialized")
-
-    # Finally, ask ourselves to load new configuration values. Doing so in
-    # json_setup_apply() (i.e. placing uwsgi-reload in manual.tasks) would be
-    # ideal. However, we can't because:
-    #
-    # o During initial setup the Web session is not authenticated (thanks to
-    #   the redirect middleware).
-    # o Once configuration_initialized is set to true, we (the Python server)
-    #   will require an admin credential to access json_setup_*().
-    # o JavaScript calls json_setup_apply/poll/finalize in a single HTML page
-    #   in that order to perform the setup process.
-    # o As a result, if the reload is done in json_setup_apply(), the JS during
-    #   initial setup wouldn't be able to call json_setup_poll or finalize after
-    #   calling apply.
-    #
-    # N.B. we use uwsgi reload (insted of uwsgi restart, or stop/start) because
-    # uwsgi stop and restart notoriously suck, and I (MP) have observed uwsgi
-    # reload to be more reliable.
-    #
-    global _UWSGI_RELOADING
-    _UWSGI_RELOADING = True
-    aerofs_common.bootstrap.enqueue_task_set("web-reload")
     return {}
-
-@view_config(
-    route_name = 'json_is_uwsgi_reloading',
-    permission='maintain',
-    renderer = 'json',
-    request_method = 'GET'
-)
-def json_is_uwsgi_reloading(request):
-    return {'reloading': _UWSGI_RELOADING}
