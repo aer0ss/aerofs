@@ -40,11 +40,10 @@ routes = {
     'upgrade_appliance',
     'download_backup_file',
     'status',
-    # N.B. its resolved route path is referred to by RedirectMiddleware
-    'maintenance_mode',
     'toggle_maintenance_mode',
 }
 
 
 def includeme(config):
     add_routes(config, routes)
+    config.add_route('maintenance_home', '/')

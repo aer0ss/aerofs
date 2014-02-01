@@ -1,6 +1,6 @@
 <%inherit file="marketing_layout.mako"/>
 
-<%namespace name="maintenance_mode" file="maintenance_mode.mako"/>
+<%namespace name="maintenance_alert" file="maintenance_alert.mako"/>
 <%namespace name="error_message" file="maintenance_error_message.mako"/>
 <%namespace name="navigation" file="navigation.mako"/>
 
@@ -33,7 +33,7 @@
 
     ## Main body
     <div class="span8">
-        <%maintenance_mode:alert/>
+        <%maintenance_alert:html/>
         ${next.body()}
     </div>
 </div>

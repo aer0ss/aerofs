@@ -41,8 +41,6 @@ def main(global_config, **settings):
     # Static views
     config.add_static_view(settings['static.prefix'], 'static', cache_max_age=3600)
 
-    config.add_route('maintenance_home', '/')
-
     # Import routes from views
     for view in views.__all__:
         config.include('{}.{}'.format(views.__name__, view))

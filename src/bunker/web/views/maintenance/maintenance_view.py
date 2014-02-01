@@ -5,7 +5,7 @@ from pyramid.view import view_config
 from web.license import set_license_file_and_attach_shasum_to_session
 from web.login_util import URL_PARAM_NEXT, get_next_url, \
     redirect_to_next_page, remember_license_based_login
-from web.util import flash_error, is_maintenance_mode
+from web.util import flash_error, is_maintenance_mode, is_configuration_initialized_in_private_deployment
 
 log = logging.getLogger(__name__)
 
@@ -61,17 +61,6 @@ def maintenance_login_submit(request):
 
 
 @view_config(
-    route_name='maintenance_mode',
-    permission=NO_PERMISSION_REQUIRED,
-    renderer='maintenance_mode.mako'
-)
-def maintenance_mode(request):
-    # Return status 503 Service Unavailable
-    request.response.status = 503
-    return {}
-
-
-@view_config(
     route_name='toggle_maintenance_mode',
     permission='maintain',
     renderer='toggle_maintenance_mode.mako'
@@ -80,3 +69,17 @@ def toggle_maintenance_mode(request):
     return {
         'is_maintenance_mode': is_maintenance_mode()
     }
+
+
+@view_config(
+    route_name='maintenance_home',
+    ## The target routes of the redirect below manage permissions
+    permission=NO_PERMISSION_REQUIRED,
+)
+def maintenance_home(request):
+    # Redirect to the setup page if the system is not initialized
+    if is_configuration_initialized_in_private_deployment():
+        redirect = 'status'
+    else:
+        redirect = 'setup'
+    return HTTPFound(location=request.route_path(redirect))

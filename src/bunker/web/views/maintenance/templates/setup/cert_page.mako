@@ -14,7 +14,6 @@
         %else:
             Use pre-installed, self-signed certificate and key
         %endif
-        <p class="main-option-footnote">Use your Web browser to check certificate details</p>
     </label>
     <label class="radio">
         <input type='radio' id="cert-option-new" name='cert.option' value='new'
@@ -33,7 +32,10 @@
         </div>
     </label>
 
-    <p style="margin-top: 10px">Provide publicly signed certificate and key to eliminate certification error messages when browsing the AeroFS Web interface. We require valid x509 SSL certificate and private key files in PEM format.</p>
+    <p style="margin-top: 10px">Provide publicly signed certificate and key to eliminate
+        certification error messages when your users browse the AeroFS Web
+        site. We require valid x509 SSL certificate and private key files in
+        the PEM format.</p>
     <hr />
     ${common.render_next_button()}
     ${common.render_previous_button()}

@@ -1,7 +1,7 @@
 <%inherit file="../base_layout.mako"/>
 <%! page_title = "Setup" %>
 
-<%namespace name="maintenance_mode" file="../maintenance_mode.mako"/>
+<%namespace name="maintenance_alert" file="../maintenance_alert.mako"/>
 <%namespace name="error_message" file="../maintenance_error_message.mako"/>
 <%namespace name="common" file="setup_common.mako"/>
 <%namespace name="no_ie" file="../no_ie.mako"/>
@@ -38,7 +38,7 @@
 
 <div class="span8 offset2">
 
-    <%maintenance_mode:alert/>
+    <%maintenance_alert:html/>
 
     %if page == 0:
         ## Page 0 must be the license page. See setup_view.py:_setup_common()
@@ -78,7 +78,7 @@
         <% local.page_scripts = cert_page.scripts %>
     %elif page == 5:
         <h3>Sit back and relax</h3>
-        <%namespace name="apply_page" file="apply_and_create_user_page.mako"/>
+        <%namespace name="apply_page" file="apply_page.mako"/>
         <%apply_page:body/>
         <% local.page_scripts = apply_page.scripts %>
     %endif

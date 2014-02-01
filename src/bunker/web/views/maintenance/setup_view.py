@@ -108,8 +108,6 @@ def _setup_common(request, conf, license_page_only):
         # The following two parameters are used by welcome_and_license.mako
         'is_license_present': is_license_present(conf),
         'is_license_present_and_valid': is_license_present_and_valid(conf),
-        # This parameter is used by apply_and_create_user_page.mako
-        'url_param_email': 'email',
         # The following parameter is used by email_page.mako
         'default_support_email': _get_default_support_email(conf['base.host.unified']),
         # This parameter is used by SMTP & LDAP verification and the apply code

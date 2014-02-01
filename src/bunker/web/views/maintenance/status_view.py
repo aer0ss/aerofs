@@ -9,11 +9,6 @@ _STATUS_URL = 'http://localhost:8000'
 
 
 @view_config(
-    route_name='maintenance_home',
-    permission='maintain',
-    renderer='status.mako'
-)
-@view_config(
     route_name='status',
     permission='maintain',
     renderer='status.mako'
