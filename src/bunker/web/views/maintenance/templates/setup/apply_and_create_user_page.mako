@@ -27,14 +27,6 @@ ${common.render_previous_button()}
     Once configuration finishes, your browser will automatically refresh.
 </%progress_modal:html>
 
-## TODO (WW) use progress_modal?
-<div id="finalizing-modal" class="modal hide" tabindex="-1" role="dialog"
-        style="top: 200px">
-    <div class="modal-body">
-        Finalizing configuration...
-    </div>
-</div>
-
 <div id="success-modal" class="modal hide small-modal" tabindex="-1" role="dialog">
     <div class="modal-header">
         <h4 class="text-success">The system is ready!</h4>
@@ -139,20 +131,11 @@ ${common.render_previous_button()}
     <%bootstrap:scripts/>
 
     <script>
-        var andFinalizeParam = '&finalize=1';
-
         $(document).ready(function() {
             initializeProgressModal();
             ## Disalbe esaping from all modals
             disableEsapingFromModal($('div.modal'));
             initializeModals();
-
-            if (window.location.search.indexOf(andFinalizeParam) != -1) {
-                ${common.trackInitialTrialSetup('Last Page Reloaded')}
-                $('#finalizing-modal').modal('show');
-                finalize();
-            }
-
             populateDashboardLinks();
         });
 
@@ -216,14 +199,10 @@ ${common.render_previous_button()}
             ## Show the progress modal
             $('#${progress_modal.id()}').modal('show');
 
-            var onFailure = hideAllModals;
-            $.get('${request.route_path('json_get_license_shasum_from_session')}')
-            .done(function(response) {
-                var poll = function(eid) {
-                    pollBootstrap(eid, response['shasum']);
-                };
-                enqueueBootstrapTask('apply-config', poll, onFailure);
-            }).fail(onFailure);
+            var poll = function(eid) {
+                pollBootstrap(eid);
+            };
+            enqueueBootstrapTask('apply-config', poll, hideAllModals);
         }
 
         ########
@@ -270,7 +249,7 @@ ${common.render_previous_button()}
         ##
         ## TODO (WW) a better alternative?
 
-        function pollBootstrap(eid, licenseShasum) {
+        function pollBootstrap(eid) {
             ## the number of consecutive status-code-0 responses. See comments above
             var statusZeroCount = 0;
             var bootstrapPollInterval = window.setInterval(function() {
@@ -281,7 +260,7 @@ ${common.render_previous_button()}
                     if (response['status'] == 'success') {
                         console.log("poll complete");
                         window.clearInterval(bootstrapPollInterval);
-                        reloadToFinalize(licenseShasum);
+                        finalize();
                     } else {
                         console.log("poll incomplete");
                         ## TODO (WW) add timeout?
@@ -289,7 +268,7 @@ ${common.render_previous_button()}
                 }).fail(function (xhr) {
                     console.log("status: " + xhr.status + " statusText: " + xhr.statusText);
                     if (xhr.status == 0) {
-                        if (statusZeroCount++ == 10) reloadToFinalize(licenseShasum);
+                        if (statusZeroCount++ == 10) finalize();
 
                     ## 400: aerofs specific error code, 500: internal server errors.
                     ## Because we are restarting nginx, the browser may throw
@@ -304,33 +283,18 @@ ${common.render_previous_button()}
             }, 1000);
         }
 
-        ## Reload the page and then call finalize() (see above comments). If the
-        ## new hostname is different from the current hostname, we will lose the
-        ## session cookie and no longer be able to call priviledged APIs.
-        ## Therefore, we pass license_shasum to the new page which uses it to
-        ## to perform license-shasum-based login.
-        function reloadToFinalize(licenseShasum) {
-            ## N.B. We expect a non-empty window.location.search here (i.e. '?page=X')
-            ## Don't use "location.href =". It's not supported by old Firefox.
-            window.location.assign('https://${current_config['base.host.unified']}' +
-                    ## N.B. Can't use the 'setup' route here since it requires no
-                    ## permission and thus bypasses license-based login in the
-                    ## forbidden view.
-                    '${request.route_path('setup_authorized')}' + window.location.search +
-                    andFinalizeParam + "&${url_param_license_shasum}=" + licenseShasum);
-        }
-
         ########
-        ## Step 3: finalize the process after reloading the page.
+        ## Step 3: finalize the process
         ##
         ## This step marks the system as initialized, so that browsing the AeroFS
         ## Web site will no longer be redirected to the setup page. This step can't
         ## be merged with step 2, because finalizing has to be done *after* boostrap
-        ## completes. If in the middle of the bootstrap nginx reload causes AJAX
+        ## completes. If in the middle of the bootstrap, nginx reload causes AJAX
         ## calls to fail (see comments in step 2), we will not be able to call the
         ## server to finalize until the page is reloaded.
 
         function finalize() {
+            console.log("finalizing...");
             doPost("${request.route_path('json_setup_finalize')}",
                 { }, pollForWebServerReadiness);
         }
