@@ -5,25 +5,24 @@
 package com.aerofs.base.id;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.google.common.base.Preconditions;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * A Mobile DID (MDID) is a UUID whose version nibble has been set to 8 instead of the default 4
  */
 public class MDID extends DID
 {
-    private static final int MDID_VERSION_NIBBLE = 8;
-
     public MDID(UniqueID id)
     {
         super(id);
-        Preconditions.checkArgument(getVersionNibble() == MDID_VERSION_NIBBLE);
+        checkArgument(isMobileDevice());
     }
 
     public MDID(byte[] bs)
     {
         super(bs);
-        Preconditions.checkArgument(getVersionNibble() == MDID_VERSION_NIBBLE);
+        checkArgument(isMobileDevice());
     }
 
     public static MDID generate()

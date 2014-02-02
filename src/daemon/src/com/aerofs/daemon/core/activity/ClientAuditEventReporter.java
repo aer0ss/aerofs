@@ -12,6 +12,7 @@ import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.NoObfuscation;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
@@ -31,6 +32,7 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.sv.client.SVClient;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -44,6 +46,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.getOnlyElement;
 
 /**
  * Service that reads events from the local
@@ -88,23 +91,23 @@ public final class ClientAuditEventReporter // this can be final because it's no
         final String sid;
         final String relativePath;
 
-        private PathComponents(String sidStringFormal, String relativePath)
+        private PathComponents(Path path)
         {
-            this.sid = sidStringFormal;
-            this.relativePath = relativePath;
+            this.sid = path.sid().toStringFormal();
+            this.relativePath = path.toStringRelative();
         }
     }
 
     @NoObfuscation
-    private static class SOID
+    private static class SIDOID
     {
         final String sid;
         final String oid;
 
-        private SOID(String sidString, String oidString)
+        private SIDOID(SID sid, OID oid)
         {
-            this.sid = sidString;
-            this.oid = oidString;
+            this.sid = sid.toStringFormal();
+            this.oid = oid.toStringFormal();
         }
     }
 
@@ -318,7 +321,16 @@ public final class ClientAuditEventReporter // this can be final because it's no
 
     private boolean isSelfGeneratedEvent(Set<DID> sourceDids)
     {
-        return (sourceDids.size() == 1 && sourceDids.contains(_localdid));
+        // self-generated events include those made on behalf of a mobile device
+        return (sourceDids.size() == 1 || sourceDids.size() == 2) && sourceDids.contains(_localdid);
+    }
+
+    private DID otherDevice(Set<DID> dids)
+    {
+        checkArgument(dids.size() == 2);
+        checkArgument(dids.contains(_localdid));
+        DID d0 = Iterables.get(dids, 0);
+        return d0.equals(_localdid) ? Iterables.get(dids, 1) : d0;
     }
 
     private AuditableEvent createAuditableEvent(boolean isLocalEvent, ActivityRow row)
@@ -332,22 +344,25 @@ public final class ClientAuditEventReporter // this can be final because it's no
         // destination device
         if (!isLocalEvent) {
             checkArgument(row._dids.size() == 1, "row idx:%s dids:%s", row._idx, row._dids);
-            event.embed("destination_device", row._dids.iterator().next().toStringFormal());
+            event.embed("destination_device", getOnlyElement(row._dids).toStringFormal());
+        } else if (row._dids.size() == 2) {
+            // on behalf of mobile device
+            DID mdid = otherDevice(row._dids);
+            checkArgument(mdid.isMobileDevice());
+            event.embed("mobile_device", mdid.toStringFormal());
         }
 
         // path
-        PathComponents path = createPathComponents(row._path);
-        event.embed("path", path);
+        event.embed("path", new PathComponents(row._path));
 
         // path to (if it exists)
         if (row._pathTo != null) {
-            PathComponents pathTo = createPathComponents(row._pathTo);
-            event.embed("path_to", pathTo);
+            event.embed("path_to", new PathComponents(row._pathTo));
         }
 
         // soid
         SID sid = _sidxTosid.getLocalOrAbsent_(row._soid.sidx());
-        event.embed("soid", new SOID(sid.toStringFormal(), row._soid.oid().toStringFormal()));
+        event.embed("soid", new SIDOID(sid, row._soid.oid()));
 
         // time (in ISO format, UTC timezone)
         event.embed("event_time", _dateFormat.format(row._time));
@@ -356,11 +371,6 @@ public final class ClientAuditEventReporter // this can be final because it's no
         event.embed("operations", ClientActivity.getIndicatedActivities(row._type));
 
         return event;
-    }
-
-    private static PathComponents createPathComponents(Path path)
-    {
-        return new PathComponents(path.sid().toStringFormal(), path.toStringRelative());
     }
 
     private void reportToAuditor_(EventBatch eventBatch)

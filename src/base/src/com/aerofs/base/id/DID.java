@@ -9,6 +9,8 @@ import com.google.protobuf.ByteString;
 // TODO (MP) remove public constructors use fromExternal() fromInternal().
 public class DID extends UniqueID
 {
+    protected static final int MDID_VERSION_NIBBLE = 8;
+
     public DID(ByteString bstr)
     {
         super(bstr);
@@ -51,5 +53,10 @@ public class DID extends UniqueID
     public static DID fromInternal(byte[] bs) throws ExFormatError
     {
         return fromExternal(bs);
+    }
+
+    public boolean isMobileDevice()
+    {
+        return getVersionNibble() == MDID_VERSION_NIBBLE;
     }
 }
