@@ -2,20 +2,18 @@
 {% from "_formhelpers.html" import render_field, submit_button %}
 
 {% block inner_content %}
-<h1>Your Account</h1>
-<h3>Organization: {{ user.customer.name }}</h3>
+<h1>My Account</h1>
+<p>Organization: {{ user.customer.name }}</p>
 
 <form action="" method="post" name="prefs">
     {{ form.hidden_tag() }}
-    <p>
-        {{ render_field(form.first_name) }}
-        {{ render_field(form.last_name) }}
-        {{ render_field(form.password) }}
-        {{ render_field(form.password_confirmation) }}
-        {{ render_field(form.security_emails) }}
-        {{ render_field(form.release_emails) }}
-        {{ render_field(form.maintenance_emails) }}
-    </p>
+    {{ render_field(form.first_name) }}
+    {{ render_field(form.last_name) }}
+    {{ render_field(form.password) }}
+    {{ render_field(form.password_confirmation) }}
+    {{ render_field(form.security_emails) }}
+    {{ render_field(form.release_emails) }}
+    {{ render_field(form.maintenance_emails) }}
     {{ submit_button("Save changes") }}
 </form>
 

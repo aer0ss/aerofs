@@ -240,7 +240,6 @@ def edit_preferences():
     form.release_emails.data = user.notify_release
     form.maintenance_emails.data = user.notify_maintenance
     return render_template("preferences.html",
-        title=u"Edit Preferences",
         form=form,
         user=user
         )

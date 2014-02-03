@@ -4,19 +4,23 @@
 {% block title %} Sign up for AeroFS Private Cloud {% endblock %}
 
 {% block content %}
-<div class="header"><h1>Sign up for AeroFS Private Cloud</h1></div>
-<form action="" method="post" name="login">
-    {{form.hidden_tag()}}
-    <p>
-        {{ render_field(form.email) }}
-        {{ render_field(form.first_name) }}
-        {{ render_field(form.last_name) }}
-        {{ render_field(form.company_name) }}
-        {{ render_field(form.phone_number) }}
-        {{ render_field(form.job_title) }}
-        {{ render_field(form.accept_eula) }}
-    </p>
-    {{ submit_button("Sign Up") }}
-</form>
+    <div class="row">
+        <div class="span2 offset1">
+        </div>
+        <div class="span8">
+            <h1>Sign up for AeroFS Private Cloud</h1>
+            <form action="" method="post" name="login">
+                {{ form.hidden_tag() }}
+                {{ render_field(form.email) }}
+                {{ render_field(form.first_name) }}
+                {{ render_field(form.last_name) }}
+                {{ render_field(form.company_name) }}
+                {{ render_field(form.phone_number) }}
+                {{ render_field(form.job_title) }}
+                {{ render_field(form.accept_eula) }}
+                {{ submit_button("Sign Up") }}
+            </form>
+        </div>
+    </div>
 {% endblock %}
 
