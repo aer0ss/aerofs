@@ -8,11 +8,19 @@ set -e -u
 
 HERE=$PWD
 NAME=bunker
-SOURCE_DIR=$HERE/../src/bunker
 PYTHONLIB_DIR=$HERE/../src/python-lib
 OUTPUT_DIR=$HERE/build/$NAME
 OPT=$OUTPUT_DIR/opt/$NAME
 DEBIAN=$OUTPUT_DIR/DEBIAN
+
+# FIXME (AG): create a temporary source dir with a copy
+# of all the bunker files to avoid any symlink issues
+
+ORIGINAL_SOURCE_DIR=$HERE/../src/bunker
+SOURCE_DIR=$(mktemp -d -t bunker.XXXX)
+pushd $ORIGINAL_SOURCE_DIR
+tar cvhf - * | $(cd $SOURCE_DIR; tar xf -)
+popd
 
 # make the output directory
 mkdir -p $OUTPUT_DIR
@@ -29,8 +37,8 @@ done
 mkdir -p $OUTPUT_DIR/var/log/bunker
 
 # make the directory in which bunker is installed in
-# we use tar to preserve ownership, permissions and follow symlinks
-# consistently on both Linux and OSX
+# we use tar to preserve ownership and permissions consistently
+# on both Linux and OSX
 mkdir -p $OPT
 pushd $SOURCE_DIR
 tar chf - web requirements.txt entry.py | $(cd $OPT; tar xf -)
