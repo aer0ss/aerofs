@@ -3,3 +3,4 @@ gen
 *.egg-info
 *.egg
 .idea
+MANIFEST
