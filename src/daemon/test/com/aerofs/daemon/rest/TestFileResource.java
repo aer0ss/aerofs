@@ -1,15 +1,14 @@
 package com.aerofs.daemon.rest;
 
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSFile;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.lib.Path;
@@ -20,6 +19,7 @@ import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.SettableFuture;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.response.Response;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +43,8 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class TestFileResource extends AbstractRestTest
@@ -179,7 +181,7 @@ public class TestFileResource extends AbstractRestTest
                 .contentType("application/octet-stream")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
 
@@ -197,7 +199,7 @@ public class TestFileResource extends AbstractRestTest
                 .contentType("text/plain")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1.txt").toStringFormal())
                 .body().asByteArray();
 
@@ -209,11 +211,11 @@ public class TestFileResource extends AbstractRestTest
     {
         givenAccess()
                 .header("Accept", "*/*")
-                .header("If-None-Match", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("If-None-Match", CURRENT_ETAG)
         .expect()
                 .statusCode(304)
                 .header("Access-Control-Allow-Origin", "*")
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
                 .content(isEmptyString())
         .when().get(RESOURCE + "/content", object("f1").toStringFormal());
     }
@@ -230,7 +232,7 @@ public class TestFileResource extends AbstractRestTest
                 .contentType("application/octet-stream")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
 
@@ -249,7 +251,7 @@ public class TestFileResource extends AbstractRestTest
                 .contentType("application/octet-stream")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
 
@@ -263,13 +265,13 @@ public class TestFileResource extends AbstractRestTest
         givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1")
-                .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("If-Range", CURRENT_ETAG)
         .expect()
                 .statusCode(206)
                 .contentType("application/octet-stream")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Range", "bytes 0-1/" + FILE_CONTENT.length)
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
 
@@ -289,7 +291,7 @@ public class TestFileResource extends AbstractRestTest
                 .contentType("application/octet-stream")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
 
@@ -310,7 +312,7 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(200)
                 .contentType("application/octet-stream")
                 .header("Access-Control-Allow-Origin", "*")
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
 
@@ -324,13 +326,13 @@ public class TestFileResource extends AbstractRestTest
         givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=1-0")
-                .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("If-Range", CURRENT_ETAG)
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
 
@@ -358,14 +360,14 @@ public class TestFileResource extends AbstractRestTest
         givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-2,3-")
-                .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("If-Range", CURRENT_ETAG)
         .expect()
                 .statusCode(206)
                 .contentType("application/octet-stream")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Range", "bytes 0-" + String.valueOf(FILE_CONTENT.length - 1)
                         + "/" + String.valueOf(FILE_CONTENT.length))
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
 
@@ -379,12 +381,12 @@ public class TestFileResource extends AbstractRestTest
         givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1,3-")
-                .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("If-Range", CURRENT_ETAG)
         .expect()
                 .statusCode(206)
                 .contentType("multipart/byteranges")
                 .header("Access-Control-Allow-Origin", "*")
-                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+                .header("Etag", CURRENT_ETAG)
         .when().get(RESOURCE + "/content", object("f1").toStringFormal());
 
         MimeMultipart m = new MimeMultipart(new ByteArrayDataSource(r.getBody().asByteArray(),
@@ -404,7 +406,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldCreateFile() throws Exception
     {
-        SettableFuture<SOID> soid = whenCreate(Type.FILE, "", "foo.txt");
+        SettableFuture<SOID> soid = whenCreate(OA.Type.FILE, "", "foo.txt");
 
         givenAccess()
                 .contentType(ContentType.JSON)
@@ -419,7 +421,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn409WhenAlreadyExists() throws Exception
     {
-        whenCreate(Type.FILE, "", "foo.txt");
+        whenCreate(OA.Type.FILE, "", "foo.txt");
 
         givenAccess()
                 .contentType(ContentType.JSON)
@@ -433,53 +435,70 @@ public class TestFileResource extends AbstractRestTest
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
         .expect()
                 .statusCode(409)
-                .body("type", equalTo(com.aerofs.rest.api.Error.Type.CONFLICT.toString()))
+                .body("type", equalTo("CONFLICT"))
         .when().post("/v0.10/files");
     }
 
     @Test
     public void shouldReturn403WhenViewerTriesToCreate() throws Exception
     {
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(
-                user, mds.root().soid().sidx(), Permissions.EDITOR);
+        doThrow(new ExNoPerm())
+                .when(acl).checkThrows_(user, mds.root().soid().sidx(), Permissions.EDITOR);
         givenAccess()
-            .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
         .expect()
-            .statusCode(403)
-            .body("type", equalTo("FORBIDDEN"))
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
         .when()
-            .post("/v0.10/files");
+                .post("/v0.10/files");
     }
 
     @Test
     public void shouldMoveFile() throws Exception
     {
-        // create file
-        MockDSFile file = mds.root().file("foo.txt");
-        SOID fileId = file.soid();
+        SOID soid = mds.root().file("foo.txt").soid();
+        SOID newParent = mds.root().dir("myFolder").soid();
 
-        // create folder
-        MockDSDir dir = mds.root().dir("myFolder");
-        SOID folderId = dir.soid();
-
-        // move file into folder
-        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
         final String newFileName = "foo1.txt";
         SettableFuture<SOID> newFileId = whenMove("foo.txt", "myFolder", newFileName);
         givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(
-                        new RestObject(rootSID, folderId.oid()).toStringFormal(),
+                        new RestObject(rootSID, newParent.oid()).toStringFormal(),
                         newFileName)))
         .expect()
                 .statusCode(200)
                 .body("id", equalToFutureObject(newFileId))
                 .body("name", equalTo(newFileName))
         .when()
-            .put("/v0.10/files/" + fileIdStr);
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
 
-        assertEquals("Object id has changed", fileId, newFileId.get());
+        assertEquals("Object id has changed", soid, newFileId.get());
+    }
+
+    @Test
+    public void shouldMoveFileWhenEtagMatch() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+        SOID newParent = mds.root().dir("myFolder").soid();
+
+        final String newFileName = "foo1.txt";
+        SettableFuture<SOID> newFileId = whenMove("foo.txt", "myFolder", newFileName);
+        givenAccess()
+                .header(Names.IF_MATCH, CURRENT_ETAG)
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, newParent.oid()).toStringFormal(),
+                        newFileName)))
+        .expect()
+                .statusCode(200)
+                .body("id", equalToFutureObject(newFileId))
+                .body("name", equalTo(newFileName))
+        .when()
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+
+        assertEquals("Object id has changed", soid, newFileId.get());
     }
 
     @Test
@@ -497,153 +516,228 @@ public class TestFileResource extends AbstractRestTest
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "boo.txt")))
         .expect()
                 .statusCode(409)
-                .body("type", equalTo(com.aerofs.rest.api.Error.Type.CONFLICT.toString()))
+                .body("type", equalTo("CONFLICT"))
         .when()
                 .put("/v0.10/files/" + fileIdStr);
+    }
+
+    @Test
+    public void shouldReturn412WhenMoveAndEtagChanged() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAccess()
+                .header(Names.IF_MATCH, OTHER_ETAG)
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "bar.txt")))
+        .expect()
+                .statusCode(412)
+                .body("type", equalTo("CONFLICT"))
+        .when()
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
 
     @Test
     public void shouldReturn404MovingNonExistingFile() throws Exception
     {
         givenAccess()
-            .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(object("").toStringFormal(), "test.txt")))
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "test.txt")))
         .expect()
-            .statusCode(404)
-            .body("type", equalTo("NOT_FOUND"))
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
         .when()
-            .put("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal());
+                .put("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal());
     }
 
     @Test
-    public void shouldReturn404MovingToNonExistingParrent() throws Exception
+    public void shouldReturn404MovingToNonExistingParent() throws Exception
     {
-        // create file
-        MockDSFile file = mds.root().file("foo.txt");
-        SOID fileId = file.soid();
-        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
+        SOID soid = mds.root().file("foo.txt").soid();
+
         givenAccess()
-            .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(new RestObject(rootSID,
-                    OID.generate()).toStringFormal(), "test.txt")))
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, OID.generate()).toStringFormal(),
+                        "test.txt")))
         .expect()
-            .statusCode(404)
-            .body("type", equalTo("NOT_FOUND"))
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
         .when()
-            .put("/v0.10/files/" + fileIdStr);
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
 
     @Test
     public void shouldReturn403WhenViewerTriesToMove() throws Exception
     {
-        MockDSFile item = mds.root().file("foo.txt");
-        SOID soid = item.soid();
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(
-                user, soid.sidx(), Permissions.EDITOR);
-        String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
-        whenMove("foo.txt", "", "moo.txt");
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(user, soid.sidx(), Permissions.EDITOR);
+
         givenAccess()
-            .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(object("").toStringFormal(), "moo.txt")))
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "moo.txt")))
         .expect()
-            .statusCode(403)
-            .body("type", equalTo("FORBIDDEN"))
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
         .when()
-            .put("/v0.10/files/" + idStr);
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
 
     @Test
-    public void shouldReturn204ForDeleteSuccess() throws Exception
+    public void shouldReturn204WhenDeleting() throws Exception
     {
-        // create file
-        MockDSFile file = mds.root().file("foo.txt");
-        SOID soid = file.soid();
-        String fileIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        SOID soid = mds.root().file("foo.txt").soid();
+
         givenAccess()
         .expect()
-            .statusCode(204)
+                .statusCode(204)
         .when()
-            .delete("/v0.10/files/" + fileIdStr);
+                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
 
+        verify(od).delete_(soid, PhysicalOp.APPLY, t);
     }
 
     @Test
-    public void shouldReturn404ForDeleteNonExistent() throws Exception
+    public void shouldReturn204WhenDeletingAndEtagMatch() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAccess()
+                .header(Names.IF_MATCH, CURRENT_ETAG)
+        .expect()
+                .statusCode(204)
+        .when()
+                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+
+        verify(od).delete_(soid, PhysicalOp.APPLY, t);
+    }
+
+    @Test
+    public void shouldReturn412WhenDeletingAndEtagChanged() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAccess()
+                .header(Names.IF_MATCH, OTHER_ETAG)
+        .expect()
+                .statusCode(412)
+        .when()
+                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+
+        verifyZeroInteractions(od);
+    }
+
+    @Test
+    public void shouldReturn404WhenDeletingNonExistent() throws Exception
     {
         givenAccess()
         .expect()
-            .statusCode(404)
+                .statusCode(404)
         .when()
-            .delete("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal());
+                .delete("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal());
 
+        verifyZeroInteractions(od);
     }
 
     @Test
     public void shouldReturn403WhenViewerTriesToDelete() throws Exception
     {
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(
-                user, mds.root().soid().sidx(), Permissions.EDITOR);
-        MockDSFile item = mds.root().file("foo.txt");
-        SOID soid = item.soid();
-        String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(
-                user, soid.sidx(), Permissions.EDITOR);
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(user, soid.sidx(), Permissions.EDITOR);
+
         givenAccess()
-            .expect()
-            .statusCode(403)
-            .body("type", equalTo("FORBIDDEN"))
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
         .when()
-            .delete("/v0.10/files/" + idStr);
+                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+
+        verifyZeroInteractions(od);
     }
 
     @Test
     public void shouldUploadContent() throws Exception
     {
-        MockDSFile file = mds.root().file("foo.txt");
-        SOID fileId = file.soid();
-        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
-        byte[] content = BaseUtil.string2utf("Sample file content");
+        SOID soid = mds.root().file("foo.txt").soid();
+
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+
         givenAccess()
-            .content(content)
+                .content(FILE_CONTENT)
         .expect()
-            .statusCode(200)
+                .statusCode(200)
         .when()
-            .put("/v0.10/files/" + fileIdStr + "/content");
-        assertArrayEquals("Output Does Not match", content, baos.toByteArray());
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal() +
+                        "/content");
+
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
+    }
+
+    @Test
+    public void shouldUploadContentWhenEtagMatch() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+
+        givenAccess()
+                .header(Names.IF_MATCH, CURRENT_ETAG)
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(200)
+        .when()
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal()
+                        + "/content");
+
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
+    }
+
+    @Test
+    public void shouldReturn412WhenUploadingAndEtagMismatch() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAccess()
+                .header(Names.IF_MATCH, OTHER_ETAG)
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(412)
+        .when()
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal()
+                        + "/content");
     }
 
     @Test
     public void shouldReturn404WhenUploadToNonExistingFile() throws Exception
     {
-        String fileIdStr = new RestObject(rootSID, OID.generate()).toStringFormal();
-        byte[] content = BaseUtil.string2utf("Sample file content");
         givenAccess()
-            .content(content)
+                .content(FILE_CONTENT)
         .expect()
-            .statusCode(404)
+                .statusCode(404)
         .when()
-            .put("/v0.10/files/" + fileIdStr + "/content");
+                .put("/v0.10/files/" + new RestObject(rootSID, OID.generate()).toStringFormal() +
+                        "/content");
     }
 
     @Test
     public void shouldReturn403WhenViewerTriesToUpload() throws Exception
     {
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(
-                user, mds.root().soid().sidx(), Permissions.EDITOR);
-        MockDSFile file = mds.root().file("foo.txt");
-        SOID fileId = file.soid();
-        String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
-        byte[] content = BaseUtil.string2utf("Sample file content");
-        givenAccess()
-            .content(content)
-        .expect()
-            .statusCode(403)
-        .when()
-            .put("/v0.10/files/" + fileIdStr + "/content");
-    }
+        SOID soid = mds.root().file("foo.txt").soid();
 
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(user, soid.sidx(), Permissions.EDITOR);
+
+        givenAccess()
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(403)
+        .when()
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal() +
+                        "/content");
+    }
 
     @Test
     public void shouldReturn429WhenOutOfUploadTokens() throws Exception

@@ -1,6 +1,7 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -264,7 +265,14 @@ public class AbstractRestTest extends AbstractTest
     protected final static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     protected final static byte[] VERSION_HASH =
-            BaseSecUtil.newMessageDigestMD5().digest(new byte[0]);
+            BaseSecUtil.newMessageDigestMD5().digest(new byte[] {0});
+
+    protected final String CURRENT_ETAG = "\"" + BaseUtil.hexEncode(VERSION_HASH) + "\"";
+
+    protected final static byte[] OTHER_HASH =
+            BaseSecUtil.newMessageDigestMD5().digest(new byte[] {1});
+
+    protected final String OTHER_ETAG = "\"" + BaseUtil.hexEncode(OTHER_HASH) + "\"";
 
     private static Gson _gson = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)

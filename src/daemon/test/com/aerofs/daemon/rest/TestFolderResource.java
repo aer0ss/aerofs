@@ -4,7 +4,6 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -14,6 +13,7 @@ import com.aerofs.rest.api.*;
 import com.aerofs.rest.api.Error;
 import com.google.common.util.concurrent.SettableFuture;
 import com.jayway.restassured.http.ContentType;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -179,121 +179,170 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldMoveFolder() throws Exception
     {
-        // create first folder
-        MockDSDir d = mds.root().dir("foo");
-        SOID firstSoid = d.soid();
+        SOID soid = mds.root().dir("foo").soid();
+        SOID newParent = mds.root().dir("boo").soid();
 
-        // create second folder
-        MockDSDir d2 = mds.root().dir("boo");
-        SOID secondSoid = d2.soid();
-
-        // move foo into boo and rename it to moo
-        String firstFolderIdStr = new RestObject(rootSID, firstSoid.oid()).toStringFormal();
         final String newFolderName = "moo";
         SettableFuture<SOID> newObjectId = whenMove("foo", "boo", newFolderName);
+
         givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(
-                        new RestObject(rootSID, secondSoid.oid()).toStringFormal(), newFolderName)))
+                        new RestObject(rootSID, newParent.oid()).toStringFormal(), newFolderName)))
         .expect()
                 .statusCode(200)
                 .body("id", equalToFutureObject(newObjectId))
                 .body("name", equalTo(newFolderName))
         .when()
-                .put("/v0.10/folders/" + firstFolderIdStr);
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
 
-        assertEquals("Object id has changed", firstSoid, newObjectId.get());
+        assertEquals("Object id has changed", soid, newObjectId.get());
+    }
+
+    @Test
+    public void shouldMoveFolderWhenEtagMatch() throws Exception
+    {
+        SOID soid = mds.root().dir("foo").soid();
+        SOID newParent = mds.root().dir("boo").soid();
+
+        final String newFolderName = "moo";
+        SettableFuture<SOID> newObjectId = whenMove("foo", "boo", newFolderName);
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .header(Names.IF_MATCH, CURRENT_ETAG)
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, newParent.oid()).toStringFormal(),
+                        newFolderName)))
+        .expect()
+                .statusCode(200)
+                .body("id", equalToFutureObject(newObjectId))
+                .body("name", equalTo(newFolderName))
+        .when()
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+
+        assertEquals("Object id has changed", soid, newObjectId.get());
     }
 
     @Test
     public void shouldReturn409WhenMoveConflict() throws Exception
     {
-        // create first folder
-        MockDSDir d = mds.root().dir("foo");
-        SOID firstSoid = d.soid();
+        SOID soid = mds.root().dir("foo").soid();
 
         String newFolderName = "boo";
-        // create second folder
         mds.root().dir(newFolderName);
-
-        // move foo into root and rename it to boo
-        String firstFolderIdStr = new RestObject(rootSID, firstSoid.oid()).toStringFormal();
 
         whenMove("foo", "", newFolderName);
 
         givenAccess()
-            .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(object("").toStringFormal(), newFolderName)))
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), newFolderName)))
         .expect()
-            .statusCode(409)
-            .body("type", equalTo(Error.Type.CONFLICT.toString()))
+                .statusCode(409)
+                .body("type", equalTo(Error.Type.CONFLICT.toString()))
         .when()
-            .put("/v0.10/folders/" + firstFolderIdStr);
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn412WhenMovingAndEtagChanged() throws Exception
+    {
+        SOID soid = mds.root().dir("foo").soid();
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .header(Names.IF_MATCH, OTHER_ETAG)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "bar")))
+        .expect()
+                .statusCode(412)
+                .body("type", equalTo(Error.Type.CONFLICT.toString()))
+        .when()
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
 
     @Test
     public void shouldReturn404MovingNonExistingDir() throws Exception
     {
         givenAccess()
-            .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(object("").toStringFormal(), "test")))
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "test")))
         .expect()
-            .statusCode(404)
-            .body("type", equalTo("NOT_FOUND"))
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
         .when()
-            .put("/v0.10/folders/" + new RestObject(rootSID, OID.generate()).toStringFormal());
+                .put("/v0.10/folders/" + new RestObject(rootSID, OID.generate()).toStringFormal());
     }
 
     @Test
     public void shouldReturn404MovingToNonExistingParrent() throws Exception
     {
-        // create folder
-        MockDSDir d = mds.root().dir("foo");
-        SOID soid = d.soid();
-        String folderIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        SOID soid = mds.root().dir("foo").soid();
+
         givenAccess()
-            .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(new RestObject(rootSID,
-                    OID.generate()).toStringFormal(), "test")))
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, OID.generate()).toStringFormal(),
+                        "test")))
         .expect()
-            .statusCode(404)
-            .body("type", equalTo("NOT_FOUND"))
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
         .when()
-            .put("/v0.10/folders/" + folderIdStr);
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
 
     @Test
     public void shouldReturn403WhenViewerTriesToMove() throws Exception
     {
-        MockDSDir item = mds.root().dir("foo");
-        SOID soid = item.soid();
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(
-                user, soid.sidx(), Permissions.EDITOR);
-        String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
-        whenMove("foo", "", "moo");
+        SOID soid = mds.root().dir("foo").soid();
+
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(user, soid.sidx(), Permissions.EDITOR);
+
         givenAccess()
-            .contentType(ContentType.JSON)
-            .body(json(CommonMetadata.child(object("").toStringFormal(), "moo")))
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "moo")))
         .expect()
-            .statusCode(403)
-            .body("type", equalTo("FORBIDDEN"))
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
         .when()
-            .put("/v0.10/folders/" + idStr);
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
 
     @Test
     public void shouldReturn204ForDeleteSuccess() throws Exception
     {
-        // create folder
-        MockDSDir d = mds.root().dir("foo");
-        SOID soid = d.soid();
-        String folderIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
+        SOID soid = mds.root().dir("foo").soid();
+
         givenAccess()
         .expect()
                 .statusCode(204)
         .when()
-                .delete("/v0.10/folders/" + folderIdStr);
+                .delete("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+    }
 
+    @Test
+    public void shouldReturn204WhenDeletingAndEtagMatch() throws Exception
+    {
+        SOID soid = mds.root().dir("foo").soid();
+
+        givenAccess()
+                .header(Names.IF_MATCH, CURRENT_ETAG)
+        .expect()
+                .statusCode(204)
+        .when()
+                .delete("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn412WhenDeletingAndEtagChanged() throws Exception
+    {
+        SOID soid = mds.root().dir("foo").soid();
+
+        givenAccess()
+                .header(Names.IF_MATCH, OTHER_ETAG)
+        .expect()
+                .statusCode(412)
+        .when()
+                .delete("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
 
     @Test
@@ -304,25 +353,20 @@ public class TestFolderResource extends AbstractRestTest
             .statusCode(404)
         .when()
             .delete("/v0.10/folders/" + new RestObject(rootSID, OID.generate()).toStringFormal());
-
     }
 
     @Test
     public void shouldReturn403WhenViewerTriesToDelete() throws Exception
     {
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(
-                user, mds.root().soid().sidx(), Permissions.EDITOR);
-        MockDSDir item = mds.root().dir("foo");
-        SOID soid = item.soid();
-        String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(
-                user, soid.sidx(), Permissions.EDITOR);
+        SOID soid = mds.root().dir("foo").soid();
+
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(user, soid.sidx(), Permissions.EDITOR);
+
         givenAccess()
         .expect()
-            .statusCode(403)
-            .body("type", equalTo("FORBIDDEN"))
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
         .when()
-            .delete("/v0.10/folders/" + idStr);
+                .delete("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
-
 }

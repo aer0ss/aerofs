@@ -69,6 +69,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     protected void handleThrows_(EIFileUpload ev) throws Exception
     {
         final OA oa = checkSanity_(ev);
+        if (oa == null) return;
 
         // generate a unique download ID to avoid prefix clashes
         // will also be used for resumable downloads
@@ -81,6 +82,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
 
             // anything can happen when the core lock is released...
             final OA newOA = checkSanity_(ev);
+            if (newOA == null) return;
 
             applyPrefix_(pf, newOA);
 
