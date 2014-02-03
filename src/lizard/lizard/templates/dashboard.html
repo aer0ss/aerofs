@@ -1,65 +1,21 @@
 {% extends "logged_in.html" %}
-{% from "_formhelpers.html" import render_field, submit_button %}
 
-{% block content %}
-<h1>Dashboard</h1>
+{% block inner_content %}
+    <h1>Dashboard</h1>
 
-<div class="span4">
-    <div class=license">
-    </div>
-</div>
-<div class="span8">
     <h3>Download</h3>
     <ul>
         {% if issued_licenses %}
-        <li><a href="{{ url_for('.download_latest_license') }}">Download your latest license file</a></li>
+            <li><a href="{{ url_for('.download_latest_license') }}">Download your latest license file</a></li>
         {% else %}
-        <li>You have no license issued yet.</li>
+            <li>You have no license issued yet.</li>
         {% endif %}
         {# TODO: note which appliance version the user has downloaded #}
-        <li><a href="{{ url_for('.download_image') }}">Download appliance image (v{{ appliance_version }})</a></li>
+        <li><a href="{{ url_for('.download_image') }}">Download appliance image (v{{ appliance_version }})</a>
+        </li>
     </ul>
     <h3>Purchases</h3>
     <table id="order-history">
         {# TODO: add license purchase history #}
     </table>
-    <h3>Administrators</h3>
-    <table id="administrators-table">
-        <thead>
-            <tr>
-                <th class="name">Name</th>
-                <th class="email">Email</th>
-                <th class="actions">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for admin in user.customer.admins %}
-            <tr class="user">
-                <td class="name">{{ admin.name }}</td>
-                <td class="email">{{ admin.email }}</td>
-                <td>
-                    {# TODO: add button to kick out user or resend invitation? #}
-                    kick out
-                </td>
-            </tr>
-            {% endfor %}
-            {% for invite in user.customer.pending_invites %}
-            <tr class="invite">
-                <td class="name"></td>
-                <td class="email">{{ invite.email }}</td>
-                <td>
-                    resend invite, remove invite
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <h4>Invite another admin</h4>
-    <form action="{{ url_for('.invite_to_organization') }}" method="post" name="invite">
-    {{ form.hidden_tag() }}
-    <p>{{ render_field(form.email) }}</p>
-    {{ submit_button("Invite") }}
-    </form>
-    {# TODO: add invite button/form here that POSTs? #}
-</div>
 {% endblock %}

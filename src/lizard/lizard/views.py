@@ -256,7 +256,7 @@ def invite_to_organization():
         # Verify that the email is not already in the Admin table
         if models.Admin.query.filter_by(email=form.email.data).first():
             flash(u'That user is already a member of an organization', 'error')
-            return redirect(url_for(".dashboard"))
+            return redirect(url_for(".administrators"))
         # Either this user has been invited to the organization already or hasn't.
         # (Since multiple organizations may attempt to invite the same user, we
         # need to filter on both email and org id in the query here.)
@@ -277,9 +277,9 @@ def invite_to_organization():
         emails.send_invite_email(record.email, customer, record.invite_code)
 
         flash(u'Invited {} to join {}'.format(email, customer.name), 'success')
-        return redirect(url_for('.dashboard'))
+        return redirect(url_for('.administrators'))
     flash(u'Sorry, that was an invalid email.', 'error')
-    return redirect(url_for('.dashboard'))
+    return redirect(url_for('.administrators'))
 
 @blueprint.route('/users/accept', methods=["GET", "POST"])
 def accept_organization_invite():
@@ -324,6 +324,7 @@ def accept_organization_invite():
             flash(u"Login failed for {}: probably marked inactive?", 'error')
 
         return redirect(url_for(".index"))
+
     return render_template("accept_invite.html",
             form=form,
             invite=invite,
@@ -332,16 +333,19 @@ def accept_organization_invite():
 @blueprint.route("/dashboard", methods=["GET"])
 @login.login_required
 def dashboard():
-    form = forms.InviteForm()
-    appliance_version = appliance.latest_appliance_version()
-    user = login.current_user
-    issued_licenses = user.customer.licenses.all()
     return render_template("dashboard.html",
-            user=user,
-            form=form,
-            issued_licenses=issued_licenses,
-            appliance_version=appliance_version,
+            issued_licenses=login.current_user.customer.licenses.all(),
+            appliance_version=appliance.latest_appliance_version(),
             )
+
+@blueprint.route("/administrators", methods=["GET"])
+@login.login_required
+def administrators():
+    return render_template("administrators.html",
+            user=login.current_user,
+            form=forms.InviteForm(),
+            )
+
 
 @blueprint.route("/download_image", methods=["GET"])
 @login.login_required

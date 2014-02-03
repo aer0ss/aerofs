@@ -1,0 +1,45 @@
+{% extends "logged_in.html" %}
+{% from "_formhelpers.html" import render_field, submit_button %}
+
+{% block inner_content %}
+    <h3>Administrators</h3>
+    <table id="administrators-table">
+        <thead>
+        <tr>
+            <th class="name">Name</th>
+            <th class="email">Email</th>
+            <th class="actions">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for admin in user.customer.admins %}
+            <tr class="user">
+                <td class="name">{{ admin.name }}</td>
+                <td class="email">{{ admin.email }}</td>
+                <td>
+                    {# TODO: add button to kick out user or resend invitation? #}
+                    kick out
+                </td>
+            </tr>
+        {% endfor %}
+        {% for invite in user.customer.pending_invites %}
+            <tr class="invite">
+                <td class="name"></td>
+                <td class="email">{{ invite.email }}</td>
+                <td>
+                    resend invite, remove invite
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <h4>Invite another admin</h4>
+
+    <form action="{{ url_for('.invite_to_organization') }}" method="post" name="invite">
+        {{ form.hidden_tag() }}
+        <p>{{ render_field(form.email) }}</p>
+        {{ submit_button("Invite") }}
+    </form>
+    {# TODO: add invite button/form here that POSTs? #}
+
+{% endblock %}
