@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 
-{% block navbar_logo_link %}
-                            <li><a href="{{ url_for('internal.index') }}">
-                                <img src="{{ url_for('static', filename='img/logo_small.png') }}"
-                                     width="144" height="40" alt="AeroFS"/>
-                            </a></li>
-{% endblock %}
-{% from "_navbarhelpers.html" import render_navpill %}
+{% block navbar_logo_link %}{{ url_for('internal.index') }}{% endblock %}
+
+{% macro render_navpill(route, label) %}
+    <li class="pull-right{% if request.path == url_for(route) %} active{% endif %}">
+        <a href="{{ url_for(route) }}">{{ label }}</a>
+    </li>
+{% endmacro %}
 
 {% block additional_nav_pills %}
-{{ render_navpill('.all_customers', 'All Customers') }}
-{{ render_navpill('.queues', 'Queues') }}
+    {{ render_navpill('.all_customers', 'All Customers') }}
+    {{ render_navpill('.queues', 'Queues') }}
 {% endblock %}

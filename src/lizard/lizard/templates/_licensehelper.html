@@ -13,8 +13,8 @@
 {% macro license_state_button(license, state, label) %}
     <form action="{{ url_for('.license_actions', license_id=license.id) }}" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <input name="state" type="hidden" value="{{ state }}"></input>
-    <input class="tablebutton" type="submit" value="{{ label }}">
+    <input name="state" type="hidden" value="{{ state }}"/>
+    <input class="tablebutton" type="submit" value="{{ label }}"/>
     </form>
 {% endmacro %}
 
