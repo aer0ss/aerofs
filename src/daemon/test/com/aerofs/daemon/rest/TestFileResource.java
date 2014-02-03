@@ -3,12 +3,14 @@ package com.aerofs.daemon.rest;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSFile;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
@@ -37,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -641,4 +644,21 @@ public class TestFileResource extends AbstractRestTest
             .put("/v0.10/files/" + fileIdStr + "/content");
     }
 
+
+    @Test
+    public void shouldReturn429WhenOutOfUploadTokens() throws Exception
+    {
+        doThrow(new ExNoResource()).when(tokenManager).acquireThrows_(eq(Cat.CLIENT), anyString());
+
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAcces()
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(429)
+                .body("type", equalTo("TOO_MANY_REQUESTS"))
+        .when()
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal()
+                        + "/content");
+    }
 }
