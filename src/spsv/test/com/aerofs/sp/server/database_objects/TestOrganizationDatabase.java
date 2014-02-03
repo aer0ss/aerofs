@@ -70,6 +70,24 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     }
 
     @Test
+    public void listSharedFolders_shouldNotBreakWhenFilteringManyRootStores() throws Exception
+    {
+        // NB: this is a probabilistic test.
+        // The relative numbers of root store vs regular stores have been chosen to minimize the
+        // likelihood of false positives while keeping the test reasonably quick.
+        for (int i = 0; i < 30; ++i) {
+            addSharedFolder(SID.rootSID(UserID.fromInternal("u" + i)));
+        }
+
+        for (int i = 0; i < 4; ++i) {
+            addSharedFolder(SID.generate());
+        }
+
+        assertEquals(5, odb.listSharedFolders(orgID, 10, 0).size());
+        assertTrue(odb.listSharedFolders(orgID, 10, 0).contains(sid));
+    }
+
+    @Test
     public void countSharedFolders_shouldSkipRootStores() throws Exception
     {
         assertEquals(1, odb.countSharedFolders(orgID));

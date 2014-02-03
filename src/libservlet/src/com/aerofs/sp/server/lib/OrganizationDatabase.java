@@ -50,6 +50,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_ORGANIZATION;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * N.B. only Organization.java may refer to this class
@@ -296,6 +297,12 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
+    private static String andNotUserRoot(String sidColumn)
+    {
+        // check the version nibble: 0 for regular store, 3 for root store, see SID.java
+        return " and substr(hex(" + sidColumn + "),13,1)='0' ";
+    }
+
     /**
      * @param orgId the organization being queried for shared folders
      * @param maxResults the maximum length of the returned list (for paging)
@@ -304,8 +311,10 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public Collection<SID> listSharedFolders(OrganizationID orgId, int maxResults, int offset)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                selectWhere(T_AC, C_AC_USER_ID + "=? limit ? offset ?", C_AC_STORE_ID));
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID),
+                C_AC_STORE_ID)
+                + " limit ? offset ?");
 
         ps.setString(1, orgId.toTeamServerUserID().getString());
         ps.setInt(2, maxResults);
@@ -316,8 +325,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             Set<SID> set = Sets.newHashSet();
             while (rs.next()) {
                 SID sid = new SID(rs.getBytes(1));
-                // skip root stores
-                if (!sid.isUserRoot()) Util.verify(set.add(sid));
+                checkState(!sid.isUserRoot());
+                Util.verify(set.add(sid));
             }
             return set;
         } finally {
@@ -331,20 +340,15 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public int countSharedFolders(OrganizationID orgId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                selectWhere(T_AC, C_AC_USER_ID + "=?", C_AC_STORE_ID));
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID),
+                "count(*)"));
 
         ps.setString(1, orgId.toTeamServerUserID().getString());
 
         ResultSet rs = ps.executeQuery();
         try {
-            int count = 0;
-            while (rs.next()) {
-                SID sid = new SID(rs.getBytes(1));
-                // skip root stores
-                if (!sid.isUserRoot()) count++;
-            }
-            return count;
+            return DBUtil.count(rs);
         } finally {
             rs.close();
         }
