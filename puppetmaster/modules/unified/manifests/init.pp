@@ -98,8 +98,7 @@ class unified {
     # Bunker (Maintenance Panel)
     # --------------
 
-    # FIXME: removed due to build issue; distutils does not speak symlinks
-    # include bunker
+    include bunker
 
     # --------------
     # Bootstrap
@@ -141,11 +140,10 @@ class unified {
         require => Package["aerofs-sanity"],
     }
 
-    # FIXME: bunker disabled due to build error; distutils don't PLAY symlink, foo'
-    # file {"/opt/sanity/probes/bunker.sh":
-        # source => "puppet:///modules/unified/probes/bunker.sh",
-        # require => Package["aerofs-sanity"],
-    # }
+   file {"/opt/sanity/probes/bunker.sh":
+        source => "puppet:///modules/unified/probes/bunker.sh",
+        require => Package["aerofs-sanity"],
+    }
 
     # --------------
     # Apt
