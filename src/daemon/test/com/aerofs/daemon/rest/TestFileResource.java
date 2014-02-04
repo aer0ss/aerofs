@@ -455,6 +455,19 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn403WhenTriesToCreateWithReadOnlyToken() throws Exception
+    {
+        givenReadAccess()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+        .when()
+                .post("/v0.10/files");
+    }
+
+    @Test
     public void shouldMoveFile() throws Exception
     {
         SOID soid = mds.root().file("foo.txt").soid();
@@ -585,6 +598,21 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn403WhenTriesToMoveWithReadOnlyToken() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenReadAccess()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "moo.txt")))
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+        .when()
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+    }
+
+    @Test
     public void shouldReturn204WhenDeleting() throws Exception
     {
         SOID soid = mds.root().file("foo.txt").soid();
@@ -648,6 +676,21 @@ public class TestFileResource extends AbstractRestTest
         doThrow(new ExNoPerm()).when(acl).checkThrows_(user, soid.sidx(), Permissions.EDITOR);
 
         givenAccess()
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+        .when()
+                .delete("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+
+        verifyZeroInteractions(od);
+    }
+
+    @Test
+    public void shouldReturn403WhenTriesToDeleteWithReadOnlyToken() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenReadAccess()
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
@@ -731,6 +774,20 @@ public class TestFileResource extends AbstractRestTest
         doThrow(new ExNoPerm()).when(acl).checkThrows_(user, soid.sidx(), Permissions.EDITOR);
 
         givenAccess()
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(403)
+        .when()
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal() +
+                        "/content");
+    }
+
+    @Test
+    public void shouldReturn403WhenTriesToUploadWithReadOnlyToken() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenReadAccess()
                 .content(FILE_CONTENT)
         .expect()
                 .statusCode(403)

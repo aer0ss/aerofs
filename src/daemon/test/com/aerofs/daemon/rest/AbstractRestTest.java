@@ -52,6 +52,8 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
@@ -117,6 +119,11 @@ import static org.mockito.Mockito.when;
 @RunWith(Parameterized.class)
 public class AbstractRestTest extends AbstractTest
 {
+    static {
+        LogUtil.setLevel(Level.DEBUG);
+        LogUtil.enableConsoleLogging();
+    }
+
     @Parameters
     public static Collection<Object[]> data()
     {
@@ -420,7 +427,13 @@ public class AbstractRestTest extends AbstractTest
     protected RequestSpecification givenAccess()
     {
         return given()
-                .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.TOKEN);
+                .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.RW_TOKEN);
+    }
+
+    protected RequestSpecification givenReadAccess()
+    {
+        return given()
+                .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.RO_TOKEN);
     }
 
     protected static String json(Object o) { return _gson.toJson(o); }

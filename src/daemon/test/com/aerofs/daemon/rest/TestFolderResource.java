@@ -122,6 +122,19 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn403WhenTriesToCreateWithReadOnlyToken() throws Exception
+    {
+        givenReadAccess()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "foo")))
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+        .when()
+                .post("/v0.10/folders");
+    }
+
+    @Test
     public void shouldReturn404WhenTryingToCreateUnderNonExistingParent() throws Exception
     {
         givenAccess()
@@ -308,6 +321,21 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn403WhenTriesToMoveWithreadOnlyToken() throws Exception
+    {
+        SOID soid = mds.root().dir("foo").soid();
+
+        givenReadAccess()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(object("").toStringFormal(), "moo")))
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+        .when()
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+    }
+
+    @Test
     public void shouldReturn204ForDeleteSuccess() throws Exception
     {
         SOID soid = mds.root().dir("foo").soid();
@@ -363,6 +391,19 @@ public class TestFolderResource extends AbstractRestTest
         doThrow(new ExNoPerm()).when(acl).checkThrows_(user, soid.sidx(), Permissions.EDITOR);
 
         givenAccess()
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+        .when()
+                .delete("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn403WhenTriesToDeleteWithReadOnlyToken() throws Exception
+    {
+        SOID soid = mds.root().dir("foo").soid();
+
+        givenReadAccess()
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))

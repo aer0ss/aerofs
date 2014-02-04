@@ -20,6 +20,8 @@ import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -33,7 +35,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mock;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -56,7 +57,8 @@ public abstract class BifrostTest extends AbstractTest
     protected final static String CLIENTSECRET = "test-app-secret";
     protected final static String CLIENTREDIRECT = "http://client.example.com:9000/redirect";
     protected final static String USERNAME = "user";
-    public final static String TOKEN = "token";
+    public final static String RW_TOKEN = "rwtoken";
+    public final static String RO_TOKEN = "rotoken";
     public final static String EXPIRED = "expired";
     protected final static String AUTH_URL = "/authorize";
     protected final static String TOKEN_URL = "/token";
@@ -110,7 +112,7 @@ public abstract class BifrostTest extends AbstractTest
 
     protected static Map<String, String> extractQuery(String location)
     {
-        HashMap<String, String> res = new HashMap<String, String>();
+        Map<String, String> res = Maps.newHashMap();
 
         assertTrue(location.contains("?"));
         String query = location.substring(location.lastIndexOf("?") + 1);
@@ -164,11 +166,17 @@ public abstract class BifrostTest extends AbstractTest
         AuthenticatedPrincipal principal = new AuthenticatedPrincipal(USERNAME);
         principal.setUserID(user);
         principal.setOrganizationID(OrganizationID.PRIVATE_ORGANIZATION);
-        AccessToken token = new AccessToken(TOKEN,
+        AccessToken token = new AccessToken(RW_TOKEN,
                 principal,
                 client,
                 0,
                 scopes,
+                "");
+        AccessToken read = new AccessToken(RO_TOKEN,
+                principal,
+                client,
+                0,
+                ImmutableSet.of("read"),
                 "");
         AccessToken expired = new AccessToken(EXPIRED,
                 principal,
@@ -180,6 +188,7 @@ public abstract class BifrostTest extends AbstractTest
         inj.getInstance(ResourceServerRepository.class).save(rs);
         inj.getInstance(ClientRepository.class).save(client);
         inj.getInstance(AccessTokenRepository.class).save(token);
+        inj.getInstance(AccessTokenRepository.class).save(read);
         inj.getInstance(AccessTokenRepository.class).save(expired);
     }
 
