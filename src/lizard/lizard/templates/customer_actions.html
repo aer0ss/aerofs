@@ -5,26 +5,24 @@
 {% block title %}Customer view{% endblock %}
 
 {% block content %}
-<div class="header"><h1>{{ customer.name}}</h1></div>
-<h3>Members</h3>
-<ul>
-{% for admin in customer.admins.all() %}
-<li>{{ admin.first_name }} {{ admin.last_name }} - {{ admin.email }}</li>
-{% endfor %}
-</ul>
+    <h1>{{ customer.name }}</h1>
+    <h3>Members</h3>
+    <ul>
+        {% for admin in customer.admins.all() %}
+            <li>{{ admin.first_name }} {{ admin.last_name }} - {{ admin.email }}</li>
+        {% endfor %}
+    </ul>
 
-<h3>Licenses</h3>
-{{ render_license_table(customer.licenses.all()) }}
+    <h3>Licenses</h3>
+    {{ render_license_table(customer.licenses.all()) }}
 
-<h3>Create license request</h3>
-<form action="" method="post">
-    {{form.hidden_tag()}}
-    <p>
+    <h3>Create license request</h3>
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
         {{ render_field(form.seats) }}
         {{ render_field(form.expiry_date) }}
         {{ render_field(form.is_trial) }}
         {{ render_field(form.allow_audit) }}
-    </p>
-    {{ submit_button("Create license request") }}
-</form>
+        {{ submit_button("Create license request") }}
+    </form>
 {% endblock %}

@@ -55,7 +55,14 @@
             </div>
 
             <div class="container">
-                {% block content %}{% endblock %}
+                <div class="row">
+                    <div class="span2 offset1">
+                        {% block sidebar %}{% endblock %}
+                    </div>
+                    <div class="span8">
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
             </div>
 
             <div id="footer-push"></div>

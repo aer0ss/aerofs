@@ -1,5 +1,6 @@
 {% extends 'public.html' %}
 {% from "_formhelpers.html" import submit_button %}
+{% from "_menuhelpers.html" import render_menu_item %}
 
 {# due to the pull-right logic, pills are listed from right to left here #}
 {% block additional_nav_pills %}
@@ -11,25 +12,11 @@
     </li>
 {% endblock %}
 
-{% macro render_menu_item(route, label) %}
-    <li {% if request.path == url_for(route) %}class="active"{% endif %}>
-        <a href="{{ url_for(route) }}">{{ label }}</a>
-    </li>
-{% endmacro %}
-
-{% block content %}
-    <div class="row">
-        <div class="span2 offset1">
-            <ul class="nav nav-list left-nav">
-                <li class="nav-header">AeroFS Private Cloud</li>
-                {{ render_menu_item('.dashboard', 'Dashboard') }}
-                {{ render_menu_item('.administrators', 'Administrators') }}
-                {{ render_menu_item('.edit_preferences', 'My Account') }}
-            </ul>
-        </div>
-
-        <div class="span8">
-            {% block inner_content %}{% endblock %}
-        </div>
-    </div>
+{% block sidebar %}
+    <ul class="nav nav-list left-nav">
+        <li class="nav-header">AeroFS Private Cloud</li>
+        {{ render_menu_item('.dashboard', 'Dashboard') }}
+        {{ render_menu_item('.administrators', 'Administrators') }}
+        {{ render_menu_item('.edit_preferences', 'My Account') }}
+    </ul>
 {% endblock %}

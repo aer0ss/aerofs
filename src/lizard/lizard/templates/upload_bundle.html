@@ -4,10 +4,10 @@
 {% block title %}Upload license bundle{% endblock %}
 
 {% block content %}
-<div class="header"><h1>Upload license bundle</h1></div>
-<form action="" method="post" enctype="multipart/form-data">
-    {{ form.hidden_tag() }}
-    {{ render_field(form.license_bundle) }}
-    {{ submit_button("Upload bundle") }}
-</form>
+    <h1>Upload license bundle</h1>
+    <form action="" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        {{ render_field(form.license_bundle) }}
+        {{ submit_button("Upload bundle") }}
+    </form>
 {% endblock %}

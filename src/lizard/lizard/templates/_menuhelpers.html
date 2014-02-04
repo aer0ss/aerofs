@@ -1,0 +1,6 @@
+{# Render a menu item for the sidebar #}
+{% macro render_menu_item(route, label) %}
+    <li {% if request.path == url_for(route) %}class="active"{% endif %}>
+        <a href="{{ url_for(route) }}">{{ label }}</a>
+    </li>
+{% endmacro %}

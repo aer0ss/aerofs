@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
+{% from "_menuhelpers.html" import render_menu_item %}
 
 {% block navbar_logo_link %}{{ url_for('internal.index') }}{% endblock %}
 
-{% macro render_navpill(route, label) %}
-    <li class="pull-right{% if request.path == url_for(route) %} active{% endif %}">
-        <a href="{{ url_for(route) }}">{{ label }}</a>
-    </li>
-{% endmacro %}
-
-{% block additional_nav_pills %}
-    {{ render_navpill('.all_customers', 'All Customers') }}
-    {{ render_navpill('.queues', 'Queues') }}
+{% block sidebar %}
+    <ul class="nav nav-list left-nav">
+        <li class="nav-header">Licensing Admin</li>
+        {{ render_menu_item('.all_customers', 'View customers') }}
+        {{ render_menu_item('.queues', 'License queues') }}
+        {{ render_menu_item('.download_license_request_csv', 'Download license request csv') }}
+        {{ render_menu_item('.upload_bundle', 'Upload license bundle') }}
+    </ul>
 {% endblock %}

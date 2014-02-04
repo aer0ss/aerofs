@@ -5,26 +5,21 @@
 {% from "_formhelpers.html" import render_field, submit_button %}
 
 {% block content %}
-    <div class="row">
-        <div class="span12 page-block text-center">
-            <h1>Sign In</h1>
-        </div>
-        <div class="span7 offset5 page-block">
-            <form action="" method="post" name="login">
-                {{ form.hidden_tag() }}
-                <p>
-                    {{ render_field(form.email) }}
-                    {{ render_field(form.password) }}
-                </p>
-                {{ submit_button("Sign In") }}
-            </form>
-        </div>
+    <div class="offset1">
+        <h1>Sign In</h1>
+
+        <form action="" method="post" name="login">
+            {{ form.hidden_tag() }}
+            {{ render_field(form.email) }}
+            {{ render_field(form.password) }}
+            {{ submit_button("Sign In") }}
+        </form>
     </div>
 {% endblock %}
 
 {% block scripts %}
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             $('#email').focus();
         });
     </script>

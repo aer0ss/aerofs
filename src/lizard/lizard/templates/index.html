@@ -3,17 +3,13 @@
 {% block title %} Home {% endblock %}
 
 {% block content %}
-    <div class="row text-center">
-        <div class="span12 page-block">
-            <h1>AeroFS Private Cloud</h1>
-        </div>
-
-        <div class="span12 page-block">
-            <a class="btn btn-primary btn-large" href="{{ url_for('.signup_request_page') }}">
-                Try AeroFS Private Cloud for Free</a>
-        </div>
-        <div class="span12 text-center page-block">
+    <div class="text-center">
+        <h1>AeroFS Private Cloud</h1>
+        <a class="btn btn-primary btn-large page-block" href="{{ url_for('.signup_request_page') }}">
+            Try AeroFS Private Cloud for Free
+        </a>
+        <p class="page-block">
             <a href="{{ url_for('.login_page') }}">I already have an account. Log in</a>
-        </div>
+        </p>
     </div>
 {% endblock %}
