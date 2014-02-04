@@ -41,6 +41,7 @@ routes = {
     'download_backup_file',
     'status',
     'toggle_maintenance_mode',
+    'maintenance_mode'
 }
 
 

@@ -6,6 +6,7 @@ from web.license import set_license_file_and_attach_shasum_to_session
 from web.login_util import URL_PARAM_NEXT, get_next_url, \
     redirect_to_next_page, remember_license_based_login
 from web.util import flash_error, is_maintenance_mode, is_configuration_initialized_in_private_deployment
+from web.views.maintenance.maintenance_util import get_conf
 
 log = logging.getLogger(__name__)
 
@@ -83,3 +84,16 @@ def maintenance_home(request):
     else:
         redirect = 'setup'
     return HTTPFound(location=request.route_path(redirect))
+
+
+@view_config(
+    route_name='maintenance_mode',
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='maintenance_mode.mako'
+)
+def maintenance_mode(request):
+    # Return status 503 Service Unavailable
+    request.response.status = 503
+    return {
+        'support_email': get_conf()['base.www.support_email_address']
+    }
