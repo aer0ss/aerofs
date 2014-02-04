@@ -108,6 +108,10 @@ function disableEsapingFromModal($modal) {
     });
 }
 
+function hideAllModals() {
+    $('div.modal').modal('hide');
+}
+
 // add convenience method to POST raw JS objects as JSON bodies
 $.extend({
     postJSON: function(url, data) {

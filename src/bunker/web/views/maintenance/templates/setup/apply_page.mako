@@ -29,16 +29,14 @@ ${common.render_previous_button()}
         <h4 class="text-success">The system is ready!</h4>
     </div>
     <div class="modal-body">
-        <p>System configuration is complete.</p>
-
         <% first_user_created = is_configuration_initialized or restored_from_backup %>
 
         %if first_user_created:
-            ## It's a reconfiguration. Do nothing. Write something here otherwise
-            ## the renderer would complain.
-            <!---->
+            <p>System configuration is complete.</p>
         %else:
             <p>Next, you will create the system's first user.</p>
+            <p>You may receive a certificate warning from the browser if you
+                chose a self-signed certificate in the previous step.</p>
         %endif
 
     </div>
@@ -70,7 +68,6 @@ ${common.render_previous_button()}
         function populateDashboardLinks() {
             var homeBase = 'https://' + $.url().attr('host');
             $('#dashboard_home_link').attr('href', homeBase);
-            $('#org_users_link').attr('href', homeBase + '/users');
             $('#create_first_user_link').attr('href', homeBase + '/create_first_user');
         }
 

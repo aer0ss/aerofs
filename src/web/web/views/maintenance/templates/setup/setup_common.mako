@@ -63,10 +63,6 @@
 
 <%def name="scripts(page)">
     <script>
-        function hideAllModals() {
-            $('div.modal').modal('hide');
-        }
-
         function verifyPresence(elementID, message) {
             var v = document.getElementById(elementID).value;
             if (v == null || v == "") {

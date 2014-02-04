@@ -160,12 +160,14 @@ def json_signup(request):
             msg = get_error(e)
         return {'error': msg}
 
+
 @view_config(
-    route_name = 'json.request_to_signup',
-    renderer = 'json',
-    permission = NO_PERMISSION_REQUIRED,
-    # See the comments in index.mako for the reason why we use GET but not POST
-    request_method = 'GET'
+    route_name='json.request_to_signup',
+    renderer='json',
+    permission=NO_PERMISSION_REQUIRED,
+    # See the comments in sign_up_forms.mako for the reason why we use GET but
+    # not POST.
+    request_method='GET'
 )
 def json_request_to_sign_up(request):
     _ = request.translate
@@ -184,5 +186,19 @@ def json_request_to_sign_up(request):
     sp = get_rpc_stub(request)
     exception2error(sp.request_to_sign_up, email_address, {
         common.PBException.EMPTY_EMAIL_ADDRESS: empty_email_message,
-        common.PBException.INVALID_EMAIL_ADDRESS: _("Please enter a valid email address")
+        common.PBException.INVALID_EMAIL_ADDRESS: _("Please enter a valid email address"),
+        common.PBException.NO_PERM: _("The first user has been created. New users "
+                                      "can be created only by invitations from existing users.")
     })
+
+
+@view_config(
+    route_name='create_first_user',
+    renderer='create_first_user.mako',
+    permission=NO_PERMISSION_REQUIRED,
+    request_method='GET'
+)
+def create_first_user(request):
+    return {
+        'url_param_email': URL_PARAM_EMAIL
+    }
