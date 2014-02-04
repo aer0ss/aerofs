@@ -299,14 +299,14 @@ public class BlockStorageDatabase extends AbstractDatabase
 
     public long getOrCreateHistDirByPath_(Path path, Trans t) throws SQLException
     {
-        long dirId = DIR_ID_ROOT;
+        long dirId = getOrCreateChildHistDir_(DIR_ID_ROOT, path.sid().toStringFormal(), t);
         for (String name : path.elements()) dirId = getOrCreateChildHistDir_(dirId, name, t);
         return dirId;
     }
 
     public long getHistDirByPath_(Path path) throws SQLException
     {
-        long dirId = DIR_ID_ROOT;
+        long dirId = getChildHistDir_(DIR_ID_ROOT, path.sid().toStringFormal());
         for (String name : path.elements()) {
             long child = getChildHistDir_(dirId, name);
             if (child == DIR_ID_NOT_FOUND) return child;

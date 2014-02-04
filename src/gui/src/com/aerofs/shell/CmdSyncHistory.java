@@ -53,6 +53,8 @@ public class CmdSyncHistory implements IShellCommand<ShProgram>
     private static void listRevHistory(ShellCommandRunner<ShProgram> s, Path path)
             throws Exception
     {
+        if (path.isEmpty()) throw new ExBadArgs();
+
         ListRevHistoryReply reply = s.d().getRitualClient_().listRevHistory(path.toPB());
 
         s.out().println("Version index                   Size      Last Modified");

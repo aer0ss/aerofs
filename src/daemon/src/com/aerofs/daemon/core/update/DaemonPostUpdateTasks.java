@@ -75,6 +75,7 @@ public class DaemonPostUpdateTasks
             new DPUTUpdateEpochTableAddAuditColumn(dbcw),
             new DPUTFixCNROsOnOSX(osutil, dbcw),
             new DPUTResetSyncStatus(dbcw),  // bug in AggragateSyncStatus
+            new DPUTFixBlockHistory(dbcw),
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 

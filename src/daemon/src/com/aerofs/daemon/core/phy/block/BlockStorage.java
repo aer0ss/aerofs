@@ -585,6 +585,8 @@ class BlockStorage implements IPhysicalStorage
         @Override
         public Collection<Revision> listRevHistory_(Path path) throws IOException, SQLException
         {
+            if (path.isEmpty()) return Collections.emptyList();
+
             try {
                 long dirId = _bsdb.getHistDirByPath_(path.removeLast());
                 if (dirId == DIR_ID_NOT_FOUND) return Collections.emptyList();
