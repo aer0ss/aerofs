@@ -3,7 +3,7 @@
 
 {% block content %}
     <h1>Administrators</h1>
-    <table id="administrators-table">
+    <table class="table">
         <thead>
         <tr>
             <th class="name">Name</th>
@@ -14,7 +14,7 @@
         <tbody>
         {% for admin in user.customer.admins %}
             <tr class="user">
-                <td class="name">{{ admin.name }}</td>
+                <td class="name">{{ admin.first_name }} {{ admin.last_name }}</td>
                 <td class="email">{{ admin.email }}</td>
                 <td>
                     {# TODO: add button to kick out user or resend invitation? #}
@@ -37,7 +37,7 @@
 
     <form action="{{ url_for('.invite_to_organization') }}" method="post" name="invite">
         {{ form.hidden_tag() }}
-        <p>{{ render_field(form.email) }}</p>
+        {{ render_field(form.email) }}
         {{ submit_button("Invite") }}
     </form>
     {# TODO: add invite button/form here that POSTs? #}

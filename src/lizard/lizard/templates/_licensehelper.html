@@ -37,7 +37,7 @@
 
 
 {% macro render_license_table(licenses) %}
-    <table class="license-table">
+    <table class="table">
         <tr>
             <th>Company</th>
             <th>License ID</th>
@@ -56,7 +56,7 @@
             <td>{{ license.seats }}</td>
             <td>{% if license.is_trial %}Trial{% else %}Full license{% endif %}</td>
             <td>{% if license.allow_audit %}Auditing allowed{% endif %}</td>
-            <td>{{ license.expiry_date }}</td>
+            <td>{{ license.expiry_date.strftime('%b %d, %Y') }}</td>
             <td><a href="{{ url_for(".license_actions", license_id=license.id) }}">Details</a></td>
             {{ render_license_state_buttons(license) }}
         </tr>
