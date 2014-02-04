@@ -18,6 +18,7 @@
  */
 package com.aerofs.oauth;
 
+import com.aerofs.base.NoObfuscation;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.Lists;
@@ -32,6 +33,7 @@ import java.util.Map;
  * {@link Principal} that can contain roles and additional attributes. This is
  * the return Object for AbstractAuthenticator implementations.
  */
+@NoObfuscation
 public class AuthenticatedPrincipal implements Serializable, Principal
 {
     private static final long serialVersionUID = 1L;

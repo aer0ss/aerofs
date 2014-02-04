@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 /**
  * Helper to manipulate API versions
  */
+@NoObfuscation
 public class Version implements Comparable<Version>
 {
     public final int major;

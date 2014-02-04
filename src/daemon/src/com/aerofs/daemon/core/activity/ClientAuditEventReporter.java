@@ -9,6 +9,7 @@ import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.BaseParam.Audit;
+import com.aerofs.base.NoObfuscation;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -31,7 +32,6 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Lists;
-import com.google.gson.annotations.SerializedName;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,33 +82,29 @@ public final class ClientAuditEventReporter // this can be final because it's no
     // GSON objects
     //
 
+    @NoObfuscation
     private static class PathComponents
     {
-        @SerializedName("sid")
-        private final String sidString;
-
-        @SerializedName("relative_path")
-        private final String relativePath;
+        final String sid;
+        final String relativePath;
 
         private PathComponents(String sidStringFormal, String relativePath)
         {
-            this.sidString = sidStringFormal;
+            this.sid = sidStringFormal;
             this.relativePath = relativePath;
         }
     }
 
+    @NoObfuscation
     private static class SOID
     {
-        @SerializedName("sid")
-        private final String sidString;
-
-        @SerializedName("oid")
-        private final String oidString;
+        final String sid;
+        final String oid;
 
         private SOID(String sidString, String oidString)
         {
-            this.sidString = sidString;
-            this.oidString = oidString;
+            this.sid = sidString;
+            this.oid = oidString;
         }
     }
 
