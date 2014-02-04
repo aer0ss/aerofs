@@ -14,8 +14,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.proto.Limit;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.base.Preconditions;
@@ -87,10 +85,6 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
         super(f._sched, Loggers.getLogger(GlobalLimiter.class),
                 _MIN_UL_BW, getUploadBw_(), getUploadBw_() /* sigh */,
                 _MAX_SHAPING_Q_BACKLOG);
-
-        LogUtil.setLevel(GlobalLimiter.class, Level.NONE);
-        LogUtil.setLevel(LimitMonitor.class, Level.NONE);
-        LogUtil.setLevel(PerDeviceLimiter.class, Level.NONE);
 
         _f = f;
         _lower = lower;

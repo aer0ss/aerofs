@@ -312,7 +312,7 @@ abstract class AbstractLimiter implements ILimiter
         _fillRate = fillRate;
         _tokens = (_tokens > _bucket ? _bucket : _tokens);
 
-        l.debug("{}: upd bk: {} -> {} fr: {} -> {}", name(), oldBucket,  _bucket, oldFillRate, _fillRate);
+        l.trace("{}: upd bk: {} -> {} fr: {} -> {}", name(), oldBucket,  _bucket, oldFillRate, _fillRate);
     }
 
     protected long tokensAvailable_(long now)
