@@ -13,6 +13,7 @@ Werkzeug==0.9.4
 analytics-python==0.4.4
 decorator==3.4.0
 itsdangerous==0.23
+oursql==0.9.3.1
 pbr==0.5.23
 pygpgme==0.3
 python-dateutil==2.2
