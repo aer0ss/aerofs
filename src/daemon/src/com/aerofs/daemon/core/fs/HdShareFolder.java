@@ -32,7 +32,9 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -71,6 +73,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final DescendantStores _dss;
     private final ACLSynchronizer _aclsync;
     private final SPBlockingClient.Factory _factSP;
+    private final CfgStorageType _storageType;
     private final CfgAbsRoots _absRoots;
 
     @Inject
@@ -78,7 +81,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             IPhysicalStorage ps, DirectoryService ds, ImmigrantCreator imc, ObjectMover om,
             ObjectDeleter od, IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss,
             ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP,
-            CfgAbsRoots cfgAbsRoots)
+            CfgAbsRoots cfgAbsRoots, CfgStorageType storageType)
     {
         _ss = ss;
         _tokenManager = tokenManager;
@@ -94,6 +97,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _aclsync = aclsync;
         _factSP = factSP;
         _absRoots = cfgAbsRoots;
+        _storageType = storageType;
     }
 
     @Override
@@ -117,17 +121,19 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             } else {
                 throw new ExNotDir();
             }
-
         } else {
-            // physical root is an external shared folder: the root can be shared and no nested
-            // sharing is allowed as it would break consistency (an externally shared folder for
-            // one user may be located under the root anchor for another)
+            // option 1: Block Storage
+            // option 2: physical root is an external shared folder. The root can be shared and no
+            // nested sharing is allowed as it would break consistency (an externally shared folder
+            // for one user may be located under the root anchor for another)
             if (!ev._path.isEmpty()) throw new ExParentAlreadyShared();
             alreadyShared = true;
             sid = ev._path.sid();
             oa = null;
-            // check that the sid is a valid external root
-            if (_absRoots.getNullable(sid) == null) throw new ExBadArgs();
+            // if linked storage is used, check that the sid is a valid external root
+            if (_storageType.get() == StorageType.LINKED && _absRoots.getNullable(sid) == null) {
+                throw new ExBadArgs();
+            }
         }
 
         //

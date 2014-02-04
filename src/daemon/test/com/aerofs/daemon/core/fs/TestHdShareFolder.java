@@ -33,8 +33,10 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
@@ -84,6 +86,7 @@ public class TestHdShareFolder extends AbstractTest
     @Mock InjectableSPBlockingClientFactory factSP;
     @Mock CfgLocalUser cfgLocalUser;
     @Mock CfgAbsRoots cfgAbsRoots;
+    @Mock CfgStorageType cfgStorageType;
 
     @InjectMocks HdShareFolder hd;
 
@@ -108,6 +111,7 @@ public class TestHdShareFolder extends AbstractTest
 
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn("/AeroFS");
         when(cfgAbsRoots.getNullable(extSID)).thenReturn("/external");
+        when(cfgStorageType.get()).thenReturn(StorageType.LINKED);
 
         MockDS mds = new MockDS(rootSID, ds, sm, sm);
         mds.root()
