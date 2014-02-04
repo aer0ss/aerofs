@@ -22,7 +22,7 @@ public class TestChildrenResource extends AbstractRestTest
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
@@ -32,7 +32,7 @@ public class TestChildrenResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingStore() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -42,7 +42,7 @@ public class TestChildrenResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingDir() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -57,7 +57,7 @@ public class TestChildrenResource extends AbstractRestTest
                 .file("f").parent()
                 .anchor("a");
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(200)
                 .body("files", hasSize(1)).body("files.name", hasItems("f"))
@@ -71,7 +71,7 @@ public class TestChildrenResource extends AbstractRestTest
         mds.root()
                 .dir("d");
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(200)
                 .body("files", empty())
@@ -86,7 +86,7 @@ public class TestChildrenResource extends AbstractRestTest
         a.dir("d").parent()
                 .file("f");
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(200)
                 .body("files", empty())
@@ -104,7 +104,7 @@ public class TestChildrenResource extends AbstractRestTest
         a.dir("d").parent()
                 .file("f").caMaster(42, 0xdeadbeef);
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(200)
                 .body("files", hasSize(1))

@@ -84,7 +84,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(400)
                 .header("Access-Control-Allow-Origin", "*")
@@ -95,7 +95,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingStore() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(404)
                 .header("Access-Control-Allow-Origin", "*")
@@ -106,7 +106,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingDir() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(404)
                 .header("Access-Control-Allow-Origin", "*")
@@ -119,7 +119,7 @@ public class TestFileResource extends AbstractRestTest
     {
         mds.root().dir("d0");
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(404)
                 .header("Access-Control-Allow-Origin", "*")
@@ -130,7 +130,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldGetMetadata() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(200)
                 .header("Access-Control-Allow-Origin", "*")
@@ -145,7 +145,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldGetMetadataWithMIME() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(200)
                 .header("Access-Control-Allow-Origin", "*")
@@ -160,7 +160,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldGet406IfNotAcceptingOctetStream() throws Exception
     {
-        givenAcces()
+        givenAccess()
                 .header("Accept", "application/json")
         .expect()
                 .statusCode(406)
@@ -172,7 +172,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetContent() throws Exception
     {
         byte[] content =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
         .expect()
                 .statusCode(200)
@@ -190,7 +190,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetContentWithMIME() throws Exception
     {
         byte[] content =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
         .expect()
                 .statusCode(200)
@@ -207,7 +207,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldGet304WhenEtagUnchanged() throws Exception
     {
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("If-None-Match", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .expect()
@@ -222,7 +222,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetContentWhenEtagChanged() throws Exception
     {
         byte[] content =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("If-None-Match", "\"f00\"")
         .expect()
@@ -241,7 +241,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetContentWhenEtagInvalid() throws Exception
     {
         byte[] content =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("If-None-Match", "lowut")
         .expect()
@@ -260,7 +260,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetRangeWhenIfRangeMatchEtag() throws Exception
     {
         byte[] content =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1")
                 .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
@@ -280,7 +280,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetFullContentWhenIfRangeMismatchEtag() throws Exception
     {
         byte[] content =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1")
                 .header("If-Range", "\"f00\"")
@@ -302,7 +302,7 @@ public class TestFileResource extends AbstractRestTest
         // RFC 2616 does not specifically address this case so a safe
         // behavior was chosen
         byte[] content =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1")
                 .header("If-Range", "lolwut")
@@ -321,7 +321,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetFullContentWhenRangeInvalid() throws Exception
     {
         byte[] content =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=1-0")
                 .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
@@ -340,7 +340,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn416WhenRangeNotSatisfiable() throws Exception
     {
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=" + (FILE_CONTENT.length) + "-")
         .expect()
@@ -355,7 +355,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetFullContentWhenRangeEncompassing() throws Exception
     {
         byte[] content =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-2,3-")
                 .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
@@ -376,7 +376,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldGetMultipartWhenDisjointSubrangesRequested() throws Exception
     {
         Response r =
-        givenAcces()
+        givenAccess()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=0-1,3-")
                 .header("If-Range", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
@@ -406,7 +406,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SettableFuture<SOID> soid = whenCreate(Type.FILE, "", "foo.txt");
 
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
         .expect()
@@ -421,14 +421,14 @@ public class TestFileResource extends AbstractRestTest
     {
         whenCreate(Type.FILE, "", "foo.txt");
 
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
         .expect()
                 .statusCode(201)
         .when().post("/v0.10/files");
 
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
         .expect()
@@ -442,7 +442,7 @@ public class TestFileResource extends AbstractRestTest
     {
         doThrow(new ExNoPerm()).when(acl).checkThrows_(
                 user, mds.root().soid().sidx(), Permissions.EDITOR);
-        givenAcces()
+        givenAccess()
             .contentType(ContentType.JSON)
             .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
         .expect()
@@ -467,7 +467,7 @@ public class TestFileResource extends AbstractRestTest
         String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
         final String newFileName = "foo1.txt";
         SettableFuture<SOID> newFileId = whenMove("foo.txt", "myFolder", newFileName);
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(
                         new RestObject(rootSID, folderId.oid()).toStringFormal(),
@@ -492,7 +492,7 @@ public class TestFileResource extends AbstractRestTest
         mds.root().file("boo.txt");
         String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
         whenMove("foo.txt", "", "boo.txt");
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "boo.txt")))
         .expect()
@@ -505,7 +505,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn404MovingNonExistingFile() throws Exception
     {
-        givenAcces()
+        givenAccess()
             .contentType(ContentType.JSON)
             .body(json(CommonMetadata.child(object("").toStringFormal(), "test.txt")))
         .expect()
@@ -522,7 +522,7 @@ public class TestFileResource extends AbstractRestTest
         MockDSFile file = mds.root().file("foo.txt");
         SOID fileId = file.soid();
         String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
-        givenAcces()
+        givenAccess()
             .contentType(ContentType.JSON)
             .body(json(CommonMetadata.child(new RestObject(rootSID,
                     OID.generate()).toStringFormal(), "test.txt")))
@@ -542,7 +542,7 @@ public class TestFileResource extends AbstractRestTest
                 user, soid.sidx(), Permissions.EDITOR);
         String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
         whenMove("foo.txt", "", "moo.txt");
-        givenAcces()
+        givenAccess()
             .contentType(ContentType.JSON)
             .body(json(CommonMetadata.child(object("").toStringFormal(), "moo.txt")))
         .expect()
@@ -559,7 +559,7 @@ public class TestFileResource extends AbstractRestTest
         MockDSFile file = mds.root().file("foo.txt");
         SOID soid = file.soid();
         String fileIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
-        givenAcces()
+        givenAccess()
         .expect()
             .statusCode(204)
         .when()
@@ -570,7 +570,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForDeleteNonExistent() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
             .statusCode(404)
         .when()
@@ -588,7 +588,7 @@ public class TestFileResource extends AbstractRestTest
         String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
         doThrow(new ExNoPerm()).when(acl).checkThrows_(
                 user, soid.sidx(), Permissions.EDITOR);
-        givenAcces()
+        givenAccess()
             .expect()
             .statusCode(403)
             .body("type", equalTo("FORBIDDEN"))
@@ -605,7 +605,7 @@ public class TestFileResource extends AbstractRestTest
         byte[] content = BaseUtil.string2utf("Sample file content");
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
-        givenAcces()
+        givenAccess()
             .content(content)
         .expect()
             .statusCode(200)
@@ -619,7 +619,7 @@ public class TestFileResource extends AbstractRestTest
     {
         String fileIdStr = new RestObject(rootSID, OID.generate()).toStringFormal();
         byte[] content = BaseUtil.string2utf("Sample file content");
-        givenAcces()
+        givenAccess()
             .content(content)
         .expect()
             .statusCode(404)
@@ -636,7 +636,7 @@ public class TestFileResource extends AbstractRestTest
         SOID fileId = file.soid();
         String fileIdStr = new RestObject(rootSID, fileId.oid()).toStringFormal();
         byte[] content = BaseUtil.string2utf("Sample file content");
-        givenAcces()
+        givenAccess()
             .content(content)
         .expect()
             .statusCode(403)
@@ -652,7 +652,7 @@ public class TestFileResource extends AbstractRestTest
 
         SOID soid = mds.root().file("foo.txt").soid();
 
-        givenAcces()
+        givenAccess()
                 .content(FILE_CONTENT)
         .expect()
                 .statusCode(429)

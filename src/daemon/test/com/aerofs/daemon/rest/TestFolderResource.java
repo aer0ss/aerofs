@@ -36,7 +36,7 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
@@ -46,7 +46,7 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingStore() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -56,7 +56,7 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingDir() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -68,7 +68,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         mds.root().dir("d0").file("f1");
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(200)
                 .body("id", equalTo(object("d0").toStringFormal()))
@@ -82,7 +82,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         mds.root().file("f1");
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -94,7 +94,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         SettableFuture<SOID> soid = whenCreate(Type.DIR, "", "foo");
 
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "foo")))
         .expect()
@@ -111,7 +111,7 @@ public class TestFolderResource extends AbstractRestTest
         doThrow(new ExNoPerm()).when(acl).checkThrows_(
                 user, mds.root().soid().sidx(), Permissions.EDITOR);
 
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "foo")))
         .expect()
@@ -124,7 +124,7 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn404WhenTryingToCreateUnderNonExistingParent() throws Exception
     {
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(
                         new RestObject(rootSID, OID.generate()).toStringFormal(), "foo")))
@@ -143,7 +143,7 @@ public class TestFolderResource extends AbstractRestTest
         when(oc.create_(any(Type.class), any(SOID.class), anyString(), eq(PhysicalOp.APPLY), eq(t)))
                 .thenThrow(new ExNotDir());
 
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("f1").toStringFormal(), "foo")))
         .expect()
@@ -158,7 +158,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         whenCreate(Type.DIR, "", "foo");
 
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "foo")))
         .expect()
@@ -166,7 +166,7 @@ public class TestFolderResource extends AbstractRestTest
         .when()
                 .post("/v0.10/folders");
 
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "foo")))
         .expect()
@@ -191,7 +191,7 @@ public class TestFolderResource extends AbstractRestTest
         String firstFolderIdStr = new RestObject(rootSID, firstSoid.oid()).toStringFormal();
         final String newFolderName = "moo";
         SettableFuture<SOID> newObjectId = whenMove("foo", "boo", newFolderName);
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(
                         new RestObject(rootSID, secondSoid.oid()).toStringFormal(), newFolderName)))
@@ -221,7 +221,7 @@ public class TestFolderResource extends AbstractRestTest
 
         whenMove("foo", "", newFolderName);
 
-        givenAcces()
+        givenAccess()
             .contentType(ContentType.JSON)
             .body(json(CommonMetadata.child(object("").toStringFormal(), newFolderName)))
         .expect()
@@ -234,7 +234,7 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn404MovingNonExistingDir() throws Exception
     {
-        givenAcces()
+        givenAccess()
             .contentType(ContentType.JSON)
             .body(json(CommonMetadata.child(object("").toStringFormal(), "test")))
         .expect()
@@ -251,7 +251,7 @@ public class TestFolderResource extends AbstractRestTest
         MockDSDir d = mds.root().dir("foo");
         SOID soid = d.soid();
         String folderIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
-        givenAcces()
+        givenAccess()
             .contentType(ContentType.JSON)
             .body(json(CommonMetadata.child(new RestObject(rootSID,
                     OID.generate()).toStringFormal(), "test")))
@@ -271,7 +271,7 @@ public class TestFolderResource extends AbstractRestTest
                 user, soid.sidx(), Permissions.EDITOR);
         String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
         whenMove("foo", "", "moo");
-        givenAcces()
+        givenAccess()
             .contentType(ContentType.JSON)
             .body(json(CommonMetadata.child(object("").toStringFormal(), "moo")))
         .expect()
@@ -288,7 +288,7 @@ public class TestFolderResource extends AbstractRestTest
         MockDSDir d = mds.root().dir("foo");
         SOID soid = d.soid();
         String folderIdStr = new RestObject(rootSID, soid.oid()).toStringFormal();
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(204)
         .when()
@@ -299,7 +299,7 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForDeleteNonExistent() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
             .statusCode(404)
         .when()
@@ -317,7 +317,7 @@ public class TestFolderResource extends AbstractRestTest
         String idStr = new RestObject(rootSID, soid.oid()).toStringFormal();
         doThrow(new ExNoPerm()).when(acl).checkThrows_(
                 user, soid.sidx(), Permissions.EDITOR);
-        givenAcces()
+        givenAccess()
         .expect()
             .statusCode(403)
             .body("type", equalTo("FORBIDDEN"))

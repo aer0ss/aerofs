@@ -409,7 +409,7 @@ public class AbstractRestTest extends AbstractTest
         return new RestObject(sid, soid.oid());
     }
 
-    protected RequestSpecification givenAcces()
+    protected RequestSpecification givenAccess()
     {
         return given()
                 .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.TOKEN);

@@ -30,7 +30,7 @@ public class TestVersionResource extends AbstractRestTest
     @Test
     public void shouldFindClientForLowerVersion()
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(200)
         .when()
@@ -42,7 +42,7 @@ public class TestVersionResource extends AbstractRestTest
     {
         assumeTrue(useProxy);
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(503)
         .when()
@@ -54,7 +54,7 @@ public class TestVersionResource extends AbstractRestTest
     {
         assumeTrue(useProxy);
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(503)
         .when()

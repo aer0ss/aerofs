@@ -28,7 +28,7 @@ public class TestExceptions extends AbstractRestTest
         doThrow(new NullPointerException())
         .when(acl).checkThrows_(any(UserID.class), any(SIndex.class), any(Permissions.class));
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(500)
                 .body("type", equalTo("INTERNAL_ERROR"))
@@ -42,7 +42,7 @@ public class TestExceptions extends AbstractRestTest
         doThrow(new IllegalArgumentException())
                 .when(acl).checkThrows_(any(UserID.class), any(SIndex.class), any(Permissions.class));
 
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
@@ -53,7 +53,7 @@ public class TestExceptions extends AbstractRestTest
     @Test
     public void shouldReturn400WhenPassedInvalidParam() throws Exception
     {
-        givenAcces()
+        givenAccess()
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
@@ -64,7 +64,7 @@ public class TestExceptions extends AbstractRestTest
     @Test
     public void shouldReturn400WhenPassedInvalidJSON() throws Exception
     {
-        givenAcces()
+        givenAccess()
                 .contentType(ContentType.JSON)
                 .content("{\"broken\": 42,")
         .expect()
