@@ -4,9 +4,7 @@ import com.aerofs.lib.ex.ExNoConsole;
 
 /**
  * methods with a trailing underscore is always called from the ui thread
- *
  */
-
 public interface IUI {
 
     public static enum MessageType {

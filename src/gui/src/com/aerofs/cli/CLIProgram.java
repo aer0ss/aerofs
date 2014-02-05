@@ -1,16 +1,12 @@
 package com.aerofs.cli;
 
 import com.aerofs.controller.SPBadCredentialListener;
-import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
-import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
-import com.aerofs.ui.UIUtil;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 public class CLIProgram implements IProgram
 {
@@ -22,31 +18,13 @@ public class CLIProgram implements IProgram
         // process application arguments
         for (String arg : args) processArgument(arg);
 
-        //
-        // FIXME (AG): The below is practically identical to code in GUIProgram
-        //
-
-        ClientSocketChannelFactory clientChannelFactory = ChannelFactories.getClientChannelFactory();
-        UIGlobals.initSetup_(rtRoot);
+        UIGlobals.initialize_(rtRoot, false);
         SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
-        RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
 
         CLI cli = new CLI();
         UI.set(cli);
-
-        UIGlobals.setRitualClientProvider(ritualProvider);
-
-        // Launch the daemon
-        cli.asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                UIUtil.launch(rtRoot, null, null);
-            }
-        });
-
-        CLI.get().enterMainLoop_();
+        cli.scheduleLaunch(rtRoot);
+        cli.enterMainLoop_();
     }
 
     /**

@@ -20,10 +20,6 @@ import static com.aerofs.sp.server.lib.user.AuthorizationLevel.*;
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
-import javax.annotation.concurrent.Immutable;
-import java.util.Collection;
-
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

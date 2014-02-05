@@ -5,21 +5,17 @@
 package com.aerofs.gui;
 
 import com.aerofs.controller.SPBadCredentialListener;
-import com.aerofs.lib.ChannelFactories;
-import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 public class GUIProgram implements IProgram
 {
@@ -54,22 +50,11 @@ public class GUIProgram implements IProgram
         // process application arguments
         for (String arg : args) processArgument(arg);
 
-        //
-        // FIXME (AG): The below is practically identical to code in CLIProgram
-        //
-
-        ClientSocketChannelFactory clientChannelFactory = ChannelFactories.getClientChannelFactory();
-        UIGlobals.initSetup_(rtRoot);
+        UIGlobals.initialize_(rtRoot, true);
         SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
-        RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
-
-        ShellextService sextservice = new ShellextService(ChannelFactories.getServerChannelFactory(), ritualProvider);
-        UIGlobals.setShellextService(sextservice);
-        UIGlobals.setRitualClientProvider(ritualProvider);
 
         GUI gui = new GUI();
         UI.set(gui);
-        // schedule the GUI's launch() method to be called as soon as we enter the main loop
         gui.scheduleLaunch(rtRoot);
         gui.enterMainLoop_();
     }

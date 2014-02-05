@@ -15,6 +15,9 @@ import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.ui.update.Updater;
 
+import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
+import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
+
 /**
  * Global access points for all the singleton classes used in the Java UI. (both GUI & CLI)
  *
@@ -25,32 +28,9 @@ import com.aerofs.ui.update.Updater;
  */
 public final class UIGlobals
 {
-    private static RitualClientProvider _ritualProvider;
-
-    public static void setRitualClientProvider(RitualClientProvider ritualProvider)
-    {
-        _ritualProvider = ritualProvider;
-    }
-
-    // explicitly set to null because hasShellextService() expects it to be null if unset.
-    private static ShellextService _shellext = null;
-
-    public static ShellextService shellext()
-    {
-        return _shellext;
-    }
-
-    public static void setShellextService(ShellextService shellext)
-    {
-        _shellext = shellext;
-    }
-
-    public static boolean hasShellextService()
-    {
-        return _shellext == null;
-    }
-
-    public static void initSetup_(String rtRoot) { s_setup = new Setup(rtRoot); }
+    private static RitualClientProvider s_ritualProvider =
+            new RitualClientProvider(getClientChannelFactory());
+    private static ShellextService s_shellext;
 
     private static final Updater s_updater = Updater.getInstance_();
     private static Setup s_setup;
@@ -59,8 +39,9 @@ public final class UIGlobals
     private static final RitualNotificationClient s_rnc = new RitualNotificationClient(
             new RitualNotificationSystemConfiguration());
     // FIXME (AT): TransferState is meant for just GUI, not CLI
+    // should be moved to TransferTrayMenuSection
     private static final TransferState s_ts = new TransferState(s_rnc);
-    // TODO (AT): meant for both GUI and CLI, currently on used for GUI
+    // TODO (AT): meant for both GUI and CLI, currently only used for GUI
     private static final Progresses s_progress = new Progresses();
 
     private static final SanityPoller s_rap = new SanityPoller();
@@ -68,6 +49,19 @@ public final class UIGlobals
     private static final UIScheduler s_sched = new UIScheduler();
     private static final Analytics s_analytics = new Analytics(new DesktopAnalyticsProperties());
     private static final RockLog s_rockLog = new RockLog();
+
+    public static void initialize_(String rtRoot, boolean createShellextService)
+    {
+        s_setup = new Setup(rtRoot);
+
+        if (createShellextService) {
+            s_shellext = new ShellextService(getServerChannelFactory(), s_ritualProvider);
+        }
+    }
+
+    public static ShellextService shellext() { return s_shellext; }
+
+    public static boolean hasShellextService() { return s_shellext == null; }
 
     public static Updater updater() { return s_updater; }
 
@@ -91,11 +85,11 @@ public final class UIGlobals
 
     public static InfoCollector ic() { return s_ic; }
 
-    public static IRitualClientProvider ritualClientProvider() { return _ritualProvider; }
+    public static IRitualClientProvider ritualClientProvider() { return s_ritualProvider; }
 
-    public static RitualBlockingClient ritual() { return _ritualProvider.getBlockingClient(); }
+    public static RitualBlockingClient ritual() { return s_ritualProvider.getBlockingClient(); }
 
-    public static RitualClient ritualNonBlocking() { return _ritualProvider.getNonBlockingClient(); }
+    public static RitualClient ritualNonBlocking() { return s_ritualProvider.getNonBlockingClient(); }
 
     public static Analytics analytics() { return s_analytics; }
 

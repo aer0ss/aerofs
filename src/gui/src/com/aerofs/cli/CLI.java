@@ -11,6 +11,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
+import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UIParam;
@@ -305,6 +306,18 @@ public class CLI implements IUI {
     public void setup_(String rtRoot) throws Exception
     {
         new CLISetup(this, rtRoot);
+    }
+
+    public void scheduleLaunch(final String rtRoot)
+    {
+        asyncExec(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                UIUtil.launch(rtRoot, null, null);
+            }
+        });
     }
 
     public void enterMainLoop_()
