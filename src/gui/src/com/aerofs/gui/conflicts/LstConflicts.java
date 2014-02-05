@@ -24,6 +24,8 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 
@@ -60,7 +62,7 @@ class LstConflicts extends Composite
         layout.setColumnData(colConflicts.getColumn(), new ColumnWeightData(1));
         setLayout(layout);
 
-        UIGlobals.rnc().addListener(new IRitualNotificationListener()
+        final IRitualNotificationListener notificationListener = new IRitualNotificationListener()
         {
             @Override
             public void onNotificationReceived(PBNotification notification)
@@ -81,6 +83,16 @@ class LstConflicts extends Composite
             public void onNotificationChannelBroken()
             {
 
+            }
+        };
+
+        UIGlobals.rnc().addListener(notificationListener);
+        addDisposeListener(new DisposeListener()
+        {
+            @Override
+            public void widgetDisposed(DisposeEvent disposeEvent)
+            {
+                UIGlobals.rnc().removeListener(notificationListener);
             }
         });
     }
