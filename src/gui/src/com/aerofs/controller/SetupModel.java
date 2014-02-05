@@ -9,17 +9,28 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.ui.UIGlobals;
 
 /**
- * This class acts as the model and supports the operations done on
- *   com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.
+ * This class collects various pieces of information necessary to run setup and delegate to other
+ * classes to perform the actual setup tasks. The implementation detail has evolved sufficiently
+ * complicated to support various install and sign in methods.
+ *
+ * Here be dragons.
+ *
+ * FIXME(AT):
+ * This class is originally intended to be used only with the multiuser setup dialog. Hence the
+ * data it keeps is structured to work well with the GUI flow of the multiuser setup dialog.
+ *
+ * Over time, it has involved into the front-end wrapper for all setup & install flows. The class
+ * has never been repurposed and its data structure has never been refactored. That's how we end
+ * up with the mess in GUI unattended setup, CLISetup.setupSingleUser() and
+ * CLISetup.setupMultiUser().
  */
 public class SetupModel
 {
-    public SetupModel()
+    public SetupModel(String rtroot)
     {
-        _setup = UIGlobals.setup();
+        _setup = new Setup(rtroot);
 
         _devAlias = Setup.getDefaultDeviceName();
         _isLocal = true;

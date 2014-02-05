@@ -73,13 +73,13 @@ import static org.eclipse.jface.dialogs.IDialogConstants.OK_ID;
 
 public class DlgSignIn extends AeroFSTitleAreaDialog
 {
-    public DlgSignIn(Shell parentShell) throws Exception
+    public DlgSignIn(Shell parentShell, SetupModel model) throws Exception
     {
         super(null, parentShell, false, shouldAlwaysOnTop(), false);
 
         setTitleImage(Images.get(Images.IMG_SETUP));
 
-        _model = new SetupModel();
+        _model = model;
         _model._localOptions._rootAnchorPath = Setup.getDefaultAnchorRoot();
         _model.setInstallActor(new InstallActor.SingleUser());
         _model.setDeviceName(Setup.getDefaultDeviceName());

@@ -50,7 +50,7 @@ public class GUIProgram implements IProgram
         // process application arguments
         for (String arg : args) processArgument(arg);
 
-        UIGlobals.initialize_(rtRoot, true);
+        UIGlobals.initialize_(true);
         SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
 
         GUI gui = new GUI();

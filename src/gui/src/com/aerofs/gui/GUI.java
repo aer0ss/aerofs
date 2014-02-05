@@ -538,14 +538,14 @@ public class GUI implements IUI
     @Override
     public void setup_(String rtRoot) throws Exception
     {
+        SetupModel model = new SetupModel(rtRoot);
         UnattendedSetup unattendedSetup = new UnattendedSetup(rtRoot);
 
         if (unattendedSetup.setupFileExists()) {
             InstallActor installActor =
                     L.isMultiuser() ? new InstallActor.MultiUser() : new InstallActor.SingleUser();
 
-            SetupModel model = new SetupModel()
-                    .setSignInActor(new SignInActor.CredentialActor())
+            model.setSignInActor(new SignInActor.CredentialActor())
                     .setInstallActor(installActor);
             model._localOptions._rootAnchorPath = Setup.getDefaultAnchorRoot();
             model.setDeviceName(Setup.getDefaultDeviceName());
@@ -574,12 +574,12 @@ public class GUI implements IUI
         }
 
         if (L.isMultiuser()) {
-            DlgMultiuserSetup dialog = new DlgMultiuserSetup(_sh);
+            DlgMultiuserSetup dialog = new DlgMultiuserSetup(_sh, model);
             Object result = dialog.openDialog();
             // N.B. a null result indicates the user has canceled the setup.
             if (result == null) throw new ExLaunchAborted("user canceled setup");
         } else {
-            AeroFSTitleAreaDialog dlg = new DlgSignIn(_sh);
+            AeroFSTitleAreaDialog dlg = new DlgSignIn(_sh, model);
 
             dlg.open();
 

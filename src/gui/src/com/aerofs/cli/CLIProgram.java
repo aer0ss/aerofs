@@ -18,7 +18,7 @@ public class CLIProgram implements IProgram
         // process application arguments
         for (String arg : args) processArgument(arg);
 
-        UIGlobals.initialize_(rtRoot, false);
+        UIGlobals.initialize_(false);
         SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
 
         CLI cli = new CLI();

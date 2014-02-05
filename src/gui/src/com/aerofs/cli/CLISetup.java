@@ -32,7 +32,7 @@ public class CLISetup
         String defaultRootAnchor = Setup.getDefaultAnchorRoot();
         String defaultDeviceName = Setup.getDefaultDeviceName();
 
-        _model = new SetupModel()
+        _model = new SetupModel(rtRoot)
                 .setSignInActor(LibParam.OpenId.enabled() ?
                         new OpenIdCLIActor(cli) : new CredentialActor());
 

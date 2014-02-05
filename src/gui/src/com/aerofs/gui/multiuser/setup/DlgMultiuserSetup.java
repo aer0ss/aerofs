@@ -26,11 +26,11 @@ public class DlgMultiuserSetup extends AeroFSDialog
 
     private AbstractSetupPage _page;
 
-    public DlgMultiuserSetup(Shell shell)
+    public DlgMultiuserSetup(Shell shell, SetupModel model)
     {
         super(shell, null, false, true);
 
-        _model = new SetupModel()
+        _model = model
                 .setSignInActor(LibParam.OpenId.enabled() ?
                         new OpenIdGUIActor() : new CredentialActor())
                 .setInstallActor(new InstallActor.MultiUser());
