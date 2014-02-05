@@ -14,8 +14,9 @@ import tempfile
 # Statics
 # ----------------------------------------------------------------------
 
-PROPERTIES_EXTERNAL = "/opt/config/properties/external.properties"
-PROPERTIES_EXTERNAL_TMP = "/opt/config/properties/external.properties.tmp"
+PWD = os.path.abspath(os.path.dirname(__file__))
+PROPERTIES_EXTERNAL = os.path.join(PWD, "properties", "external.properties")
+PROPERTIES_EXTERNAL_TMP = os.path.join(PWD, "properties","external.properties.tmp")
 CACERT_PATH = "/etc/ssl/certs/AeroFS_CA.pem"
 
 LICENSE_FILE_PATH = "/etc/aerofs/license.gpg"
@@ -79,6 +80,9 @@ def read_dict_from_file(filename):
     d = {}
     with open(filename, 'r') as f:
         for line in f:
+            # ignore empty lines and comment lines for robustness to human changes
+            if line == '\n' or line.startswith("#"):
+                continue
             (key, val) = line.split('=', 1)
             d[key] = val.strip()
     return d
@@ -243,6 +247,6 @@ except:
 
 if __name__ == '__main__':
     try:
-        app.run(host="127.0.0.1", port=5434)
+        app.run(host="127.0.0.1", port=5434, debug=True)
     except KeyboardInterrupt:
         app.stop()
