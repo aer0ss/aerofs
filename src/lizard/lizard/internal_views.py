@@ -8,7 +8,7 @@ from flask import Blueprint, url_for, render_template, redirect, Response, reque
 
 from aerofs_licensing import unicodecsv
 from lizard import db
-from . import emails, forms, models
+from . import appliance, emails, forms, models
 
 blueprint = Blueprint('internal', __name__, template_folder='templates')
 
@@ -141,3 +141,24 @@ def upload_bundle():
         flash(u"Imported {} new licenses.".format(len(just_imported)), "success")
         return redirect(url_for(".queues"))
     return render_template('upload_bundle.html', form=form)
+
+@blueprint.route("/release", methods=["GET", "POST"])
+def release():
+    form = forms.ReleaseForm()
+    current_ver = appliance.latest_appliance_version()
+    if form.validate_on_submit():
+        version = form.release_version.data
+        print "would attempt to release", version
+        # Check that the two files we expect to be in the bucket are in the bucket
+        if not appliance.ova_present_for(version):
+            flash(u'Missing file for release: {}'.format(appliance.ova_url(version)), 'error')
+        elif not appliance.qcow_present_for(version):
+            flash(u'Missing file for release: {}'.format(appliance.qcow_url(version)), 'error')
+        else:
+            appliance.set_public_version(version)
+            flash(u'Released version {}'.format(version), 'success')
+            return redirect(url_for('.release'))
+    return render_template("release_version.html",
+            form=form,
+            current_version=appliance.latest_appliance_version()
+            )

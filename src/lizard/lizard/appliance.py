@@ -27,3 +27,18 @@ def latest_appliance_version():
             f.write(version.encode("utf-8") + '\n')
     with open(filename) as f:
         return f.read().strip()
+
+def set_public_version(version):
+    filename = current_app.config["RELEASE_VERSION_FILE"]
+    with open(filename, "w") as f:
+        f.write(version.encode("utf-8") + '\n')
+
+def ova_present_for(version):
+    ova = ova_url(version)
+    r = requests.head(ova)
+    return r.ok
+
+def qcow_present_for(version):
+    qcow = qcow_url(version)
+    r = requests.head(qcow)
+    return r.ok

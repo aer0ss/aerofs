@@ -77,3 +77,6 @@ class InternalLicenseStateForm(Form):
 
 class PasswordResetForm(Form):
     email = TextField('Email', validators = [Email()])
+
+class ReleaseForm(Form):
+    release_version = TextField('Version', validators = [InputRequired()])
