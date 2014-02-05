@@ -52,7 +52,7 @@ public class PulseHandlerUtil
         AddPulseResult pinf = pm.addInProgressPulse(did, prevtok);
         if (pinf == null) return null;
 
-        l.info("d:" + did + " msgid:" + pinf.msgid() + " tok:" + pinf.tok());
+        l.debug("d:{} msgid:{} tok:{}", did, pinf.msgid(), pinf.tok());
         return new MakePulseResult(pinf.tok(), newCheckPulse(pinf.msgid()));
     }
 
@@ -61,15 +61,15 @@ public class PulseHandlerUtil
      * <code>timeout</code>
      *
      * @param l {@link Logger} to log messages to
-     * @param sched {@link Scheduler} used by the transport to schedule events to itself
+     * @param sched {@link IScheduler} used by the transport to schedule events to itself
      * @param ev {@link IPulseEvent} to schedule
      * @param timeout time after which the event should be scheduled
      */
     public static void schedule_(Logger l, IScheduler sched, IPulseEvent ev, long timeout)
     {
-        l.info("d:" + ev.did() + " attempt pulse sched");
+        l.trace("d:{} attempt pulse sched", ev.did());
         sched.schedule(ev, timeout);
-        l.info("d:" + ev.did() + " pulse sched:+" + timeout);
+        l.trace("d:{} pulse sched:+{}", ev.did(), timeout);
     }
 
     /**
@@ -78,7 +78,7 @@ public class PulseHandlerUtil
      * the transport at <code>INIT_PULSE_TIMEOUT</code>
      *
      * @param l {@link Logger} to log messages to
-     * @param sched {@link Scheduler} used by the transport to schedule events to itself
+     * @param sched {@link IScheduler} used by the transport to schedule events to itself
      * @param did {@link DID} of the remote peer for whom the pulse is being rescheduled
      * @param tok {@link PulseToken} with which to create the <code>EOTpSubsequentPulse</code>;
      * this means that this <code>EOTpSubsequentPulse</code> event is part of a given
@@ -120,14 +120,14 @@ public class PulseHandlerUtil
         // stop pulses if no in-progress pulse entry was found (i.e. a reply came)
 
         if (pm.getInProgressPulse(did) == null) {
-            l.info("d:" + did + " in-progress pulse not found; term hd");
+            l.info("d:{} in-progress pulse not found; term hd", did);
             return false;
         }
 
         // kill the connection and restart pulsing
 
         if (!ev.killed_() && (ev.tries_() >= maxfails)) {
-            l.info("d:" + did + " fails > maxfails (" + ev.tries_() + " >= " +  maxfails + ") kill conn and resched ev");
+            l.info("d:{} fails > maxfails ({} >= {}) kill conn and resched ev", did, ev.tries_(), maxfails);
             unicast.disconnect(did, new ExDeviceUnavailable("pulse timed out"));
             ev.markkilled_();
         }

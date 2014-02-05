@@ -61,7 +61,7 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
     {
         DID did = ev.did();
 
-        l.info("d:" + did + " hd pulse");
+        l.trace("d:{} hd pulse", did);
 
         if (!ph.prepulsechecks_(ev)) return;
 
@@ -72,16 +72,16 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
         try {
             MakePulseResult ret = makepulse_(l, pm, did, prevtok);
             if (ret == null) {
-                l.warn("d:" + did + " prevtok:" + printtok(prevtok) + " no ret");
+                l.error("d:{} prevtok:{} no ret", did, printtok(prevtok));
                 return;
             }
 
             ev.tok_(ret.tok());
-            l.info("d:" + did + " prevtok:" + printtok(prevtok) + " tok:" + ret.tok() + " send pulse");
+            l.trace("d:{} prevtok:{} tok:{} send pulse", did, printtok(prevtok), ret.tok());
 
             uc.send(did, null, Prio.HI, newControl(ret.hdr()), null);
         } catch (Exception e) {
-            l.info("d:" + did + " err:" + e + " pulse resched");
+            l.warn("d:{} pulse resched", did, e);
         }
 
         ph.schednextpulse_(ev);

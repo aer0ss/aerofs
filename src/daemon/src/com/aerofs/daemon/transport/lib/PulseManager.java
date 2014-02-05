@@ -50,7 +50,7 @@ public class PulseManager
      * Add a {@link GenericPulseDeletionWatcher} to the list of listeners
      * to be notified if a pulse was deleted.
      *
-     * @param tp {@link ILinkStateListener} that owns this <code>PulseManager</code>
+     * @param tp {@link ITransport} that owns this <code>PulseManager</code>
      * @param tpsink <code>IEvent</code> into which the transport enqueues events to the core
      */
     public synchronized void addGenericPulseDeletionWatcher(ITransport tp, IBlockingPrioritizedEventSink<IEvent> tpsink)
@@ -116,7 +116,7 @@ public class PulseManager
         _pulsetokens.put(did, tokid);
         _msgids.put(did, msgid);
 
-        l.info("d:" + did + " generate msgpulseid:" + msgid + " for pulse seq num:" + tokid);
+        l.info("d:{} generate msgpulseid:{} for pulse seq num:{}", did, msgid, tokid);
 
         return new AddPulseResult(tokid, msgid);
     }
@@ -161,7 +161,7 @@ public class PulseManager
     {
         boolean existed = delInProgressPulse(did);
         if (existed || forcenotify) notifyWatchers_(did);
-        if (existed) l.info("d:" + did + " stopped pulse");
+        if (existed) l.info("d:{} stopped pulse", did);
         return existed;
     }
 
@@ -176,11 +176,11 @@ public class PulseManager
      */
     public synchronized void processIncomingPulseId(DID did, int msgpulseid)
     {
-        l.info("d:" + did + " rcv pulse rep msgpulseid:" + msgpulseid);
+        l.info("d:{} rcv pulse rep msgpulseid:{}", did, msgpulseid);
 
         Integer pulseid = getInProgressPulse(did);
         if (pulseid == null) {
-            l.info("d:" + did + " no in-progress pulse; drop pulse rep");
+            l.info("d:{} no in-progress pulse; drop pulse rep", did);
             return;
         }
 
@@ -190,7 +190,7 @@ public class PulseManager
         //
 
         if (pulseid == msgpulseid) {
-            l.info("d:" + did + " matched msgpulseid:" + msgpulseid + " - del pulse + notify core");
+            l.info("d:{} matched msgpulseid:{} - del pulse + notify core", did, msgpulseid);
             stopPulse(did, false);
         }
     }
@@ -318,7 +318,7 @@ public class PulseManager
         /**
          * Constructor
          *
-         * @param tp {@link ILinkStateListener} via which pulses are being sent
+         * @param tp {@link ITransport} via which pulses are being sent
          * @param tpsink <code>IEvent</code> into which the transport enqueues events to the core
          */
         public GenericPulseDeletionWatcher(ITransport tp, IBlockingPrioritizedEventSink<IEvent> tpsink)
