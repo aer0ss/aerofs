@@ -21,5 +21,13 @@ server {
 
     add_header X-Frame-Options SAMEORIGIN;
 
+    # redirect all requests to bunker based on flags
+    if (!-f /var/aerofs/configuration-initialized-flag) {
+        rewrite ^ http://$host:4444/setup break;
+    }
+    if (-f /var/aerofs/maintenance-mode-flag) {
+        rewrite ^ http://$host:4444/maintenance_mode break;
+    }
+
     include /etc/nginx/backends-enabled/* ;
 }
