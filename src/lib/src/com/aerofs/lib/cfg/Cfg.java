@@ -20,6 +20,7 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.LeanByteString;
@@ -390,6 +391,7 @@ public class Cfg
 
     public static int port(PortType type)
     {
+        Preconditions.checkState(_portbase != 0);
         return _portbase + type.ordinal();
     }
 
