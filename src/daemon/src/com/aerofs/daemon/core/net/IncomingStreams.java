@@ -26,6 +26,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
@@ -53,7 +54,7 @@ public final class IncomingStreams
         }
 
         @Override
-        public int compareTo(StreamKey key)
+        public int compareTo(@Nonnull StreamKey key)
         {
             int ret = _did.compareTo(key._did);
             return ret != 0 ? ret : _strmid.compareTo(key._strmid);
@@ -174,15 +175,15 @@ public final class IncomingStreams
     {
         IncomingStream stream = _map.get(key);
         if (stream == null) {
-            l.warn("recv chunk after end " + stream + ":" + key);
+            l.warn("recv chunk after end for null stream with key:{}", key);
         } else if (seq != ++stream._seq) {
             if (stream._invalidationReason == null) { // not aborted
                 _fds.logSendAsync("istrm " + stream._pc.ep().tp() +
                         ":" + key + " expect seq " + stream._seq + " actual " + seq);
-                aborted_(key, InvalidationReason.OUT_OF_ORDER); // notify receiver
+                abortAndNotifyReceiver_(key, InvalidationReason.OUT_OF_ORDER); // notify receiver
                 end_(key); // notify lower layers
             } else {
-                l.warn("istrm " + stream + " recv chunk after abort seq:" + seq);
+                l.warn("istrm {} recv chunk after abort seq:{}", stream, seq);
             }
         } else {
             try {
@@ -193,22 +194,27 @@ public final class IncomingStreams
                 }
                 resume_(stream);
             } catch (IOException e) {
-                l.warn("istrm " + stream + " fail chunk.available");
-                aborted_(key, InvalidationReason.INTERNAL_ERROR);
+                l.warn("istrm {} fail chunk.available", stream);
+                abortAndNotifyReceiver_(key, InvalidationReason.INTERNAL_ERROR);
                 end_(key);
             }
         }
     }
 
-    public void aborted_(StreamKey key, InvalidationReason reason)
+    public void onAbortBySender_(StreamKey key, InvalidationReason reason)
     {
-        assert reason != null;
+        abortAndNotifyReceiver_(key, reason);
+    }
+
+    private void abortAndNotifyReceiver_(StreamKey key, InvalidationReason reason)
+    {
+        checkNotNull(reason);
 
         IncomingStream stream = _map.get(key);
         if (stream == null) {
-            l.warn("abort " + stream + " key:" + key + " after stream end");
+            l.warn("abort after end for null stream with key:{}", key);
         } else {
-            l.warn("abort " + stream + " key:" + key + " rsn:" + reason);
+            l.warn("abort {} key:{} rsn:{}", stream, key, reason);
 
             stream._invalidationReason = reason;
             for (IIncomingStreamChunkListener listener : _listenerList) {
@@ -230,20 +236,21 @@ public final class IncomingStreams
     public void end_(StreamKey key)
     {
         IncomingStream stream = _map.remove(key);
+
         if (stream == null) {
-            l.warn("end called but no stream key:" + key);
+            l.warn("end called for null stream with key:{}", key);
             return;
         }
 
         try {
-            l.info("end" + stream + " key:" + key);
+            l.info("end {} key:{}", stream, key);
 
             long _diffTime = stream._timer.elapsed();
             l.debug("istrm processed:{} time:{}", stream._bytesRead, _diffTime);
 
             _stack.output().endIncomingStream_(key._strmid, stream._pc.ep());
         } catch (Exception e) {
-            l.warn("cannot end " + stream + " key:" + key + ", backlog it: " + Util.e(e));
+            l.warn("cannot end {} key:{}" ,stream, key, Util.e(e));
 
             _ended.put(key, stream);
         }

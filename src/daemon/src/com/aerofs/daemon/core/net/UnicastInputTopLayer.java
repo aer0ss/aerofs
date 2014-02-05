@@ -265,6 +265,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
     public void onStreamAborted_(StreamID streamId, Endpoint ep, InvalidationReason reason)
     {
         StreamKey key = new StreamKey(ep.did(), streamId);
-        _f._iss.aborted_(key, reason);
+        _f._iss.onAbortBySender_(key, reason);
     }
 }
