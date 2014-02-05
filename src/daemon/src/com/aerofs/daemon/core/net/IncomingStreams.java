@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 public final class IncomingStreams
 {
     private static final Logger l = Loggers.getLogger(IncomingStreams.class);
@@ -134,8 +137,9 @@ public final class IncomingStreams
             throws ExTimeout, ExStreamInvalid, ExNoResource, ExAborted
     {
         IncomingStream stream = _map.get(key);
-        assert stream != null : key;
-        assert stream._tcb == null : stream._tcb;
+
+        checkNotNull(stream, "no stream for key:%s", key);
+        checkState(stream._tcb == null, "stream should only run on core thread but has non-null tcb:%s", stream._tcb);
 
         if (stream._invalidationReason == null && stream._chunks.isEmpty()) {
             // no chunk available. wait for one
@@ -147,7 +151,7 @@ public final class IncomingStreams
                 stream._tcb = null;
             }
 
-            assert stream._invalidationReason != null || !stream._chunks.isEmpty();
+            checkState(stream._invalidationReason != null || !stream._chunks.isEmpty());
         }
 
         if (stream._invalidationReason != null) {
