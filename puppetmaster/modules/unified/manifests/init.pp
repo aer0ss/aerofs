@@ -8,9 +8,6 @@ class unified {
     file {"/etc/hosts":
         source => "puppet:///modules/unified/hosts",
     }
-    file {"/etc/default/grub":
-        source => "puppet:///modules/unified/grub-options",
-    }
     include enterprise-network-config
 
     class {'persistent::services':
