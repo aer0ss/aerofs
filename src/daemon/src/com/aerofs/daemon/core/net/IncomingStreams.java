@@ -215,12 +215,15 @@ public final class IncomingStreams
             l.warn("abort after end for null stream with key:{}", key);
         } else {
             l.warn("abort {} key:{} rsn:{}", stream, key, reason);
-
             stream._invalidationReason = reason;
-            for (IIncomingStreamChunkListener listener : _listenerList) {
-                listener.onStreamInvalidated_(key._did, key._strmid);
-            }
-
+            // FIXME (AG): remove this when core streams are reworked
+            // _technically_ it's safe to put this into end_ only,
+            // because end_ should be called inside the finally block
+            // of every stream user. unfortunately that policy is
+            // completely unenforced, and it's possible to have a token
+            // leak if someone calls abort without end. to work around
+            // this I'll call this multiple times.
+            notifyListenersOfStreamInvalidation_(key);
             resume_(stream);
         }
     }
@@ -248,11 +251,20 @@ public final class IncomingStreams
             long _diffTime = stream._timer.elapsed();
             l.debug("istrm processed:{} time:{}", stream._bytesRead, _diffTime);
 
+            notifyListenersOfStreamInvalidation_(key);
+
             _stack.output().endIncomingStream_(key._strmid, stream._pc.ep());
         } catch (Exception e) {
             l.warn("cannot end {} key:{}" ,stream, key, Util.e(e));
 
             _ended.put(key, stream);
+        }
+    }
+
+    private void notifyListenersOfStreamInvalidation_(StreamKey key)
+    {
+        for (IIncomingStreamChunkListener listener : _listenerList) {
+            listener.onStreamInvalidated_(key._did, key._strmid);
         }
     }
 }
