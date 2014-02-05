@@ -18,6 +18,7 @@
     <orderEntry type="library" exported="" name="logback" level="project" />
     <orderEntry type="library" exported="" name="commons-lang" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="TEST" name="bouncycastle" level="project" />
   </component>
 </module>
 

@@ -12,13 +12,9 @@ import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
@@ -31,8 +27,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 
 /**
@@ -165,6 +159,7 @@ public class TestDownstream extends AbstractTest
     {
         ReconnectingClientHandler.resetDelay();
         do {
+            assert true : "yes it's true, resolve an IDEA warning";
         } while (ReconnectingClientHandler.getNextDelay() != ReconnectingClientHandler.MAX_DELAY_MS);
         Assert.assertEquals(ReconnectingClientHandler.getNextDelay(), ReconnectingClientHandler.MAX_DELAY_MS);
     }
@@ -177,44 +172,6 @@ public class TestDownstream extends AbstractTest
 
         Assert.assertTrue(!chan.isConnected());
         chan.doSend("hi"); // no exception from this guy, async...
-    }
-
-    // A simple server handler that records line-delimited messages received for later checking
-    static class LineServerHandler extends SimpleChannelHandler
-    {
-        Queue<String> recd  = new ConcurrentLinkedQueue<String>();
-
-        @Override
-        public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
-        {
-            String msg = (String)e.getMessage();
-            l.info("LSH R: {}", msg);
-            if (msg.equals("bye\n")) {
-                e.getChannel().disconnect();
-            }
-            recd.add(msg);
-        }
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
-        {
-            e.getCause().printStackTrace();
-            Assert.fail();
-        }
-
-        /**
-         * Block until the expected message has arrived, or 5 seconds, whichever is sooner.
-         */
-        public void waitForMessage(String expected)
-        {
-            int attempts = 0;
-            while ((attempts < MAX_ATTEMPTS) && (recd.size() < 1)) {
-                attempts++;
-                ThreadUtil.sleepUninterruptable(DELAY);
-            }
-            Assert.assertEquals(1, recd.size());
-            Assert.assertEquals(expected + '\n', recd.remove());
-        }
     }
 
     private void waitForConnectState(IAuditChannel channel, boolean expected)
