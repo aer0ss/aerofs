@@ -1,5 +1,7 @@
 import datetime
 
+from flask.ext import scrypt
+
 from lizard import db
 
 # Maximum length of a valid email address, in bytes, including null terminator
@@ -137,6 +139,13 @@ class Admin(db.Model, TimeStampedMixin):
     notify_security = db.Column(db.Boolean, default=True, nullable=False)
     notify_release = db.Column(db.Boolean, default=True, nullable=False)
     notify_maintenance = db.Column(db.Boolean, default=True, nullable=False)
+
+    def set_password(self, password):
+        # Generate a new random salt every time we set the password.
+        salt = scrypt.generate_random_salt()
+        self.salt = salt
+        # scrypt her password with that salt
+        self.pw_hash = scrypt.generate_password_hash(password, salt)
 
     def __repr__(self):
         return "<Admin {}>".format(self.email)

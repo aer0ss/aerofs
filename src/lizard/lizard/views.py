@@ -1,11 +1,15 @@
 import base64
 import datetime
 import os
+import json
+import time
 
-from flask import Blueprint, render_template, flash, redirect, request, url_for, Response
+from flask import Blueprint, current_app, render_template, flash, redirect, request, url_for, Response
 from flask.ext import scrypt, login
-from sqlalchemy import desc
+import itsdangerous
+from itsdangerous import TimestampSigner
 import markupsafe
+from sqlalchemy import desc
 
 from lizard import analytics_client, db, login_manager
 from . import appliance, emails, forms, models
@@ -142,11 +146,7 @@ def signup_completion_page():
         admin.last_name = signup.last_name
         admin.phone_number = signup.phone_number
         admin.job_title = signup.job_title
-        # generate a random salt for this user
-        salt = scrypt.generate_random_salt()
-        admin.salt = salt
-        # scrypt her password with that salt
-        admin.pw_hash = scrypt.generate_password_hash(form.password.data, salt)
+        admin.set_password(form.password.data)
         db.session.add(admin)
 
         # Delete any invite codes for that user from the database; they can no
@@ -221,10 +221,7 @@ def edit_preferences():
         user.first_name = form.first_name.data
         user.last_name = form.last_name.data
         if len(form.password.data) > 0:
-            # Always generate a new salt when updating password.
-            salt = scrypt.generate_random_salt()
-            user.salt = salt
-            user.pw_hash = scrypt.generate_password_hash(form.password.data, salt)
+            user.set_password(form.password.data)
         # Update email preferences
         user.notify_security    = form.security_emails.data
         user.notify_release     = form.release_emails.data
@@ -302,11 +299,7 @@ def accept_organization_invite():
         admin.last_name = form.last_name.data
         admin.phone_number = form.phone_number.data
         admin.job_title = form.job_title.data
-        # generate a random salt for this user
-        salt = scrypt.generate_random_salt()
-        admin.salt = salt
-        # scrypt her password with that salt
-        admin.pw_hash = scrypt.generate_password_hash(form.password.data, salt)
+        admin.set_password(form.password.data)
         db.session.add(admin)
 
         # Delete all invite and signup codes associated with this email
@@ -369,3 +362,65 @@ def download_latest_license():
             headers={"Content-Disposition": "attachment; filename=aerofs-private-cloud.license"}
             )
     return r
+
+@blueprint.route("/start_password_reset", methods=["GET", "POST"])
+def start_password_reset():
+    form = forms.PasswordResetForm()
+    if form.validate_on_submit():
+        if models.Admin.query.filter_by(email=form.email.data).first():
+            # Generate a blob hmaced
+            email = form.email.data
+            s = TimestampSigner(current_app.secret_key)
+            token = {
+                    "email": email,
+                    }
+            reset_token = base64.urlsafe_b64encode(s.sign(json.dumps(token)))
+            reset_link = url_for(".complete_password_reset", reset_token=reset_token, _external=True)
+            emails.send_password_reset_email(email, reset_link)
+
+        # Note: pretend that password reset worked even if the email given
+        # was not known to avoid leaking which emails are registered admins.
+        return render_template("password_reset_requested.html")
+    return render_template("password_reset.html",
+            form=form)
+
+@blueprint.route("/complete_password_reset", methods=["GET", "POST"])
+def complete_password_reset():
+    reset_blob = request.args.get("reset_token", None)
+    if not reset_blob:
+        flash(u"No password reset token given.", "error")
+        return redirect(url_for(".start_password_reset"))
+
+    try:
+        signed_reset_token = base64.urlsafe_b64decode(reset_blob.encode("latin1"))
+    except Exception as e:
+        print e
+        flash(u"Not a valid password reset token.", "error")
+        return redirect(url_for(".start_password_reset"))
+
+    s = TimestampSigner(current_app.secret_key)
+    try:
+        reset_token = s.unsign(signed_reset_token, max_age=3600)
+    except itsdangerous.BadSignature as e:
+        flash(u"Not a valid password reset token.", "error")
+        return redirect(url_for(".start_password_reset"))
+    except itsdangerous.SignatureExpired as e:
+        flash(u"Password reset token valid but expired.", "error")
+        return redirect(url_for(".start_password_reset"))
+
+    token = json.loads(reset_token)
+    token_email = token["email"]
+
+    form = forms.CompleteSignupForm()
+    if form.validate_on_submit():
+        admin = models.Admin.query.filter_by(email=token_email).first_or_404()
+        # Reset the password
+        admin.set_password(form.password.data)
+        # save to DB
+        db.session.add(admin)
+        db.session.commit()
+        # log in the user
+        login.login_user(admin, remember=False)
+        flash(u"Password reset successfully.", 'success')
+        return redirect(url_for(".dashboard"))
+    return render_template("complete_password_reset.html", email=token_email, form=form)

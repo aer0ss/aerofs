@@ -58,6 +58,14 @@ def _license_available_email_for(email_address, company):
     return _make_email_message(email_address, "Your AeroFS Private Cloud License is ready",
             text_body, html_body)
 
+def _password_reset_email_for(email_address, link):
+    text_body = render_template("password_reset_email.txt",
+            link=link)
+    html_body = render_template("password_reset_email.html",
+            link=link)
+    return _make_email_message(email_address, "AeroFS Private Cloud password reset",
+            text_body, html_body)
+
 def _send_email(email_address, msg):
     s = smtplib.SMTP(SMTP_RELAY)
     try:
@@ -75,4 +83,8 @@ def send_invite_email(email_address, company, invite_code):
 
 def send_license_available_email(email_address, company):
     msg = _license_available_email_for(email_address, company)
+    _send_email(email_address, msg)
+
+def send_password_reset_email(email_address, link):
+    msg = _password_reset_email_for(email_address, link)
     _send_email(email_address, msg)

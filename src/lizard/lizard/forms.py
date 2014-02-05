@@ -74,3 +74,6 @@ class InternalLicenseStateForm(Form):
         ('ON_HOLD', 'ON HOLD'),
         ('IGNORED', 'IGNORED')
     ])
+
+class PasswordResetForm(Form):
+    email = TextField('Email', validators = [Email()])
