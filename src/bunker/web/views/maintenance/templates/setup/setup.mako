@@ -12,6 +12,7 @@
 </%def>
 
 <%block name="tracking_codes">
+    ## This tracking code corresponds to the Private Cloud project in segment.io.
     ${segment_io.code('xtw6kl4cml')}
 </%block>
 
