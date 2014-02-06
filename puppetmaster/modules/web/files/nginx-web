@@ -25,7 +25,13 @@ server {
     location /static {
         root /opt/web/web;
     }
+    location /docs {
+        alias /opt/web/docs/;
+    }
     location / {
+        # redirect /developer to /developers
+        rewrite /developer(/.*)?$ /developers$1 permanent;
+
         # proxies to Pyramid, the python server serving the AeroFS website.
         uwsgi_pass 127.0.0.1:8080;
         include uwsgi_params;
