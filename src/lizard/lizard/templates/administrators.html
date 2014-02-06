@@ -18,7 +18,7 @@
                 <td class="email">{{ admin.email }}</td>
                 <td>
                     {# TODO: add button to kick out user or resend invitation? #}
-                    kick out
+                    Remove as Admin
                 </td>
             </tr>
         {% endfor %}
@@ -35,10 +35,10 @@
     </table>
     <h4>Invite another admin</h4>
 
-    <form action="{{ url_for('.invite_to_organization') }}" method="post" name="invite">
+    <form class="form-inline" action="{{ url_for('.invite_to_organization') }}" method="post" name="invite">
         {{ form.hidden_tag() }}
-        {{ render_field(form.email) }}
-        {{ submit_button("Invite") }}
+        {{ render_field(form.email, with_label=False, no_divs=True) }}
+        {{ submit_button("Send Invite") }}
     </form>
     {# TODO: add invite button/form here that POSTs? #}
 

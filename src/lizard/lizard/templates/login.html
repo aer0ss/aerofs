@@ -1,13 +1,12 @@
 {% extends "public.html" %}
 
-{% block title %} Sign In {% endblock %}
+{% block title %}Sign in to Your Private Cloud Account{% endblock %}
 
 {% from "_formhelpers.html" import render_field, submit_button %}
 
 {% block content %}
+    <h1>Sign In to Your Private Cloud Account</h1>
     <div class="offset1">
-        <h1>Sign In</h1>
-
         <form action="" method="post" name="login">
             {{ form.hidden_tag() }}
             {{ render_field(form.email) }}

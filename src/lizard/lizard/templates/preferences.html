@@ -3,7 +3,6 @@
 
 {% block content %}
     <h1>My Account</h1>
-    <p>Organization: {{ user.customer.name }}</p>
     <form action="" method="post" name="prefs">
         {{ form.hidden_tag() }}
         {{ render_field(form.first_name) }}

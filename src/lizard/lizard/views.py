@@ -322,6 +322,7 @@ def dashboard():
                 models.License.modify_date.desc(),
             )
     return render_template("dashboard.html",
+            user=login.current_user,
             current_license=licenses.first(),
             appliance_version=appliance.latest_appliance_version(),
             )

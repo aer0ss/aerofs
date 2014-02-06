@@ -2,8 +2,9 @@
 
 {% block content %}
     <h1>Dashboard</h1>
+	<p>Organization: {{ user.customer.name }}</p>
     {% if current_license %}
-    <h3>Download</h3>
+    <h3>Downloads</h3>
     <ul>
         <li><a href="{{ url_for('.download_latest_license') }}">Download your latest license file</a></li>
         {# TODO: note which appliance version the user has downloaded #}
