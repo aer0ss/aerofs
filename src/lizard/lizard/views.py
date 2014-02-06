@@ -197,15 +197,6 @@ def signup_completion_page():
         if not login_success:
             flash(u"Login failed for {}: probably marked inactive?")
 
-        # TODO: also remove the flashed password before deploying to production
-        flash(u"Created user {} ({} {} from company {} pw: {}, signup code: {})".format(
-            admin.email,
-            admin.first_name,
-            admin.last_name,
-            cust.name,
-            form.password.data,
-            user_signup_code),
-            'success')
         return redirect(url_for(".index"))
     return render_template("complete_signup.html",
             form=form,
