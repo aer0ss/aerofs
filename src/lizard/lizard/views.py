@@ -316,8 +316,13 @@ def accept_organization_invite():
 @blueprint.route("/dashboard", methods=["GET"])
 @login.login_required
 def dashboard():
+    user = login.current_user
+    licenses = user.customer.licenses.filter_by(state=models.License.states.FILLED).order_by(
+                models.License.expiry_date.desc(),
+                models.License.modify_date.desc(),
+            )
     return render_template("dashboard.html",
-            issued_licenses=login.current_user.customer.licenses.all(),
+            current_license=licenses.first(),
             appliance_version=appliance.latest_appliance_version(),
             )
 

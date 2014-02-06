@@ -2,19 +2,21 @@
 
 {% block content %}
     <h1>Dashboard</h1>
+    {% if current_license %}
     <h3>Download</h3>
     <ul>
-        {% if issued_licenses %}
-            <li><a href="{{ url_for('.download_latest_license') }}">Download your latest license file</a></li>
-        {% else %}
-            <li>You have no license issued yet.</li>
-        {% endif %}
+        <li><a href="{{ url_for('.download_latest_license') }}">Download your latest license file</a></li>
         {# TODO: note which appliance version the user has downloaded #}
-        <li><a href="{{ url_for('.download_image') }}">Download appliance image (v{{ appliance_version }})</a>
-        </li>
+        <li><a href="{{ url_for('.download_image') }}">Download appliance image (v{{ appliance_version }})</a></li>
     </ul>
-    <h3>Purchases</h3>
-    <table class="table">
-        {# TODO: add license purchase history #}
-    </table>
+
+    <h3>Current license</h3>
+    <ul>
+        <li>License type: {% if current_license.is_trial %}Trial{% else %}Standard{% endif %}</li>
+        <li>Seats: {{ current_license.seats }}</li>
+        <li>Valid until: {{ current_license.expiry_date.strftime('%b %d, %Y') }}</li>
+    </ul>
+    {% else %}
+    <p>Your license request is being processed.  We'll send you an email when it's ready.</p>
+    {% endif %}
 {% endblock %}
