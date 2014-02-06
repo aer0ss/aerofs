@@ -4,6 +4,7 @@
 
 package com.aerofs.audit.client;
 
+import com.aerofs.base.NoObfuscation;
 import com.aerofs.lib.log.LogUtil;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -37,6 +38,7 @@ public class AuditClient
     Logger l = LoggerFactory.getLogger(AuditClient.class);
 
     /** The general topic this audit belongs to. */
+    @NoObfuscation
     public enum AuditTopic
     {
         FILE,

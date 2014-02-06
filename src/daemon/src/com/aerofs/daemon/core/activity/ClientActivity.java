@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.activity;
 
+import com.aerofs.base.NoObfuscation;
 import com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType;
 import com.google.common.collect.Sets;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,7 @@ import static com.google.common.base.Preconditions.checkState;
  * individual activity's value. Remotely-generated activities
  * are exclusive. They cannot be combined.
  */
+@NoObfuscation
 public enum ClientActivity
 {
     // event types
