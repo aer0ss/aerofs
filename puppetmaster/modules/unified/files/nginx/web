@@ -1,5 +1,15 @@
 server {
     listen 80;
+
+    # redirect all HTTP requests to bunker based on flags.
+    # note: duplicate code in the following block.
+    if (!-f /var/aerofs/configuration-initialized-flag) {
+        rewrite ^ http://$host:4444/setup break;
+    }
+    if (-f /var/aerofs/maintenance-mode-flag) {
+        rewrite ^ http://$host:4444/maintenance_mode break;
+    }
+
     rewrite ^ https://$host$request_uri permanent;
 }
 server {
@@ -21,7 +31,8 @@ server {
 
     add_header X-Frame-Options SAMEORIGIN;
 
-    # redirect all requests to bunker based on flags
+    # redirect all HTTPS requests to bunker based on flags
+    # note: duplicate code in the previous block.
     if (!-f /var/aerofs/configuration-initialized-flag) {
         rewrite ^ http://$host:4444/setup break;
     }
