@@ -5,8 +5,7 @@ from pyramid.paster import setup_logging
 bunker = get_app('production.ini', 'main')
 setup_logging('production.ini')
 
-# FIXME (AG): load this from the config file
-server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 8588), bunker)
+server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 4444), bunker)
 server.shutdown_timeout = .1
 
 if __name__ == "__main__":
