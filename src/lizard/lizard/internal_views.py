@@ -135,7 +135,7 @@ def upload_bundle():
                 # email all admins in org
                 for admin in license_request.customer.admins:
                     print "emailing", admin, "about new license"
-                    emails.send_license_available_email(admin.email, license_request.customer)
+                    emails.send_license_available_email(admin, license_request.customer)
             else:
                 print "Got a license descriptor without no outstanding license request. Discarding."
         flash(u"Imported {} new licenses.".format(len(just_imported)), "success")

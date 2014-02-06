@@ -1,0 +1,15 @@
+{{ admin.first_name }} -
+
+Congratulations, in this email you are receiving access to your AeroFS Private Cloud.  The implementation is a 4 step process and should take less then 10 minutes.  You will need to open ports in your firewall (please reference the FAQ linked below for additional information).
+
+Your license key and the appliance image are available for download from the Private Cloud Dashboard:
+
+{{ dashboard_url }}
+
+You can install the appliance on a few different platforms including VMWare, VirtualBox, and OpenStack.  If you would like to use VirtualBox you can download VirtualBox at {{ virtualbox_url }}
+
+If you have previously downloaded the AeroFS client, Hybrid clients will not work with the Private Cloud appliance.  For additional information please click on the following link: {{ migrating_to_private_url }}
+
+Helpful links:
+- Implementation Video: {{ implementation_video_url }}
+- FAQs: {{ faqs_url }}

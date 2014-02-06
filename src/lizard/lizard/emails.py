@@ -51,11 +51,22 @@ def _invite_email_for(email_address, company, invite_code):
     return _make_email_message(email_address, "You've been invited to help purchase AeroFS Private Cloud",
             text_body, html_body)
 
-def _license_available_email_for(email_address, company):
-    # TODO: Add license email templates when I get them from Erik
-    text_body = "Testing"
-    html_body = "<p>Testing HTML</p>"
-    return _make_email_message(email_address, "Your AeroFS Private Cloud License is ready",
+def _license_available_email_for(admin, company):
+    # We can't use url_for() here because it's not part of this server instance
+    # (this email is sent from internal app - links would point to the internal
+    # app, rather than the user-facing one)
+    dashboard_url = "https://privatecloud.aerofs.com/dashboard"
+    template_args = {
+            "admin": admin,
+            "dashboard_url": dashboard_url,
+            "virtualbox_url": "https://www.virtualbox.org/wiki/Downloads",
+            "migrating_to_private_url": "https://support.aerofs.com/entries/22978949-Migrating-your-clients-to-the-AeroFS-Private-Cloud",
+            "implementation_video_url": "https://aerofs.com/product/deployment/private-cloud",
+            "faqs_url": "https://support.aerofs.com/forums/20877659-Getting-Started-with-Private-Cloud",
+    }
+    text_body = render_template("license_ready_email.txt", **template_args)
+    html_body = render_template("license_ready_email.html", **template_args)
+    return _make_email_message(admin.email, "Your AeroFS Private Cloud License is ready",
             text_body, html_body)
 
 def _password_reset_email_for(email_address, link):
@@ -81,9 +92,9 @@ def send_invite_email(email_address, company, invite_code):
     msg = _invite_email_for(email_address, company, invite_code)
     _send_email(email_address, msg)
 
-def send_license_available_email(email_address, company):
-    msg = _license_available_email_for(email_address, company)
-    _send_email(email_address, msg)
+def send_license_available_email(admin, company):
+    msg = _license_available_email_for(admin, company)
+    _send_email(admin.email, msg)
 
 def send_password_reset_email(email_address, link):
     msg = _password_reset_email_for(email_address, link)
