@@ -1,6 +1,6 @@
 import logging
 from pyramid import url
-from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from pyramid.httpexceptions import HTTPFound
 from pyramid.security import remember, NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
@@ -10,7 +10,6 @@ from aerofs_common.exception import ExceptionReply
 
 from web.login_util import DEFAULT_DASHBOARD_NEXT, resolve_next_url
 from web.util import flash_error
-from web.auth import NON_SP_USER_ID
 
 log = logging.getLogger(__name__)
 
@@ -65,9 +64,6 @@ def _get_sp_auth(request, stay_signed_in):
 
     login = attrs.userId
     log.debug('SP auth returned ' + login)
-
-    if login == NON_SP_USER_ID:
-        raise HTTPForbidden("can't use builtin user ids")
 
     if stay_signed_in:
         log.debug("Extending session")

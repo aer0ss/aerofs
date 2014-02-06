@@ -106,7 +106,7 @@ ${common.render_previous_button()}
             ## Show the progress modal
             $('#${progress_modal.id()}').modal('show');
 
-            runBootstrapTask('apply-config-for-bunker', finalize, function() {
+            runBootstrapTask('apply-config', finalize, function() {
                 ## An error message is already shown by runBootstrapTask()
                 hideAllModals();
                 trackError();

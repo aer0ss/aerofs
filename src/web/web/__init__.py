@@ -5,10 +5,8 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
 from root_factory import RootFactory
 from auth import get_principals
-from license import is_license_present_and_valid
 from util import is_private_deployment, is_configuration_initialized
 import views
-from web.redirect import RedirectMiddleware
 
 
 def main(global_config, **settings):
@@ -75,4 +73,4 @@ def main(global_config, **settings):
     # See http://pyramid.readthedocs.org/en/latest/narr/advconfig.html for more details.
     config.commit()
 
-    return RedirectMiddleware(config.make_wsgi_app(), settings)
+    return config.make_wsgi_app()

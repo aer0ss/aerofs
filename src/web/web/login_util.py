@@ -3,14 +3,13 @@ import logging
 # N.B. This parameter is also used in aerofs.js. Remember to update this and all
 # other references to this parameter when modifying handling of the next parameter.
 from pyramid.httpexceptions import HTTPFound
-from pyramid.security import remember
-from web.auth import is_authenticated, NON_SP_USER_ID
 
 URL_PARAM_NEXT = 'next'
 
 DEFAULT_DASHBOARD_NEXT = 'dashboard_home'
 
 log = logging.getLogger(__name__)
+
 
 def get_next_url(request, default_route):
     """
@@ -19,6 +18,7 @@ def get_next_url(request, default_route):
     """
     next_url = request.params.get(URL_PARAM_NEXT)
     return next_url if next_url else request.route_path(default_route)
+
 
 def resolve_next_url(request, default_route):
     """
@@ -35,6 +35,7 @@ def resolve_next_url(request, default_route):
 
     return request.host_url + next_url
 
+
 def redirect_to_next_page(request, headers, default_route):
     """
     Resolve the next URL from the request and redirect to the URL.
@@ -48,12 +49,3 @@ def redirect_to_next_page(request, headers, default_route):
     redirect = resolve_next_url(request, default_route)
     log.debug("login redirect to {}".format(redirect))
     return HTTPFound(location=redirect, headers=headers)
-
-def remember_license_based_login(request):
-    # Log in the user as a maintainer if the user hasn't logged in yet. The
-    # test is necessary to keep the real user ID if the user is already
-    # logged in with the real ID.
-    # Return the headers returned from remember(), or None if the user already
-    # logged in.
-    if not is_authenticated(request):
-        return remember(request, NON_SP_USER_ID)

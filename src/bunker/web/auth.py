@@ -4,15 +4,8 @@
 # login_view.py:get_principals() calls _get_auth_level() every time
 # a request is made, it is not a problem.
 #
-# Related documentation: docs/design/pyramid_auth.md
-#
 import logging
 from pyramid.security import authenticated_userid
-from aerofs_sp.gen.sp_pb2 import ADMIN
-from util import get_rpc_stub
-
-# A fake user ID for the system to tell if the user has logged in with SP. SP
-# login system must prevent users from signing in using this ID.
 from web.license import is_license_shasum_valid, get_license_shasum_from_session
 
 GROUP_ID_MAINTAINERS = 'group:maintainers'

@@ -10,7 +10,6 @@ packages = [
     "web.views.download",
     "web.views.error",
     "web.views.login",
-    "web.views.maintenance",
     "web.views.marketing",
     "web.views.password_reset",
     "web.views.payment",

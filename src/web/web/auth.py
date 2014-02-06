@@ -4,24 +4,16 @@
 # login_view.py:get_principals() calls _get_auth_level() every time
 # a request is made, it is not a problem.
 #
-# Related documentation: docs/design/pyramid_auth.md
-#
 import logging
 from pyramid.security import authenticated_userid
 from aerofs_sp.gen.sp_pb2 import ADMIN
 from util import get_rpc_stub
 
-# A fake user ID for the system to tell if the user has logged in with SP. SP
-# login system must prevent users from signing in using this ID.
-from web.license import is_license_shasum_valid, get_license_shasum_from_session
-
-NON_SP_USER_ID = 'fakeuser'
-
-GROUP_ID_MAINTAINERS = 'group:maintainers'
 GROUP_ID_ADMINS = 'group:admins'
 GROUP_ID_USERS = 'group:users'
 
 log = logging.getLogger(__name__)
+
 
 def is_authenticated(request):
     """
@@ -30,6 +22,7 @@ def is_authenticated(request):
     return authenticated_userid(request)
 
 _SESSION_KEY_IS_ADMIN = 'admin'
+
 
 def is_admin(request):
     """
@@ -43,39 +36,12 @@ def is_admin(request):
         else: request.session[_SESSION_KEY_IS_ADMIN] = False
     return request.session[_SESSION_KEY_IS_ADMIN]
 
+
 def get_principals(authed_userid, request):
     """
     This method is used as the callback for SessionAuthenticationPolicy().
     This is THE function that dictates authorization.
-
-    Note that if calls to the server throw for any reason, e.g. config server is
-    down or SP is under maintenance, do not add corresponding principals. This
-    potentially triggers the forbidden view which redirects the user to the
-    login page.
-
-    See docs/design/pyramid_auth.md for more information.
-
-    @return the list of principals
     """
-    principals = []
-
-    shasum = get_license_shasum_from_session(request)
-    if shasum:
-        try:
-            if is_license_shasum_valid(shasum):
-                principals.append(GROUP_ID_MAINTAINERS)
-        except Exception as e:
-            log.error("is_license_shasum_valid() for {}: {}".format(authed_userid, e))
-
-    if authed_userid != NON_SP_USER_ID:
-        try:
-            level = get_rpc_stub(request).get_authorization_level().level
-            group = GROUP_ID_ADMINS if level == ADMIN else GROUP_ID_USERS
-            principals.append(group)
-        except Exception as e:
-            log.error("sp.get_auth_level() for {}: {}".format(authed_userid, e))
-
-    # Cache result for is_admin() everytime this method is called.
-    request.session[_SESSION_KEY_IS_ADMIN] = GROUP_ID_ADMINS in principals
-
-    return principals
+    level = get_rpc_stub(request).get_authorization_level().level
+    request.session[_SESSION_KEY_IS_ADMIN] = level == ADMIN
+    return [GROUP_ID_ADMINS if level == ADMIN else GROUP_ID_USERS]

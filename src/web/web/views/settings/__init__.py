@@ -1,5 +1,6 @@
 from web.util import add_routes
 
+
 def includeme(config):
     config.add_route('access_tokens', 'apps')
     config.add_route('app_authorization', 'authorize')

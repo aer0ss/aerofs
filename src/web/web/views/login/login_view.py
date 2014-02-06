@@ -1,8 +1,7 @@
 import logging
-import re
 
 from pyramid import url
-from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from pyramid.httpexceptions import HTTPFound
 from pyramid.security import remember, forget, NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 from aerofs_common.exception import ExceptionReply
@@ -10,7 +9,6 @@ from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
-from web.auth import NON_SP_USER_ID
 from web.util import flash_error, get_rpc_stub, is_private_deployment
 
 from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page, DEFAULT_DASHBOARD_NEXT
@@ -139,9 +137,6 @@ def _log_in_user(request, login, creds, stay_signed_in):
     if not isinstance(creds, bytes):
         raise TypeError("credentials require encoding")
 
-    if login == NON_SP_USER_ID:
-        raise HTTPForbidden("can't use builtin user ids")
-
     # ignore any session data that may be saved
     settings = request.registry.settings
     con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
@@ -161,8 +156,8 @@ def _log_in_user(request, login, creds, stay_signed_in):
     return remember(request, login)
 
 @view_config(
-    route_name = 'logout',
-    permission = 'user'
+    route_name='logout',
+    permission='user'
 )
 def logout_view(request):
     return HTTPFound(

@@ -1,10 +1,9 @@
 import logging
 from pyramid.exceptions import NotFound
-from pyramid.security import NO_PERMISSION_REQUIRED
+from pyramid.security import NO_PERMISSION_REQUIRED, remember
 from pyramid.view import view_config, forbidden_view_config
 from web.license import get_license_shasum_from_query,\
     get_license_shasum_from_session, verify_license_shasum_and_attach_to_session
-from web.login_util import remember_license_based_login
 from web.views.error.error_view_util import force_login
 
 log = logging.getLogger(__name__)
@@ -51,7 +50,7 @@ def _attempt_license_shasum_login(request):
         log.info('skip license-based login. shasum: {}'.format(shasum))
     elif verify_license_shasum_and_attach_to_session(request, shasum):
         log.info('license shasum in query string verified. login w/ license')
-        remember_license_based_login(request)
+        remember(request, 'fakeuser')
         return request.invoke_subrequest(request, use_tweens=True)
 
 

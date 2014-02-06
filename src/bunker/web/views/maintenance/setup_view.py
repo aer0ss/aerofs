@@ -6,7 +6,7 @@ import os
 import socket
 import re
 from web.util import str2bool
-from pyramid.security import NO_PERMISSION_REQUIRED
+from pyramid.security import NO_PERMISSION_REQUIRED, remember
 
 import requests
 from pyramid.view import view_config
@@ -14,7 +14,6 @@ from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError
 import aerofs_common.bootstrap
 from aerofs_common.configuration import Configuration
 from web.error import error
-from web.login_util import remember_license_based_login
 from web.util import is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, \
     get_license_shasum_from_session, \
@@ -171,7 +170,7 @@ def json_set_license(request):
     if _SESSION_KEY_RESTORED in request.session:
         del request.session[_SESSION_KEY_RESTORED]
 
-    headers = remember_license_based_login(request)
+    headers = remember(request, 'fakeuser')
     return HTTPOk(headers=headers)
 
 

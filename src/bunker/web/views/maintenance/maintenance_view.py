@@ -1,10 +1,10 @@
 import logging
 from pyramid.httpexceptions import HTTPFound
-from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid
+from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid, remember
 from pyramid.view import view_config
 from web.license import set_license_file_and_attach_shasum_to_session
 from web.login_util import URL_PARAM_NEXT, get_next_url, \
-    redirect_to_next_page, remember_license_based_login
+    redirect_to_next_page
 from web.util import flash_error, is_maintenance_mode, is_configuration_initialized_in_private_deployment
 from web.views.maintenance.maintenance_util import get_conf
 
@@ -57,7 +57,7 @@ def maintenance_login_submit(request):
         flash_error(request, "The license is incorrect.")
         return HTTPFound(location=request.route_path('maintenance_login'))
 
-    headers = remember_license_based_login(request)
+    headers = remember(request, 'fakeuser')
     return redirect_to_next_page(request, headers, _DEFAULT_NEXT)
 
 
