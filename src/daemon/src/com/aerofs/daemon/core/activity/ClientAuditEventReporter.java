@@ -264,14 +264,19 @@ public final class ClientAuditEventReporter // this can be final because it's no
             // create a list of events to send to the auditor
             EventBatch eventBatch = createAuditableEventBatch_(initialActivityLogIndex);
 
-            // bail early if there are no events to report
-            if (!eventBatch.hasEvents()) {
-                l.debug("no events to report to auditor");
+            // have events, will report
+            if (eventBatch.hasEvents()) {
+                reportToAuditor_(eventBatch);
+            }
+
+            // were there any events let in the db?
+            if (eventBatch.lastActivityLogIndex == lastActivityLogIndex) {
+                l.debug("terminate run - no events in al");
                 break;
             }
 
-            // have events, will report
-            reportToAuditor_(eventBatch);
+            // we always have to indicate that we've moved our position in the al table
+            persistLastReportedActivityLogIndex(eventBatch.lastActivityLogIndex);
 
             // check if we can still report events or whether we should wait for the next run
             if (!continueIterating(initialActivityLogIndex, eventBatch.lastActivityLogIndex)) {
@@ -291,18 +296,18 @@ public final class ClientAuditEventReporter // this can be final because it's no
     {
         IDBIterator<ActivityRow> activityRowIterator = _activityLog.getActivitesAfterIndex_(lastActivityLogIndex);
         try {
-            long lastActivityLogIndex = 0;
+            long lastIteratedActivityLogIndex = lastActivityLogIndex;
             List<AuditableEvent> reportableEvents = Lists.newArrayListWithCapacity(AUDIT_EVENT_BATCH_SIZE);
 
             while (activityRowIterator.next_()
                     && (reportableEvents.size() < AUDIT_EVENT_BATCH_SIZE)
-                    && continueIterating(initialActivityLogIndex, lastActivityLogIndex)) {
+                    && continueIterating(initialActivityLogIndex, lastIteratedActivityLogIndex)) {
                 ActivityRow row = activityRowIterator.get_();
                 boolean isLocalEvent = ClientActivity.isLocalActivity(row._type);
 
                 // IMPORTANT: update the last activity log index here
                 // because we may bail early if we don't have to report this event
-                lastActivityLogIndex = row._idx;
+                lastIteratedActivityLogIndex = row._idx;
 
                 // we only care about local events where _we_ are the source
                 if (isLocalEvent && !isSelfGeneratedEvent(row._dids)) {
@@ -313,7 +318,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
                 reportableEvents.add(event);
             }
 
-            return new EventBatch(lastActivityLogIndex, reportableEvents);
+            return new EventBatch(lastIteratedActivityLogIndex, reportableEvents);
         } finally {
             activityRowIterator.close_();
         }
@@ -394,24 +399,6 @@ public final class ClientAuditEventReporter // this can be final because it's no
         } finally {
             tk.reclaim_();
         }
-
-        // NOTE: this _must_ run with the core lock held
-
-        // FIXME (AG): waiting until the end of the batch to update the lastPostedActivity database may cause duplicate events to be sent to the audit server
-        // NOTE: this can happen if most events can be sent successfully,
-        // but an intermediate event fails. This will cause us to exit this
-        // method without updating the "lastPosted" database. On a
-        // subsequent execution we'll attempt to repost this batch to the auditor.
-        // I _could_ take two alternative approaches:
-        //     1. Update the database on each successful POST (lots of disk activity)
-        //     2. Attempt to update the database even if an exception is thrown (*)
-        //
-        // (*) I considered this option and rejected it because I would have to
-        //     perform this action in a finally block. It's possible that the database
-        //     update could fail, causing another exception to be thrown from
-        //     within the finally block, which could hide the original exception.
-
-        persistLastReportedActivityLogIndex(eventBatch.lastActivityLogIndex);
     }
 
     private void persistLastReportedActivityLogIndex(long lastReportedActivityLogIndex)
