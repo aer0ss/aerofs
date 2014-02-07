@@ -11,6 +11,7 @@ import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.ListNonRepresentableObjectsReply;
 import com.aerofs.proto.Ritual.ListNonRepresentableObjectsReply.PBNonRepresentableObject;
 import com.aerofs.ui.IUI.MessageType;
@@ -27,7 +28,6 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -96,9 +96,9 @@ public class CompUnsyncableFiles extends Composite
         _lnkHelp.addSelectionListener(
                 createUrlLaunchListener("https://support.aerofs.com/entries/23776990"));
 
-        _buttonBar = GUIUtil.newPackedButtonContainer(this);
+        _spinner = new CompSpin(this, SWT.NONE);
 
-        _spinner = new CompSpin(_buttonBar, SWT.NONE);
+        _buttonBar = GUIUtil.newButtonContainer(this, false);
 
         _btnRefresh = GUIUtil.createButton(_buttonBar, SWT.PUSH);
         _btnRefresh.setText("Refresh");
@@ -112,7 +112,10 @@ public class CompUnsyncableFiles extends Composite
         });
 
         _btnOpen = GUIUtil.createButton(_buttonBar, SWT.PUSH);
-        _btnOpen.setText("Open Parent Folder");
+        // This button's action is best known as "Show in Finder" in the OS X world. "Show in
+        // Finder" is a common and well-understood term in OS X, but it makes no sense on other
+        // platforms. Thus we are using platform-specific text.
+        _btnOpen.setText(OSUtil.isOSX() ? "Show in Finder" : "Open Parent Folder");
         getShell().setDefaultButton(_btnOpen);
         _btnOpen.addSelectionListener(new SelectionAdapter()
         {
@@ -145,7 +148,7 @@ public class CompUnsyncableFiles extends Composite
             }
         });
 
-        GridLayout layout = new GridLayout(2, false);
+        GridLayout layout = new GridLayout(3, false);
         layout.marginWidth = 0;
         layout.marginHeight = 0;
         layout.verticalSpacing = GUIParam.MAJOR_SPACING;
@@ -157,13 +160,8 @@ public class CompUnsyncableFiles extends Composite
         _table.setLayoutData(tableLayoutData);
 
         _lnkHelp.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
+        _spinner.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         _buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-
-        int buttonWidth = 120;
-        _btnRefresh.setLayoutData(new RowData(buttonWidth, SWT.DEFAULT));
-        _btnOpen.setLayoutData(new RowData(buttonWidth, SWT.DEFAULT));
-        _btnRename.setLayoutData(new RowData(buttonWidth, SWT.DEFAULT));
-        _btnDelete.setLayoutData(new RowData(buttonWidth, SWT.DEFAULT));
 
         // when the dialog is constructed, we'll be in the busy state while we are loading
         // data. After loading the data, the busy state will be set to false, which will set
