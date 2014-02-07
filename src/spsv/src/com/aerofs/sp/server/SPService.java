@@ -88,7 +88,6 @@ import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
-import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
@@ -157,7 +156,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -174,7 +172,7 @@ public class SPService implements ISPService
     private final SQLThreadLocalTransaction _sqlTrans;
     private final SharingRulesFactory _sharingRules;
 
-    private VerkehrPublisher _verkehrPublisher;
+    private ACLNotificationPublisher _aclPublisher;
     private VerkehrAdmin _verkehrAdmin;
     private AuditClient _auditClient;
 
@@ -281,8 +279,8 @@ public class SPService implements ISPService
         assert verkehrPublisher != null;
         assert verkehrAdmin != null;
 
-        _verkehrPublisher = verkehrPublisher;
         _verkehrAdmin = verkehrAdmin;
+        _aclPublisher = new ACLNotificationPublisher(_factUser, verkehrPublisher);
     }
 
     public void setAuditorClient_(AuditClient auditClient)
@@ -1121,7 +1119,7 @@ public class SPService implements ISPService
         if (!suppressSharingRulesWarnings) rules.throwIfAnyWarningTriggered();
 
         // send verkehr notification as the last step of the transaction
-        if (created || rules.shouldBumpEpoch()) publishACLs_(users);
+        if (created || rules.shouldBumpEpoch()) _aclPublisher.publish_(users);
 
         _sqlTrans.commit();
 
@@ -1280,7 +1278,7 @@ public class SPService implements ISPService
         }
 
         // always call this method as the last step of the transaction
-        publishACLs_(users);
+        _aclPublisher.publish_(users);
     }
 
     @Override
@@ -1334,7 +1332,7 @@ public class SPService implements ISPService
             Collection<UserID> users = sf.setState(user, SharedFolderState.LEFT);
 
             // always call this method as the last step of the transaction
-            publishACLs_(users);
+            _aclPublisher.publish_(users);
         }
 
         _auditClient.event(AuditTopic.SHARING, "folder.leave")
@@ -1536,7 +1534,7 @@ public class SPService implements ISPService
         // retrieve the stripe data for the old organization _after_ the user moves out.
         PBStripeData sd = getStripeData(orgOld);
 
-        publishACLs_(users);
+        _aclPublisher.publish_(users);
 
         _sqlTrans.commit();
         _auditClient.event(AuditTopic.USER, "user.org.accept")
@@ -1838,7 +1836,7 @@ public class SPService implements ISPService
                     .publish();
 
             // always call publishACLs_() as the last step of the transaction
-            publishACLs_(affectedUsers);
+            _aclPublisher.publish_(affectedUsers);
         }
 
         _sqlTrans.commit();
@@ -1866,64 +1864,10 @@ public class SPService implements ISPService
                 .publish();
 
         // always call this method as the last step of the transaction
-        publishACLs_(sf.removeUser(subject));
+        _aclPublisher.publish_(sf.removeUser(subject));
         _sqlTrans.commit();
 
         return createVoidReply();
-    }
-
-    /**
-     * Utility to minimize duped code in the below verkehr-related methods.
-     * @param future either the verkehr publisher or admin.
-     */
-    private void verkehrFutureGet_(ListenableFuture<Void> future)
-            throws Exception
-    {
-        try {
-            future.get();
-        } catch (InterruptedException e) {
-            assert false : ("publisher client should never be interrupted");
-        } catch (ExecutionException e) {
-            Throwable t = e.getCause();
-            if (t instanceof Exception) {
-                throw (Exception) e.getCause();
-            } else {
-                assert false : ("cannot handle arbitrary throwable");
-            }
-        }
-    }
-
-    /**
-     * Publish ACL verkehr notificaitons for the specified users.
-     *
-     * NB. always call this method as the last step of the database transaction!
-     */
-    private void publishACLs_(Collection<UserID> users)
-            throws Exception
-    {
-        for (Map.Entry<UserID, Long> entry : incrementACLEpochs_(users).entrySet()) {
-            l.info(entry.getKey() + ": acl notification");
-
-            PBACLNotification notification = PBACLNotification.newBuilder()
-                    .setAclEpoch(entry.getValue())
-                    .build();
-
-            // Must match what is done on the client side.
-            String aclTopic = ACL_CHANNEL_TOPIC_PREFIX + entry.getKey().getString();
-            ListenableFuture<Void> published =
-                    _verkehrPublisher.publish_(aclTopic, notification.toByteArray());
-
-            verkehrFutureGet_(published);
-        }
-    }
-
-    private Map<UserID, Long> incrementACLEpochs_(Collection<UserID> users) throws SQLException
-    {
-        Map<UserID, Long> m = Maps.newHashMap();
-        for (UserID u : users) {
-            m.put(u, _factUser.create(u).incrementACLEpoch());
-        }
-        return m;
     }
 
     @Override
@@ -2021,7 +1965,7 @@ public class SPService implements ISPService
 
         OrganizationID orgID = user.getOrganization().id();
         // always call this method as the last step of the transaction
-        publishACLs_(users);
+        _aclPublisher.publish_(users);
 
         _sqlTrans.commit();
 
@@ -2072,7 +2016,9 @@ public class SPService implements ISPService
         // Accept organization invitation if there is one associated with the signup code.
         OrganizationInvitation oi = _factOrgInvite.getBySignUpCodeNullable(signUpCode);
         if (oi == null) {
-            return new SignUpWithCodeImplResult(Collections.<UserID>emptyList(), false);
+            // make sure to update TS ACL epoch!
+            return new SignUpWithCodeImplResult(
+                    ImmutableList.of(user.getOrganization().id().toTeamServerUserID()), false);
 
         } else if (!oi.getInvitee().equals(user)) {
             l.error("the org invite ({} => {} to {}) associated with the signup code {} " +
@@ -2357,6 +2303,8 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         if (!user.exists()) {
             user.save(new byte[0], new FullName(attrs.getFirstName(), attrs.getLastName()));
+            // notify TS of user creation (for root store auto-join)
+            _aclPublisher.publish_(user.getOrganization().id().toTeamServerUserID());
         }
         _sqlTrans.commit();
         l.info("SI (OpenID): " + user.toString());
@@ -2757,7 +2705,7 @@ public class SPService implements ISPService
 
         notifyPeerDevicesOfUnlink(user, !revokedSerials.isEmpty());
 
-        publishACLs_(affectedUsers);
+        _aclPublisher.publish_(affectedUsers);
 
         PBStripeData sd = getStripeData(org);
 
@@ -2826,6 +2774,6 @@ public class SPService implements ISPService
         l.info("command verkehr, #serials: " + serials.size());
         ListenableFuture<Void> succeeded = _verkehrAdmin.updateCRL(serials);
 
-        verkehrFutureGet_(succeeded);
+        ACLNotificationPublisher.verkehrFutureGet_(succeeded);
     }
 }

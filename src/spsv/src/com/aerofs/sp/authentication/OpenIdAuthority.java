@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
+import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.user.User;
 
 import java.sql.SQLException;
@@ -37,6 +38,9 @@ class OpenIdAuthority implements IAuthority
     {
         throw new ExBadCredential("Attempt to sign in to an OpenID account");
     }
+
+    @Override
+    public void setACLPublisher(ACLNotificationPublisher aclPublisher) {}
 
     @Override
     public boolean isInternalUser(UserID userID)

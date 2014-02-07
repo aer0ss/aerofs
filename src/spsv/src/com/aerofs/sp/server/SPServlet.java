@@ -151,6 +151,8 @@ public class SPServlet extends AeroServlet
         super.init(config);
         init_();
 
+        _authenticator.setACLPublisher_(new ACLNotificationPublisher(_factUser, getVerkehrPublisher()));
+
         _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrAdmin());
         _service.setAuditorClient_(getAuditClient());
 

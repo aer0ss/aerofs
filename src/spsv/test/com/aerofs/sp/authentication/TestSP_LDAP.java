@@ -7,6 +7,7 @@ package com.aerofs.sp.authentication;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.authentication.InMemoryServer.LdapSchema;
+import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
@@ -14,16 +15,22 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Spy;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class TestSP_LDAP extends AbstractSPTest
 {
     private static InMemoryServer _server;
     LdapConfiguration _cfg = new LdapConfiguration();
+    @Mock ACLNotificationPublisher aclPublisher;
     @Spy Authenticator _authenticator = new Authenticator(
             new IAuthority[] { new LdapAuthority(_cfg) });
 
@@ -34,7 +41,11 @@ public class TestSP_LDAP extends AbstractSPTest
     public static void tearDown() throws Exception { _server.stop(); }
 
     @Before
-    public void updateConfigs() { _server.resetConfig(_cfg); }
+    public void updateConfigs()
+    {
+        _authenticator.setACLPublisher_(aclPublisher);
+        _server.resetConfig(_cfg);
+    }
 
     @Test
     public void testShouldSimpleSignIn() throws Exception
@@ -54,6 +65,7 @@ public class TestSP_LDAP extends AbstractSPTest
         assertTrue(u.exists());
         assertEquals(u.getFullName()._first, "Firsty");
         assertEquals(u.getFullName()._last, "Lasto");
+        verify(aclPublisher).publish_(u.getOrganization().id().toTeamServerUserID());
         sqlTrans.commit();
     }
 
@@ -134,6 +146,7 @@ public class TestSP_LDAP extends AbstractSPTest
         assertTrue(u.exists());
         assertEquals(u.getFullName()._first, "Firsty");
         assertEquals(u.getFullName()._last, "Lasto");
+        verify(aclPublisher).publish_(u.getOrganization().id().toTeamServerUserID());
         sqlTrans.commit();
     }
 

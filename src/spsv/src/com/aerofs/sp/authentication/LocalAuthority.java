@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
+import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
@@ -57,6 +58,9 @@ class LocalAuthority implements IAuthority
     {
         return _internalAddressPattern.isInternalUser(userID);
     }
+
+    @Override
+    public void setACLPublisher(ACLNotificationPublisher aclPublisher) {}
 
     @Override
     public boolean managesLocalCredential() { return true; }

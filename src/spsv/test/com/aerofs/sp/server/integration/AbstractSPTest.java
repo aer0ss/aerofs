@@ -169,7 +169,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // N.B. the @Mock is only necessary if the subclass will mock the object in some special way
     @InjectMocks protected SPService service;
 
-    private Set<String> verkehrPublished;
+    protected Set<String> verkehrPublished;
 
     // N.B. These users are DEPRECATED. Do not use them in the new code. Use newUser(), saveUser(), etc.
     protected final User USER_1 /* DEPRECATED */ = factUser.create(UserID.fromInternal("user_1"));

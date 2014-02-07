@@ -10,6 +10,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
@@ -17,6 +18,7 @@ import org.junit.Test;
 
 import java.sql.SQLException;
 
+import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,8 +47,11 @@ public class TestSP_SignUpWithCode extends AbstractSPTest
     public void shouldIgnoreExistingUserWithMatchingPassword()
             throws Exception
     {
+        String orgId = signUp().get().getOrgId();
+        assertEquals(ImmutableSet.of(ACL_CHANNEL_TOPIC_PREFIX + ":" + orgId), verkehrPublished);
+        clearVerkehrPublish();
         signUp();
-        signUp();
+        assertVerkehrPublishOnlyContains();
     }
 
     @Test

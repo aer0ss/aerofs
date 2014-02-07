@@ -19,6 +19,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
+import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.user.User;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnection;
@@ -59,6 +60,8 @@ import java.sql.SQLException;
  */
 public class LdapAuthority implements IAuthority
 {
+    private ACLNotificationPublisher _aclPublisher;
+
     /**
      * Initialize this authenticator with a provisioning strategy.
      */
@@ -96,7 +99,11 @@ public class LdapAuthority implements IAuthority
                     .add("authority", this)
                     .publish();
             user.save(new byte[0], fullName);
+
+            // notify TS of user creation (for root store auto-join)
+            _aclPublisher.publish_(user.getOrganization().id().toTeamServerUserID());
         }
+
         trans.commit();
     }
 
@@ -107,6 +114,12 @@ public class LdapAuthority implements IAuthority
     public boolean isInternalUser(UserID userID) throws ExExternalServiceUnavailable
     {
         return canAuthenticate(userID);
+    }
+
+    @Override
+    public void setACLPublisher(ACLNotificationPublisher aclPublisher)
+    {
+        _aclPublisher = aclPublisher;
     }
 
     /**

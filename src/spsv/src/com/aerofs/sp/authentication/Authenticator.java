@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
+import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
@@ -101,6 +102,11 @@ public class Authenticator
     public boolean isInternalUser(UserID userID) throws ExExternalServiceUnavailable
     {
         return userID.isTeamServerID() ? true : _authorities[0].isInternalUser(userID);
+    }
+
+    public void setACLPublisher_(ACLNotificationPublisher aclPublisher)
+    {
+        for (IAuthority auth : _authorities) auth.setACLPublisher(aclPublisher);
     }
 
     private IAuthority[] _authorities;

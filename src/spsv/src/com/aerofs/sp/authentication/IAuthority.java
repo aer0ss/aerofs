@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
+import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.user.User;
 
 import java.sql.SQLException;
@@ -67,4 +68,10 @@ public interface IAuthority
      * @see IAuthority#managesLocalCredential()
      */
     boolean isInternalUser(UserID userID) throws ExExternalServiceUnavailable;
+
+    /**
+     * Authorities that auto-provision users need to send ACL notifications to the Team Server
+     * otherwise it will not auto-join root stores until it is restarted.
+     */
+    void setACLPublisher(ACLNotificationPublisher aclPublisher);
 }
