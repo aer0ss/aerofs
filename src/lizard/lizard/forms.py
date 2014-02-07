@@ -3,7 +3,7 @@ import datetime
 from flask.ext.wtf import Form
 from flask_wtf.file import FileField, FileRequired
 from wtforms import TextField, PasswordField, HiddenField, BooleanField, \
-        IntegerField, DateField, SelectField
+        IntegerField, DateField, SelectField, TextAreaField
 from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo
 
 class LoginForm(Form):
@@ -80,3 +80,6 @@ class PasswordResetForm(Form):
 
 class ReleaseForm(Form):
     release_version = TextField('Version', validators = [InputRequired()])
+
+class ContactForm(Form):
+    message = TextAreaField("What's up?", validators=[InputRequired()])

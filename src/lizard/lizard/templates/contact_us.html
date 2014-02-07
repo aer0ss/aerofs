@@ -1,0 +1,13 @@
+{% extends 'logged_in.html' %}
+{% from '_formhelpers.html' import render_field, submit_button %}
+
+{% block content %}
+<h1>Contact us</h1>
+<p>Questions?  Issues?  Drop us a line, and we'll see what we can do for you.</p>
+
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    {{ render_field(form.message, rows=8) }}
+    {{ submit_button("Send") }}
+</form>
+{% endblock %}

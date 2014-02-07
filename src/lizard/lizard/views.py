@@ -420,3 +420,14 @@ def complete_password_reset():
         flash(u"Password reset successfully.", 'success')
         return redirect(url_for(".dashboard"))
     return render_template("complete_password_reset.html", email=token_email, form=form)
+
+@blueprint.route("/contact", methods=["GET", "POST"])
+@login.login_required
+def contact_us():
+    user = login.current_user
+    form = forms.ContactForm()
+    if form.validate_on_submit():
+        emails.send_support_request_email(user.email, form.message.data)
+        flash(u"Message sent successfully.  We'll be in touch.", 'success')
+        return redirect(url_for(".dashboard"))
+    return render_template("contact_us.html", form=form)

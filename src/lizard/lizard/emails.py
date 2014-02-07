@@ -8,6 +8,8 @@ from flask import render_template, url_for
 SENDER_ADDR = "AeroFS <support@aerofs.com>"
 SMTP_RELAY = "sv.aerofs.com"
 
+SUPPORT_ADDR = "business@aerofs.com"
+
 def _make_email_message(email_address, subject, text_body, html_body):
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
@@ -99,3 +101,14 @@ def send_license_available_email(admin, company):
 def send_password_reset_email(email_address, link):
     msg = _password_reset_email_for(email_address, link)
     _send_email(email_address, msg)
+
+def send_support_request_email(requester, message):
+    subject = "[Private Cloud Support] - {}".format(requester)
+    text_body = message
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = SENDER_ADDR
+    msg['To'] = SUPPORT_ADDR
+    part1 = MIMEText(text_body, 'plain')
+    msg.attach(part1)
+    _send_email(SUPPORT_ADDR, msg)
