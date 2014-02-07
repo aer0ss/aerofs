@@ -18,7 +18,7 @@
         please <a href="mailto:support@aerofs.com">contact us</a> to request
         a license.</p>
 
-    <p class="footnote"><a target="_blank" href="https://support.aerofs.com/entries/25408319-What-happens-if-my-Private-Cloud-license-expires-">
+    <p class="footnote"><a target="_blank" href="https://support.aerofs.com/entries/25408319">
     What happens if the license expires?</a></p>
 
     <hr />
@@ -39,7 +39,7 @@
         <label class="checkbox">
             <input type="checkbox" id="data-collection" checked />
             Allow AeroFS to collect setup experience for trial users.
-            <a href="https://support.aerofs.com/entries/25712809-Setup-experience-data-collection-for-Private-Cloud-trial-users"
+            <a href="https://support.aerofs.com/entries/25712809"
                target="_blank">Read more.</a>
         </label>
     </div>
@@ -59,7 +59,7 @@
     <p>Your firewall or VPN may require configuration to unblock these ports for
         your AeroFS clients. Please check this now.</p>
     <p><a target="_blank"
-        href="https://support.aerofs.com/entries/22661589-Things-to-know-before-deploying-AeroFS-Private-Cloud">
+        href="https://support.aerofs.com/entries/22661589">
         Read more about network requirements</a>.</p>
 
     <%def name="footer()">

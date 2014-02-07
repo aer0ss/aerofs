@@ -8,7 +8,7 @@
     <p>This page will guide you through setting up the appliance.
         Review your license before continuing. Information on network and
         firewall requirements can be found <a target="_blank"
-        href="https://support.aerofs.com/entries/22661589-Things-to-know-before-deploying-AeroFS-Private-Cloud">
+        href="https://support.aerofs.com/entries/22661589">
         here</a>.</p>
     <h4>Your license:</h4>
     <dl class="dl-horizontal">
@@ -25,7 +25,7 @@
     <h4>Update your license:</h4>
     <p><a href="mailto:support@aerofs.com">Contact us</a> to request a new license.</p>
     <p><input id="license-file" type="file"></p>
-    <p><a target="_blank" href="https://support.aerofs.com/entries/25408319-What-happens-if-my-Private-Cloud-license-expires-">
+    <p><a target="_blank" href="https://support.aerofs.com/entries/25408319">
         You can read here what happens if a license expires.</a></p>
 
     <hr />
