@@ -1,13 +1,17 @@
 server {
     listen 80;
 
-    # redirect all HTTP requests to bunker based on flags.
-    # note: duplicate code in the following block.
+    # Redirect all HTTP requests to bunker based on flags.
+    # Note 1: the order of the redirect matters.
+    # Note 2: duplicate code in the following block.
     if (!-f /var/aerofs/configuration-initialized-flag) {
         rewrite ^ http://$host:4444/setup break;
     }
     if (-f /var/aerofs/maintenance-flag) {
         rewrite ^ http://$host:4444/maintenance_mode break;
+    }
+    if (-f /var/aerofs/license-expired-flag) {
+        rewrite ^ http://$host:4444/setup break;
     }
 
     rewrite ^ https://$host$request_uri permanent;
@@ -31,13 +35,17 @@ server {
 
     add_header X-Frame-Options SAMEORIGIN;
 
-    # redirect all HTTPS requests to bunker based on flags
-    # note: duplicate code in the previous block.
+    # Redirect all HTTP requests to bunker based on flags.
+    # Note 1: the order of the redirect matters.
+    # Note 2: duplicate code in the previous block.
     if (!-f /var/aerofs/configuration-initialized-flag) {
         rewrite ^ http://$host:4444/setup break;
     }
     if (-f /var/aerofs/maintenance-flag) {
         rewrite ^ http://$host:4444/maintenance_mode break;
+    }
+    if (-f /var/aerofs/license-expired-flag) {
+        rewrite ^ http://$host:4444/setup break;
     }
 
     include /etc/nginx/backends-enabled/* ;

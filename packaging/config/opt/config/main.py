@@ -3,7 +3,6 @@ from functools import wraps
 from aerofs_licensing import license_file
 from io import BytesIO
 import base64
-import datetime
 import errno
 import hashlib
 import os
@@ -113,6 +112,12 @@ def get_template_kv_pairs():
     d["license_lines"] = u"\n".join([ u"{}={}".format(k, v) for k, v in current_license_info.iteritems() ])
     return d
 
+def remove_license_expired_flag_file():
+    # This flag file is used by nginx to redirect web acces to a 'linense has
+    # expired' page.
+    f = '/var/aerofs/license-expired-flag'
+    if os.path.exists(f): os.remove(f)
+
 # ----------------------------------------------------------------------
 # Routes
 # ----------------------------------------------------------------------
@@ -167,7 +172,8 @@ def set_license_file():
     This path expects form parameter `license_file` to contain the
     urlsafe-base64-encoded bytestring.
 
-    If this request returns 200, the license file was accepted.
+    If this request returns 200, the license file was accepted, and the license-expired-flag file is
+    removed.
     If this request returns any other code, then the license file was rejected.
     """
     license_base64 = request.form['license_file'].encode('latin1')
@@ -200,6 +206,9 @@ def set_license_file():
         with open(LICENSE_FILE_PATH) as f:
             old_license_file_bytes = f.read()
         if license_file_bytes == old_license_file_bytes:
+            # This call seems superfluous, but it's safe to make the call on all 200 returns
+            # to avoid potential race conditions.
+            remove_license_expired_flag_file()
             return "Provided license file matches the currently-active license file.\n"
         old_license_file = BytesIO(old_license_file_bytes)
         old_license_info = license_file.verify_and_load(old_license_file)
@@ -226,7 +235,9 @@ def set_license_file():
     global current_license_info
     current_license_info = new_license_info
     os.rename(new_license_tempfile_path, LICENSE_FILE_PATH)
+
     # return 200 OK
+    remove_license_expired_flag_file()
     return "License file accepted.\n"
 
 # Load license info to current_license_info if it exists
