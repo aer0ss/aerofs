@@ -80,7 +80,7 @@ public class DlgDefect extends AeroFSJFaceDialog
         Composite container = (Composite) super.createDialogArea(parent);
 
         GridLayout gl_container = new GridLayout(1, false);
-        gl_container.verticalSpacing = GUIParam.MAJOR_SPACING / 2;
+        gl_container.verticalSpacing = GUIParam.VERTICAL_SPACING;
         gl_container.marginTop = GUIParam.MARGIN;
         gl_container.marginHeight = 0;
         gl_container.marginWidth = GUIParam.MARGIN;
@@ -112,9 +112,10 @@ public class DlgDefect extends AeroFSJFaceDialog
     {
         Label lblWhatsUp = new Label(container, SWT.NONE);
         // \n: a nasty way of setting margins. it's ugly but it works.
-        String msg = "\nPlease describe the problem";
-        if (_exception != null) msg += " (optional but recommended)";
-        msg += ':';
+        String msg = "\nPlease describe the problem:\n" +
+                "\t- What are you trying to accomplish?\n" +
+                "\t- How do you expect AeroFS to behave?\n" +
+                "\t- What do you see AeroFS doing instead?";
         lblWhatsUp.setText(msg);
 
         _txtComment = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
@@ -202,13 +203,8 @@ public class DlgDefect extends AeroFSJFaceDialog
 
     private void updateControlStatus()
     {
-        boolean ready = true;
-
-        if (!Util.isValidEmailAddress(_txtEmailAddress.getText())) ready = false;
-
-        // The comment is required if no exception is available
-        if (_exception == null && _txtComment.getText().isEmpty()) ready = false;
-
+        boolean ready = Util.isValidEmailAddress(_txtEmailAddress.getText())
+                && !_txtComment.getText().trim().isEmpty();
         getButton(IDialogConstants.OK_ID).setEnabled(ready);
     }
 
