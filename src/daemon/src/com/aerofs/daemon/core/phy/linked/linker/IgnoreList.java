@@ -27,12 +27,12 @@ public class IgnoreList
     public boolean isIgnored(String name)
     {
         // The Java File API transparently converts filenames as bytestrings into
-        // Strings using the platform encoding.  If the filename's bytestring
+        // Strings using the platform encoding. If the filename's bytestring
         // is invalid under that encoding (usually UTF-8), then String replaces
         // that byte with a Unicode replacement character (U+FFFD).
         //
         // When this path is passed to Scanner will fail to find the file when that
-        // String is passed to getFID, which causes a full rescan.  This causes an
+        // String is passed to getFID, which causes a full rescan. This causes an
         // infinite rescan loop which makes no forward progress syncing.
         //
         // This workaround ignores such files and folders so that syncing can progress.
@@ -44,19 +44,24 @@ public class IgnoreList
          * NOTE: long term we probably need to use a more generic regexp based solution (probably
          * not Pattern though because it's a slow backtracking algorithm instead of a fast DFA) and
          * load the list of excluded pattern from a text file so that power users can tweak the
-         * ignore list
+         * ignore list.
          */
 
         // GEdit creates temporary .goutputstream-XXXXXX and copies them over the target file when
         // saving which pollutes the DB, causes useless network overhead and creates linker conflict
-        // so we simply ignore these files
+        // so we simply ignore these files.
         if (name.startsWith(".goutputstream-")) return true;
 
         // Kate creates temporary .${filename}.kate-swp files to hold the temporary state of a file
         // being edited and writes it to disk on pretty much every keystroke which pollutes the DB,
         // creates an inordinate amount of uninteresting activity log entries and significant
-        // network overhead so we ignore these files
+        // network overhead so we ignore these files.
         if (name.charAt(0) == '.' && name.endsWith(".kate-swp")) return true;
+
+        // Microsoft office files: ignore them all. Copying what dropbox does as per their support
+        // article: https://www.dropbox.com/help/145/en
+        if (name.startsWith("~$") || name.startsWith(".~")) return true;
+        if (name.charAt(0) == '~' && name.endsWith(".tmp")) return true;
 
         return Linker.isInternalFile(name) || _set.contains(name);
     }
