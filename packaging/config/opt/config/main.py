@@ -42,6 +42,7 @@ def require_matching_license_shasum():
         @wraps(f)
         def wrapped(*args, **kwargs):
             if not os.path.exists(LICENSE_FILE_PATH):
+                app.logger.debug("Requested path {} required authentication, but no license file on record to auth against".format(request.path))
                 return Response("No license file on record for this appliance to auth against.\n", status=500)
             purported_sha1 = request.args.get("license_sha1")
             if not purported_sha1:
@@ -180,6 +181,7 @@ def set_license_file():
     try:
         license_file_bytes = base64.urlsafe_b64decode(license_base64)
     except Exception as e:
+        app.logger.info("Refusing non-base64'd license file")
         return Response("License file was not a valid base64 string.\n", status=400)
 
     # If the license file is not signed by the AeroFS root key, reject.
@@ -189,11 +191,14 @@ def set_license_file():
     try:
         new_license_info = license_file.verify_and_load(buf)
     except:
+        app.logger.info("Refusing unsigned license file")
         return Response("License file was not signed by a trusted authority.\n", status=400)
 
     # Verify that if the license has an expiry date, that that date is
     # currently in the future (that is, that the new license is currently valid)
     if not new_license_info.is_currently_valid():
+        app.logger.info("Refusing new license that has already expired (expiry date: %s)",
+                new_license_info["license_valid_until"])
         return Response("New license file is no longer valid.\n", status=400)
 
     # If there already exists an installed license file, ensure that the new
@@ -213,11 +218,15 @@ def set_license_file():
         old_license_file = BytesIO(old_license_file_bytes)
         old_license_info = license_file.verify_and_load(old_license_file)
         if old_license_info["customer_id"] != new_license_info["customer_id"]:
+            app.logger.info("Refusing new license file with different customer_id (existing: %s, new: %s)",
+                    old_license_info["customer_id"], new_license_info["customer_id"])
             return Response("New license file customer_id differs from that of existing license.\n", status=400)
         # We refuse to accept licenses that were issued before the current
         # license file was issued to prevent accidental or malicious license
         # rollback by an uncoordinated set of administrators.
         if old_license_info.issue_date() > new_license_info.issue_date():
+            app.logger.info("Refusing new license file issued before the current license file (exising: %s, new %s)",
+                    old_license_info.issue_date().isoformat(), new_license_info.issue_date().isoformat())
             return Response("New license file was issued before the current license file.\n" +
                             "Cowardly refusing to downgrade license.\n", status=400)
 
@@ -238,6 +247,10 @@ def set_license_file():
 
     # return 200 OK
     remove_license_expired_flag_file()
+    app.logger.info("Set new license file for %s (id %s), valid until %s",
+            new_license_info["license_company"],
+            new_license_info["customer_id"],
+            new_license_info["license_valid_until"])
     return "License file accepted.\n"
 
 # Load license info to current_license_info if it exists
