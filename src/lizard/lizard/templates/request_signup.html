@@ -7,7 +7,7 @@
     <h1>Sign Up For The AeroFS Private Cloud</h1>
     <form class="form-horizontal" action="" method="post" name="login">
         {{ form.hidden_tag() }}
-        {{ render_field(form.email) }}
+        {{ render_field(form.email, autofocus=true) }}
         {{ render_field(form.first_name) }}
         {{ render_field(form.last_name) }}
         {{ render_field(form.company_name) }}

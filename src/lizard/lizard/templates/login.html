@@ -9,18 +9,10 @@
     <div class="offset1">
         <form action="" method="post" name="login">
             {{ form.hidden_tag() }}
-            {{ render_field(form.email) }}
+            {{ render_field(form.email, autofocus=true) }}
             {{ render_field(form.password) }}
             {{ submit_button("Sign In") }}
         </form>
         <p><a href="{{ url_for('.start_password_reset') }}">Forgot your password?</a></p>
     </div>
-{% endblock %}
-
-{% block scripts %}
-    <script>
-        $(document).ready(function () {
-            $('#email').focus();
-        });
-    </script>
 {% endblock %}

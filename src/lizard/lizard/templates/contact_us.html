@@ -7,7 +7,7 @@
 
 <form action="" method="post">
     {{ form.hidden_tag() }}
-    {{ render_field(form.message, rows=8) }}
+    {{ render_field(form.message, rows=8, autofocus=true) }}
     {{ submit_button("Send") }}
 </form>
 {% endblock %}

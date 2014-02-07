@@ -13,7 +13,7 @@ the aerofs.privatecloud S3 bucket with public ACLs and filenames
 
     <form action="" method="post">
         {{ form.hidden_tag() }}
-        {{ render_field(form.release_version, autofocus=True) }}
+        {{ render_field(form.release_version, autofocus=true) }}
         {{ submit_button("Release new appliance") }}
     </form>
 

@@ -7,7 +7,7 @@
     <form class="form-horizontal" action="" method="post" name="login">
         {{ form.hidden_tag() }}
         {{ render_disabled_field('Email:', record.email) }}
-        {{ render_field(form.password) }}
+        {{ render_field(form.password, autofocus=true) }}
         {{ submit_button("Complete Sign Up", horizontal=True) }}
     </form>
 {% endblock %}
