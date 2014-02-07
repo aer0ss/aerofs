@@ -52,7 +52,8 @@ def _get_modulus_helper(cmd):
     return stdout.split('=')[1]
 
 
-def get_conf():
-    properties = {}
-    Configuration().fetch_and_populate(properties)
-    return properties
+def get_conf(request):
+    return get_conf_client(request).server_properties()
+
+def get_conf_client(request):
+    return Configuration(request.registry.settings["deployment.config_server_uri"])

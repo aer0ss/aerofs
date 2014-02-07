@@ -12,7 +12,6 @@ import requests
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError
 import aerofs_common.bootstrap
-from aerofs_common.configuration import Configuration
 from web.error import error
 from web.util import is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, \
@@ -22,7 +21,7 @@ from backup_view import BACKUP_FILE_PATH
 from maintenance_util import write_pem_to_file, \
     format_pem, is_certificate_formatted_correctly, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \
-    is_key_formatted_correctly, get_conf
+    is_key_formatted_correctly, get_conf, get_conf_client
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +70,7 @@ _SESSION_KEY_RESTORED = 'restored'
     renderer='setup/setup.mako'
 )
 def setup(request):
-    conf = get_conf()
+    conf = get_conf(request)
     # See docs/design/pyramid_auth.md for explanation of the following logic.
     if is_license_present_and_valid(conf):
         log.info("license is valid. redirect to setup_authorized")
@@ -87,7 +86,7 @@ def setup(request):
     renderer='setup/setup.mako',
 )
 def setup_authorized(request):
-    return _setup_common(request, get_conf(), False)
+    return _setup_common(request, get_conf(request), False)
 
 
 def _setup_common(request, conf, license_page_only):
@@ -216,7 +215,7 @@ def _is_data_collection_enabled(conf):
 def json_setup_set_data_collection(request):
     enable = request.params['enable']
     log.info("appliance setup data collection: {}".format(enable))
-    config = Configuration()
+    config = get_conf_client(request)
     config.set_external_property('enable_appliance_setup_data_collection',
                                  enable)
 
@@ -242,7 +241,8 @@ def json_setup_hostname(request):
     elif not _is_hostname_resolvable(hostname):
         error("Unable to resolve " + hostname + ". Please check your settings.")
 
-    Configuration().set_external_property('base_host', hostname)
+    conf_client = get_conf_client(request)
+    conf_client.set_external_property('base_host', hostname)
 
     return {}
 
@@ -314,7 +314,8 @@ def json_verify_smtp(request):
     verify_email = request.params['verification-to-email']
 
     # Save the email for the frontend to use next time
-    Configuration().set_external_property('last_smtp_verification_email', verify_email)
+    conf_client = get_conf_client(request)
+    conf_client.set_external_property('last_smtp_verification_email', verify_email)
 
     r = _send_verification_email(support_address, verify_email,
                                  verify_code, host, port,
@@ -337,7 +338,7 @@ def json_setup_email(request):
     host, port, username, password, enable_tls, smtp_cert, support_address = \
         _parse_email_request(request)
 
-    configuration = Configuration()
+    configuration = get_conf_client(request)
     configuration.set_external_property('support_address',   support_address)
     configuration.set_external_property('email_host',        host)
     configuration.set_external_property('email_port',        port)
@@ -385,7 +386,7 @@ def json_setup_certificate(request):
             error("The certificate and key you provided do not match each other.")
 
         # All is well - set the external properties.
-        configuration = Configuration()
+        configuration = get_conf_client(request)
         configuration.set_external_property('browser_cert', format_pem(certificate))
         configuration.set_external_property('browser_key', format_pem(key))
 
@@ -446,7 +447,7 @@ def json_setup_identity(request):
     ldap = auth == 'external_credential'
 
     # All is well - set the external properties.
-    conf = Configuration()
+    conf = get_conf_client(request)
     conf.set_external_property('authenticator', auth)
     if ldap:
         _write_ldap_properties(conf, request.params)

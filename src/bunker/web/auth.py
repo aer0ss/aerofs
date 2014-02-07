@@ -26,7 +26,7 @@ def get_principals(authed_userid, request):
     This is THE function that dictates authorization.
     """
     shasum = get_license_shasum_from_session(request)
-    if shasum and is_license_shasum_valid(shasum):
+    if shasum and is_license_shasum_valid(request, shasum):
         return [GROUP_ID_MAINTAINERS]
     else:
         return []

@@ -21,8 +21,7 @@ class TestConfiguration(unittest.TestCase):
         requests.get = lambda url: res
 
     def _verify_fetch_result(self, expected):
-        config = {}
-        Configuration().fetch_and_populate(config)
+        config = Configuration("http://dummy:5434").server_properties()
         self.assertEqual(config, expected)
 
 def test_suite():

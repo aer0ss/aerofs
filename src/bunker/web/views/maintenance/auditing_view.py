@@ -1,10 +1,10 @@
 import logging
 import os
 from pyramid.view import view_config
-from aerofs_common.configuration import Configuration
 from web.util import str2bool
 from maintenance_util import write_pem_to_file, \
-    is_certificate_formatted_correctly, format_pem, get_conf
+    is_certificate_formatted_correctly, format_pem, get_conf, \
+    get_conf_client
 from web.error import error
 
 log = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
     renderer='auditing.mako'
 )
 def auditing(request):
-    conf = get_conf()
+    conf = get_conf(request)
     return {
         'is_audit_allowed': _is_audit_allowed(conf),
         'is_audit_enabled': _is_audit_enabled(conf),
@@ -57,10 +57,10 @@ def json_setup_audit(request):
 
     # _is_audit_allowed is needed to prevent users from bypassing the front-end
     # license enforcement and enable auditing by calling this method directly.
-    audit_enabled = _is_audit_allowed(get_conf()) and \
+    audit_enabled = _is_audit_allowed(get_conf(request)) and \
         str2bool(request.params['audit-enabled'])
 
-    config = Configuration()
+    config = get_conf_client(request)
     config.set_external_property('audit_enabled', audit_enabled)
 
     if not audit_enabled:

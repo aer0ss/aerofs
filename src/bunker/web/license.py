@@ -2,10 +2,13 @@
 Utility functions to support licensing. See License.java for its counterpart in Java
 """
 import base64
+import datetime
 import hashlib
 import logging
-import datetime
+
+from aerofs_common.configuration import Configuration
 import requests
+
 from util import is_private_deployment
 
 log = logging.getLogger(__name__)
@@ -16,11 +19,6 @@ _CONF_KEY_LICENSE_VALID_UNTIL = 'license_valid_until'
 URL_PARAM_KEY_LICENSE_SHASUM = 'license_shasum'
 
 _SESSION_KEY_LICENSE_SHASUM = 'license_shasum'
-
-# 'https://unified.syncfs.com/config' for testing
-_URL_LICENSE_HOST = 'http://localhost:5434'
-_URL_SET_LICENSE_FILE = _URL_LICENSE_HOST + "/set_license_file"
-_URL_CHECK_LICENSE_SHA1 = _URL_LICENSE_HOST + "/check_license_sha1"
 
 def is_license_present(conf):
     """
@@ -58,16 +56,15 @@ def set_license_file_and_attach_shasum_to_session(request, license_bytes):
 
     @param license_bytes: content of a license file
     """
-    r = requests.post(_URL_SET_LICENSE_FILE, data = {
-        'license_file': base64.urlsafe_b64encode(license_bytes)
-    })
-    if r.status_code == 200:
-        log.info("set license file okay: {}".format(r.text))
+    conf_client = Configuration(request.registry.settings['deployment.config_server_uri'])
+    try:
+        text = conf_client.set_license(license_bytes)
+        log.info("set license file okay: {}".format(text))
         shasum = hashlib.sha1(license_bytes).hexdigest()
         _attach_checksum_to_session(request, shasum)
         return True
-    else:
-        log.error("set license file failed: {} {}".format(r.status_code, r.text))
+    except requests.HTTPError as e:
+        log.error("set license file failed: {} {}".format(e.response.status_code, e.response.text))
         return False
 
 def verify_license_shasum_and_attach_to_session(request, shasum):
@@ -76,7 +73,7 @@ def verify_license_shasum_and_attach_to_session(request, shasum):
     the session if verification is successful.
     @return whether verification succeeds
     """
-    if shasum and is_license_shasum_valid(shasum):
+    if shasum and is_license_shasum_valid(request, shasum):
         _attach_checksum_to_session(request, shasum)
         return True
     else:
@@ -102,16 +99,15 @@ def get_license_shasum_from_session(request):
     """
     return request.session.get(_SESSION_KEY_LICENSE_SHASUM)
 
-def is_license_shasum_valid(shasum):
+def is_license_shasum_valid(request, shasum):
     """
     Call the config server to verify the shasum saved in the session matches the
     current license data. This method assumes the shasum is non-null.
     """
-    r = requests.get(_URL_CHECK_LICENSE_SHA1, params = {
-        'license_sha1': shasum
-    })
-    if r.status_code == 200:
+    client = Configuration(request.registry.settings['deployment.config_server_uri'])
+    try:
+        client.is_license_shasum_valid(shasum)
         return True
-    else:
-        log.error("check license sum failed: {} {}".format(r.status_code, r.text))
+    except requests.HTTPError as e:
+        log.error("check license sum failed: {} {}".format(e.response.status_code, e.response.text))
         return False

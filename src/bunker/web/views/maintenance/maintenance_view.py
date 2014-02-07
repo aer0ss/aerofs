@@ -95,5 +95,5 @@ def maintenance_mode(request):
     # Return status 503 Service Unavailable
     request.response.status = 503
     return {
-        'support_email': get_conf()['base.www.support_email_address']
+        'support_email': get_conf(request)['base.www.support_email_address']
     }

@@ -15,8 +15,8 @@ def main(global_config, **settings):
     """
 
     if settings['deployment.mode'] == 'private':
-        configuration = Configuration()
-        configuration.fetch_and_populate(settings)
+        configuration = Configuration(settings['deployment.config_server_uri'])
+        settings.update(configuration.server_properties())
 
     # Import template directories from views
     # TODO (WW) don't do this. Use renderer="<module>:templates/foo.mako" instead

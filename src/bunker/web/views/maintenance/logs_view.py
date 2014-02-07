@@ -19,7 +19,7 @@ LOG_ARCHIVE_PATH = '/opt/bootstrap/public/logs.zip'
     renderer='logs.mako'
 )
 def logs(request):
-    _log_customer_id()
+    _log_customer_id(request)
     return {}
 
 
@@ -29,12 +29,12 @@ def logs(request):
     renderer='logs_auto_download.mako'
 )
 def logs_auto_download(request):
-    _log_customer_id()
+    _log_customer_id(request)
     return {}
 
 
-def _log_customer_id():
-    log.info("customer id: {}".format(get_conf().get('customer_id', 'unknown')))
+def _log_customer_id(request):
+    log.info("customer id: {}".format(get_conf(request).get('customer_id', 'unknown')))
 
 
 @view_config(
