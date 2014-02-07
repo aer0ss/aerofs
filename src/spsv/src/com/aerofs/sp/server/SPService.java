@@ -1114,7 +1114,7 @@ public class SPService implements ISPService
                     .add("folder", folderName)
                     .add("sharer", sharer.id())
                     .add("target", sharee.id())
-                    .add("role", actualPermissions.roleName())
+                    .embed("role", actualPermissions.toArray())
                     .publish();
         }
 
@@ -1236,7 +1236,7 @@ public class SPService implements ISPService
                 .add("user", user.id())
                 .add("user_type", external ? "external" : "internal")
                 .add("folder", sf.getName())
-                .add("role", perm == null ? "?" : perm.roleName())
+                .embed("role", perm == null ? "" : perm.toArray())
                 .publish();
         _sqlTrans.commit();
 
@@ -1832,8 +1832,8 @@ public class SPService implements ISPService
             _auditClient.event(AuditTopic.SHARING, "folder.permission.update")
                     .add("target_user", subject.id())
                     .add("admin_user", user.id())
-                    .add("new_role", role)
-                    .add("old_role", oldPermissions)
+                    .embed("new_role", role.toArray())
+                    .embed("old_role", oldPermissions != null ? oldPermissions.toArray() : "")
                     .add("folder", sf.getName())
                     .publish();
 

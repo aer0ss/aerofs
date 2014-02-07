@@ -134,6 +134,11 @@ public class Permissions implements Comparable<Permissions>
         return bd.toString();
     }
 
+    public Permission[] toArray()
+    {
+        return _set.toArray(new Permission[_set.size()]);
+    }
+
     // this smells, ideally we should get mapping of Permissions to role names
     // from the configuration
     private static ImmutableBiMap<Permissions, String> buildRoleNames()
