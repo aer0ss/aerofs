@@ -12,7 +12,7 @@
 
         ## The enctype is needed for file uploads
         <form method="post" enctype='multipart/form-data'
-              action="${request.route_path('maintenance_login_submit')}">
+              action="${request.route_path('login_submit')}">
             ${csrf.token_input()}
             <input type="hidden" name="${url_param_next}" value="${next}">
 

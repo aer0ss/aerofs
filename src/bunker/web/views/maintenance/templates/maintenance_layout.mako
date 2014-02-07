@@ -17,8 +17,8 @@
                     ('logs', _("Server Logs")),
                     ('registered_apps', _("Registered Apps")),
                     ('toggle_maintenance_mode', _("Maintenance")),
-                    ('upgrade_appliance', _("Upgrade")),
-                    ('backup_appliance', _("Backup")),
+                    ('upgrade', _("Upgrade")),
+                    ('backup', _("Backup")),
                     ('setup', _("Setup")),
                 ]
             %>
@@ -39,11 +39,10 @@
 </div>
 
 <%block name="layout_scripts">
-    <script src="${request.static_path('web:static/js/purl.js')}"></script>
     <%error_message:scripts/>
     <script>
         $(document).ready(function() {
-            $('#dashboard_home_link').attr('href', 'https://' + $.url().attr('host'));
+            $('#dashboard_home_link').attr('href', 'https://' + location.hostname);
         });
     </script>
 </%block>

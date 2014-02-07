@@ -11,7 +11,9 @@ from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 from web.util import flash_error, get_rpc_stub, is_private_deployment
 
-from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page, DEFAULT_DASHBOARD_NEXT
+from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page
+
+DEFAULT_DASHBOARD_NEXT = 'dashboard_home'
 
 URL_PARAM_FORM_SUBMITTED = 'form_submitted'
 URL_PARAM_EMAIL = 'email'

@@ -17,7 +17,8 @@
         %endif
     >
     support.aerofs.com</a> with a brief description of the problem. We will
-    get back to you within one business day!
+    get back to you within one to two business days depending on the severity
+    of your issue.
 </%def>
 
 <%def name="scripts()">

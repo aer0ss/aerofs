@@ -59,7 +59,7 @@
 
             disableNavButtons();
 
-            ## TODO (WW) use multipart/form-data as in maintenance_login.mako
+            ## TODO (WW) use multipart/form-data as in login.mako
             var file = document.getElementById('${license_file_input_id}').files[0];
             var reader = new FileReader();
             reader.onload = function() {

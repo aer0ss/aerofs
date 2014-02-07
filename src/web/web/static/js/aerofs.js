@@ -53,6 +53,7 @@ function showErrorMessageFromResponse(xhr) {
         showErrorMessage(getAeroFSErrorMessage(xhr));
     } else if (xhr.status == 403) {
         // See error_view.py:_force_login on generation of 403
+        // Note that both web and bunker uses 'login' as the login route
         window.location.assign("/login?next=" +
             encodeURIComponent(window.location.pathname +
                 window.location.search + window.location.hash));

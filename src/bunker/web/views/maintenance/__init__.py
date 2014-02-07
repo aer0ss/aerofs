@@ -24,20 +24,18 @@ routes = {
     'json_get_bootstrap_task_status',
 
     # Other maintenance routes
-    'maintenance_login',
-    'maintenance_login_submit',
-    'backup_appliance',
+    'login',
+    'login_submit',
+    'backup',
+    'upgrade',
     'logs',
     'logs_auto_download',
     'download_logs',
     'auditing',
     'json_set_auditing',
-    # 'apps' is already taken by the access token management page
     'registered_apps',
     'register_app',
     'json_delete_app',
-    # 'upgrade' is already taken by the organization settings page
-    'upgrade_appliance',
     'download_backup_file',
     'status',
     'toggle_maintenance_mode',

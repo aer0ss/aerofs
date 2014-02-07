@@ -8,8 +8,9 @@ from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
 
-from web.login_util import DEFAULT_DASHBOARD_NEXT, resolve_next_url
+from web.login_util import resolve_next_url
 from web.util import flash_error
+from web.views.login.login_view import DEFAULT_DASHBOARD_NEXT
 
 log = logging.getLogger(__name__)
 

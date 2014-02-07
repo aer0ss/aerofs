@@ -6,7 +6,7 @@ server {
     if (!-f /var/aerofs/configuration-initialized-flag) {
         rewrite ^ http://$host:4444/setup break;
     }
-    if (-f /var/aerofs/maintenance-mode-flag) {
+    if (-f /var/aerofs/maintenance-flag) {
         rewrite ^ http://$host:4444/maintenance_mode break;
     }
 
@@ -36,7 +36,7 @@ server {
     if (!-f /var/aerofs/configuration-initialized-flag) {
         rewrite ^ http://$host:4444/setup break;
     }
-    if (-f /var/aerofs/maintenance-mode-flag) {
+    if (-f /var/aerofs/maintenance-flag) {
         rewrite ^ http://$host:4444/maintenance_mode break;
     }
 

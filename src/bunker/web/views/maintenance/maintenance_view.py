@@ -16,11 +16,11 @@ _DEFAULT_NEXT = 'status'
 
 
 @view_config(
-    route_name='maintenance_login',
+    route_name='login',
     permission=NO_PERMISSION_REQUIRED,
-    renderer='maintenance_login.mako'
+    renderer='login.mako'
 )
-def maintenance_login(request):
+def login(request):
     return {
         'url_param_license': URL_PARAM_LICENSE,
         'url_param_next': URL_PARAM_NEXT,
@@ -29,11 +29,11 @@ def maintenance_login(request):
 
 
 @view_config(
-    route_name='maintenance_login_submit',
+    route_name='login_submit',
     permission=NO_PERMISSION_REQUIRED,
     request_method='POST'
 )
-def maintenance_login_submit(request):
+def login_submit(request):
     log.info("attempt to login with license. auth'ed userid: {}"
         .format(authenticated_userid(request)))
 
@@ -55,7 +55,7 @@ def maintenance_login_submit(request):
 
     if not set_license_file_and_attach_shasum_to_session(request, license_bytes):
         flash_error(request, "The license is incorrect.")
-        return HTTPFound(location=request.route_path('maintenance_login'))
+        return HTTPFound(location=request.route_path('login'))
 
     headers = remember(request, 'fakeuser')
     return redirect_to_next_page(request, headers, _DEFAULT_NEXT)

@@ -10,19 +10,19 @@ log = logging.getLogger(__name__)
 BACKUP_FILE_PATH = '/opt/bootstrap/public/aerofs-db-backup.tar.gz'
 
 @view_config(
-    route_name='backup_appliance',
+    route_name='backup',
     permission='maintain',
     renderer='backup.mako'
 )
-def backup_appliance(request):
+def backup(request):
     return {}
 
 @view_config(
-    route_name='upgrade_appliance',
+    route_name='upgrade',
     permission='maintain',
     renderer='upgrade.mako'
 )
-def upgrade_appliance(request):
+def upgrade(request):
     return {
         'current_version': get_current_version()
     }

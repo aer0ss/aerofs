@@ -6,8 +6,6 @@ from pyramid.httpexceptions import HTTPFound
 
 URL_PARAM_NEXT = 'next'
 
-DEFAULT_DASHBOARD_NEXT = 'dashboard_home'
-
 log = logging.getLogger(__name__)
 
 

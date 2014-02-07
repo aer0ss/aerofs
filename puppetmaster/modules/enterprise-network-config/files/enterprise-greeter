@@ -238,7 +238,7 @@ def print_network_state_and_next_instructions():
     print "                    DNS Nameservers: {}".format(csv_nameservers)
     print ""
     if address:
-        url = centered("https://{}".format(address))
+        url = centered("http://{}".format(address))
         colored_url = "{}{}{}".format(CYAN, url, NORMAL)
         print centered("To continue configuring this node, point your browser at:")
         print colored_url

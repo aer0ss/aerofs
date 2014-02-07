@@ -154,7 +154,7 @@ def _is_ipv4_address(string):
 def json_set_license(request):
     log.info("set license")
 
-    # TODO (WW) share code with maintenance_view.py:maintenance_login_submit()?
+    # TODO (WW) share code with maintenance_view.py:login_submit()?
 
     # Due to the way we use JS to upload this file, the request parameter on
     # the wire is urlencoded utf8 of a unicode string.

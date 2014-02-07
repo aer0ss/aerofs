@@ -106,7 +106,7 @@
         ${render_admin_org_links()}
         %if is_private_deployment(request.registry.settings):
             <li class="nav-header">My Appliance</li>
-            ${navigation.link(('manage', _("Manage")))}
+            <a id="appliance_manage_link">Manage</a></li>
         %endif
     </ul>
 </%def>
@@ -136,3 +136,11 @@
         ${navigation.link(link)}
     % endfor
 </%def>
+
+<%block name="layout_scripts">
+    <script>
+        $(document).ready(function() {
+            $('#appliance_manage_link').attr('href', 'http://' + location.hostname + ':4444');
+        });
+    </script>
+</%block>
