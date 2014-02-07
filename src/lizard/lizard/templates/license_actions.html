@@ -8,9 +8,13 @@
     <h1>License {{ license.id }}</h1>
     <dl>
         <dt>Company</dt>
-        <dd>{{ license.customer.name }}</dd>
+        <dd><a href="{{ url_for('.customer_actions', org_id=license.customer.id) }}">{{ license.customer.name }}</a></dd>
+        <dt>Members</dt>
+        {% for admin in license.customer.admins.all() %}
+        <dd>{{ admin.first_name }} {{ admin.last_name }} - {{ admin.email }}</dd>
+        {% endfor %}
         <dt>Company ID</dt>
-        <dd>{{ license.customer.id }}</dd>
+        <dd><a href="{{ url_for('.customer_actions', org_id=license.customer.id) }}">{{ license.customer.id }}</a></dd>
         <dt>License request serial number</dt>
         <dd>{{ license.id }}</dd>
         <dt>State</dt>
