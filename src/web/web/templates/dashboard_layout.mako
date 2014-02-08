@@ -106,7 +106,10 @@
         ${render_admin_org_links()}
         %if is_private_deployment(request.registry.settings):
             <li class="nav-header">My Appliance</li>
-            <a id="appliance_manage_link">Manage</a></li>
+
+            <% import re %>
+            ## remove the port number from the host name, if any.
+            <a href="http://${re.sub(r':.*$', '', request.host) + ':8080'}">Manage</a>
         %endif
     </ul>
 </%def>
@@ -136,11 +139,3 @@
         ${navigation.link(link)}
     % endfor
 </%def>
-
-<%block name="layout_scripts">
-    <script>
-        $(document).ready(function() {
-            $('#appliance_manage_link').attr('href', 'http://' + location.hostname + ':8080');
-        });
-    </script>
-</%block>

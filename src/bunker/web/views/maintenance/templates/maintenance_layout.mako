@@ -36,7 +36,9 @@
             %endfor
 
             <li class="nav-header">My AeroFS</li>
-            <a id="dashboard_home_link">Home</a>
+            <% import re %>
+            ## remove the port number from the host name, if any.
+            <a href="https://${re.sub(r':.*$', '', request.host)}">Home</a>
         </ul>
     </div>
 
@@ -49,9 +51,4 @@
 
 <%block name="layout_scripts">
     <%error_message:scripts/>
-    <script>
-        $(document).ready(function() {
-            $('#dashboard_home_link').attr('href', 'https://' + location.hostname);
-        });
-    </script>
 </%block>

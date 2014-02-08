@@ -3,7 +3,7 @@ server {
 
     # Redirect all HTTP requests to bunker based on flags.
     # Note 1: the order of the redirect matters.
-    # Note 2: duplicate code in the following block.
+    # Note 2: duplicate code in the following block for HTTPS redirect.
     if (!-f /var/aerofs/configuration-initialized-flag) {
         rewrite ^ http://$host:8080/setup break;
     }
@@ -35,9 +35,9 @@ server {
 
     add_header X-Frame-Options SAMEORIGIN;
 
-    # Redirect all HTTP requests to bunker based on flags.
+    # Redirect all HTTPS requests to bunker based on flags.
     # Note 1: the order of the redirect matters.
-    # Note 2: duplicate code in the previous block.
+    # Note 2: duplicate code in the previous block for HTTP redirect.
     if (!-f /var/aerofs/configuration-initialized-flag) {
         rewrite ^ http://$host:8080/setup break;
     }
