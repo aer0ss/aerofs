@@ -8,6 +8,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.InjectableCfg;
+import com.google.common.collect.Queues;
 import com.google.common.net.HttpHeaders;
 import org.slf4j.Logger;
 
@@ -15,6 +16,10 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
@@ -26,6 +31,11 @@ public class RockLog
 
     private final String _rocklogUrl;
     private final InjectableCfg _cfg;
+
+    private final Executor _e = new ThreadPoolExecutor(
+            0, 1,                                           // at most 1 thread
+            1, TimeUnit.SECONDS,                            // idle thread TTL
+            Queues.<Runnable>newLinkedBlockingQueue(100));  // bounded event queue
 
     @Inject
     public RockLog()
@@ -61,14 +71,14 @@ public class RockLog
 
     void send(final Defect defect)
     {
-        new Thread(new Runnable()
+        _e.execute(new Runnable()
         {
             @Override
             public void run()
             {
                 rpc(defect);
             }
-        },"rocklog-send").start();
+        });
     }
 
     boolean rpc(Defect defect)
