@@ -1,3 +1,6 @@
+import base64
+import logging
+import os
 from pyramid.config import Configurator
 from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
@@ -5,6 +8,8 @@ from pyramid_beaker import session_factory_from_settings
 from root_factory import RootFactory
 from auth import get_principals
 import views
+
+log = logging.getLogger(__name__)
 
 
 def main(global_config, **settings):
@@ -15,6 +20,8 @@ def main(global_config, **settings):
     # Some Python functions shared between the web and bunker projects
     # need this property to behave properly. i.e. util.is_private_deployment()
     settings['config.loader.is_private_deployment'] = True
+
+    _initialize_session_keys(settings)
 
     # Import template directories from views
     # TODO (WW) don't do this. Use renderer="<module>:templates/foo.mako" instead
@@ -55,3 +62,29 @@ def main(global_config, **settings):
     config.commit()
 
     return config.make_wsgi_app()
+
+
+def _initialize_session_keys(settings):
+    """
+    Generate per-appliance session validate and encrypt keys if they don't exist.
+    See http://beaker.readthedocs.org/en/latest/modules/session.html and
+    http://beaker.readthedocs.org/en/latest/configuration.html#session-options.
+    """
+    settings['session.validate_key'] = _read_or_create_key_file('session_validate_key')
+    settings['session.encrypt_key'] = _read_or_create_key_file('session_encrypt_key')
+
+
+def _read_or_create_key_file(file_name):
+    # The package installer creates and sets proper permissions on the folder /opt/bunker/state
+    path = os.path.join(os.sep, 'opt', 'bunker', 'state', file_name)
+    if os.path.exists(path):
+        log.info('reading ' + path)
+    else:
+        log.info('generating ' + path)
+        with open("/dev/urandom") as rng:
+            key = base64.b64encode(rng.read(64))
+        with open(path, "w") as f:
+            f.write(key)
+
+    with open(path) as f:
+        return f.read()
