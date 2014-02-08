@@ -32,9 +32,13 @@
 </div>
 
 <%block name="scripts">
-    <script type="text/javascript">
+    <script src="${request.static_path('web:static/js/purl.js')}"></script>
+    <script>
         $(document).ready(function() {
-            $('#create-user-email').focus();
+            var $input = $('#create-user-email');
+            ## This param is set by bunker's apply_page.mako
+            $input.val($.url().param('email'));
+            $input.focus();
         });
 
         function submitForm() {

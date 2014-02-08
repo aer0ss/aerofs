@@ -41,16 +41,25 @@ ${common.render_previous_button()}
 
     </div>
     <div class="modal-footer">
+
+        <%
+            import re
+            # remove the port number from the host name, if any.
+            home_url = 'https://' + re.sub(r':.*$', '', request.host)
+            # Use the SMTP verification email as the default first user email
+            create_user_url = '{}/create_first_user?email={}'.format(
+                home_url, current_config['last_smtp_verification_email'])
+        %>
+
         %if first_user_created:
-            <a id="dashboard_home_link" class="btn btn-primary">Go to Home Page</a>
+            <a class="btn btn-primary" href='${home_url}'>Go to Home Page</a>
         %else:
-            <a id="create_first_user_link" class="btn btn-primary">Create First User</a>
+            <a class="btn btn-primary" href='${create_user_url}'>Create First User</a>
         %endif
     </div>
 </div>
 
 <%def name="scripts()">
-    <script src="${request.static_path('web:static/js/purl.js')}"></script>
     <%progress_modal:scripts/>
     ## spinner support is required by progress_modal
     <%spinner:scripts/>
@@ -62,14 +71,7 @@ ${common.render_previous_button()}
             ## Disalbe esaping from all modals
             disableEsapingFromModal($('div.modal'));
             initializeModals();
-            populateDashboardLinks();
         });
-
-        function populateDashboardLinks() {
-            var homeBase = 'https://' + $.url().attr('host');
-            $('#dashboard_home_link').attr('href', homeBase);
-            $('#create_first_user_link').attr('href', homeBase + '/create_first_user');
-        }
 
         function initializeModals() {
             var countDownInterval;
