@@ -140,7 +140,7 @@
 <%block name="layout_scripts">
     <script>
         $(document).ready(function() {
-            $('#appliance_manage_link').attr('href', 'http://' + location.hostname + ':4444');
+            $('#appliance_manage_link').attr('href', 'http://' + location.hostname + ':8080');
         });
     </script>
 </%block>

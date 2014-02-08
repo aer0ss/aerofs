@@ -21,18 +21,7 @@ class unified::network {
     Firewall {
         require => Exec["import-iptables-debconf"],
     }
-    # INPUT chain:
-    # allow RELATED,ESTABLISHED
-    # allow 22    (ssh)
-    # allow 80    (web)
-    # allow 443   (web)
-    # allow 3478 (and UDP!)
-    # allow 4433  (sp service)
-    # allow 5222  (ejabberd)
-    # allow 5435  (config)
-    # allow 8888  (zephyr)
-    # allow 29438 (verkehr)
-    # allow 8084  (havre tunnel)
+
     firewall {"000 allow RELATED, ESTABLISHED":
         state  => ['RELATED', 'ESTABLISHED'],
         proto  => 'all',
@@ -104,7 +93,7 @@ class unified::network {
     firewall {"208 allow bunker maintenance port":
         table => "filter",
         chain => "INPUT",
-        dport => 4444,
+        dport => 8080,
         action => "accept",
     }->
     # deny all others
