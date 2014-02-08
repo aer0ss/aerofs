@@ -9,17 +9,26 @@
     ## Left navigation bar
     <div class="span2 offset1">
         <ul class="nav nav-list left-nav">
-            <li class="nav-header">My Appliance</li>
+            <li class="nav-header">Settings</li>
             <%
                 links = [
+                    ('registered_apps', _("Registered Apps")),
                     ('auditing', _("Auditing")),
+                    ('setup', _("Setup")),
+                ]
+            %>
+            %for link in links:
+                ${navigation.link(link)}
+            %endfor
+
+            <li class="nav-header">Maintenance</li>
+            <%
+                links = [
+                    ('toggle_maintenance_mode', _("Toggle Mode")),
                     ('status', _("Service Status")),
                     ('logs', _("Server Logs")),
-                    ('registered_apps', _("Registered Apps")),
-                    ('toggle_maintenance_mode', _("Maintenance")),
                     ('upgrade', _("Upgrade")),
                     ('backup', _("Backup")),
-                    ('setup', _("Setup")),
                 ]
             %>
             %for link in links:

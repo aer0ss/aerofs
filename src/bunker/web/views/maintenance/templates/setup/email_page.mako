@@ -116,12 +116,12 @@
 
 <div id="verify-modal-email-input" class="modal hide small-modal" tabindex="-1" role="dialog">
     <div class="modal-header">
-        <h4>Test your SMTP settings</h4>
+        <h4>Test SMTP settings</h4>
     </div>
 
     <div class="modal-body">
-        <p>Please test the email settings before proceeding. Enter your email
-            address so that we can send you a test email.</p>
+        <p>Please test SMTP settings before proceeding.</p>
+        <p>Enter your email address and we will send you a test email.</p>
         <form id="verify-modal-email-input-form" method="post" class="form-inline"
                 onsubmit="sendVerificationCodeAndShowCodeInputModal(); return false;">
             ${csrf.token_input()}

@@ -35,8 +35,8 @@ ${common.render_previous_button()}
             <p>System configuration is complete.</p>
         %else:
             <p>Next, you will create the system's first user.</p>
-            <p>You may receive a certificate warning from the browser if you
-                chose a self-signed certificate in the previous step.</p>
+            <p>Your browser may warn about the certificate if you chose a self-signed certificate
+                in the previous step.</p>
         %endif
 
     </div>
