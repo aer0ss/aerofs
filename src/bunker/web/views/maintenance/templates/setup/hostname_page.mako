@@ -21,9 +21,10 @@
 
 <%modal:modal>
     <%def name="id()">confirm-ip-address-modal</%def>
-    <%def name="title()">Using IP addresses</%def>
+    <%def name="title()">Using IP addresses...</%def>
+    <%def name="error()"></%def>
 
-    <p><strong>Not recommended</strong>:
+    <p><strong>Is not recommended</strong>:
         Using an IP address as the hostname is not recommended for production use,
         since changing it will ${require_reinstall()}</p>
 
