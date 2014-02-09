@@ -13,6 +13,7 @@ import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,6 +31,7 @@ import static com.aerofs.sp.server.lib.SPSchema.T_CERT;
 
 public class CertificateDatabase extends AbstractSQLDatabase
 {
+    @Inject
     public CertificateDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);

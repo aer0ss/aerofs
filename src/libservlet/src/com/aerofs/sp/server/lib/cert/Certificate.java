@@ -3,6 +3,7 @@ package com.aerofs.sp.server.lib.cert;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 
+import javax.inject.Inject;
 import java.sql.SQLException;
 
 public class Certificate
@@ -11,6 +12,7 @@ public class Certificate
     {
         private final CertificateDatabase _certdb;
 
+        @Inject
         public Factory(CertificateDatabase certdb)
         {
             _certdb = certdb;

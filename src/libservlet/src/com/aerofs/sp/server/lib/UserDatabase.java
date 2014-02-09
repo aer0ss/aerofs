@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -66,6 +67,7 @@ import static com.aerofs.sp.server.lib.SPSchema.T_USER;
  */
 public class UserDatabase extends AbstractSQLDatabase
 {
+    @Inject
     public UserDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);

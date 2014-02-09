@@ -52,17 +52,17 @@ public class User
 
     public static class Factory
     {
-        private final UserDatabase _udb;
-        private final OrganizationInvitationDatabase _odb;
+        private UserDatabase _udb;
+        private OrganizationInvitationDatabase _odb;
 
-        private final Device.Factory _factDevice;
-        private final Organization.Factory _factOrg;
-        private final OrganizationInvitation.Factory _factOrgInvite;
-        private final SharedFolder.Factory _factSharedFolder;
-        private final License _license;
+        private Device.Factory _factDevice;
+        private Organization.Factory _factOrg;
+        private OrganizationInvitation.Factory _factOrgInvite;
+        private SharedFolder.Factory _factSharedFolder;
+        private License _license;
 
         @Inject
-        public Factory(UserDatabase udb, OrganizationInvitationDatabase odb,
+        public void inject(UserDatabase udb, OrganizationInvitationDatabase odb,
                 Device.Factory factDevice, Organization.Factory factOrg,
                 OrganizationInvitation.Factory factOrgInvite, SharedFolder.Factory factSharedFolder,
                 License license)

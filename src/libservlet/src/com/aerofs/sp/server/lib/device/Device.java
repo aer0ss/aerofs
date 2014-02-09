@@ -26,6 +26,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
@@ -44,6 +45,7 @@ public class Device
         private User.Factory _factUser;
         private Certificate.Factory _factCert;
 
+        @Inject
         public void inject(DeviceDatabase db, CertificateDatabase certdb,
                 CertificateGenerator certgen, User.Factory factUser, Certificate.Factory factCert)
         {

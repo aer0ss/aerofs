@@ -14,6 +14,7 @@ import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.google.common.collect.Sets;
 
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -41,6 +42,7 @@ import static com.aerofs.sp.server.lib.SPSchema.T_USER;
  */
 public class EmailSubscriptionDatabase extends AbstractSQLDatabase
 {
+    @Inject
     public EmailSubscriptionDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);

@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,6 +58,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class OrganizationDatabase extends AbstractSQLDatabase
 {
+    @Inject
     public OrganizationDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);

@@ -132,9 +132,10 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected JedisEpochCommandQueue commandQueue = new JedisEpochCommandQueue(jedisTrans);
 
     License license = mock(License.class);
-    @Spy protected User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg,
-            factOrgInvite, factSharedFolder, license);
+    @Spy protected User.Factory factUser = new User.Factory();
     {
+        factUser.inject(udb, oidb, factDevice, factOrg,
+                factOrgInvite, factSharedFolder, license);
         factDevice.inject(ddb, certdb, certgen, factUser, factCert);
         factSharedFolder.inject(sfdb, factUser);
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);

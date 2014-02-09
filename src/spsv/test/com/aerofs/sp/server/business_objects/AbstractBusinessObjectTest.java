@@ -67,9 +67,10 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
 
     License license = mock(License.class);
 
-    @Spy protected final User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg,
-            factOrgInvite, factSharedFolder, license);
+    @Spy protected final User.Factory factUser = new User.Factory();
     {
+        factUser.inject(udb, oidb, factDevice, factOrg,
+                factOrgInvite, factSharedFolder, license);
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
         factSharedFolder.inject(sfdb, factUser);
         factDevice.inject(ddb, cdb, cgen, factUser, factCert);

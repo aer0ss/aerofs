@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -49,6 +50,7 @@ import static com.aerofs.sp.server.lib.SPSchema.T_SF;
  */
 public class SharedFolderDatabase extends AbstractSQLDatabase
 {
+    @Inject
     public SharedFolderDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);

@@ -11,6 +11,7 @@ import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import org.slf4j.Logger;
 
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -62,6 +63,7 @@ public class SQLThreadLocalTransaction
      * Initialize a new ThreadLocalTransaction with the given connection provider. This object
      * should be dependency injected into any classes that need access to a database connection.
      */
+    @Inject
     public SQLThreadLocalTransaction(IDatabaseConnectionProvider<Connection> provider)
     {
         _provider = provider;

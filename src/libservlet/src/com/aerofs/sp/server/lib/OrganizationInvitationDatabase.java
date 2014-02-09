@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.sql.Types;
 import java.util.List;
 import java.sql.Connection;
@@ -34,6 +35,7 @@ import static com.aerofs.sp.server.lib.SPSchema.T_OI;
 
 public class OrganizationInvitationDatabase extends AbstractSQLDatabase
 {
+    @Inject
     public OrganizationInvitationDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);

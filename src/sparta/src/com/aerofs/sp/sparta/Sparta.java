@@ -11,6 +11,10 @@ import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.sp.sparta.resources.DevicesResource;
+import com.aerofs.sp.sparta.resources.SharesResource;
+import com.aerofs.sp.sparta.resources.UsersResource;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -22,9 +26,11 @@ import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.util.Properties;
+import java.util.Set;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
 /**
@@ -46,7 +52,9 @@ public class Sparta extends Service
 
         enableVersioning();
 
-        // TODO: add resources
+        addResource(UsersResource.class);
+        addResource(DevicesResource.class);
+        addResource(SharesResource.class);
     }
 
     private static InetSocketAddress listenAddress()
@@ -65,6 +73,12 @@ public class Sparta extends Service
         // Note, we expect nginx or similar to provide ssl termination...
         new Sparta(Guice.createInjector(databaseModule(), spartaModule()), null)
                 .start();
+    }
+
+    @Override
+    protected Set<Class<?>> singletons()
+    {
+        return ImmutableSet.of();
     }
 
     static private Module databaseModule()

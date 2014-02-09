@@ -14,6 +14,7 @@ import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,6 +35,7 @@ import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
  */
 public class DeviceDatabase extends AbstractSQLDatabase
 {
+    @Inject
     public DeviceDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);

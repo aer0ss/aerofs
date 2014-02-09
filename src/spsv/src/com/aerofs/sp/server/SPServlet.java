@@ -99,9 +99,10 @@ public class SPServlet extends AeroServlet
     private final OrganizationInvitation.Factory _factOrgInvite =
             new OrganizationInvitation.Factory();
     private final License _license = new License();
-    private final User.Factory _factUser = new User.Factory(_udb, _oidb, _factDevice, _factOrg,
-            _factOrgInvite, _factSharedFolder, _license);
+    private final User.Factory _factUser = new User.Factory();
     {
+        _factUser.inject(_udb, _oidb, _factDevice, _factOrg,
+                _factOrgInvite, _factSharedFolder, _license);
         _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
         _factOrg.inject(_odb, _oidb, _factUser, _factSharedFolder, _factOrgInvite);
         _factOrgInvite.inject(_oidb, _factUser, _factOrg);

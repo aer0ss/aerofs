@@ -12,6 +12,7 @@ import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,6 +38,7 @@ import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 // DO NOT ADD NEW METHODS.
 public class SPDatabase extends AbstractSQLDatabase
 {
+    @Inject
     public SPDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);

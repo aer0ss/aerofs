@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableList.Builder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
 public class SharedFolder
 {
@@ -39,6 +40,7 @@ public class SharedFolder
         private SharedFolderDatabase _db;
         private User.Factory _factUser;
 
+        @Inject
         public void inject(SharedFolderDatabase db, User.Factory factUser)
         {
             _db = db;
