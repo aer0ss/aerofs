@@ -19,6 +19,7 @@
       <module fileurl="file://$PROJECT_DIR$/../../src/oauth-verify/oauth-verify.iml" filepath="$PROJECT_DIR$/../../src/oauth-verify/oauth-verify.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/rest-api/rest-api.iml" filepath="$PROJECT_DIR$/../../src/rest-api/rest-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/restless/restless.iml" filepath="$PROJECT_DIR$/../../src/restless/restless.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/sparta/sparta.iml" filepath="$PROJECT_DIR$/../../src/sparta/sparta.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/spsv/spsv.iml" filepath="$PROJECT_DIR$/../../src/spsv/spsv.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" filepath="$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/syncstat/syncstat.iml" filepath="$PROJECT_DIR$/../../src/syncstat/syncstat.iml" />

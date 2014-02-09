@@ -30,6 +30,7 @@ PACKAGES= \
 	sanity \
 	servlet-tools \
 	sp \
+	sparta \
 	spdb \
 	stun \
 	sv \

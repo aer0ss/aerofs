@@ -77,6 +77,12 @@ class transient::services {
     include havre
 
     #---------------
+    # RESTful SP
+    #---------------
+
+    include sparta
+
+    #---------------
     # OAuth server
     #---------------
 
@@ -144,6 +150,11 @@ class transient::services {
 
     file {"/opt/sanity/probes/bifrost.sh":
         source => "puppet:///modules/transient/probes/bifrost.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/sparta.sh":
+        source => "puppet:///modules/transient/probes/sparta.sh",
         require => Package["aerofs-sanity"],
     }
 
