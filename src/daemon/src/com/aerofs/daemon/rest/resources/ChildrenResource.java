@@ -8,7 +8,7 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.daemon.rest.util.OAuthToken;
+import com.aerofs.rest.util.AuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
 import com.aerofs.restless.Auth;
@@ -37,7 +37,7 @@ public class ChildrenResource
 
     @Since("0.8")
     @GET
-    public Response listUserRoot(@Auth OAuthToken token)
+    public Response listUserRoot(@Auth AuthToken token)
     {
         return new EIListChildren(_imce, token, new RestObject(SID.rootSID(token.user), OID.ROOT))
                 .execute();
@@ -46,7 +46,7 @@ public class ChildrenResource
     @Since("0.9")
     @GET
     @Path("/{folder_id}")
-    public Response list(@Auth OAuthToken token,
+    public Response list(@Auth AuthToken token,
             @PathParam("folder_id") RestObject object)
     {
         return new EIListChildren(_imce, token, object).execute();

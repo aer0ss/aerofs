@@ -12,7 +12,7 @@ import com.aerofs.daemon.rest.event.EIDeleteObject;
 import com.aerofs.daemon.rest.event.EIMoveObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
-import com.aerofs.daemon.rest.util.OAuthToken;
+import com.aerofs.rest.util.AuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.rest.api.Folder;
 import com.aerofs.restless.Auth;
@@ -53,7 +53,7 @@ public class FoldersResource
     @Since("0.9")
     @GET
     @Path("/{folder_id}")
-    public Response metadata(@Auth OAuthToken token,
+    public Response metadata(@Auth AuthToken token,
             @PathParam("folder_id") RestObject object)
     {
         return new EIObjectInfo(_imce, token, object, Type.FOLDER).execute();
@@ -62,7 +62,7 @@ public class FoldersResource
     @Since("0.10")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(@Auth OAuthToken token,
+    public Response create(@Auth AuthToken token,
             @Context Version version,
             Folder folder) throws IOException
     {
@@ -76,7 +76,7 @@ public class FoldersResource
     @PUT
     @Path("/{folder_id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response move(@Auth OAuthToken token,
+    public Response move(@Auth AuthToken token,
             @PathParam("folder_id") RestObject object,
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             Folder folder) throws IOException
@@ -91,7 +91,7 @@ public class FoldersResource
     @DELETE
     @Path("/{folder_id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response delete(@Auth OAuthToken token,
+    public Response delete(@Auth AuthToken token,
             @PathParam("folder_id") RestObject object,
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
             throws IOException

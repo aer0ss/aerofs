@@ -5,11 +5,11 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.Version;
-import com.aerofs.daemon.rest.providers.IllegalArgumentExceptionMapper;
-import com.aerofs.daemon.rest.providers.ParamExceptionMapper;
-import com.aerofs.daemon.rest.providers.JsonExceptionMapper;
-import com.aerofs.daemon.rest.providers.OAuthProvider;
-import com.aerofs.daemon.rest.providers.RuntimeExceptionMapper;
+import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
+import com.aerofs.rest.providers.ParamExceptionMapper;
+import com.aerofs.rest.providers.JsonExceptionMapper;
+import com.aerofs.rest.providers.OAuthProvider;
+import com.aerofs.rest.providers.RuntimeExceptionMapper;
 import com.aerofs.daemon.rest.resources.ChildrenResource;
 import com.aerofs.daemon.rest.resources.FilesResource;
 import com.aerofs.daemon.rest.resources.FoldersResource;

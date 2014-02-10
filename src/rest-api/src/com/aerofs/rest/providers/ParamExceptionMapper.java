@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.rest.providers;
+package com.aerofs.rest.providers;
 
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;

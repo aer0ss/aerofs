@@ -8,9 +8,14 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.Version;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.lib.properties.Configuration.Server;
+import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
+import com.aerofs.rest.providers.JsonExceptionMapper;
+import com.aerofs.rest.providers.ParamExceptionMapper;
+import com.aerofs.rest.providers.RuntimeExceptionMapper;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.sp.sparta.providers.AuthProvider;
 import com.aerofs.sp.sparta.resources.DevicesResource;
 import com.aerofs.sp.sparta.resources.SharesResource;
 import com.aerofs.sp.sparta.resources.UsersResource;
@@ -78,7 +83,13 @@ public class Sparta extends Service
     @Override
     protected Set<Class<?>> singletons()
     {
-        return ImmutableSet.of();
+        return ImmutableSet.of(
+                AuthProvider.class,
+                JsonExceptionMapper.class,
+                ParamExceptionMapper.class,
+                IllegalArgumentExceptionMapper.class,
+                RuntimeExceptionMapper.class
+        );
     }
 
     static private Module databaseModule()

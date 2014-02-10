@@ -5,12 +5,12 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.MDID;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.rest.util.AuthToken;
 import com.aerofs.restless.util.HttpStatus;
-import com.aerofs.daemon.rest.util.OAuthToken;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.rest.api.Error;
 import com.aerofs.lib.event.Prio;
@@ -27,11 +27,11 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
 {
     private static final Logger l = Loggers.getLogger(AbstractRestEBIMC.class);
 
-    public final OAuthToken _token;
+    public final AuthToken _token;
 
     private Object _result;
 
-    protected AbstractRestEBIMC(IIMCExecutor imce, OAuthToken token)
+    protected AbstractRestEBIMC(IIMCExecutor imce, AuthToken token)
     {
         super(imce);
         _token = token;
@@ -47,7 +47,7 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
         return _token.user;
     }
 
-    public final MDID did()
+    public final DID did()
     {
         return _token.did;
     }

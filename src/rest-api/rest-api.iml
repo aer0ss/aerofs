@@ -6,7 +6,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="library" name="jsr305" level="project" />
+    <orderEntry type="module" module-name="restless" />
+    <orderEntry type="module" module-name="oauth-verify" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

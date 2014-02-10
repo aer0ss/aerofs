@@ -1,8 +1,8 @@
-package com.aerofs.daemon.rest.providers;
+package com.aerofs.rest.providers;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.rest.util.OAuthToken;
+import com.aerofs.rest.util.AuthToken;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.oauth.VerifyTokenResponse;
 import com.aerofs.rest.api.Error;
@@ -27,13 +27,13 @@ import java.nio.channels.ClosedChannelException;
 
 /**
  * Jersey injectable provider that validates OAuth access tokens in HTTP requests and extracts an
- * {@link OAuthToken} to make it available as an @Auth-annotated parameter to resource methods.
+ * {@link com.aerofs.rest.util.AuthToken} to make it available as an @Auth-annotated parameter to resource methods.
  *
  * The actual verification is done by {@link TokenVerifier}, which provides a cache on top of
  * bifrost.
  */
 public class OAuthProvider
-        extends AbstractHttpContextInjectable<OAuthToken>
+        extends AbstractHttpContextInjectable<AuthToken>
         implements InjectableProvider<Auth, Parameter>
 {
     private final static Logger l = Loggers.getLogger(OAuthProvider.class);
@@ -47,14 +47,14 @@ public class OAuthProvider
     }
 
     @Override
-    public OAuthToken getValue(HttpContext context)
+    public AuthToken getValue(HttpContext context)
     {
         String auth = context.getRequest().getHeaderValue(HttpHeaders.AUTHORIZATION);
         try {
             VerifyTokenResponse r = _verifier.verifyHeader(auth);
             if (r != null && r.principal != null) {
                 l.info("verified");
-                return new OAuthToken(r);
+                return new AuthToken(r);
             }
         } catch (Exception e) {
             l.error("failed to verify token", BaseLogUtil.suppress(e,
@@ -74,8 +74,8 @@ public class OAuthProvider
     }
 
     @Override
-    public Injectable<OAuthToken> getInjectable(ComponentContext ctx, Auth auth, Parameter param)
+    public Injectable<AuthToken> getInjectable(ComponentContext ctx, Auth auth, Parameter param)
     {
-        return param.getParameterClass().isAssignableFrom(OAuthToken.class) ? this : null;
+        return param.getParameterClass().isAssignableFrom(AuthToken.class) ? this : null;
     }
 }
