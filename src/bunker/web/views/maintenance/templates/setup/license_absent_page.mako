@@ -52,7 +52,8 @@
     <p>The following ports need to be open for AeroFS desktop clients and Team
         Servers to connect to the appliance:</p>
     <ul>
-        <li>TCP ports: 80, 443, 3478, 4433, 5222, 8080, 8084, 8888, and 29438.</li>
+        ## N.B. REMEMBER TO UPDATE https://support.aerofs.com/entries/22661589 as well
+        <li>TCP ports: 80, 443, 3478, 4433, 5222, 8084, 8484, 8888, and 29438.</li>
         <li>UDP port: 3478.</li>
     </ul>
 

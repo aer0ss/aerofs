@@ -93,7 +93,7 @@ class unified::network {
     firewall {"208 allow bunker maintenance port":
         table => "filter",
         chain => "INPUT",
-        dport => 8080,
+        dport => 8484,
         action => "accept",
     }->
     # deny all others

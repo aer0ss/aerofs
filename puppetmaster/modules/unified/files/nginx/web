@@ -5,13 +5,13 @@ server {
     # Note 1: the order of the redirect matters.
     # Note 2: duplicate code in the following block for HTTPS redirect.
     if (!-f /var/aerofs/configuration-initialized-flag) {
-        rewrite ^ http://$host:8080/setup break;
+        rewrite ^ http://$host:8484/setup break;
     }
     if (-f /var/aerofs/maintenance-flag) {
-        rewrite ^ http://$host:8080/maintenance_mode break;
+        rewrite ^ http://$host:8484/maintenance_mode break;
     }
     if (-f /var/aerofs/license-expired-flag) {
-        rewrite ^ http://$host:8080/setup break;
+        rewrite ^ http://$host:8484/setup break;
     }
 
     rewrite ^ https://$host$request_uri permanent;
@@ -39,13 +39,13 @@ server {
     # Note 1: the order of the redirect matters.
     # Note 2: duplicate code in the previous block for HTTP redirect.
     if (!-f /var/aerofs/configuration-initialized-flag) {
-        rewrite ^ http://$host:8080/setup break;
+        rewrite ^ http://$host:8484/setup break;
     }
     if (-f /var/aerofs/maintenance-flag) {
-        rewrite ^ http://$host:8080/maintenance_mode break;
+        rewrite ^ http://$host:8484/maintenance_mode break;
     }
     if (-f /var/aerofs/license-expired-flag) {
-        rewrite ^ http://$host:8080/setup break;
+        rewrite ^ http://$host:8484/setup break;
     }
 
     include /etc/nginx/backends-enabled/* ;

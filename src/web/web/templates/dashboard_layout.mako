@@ -109,7 +109,7 @@
 
             <% import re %>
             ## remove the port number from the host name, if any.
-            <a href="http://${re.sub(r':.*$', '', request.host) + ':8080'}">Manage</a>
+            <a href="http://${re.sub(r':.*$', '', request.host) + ':8484'}">Manage</a>
         %endif
     </ul>
 </%def>
