@@ -15,6 +15,7 @@
     <orderEntry type="library" name="flyway-core-2.2.1" level="project" />
     <orderEntry type="library" name="tomcat-jdbc" level="project" />
     <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
+    <orderEntry type="module" module-name="bifrost" scope="TEST" />
   </component>
 </module>
 

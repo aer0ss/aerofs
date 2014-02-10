@@ -100,7 +100,7 @@ public class ClientsResource
             return Response.ok().entity(response).build();
 
         } catch (Exception e) {
-            l.error(e.toString());
+            l.error("", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -132,8 +132,7 @@ public class ClientsResource
             return Response.ok().entity(response).build();
 
         } catch (Exception e) {
-            e.printStackTrace();
-            l.error(e.toString());
+            l.error("", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -163,7 +162,7 @@ public class ClientsResource
                     client.getSecret())).build();
 
         } catch (Exception e) {
-            l.error(e.toString());
+            l.error("", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -195,7 +194,7 @@ public class ClientsResource
             return Response.ok().build();
 
         } catch (Exception e) {
-            l.error(e.toString());
+            l.error("", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR).build();
         }
     }

@@ -134,9 +134,19 @@ public class Permissions implements Comparable<Permissions>
         return bd.toString();
     }
 
-    public Permission[] toArray()
+    public String[] toArray()
     {
-        return _set.toArray(new Permission[_set.size()]);
+        int i = 0;
+        String[] a = new String[_set.size()];
+        for (Permission p : _set) a[i++] = p.name();
+        return a;
+    }
+
+    public static Permissions fromArray(String[] a)
+    {
+        int r = 0;
+        for (String p : a) r |= Permission.valueOf(p).flag();
+        return new Permissions(r);
     }
 
     // this smells, ideally we should get mapping of Permissions to role names

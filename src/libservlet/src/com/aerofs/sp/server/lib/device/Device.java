@@ -12,6 +12,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.sp.server.ParamFactory;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
@@ -65,6 +66,17 @@ public class Device
         {
             return create(new DID(did));
         }
+
+        @ParamFactory
+        public Device _create(String s)
+        {
+            try {
+                return create(DID.fromStringFormal(s));
+            } catch (ExFormatError e) {
+                throw new IllegalArgumentException("Invalid DID");
+            }
+        }
+
     }
 
     private final Factory _f;

@@ -22,6 +22,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.common.Base62CodeGenerator;
+import com.aerofs.sp.server.ParamFactory;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -74,6 +75,16 @@ public class User
             _factOrgInvite = factOrgInvite;
             _factSharedFolder = factSharedFolder;
             _license = license;
+        }
+
+        @ParamFactory
+        public User _create(String userid)
+        {
+            try {
+                return create(UserID.fromExternal(userid));
+            } catch (ExEmptyEmailAddress e) {
+                throw new IllegalArgumentException("empty email address");
+            }
         }
 
         public User create(@Nonnull UserID id)

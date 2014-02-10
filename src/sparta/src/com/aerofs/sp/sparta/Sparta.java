@@ -4,6 +4,8 @@
 
 package com.aerofs.sp.sparta;
 
+import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.BaseParam.Cacert;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
@@ -22,9 +24,14 @@ import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.sp.authentication.Authenticator;
+import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.sparta.providers.AuthProvider;
+import com.aerofs.sp.sparta.providers.FactoryReaderProvider;
+import com.aerofs.sp.sparta.providers.TransactionWrapper;
+import com.aerofs.sp.sparta.providers.WirableMapper;
 import com.aerofs.sp.sparta.resources.DevicesResource;
-import com.aerofs.sp.sparta.resources.SharesResource;
+import com.aerofs.sp.sparta.resources.SharedFolderResource;
 import com.aerofs.sp.sparta.resources.UsersResource;
 import com.aerofs.verkehr.client.lib.publisher.ClientFactory;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -33,11 +40,13 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.Scoping;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 
@@ -52,7 +61,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 
 /**
  * Standalone RESTful SP
@@ -68,14 +76,13 @@ public class Sparta extends Service
 
     public Sparta(Injector injector, IPrivateKeyProvider kmgr)
     {
-        // use a cached thread pool to free-up I/O threads while the requests do db work
-        super("sparta", listenAddress(), kmgr, injector, newCachedThreadPool());
+        super("sparta", listenAddress(), kmgr, injector, null);
 
         enableVersioning();
 
         addResource(UsersResource.class);
         addResource(DevicesResource.class);
-        addResource(SharesResource.class);
+        addResource(SharedFolderResource.class);
     }
 
     private static InetSocketAddress listenAddress()
@@ -90,13 +97,14 @@ public class Sparta extends Service
         if (args.length > 0) extra.load(new FileInputStream(args[0]));
 
         Server.initialize(extra);
+
         ICertificateProvider cacert = new FileBasedCertificateProvider(Cacert.FILE);
 
         Timer timer = new HashedWheelTimer();
         ClientSocketChannelFactory clientFactory = new NioClientSocketChannelFactory();
 
         Injector inj = Guice.createInjector(databaseModule(),
-                verkehrModule(cacert, timer, clientFactory),
+                clientsModule(cacert, timer, clientFactory),
                 spartaModule(timer, clientFactory));
 
         // NB: we expect nginx or similar to provide ssl termination...
@@ -105,10 +113,24 @@ public class Sparta extends Service
     }
 
     @Override
+    public ChannelPipeline getSpecializedPipeline()
+    {
+        ChannelPipeline p = super.getSpecializedPipeline();
+
+        // free i/o threads while handling app logic and preserve HTTP pipelining
+        p.addBefore(JERSEY_HANLDER, "exec", new ExecutionHandler(
+                new OrderedMemoryAwareThreadPoolExecutor(10, 1 * C.MB, 5 * C.MB)));
+        return p;
+    }
+
+    @Override
     protected Set<Class<?>> singletons()
     {
-        return ImmutableSet.of(
+        return ImmutableSet.<Class<?>>of(
                 AuthProvider.class,
+                FactoryReaderProvider.class,
+                TransactionWrapper.class,
+                WirableMapper.class,
                 JsonExceptionMapper.class,
                 ParamExceptionMapper.class,
                 IllegalArgumentExceptionMapper.class,
@@ -129,11 +151,10 @@ public class Sparta extends Service
         };
     }
 
-    static private Module verkehrModule(final ICertificateProvider cacert, final Timer timer,
+    static private Module clientsModule(final ICertificateProvider cacert, final Timer timer,
             final ClientSocketChannelFactory clientFactory)
     {
         return new AbstractModule() {
-            private VerkehrPublisher publisher;
             private final ClientFactory factClient = new ClientFactory(
                     Verkehr.HOST,
                     Short.parseShort(Verkehr.PUBLISH_PORT),
@@ -147,45 +168,34 @@ public class Sparta extends Service
 
             @Override
             protected void configure()
-            {}
-
-            @Provides
-            public VerkehrPublisher providesPublisher()
             {
-                if (publisher == null) publisher = factClient.create();
-                return publisher;
+                bind(VerkehrPublisher.class).toInstance(factClient.create());
+                bind(AuditClient.class).toInstance(new AuditClient()
+                        .setAuditorClient(AuditorFactory.createUnauthenticated()));
             }
         };
     }
 
     static public Module spartaModule(final Timer timer, final ClientSocketChannelFactory clientFactory)
     {
-        return (new AbstractModule() {
-            private TokenVerifier verifier;
-
+        return new AbstractModule() {
             @Override
             protected void configure()
             {
                 bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
                 bind(Configuration.class).to(SpartaConfiguration.class);
+                bind(Timer.class).toInstance(timer);
+                bind(Authenticator.class).toInstance(AuthenticatorFactory.create());
+                bind(TokenVerifier.class).toInstance(new TokenVerifier(
+                        getStringProperty("sparta.oauth.id", ""),
+                        getStringProperty("sparta.oauth.secret", ""),
+                        URI.create(getStringProperty("sparta.oauth.url",
+                                "https://localhost:8700/tokeninfo")),
+                        timer,
+                        null,
+                        clientFactory
+                ));
             }
-
-            @Provides
-            public TokenVerifier providesVerifier()
-            {
-                if (verifier == null) {
-                    verifier = new TokenVerifier(
-                            getStringProperty("sparta.oauth.id", ""),
-                            getStringProperty("sparta.oauth.secret", ""),
-                            URI.create(getStringProperty("sparta.oauth.url",
-                                    "https://localhost:8700/tokeninfo")),
-                            timer,
-                            null,
-                            clientFactory
-                    );
-                }
-                return verifier;
-            }
-        });
+        };
     }
 }

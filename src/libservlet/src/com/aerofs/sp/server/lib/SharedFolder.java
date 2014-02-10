@@ -8,6 +8,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
@@ -15,6 +16,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
+import com.aerofs.sp.server.ParamFactory;
 import com.aerofs.sp.server.lib.SharedFolderDatabase.UserIDRoleAndState;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
@@ -27,6 +29,7 @@ import com.google.protobuf.ByteString;
 import java.sql.SQLException;
 
 import static com.aerofs.sp.common.SharedFolderState.*;
+
 import com.google.common.collect.ImmutableList.Builder;
 
 import javax.annotation.Nonnull;
@@ -55,6 +58,16 @@ public class SharedFolder
         public SharedFolder create(SID sid)
         {
             return new SharedFolder(this, sid);
+        }
+
+        @ParamFactory
+        public SharedFolder _create(String s)
+        {
+            try {
+                return create(new SID(s));
+            } catch (ExFormatError e) {
+                throw new IllegalArgumentException("Invalid SID");
+            }
         }
     }
 
@@ -448,7 +461,7 @@ public class SharedFolder
             throws ExNoAdminOrOwner, SQLException
     {
         if (!hasOwnerLeft()) {
-            throw new ExNoAdminOrOwner("there must be at least one owner");
+            throw new ExNoAdminOrOwner("There must be at least one owner per shared folder");
         }
     }
 
@@ -475,7 +488,7 @@ public class SharedFolder
             }
         }
 
-        throw new ExNoPerm();
+        throw new ExNoPerm("Not allowed to manage users for this shared folder");
     }
 
     private boolean isJoinedOwner(User user)

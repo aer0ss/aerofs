@@ -131,18 +131,34 @@ public abstract class BifrostTest extends AbstractTest
      */
     public static void createTestEntities(UserID user, Injector inj)
     {
-        Client client = new Client();
-        ResourceServer rs = new ResourceServer();
-        Set<Client> clients = Sets.newHashSet();
-        Set<String> scopes = Sets.newHashSet();
+        ResourceServer rs = createResourceServer(inj);
+        Client client = createClient(rs, inj);
 
+        createAccessToken(client, inj, RW_TOKEN, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
+                ImmutableSet.of("read", "write"));
+        createAccessToken(client, inj, RO_TOKEN, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
+                ImmutableSet.of("read"));
+        createAccessToken(client, inj, EXPIRED, user, OrganizationID.PRIVATE_ORGANIZATION, 1,
+                ImmutableSet.of("read", "write"));
+    }
+
+    public static ResourceServer createResourceServer(Injector inj)
+    {
+        ResourceServer rs = new ResourceServer();
         rs.updateTimeStamps();
         rs.setContactEmail("localadmin@example.com");
         rs.setContactName("local admin");
         rs.setName("Auth server");
         rs.setKey(RESOURCEKEY);
         rs.setSecret(RESOURCESECRET);
+        rs.setScopes(ImmutableSet.of("read", "write"));
+        inj.getInstance(ResourceServerRepository.class).save(rs);
+        return rs;
+    }
 
+    public static Client createClient(ResourceServer rs, Injector inj)
+    {
+        Client client = new Client();
         client.setClientId(CLIENTID);
         client.setSecret(CLIENTSECRET);
         client.setName(CLIENTNAME);
@@ -152,44 +168,34 @@ public abstract class BifrostTest extends AbstractTest
         client.setContactName("Test contact");
         client.setIncludePrincipal(true);
         client.setSkipConsent(false);
-
-        scopes.add("read");
-        scopes.add("write");
-        client.setScopes(scopes);
-        rs.setScopes(scopes);
-
+        client.setScopes(ImmutableSet.of("read", "write"));
         client.setResourceServer(rs);
-        clients.add(client);
+        inj.getInstance(ClientRepository.class).save(client);
 
-        rs.setClients(clients);
+        Set<Client> clients = rs.getClients();
+        if (clients != null){
+            clients.addAll(rs.getClients());
+        } else {
+            rs.setClients(Sets.newHashSet(client));
+        }
+        inj.getInstance(ResourceServerRepository.class).save(rs);
+        return client;
+    }
 
+    public static AccessToken createAccessToken(Client client, Injector inj, String tokenId,
+            UserID user, OrganizationID org, long expires, Set<String> scopes)
+    {
         AuthenticatedPrincipal principal = new AuthenticatedPrincipal(USERNAME);
         principal.setUserID(user);
-        principal.setOrganizationID(OrganizationID.PRIVATE_ORGANIZATION);
-        AccessToken token = new AccessToken(RW_TOKEN,
+        principal.setOrganizationID(org);
+        AccessToken token = new AccessToken(tokenId,
                 principal,
                 client,
-                0,
+                expires,
                 scopes,
                 "");
-        AccessToken read = new AccessToken(RO_TOKEN,
-                principal,
-                client,
-                0,
-                ImmutableSet.of("read"),
-                "");
-        AccessToken expired = new AccessToken(EXPIRED,
-                principal,
-                client,
-                1,
-                scopes,
-                "");
-
-        inj.getInstance(ResourceServerRepository.class).save(rs);
-        inj.getInstance(ClientRepository.class).save(client);
         inj.getInstance(AccessTokenRepository.class).save(token);
-        inj.getInstance(AccessTokenRepository.class).save(read);
-        inj.getInstance(AccessTokenRepository.class).save(expired);
+        return token;
     }
 
     public static Module mockDatabaseModule(final SessionFactory sessionFactory)

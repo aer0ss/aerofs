@@ -11,6 +11,8 @@ import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.Factory;
 
+import javax.inject.Inject;
+
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 
 public class SharingRulesFactory
@@ -19,6 +21,7 @@ public class SharingRulesFactory
     final Factory _factUser;
     final SharedFolderNotificationEmailer _sfnEmailer;
 
+    @Inject
     public SharingRulesFactory(Authenticator authenticator, Factory factUser,
             SharedFolderNotificationEmailer sfnEmailer)
     {

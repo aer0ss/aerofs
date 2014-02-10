@@ -4,6 +4,7 @@
 
 package com.aerofs.rest.providers;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 
@@ -27,6 +28,7 @@ public class RuntimeExceptionMapper implements ExceptionMapper<RuntimeException>
         if (e instanceof WebApplicationException) {
             return ((WebApplicationException)e).getResponse();
         }
+        Loggers.getLogger(RuntimeExceptionMapper.class).warn("ex ", e);
         return Response.status(Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(new Error(Type.INTERNAL_ERROR, "Internal error while servicing request"))
