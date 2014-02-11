@@ -96,7 +96,7 @@
             (sub_item('Share Securely'), 'solutions_secure_file_sharing'),
             (sub_item('Server Replacement'), 'solutions_server_replacement'),
             (sub_item('Data Recovery'), 'solutions_data_recovery'),
-            ('Compliance', 'solutions_data_protection_policy')
+            ('Compliance & DLP', 'solutions_data_protection_policy')
         ]
     %>
     ${_render_items(items, highlight_current_item)}
