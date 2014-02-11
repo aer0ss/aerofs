@@ -10,9 +10,8 @@
 
 <p class="page-block">Auditing allows admins to monitor and track user activities.
     The audit log provides a real time stream of a wide range of user activities
-    and file syncing events, to 3rd-party logging systems such as Splunk or
-    ElasticSearch.
-    <a href="#" target="_blank">Read more</a>.</p>
+    and file syncing events, to 3rd-party logging systems such as Splunk.
+    <a href="https://support.aerofs.com/entries/26663920" target="_blank">Read more</a>.</p>
 
 <div class="page-block">
     %if not is_audit_allowed:
