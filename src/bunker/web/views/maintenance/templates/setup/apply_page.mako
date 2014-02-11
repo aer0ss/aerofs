@@ -43,9 +43,10 @@ ${common.render_previous_button()}
     <div class="modal-footer">
 
         <%
-            import re
-            # remove the port number from the host name, if any.
-            home_url = 'https://' + re.sub(r':.*$', '', request.host)
+            # Redirect user to the set hostname rather than the hostname derived from the current URL which can be an IP
+            # address. This is useful to suppress browser warnings if the CNAME of the browser certificate doesn't match
+            # the IP address.
+            home_url = 'https://' + current_config['base.host.unified']
             # Use the SMTP verification email as the default first user email
             create_user_url = '{}/create_first_user?email={}'.format(
                 home_url, current_config['last_smtp_verification_email'])
