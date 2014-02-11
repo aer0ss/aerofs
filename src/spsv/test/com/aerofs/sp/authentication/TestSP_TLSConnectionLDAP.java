@@ -7,12 +7,14 @@ package com.aerofs.sp.authentication;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.sp.authentication.LdapConfiguration.SecurityType;
 import com.aerofs.sp.authentication.InMemoryServer.LdapSchema;
+import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.google.protobuf.ByteString;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Spy;
 
 import java.io.IOException;
@@ -29,6 +31,7 @@ public class TestSP_TLSConnectionLDAP extends AbstractSPTest
     @Before
     public void updateConfigs() throws CertificateException, IOException
     {
+        _authenticator.setACLPublisher_(aclPublisher);
         _server.resetConfig(_cfg);
         _cfg.SERVER_SECURITY = SecurityType.STARTTLS;
         _cfg.SERVER_CA_CERT = _server.getCertString();
@@ -66,4 +69,5 @@ public class TestSP_TLSConnectionLDAP extends AbstractSPTest
     @Spy Authenticator _authenticator = new Authenticator(
             new IAuthority[] { new LdapAuthority(_cfg), new LocalAuthority()});
     private static InMemoryServer _server;
+    @Mock ACLNotificationPublisher aclPublisher;
 }
