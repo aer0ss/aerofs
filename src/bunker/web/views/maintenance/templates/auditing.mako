@@ -61,8 +61,8 @@
             <hr/>
             <h4>Downstream Options</h4>
             <p>Auditing requires a downstream server to which AeroFS will
-                publish audit events. The events will be sent over HTTP(S) in
-                JSON:</p>
+                publish audit events. The events will be sent as newline-separated
+                JSON documents over tcp (or tcp-ssl):</p>
 
             <div class="row-fluid">
                 <div class="span8">
