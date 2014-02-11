@@ -48,14 +48,14 @@ ${common.render_previous_button()}
             # the IP address.
             home_url = 'https://' + current_config['base.host.unified']
             # Use the SMTP verification email as the default first user email
-            create_user_url = '{}/create_first_user?email={}'.format(
-                home_url, current_config['last_smtp_verification_email'])
+            email = current_config['last_smtp_verification_email']
         %>
 
         %if first_user_created:
             <a class="btn btn-primary" href='${home_url}'>Go to Home Page</a>
         %else:
-            <a class="btn btn-primary" href='${create_user_url}'>Create First User</a>
+            <a class="btn btn-primary" href='${home_url}/create_first_user?email=${email | u}'>
+                Create First User</a>
         %endif
     </div>
 </div>

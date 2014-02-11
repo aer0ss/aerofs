@@ -37,8 +37,9 @@
         $(document).ready(function() {
             var $input = $('#create-user-email');
             ## This param is set by bunker's apply_page.mako
-            $input.val($.url().param('email'));
-            $input.focus();
+            $input.val($.url().param('email'))
+                    .select()
+                    .focus();
         });
 
         function submitForm() {
