@@ -122,6 +122,7 @@
                         <li><a href="${request.route_path('terms')}">Terms</a></li>
                         <li><a href="http://support.aerofs.com">Support</a></li>
                         <li><a href="${request.route_path('resources')}">Resources</a></li>
+                        <li><a href="${request.route_path('developers_overview')}">Developers</a></li>
                         ## <li><a href="${request.route_path('developers_overview')}">Developers</a></li>
 
                         <li class="pull-right">&copy; Air Computing Inc. 2013</li>
