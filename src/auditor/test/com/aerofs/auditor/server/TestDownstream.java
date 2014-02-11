@@ -160,8 +160,8 @@ public class TestDownstream extends AbstractTest
         ReconnectingClientHandler.resetDelay();
         do {
             assert true : "yes it's true, resolve an IDEA warning";
-        } while (ReconnectingClientHandler.getNextDelay() != ReconnectingClientHandler.MAX_DELAY_MS);
-        Assert.assertEquals(ReconnectingClientHandler.getNextDelay(), ReconnectingClientHandler.MAX_DELAY_MS);
+        } while (ReconnectingClientHandler.getNextDelay() != ReconnectingClientHandler.MAX_WAIT_TIME);
+        Assert.assertEquals(ReconnectingClientHandler.getNextDelay(), ReconnectingClientHandler.MAX_WAIT_TIME);
     }
 
     @Test

@@ -4,6 +4,7 @@
 
 package com.aerofs.auditor.resource;
 
+import com.aerofs.auditor.resource.HttpRequestAuthenticator.VerifiedSubmitter;
 import com.aerofs.auditor.server.Downstream;
 import com.aerofs.lib.log.LogUtil;
 import com.google.gson.FieldNamingPolicy;
@@ -11,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.HttpContext;
+import com.sun.jersey.api.core.HttpRequestContext;
 import org.jboss.netty.channel.ChannelFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +64,13 @@ public class EventResource
             return Response.status(400)
                     .entity(new EventResult("Request missing required parameters"))
                     .build();
+        }
+
+        HttpRequestContext req = context.getRequest();
+        String userId = req.getHeaderValue(HttpRequestAuthenticator.HEADER_AUTH_USERID);
+        String deviceId = req.getHeaderValue(HttpRequestAuthenticator.HEADER_AUTH_DEVICE);
+        if (userId != null) {
+            contents.put("verified_submitter", new VerifiedSubmitter(userId, deviceId));
         }
 
         String parsed = _gson.toJson(contents);

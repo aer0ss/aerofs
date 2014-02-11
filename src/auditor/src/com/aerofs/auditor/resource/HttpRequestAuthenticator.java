@@ -52,9 +52,26 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
 
     // HTTP headers populated by the nginx frontend:
     public final static String HEADER_AUTH_REQ = "AeroFS-Auth-Required";
+    public final static String HEADER_AUTH_USERID = "AeroFS-Auth-UserId";
+    public final static String HEADER_AUTH_DEVICE = "AeroFS-Auth-DeviceId";
     public final static String HEADER_DNAME = "DName";
     public final static String HEADER_VERIFY = "Verify";
     public final static String HEADER_VERIFY_OK = "SUCCESS";
+
+    /**
+     * JSON-embeddable object that contains only the verified elements of a remote
+     * submitter. (In other words, we check the userid and deviceId agains the certificate
+     * information, which is in turn verified by SSL).
+     */
+    static class VerifiedSubmitter
+    {
+        final String userId;
+        final String deviceId;
+        VerifiedSubmitter(String userId, String deviceId) {
+            this.userId = userId;
+            this.deviceId = deviceId;
+        }
+    }
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
@@ -63,7 +80,13 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
         HttpRequest req = (HttpRequest)e.getMessage();
 
         try {
-            if (Boolean.parseBoolean(req.getHeader(HEADER_AUTH_REQ))) throwIfInvalidCreds(req);
+            if (_submitter == null && Boolean.parseBoolean(req.getHeader(HEADER_AUTH_REQ))) {
+                _submitter = throwIfInvalidCreds(req);
+            }
+            if (_submitter != null) {
+                req.setHeader(HEADER_AUTH_USERID, _submitter.userId);
+                req.setHeader(HEADER_AUTH_DEVICE, _submitter.deviceId);
+            }
         } catch (Exception ex) {
             HttpResponseStatus status = (ex instanceof ExBadCredential) ?
                     HttpResponseStatus.UNAUTHORIZED : HttpResponseStatus.BAD_REQUEST;
@@ -71,8 +94,6 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
             throw ex;
         }
 
-        l.debug("Removing HTTP certificate authenticator");
-        ctx.getPipeline().remove(this);
         ctx.sendUpstream(e);
     }
 
@@ -80,7 +101,7 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
      * Throw a reasonable exception if the HTTP headers don't meet the identity-verification
      * requirements described above.
      */
-    private void throwIfInvalidCreds(HttpRequest req)
+    private VerifiedSubmitter throwIfInvalidCreds(HttpRequest req)
             throws ExBadCredential, IOException, ExFormatError
     {
         String verifyVal = req.getHeader(HEADER_VERIFY);
@@ -106,6 +127,8 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
             l.warn("UID/DID-cert mismatch. uid:{} did:{} DN:{}", userIdVal, deviceIdVal, dNameVal);
             throw new ExBadCredential("UID/DID do not match certificate CName");
         }
+
+        return new VerifiedSubmitter(userIdVal, deviceIdVal);
     }
 
     /**
@@ -132,4 +155,6 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
                 UserID.fromInternalThrowIfNotNormalized(userId),
                 new DID(deviceId));
     }
+
+    private VerifiedSubmitter _submitter = null;
 }

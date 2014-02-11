@@ -17,8 +17,6 @@
         <appender-ref ref="LOGFILE" />
     </appender>
 
-    <logger name="com.aerofs.restless.netty" level="DEBUG"/>
-
     <root level="INFO">
         <appender-ref ref="ASYNC"/>
     </root>

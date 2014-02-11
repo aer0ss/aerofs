@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This handles upstream messages for a given channel instance. When a channel instance closes,
@@ -40,8 +39,10 @@ public class ReconnectingClientHandler extends SimpleChannelHandler
 
     // I don't _love_ using statics to hold this state, but it does apply across
     // ReconnectingClientHandler instances.
-    static final long           MAX_DELAY_MS = 10 * C.SEC;
-    private static AtomicInteger _connectFailures = new AtomicInteger(0);
+    private static final long   EXP_WAIT_COEFF = 2L;
+    private static final long   MIN_WAIT_TIME = C.SEC / 4;
+    static final long   MAX_WAIT_TIME = 60 * C.SEC;
+    private static long         _interval = MIN_WAIT_TIME;
     private static boolean      _quiescent = false;
 
     /**
@@ -116,13 +117,13 @@ public class ReconnectingClientHandler extends SimpleChannelHandler
      */
     static long getNextDelay()
     {
-        return Math.min(
-                1 << _connectFailures.incrementAndGet(),
-                MAX_DELAY_MS);
+        long delay = _interval;
+        _interval = Math.min(_interval * EXP_WAIT_COEFF, MAX_WAIT_TIME);
+        return delay;
     }
     static void resetDelay()
     {
-        _connectFailures.set(0);
+        _interval = MIN_WAIT_TIME;
     }
 
     /**
