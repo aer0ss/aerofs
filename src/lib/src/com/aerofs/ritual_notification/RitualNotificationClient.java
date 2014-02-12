@@ -37,7 +37,7 @@ public class RitualNotificationClient extends AbstractNettyReconnectingClient
 
     public RitualNotificationClient(RitualNotificationSystemConfiguration config)
     {
-        super(config.getAddress(), TimerUtil.getGlobalTimer(),
+        super(config.host(), config.port(), TimerUtil.getGlobalTimer(),
                 ChannelFactories.getClientChannelFactory());
     }
 

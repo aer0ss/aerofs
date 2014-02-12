@@ -29,7 +29,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
 
 import static java.util.concurrent.Executors.newCachedThreadPool;
@@ -109,7 +108,7 @@ public class TestTunnel extends AbstractBaseTest
      */
     Tunnel<Channel, TunnelHandler> makePhysical() throws Exception
     {
-        ChannelFuture cf = new TunnelClient(new InetSocketAddress(port), user, did,
+        ChannelFuture cf = new TunnelClient("127.0.0.1", port, user, did,
                 clientChannelFactory,
                 clientSslEngineFactory,
                 new ChannelPipelineFactory() {

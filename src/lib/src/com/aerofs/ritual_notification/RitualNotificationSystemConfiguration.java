@@ -4,7 +4,6 @@
 
 package com.aerofs.ritual_notification;
 
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 
@@ -14,7 +13,16 @@ public class RitualNotificationSystemConfiguration
 {
     public InetSocketAddress getAddress()
     {
-        return new InetSocketAddress(LibParam.LOCALHOST_ADDR,
-                Cfg.port(PortType.RITUAL_NOTIFICATION));
+        return new InetSocketAddress(host(), port());
+    }
+
+    public String host()
+    {
+        return "127.0.0.1";
+    }
+
+    public int port()
+    {
+        return Cfg.port(PortType.RITUAL_NOTIFICATION);
     }
 }

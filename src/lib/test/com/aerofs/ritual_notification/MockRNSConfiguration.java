@@ -4,7 +4,6 @@
 
 package com.aerofs.ritual_notification;
 
-import java.net.InetSocketAddress;
 import java.util.Random;
 
 public class MockRNSConfiguration extends RitualNotificationSystemConfiguration
@@ -12,8 +11,8 @@ public class MockRNSConfiguration extends RitualNotificationSystemConfiguration
     private final int port = 1024 + new Random().nextInt(10000);
 
     @Override
-    public InetSocketAddress getAddress()
+    public int port()
     {
-        return new InetSocketAddress(port);
+        return port;
     }
 }

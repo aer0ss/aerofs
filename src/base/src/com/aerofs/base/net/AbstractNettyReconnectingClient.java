@@ -37,7 +37,8 @@ public abstract class AbstractNettyReconnectingClient
 
     protected final Timer _timer;
     private final ClientBootstrap _bootstrap;
-    private final InetSocketAddress _address;
+    private final String _host;
+    private final int _port;
 
     private volatile Channel _channel;
     private volatile boolean _running;
@@ -69,11 +70,12 @@ public abstract class AbstractNettyReconnectingClient
         }
     };
 
-    protected AbstractNettyReconnectingClient(InetSocketAddress address, Timer timer,
+    protected AbstractNettyReconnectingClient(String host, int port, Timer timer,
             ClientSocketChannelFactory channelFactory)
     {
         _timer = timer;
-        _address = address;
+        _host = host;
+        _port = port;
         _bootstrap = new ClientBootstrap(channelFactory);
     }
 
@@ -85,7 +87,9 @@ public abstract class AbstractNettyReconnectingClient
     public ChannelFuture connect()
     {
         _bootstrap.setPipelineFactory(pipelineFactory());
-        return _bootstrap.connect(_address);
+        // NB: create a new InetSocketAddress on every connnection, otherwise failure to resolve
+        // DNS on the first connection will prevent any future connection form ever succeeding
+        return _bootstrap.connect(new InetSocketAddress(_host, _port));
     }
 
     /**

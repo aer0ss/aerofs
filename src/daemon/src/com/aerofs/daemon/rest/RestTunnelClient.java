@@ -9,8 +9,6 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.util.Timer;
 
-import java.net.InetSocketAddress;
-
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
@@ -21,7 +19,9 @@ public class RestTunnelClient extends TunnelClient
     public RestTunnelClient(CfgLocalUser user, CfgLocalDID did, Timer timer,
             ClientSSLEngineFactory sslEngineFactory, final RestService service)
     {
-        super(tunnelAddress(), user.get(), did.get(), getClientChannelFactory(), sslEngineFactory,
+        super(getStringProperty("api.tunnel.host", "aerofs.com"),
+                getIntegerProperty("api.tunnel.port", 8084), user.get(), did.get(),
+                getClientChannelFactory(), sslEngineFactory,
                 new ChannelPipelineFactory()
                 {
                     @Override
@@ -31,13 +31,6 @@ public class RestTunnelClient extends TunnelClient
                         return service.getSpecializedPipeline();
                     }
                 }, timer);
-    }
-
-    private static InetSocketAddress tunnelAddress()
-    {
-        return new InetSocketAddress(
-                getStringProperty("api.tunnel.host", "aerofs.com"),
-                getIntegerProperty("api.tunnel.port", 8084));
     }
 
     @Override

@@ -12,8 +12,6 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.util.Timer;
 
-import java.net.InetSocketAddress;
-
 /**
  * Tunnel client: connects to a Tunnel server and generates virtual server channels
  */
@@ -24,11 +22,11 @@ public class TunnelClient extends AbstractNettyReconnectingClient
     private final SSLEngineFactory _sslEngineFactory;
     private final ChannelPipelineFactory _pipelineFactory;
 
-    public TunnelClient(InetSocketAddress address, UserID user, DID did,
+    public TunnelClient(String host, int port, UserID user, DID did,
             ClientSocketChannelFactory channelFactory, SSLEngineFactory sslEngineFactory,
             ChannelPipelineFactory pipelineFactory, Timer timer)
     {
-        super(address, timer, channelFactory);
+        super(host, port, timer, channelFactory);
         _user = user;
         _did = did;
         _sslEngineFactory = sslEngineFactory;
