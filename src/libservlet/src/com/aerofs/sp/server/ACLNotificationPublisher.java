@@ -11,6 +11,7 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import javax.inject.Inject;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 
@@ -24,6 +25,7 @@ public class ACLNotificationPublisher
     private final User.Factory _factUser;
     private final VerkehrPublisher _vk;
 
+    @Inject
     ACLNotificationPublisher(User.Factory factUser, VerkehrPublisher vk)
     {
         _factUser = factUser;

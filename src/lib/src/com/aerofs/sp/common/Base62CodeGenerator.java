@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.common;
 
-import com.aerofs.lib.SecUtil;
+import com.aerofs.base.BaseSecUtil;
 
 /**
  * Base62CodeGeneraor is use by the invitation mailer and by the password reset mailer.
@@ -24,7 +24,7 @@ public class Base62CodeGenerator
         assert len > 0;
         StringBuilder sb = new StringBuilder(len);
         for (int i = 0; i < len; i++) {
-            int rand = SecUtil.newRandomInt() % BASE62_CHARS.length;
+            int rand = BaseSecUtil.newRandomInt() % BASE62_CHARS.length;
             sb.append(BASE62_CHARS[rand >= 0 ? rand : rand + BASE62_CHARS.length]);
         }
         return sb.toString();

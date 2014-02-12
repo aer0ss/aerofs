@@ -15,12 +15,9 @@
     <orderEntry type="library" name="commons-codec" level="project" />
     <orderEntry type="library" name="bouncycastle" level="project" />
     <orderEntry type="library" name="metrics-graphite-reporter" level="project" />
-    <orderEntry type="library" name="dyuproject-openid-1.1" level="project" />
-    <orderEntry type="library" name="unboundid-ldapsdk-se" level="project" />
     <orderEntry type="library" scope="TEST" name="jetty" level="project" />
     <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scrypt-1.4.0" level="project" />
   </component>
 </module>
 
