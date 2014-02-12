@@ -1,14 +1,13 @@
 {% extends 'public.html' %}
-{% from "_formhelpers.html" import submit_button %}
 {% from "_menuhelpers.html" import render_menu_item %}
 
 {# due to the pull-right logic, pills are listed from right to left here #}
 {% block additional_nav_pills %}
-    <li class="pull-right">
-        <form action="{{ url_for('.logout') }}" method="post" name="logout">
+    <li>
+        <form id="logout_form" action="{{ url_for('.logout') }}" method="post" name="logout" class="hidden">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            {{ submit_button("Logout") }}
         </form>
+        {{ current_user.email }} <a href="#" onclick="$('#logout_form').submit();" style="margin: 0 12px;">Sign out</a>
     </li>
 {% endblock %}
 

@@ -37,7 +37,7 @@ class PreferencesForm(Form):
     password = PasswordField("Password", validators=[
         Optional(),
         Length(min=6),
-        EqualTo('password_confirmation', message='Passwords must match')
+        EqualTo('password_confirmation', message='Passwords must match.')
         ])
     password_confirmation = PasswordField("Password confirmation")
     security_emails = BooleanField("Receive security notifications")

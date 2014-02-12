@@ -48,7 +48,7 @@ def create_app(internal=False):
     # Enable plugins:
     # 1) Flask-Login
     login_manager.init_app(app)
-    login_manager.login_view = 'login_page'
+    login_manager.login_view = '.login_page'
 
     # 2) Flask-WTF CSRF protection
     csrf.init_app(app)
