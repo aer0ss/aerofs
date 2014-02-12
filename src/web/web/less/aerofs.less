@@ -347,6 +347,11 @@ blockquote {
   border-left-color: darken(@bodyBackground, 10%);
 }
 
+// override Bootstrap's <hr> style which always use @white for border-bottom
+hr {
+  border-bottom: 1px solid @hrBorder;
+}
+
 .accordion-group {
   background-color: white;
 }
