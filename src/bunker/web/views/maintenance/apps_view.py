@@ -7,7 +7,7 @@ from web import util
 from web.util import flash_error, flash_success
 from web.oauth import raise_error_for_bifrost_response, flash_error_for_bifrost_response, \
     is_builtin_client_id, get_bifrost_url, is_valid_non_builtin_client_id
-
+from maintenance_util import get_conf
 
 log = logging.getLogger(__name__)
 
@@ -15,10 +15,10 @@ log = logging.getLogger(__name__)
 @view_config(
     route_name='registered_apps',
     permission='maintain',
-    renderer='apps/apps.mako',
+    renderer='apps/registered_apps.mako',
     request_method='GET'
 )
-def apps(request):
+def registered_apps(request):
     r = requests.get(get_bifrost_url(request) + '/clients')
     if r.ok:
         # clients is an array of registered clients
@@ -29,8 +29,11 @@ def apps(request):
         clients = []
         flash_error_for_bifrost_response(request, r)
 
+    conf = get_conf(request)
     return {
-        'clients': clients
+        'clients': clients,
+        'hostname': conf['base.host.unified'],
+        'cert': conf['server.browser.certificate']
     }
 
 

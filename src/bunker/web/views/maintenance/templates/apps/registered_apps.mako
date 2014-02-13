@@ -49,13 +49,14 @@
                     blob = urlencode(jsonify({
                         'client_id': client['client_id'],
                         'client_secret': client['secret'],
-                        'hostname': request.registry.settings['base.host.unified'],
-                        'cert': request.registry.settings['server.browser.certificate'].replace('\\n','\n'),
+                        'hostname': hostname,
+                        'cert': cert.replace('\\n','\n'),
                     }).encode('utf-8'))
                   %>
                     ## N.B. download= is not present before HTML5
                     <a href="data:'text/json;charset=utf-8,${blob | n}" download="appconfig.json">Download JSON</a>
-                    <a href="https://www.aerofs.com/developers/publish"><i class="icon-question-sign tooltip_json_blob"></i></a>
+                    <a href="https://www.aerofs.com/developers/publish">
+                        <i class="icon-question-sign tooltip_json_blob"></i></a>
                   </div>
                   <div>
                     <a href="#" onclick="confirmDeletion('${client['client_id']}', $(this));
@@ -93,13 +94,16 @@
             var clients = $table.find('tbody').find('tr').length;
             setVisible($table, clients > 0);
             setVisible($('#no-clients-label'), clients == 0);
-            registerTooltips()
+            registerTooltips();
         }
 
         function registerTooltips() {
-            $('.tooltip_json_blob').tooltip({placement: 'right', 'title':
-                'Download a JSON-formatted document used to configure the app. ' +
-                'Click here for more information.'});
+            $('.tooltip_json_blob').tooltip({
+                placement: 'right',
+                container: 'body',
+                title: 'Download a JSON-formatted document used to configure the app. ' +
+                    'Click the icon for more information.'
+            });
         }
 
         function confirmDeletion(clientID, $deleteButton) {
