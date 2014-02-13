@@ -1,14 +1,14 @@
 {% extends "public.html" %}
 
-{% from "_formhelpers.html" import render_field, submit_button %}
+{% from "_formhelpers.html" import render_field, submit_button, render_disabled_field %}
 
 {% block content %}
     <h1>Complete your signup</h1>
-    <form action="" method="post" name="login">
+    <form class="form-horizontal" action="" method="post" name="login">
         {{ form.hidden_tag() }}
-        <p>Email: {{ record.email }}</p>
+        {{ render_disabled_field('Email:', record.email) }}
         {{ render_field(form.password) }}
-        {{ submit_button("Complete Sign Up") }}
+        {{ submit_button("Complete Sign Up", horizontal=True) }}
     </form>
 {% endblock %}
 

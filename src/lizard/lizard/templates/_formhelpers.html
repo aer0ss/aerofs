@@ -60,8 +60,23 @@
             {% endif %}
 {% endmacro %}
 
-{% macro submit_button(button_text) %}
+{% macro render_disabled_field(label, value) %}
+    <div class="control-group ">
+        <label class="control-label">{{ label }}</label>
+        <div class="controls">
+            <input class="input-xlarge" type="text" disabled value="{{ value }}"/>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro submit_button(button_text, horizontal=False) %}
+    {% if horizontal %}
+        <div class="control-group"><div class="controls">
+    {% endif %}
     <input class="btn btn-primary" type="submit" value="{{ button_text }}">
+    {% if horizontal %}
+        </div></div>
+    {% endif %}
 {% endmacro %}
 
 {% macro eula_notice() %}

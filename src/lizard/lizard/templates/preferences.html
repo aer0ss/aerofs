@@ -1,10 +1,11 @@
 {% extends "logged_in.html" %}
-{% from "_formhelpers.html" import render_field, submit_button %}
+{% from "_formhelpers.html" import render_field, submit_button, render_disabled_field %}
 
 {% block content %}
     <h1>My Account</h1>
     <form action="" method="post" name="prefs">
         {{ form.hidden_tag() }}
+        {{ render_disabled_field('Organization:', current_user.customer.name) }}
         {{ render_field(form.first_name) }}
         {{ render_field(form.last_name) }}
         {{ render_field(form.password) }}

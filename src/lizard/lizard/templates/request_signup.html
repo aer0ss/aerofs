@@ -15,12 +15,7 @@
         {{ render_field(form.job_title) }}
         {{ eula_notice() }}
 
-        {# We need to wrap the submit button with those divs because it's an horizontal form #}
-        <div class="control-group">
-            <div class="controls">
-                {{ submit_button("Sign Up") }}
-            </div>
-        </div>
+        {{ submit_button("Sign Up", horizontal=True) }}
     </form>
 {% endblock %}
 

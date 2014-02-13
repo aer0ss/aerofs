@@ -13,7 +13,7 @@ class LoginForm(Form):
 class SignupForm(Form):
     first_name = TextField('First Name', validators=[InputRequired()])
     last_name = TextField('Last Name', validators=[InputRequired()])
-    email = TextField('Email', validators = [Email()])
+    email = TextField('Email', validators = [InputRequired(), Email()])
     company_name = TextField('Organization Name', validators=[InputRequired()])
     phone_number = TextField("Phone Number", validators=[Optional()])
     job_title = TextField("Job Title", validators=[Optional()])

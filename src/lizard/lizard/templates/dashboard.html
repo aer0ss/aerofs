@@ -2,22 +2,45 @@
 
 {% block content %}
     <h1>Dashboard</h1>
-	<p>Organization: {{ user.customer.name }}</p>
     {% if current_license %}
-    <h3>Downloads</h3>
-    <ul>
-        <li><a href="{{ url_for('.download_latest_license') }}">Download your latest license file</a></li>
-        {# TODO: note which appliance version the user has downloaded #}
-        <li><a href="{{ url_for('.download_image') }}">Download appliance image (v{{ appliance_version }})</a></li>
-    </ul>
+        <div class="row">
+            <div class="span3">
+                <h4>Current license</h4>
+                <dl id="license_description" class="dl-horizontal well">
+                    <dt>License type:</dt>
+                    <dd>{% if current_license.is_trial %}Trial{% else %}Standard{% endif %}</dd>
+                    <dt>Seats:</dt>
+                    <dd>{{ current_license.seats }}</dd>
+                    <dt>Valid until:</dt>
+                    <dd>{{ current_license.expiry_date.strftime('%b %d, %Y') }}</dd>
+                </dl>
+            </div>
+            <div class="span4">
+                <h4>Download and install AeroFS Private Cloud</h4>
 
-    <h3>Current license</h3>
-    <ul>
-        <li>License type: {% if current_license.is_trial %}Trial{% else %}Standard{% endif %}</li>
-        <li>Seats: {{ current_license.seats }}</li>
-        <li>Valid until: {{ current_license.expiry_date.strftime('%b %d, %Y') }}</li>
-    </ul>
+                {# TODO: note which appliance version the user has downloaded #}
+                <p><a class="btn btn-success" href="{{ url_for('.download_image') }}">
+                    Download appliance image (v{{ appliance_version }})</a>
+                </p>
+
+                <p><a class="btn btn-success" href="{{ url_for('.download_latest_license') }}">
+                    Download your latest license file</a>
+                </p>
+            </div>
+        </div>
+
+        <h4>How To Install AeroFS Private Cloud</h4>
+        <p>You can install the appliance on a few different platforms including
+            <a href="http://www.vmware.com/">VMWare</a>, <a href="https://www.virtualbox.org/">VirtualBox</a>,
+            <a href="https://www.openstack.org/">OpenStack</a>, and <a href="http://aws.amazon.com/ec2/">Amazon EC2</a>.
+            For more details, check out our <a href="https://support.aerofs.com/forums/20877659">FAQ</a> or
+            <a href="{{ url_for('.contact_us') }}">contact us</a>.
+        </p>
+        <iframe width="640" height="390" src="//www.youtube.com/embed/pVqpobLdoHk" frameborder="0"
+                allowfullscreen></iframe>
+
     {% else %}
-    <p>Your license request is being processed.  We'll send you an email when it's ready.</p>
+        <p class="alert alert-info">Your license request is being processed. We'll send you an email when it's
+            ready.</p>
     {% endif %}
 {% endblock %}
