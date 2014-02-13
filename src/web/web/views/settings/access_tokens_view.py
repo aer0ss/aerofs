@@ -5,7 +5,7 @@ import requests
 
 from pyramid.view import view_config
 from web import util
-from web.oauth import flash_error_for_bifrost_response, BIFROST_URL, \
+from web.oauth import flash_error_for_bifrost_response, get_bifrost_url, \
     is_builtin_client_id, raise_error_for_bifrost_response, is_valid_access_token
 
 log = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def app_authorization(request):
     client_id = get_exactly_one_or_throw_400(request.params, "client_id")
     user_redirect_uri = get_exactly_one_or_throw_400(request.params, "redirect_uri")
 
-    r = requests.get(BIFROST_URL + "/clients/" + client_id)
+    r = requests.get(get_bifrost_url(request) + "/clients/" + client_id)
     if r.status_code == 404:
         raise HTTPBadRequest(detail="client_id {} not found".format(client_id))
     if not r.ok:
@@ -92,7 +92,7 @@ def app_authorization(request):
     request_method='GET'
 )
 def access_tokens(request):
-    r = requests.get(BIFROST_URL + '/tokenlist', params={
+    r = requests.get(get_bifrost_url(request) + '/tokenlist', params={
         'owner': authenticated_userid(request)
     })
     if r.ok:
@@ -122,7 +122,7 @@ def json_delete_access_token(request):
         log.error('json_delete_access_token(): invalid token: ' + token)
         util.error('The application ID is invalid.')
 
-    r = requests.delete(BIFROST_URL + '/token/{}'.format(token))
+    r = requests.delete(get_bifrost_url(request) + '/token/{}'.format(token))
     if not r.ok:
         raise_error_for_bifrost_response(r)
     return {}

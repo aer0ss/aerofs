@@ -1,7 +1,6 @@
 import logging
 from pyramid.view import view_config
-from aerofs_common import bootstrap
-from aerofs_common.bootstrap import Status
+from aerofs_common.bootstrap import BootstrapClient, Status
 from web.util import error
 
 log = logging.getLogger(__name__)
@@ -9,6 +8,8 @@ log = logging.getLogger(__name__)
 _URL_PARAM_TASK = 'task'
 _URL_PARAM_EXECUTION_ID = 'execution_id'
 
+def get_bootstrap_client(request):
+    return BootstrapClient(request.registry.settings["deployment.bootstrap_server_uri"])
 
 @view_config(
     route_name='json_enqueue_bootstrap_task',
@@ -18,7 +19,7 @@ _URL_PARAM_EXECUTION_ID = 'execution_id'
 )
 def json_enqueue_bootstrap_task(request):
     task = request.params[_URL_PARAM_TASK]
-    eid = bootstrap.enqueue_task_set(task)
+    eid = get_bootstrap_client(request).enqueue_task_set(task)
     log.info("enqueue bootstrap task: {}, eid: {}".format(task, eid))
     return {
         _URL_PARAM_EXECUTION_ID: eid
@@ -36,7 +37,7 @@ def json_get_bootstrap_task_status(request):
     TODO (WW) share the code with setup_view.py:json_setup_poll
     """
     eid = request.params[_URL_PARAM_EXECUTION_ID]
-    status, error_message = bootstrap.get_task_status(eid)
+    status, error_message = get_bootstrap_client(request).get_task_status(eid)
     if status == Status.ERROR:
         log.error("bootstrap task {} failed: {}".format(eid, error_message))
         error("The operation couldn't complete. Please try again later."

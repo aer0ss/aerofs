@@ -4,6 +4,7 @@ use = egg:aerofs-web
 # Mode
 deployment.mode = private
 deployment.config_server_uri = http://localhost:5434
+deployment.oauth_server_uri = http://localhost:8700
 
 # SP settings
 sp.version = 21

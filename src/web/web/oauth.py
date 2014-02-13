@@ -10,8 +10,8 @@ log = logging.getLogger(__name__)
 
 
 # The URL to Bifrost, i.e. the OAuth server
-BIFROST_URL = "http://localhost:8700"
-
+def get_bifrost_url(request):
+    return request.registry.setting["deployment.oauth_server_uri"]
 
 def is_builtin_client_id(client_id):
     """

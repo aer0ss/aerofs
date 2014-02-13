@@ -6,7 +6,7 @@ from pyramid.view import view_config
 from web import util
 from web.util import flash_error, flash_success
 from web.oauth import raise_error_for_bifrost_response, flash_error_for_bifrost_response, \
-    is_builtin_client_id, BIFROST_URL, is_valid_non_builtin_client_id
+    is_builtin_client_id, get_bifrost_url, is_valid_non_builtin_client_id
 
 
 log = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
     request_method='GET'
 )
 def apps(request):
-    r = requests.get(BIFROST_URL + '/clients')
+    r = requests.get(get_bifrost_url(request) + '/clients')
     if r.ok:
         # clients is an array of registered clients
         clients = r.json()['clients']
@@ -61,7 +61,7 @@ def register_app_post(request):
         flash_error(request, 'The redirect URI is required.')
         raise HTTPFound(request.route_path('register_app'))
 
-    r = requests.post(BIFROST_URL + '/clients', data = {
+    r = requests.post(get_bifrost_url(request) + '/clients', data = {
         'resource_server_key': 'oauth-havre',
         'client_name': client_name,
         'redirect_uri': redirect_uri
@@ -87,7 +87,7 @@ def json_delete_app(request):
         log.error('json_delete_app(): invalid client_id: ' + client_id)
         util.error('The application ID is invalid.')
 
-    r = requests.delete(BIFROST_URL + '/clients/{}'
+    r = requests.delete(get_bifrost_url(request) + '/clients/{}'
             .format(client_id))
     if not r.ok:
         raise_error_for_bifrost_response(r)

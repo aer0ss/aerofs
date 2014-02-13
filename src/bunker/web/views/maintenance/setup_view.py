@@ -11,7 +11,7 @@ from pyramid.security import NO_PERMISSION_REQUIRED, remember
 import requests
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError
-import aerofs_common.bootstrap
+from aerofs_common.bootstrap import BootstrapClient
 from web.error import error
 from web.util import is_configuration_initialized
 from web.license import is_license_present_and_valid, is_license_present, \
@@ -31,10 +31,13 @@ log = logging.getLogger(__name__)
 # ------------------------------------------------------------------------
 
 # Base URL for all calls to the tomcat verification servlet.
-_VERIFICATION_BASE_URL = "http://localhost:8080/verification/"
+def _verification_base_url(request):
+    return request.registry.settings["deployment.verification_server_uri"]
 
 # This is a tomcat servlet that is part of the SP package.
-_SMTP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "email"
+def _email_verification_url(request):
+    return _verification_base_url(request) + "/email"
+
 # N.B. these params are also defined in Java land in SmtpVerificationServlet.java
 _SMTP_VERIFICATION_FROM_EMAIL = "from_email"
 _SMTP_VERIFICATION_TO_EMAIL = "to_email"
@@ -47,7 +50,8 @@ _SMTP_VERIFICATION_SMTP_ENABLE_TLS = "email_sender_public_enable_tls"
 _SMTP_VERIFICATION_SMTP_CERT = "email_sender_public_cert"
 
 # LDAP verification servlet URL.
-_LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
+def _ldap_verification_url(request):
+    return _verification_base_url(request) + "/ldap"
 
 
 # ------------------------------------------------------------------------
@@ -283,7 +287,7 @@ def _parse_email_request(request):
     return host, port, username, password, enable_tls, smtp_cert, support_address
 
 
-def _send_verification_email(from_email, to_email, code, host, port,
+def _send_verification_email(url, from_email, to_email, code, host, port,
                              username, password, enable_tls, smtp_cert):
     payload = {
         _SMTP_VERIFICATION_FROM_EMAIL: from_email,
@@ -297,7 +301,7 @@ def _send_verification_email(from_email, to_email, code, host, port,
         _SMTP_VERIFICATION_SMTP_CERT: smtp_cert
     }
 
-    return requests.post(_SMTP_VERIFICATION_URL, data=payload)
+    return requests.post(url, data=payload)
 
 
 @view_config(
@@ -317,7 +321,8 @@ def json_verify_smtp(request):
     conf_client = get_conf_client(request)
     conf_client.set_external_property('last_smtp_verification_email', verify_email)
 
-    r = _send_verification_email(support_address, verify_email,
+    url = _email_verification_url(request)
+    r = _send_verification_email(url, support_address, verify_email,
                                  verify_code, host, port,
                                  username, password, enable_tls, smtp_cert)
 
@@ -419,7 +424,7 @@ def json_verify_ldap(request):
         # unicode format.
         payload[key] = request.params[key].encode('ascii', 'ignore')
 
-    r = requests.post(_LDAP_VERIFICATION_URL, data=payload)
+    r = requests.post(_ldap_verification_url(request), data=payload)
 
     if r.status_code == 200:
         return {}
@@ -520,5 +525,6 @@ def json_upload_backup(request):
 )
 def json_setup_finalize(request):
     log.warn("finalizing configuration...")
-    aerofs_common.bootstrap.enqueue_task_set("set-configuration-initialized")
+    bootstrap_client = BootstrapClient(request.registry.settings["deployment.bootstrap_server_uri"])
+    bootstrap_client.enqueue_task_set("set-configuration-initialized")
     return {}
