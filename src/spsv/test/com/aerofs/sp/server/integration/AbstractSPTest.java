@@ -230,7 +230,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     protected void wireSPService()
     {
         service.setAuditorClient_(auditClient);
-        service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
+        service.setNotificationClients(verkehrPublisher, verkehrAdmin);
         service.setSessionInvalidator(sessionInvalidator);
         service.setUserTracker(userSessionTracker);
         service.setMaxFreeMembers(Integer.MAX_VALUE);

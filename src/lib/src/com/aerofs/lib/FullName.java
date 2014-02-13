@@ -4,9 +4,14 @@
 
 package com.aerofs.lib;
 
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Sp.PBFullName;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.gson.annotations.SerializedName;
+
+import javax.annotation.Nonnull;
 
 /**
  * This class represents a user's full name
@@ -18,10 +23,19 @@ public class FullName
     // mark as transient to avoid GSON serialization
     private transient PBFullName _pb;
 
-    public FullName(String first, String last)
+    public static FullName fromExternal(@Nonnull String first, @Nonnull String last)
+            throws ExBadArgs
     {
-        assert first != null;
-        assert last != null;
+        String firstName = first.trim();
+        String lastName = last.trim();
+        if (firstName.isEmpty() || lastName.isEmpty()) {
+            throw new ExBadArgs("First and last names must not be empty");
+        }
+        return new FullName(firstName, lastName);
+    }
+
+    public FullName(@Nonnull String first, @Nonnull String last)
+    {
         _first = first;
         _last = last;
     }

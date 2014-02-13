@@ -8,9 +8,11 @@ import com.aerofs.base.id.DID;
 import com.aerofs.proto.Cmd.CommandType;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Tuple;
 
+import javax.inject.Inject;
 import java.util.Set;
 import java.util.List;
 
@@ -60,6 +62,7 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
     private static final String PREFIX_ATTEMPTS = "jeq:a/";
     private static final String PREFIX_CREATE   = "jeq:c/";
 
+    @Inject
     public JedisEpochCommandQueue(JedisThreadLocalTransaction transaction)
     {
         super(transaction);

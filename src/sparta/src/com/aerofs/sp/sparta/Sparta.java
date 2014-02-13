@@ -4,8 +4,6 @@
 
 package com.aerofs.sp.sparta;
 
-import com.aerofs.audit.client.AuditClient;
-import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.BaseParam.Cacert;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
@@ -24,9 +22,14 @@ import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
+import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
+import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.sparta.providers.AuthProvider;
 import com.aerofs.sp.sparta.providers.FactoryReaderProvider;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
@@ -34,6 +37,7 @@ import com.aerofs.sp.sparta.providers.WirableMapper;
 import com.aerofs.sp.sparta.resources.DevicesResource;
 import com.aerofs.sp.sparta.resources.SharedFolderResource;
 import com.aerofs.sp.sparta.resources.UsersResource;
+import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.ClientFactory;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.collect.ImmutableSet;
@@ -41,6 +45,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.Scoping;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -50,6 +56,8 @@ import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
+import redis.clients.jedis.JedisPooledConnection;
+import redis.clients.jedis.exceptions.JedisException;
 
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
@@ -60,8 +68,10 @@ import java.util.Set;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
-
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ACK_TIMEOUT;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_RECONNECT_DELAY;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 /**
  * Standalone RESTful SP
@@ -107,6 +117,7 @@ public class Sparta extends Service
         Injector inj = Guice.createInjector(databaseModule(new SpartaSQLConnectionProvider()),
                 clientsModule(cacert, timer, clientFactory),
                 spartaModule(timer, clientFactory));
+
 
         // NB: we expect nginx or similar to provide ssl termination...
         new Sparta(inj, null)
@@ -162,7 +173,8 @@ public class Sparta extends Service
     static private Module clientsModule(final ICertificateProvider cacert, final Timer timer,
             final ClientSocketChannelFactory clientFactory)
     {
-        return new AbstractModule() {
+        return new AbstractModule()
+        {
             private final ClientFactory factClient = new ClientFactory(
                     Verkehr.HOST,
                     Short.parseShort(Verkehr.PUBLISH_PORT),
@@ -174,12 +186,37 @@ public class Sparta extends Service
                     new NoopConnectionListener(),
                     sameThreadExecutor());
 
+            private final com.aerofs.verkehr.client.lib.admin.ClientFactory factAdmin =
+                    new com.aerofs.verkehr.client.lib.admin.ClientFactory(
+                            Verkehr.HOST, Short.parseShort(Verkehr.ADMIN_PORT),
+                            newCachedThreadPool(), newCachedThreadPool(),
+                            cacert,
+                            VERKEHR_RECONNECT_DELAY, VERKEHR_ACK_TIMEOUT, timer,
+                            new NoopConnectionListener(), sameThreadExecutor());
+
             @Override
             protected void configure()
             {
-                bind(VerkehrPublisher.class).toInstance(factClient.create());
-                bind(AuditClient.class).toInstance(new AuditClient()
-                        .setAuditorClient(AuditorFactory.createUnauthenticated()));
+                bind(new TypeLiteral<IDatabaseConnectionProvider<JedisPooledConnection>>() {})
+                        .toInstance(new PooledJedisConnectionProvider());
+                bind(new TypeLiteral<IThreadLocalTransaction<JedisException>>() {})
+                        .to(JedisThreadLocalTransaction.class);
+            }
+
+            @Provides @Singleton
+            public VerkehrPublisher providesPublisher()
+            {
+                VerkehrPublisher publisher = factClient.create();
+                publisher.start();
+                return publisher;
+            }
+
+            @Provides @Singleton
+            public VerkehrAdmin providesAdmin()
+            {
+                VerkehrAdmin admin = factAdmin.create();
+                admin.start();
+                return admin;
             }
         };
     }

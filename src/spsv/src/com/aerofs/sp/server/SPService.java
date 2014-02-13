@@ -90,7 +90,6 @@ import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueSize;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
@@ -155,7 +154,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.google.common.base.Objects.firstNonNull;
@@ -203,6 +201,7 @@ public class SPService implements ISPService
 
     private final JedisEpochCommandQueue _commandQueue;
     private final JedisThreadLocalTransaction _jedisTrans;
+    private final CommandDispatcher _commandDispatcher;
     private final Analytics _analytics;
 
     private final IdentitySessionManager _identitySessionManager;
@@ -267,6 +266,7 @@ public class SPService implements ISPService
         _invitationHelper = new InvitationHelper(_authenticator, _factInvitationEmailer, _esdb);
 
         _commandQueue = commandQueue;
+        _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans);
         _analytics = checkNotNull(analytics);
     }
 
@@ -279,12 +279,17 @@ public class SPService implements ISPService
         _maxFreeMembersPerOrg = maxFreeMembersPerOrg;
     }
 
-    public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
+    /**
+     * Set the verkehr clients and things that depend on them - the command dispatcher.
+     */
+    public void setNotificationClients(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
     {
         assert verkehrPublisher != null;
         assert verkehrAdmin != null;
 
         _verkehrAdmin = verkehrAdmin;
+        _commandDispatcher.setAdminClient(verkehrAdmin);
+
         _aclPublisher = new ACLNotificationPublisher(_factUser, verkehrPublisher);
     }
 
@@ -402,7 +407,7 @@ public class SPService implements ISPService
                 throw new ExBadArgs("First and last name must both be non-null or both null");
             }
 
-            FullName fullName = sanitizeName(firstName, lastName);
+            FullName fullName = FullName.fromExternal(firstName, lastName);
             l.info("{} set full name: {}, session user {}", user, fullName.getString(),
                     _sessionUser.getUser());
             user.setName(fullName);
@@ -428,12 +433,12 @@ public class SPService implements ISPService
             for (Device peerDevice : peerDevices) {
                 if (userNameUpdated) {
                     l.info("cmd: inval user cache for " + peerDevice.id().toStringFormal());
-                    addToCommandQueueAndSendVerkehrMessage(peerDevice.id(),
+                    _commandDispatcher.enqueueCommand(peerDevice.id(),
                             CommandType.INVALIDATE_USER_NAME_CACHE);
                 }
                 if (deviceNameUpdated) {
                     l.info("cmd: inval device cache for " + peerDevice.id().toStringFormal());
-                    addToCommandQueueAndSendVerkehrMessage(peerDevice.id(),
+                    _commandDispatcher.enqueueCommand(peerDevice.id(),
                             CommandType.INVALIDATE_DEVICE_NAME_CACHE);
                 }
             }
@@ -1206,7 +1211,7 @@ public class SPService implements ISPService
         // map may have changed).
         for (Device peer : peerDevices) {
             l.info("{} crl refresh", peer.id());
-            addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
+            _commandDispatcher.enqueueCommand(peer.id(), CommandType.REFRESH_CRL);
         }
 
         User sharer = sf.getSharerNullable(user);
@@ -1973,7 +1978,7 @@ public class SPService implements ISPService
     {
         l.info("sign up {} with code {}", user, signUpCode);
 
-        user.save(shaedSP, sanitizeName(firstName, lastName));
+        user.save(shaedSP, FullName.fromExternal(firstName, lastName));
 
         // Unsubscribe user from the aerofs invitation reminder mailing list
         _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
@@ -2297,18 +2302,6 @@ public class SPService implements ISPService
                 .build());
     }
 
-    // TODO (WW) similar to UserID, create FullName.fromExternal(), fromInternal()?
-    private FullName sanitizeName(String firstName, String lastName)
-            throws ExBadArgs
-    {
-        firstName = firstName.trim();
-        lastName = lastName.trim();
-        if (firstName.isEmpty() || lastName.isEmpty()) {
-            throw new ExBadArgs("First and last names must not be empty");
-        }
-        return new FullName(firstName, lastName);
-    }
-
     @Override
     public ListenableFuture<GetUserCRLReply> getUserCRL(final Long crlEpoch)
         throws Exception
@@ -2378,45 +2371,11 @@ public class SPService implements ISPService
         User owner = device.getOwner();
 
         ImmutableSet<Long> serials = device.delete();
-        if (!serials.isEmpty()) updateVerkehrCRL(serials);
 
-        notifyPeerDevicesOfUnlink(owner, !serials.isEmpty());
-        sendUnlinkCommand(did, erase);
-    }
+        UserManagement.propagateDeviceUnlink(_commandDispatcher, owner.getPeerDevices(), serials);
 
-    /**
-     * Notify the appropriate subset of peer devices when a device is unlinked.
-     * Should be called with a SQL transaction.
-     * @param owner user owning the unlinked device(s)
-     */
-    private void notifyPeerDevicesOfUnlink(User owner, boolean crlUpdated) throws Exception
-    {
-        Collection<Device> peerDevices = owner.getPeerDevices();
-
-        // Tell peer devices to clean their sss database and refresh their certificate revocation
-        // list.
-        for (Device peer : peerDevices) {
-            // Only need to refresh the CRL if we actually deleted a cert.
-            if (crlUpdated) {
-                addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
-            }
-
-            // Clean the sync status database regardless, since we deleted a device.
-            addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.CLEAN_SSS_DATABASE);
-        }
-    }
-
-    private void sendUnlinkCommand(DID did, boolean erase) throws Exception
-    {
-        // Tell the actual device to perform the required local actions. Remember to flush the queue
-        // first so that this is the only command left in the queue. The ensures that if the user
-        // changes their password the unlink/wipe command can still be executed.
-        if (erase) {
-            addToCommandQueueAndSendVerkehrMessage(did,
-                    CommandType.UNLINK_AND_WIPE_SELF, true);
-        } else {
-            addToCommandQueueAndSendVerkehrMessage(did, CommandType.UNLINK_SELF, true);
-        }
+        _commandDispatcher.replaceQueue(did,
+                erase ? CommandType.UNLINK_AND_WIPE_SELF : CommandType.UNLINK_SELF);
     }
 
     @Override
@@ -2649,33 +2608,9 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userId);
 
         _sqlTrans.begin();
-
-        user.throwIfNotFound();
-
-        if (!(caller.equals(user) || caller.isAdminOf(user))) throw new ExNoPerm("");
-
-        // fetch organization before deactivation
         Organization org = user.getOrganization();
 
-        // fetch device list before deactivation
-        Collection<Device> devices = user.getDevices();
-
-        ImmutableSet.Builder<Long> bd = ImmutableSet.builder();
-        Collection<UserID> affectedUsers = user.deactivate(bd, caller.equals(user) ? null : caller);
-        ImmutableCollection<Long> revokedSerials = bd.build();
-
-        // IMPORTANT: no DB writes beyond this point
-
-        // TODO: long term we need to ensure atomic sending of all vk messages in a transaction...
-        for (Device device : devices) {
-            sendUnlinkCommand(device.id(), eraseDevices);
-        }
-
-        updateVerkehrCRL(revokedSerials);
-
-        notifyPeerDevicesOfUnlink(user, !revokedSerials.isEmpty());
-
-        _aclPublisher.publish_(affectedUsers);
+        UserManagement.deactivateUser(caller, user, eraseDevices, _commandDispatcher, _aclPublisher);
 
         PBStripeData sd = getStripeData(org);
 
@@ -2711,39 +2646,5 @@ public class SPService implements ISPService
     {
         if (maxResults > ABSOLUTE_MAX_RESULTS) throw new ExBadArgs("maxResults is too big");
         else if (maxResults < 0) throw new ExBadArgs("maxResults is a negative number");
-    }
-
-    private void addToCommandQueueAndSendVerkehrMessage(DID did, CommandType type)
-        throws ExecutionException, InterruptedException
-    {
-        addToCommandQueueAndSendVerkehrMessage(did, type, false);
-    }
-
-    private void addToCommandQueueAndSendVerkehrMessage(DID did, CommandType type,
-            boolean flushQueueFirst)
-            throws ExecutionException, InterruptedException
-    {
-        _jedisTrans.begin();
-        if (flushQueueFirst) {
-            _commandQueue.delete(did);
-        }
-        Epoch epoch = _commandQueue.enqueue(did, type);
-        _jedisTrans.commit();
-        assert epoch != null;
-
-        Command command = Command.newBuilder()
-                .setEpoch(epoch.get())
-                .setType(type)
-                .build();
-        _verkehrAdmin.deliverPayload_(did.toStringFormal(), command.toByteArray()).get();
-    }
-
-    private void updateVerkehrCRL(ImmutableCollection<Long> serials)
-            throws Exception
-    {
-        l.info("command verkehr, #serials: " + serials.size());
-        ListenableFuture<Void> succeeded = _verkehrAdmin.updateCRL(serials);
-
-        ACLNotificationPublisher.verkehrFutureGet_(succeeded);
     }
 }

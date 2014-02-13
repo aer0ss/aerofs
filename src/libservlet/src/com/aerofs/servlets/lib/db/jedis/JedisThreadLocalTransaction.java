@@ -9,10 +9,14 @@ import com.aerofs.servlets.lib.db.AbstractThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
+
 import org.slf4j.Logger;
 import redis.clients.jedis.JedisPooledConnection;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisException;
+
+import javax.inject.Inject;
+
 
 /**
  * Class that facilitates thread local Jedis (Java Redis) transactions.
@@ -30,6 +34,7 @@ public class JedisThreadLocalTransaction
     private ThreadLocal<JedisThreadLocalObjectHolder> _jedisHolder =
             new ThreadLocal<JedisThreadLocalObjectHolder>();
 
+    @Inject
     public JedisThreadLocalTransaction(IDatabaseConnectionProvider<JedisPooledConnection> provider)
     {
         _provider = provider;

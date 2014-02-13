@@ -24,13 +24,16 @@ import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.sparta.Sparta;
 import com.aerofs.testlib.AbstractBaseTest;
+import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -48,6 +51,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -89,12 +93,15 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static final String OTHER = "other";
 
     @Mock VerkehrPublisher vkPub;
+    @Mock VerkehrAdmin vkAdmin;
+    @Mock CommandDispatcher commandDispatcher;
 
     private final SPDatabaseParams dbParams = new SPDatabaseParams();
 
     protected SQLThreadLocalTransaction sqlTrans;
     protected User.Factory factUser;
     protected SharedFolder.Factory factSF;
+    private int nextUserID = 1;
 
     @BeforeClass
     public static void commonSetup() throws Exception
@@ -171,8 +178,11 @@ public class AbstractResourceTest extends AbstractBaseTest
             protected void configure()
             {
                 bind(VerkehrPublisher.class).toInstance(vkPub);
-                bind(AuditClient.class).toInstance(new AuditClient()
-                        .setAuditorClient(new IAuditorClient() {
+                bind(VerkehrAdmin.class).toInstance(vkAdmin);
+                bind(CommandDispatcher.class).toInstance(commandDispatcher);
+                bind(AuditClient.class).toInstance(
+                        new AuditClient().setAuditorClient(new IAuditorClient()
+                        {
                             @Override
                             public void submit(String content)
                             {
@@ -199,6 +209,19 @@ public class AbstractResourceTest extends AbstractBaseTest
                         return f;
                     }
                 });
+
+        when(vkAdmin.updateCRL(Matchers.<ImmutableCollection<Long>>anyObject())).thenAnswer(
+                new Answer<ListenableFuture<Void>>()
+                {
+                    @Override
+                    public ListenableFuture<Void> answer(InvocationOnMock invocation)
+                    {
+                        SettableFuture<Void> f = SettableFuture.create();
+                        f.set(null);
+                        return f;
+                    }
+                });
+        when(commandDispatcher.getVerkehrAdmin()).thenReturn(vkAdmin);
 
         inj = spartaInjector();
         sqlTrans = inj.getInstance(SQLThreadLocalTransaction.class);
@@ -312,5 +335,11 @@ public class AbstractResourceTest extends AbstractBaseTest
                 + "\"";
         sqlTrans.commit();
         return etag;
+    }
+
+    /** create a User object without adding anything to the db */
+    protected User newUser()
+    {
+        return factUser.create(UserID.fromInternal("u" + Integer.toString(++nextUserID) + "@email"));
     }
 }

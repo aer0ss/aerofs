@@ -28,6 +28,7 @@ import com.aerofs.restless.util.EntityTagSet;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.InvitationHelper;
+import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -199,7 +200,7 @@ public class SharedFolderResource
 
         // TODO oauth scopes
         sf.throwIfNoPrivilegeToChangeACL(caller);
-        if (!UsersResource.isSelfOrTSOf(caller, user)) {
+        if (!UserManagement.isSelfOrTSOf(caller, user)) {
             throw new ExNoPerm("Not allowed to bypass invitation process");
         }
 
