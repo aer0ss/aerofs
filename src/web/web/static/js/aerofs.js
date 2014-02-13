@@ -31,7 +31,9 @@ function hideAllMessages() {
 }
 
 // hide messages when a modal pops up
-$('div.modal').on('shown', hideAllMessages);
+$(document).ready(function() {
+    $('div.modal').on('shown', hideAllMessages);
+})
 
 function fadeOutErrorMessage() {
     $("#flash-msg-error").fadeOut();
