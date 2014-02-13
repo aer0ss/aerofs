@@ -10,9 +10,11 @@
         {{ render_field(form.last_name) }}
         {{ render_field(form.password) }}
         {{ render_field(form.password_confirmation) }}
+        {# DF: these fields disabled until we figure out our plans regarding emails
         {{ render_field(form.security_emails) }}
         {{ render_field(form.release_emails) }}
         {{ render_field(form.maintenance_emails) }}
+        #}
         {{ submit_button("Save changes") }}
     </form>
 {% endblock %}

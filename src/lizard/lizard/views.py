@@ -213,10 +213,10 @@ def edit_preferences():
         user.last_name = form.last_name.data
         if len(form.password.data) > 0:
             user.set_password(form.password.data)
-        # Update email preferences
-        user.notify_security    = form.security_emails.data
-        user.notify_release     = form.release_emails.data
-        user.notify_maintenance = form.maintenance_emails.data
+        # Update email preferences (disabled until we add it back to the form)
+        #user.notify_security    = form.security_emails.data
+        #user.notify_release     = form.release_emails.data
+        #user.notify_maintenance = form.maintenance_emails.data
         # Save to DB
         db.session.add(user)
         db.session.commit()
@@ -224,9 +224,10 @@ def edit_preferences():
         return redirect(url_for(".edit_preferences"))
     form.first_name.data = user.first_name
     form.last_name.data = user.last_name
-    form.security_emails.data = user.notify_security
-    form.release_emails.data = user.notify_release
-    form.maintenance_emails.data = user.notify_maintenance
+    # (disabled until we enable it in the form again)
+    #form.security_emails.data = user.notify_security
+    #form.release_emails.data = user.notify_release
+    #form.maintenance_emails.data = user.notify_maintenance
     return render_template("preferences.html",
         form=form,
         user=user

@@ -40,9 +40,10 @@ class PreferencesForm(Form):
         EqualTo('password_confirmation', message='Passwords must match.')
         ])
     password_confirmation = PasswordField("Password confirmation")
-    security_emails = BooleanField("Receive security notifications")
-    release_emails = BooleanField("Receive release notifications")
-    maintenance_emails = BooleanField("Receive maintenance notifications")
+    # DF: these fields disabled until we figure out our story with email notifications
+    #security_emails = BooleanField("Receive security notifications")
+    #release_emails = BooleanField("Receive release notifications")
+    #maintenance_emails = BooleanField("Receive maintenance notifications")
 
 def IsFutureDate(message=None):
     def _IsFutureDate(form, field):
