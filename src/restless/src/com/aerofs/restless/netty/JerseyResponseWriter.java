@@ -86,7 +86,13 @@ class JerseyResponseWriter implements ContainerResponseWriter
 
         _config.addGlobalHeaders(r);
 
-        if ((r.getHeader(Names.CONTENT_LENGTH) == null)) {
+        Object entity = response.getEntity();
+        // entity-less responses should have a truly empty body which means
+        // no chunked transfer encoding (otherwise we get an empty trailing
+        // chunk which confuses many HTTP parsers)
+        if (entity == null) r.setHeader(Names.CONTENT_LENGTH, "0");
+
+        if (r.getHeader(Names.CONTENT_LENGTH) == null) {
             // if no explicit Content-Length is set, use chunked transfer-encoding
             // -> can stream content of unknown length on a persistent connection
             r.setChunked(true);
@@ -102,7 +108,6 @@ class JerseyResponseWriter implements ContainerResponseWriter
         // write response status and headers
         _channel.write(r);
 
-        Object entity = response.getEntity();
         if (entity instanceof ContentStream) {
             // Jersey does not work well with async streaming, we need to take over...
             _channel.write(new ChunkedContentStream((ContentStream)entity)).addListener(_trailer);
