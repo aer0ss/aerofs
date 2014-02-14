@@ -1,5 +1,5 @@
 <%inherit file="maintenance_layout.mako"/>
-<%! page_title = "Backup" %>
+<%! page_title = "Upgrade" %>
 
 <%namespace name="common" file="backup_common.mako"/>
 <%namespace file="modal.mako" name="modal"/>
@@ -15,30 +15,29 @@
 
     <ol>
         <li>
-            Click "Create Backup File" below to create and download a backup file.
+            Write down network configuration found in the appliance console.
         </li>
         <li>
-            Shut down this appliance and bring up a new appliance.
+            Click the button below to download the backup file and shut down
+            the appliance.
         </li>
         <li>
-            Configure any of the required network parameters for the new appliance.
-        </li>
-        <li>
-            Select the restore option during the first setup step.
+            Launch a new appliance image and select the restore option during
+            setup.
         </li>
     </ol>
 </div>
 
 <div class="page-block">
     <p class="alert alert-success"><strong>Note</strong>: when the upgrade is
-        complete, all AeroFS clients and Team Servers will automatically update
-        to the new version within one hour.</p>
+        done, AeroFS clients and Team Servers will automatically update
+        in one hour.</p>
 </div>
 
 <div class="page-block">
     <button class="btn btn-primary"
             onclick="backup(); return false;">
-        Create Backup File
+        Download Backup File and Shutdown Appliance
     </button>
 </div>
 
