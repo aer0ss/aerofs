@@ -172,7 +172,7 @@ public class Launcher
             }));
 
             // Re-install the shell extension if it was updated
-            if (PostUpdate.updated()) {
+            if (PostUpdate.updated() && OSUtil.get().isShellExtensionAvailable()) {
                 try {
                     OSUtil.get().installShellExtension(true);
                 } catch (Exception e) {

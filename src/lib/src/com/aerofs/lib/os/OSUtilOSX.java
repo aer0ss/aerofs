@@ -133,7 +133,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public boolean isShellExtensionAvailable()
     {
-        return true;
+        return !L.isMultiuser();
     }
 
     @Override

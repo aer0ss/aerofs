@@ -21,6 +21,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
@@ -146,8 +147,11 @@ public class GUI implements IUI
         SystemTray st = GUI.get().st();
         if (st != null) st.enableMenu();
 
+        IOSUtil os = OSUtil.get();
+
         // Offer to install the shell extension if it's not installed
-        if (shellExtensionShouldBeInstalled()) {
+        if (os.isShellExtensionAvailable() &&
+                !os.isShellExtensionInstalled()) {
             try {
                 // Try to install silently
                 OSUtil.get().installShellExtension(true);
@@ -157,12 +161,6 @@ public class GUI implements IUI
                 reportShellExtInstallFailed(e);
             }
         }
-    }
-
-    private boolean shellExtensionShouldBeInstalled()
-    {
-        return !L.isMultiuser() && OSUtil.get().isShellExtensionAvailable() &&
-                !OSUtil.get().isShellExtensionInstalled();
     }
 
     private void askUserToInstallShellExt()
