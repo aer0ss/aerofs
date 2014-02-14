@@ -20,16 +20,10 @@ blueprint = Blueprint('main', __name__, template_folder='templates')
 def load_user(userid):
     return models.Admin.query.filter_by(email=userid).first()
 
-# This page is also a temporary stopgap - will be replaced with other pages
-# later, but for now, helps with testing
 @blueprint.route('/', methods=['GET'])
 @blueprint.route('/index', methods=['GET'])
 def index():
-    user = login.current_user
-    if user.is_anonymous():
-        return render_template("index.html")
-    else:
-        return redirect(url_for(".dashboard"))
+    return redirect(url_for(".dashboard"))
 
 @blueprint.route('/login', methods=['GET', 'POST'])
 def login_page():
