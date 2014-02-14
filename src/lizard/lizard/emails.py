@@ -17,8 +17,8 @@ def _make_email_message(email_address, subject, text_body, html_body):
     msg['To'] = email_address
 
     # Record the MIME types of both parts
-    part1 = MIMEText(text_body, 'plain') # text/plain
-    part2 = MIMEText(html_body, 'html') # text/html
+    part1 = MIMEText(text_body.encode('utf-8'), 'plain', 'utf-8') # text/plain
+    part2 = MIMEText(html_body.encode('utf-8'), 'html', 'utf-8') # text/html
 
     # Attach parts into message container.
     # According to RFC 2046, the last part of a multipart message, in this case
@@ -109,6 +109,6 @@ def send_support_request_email(requester, message):
     msg['Subject'] = subject
     msg['From'] = SENDER_ADDR
     msg['To'] = SUPPORT_ADDR
-    part1 = MIMEText(text_body, 'plain')
+    part1 = MIMEText(text_body.encode('utf-8'), 'plain', 'utf-8')
     msg.attach(part1)
     _send_email(SUPPORT_ADDR, msg)

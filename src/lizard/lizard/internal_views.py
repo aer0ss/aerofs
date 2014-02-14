@@ -130,12 +130,17 @@ def upload_bundle():
                 license_request.state = models.License.states.FILLED
                 # commit
                 db.session.add(license_request)
-                db.session.commit()
                 just_imported.append(row)
                 # email all admins in org
                 for admin in license_request.customer.admins:
                     print "emailing", admin, "about new license"
                     emails.send_license_available_email(admin, license_request.customer)
+                # Prefer committing after sending the emails.  In the case of a
+                # failure, admins listed before the one triggering the failure
+                # will get duplicate emails, but if you commit before sending
+                # the mails and there's an email failure, that message to the
+                # user will be lost and they'll hear nothing from us.
+                db.session.commit()
             else:
                 print "Got a license descriptor without no outstanding license request. Discarding."
         flash(u"Imported {} new licenses.".format(len(just_imported)), "success")
