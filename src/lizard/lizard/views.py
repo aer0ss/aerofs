@@ -181,6 +181,7 @@ def signup_completion_page():
                     'company': markupsafe.escape(admin.customer.name),
                     'title': markupsafe.escape(admin.job_title),
                     'phone': markupsafe.escape(admin.phone_number),
+                    'Enterprise': 'true',
                 },
                 context=context,
                 )
