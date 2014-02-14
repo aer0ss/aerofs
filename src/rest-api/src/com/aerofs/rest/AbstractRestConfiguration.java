@@ -19,9 +19,6 @@ public abstract class AbstractRestConfiguration implements Configuration
     @Override
     public void addGlobalHeaders(HttpResponse response)
     {
-        // Cross-Origin Resource Sharing
-        response.setHeader(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-
         if (!response.containsHeader(Names.CACHE_CONTROL)) {
             // If the response is successful, cache for 3 minutes, otherwise do not cache
             int code = response.getStatus().getCode();

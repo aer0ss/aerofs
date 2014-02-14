@@ -3,6 +3,37 @@
 # which allows us to leave the havre-related config blissfully
 # unaware of this mess
 location ~* /api/v[0-9]+\.[0-9]+/(users|shares|devices) {
+    # Implement wide-open CORS support
+    #
+    # If the request method is OPTIONS and the Access-Control-Request-Method header is a
+    # valid method, return the CORS response headers. If the header is not valid, return
+    # 400.
+    #
+    # N.B. this string of if statements is to workaround nginx's lack of support for nested
+    # if statements and complex boolean expressions (using AND, OR, etc.).
+    #
+    if ($request_method = OPTIONS) {
+        set $cors "OPTIONS";
+    }
+    if ($http_access_control_request_method ~* "^(GET|PUT|POST|PATCH|DELETE|HEAD|OPTIONS)$") {
+        set $cors "${cors}VALID";
+    }
+    if ($cors = "OPTIONS") {
+        return 400;
+    }
+    if ($cors = "OPTIONSVALID") {
+        add_header Access-Control-Allow-Origin *;
+        add_header Access-Control-Allow-Methods GET,PUT,POST,PATCH,DELETE,HEAD,OPTIONS;
+        add_header Access-Control-Allow-Headers Accept,Authorization,Cache-Control,Content-Type,Endpoint-Consistency,Origin;
+
+        #
+        # Tell client that this pre-flight info is valid for 20 days
+        #
+        add_header Access-Control-Max-Age 1728000;
+        add_header Content-Length 0;
+        return 204;
+    }
+
     rewrite /api/(.+) /$1 break;
     # proxy to Sparta, the standalone restful SP
     proxy_pass http://127.0.0.1:8085;
