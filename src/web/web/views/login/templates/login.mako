@@ -3,7 +3,11 @@
 
 <div class="row">
     <div class="span12" style="margin-bottom: 40px">
-        <h1 style="text-align: center">Sign In to AeroFS</h1>
+        <h1 style="text-align: center">Sign In to AeroFS
+            %if not is_private_deployment:
+                Hybrid Cloud
+            %endif
+        </h1>
     </div>
     %if openid_enabled:
         <div class="span12 text-center">

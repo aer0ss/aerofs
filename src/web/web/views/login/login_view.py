@@ -96,6 +96,7 @@ def login_view(request):
         'openid_service_external_hint': external_hint,
         'login': login,
         'next': next_url,
+        'is_private_deployment': is_private_deployment(request.registry.settings)
     }
 
 
