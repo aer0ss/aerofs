@@ -1,5 +1,5 @@
 
 To run bunker locally, run:
 
-$ ./setup.py
-$ ./run.py # or ./run.py -q
+$ ./setup.sh
+$ ./run.sh # or ./run.sh -q

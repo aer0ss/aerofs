@@ -6,6 +6,11 @@ DEV_ROOT=$(pwd)
 SRC_ROOT="$DEV_ROOT"/../..
 ENV="$HOME/bunker-env"
 
+# Create a directory and touch a flag that's needed to serve bunker locally
+# because bunker assumes the web server is running on the appliance
+sudo mkdir -p /opt/bunker/state && sudo chmod 777 /opt/bunker/state
+sudo mkdir -p /var/aerofs && sudo touch /var/aerofs/configuration-initialized-flag
+
 # Create virtualenv
 virtualenv "$ENV"
 
