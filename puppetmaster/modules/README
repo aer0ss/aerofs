@@ -1,4 +1,0 @@
-Notes on puppet modules:
-
-- "pd" stands for "private deployment". Private deployment modules generally
-  pull in other existing modules to create a deployable package.

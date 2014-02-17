@@ -17,18 +17,8 @@ node "z.arrowfs.org" inherits default {
     [ hiera('dev_users') ]:
   }
 
-  $fwknop_hostnames = [
-    "x.aerofs.com",
-    "verkehr.aerofs.com",
-  ]
-
-  class{"fwknop-client":
-    fwknop_hostnames => $fwknop_hostnames
-  }
-
   class{"pagerduty":
     require => [
-        Class["fwknop-client"],
         Exec["apt-get update"],
     ]
   }
