@@ -33,7 +33,7 @@ from time import sleep
 from ConfigParser import ConfigParser
 
 file_root = os.path.dirname(__file__)
-python_aerofs_lib = os.path.join(file_root, "../src/python-lib")
+python_aerofs_lib = os.path.join(file_root, "../../src/python-lib")
 sys.path.append(python_aerofs_lib)
 
 from aerofs_sp import connection
@@ -42,7 +42,7 @@ from aerofs_sp.gen import sp_pb2
 
 # read config .ini file for sp proto version
 ini_config = ConfigParser()
-ini_config.read(os.path.join(file_root, "../src/web/development/modes/private.ini"))
+ini_config.read(os.path.join(file_root, "../../src/web/development/modes/private.ini"))
 
 #################################
 ##   DEFAULT/CONSTANT VALUES   ##
