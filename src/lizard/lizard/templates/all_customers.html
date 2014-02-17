@@ -6,14 +6,14 @@
     <h1>All known customers</h1>
     <table class="table">
         <tr>
-            <th>ID</th>
             <th>Name</th>
+            <th>ID</th>
             <th>Admins</th>
             <th>Actions</th>
         </tr>
         {% for customer in customers %}
             <tr>
-                <td>{{ customer.name }}</td>
+                <td><a href="{{ url_for('.customer_actions', org_id=customer.id) }}">{{ customer.name }}</a></td>
                 <td>{{ customer.id }}</td>
                 <td>{% for admin in customer.admins.all() %}{{ admin.email }}<br>{% endfor %}</td>
                 <td><a href="{{ url_for('.customer_actions', org_id=customer.id) }}">Create new license request</a></td>
