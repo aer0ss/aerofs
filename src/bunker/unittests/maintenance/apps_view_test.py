@@ -3,6 +3,8 @@ from mock import Mock
 from ..test_base import TestBase
 import requests
 
+OAUTH_SERVER_URL = "http://localhost:8700"
+
 class AppsViewTest(TestBase):
     def setUp(self):
         self.setup_common()
@@ -29,6 +31,7 @@ class AppsViewTest(TestBase):
         request = self.create_dummy_request({
             'client_id': client_id
         })
+        request.registry.settings["deployment.oauth_server_uri"] = OAUTH_SERVER_URL
         json_delete_app(request)
 
 

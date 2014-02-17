@@ -11,6 +11,8 @@ CLIENT_NAME = "CLIENT_NAME"
 REDIRECT_URI = "aerofs://redirect"
 NONCE = "abcdefghijklmnop123456"
 
+OAUTH_SERVER_URL = "http://localhost:8700"
+
 def mock_requests_get(url, **kwargs):
     client_data = {
         "client_name": CLIENT_NAME,
@@ -52,6 +54,7 @@ class AuthorizeViewTest(TestBase):
 
     def _make_req(self, params):
         request = self.create_dummy_request(MultiDict(params))
+        request.registry.settings["deployment.oauth_server_uri"] = OAUTH_SERVER_URL
         return app_authorization(request)
 
     def test_should_400_if_client_id_or_redirect_uri_is_invalid(self):
