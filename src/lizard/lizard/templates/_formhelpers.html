@@ -41,8 +41,10 @@
                     {{ field.label.text|safe }}
                 </label>
             {% else %}
-                {% if field.type in ('TextField', 'TextAreaField', 'PasswordField') %}
+                {% if field.type in ('TextField', 'PasswordField') %}
                     {% set class_ = class_ + ' input-xlarge' %}
+                {% elif field.type == 'TextAreaField' %}
+                    {% set class_ = class_ + ' input-block-level' %}
                 {% elif field.type == 'FileField' %}
                     {% set class_ = class_ + ' input-file' %}
                 {% endif %}
