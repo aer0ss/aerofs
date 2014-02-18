@@ -14,7 +14,8 @@ setup(name='lizard',
                                  'migrations/migrate.cfg',
                                  'migrations/versions/*.py',
                                  'templates/*.html',
-                                 'templates/*.txt',
+                                 'templates/emails/*.html',
+                                 'templates/emails/*.txt',
                                  ]},
       )
 

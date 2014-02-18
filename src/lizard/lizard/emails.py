@@ -32,8 +32,8 @@ def _verification_email_for(email_address, signup_code):
     signup_url = url_for('.signup_completion_page', signup_code=signup_code, _external=True)
     print u"will email verification to {}, link {}".format(email_address, signup_url)
 
-    text_body = render_template("signup_email.txt", signup_url=signup_url)
-    html_body = render_template("signup_email.html", signup_url=signup_url)
+    text_body = render_template("emails/signup_email.txt", signup_url=signup_url)
+    html_body = render_template("emails/signup_email.html", signup_url=signup_url)
     return _make_email_message(email_address, "Complete your AeroFS Private Cloud signup",
             text_body, html_body)
 
@@ -41,11 +41,11 @@ def _invite_email_for(email_address, company, invite_code):
     invite_url = url_for('.accept_organization_invite', invite_code=invite_code, _external=True)
     print u"will email invite to {}, link {}".format(email_address, invite_url)
 
-    text_body = render_template("invite_email.txt",
+    text_body = render_template("emails/invite_email.txt",
             invite_url=invite_url,
             customer=company,
             )
-    html_body = render_template("invite_email.html",
+    html_body = render_template("emails/invite_email.html",
             invite_url=invite_url,
             customer=company,
             )
@@ -66,15 +66,15 @@ def _license_available_email_for(admin, company):
             "implementation_video_url": "https://aerofs.com/product/deployment/private-cloud",
             "faqs_url": "https://support.aerofs.com/forums/20877659-Getting-Started-with-Private-Cloud",
     }
-    text_body = render_template("license_ready_email.txt", **template_args)
-    html_body = render_template("license_ready_email.html", **template_args)
+    text_body = render_template("emails/license_ready_email.txt", **template_args)
+    html_body = render_template("emails/license_ready_email.html", **template_args)
     return _make_email_message(admin.email, "Your AeroFS Private Cloud License is ready",
             text_body, html_body)
 
 def _password_reset_email_for(email_address, link):
-    text_body = render_template("password_reset_email.txt",
+    text_body = render_template("emails/password_reset_email.txt",
             link=link)
-    html_body = render_template("password_reset_email.html",
+    html_body = render_template("emails/password_reset_email.html",
             link=link)
     return _make_email_message(email_address, "AeroFS Private Cloud password reset",
             text_body, html_body)
