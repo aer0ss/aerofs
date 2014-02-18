@@ -30,6 +30,8 @@ node "z.arrowfs.org" inherits default {
 
   # Daily.
   pagerduty::probe::base{[
+    # N.B. clean_defects will trigger at 90% at t=50m, so we shouldn't reach
+    # 90% unless something goes wrong.
     "sv df90 pagerduty@sv.aerofs.com 22 /data",
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
     "x df90 pagerduty@x.aerofs.com 22 /dev/sda",

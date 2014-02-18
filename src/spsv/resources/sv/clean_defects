@@ -6,6 +6,10 @@ MAX_DAYS_TO_KEEP = 21
 # The effect of keeping this value too high is that we lose logs anyway,
 # the zero-length zip files aren't helping anyone.
 MIN_DAYS_TO_KEEP = 6
+# If the disk space usage is above this threshold, the script will free up
+# more disk space. This is set to 90 to be consistent with the pagerduty
+# probe, which will trigger if the disk usage is above 90%.
+FREE_SPACE_THRESHOLD = 90
 
 def get_percent_free():
     try:
@@ -29,7 +33,7 @@ def main():
     days_to_keep = MAX_DAYS_TO_KEEP
     clean_defects(days_to_keep)
     days_to_keep = days_to_keep - 1
-    while get_percent_free() > 95 and days_to_keep > MIN_DAYS_TO_KEEP:
+    while get_percent_free() > FREE_SPACE_THRESHOLD and days_to_keep > MIN_DAYS_TO_KEEP:
         clean_defects(days_to_keep)
         days_to_keep = days_to_keep - 1
 
