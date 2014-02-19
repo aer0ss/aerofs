@@ -115,12 +115,14 @@ def signup_completion_page():
     user_signup_code = request.args.get("signup_code", None)
     if not user_signup_code:
         # return to the "enter your email so we can verify it" page
+        flash("That link didn't include a signup code.", "error")
         return redirect(url_for(".signup_request_page"))
 
     signup = models.UnboundSignup.query.filter_by(signup_code=user_signup_code).first()
     if not signup:
         # This signup code was invalid.
-        return redirect(url_for(".signup_request_page"))
+        flash("That signup code is invalid or has already been used.", "error")
+        return redirect(url_for(".login_page"))
 
     form = forms.CompleteSignupForm()
     if form.validate_on_submit():
@@ -190,7 +192,7 @@ def signup_completion_page():
         # Log user in.
         login_success = login.login_user(admin, remember=True)
         if not login_success:
-            flash(u"Login failed for {}: probably marked inactive?")
+            flash(u"Login failed for {}: probably marked inactive?", "error")
 
         return redirect(url_for(".index"))
     return render_template("complete_signup.html",
