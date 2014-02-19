@@ -133,9 +133,8 @@ fi
 # tasks
 setup_clean_approot
 "$PPWD/copy_common_resources" "$MODE" "$BASE_RESOURCES_DIR" "$APPROOT" "$APPROOT/bin"
-copy_labeling_resources $LABELING $LABELING_RESOURCES_DIR $APPROOT/bin
+copy_labeling_resources
 copy_os_specific_resources
 create_max_version_file
 create_site_properties_file
 copy_run_scripts
-

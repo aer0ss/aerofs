@@ -11,7 +11,7 @@ readonly ERRBADARGS=1
 readonly ERRBADMODE=2
 
 function print_usage() {
-    echo "usage: $0 [mode] [resource_root_dir] [output_dir]" >&2
+    echo "usage: $0 [mode] [resource_root_dir] [output_dir] [properties_dir]" >&2
     echo "    [mode]              Specifies which mode the properties are for" >&2
     echo "                        Can be PUBLIC|PRIVATE|CI." >&2
     echo "    [resource_root_dir] Directory where all non-server-specific resources are stored" >&2
