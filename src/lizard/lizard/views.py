@@ -51,7 +51,10 @@ def login_page():
             # evil site.
             if not next_url.startswith('/'):
                 next_url = url_for(".index")
-            return redirect(next_url)
+            # Ensuring that next_url starts with / is not enough; it could be a protocol-relative link
+            # like //google.com.  Ensure that we set the host for the redirect properly.
+            target_url = request.host_url[:-1] + next_url # Strip the trailing / from request.host_url
+            return redirect(target_url)
     return render_template("login.html",
             form=form)
 
