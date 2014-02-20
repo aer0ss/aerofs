@@ -126,10 +126,10 @@ message PBInetSocketAddress {
 
 //-----------------------------------------------------------------------------
 //
-// transfer statistics
+// transport transfer statistics
 //
 
-message TransferDiagnostics {
+message TransportTransferDiagnostics {
     repeated TransportTransfer transfer = 1;
     optional uint64 total_bytes_transferred = 2;
     optional uint64 total_bytes_errored = 3;
@@ -139,4 +139,28 @@ message TransportTransfer {
     required string transport_id = 1;
     optional uint64 bytes_transferred = 2;
     optional uint64 bytes_errored = 3;
+}
+
+//-----------------------------------------------------------------------------
+//
+// file transfer statistics
+//
+
+message FileTransferDiagnostics {
+    repeated FileTransfer transfer = 1;
+}
+
+message FileTransfer {
+    required TransferredObject object = 1;
+    required bytes did = 2;
+    required string using_transport_id = 3;
+    optional uint64 percent_completed = 4;
+    optional uint64 bytes_completed = 5;
+    optional uint64 total_bytes = 6;
+}
+
+message TransferredObject {
+    required uint64 store_index = 1;
+    required bytes oid = 2;
+    required uint64 component_index = 3;
 }

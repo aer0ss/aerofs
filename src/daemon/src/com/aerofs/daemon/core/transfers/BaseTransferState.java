@@ -7,17 +7,19 @@ package com.aerofs.daemon.core.transfers;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
+import com.aerofs.proto.Diagnostics.FileTransfer;
+import com.aerofs.proto.Diagnostics.FileTransferDiagnostics;
+import com.aerofs.proto.Diagnostics.TransferredObject;
 
-import java.io.PrintStream;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.google.common.collect.Maps.newHashMap;
 
-public class BaseTransferState extends ConcurrentlyModifiableListeners<ITransferStateListener> implements IDumpStatMisc
+public class BaseTransferState extends ConcurrentlyModifiableListeners<ITransferStateListener> implements IDiagnosable
 {
     private final Map<TransferredItem, TransferProgress> _state = newHashMap();
 
@@ -61,13 +63,35 @@ public class BaseTransferState extends ConcurrentlyModifiableListeners<ITransfer
     }
 
     @Override
-    public void dumpStatMisc(String indent2, String indentUnit, PrintStream ps)
+    public FileTransferDiagnostics dumpDiagnostics_()
     {
+        FileTransferDiagnostics.Builder builder = FileTransferDiagnostics.newBuilder();
+
         for (Entry<TransferredItem, TransferProgress> en : getStates_().entrySet()) {
+            FileTransfer.Builder transferBuilder = FileTransfer.newBuilder();
+
+            SOCID socid = en.getKey()._socid;
+
+            TransferredObject.Builder objectBuilder = TransferredObject.newBuilder();
+            objectBuilder.setStoreIndex(socid.sidx().getInt());
+            objectBuilder.setOid(socid.oid().toPB());
+            objectBuilder.setComponentIndex(socid.cid().getInt());
+
+            Endpoint ep = en.getKey()._ep;
             long done = en.getValue()._done;
             long total = en.getValue()._total;
             long percent = total == 0 ? 0 : (done * 100 / total);
-            ps.println(indent2 + en.getKey()._socid + " -> " + en.getKey()._ep + ' ' + String.format(".%1$02d ", percent) + done + '/' + total);
+
+            transferBuilder.setObject(objectBuilder);
+            transferBuilder.setDid(ep.did().toPB());
+            transferBuilder.setUsingTransportId(ep.tp().id());
+            transferBuilder.setBytesCompleted(done);
+            transferBuilder.setTotalBytes(total);
+            transferBuilder.setPercentCompleted(percent);
+
+            builder.addTransfer(transferBuilder);
         }
+
+        return builder.build();
     }
 }

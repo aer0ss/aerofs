@@ -48,7 +48,7 @@ public class HdDumpDiagnostics extends AbstractHdIMC<EIDumpDiagnostics>
         try {
             TCB tcb = tk.pseudoPause_("transport diagnostics");
             try {
-                diagnosticsReplyBuilder.setTransportDiagnostics(_tps.dumpDiagnostics());
+                diagnosticsReplyBuilder.setTransportDiagnostics(_tps.dumpDiagnostics_());
             } finally {
                 tcb.pseudoResumed_();
             }

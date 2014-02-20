@@ -10,12 +10,14 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.device.DevicePresence;
+import com.aerofs.daemon.core.transfers.download.DownloadState;
+import com.aerofs.daemon.core.transfers.upload.UploadState;
+import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.proto.Diagnostics.DeviceDiagnostics;
-import com.aerofs.proto.Diagnostics.TransferDiagnostics;
-import com.aerofs.proto.Diagnostics.TransportDiagnostics;
+import com.aerofs.proto.Diagnostics.TransportTransferDiagnostics;
 import com.google.inject.Inject;
+import com.google.protobuf.Message;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -41,14 +43,18 @@ final class DiagnosticsDumper implements Runnable
     private final DevicePresence _dp;
     private final TransferStatisticsManager _tsm;
     private final Transports _tps;
+    private final UploadState _ul;
+    private final DownloadState _dl;
 
     @Inject
-    DiagnosticsDumper(CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps)
+    DiagnosticsDumper(CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl)
     {
         _q = q;
         _dp = dp;
         _tsm = tsm;
         _tps = tps;
+        _ul = ul;
+        _dl = dl;
     }
 
     @Override
@@ -56,12 +62,54 @@ final class DiagnosticsDumper implements Runnable
     {
         try {
             l.info("run dd");
+            dumpDiagnostics("uls", _ul); // runs holding the core lock
+            dumpDiagnostics("dls", _dl); // runs holding the core lock
+            dumpDiagnostics("devices", _dp); // runs holding the core lock
             dumpTransportDiagnostics(); // runs without holding core lock
-            dumpTransferStatistics(); // runs without holding core lock
-            dumpDeviceDiagnostics(); // runs holding core lock
+            dumpTransportTransferDiagnostics(); // runs without holding core lock
         } catch (Throwable t) {
             l.error("fail dump diagnostics", t);
         }
+    }
+
+    private void dumpDiagnostics(String componentName, IDiagnosable component)
+    {
+        Message diagnostics = getDiagnostics(component);
+
+        if (diagnostics != null) {
+            l.info("{}:{}", componentName, prettyPrint(diagnostics));
+        } else {
+            l.warn("{}: failed diagnostics dump", componentName);
+        }
+    }
+
+    private @Nullable Message getDiagnostics(final IDiagnosable component)
+    {
+        final AtomicReference<Message> diagnostics = new AtomicReference<Message>(null);
+
+        _q.enqueueBlocking(new AbstractEBSelfHandling()
+        {
+            @Override
+            public void handle_()
+            {
+                synchronized (_locker) {
+                    diagnostics.set(component.dumpDiagnostics_());
+                    _locker.notifyAll();
+                }
+            }
+        }, Prio.LO);
+
+        synchronized (_locker) {
+            if(diagnostics.get() == null) {
+                try {
+                    _locker.wait(MAX_DEVICE_DIAGNOSTICS_WAIT_TIME);
+                } catch (InterruptedException e) {
+                    l.warn("interrupted during wait for diagnostics dump from {}", component);
+                }
+            }
+        }
+
+        return diagnostics.get();
     }
 
     private void dumpTransportDiagnostics()
@@ -71,62 +119,13 @@ final class DiagnosticsDumper implements Runnable
             return;
         }
 
-        TransportDiagnostics transportDiagnostics = _tps.dumpDiagnostics();
-
-        if (transportDiagnostics.hasTcpDiagnostics()) {
-            l.info("tcp:{}", prettyPrint(transportDiagnostics.getTcpDiagnostics()));
-        }
-        if (transportDiagnostics.hasJingleDiagnostics()) {
-            l.info("jingle:{}", prettyPrint(transportDiagnostics.getJingleDiagnostics()));
-        }
-        if (transportDiagnostics.hasZephyrDiagnostics()) {
-            l.info("zephyr:{}", prettyPrint(transportDiagnostics.getZephyrDiagnostics()));
-        }
+        Message transportDiagnostics = _tps.dumpDiagnostics_();
+        l.info("transports:{}", prettyPrint(transportDiagnostics));
     }
 
-    private void dumpTransferStatistics()
+    private void dumpTransportTransferDiagnostics()
     {
-        TransferDiagnostics transferDiagnostics = _tsm.getAndReset();
+        TransportTransferDiagnostics transferDiagnostics = _tsm.getAndReset();
         l.info("transfer:{}", prettyPrint(transferDiagnostics));
-    }
-
-    private void dumpDeviceDiagnostics()
-    {
-        DeviceDiagnostics deviceDiagnostics = getDeviceDiagnostics();
-
-        if (deviceDiagnostics != null) {
-            l.info("devices:{}", prettyPrint(deviceDiagnostics));
-        } else {
-            l.warn("devices: failed diagnostics dump");
-        }
-    }
-
-    private @Nullable DeviceDiagnostics getDeviceDiagnostics()
-    {
-        final AtomicReference<DeviceDiagnostics> deviceDiagnostics = new AtomicReference<DeviceDiagnostics>(null);
-
-        _q.enqueueBlocking(new AbstractEBSelfHandling()
-        {
-            @Override
-            public void handle_()
-            {
-                synchronized (_locker) {
-                    deviceDiagnostics.set(_dp.dumpDiagnostics_());
-                    _locker.notifyAll();
-                }
-            }
-        }, Prio.LO);
-
-        synchronized (_locker) {
-            if(deviceDiagnostics.get() == null) {
-                try {
-                    _locker.wait(MAX_DEVICE_DIAGNOSTICS_WAIT_TIME);
-                } catch (InterruptedException e) {
-                    l.warn("interrupted during wait for device diagnostics dump");
-                }
-            }
-        }
-
-        return deviceDiagnostics.get();
     }
 }

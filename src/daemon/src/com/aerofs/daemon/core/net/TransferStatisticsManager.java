@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
-import com.aerofs.proto.Diagnostics.TransferDiagnostics;
 import com.aerofs.proto.Diagnostics.TransportTransfer;
+import com.aerofs.proto.Diagnostics.TransportTransferDiagnostics;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
@@ -46,13 +46,13 @@ public class TransferStatisticsManager
         _statsMap.get(transportId)._bytesErrored += errored;
     }
 
-    public synchronized TransferDiagnostics getAndReset()
+    public synchronized TransportTransferDiagnostics getAndReset()
     {
         long totalBytesTransferred = 0;
         long totalBytesErrored = 0;
 
         // top-level message
-        TransferDiagnostics.Builder allTransfersBuilder = TransferDiagnostics.newBuilder();
+        TransportTransferDiagnostics.Builder allTransfersBuilder = TransportTransferDiagnostics.newBuilder();
 
         // iterate over all the transports
         for (Map.Entry<String, TransferStatistics> entry : _statsMap.entrySet()) {

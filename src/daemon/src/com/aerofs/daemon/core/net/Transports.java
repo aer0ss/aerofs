@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
@@ -48,7 +49,7 @@ import static com.google.common.collect.Maps.newHashMap;
 /**
  * The clients of this class may assume the list of transports never changes during run time.
  */
-public class Transports implements IStartable, ITransferStat
+public class Transports implements IStartable, IDiagnosable, ITransferStat
 {
     public static final Comparator<ITransport> PREFERENCE_COMPARATOR = new Comparator<ITransport>()
     {
@@ -178,7 +179,13 @@ public class Transports implements IStartable, ITransferStat
         return started;
     }
 
-    public TransportDiagnostics dumpDiagnostics()
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This method can be called without holding the core lock.
+     */
+    @Override
+    public TransportDiagnostics dumpDiagnostics_()
     {
         TransportDiagnostics.Builder diagnostics = TransportDiagnostics.newBuilder();
         for (ITransport transport : availableTransports.keySet()) {

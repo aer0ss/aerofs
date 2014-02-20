@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOUpdateStores;
+import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -44,7 +45,7 @@ import java.util.concurrent.Callable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class DevicePresence
+public class DevicePresence implements IDiagnosable
 {
     private static final Logger l = Loggers.getLogger(DevicePresence.class);
 
@@ -325,11 +326,14 @@ public class DevicePresence
 
     /**
      * Dump diagnostic information from the {@code DevicePresence} subsystem.
+     * <p/>
+     * This method is <strong>not</strong> thread-safe and <strong>must</strong>
+     * be called with the core lock held.
      *
      * @return a valid {@link com.aerofs.proto.Diagnostics.DeviceDiagnostics} object
      * populated with available diagnostics
      */
-    // this is not the most performant code in the world
+    @Override
     public DeviceDiagnostics dumpDiagnostics_()
     {
         DeviceDiagnostics.Builder diagnosticsBuilder = DeviceDiagnostics.newBuilder();
