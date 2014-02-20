@@ -19,8 +19,10 @@ runScTest() {
 	while true;
 	do
        		fileCount=$(find "$rootDir" -type f -not -name ".*" | grep -v "\.aerofs\." | wc -l)
-		echo "Files synced: $fileCount"
-                echo "Files synced: $fileCount" >> $logFileName
+		current=$(date +%s)
+		currDiff=$(( $current - $START ))
+		echo "$currDiff sec:"$'\t'"Files synced: $fileCount"
+                echo "$currDiff sec:"$'\t'"Files synced: $fileCount" >> $logFileName
 		if (($fileCount >= $fileNumberGoal )); then
                 	break
         	fi
