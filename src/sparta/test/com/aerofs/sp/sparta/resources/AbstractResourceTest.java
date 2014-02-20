@@ -6,9 +6,12 @@ package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.IAuditorClient;
+import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
@@ -50,6 +53,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
+import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -57,6 +61,7 @@ import static com.aerofs.bifrost.server.BifrostTest.createAccessToken;
 import static com.aerofs.bifrost.server.BifrostTest.createClient;
 import static com.aerofs.bifrost.server.BifrostTest.createResourceServer;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.aclEtag;
+import static com.aerofs.sp.sparta.resources.SharedFolderResource.listPendingMembers;
 import static com.jayway.restassured.RestAssured.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -71,7 +76,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static Session session;
     private static Bifrost bifrost;
 
-    private Sparta sparta;
+    protected Sparta sparta;
     protected Injector inj;
 
     protected static final UserID user = UserID.fromInternal("user@bar.baz");
@@ -148,7 +153,7 @@ public class AbstractResourceTest extends AbstractBaseTest
                 ImmutableSet.of("read", "write"));
         createAccessToken(client, inj, RO_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
                 ImmutableSet.of("read"));
-        createAccessToken(client, inj, ADMIN, admin, OrganizationID.PRIVATE_ORGANIZATION, 0,
+        createAccessToken(client, inj, ADMIN, OrganizationID.PRIVATE_ORGANIZATION.toTeamServerUserID(), OrganizationID.PRIVATE_ORGANIZATION, 0,
                 ImmutableSet.of("read", "write", "manage"));
         createAccessToken(client, inj, OTHER, other, OrganizationID.PRIVATE_ORGANIZATION, 0,
                 ImmutableSet.of("read", "write"));
@@ -261,6 +266,13 @@ public class AbstractResourceTest extends AbstractBaseTest
         return sid;
     }
 
+    protected void invite(UserID sharer, SID sid, UserID sharee, Permissions p) throws Exception
+    {
+        sqlTrans.begin();
+        factSF.create(sid).addPendingUser(factUser.create(sharee), p, factUser.create(sharer));
+        sqlTrans.commit();
+    }
+
     protected void addUser(SID sid, UserID user, Permissions p) throws Exception
     {
         sqlTrans.begin();
@@ -268,10 +280,36 @@ public class AbstractResourceTest extends AbstractBaseTest
         sqlTrans.commit();
     }
 
-    protected String sharesEtag(UserID user) throws SQLException
+    protected String membersEtag(UserID user) throws SQLException
     {
         sqlTrans.begin();
         String etag = "W/\"" + aclEtag(factUser.create(user)) + "\"";
+        sqlTrans.commit();
+        return etag;
+    }
+
+    protected String shareEtag(UserID user, SID sid) throws SQLException, ExNotFound
+    {
+        sqlTrans.begin();
+        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
+        listPendingMembers(factSF.create(sid), md);
+        String etag = "W/\""
+                + aclEtag(factUser.create(user))
+                + BaseUtil.hexEncode(md.digest())
+                + "\"";
+        sqlTrans.commit();
+        return etag;
+    }
+
+    protected String sharesEtag(UserID user) throws SQLException, ExNotFound
+    {
+        sqlTrans.begin();
+        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
+        UsersResource.listShares(factUser.create(user), md);
+        String etag = "W/\""
+                + aclEtag(factUser.create(user))
+                + BaseUtil.hexEncode(md.digest())
+                + "\"";
         sqlTrans.commit();
         return etag;
     }

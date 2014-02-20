@@ -103,6 +103,7 @@ import com.aerofs.sp.authentication.IAuthority;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
+import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
@@ -205,7 +206,9 @@ public class SPService implements ISPService
     private final Analytics _analytics;
 
     private final IdentitySessionManager _identitySessionManager;
-    private Authenticator _authenticator;
+    private final Authenticator _authenticator;
+
+    private final InvitationHelper _invitationHelper;
 
     // Remember to udpate text in team_members.mako, team_settings.mako, and pricing.mako when
     // changing this number.
@@ -260,6 +263,8 @@ public class SPService implements ISPService
         _sharingRules = sharingRules;
 
         _authenticator = authenticator;
+
+        _invitationHelper = new InvitationHelper(_authenticator, _factInvitationEmailer, _esdb);
 
         _commandQueue = commandQueue;
         _analytics = checkNotNull(analytics);
@@ -1107,8 +1112,8 @@ public class SPService implements ISPService
             User sharee = _factUser.create(srp._subject);
             Permissions actualPermissions = rules.onUpdatingACL(sf, sharee, srp._permissions);
             emailers.add(
-                    createFolderInvitationAndEmailer(sf, sharer, sharee, actualPermissions, note,
-                            folderName));
+                    _invitationHelper.createFolderInvitationAndEmailer(sf, sharer, sharee,
+                            actualPermissions, note, folderName));
 
             _auditClient.event(AuditTopic.SHARING, "folder.invite")
                     .add("folder", folderName)
@@ -1147,77 +1152,7 @@ public class SPService implements ISPService
         return true;
     }
 
-    private InvitationEmailer createFolderInvitationAndEmailer(SharedFolder sf, User sharer,
-            User sharee, Permissions permissions, String note, String folderName)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist,
-            ExExternalServiceUnavailable, LDAPSearchException
-    {
-        SharedFolderState state = sf.getStateNullable(sharee);
-        if (state == SharedFolderState.JOINED) {
-            // TODO (WW) throw ExAlreadyJoined?
-            throw new ExAlreadyExist(sharee.id() + " is already joined");
-        } else if (state != null) {
-            // Set user as pending if the user exists but in a non-joined state
-            sf.setState(sharee, SharedFolderState.PENDING);
-        } else {
-            // Add a pending ACL entry if the user doesn't exist
-            sf.addPendingUser(sharee, permissions, sharer);
-        }
 
-        InvitationEmailer emailer;
-        if (sharee.exists()) {
-            // send folder invitation email
-            emailer = _factInvitationEmailer.createFolderInvitationEmailer(sharer, sharee,
-                    folderName, note, sf.id(), permissions);
-        } else {
-            // send sign-up email
-            emailer = inviteToSignUp(sharer, sharee, folderName, permissions, note)._emailer;
-        }
-        return emailer;
-    }
-
-    private static class InviteToSignUpResult
-    {
-        final InvitationEmailer _emailer;
-        @Nullable final String _signUpCode;
-
-        InviteToSignUpResult(InvitationEmailer emailer, @Nullable String signUpCode)
-        {
-            _emailer = emailer;
-            _signUpCode = signUpCode;
-        }
-    }
-
-    /**
-     * Call this method to use an inviter name different from inviter.getFullName()._first
-     */
-    private InviteToSignUpResult inviteToSignUp(User inviter, User invitee, @Nullable String folderName,
-            @Nullable Permissions permissions, @Nullable String note)
-            throws SQLException, IOException, ExNotFound, ExExternalServiceUnavailable,
-            LDAPSearchException
-    {
-        assert !invitee.exists();
-
-        String code;
-        if (_authenticator.isLocallyManaged(invitee.id())) {
-            code = invitee.addSignUpCode();
-            _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-        } else {
-            // No signup code is needed for auto-provisioned users.
-            // They can simply sign in using their externally-managed account credentials.
-            code = null;
-
-            // We can't set up reminder emails as we do for locall-managed users, because
-            // reminder email implementation requires valid signup codes. We can implement
-            // different reminder emails if we'd like. In doing that, we need to remove the
-            // reminder when creating the user during auto-provisioning.
-        }
-
-        InvitationEmailer emailer = _factInvitationEmailer.createSignUpInvitationEmailer(inviter,
-                invitee, folderName, permissions, note, code);
-
-        return new InviteToSignUpResult(emailer, code);
-    }
 
     @Override
     public ListenableFuture<Void> joinSharedFolder(ByteString sid, @Nullable Boolean external)
@@ -1488,7 +1423,8 @@ public class SPService implements ISPService
             // The user doesn't exist. Send him a sign-up invitation email only, and associate the
             // signup code with the organization invitation. See signUpWithCode() on how this association is
             // consumed.
-            InviteToSignUpResult res = inviteToSignUp(inviter, invitee, null, null, null);
+            InviteToSignUpResult res = _invitationHelper.inviteToSignUp(inviter, invitee, null,
+                    null, null);
             // ignore the emailer returned by inviteToOrganization(), so we only send one email
             // rather than two.
             inviteToOrganization(inviter, invitee, org, res._signUpCode);

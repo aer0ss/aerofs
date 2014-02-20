@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.sparta.resources;
 
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
@@ -162,5 +163,158 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("type", equalTo("NOT_FOUND"))
         .when().log().everything()
                 .get(RESOURCE + "/shares", user.getString());
+    }
+
+    @Test
+    public void shouldListInvitations() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        invite(user, sid, other, Permissions.EDITOR);
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(200)
+                .body("share_id", hasItem(equalTo(sid.toStringFormal())))
+                .body("share_name", hasItem(equalTo("Test")))
+                .body("invited_by", hasItem(equalTo(user.getString())))
+                .body("permissions", hasItem(hasItems("WRITE")))
+        .when().log().everything()
+                .get(RESOURCE + "/invitations", other.getString());
+    }
+
+    @Test
+    public void shouldReturn404WhenListInvitationsByOther() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        invite(user, sid, other, Permissions.EDITOR);
+
+        givenReadAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such user"))
+        .when().log().everything()
+                .get(RESOURCE + "/invitations", other.getString());
+    }
+
+    @Test
+    public void shouldGetInvitation() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        invite(user, sid, other, Permissions.EDITOR);
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(200)
+                .body("share_id", equalTo(sid.toStringFormal()))
+                .body("share_name", equalTo("Test"))
+                .body("invited_by", equalTo(user.getString()))
+                .body("permissions", hasItems("WRITE"))
+        .when().log().everything()
+                .get(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenGetInvitationByOther() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        invite(user, sid, other, Permissions.EDITOR);
+
+        givenReadAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such user"))
+        .when().log().everything()
+                .get(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldAcceptInvitation() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        invite(user, sid, other, Permissions.EDITOR);
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(201)
+                .header(Names.LOCATION, "https://localhost:" + sparta.getListeningPort()
+                        + "/v1.1/shares/" + sid.toStringFormal())
+                .body("id", equalTo(sid.toStringFormal()))
+                .body("name", equalTo("Test"))
+                .body("members.email", hasItems(user.getString(), other.getString()))
+                .body("members.permissions", hasItems(hasItems("WRITE", "MANAGE"), hasItems("WRITE")))
+                .body("pending", emptyIterable())
+        .when().log().everything()
+                .post(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenAcceptNonExistingInvitation() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such invitation"))
+        .when().log().everything()
+                .post(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenAcceptInvitationByOther() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+
+        givenReadAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such user"))
+        .when().log().everything()
+                .post(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldIgnoreInvitation() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        invite(user, sid, other, Permissions.EDITOR);
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(204)
+        .when().log().everything()
+                .delete(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenIgnoreNonExistingInvitation() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such invitation"))
+        .when().log().everything()
+                .delete(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenIgnoreInvitationByOther() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+
+        givenReadAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such user"))
+        .when().log().everything()
+                .delete(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
     }
 }
