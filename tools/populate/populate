@@ -66,6 +66,11 @@ function copy_os_specific_resources() {
         *)       echo "unsupported OS: $OS" && exit 1 ;;
     esac
     cp -R "$CLIENT_RESOURCES_DIR/$OS_RESOURCES_DIR/"* "$APPROOT"/
+
+    if [[ "$LABELING" == "CLIENT" ]] && [[ "$OS" == "win" || "$OS" == "osx" ]]
+    then
+        cp -R "${CLIENT_RESOURCES_DIR}/shellext/${OS_RESOURCES_DIR}/"* "${APPROOT}/"
+    fi
 }
 
 # Create a version file with the specical development version 100.0.0

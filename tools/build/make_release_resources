@@ -121,6 +121,12 @@ function copy_resources_to_local_release_directories() {
     cp -R "${CLIENT_WIN_RESOURCES_DIR}"/* "${AEROFS_RELEASE_WIN_DIR}/"
     cp -R "${CLIENT_LINUX_RESOURCES_DIR}"/* "${AEROFS_RELEASE_LINUX_DIR}/"
 
+    # copy shell extension if product=client
+    if is_client ; then
+        cp -R "${CLIENT_OSX_SHELLEXT_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}/"
+        cp -R "${CLIENT_WIN_SHELLEXT_DIR}"/* "${AEROFS_RELEASE_WIN_DIR}/"
+    fi
+
     # Create the symlinks to launcher that will later be copied into the
     # approot.  The symlinks the user should use directly will be created later
     # as part of the debian package and tgz.
