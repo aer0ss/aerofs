@@ -8,8 +8,10 @@
 GRUB_DEFAULT=0
 GRUB_TIMEOUT=1
 GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
-GRUB_CMDLINE_LINUX_DEFAULT="ds=nocloud"
+# AeroFS: we customize the cmdline later by appending a few lines at the bottom
+# that override these two.
 GRUB_CMDLINE_LINUX=""
+GRUB_CMDLINE_LINUX_DEFAULT=""
 
 # Uncomment to disable graphical terminal (grub-pc only)
 GRUB_TERMINAL=console
