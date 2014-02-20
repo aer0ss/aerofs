@@ -8,7 +8,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
-import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ConfigurationPropertiesResource;
 import com.aerofs.daemon.transport.ITransport;
@@ -56,7 +55,6 @@ public class TestCoreTransports extends AbstractTest
     private @Mock CfgScrypted _scrypted;
     private @Mock CfgLolol _cfgLolol;
     private @Mock CoreQueue _coreQueue;
-    private @Mock TokenManager _tokenManager;
     private @Mock MaxcastFilterReceiver _maxcastFilterReceiver;
     private @Mock LinkStateService _linkStateService;
     private @Mock RockLog _rockLog;
@@ -99,7 +97,6 @@ public class TestCoreTransports extends AbstractTest
                 _cfgLolol,
                 enabledTransports,
                 _coreQueue,
-                _tokenManager,
                 _maxcastFilterReceiver,
                 _linkStateService,
                 null,
@@ -138,7 +135,6 @@ public class TestCoreTransports extends AbstractTest
                 _cfgLolol,
                 enabledTransports,
                 _coreQueue,
-                _tokenManager,
                 _maxcastFilterReceiver,
                 _linkStateService,
                 null,

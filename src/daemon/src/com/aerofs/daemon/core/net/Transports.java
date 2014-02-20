@@ -9,7 +9,6 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
-import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -65,7 +64,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
     private static final Logger l = Loggers.getLogger(Transports.class);
 
     private final Map<ITransport, IIMCExecutor> availableTransports = newHashMap();
-    private final TokenManager _tokenManager;
 
     private volatile boolean started = false;
 
@@ -80,7 +78,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             CfgLolol lolol,
             CfgEnabledTransports enabledTransports,
             CoreQueue coreQueue,
-            TokenManager tokenManager,
             MaxcastFilterReceiver maxcastFilterReceiver,
             LinkStateService linkStateService,
             MobileServerZephyrConnector mobileServerZephyrConnector,
@@ -91,8 +88,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             ServerSocketChannelFactory serverSocketChannelFactory)
             throws ExUnsupportedTransport
     {
-        _tokenManager = tokenManager;
-
         TransportFactory transportFactory = new TransportFactory(
                 absRTRoot.get(),
                 localid.get(),

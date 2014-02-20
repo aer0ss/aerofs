@@ -40,8 +40,6 @@ import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -57,8 +55,6 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 
 public class Jingle implements ITransport, IUnicastCallbacks
 {
-    private static final Logger l = LoggerFactory.getLogger(Jingle.class);
-
     private final TransportEventQueue transportEventQueue;
     private final EventDispatcher dispatcher;
     private final Scheduler scheduler;

@@ -1,12 +1,10 @@
 package com.aerofs.daemon.core.admin;
 
-import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
-import com.google.inject.Inject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -15,14 +13,6 @@ import java.util.Map.Entry;
 public class HdDumpStat extends AbstractHdIMC<EIDumpStat>
 {
     private final long _launchTime = System.currentTimeMillis();
-
-    private final Transports _tps;
-
-    @Inject
-    public HdDumpStat(Transports tps)
-    {
-        _tps = tps;
-    }
 
     @Override
     protected void handleThrows_(EIDumpStat ev, Prio prio) throws Exception
