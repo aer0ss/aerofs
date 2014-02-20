@@ -7,15 +7,11 @@ import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
-import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.lib.handlers.ServerHandler;
 import com.aerofs.daemon.transport.lib.handlers.ServerHandler.IServerHandlerListener;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
-import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.proto.Diagnostics.PBDumpStat;
-import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -40,7 +36,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newConcurrentMap;
 import static com.google.common.util.concurrent.Futures.addCallback;
 
-public final class Unicast implements ILinkStateListener, IUnicastInternal, IServerHandlerListener, IDumpStat
+public final class Unicast implements ILinkStateListener, IUnicastInternal, IServerHandlerListener
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
@@ -338,37 +334,5 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
         unicastCallbacks.onClientCreated(client);
 
         return client;
-    }
-
-    @Override
-    public void dumpStat(PBDumpStat template, PBDumpStat.Builder builder)
-        throws Exception
-    {
-        PBTransport tp = checkNotNull(template.getTransport(0));
-
-        // get the PBTransport builder
-        PBTransport.Builder tpBuilder = PBTransport.newBuilder();
-
-        // Add global bytes sent / received stats
-        tpBuilder.setBytesIn(transportStats.getBytesReceived());
-        tpBuilder.setBytesOut(transportStats.getBytesSent());
-
-        // Add stats about individual connections
-        if (tp.getConnectionCount() != 0) {
-
-            Set<DID> dids = Sets.union(clients.keySet(), servers.keySet());
-
-            for (DID did : dids) {
-                ClientHandler client = clients.get(did);
-                ServerHandler server = servers.get(did);
-
-                long sent = (client != null) ? client.getPipeline().get(IOStatsHandler.class).getBytesSentOnChannel() : 0;
-                long rcvd = (server != null) ? server.getPipeline().get(IOStatsHandler.class).getBytesReceivedOnChannel() : 0;
-
-                tpBuilder.addConnection(did + " : sent: " + Long.toString(sent) + ", rcvd: " + Long.toString(rcvd));
-            }
-        }
-
-        builder.addTransport(tpBuilder);
     }
 }

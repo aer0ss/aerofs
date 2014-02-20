@@ -18,11 +18,7 @@ import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.signalling.ISignallingService;
 import com.aerofs.daemon.transport.xmpp.signalling.ISignallingServiceListener;
-import com.aerofs.lib.IDumpStat;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.proto.Diagnostics.PBDumpStat;
-import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
@@ -44,7 +40,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -74,7 +69,7 @@ import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 /**
  * Creates and manages connections to a Zephyr relay server
  */
-final class ZephyrConnectionService implements ILinkStateListener, IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener, IDumpStat, IDumpStatMisc
+final class ZephyrConnectionService implements ILinkStateListener, IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener
 {
     private static final Predicate<Entry<DID,Channel>> TRUE_FILTER = new Predicate<Entry<DID, Channel>>()
     {
@@ -555,39 +550,5 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                 l.warn("fail close reachability socket with err:{}", e.getMessage());
             }
         }
-    }
-
-    @Override
-    public void dumpStat(PBDumpStat template, PBDumpStat.Builder builder)
-    {
-        Map<DID, Channel> currentChannels;
-
-        synchronized (this) {
-            currentChannels = newHashMap(channels);
-        }
-
-        PBTransport tpTemplate = checkNotNull(template.getTransport(0));
-        PBTransport.Builder tpBuilder = PBTransport.newBuilder();
-
-        tpBuilder.setBytesIn(transportStats.getBytesReceived());
-        tpBuilder.setBytesOut(transportStats.getBytesSent());
-
-        if (tpTemplate.hasName()) {
-            tpBuilder.setName("z"); // FIXME (AG): move to Zephpyr
-        }
-
-        if (tpTemplate.getConnectionCount() != 0) {
-            for (Channel channel : currentChannels.values()) {
-                tpBuilder.addConnection(getZephyrClient(channel).debugString());
-            }
-        }
-
-        builder.addTransport(tpBuilder);
-    }
-
-    @Override
-    public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
-    {
-        ps.println(indent + "running:" + running.get());
     }
 }

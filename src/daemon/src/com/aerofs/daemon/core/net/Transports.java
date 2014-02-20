@@ -8,10 +8,7 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
@@ -22,8 +19,6 @@ import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
-import com.aerofs.lib.IDumpStat;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
@@ -32,8 +27,6 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
-import com.aerofs.proto.Diagnostics.PBDumpStat;
-import com.aerofs.proto.Diagnostics.PBDumpStat.Builder;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
@@ -41,7 +34,6 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
 
-import java.io.PrintStream;
 import java.net.Proxy;
 import java.util.Collection;
 import java.util.Comparator;
@@ -50,14 +42,13 @@ import java.util.Map;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.JINGLE;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
-import static com.aerofs.daemon.core.tc.Cat.UNLIMITED;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Maps.newHashMap;
 
 /**
  * The clients of this class may assume the list of transports never changes during run time.
  */
-public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransferStat
+public class Transports implements IStartable, ITransferStat
 {
     public static final Comparator<ITransport> PREFERENCE_COMPARATOR = new Comparator<ITransport>()
     {
@@ -144,8 +135,6 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             if (!enabledTransports.isJingleEnabled()) zephyr.enableMulticast();
             addTransport(zephyr);
         }
-
-        Dumpables.add("tps", this);
     }
 
     private void addTransport(ITransport transport)
@@ -187,46 +176,6 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
     public boolean started()
     {
         return started;
-    }
-
-    @Override
-    public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
-            throws Exception
-    {
-        Token tk = _tokenManager.acquireThrows_(UNLIMITED, "dumpStatMisc"); // because dumpStat on transports may block, we use pseudo pause
-        try {
-            TCB tcb = tk.pseudoPause_("dumpStatMisc");
-            try {
-                for (ITransport tp : availableTransports.keySet()) {
-                    ps.println(indent + tp.id());
-                    tp.dumpStatMisc(indent + indentUnit, indentUnit, ps);
-                }
-            } finally {
-                tcb.pseudoResumed_();
-            }
-        } finally {
-            tk.reclaim_();
-        }
-    }
-
-    @Override
-    public void dumpStat(PBDumpStat template, Builder bd)
-            throws Exception
-    {
-        Token tk = _tokenManager.acquireThrows_(UNLIMITED, "dumpStat"); // because dumpStat on transports may block, we use pseudo pause
-        try {
-            TCB tcb = tk.pseudoPause_("dumpStat"); // according to ITransport's contract dumpStat() may block
-            try {
-                for (ITransport tp : availableTransports.keySet()) {
-                    bd.addEnabledTransports(tp.id());
-                    tp.dumpStat(template, bd);
-                }
-            } finally {
-                tcb.pseudoResumed_();
-            }
-        } finally {
-            tk.reclaim_();
-        }
     }
 
     public TransportDiagnostics dumpDiagnostics()

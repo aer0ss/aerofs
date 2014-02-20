@@ -32,7 +32,6 @@ import com.aerofs.daemon.transport.xmpp.signalling.SignallingService;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.ServerStatus;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
@@ -45,7 +44,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.Set;
@@ -256,25 +254,6 @@ public final class Zephyr implements ITransport
     public String toString()
     {
         return id();
-    }
-
-    @Override
-    public void dumpStat(PBDumpStat template, PBDumpStat.Builder bd)
-    {
-        zephyrConnectionService.dumpStat(template, bd);
-    }
-
-    @Override
-    public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
-    {
-        String indent2 = indent + indentUnit;
-
-        ps.println(indent + "q");
-        transportEventQueue.dumpStatMisc(indent2, indentUnit, ps);
-        ps.println(indent + "xmpp");
-        xmppConnectionService.dumpStatMisc(indent2, indentUnit, ps);
-        ps.println(indent + "unicast");
-        zephyrConnectionService.dumpStatMisc(indent2, indentUnit, ps);
     }
 
     @Override

@@ -13,7 +13,6 @@ import com.aerofs.base.id.JabberID;
 import com.aerofs.daemon.lib.Listeners;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.rocklog.RockLog;
@@ -30,7 +29,6 @@ import org.jivesoftware.smack.packet.Packet;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
@@ -50,7 +48,7 @@ import static com.google.common.collect.Maps.newConcurrentMap;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static org.jivesoftware.smack.packet.IQ.Type.GET;
 
-public final class XMPPConnectionService implements ILinkStateListener, IDumpStatMisc
+public final class XMPPConnectionService implements ILinkStateListener
 {
     public static final String XMPP_PING_STANZA = "<ping xmlns='urn:xmpp:ping'/>";
 
@@ -608,18 +606,5 @@ public final class XMPPConnectionService implements ILinkStateListener, IDumpSta
             @Override
             public void reconnectionSuccessful() { }
         });
-    }
-
-    @Override
-    public synchronized void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
-    {
-        if (connection == null || !connection.isConnected()) {
-            ps.println(indent + "disconnected");
-        } else {
-            ps.println(indent + "auth'ed " + connection.isAuthenticated() +
-                    ", secure " + connection.isSecureConnection() +
-                    ", tls " + connection.isUsingTLS() +
-                    ", compression: " + connection.isUsingCompression());
-        }
     }
 }

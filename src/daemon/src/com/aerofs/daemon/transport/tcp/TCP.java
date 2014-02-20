@@ -36,8 +36,6 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.proto.Diagnostics.PBDumpStat;
-import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
 import com.aerofs.proto.Diagnostics.TCPDevice;
 import com.aerofs.proto.Diagnostics.TCPDiagnostics;
@@ -53,7 +51,6 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
 
-import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
@@ -63,7 +60,6 @@ import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.HEARTBEAT_INTERVAL;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupCommonHandlersAndListeners;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupMulticastHandler;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newLinkedList;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
@@ -331,33 +327,6 @@ public class TCP implements ITransport, IUnicastCallbacks
         // Send a TCP_PONG so that the peer knows our listening port and our stores
         PBTPHeader pong = stores.newPongMessage(false);
         if (pong != null) client.send(TPUtil.newControl(pong));
-    }
-
-    @Override
-    public void dumpStat(PBDumpStat dstemplate, PBDumpStat.Builder dsbuilder)
-    {
-        PBTransport tp = dstemplate.getTransport(0);
-        checkNotNull(tp, "called dumpstat with null tp template");
-
-        PBTransport.Builder tpbuilder = PBTransport.newBuilder();
-        if (tp.hasName()) tpbuilder.setName(id());
-
-        dsbuilder.addTransport(tpbuilder);
-
-        try {
-            unicast.dumpStat(dstemplate, dsbuilder);
-            if (tp.hasDiagnosis()) tpbuilder.setDiagnosis("arp:\n" + arp);
-        } catch (Exception e) {
-            l.warn("fail dump stat", e);
-        }
-    }
-
-    @Override
-    public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
-    {
-        String indent2 = indent + indentUnit;
-        ps.println(indent + "q");
-        transportEventQueue.dumpStatMisc(indent2, indentUnit, ps);
     }
 
     @Override

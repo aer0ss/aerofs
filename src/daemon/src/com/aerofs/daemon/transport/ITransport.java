@@ -1,7 +1,5 @@
 package com.aerofs.daemon.transport;
 
-import com.aerofs.lib.IDumpStat;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -10,7 +8,7 @@ import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 /**
  * Implemented by classes that provide a message transport mechanism.
  */
-public interface ITransport extends ITransferStat, IDumpStat, IDumpStatMisc
+public interface ITransport extends ITransferStat
 {
     /**
      * Initialize internal state for the transport.

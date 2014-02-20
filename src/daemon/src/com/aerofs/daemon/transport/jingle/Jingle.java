@@ -35,8 +35,6 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Diagnostics.JingleDevice;
 import com.aerofs.proto.Diagnostics.JingleDiagnostics;
-import com.aerofs.proto.Diagnostics.PBDumpStat;
-import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.proto.Diagnostics.ServerStatus;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.rocklog.RockLog;
@@ -46,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
@@ -56,7 +53,6 @@ import static com.aerofs.daemon.transport.lib.TPUtil.setupCommonHandlersAndListe
 import static com.aerofs.daemon.transport.lib.TPUtil.setupMulticastHandler;
 import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
 import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 public class Jingle implements ITransport, IUnicastCallbacks
@@ -207,37 +203,6 @@ public class Jingle implements ITransport, IUnicastCallbacks
     public IBlockingPrioritizedEventSink<IEvent> q()
     {
         return transportEventQueue;
-    }
-
-    @Override
-    public void dumpStat(PBDumpStat dstemplate, final PBDumpStat.Builder dsbuilder)
-            throws Exception
-    {
-        // TODO (GS): Copied from TCP
-
-        PBTransport tp = checkNotNull(dstemplate.getTransport(0));
-        PBTransport.Builder tpbuilder = PBTransport.newBuilder();
-        if (tp.hasName()) tpbuilder.setName(id());
-
-        dsbuilder.addTransport(tpbuilder);
-
-        try {
-            unicast.dumpStat(dstemplate, dsbuilder);
-        } catch (Exception e) {
-            l.warn("fail unicast dumpstat");
-        }
-    }
-
-    @Override
-    public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
-            throws Exception
-    {
-        String indent2 = indent + indentUnit;
-        ps.println(indent + "q");
-        transportEventQueue.dumpStatMisc(indent2, indentUnit, ps);
-        ps.println(indent + "xmpp");
-        xmppConnectionService.dumpStatMisc(indent2, indentUnit, ps);
-        // TODO (AG): add dump for unicast and multicast
     }
 
     @Override
