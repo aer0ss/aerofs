@@ -44,10 +44,10 @@ public final class HealthCheckService implements IStartable
     }
 
     //
-    // constants for the transport diagnostics dumper
+    // constants for the diagnostics dumper
     //
 
-    private static final class TDDConstants
+    private static final class DDConstants
     {
         private static final long INITIAL_DELAY = DEFAULT_INITIAL_DELAY;
         private static final long INTERVAL = DEFAULT_INTERVAL;
@@ -113,6 +113,6 @@ public final class HealthCheckService implements IStartable
 
         _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_coreProgressWatcher, CPWConstants.INTERVAL), CPWConstants.INITIAL_DELAY, CPWConstants.INTERVAL, MILLISECONDS);
         _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_deadlockDetector, DLDConstants.INTERVAL), DLDConstants.INITIAL_DELAY, DLDConstants.INTERVAL, MILLISECONDS);
-        _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_diagnosticsDumper, TDDConstants.INTERVAL), TDDConstants.INITIAL_DELAY, TDDConstants.INTERVAL, MILLISECONDS);
+        _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_diagnosticsDumper, DDConstants.INTERVAL), DDConstants.INITIAL_DELAY, DDConstants.INTERVAL, MILLISECONDS);
     }
 }

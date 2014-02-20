@@ -1,15 +1,13 @@
 package com.aerofs.sv.server;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
+import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
-import com.aerofs.servlets.AeroServlet;
 import com.googlecode.flyway.core.Flyway;
-import com.yammer.metrics.reporting.GraphiteReporter;
 import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
@@ -21,7 +19,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import static com.aerofs.sv.server.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
-import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class SVServlet extends AeroServlet
 {
@@ -44,7 +41,6 @@ public class SVServlet extends AeroServlet
         try {
             _reactor.init_();
             initDB_();
-            initMetrics_();
         } catch (Exception e) {
             l.error("init: ", e);
             throw new ServletException(e);
@@ -69,12 +65,6 @@ public class SVServlet extends AeroServlet
         flyway.setInitOnMigrate(true);
         flyway.setSchemas("aerofs_sv");
         flyway.migrate();
-    }
-
-    private void initMetrics_()
-    {
-        GraphiteReporter.enable(2, MINUTES, BaseParam.Metrics.ADDRESS.getHostName(),
-                BaseParam.Metrics.ADDRESS.getPort());
     }
 
     @Override

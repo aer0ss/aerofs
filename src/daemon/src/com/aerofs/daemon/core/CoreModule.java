@@ -2,6 +2,7 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.audit.client.IAuditorClient;
+import com.aerofs.base.BaseParam;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.daemon.core.db.TamperingDetectionSchema;
@@ -59,10 +60,16 @@ import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.metriks.IMetriks;
+import com.aerofs.metriks.Metriks;
+import com.aerofs.metriks.NoopMetriks;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.internal.Scoping;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -157,5 +164,16 @@ public class CoreModule extends AbstractModule
     public IAuditorClient provideAuditorClient()
     {
         return AuditorFactory.createAuthenticated();
+    }
+
+    @Provides
+    @Singleton
+    public IMetriks provideMetriks(CfgLocalUser localUser, CfgLocalDID did, IOSUtil iosUtil)
+    {
+        if (BaseParam.Metriks.METRIKS_ENABLED) {
+            return new Metriks(localUser.get(), did.get(), iosUtil.getFullOSName(), BaseParam.Metriks.TRIKS_URL);
+        } else {
+            return new NoopMetriks();
+        }
     }
 }

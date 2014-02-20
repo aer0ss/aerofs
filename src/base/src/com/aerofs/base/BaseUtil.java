@@ -16,6 +16,8 @@ import java.nio.charset.Charset;
 import java.util.Scanner;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.net.HttpURLConnection.HTTP_CREATED;
+import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
 import static java.net.HttpURLConnection.HTTP_OK;
 
 public class BaseUtil
@@ -124,7 +126,6 @@ public class BaseUtil
         return dirSize;
     }
 
-
     /**
      * Simple helper function to perform an HTTP request on a HttpURLConnection
      * Note: this function does not deal with character encodings properly. You should only
@@ -150,7 +151,7 @@ public class BaseUtil
 
             // Receive
             int code = connection.getResponseCode();
-            if (code != HTTP_OK) {
+            if (code != HTTP_OK && code != HTTP_CREATED && code != HTTP_NO_CONTENT) {
                 throw new IOException("HTTP request failed. Code: " + code);
             }
 

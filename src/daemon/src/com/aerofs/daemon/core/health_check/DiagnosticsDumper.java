@@ -15,6 +15,9 @@ import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.metriks.IMetriks;
+import com.aerofs.metriks.Metriks;
+import com.aerofs.proto.Diagnostics.TransportTransfer;
 import com.aerofs.proto.Diagnostics.TransportTransferDiagnostics;
 import com.google.inject.Inject;
 import com.google.protobuf.Message;
@@ -45,9 +48,10 @@ final class DiagnosticsDumper implements Runnable
     private final Transports _tps;
     private final UploadState _ul;
     private final DownloadState _dl;
+    private final IMetriks _metriks;
 
     @Inject
-    DiagnosticsDumper(CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl)
+    DiagnosticsDumper(CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl, Metriks metriks)
     {
         _q = q;
         _dp = dp;
@@ -55,6 +59,7 @@ final class DiagnosticsDumper implements Runnable
         _tps = tps;
         _ul = ul;
         _dl = dl;
+        _metriks = metriks;
     }
 
     @Override
@@ -125,7 +130,19 @@ final class DiagnosticsDumper implements Runnable
 
     private void dumpTransportTransferDiagnostics()
     {
+        // print
         TransportTransferDiagnostics transferDiagnostics = _tsm.getAndReset();
         l.info("transfer:{}", prettyPrint(transferDiagnostics));
+
+        // send
+        // FIXME (AG): add an method called "addAll" that automatically adds all fields
+        l.info("send transfer");
+        for (TransportTransfer transfer : transferDiagnostics.getTransferList()) {
+            _metriks.newMetrik("transfer")
+                    .addField("transport_id", transfer.getTransportId())
+                    .addField("bytes_transferred", transfer.getBytesTransferred())
+                    .addField("bytes_errored", transfer.getBytesErrored())
+                    .send();
+        }
     }
 }

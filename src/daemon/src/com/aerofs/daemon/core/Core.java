@@ -28,6 +28,7 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.metriks.IMetriks;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.inject.Inject;
 
@@ -56,6 +57,7 @@ public class Core implements IModule
     private final DaemonPostUpdateTasks _dput;
     private final CoreDBSetup _dbsetup;
     private final TamperingDetection _tamperingDetection;
+    private final IMetriks _metriks;
     private final HealthCheckService _hcs;
     private final ClientAuditEventReporter _caer;
     private final DaemonLaunchTasks _dlts;
@@ -83,6 +85,7 @@ public class Core implements IModule
             CoreDBSetup dbsetup,
             TamperingDetection tamperingDetection,
             IStores ss,
+            IMetriks metriks,
             HealthCheckService hcs,
             ClientAuditEventReporter caer,
             DaemonLaunchTasks dlts)
@@ -108,6 +111,7 @@ public class Core implements IModule
         _dput = dput;
         _dbsetup = dbsetup;
         _tamperingDetection = tamperingDetection;
+        _metriks = metriks;
         _hcs = hcs;
         _caer = caer;
         _dlts = dlts;
@@ -237,6 +241,9 @@ public class Core implements IModule
         if (Audit.AUDIT_ENABLED) {
             _caer.start_();
         }
+
+        // metrics
+        _metriks.start();
 
         // transports
 

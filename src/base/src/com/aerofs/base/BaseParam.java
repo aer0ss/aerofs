@@ -58,10 +58,10 @@ public class BaseParam
         }
     }
 
-    public static class Metrics
+    public static class Metriks
     {
-        public static final InetSocketAddress ADDRESS = getAddressProperty("base.metrics.address",
-                InetSocketAddress.createUnresolved("metrics.aerofs.com", 2003));
+        public static final URL TRIKS_URL = getUrlProperty("base.triks.url", "http://triks.aerofs.com");
+        public static boolean METRIKS_ENABLED = getBooleanProperty("base.triks.enabled", true);
     }
 
     public static class Zephyr
