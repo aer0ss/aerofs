@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Maps.newHashMap;
@@ -44,6 +45,7 @@ public class Defect
     private final RockLog _rockLog;
 
     private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+    private static final String ID_KEY = "defectid";
     private static final String NAME_KEY = "name";
     private static final String MESSAGE_KEY = "@message";
     private static final String EXCEPTION_KEY = "exception";
@@ -56,6 +58,7 @@ public class Defect
         _rockLog = checkNotNull(rockLog);
         // TODO (GS): add cfg DB
 
+        addId();
         addTimestamp();
         addVersion(cfg);
         addDeviceInfo(cfg);
@@ -149,6 +152,11 @@ public class Defect
         result.put("cause", encodeException(e.getCause()));
 
         return result;
+    }
+
+    private void addId()
+    {
+        addData(ID_KEY, UUID.randomUUID());
     }
 
     private void addTimestamp()

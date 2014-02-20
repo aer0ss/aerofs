@@ -303,8 +303,11 @@ public final class SVClient
             // info about defect names.
 
             Defect.Priority priority = isAutoBug ? Priority.Auto : Priority.User;
-            rockLog.newDefect("svdefect").setMessage(description).setPriority(priority).setException(cause).send();
+            String defectName = cause.getStackTrace().length == 0 ? "svdefect" : cause.getMessage();
+            rockLog.newDefect(defectName).setMessage(description).setPriority(priority).setException(cause).send();
         }
+
+        // FIXME (AG): dump healthcheck diagnostics here
 
         // always send non-automatic defects and database requests
         boolean ignoreDefect = isAutoBug && recentExceptions.isRecent(cause) && !sendDB;
