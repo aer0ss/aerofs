@@ -24,6 +24,7 @@ import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.sparta.providers.AuthProvider;
@@ -103,7 +104,7 @@ public class Sparta extends Service
         Timer timer = new HashedWheelTimer();
         ClientSocketChannelFactory clientFactory = new NioClientSocketChannelFactory();
 
-        Injector inj = Guice.createInjector(databaseModule(),
+        Injector inj = Guice.createInjector(databaseModule(new SpartaSQLConnectionProvider()),
                 clientsModule(cacert, timer, clientFactory),
                 spartaModule(timer, clientFactory));
 
@@ -138,15 +139,22 @@ public class Sparta extends Service
         );
     }
 
-    static private Module databaseModule()
+    public static Module databaseModule(final IDatabaseConnectionProvider<Connection> db)
     {
         return new AbstractModule() {
             @Override
             protected void configure()
             {
                 bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
-                bind(new TypeLiteral<IDatabaseConnectionProvider<Connection>>() {})
-                        .toInstance(new SpartaSQLConnectionProvider());
+                /**
+                 * SQLThreadLocalTransaction implements IDatabaseConnectionProvider and wraps an
+                 * underlying IDatabaseConnectionProvider which makes injection a little convoluted
+                 * especially because you want a single instance of it to be injected even though
+                 * it can be injected both directly and indirectly by referring to the interface...
+                 */
+                SQLThreadLocalTransaction t = new SQLThreadLocalTransaction(db);
+                bind(SQLThreadLocalTransaction.class).toInstance(t);
+                bind(new TypeLiteral<IDatabaseConnectionProvider<Connection>>() {}).toInstance(t);
             }
         };
     }

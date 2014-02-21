@@ -17,7 +17,6 @@ import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.lib.FullName;
-import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
@@ -35,7 +34,6 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.TypeLiteral;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.hibernate.Session;
@@ -52,7 +50,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -163,12 +160,11 @@ public class AbstractResourceTest extends AbstractBaseTest
     {
         return Guice.createInjector(
                 Sparta.spartaModule(new HashedWheelTimer(), new NioClientSocketChannelFactory()),
+                Sparta.databaseModule(dbParams.getProvider()),
                 new AbstractModule() {
             @Override
             protected void configure()
             {
-                bind(new TypeLiteral<IDatabaseConnectionProvider<Connection>>() {})
-                        .toInstance(dbParams.getProvider());
                 bind(VerkehrPublisher.class).toInstance(vkPub);
                 bind(AuditClient.class).toInstance(new AuditClient()
                         .setAuditorClient(new IAuditorClient() {
