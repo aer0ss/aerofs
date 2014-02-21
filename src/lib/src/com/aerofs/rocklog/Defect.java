@@ -45,7 +45,7 @@ public class Defect
     private final RockLog _rockLog;
 
     private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
-    private static final String ID_KEY = "defectid";
+    private static final String ID_KEY = "defect_id";
     private static final String NAME_KEY = "name";
     private static final String MESSAGE_KEY = "@message";
     private static final String EXCEPTION_KEY = "exception";

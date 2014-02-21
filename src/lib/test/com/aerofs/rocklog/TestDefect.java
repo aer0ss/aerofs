@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -54,8 +55,7 @@ public class TestDefect extends AbstractTest
         when(_cfg.user()).thenReturn(user);
 
         // Create a new defect
-        Defect defect = new Defect(_rocklog, _cfg, "test-defect").setException(wrapper).setMessage(
-                "hello");
+        Defect defect = new Defect(_rocklog, _cfg, "test-defect").setException(wrapper).setMessage("hello");
 
         // Serialize and de-serialize the defect
         String json = defect.getJSON();
@@ -64,6 +64,7 @@ public class TestDefect extends AbstractTest
 
         // Check the basic properties of the defect
         // TODO (GS): Check timestamp
+        assertNotNull(UUID.fromString(result.defect_id)); // check that a valid UUID was generated
         assertEquals("test-defect", result.name);
         assertEquals("hello", result.message);
         assertEquals(Priority.Auto, result.priority);
@@ -95,6 +96,7 @@ public class TestDefect extends AbstractTest
      */
     public static class JsonDefect
     {
+        public String defect_id;
         public String name;
         @SerializedName("@message") public String message;
         @SerializedName("@timestamp") public String timestamp;
