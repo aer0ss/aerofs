@@ -7,12 +7,12 @@ package com.aerofs.sp.server.lib;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.db.DBUtil;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.aerofs.sp.common.SharedFolderState;
@@ -32,18 +32,24 @@ import java.sql.Types;
 import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.deleteWhere;
+import static com.aerofs.lib.db.DBUtil.insertOnDuplicateUpdate;
+import static com.aerofs.lib.db.DBUtil.insertedOrUpdatedOneRow;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_EXTERNAL;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_STATE;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_ROLE;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_STATE;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_SFN_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_SFN_STORE_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_SFN_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_SF_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_SF_ORIGINAL_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_SF;
+import static com.aerofs.sp.server.lib.SPSchema.T_SFN;
 
 /**
  * N.B. only User.java may refer to this class
@@ -75,7 +81,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     public void insert(SID sid, String name)
             throws SQLException, ExAlreadyExist
     {
-        PreparedStatement ps = prepareStatement(DBUtil.insert(T_SF, C_SF_ID, C_SF_NAME));
+        PreparedStatement ps = prepareStatement(DBUtil.insert(T_SF, C_SF_ID, C_SF_ORIGINAL_NAME));
 
         ps.setBytes(1, sid.getBytes());
         ps.setString(2, name);
@@ -413,12 +419,52 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         Util.verify(ps.executeUpdate() > 0);
     }
 
-    public @Nonnull String getName(SID sid)
+    public @Nonnull String getName(SID sid, UserID userID)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = querySharedFolder(sid, C_SF_NAME);
+        // Return the user-specified name, if any
+        String name = getUserSpecifiedName(sid, userID);
+        if (name != null) return name;
+
+        // Otherwise, return the original name
+        ResultSet rs = querySharedFolder(sid, C_SF_ORIGINAL_NAME);
         try {
             return rs.getString(1);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public void setName(SID sid, UserID userID, String name)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(insertOnDuplicateUpdate(T_SFN, C_SFN_NAME + "=?",
+                C_SFN_STORE_ID, C_SFN_USER_ID, C_SFN_NAME));
+
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, userID.getString());
+        ps.setString(3, name);
+        ps.setString(4, name);
+
+        int result = ps.executeUpdate();
+        Util.verify(insertedOrUpdatedOneRow(result));
+    }
+
+    /**
+     * Given an sid and a user id, returns the user-specified name for that shared folder, if any.
+     * Returns null if the user didn't set a specific name for that shared folder yet.
+     */
+    private @Nullable String getUserSpecifiedName(SID sid, UserID userID)
+            throws SQLException
+    {
+        String condition = C_SFN_STORE_ID + "=? and " + C_SFN_USER_ID + "=?";
+        PreparedStatement ps = prepareStatement(selectWhere(T_SFN, condition, C_SFN_NAME));
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, userID.getString());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            return rs.next() ? rs.getString(1) : null;
         } finally {
             rs.close();
         }

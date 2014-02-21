@@ -513,7 +513,7 @@ public class SPService implements ISPService
 
         int sharedFolderCount = org.countSharedFolders();
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset), org);
+        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset), org, user);
 
         _sqlTrans.commit();
 
@@ -560,7 +560,7 @@ public class SPService implements ISPService
 
         User sessionUser = _sessionUser.getUser();
         List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders(),
-                sessionUser.getOrganization());
+                sessionUser.getOrganization(), user);
 
         _sqlTrans.commit();
 
@@ -622,9 +622,11 @@ public class SPService implements ISPService
      * populate the builder with shared folder information including members and pending members.
      *
      * @param sessionOrg the organization of the session user
+     * @param user the user that will be used to resolve the shared folder names. Shared folders
+     * can have different names for different users.
      */
     private List<PBSharedFolder> sharedFolders2pb(Collection<SharedFolder> sfs,
-            Organization sessionOrg)
+            Organization sessionOrg, User user)
             throws ExNotFound, SQLException
     {
         // A cache to avoid excessive database queries. This should be obsolete with memcached.
@@ -638,7 +640,7 @@ public class SPService implements ISPService
 
             PBSharedFolder.Builder builder = PBSharedFolder.newBuilder()
                     .setStoreId(sf.id().toPB())
-                    .setName(sf.getName())
+                    .setName(sf.getName(user))
                     .setOwnedByTeam(false);
 
             // fill in folder members
@@ -1233,7 +1235,8 @@ public class SPService implements ISPService
         _auditClient.event(AuditTopic.SHARING, "folder.join")
                 .add("user", user.id())
                 .add("user_type", external ? "external" : "internal")
-                .add("folder", sf.getName())
+                .add("folder_id", sf.id())
+                .add("folder_name", sf.getName(user))
                 .embed("role", perm == null ? "" : perm.toArray())
                 .publish();
         _sqlTrans.commit();
@@ -1271,9 +1274,18 @@ public class SPService implements ISPService
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
         }
 
-        // send notification email
         User sharer = sf.getSharerNullable(user);
         if (sharer != null && !sharer.id().isTeamServerID()) {
+
+            // Set the shared folder name for the sharee to be the same name as for the sharer.
+
+            // Note that by setting the name here in joinSharedFolder this means that if A shares
+            // a folder with B and A later renames that folder before B joins, B will receive an
+            // invitation email with the old name but will get the folder with the new name.
+            // While this may seem odd, this is actually desirable. It should also be fairly rare.
+            sf.setName(user, sf.getName(sharer));
+
+            // Send notification email
             _sfnEmailer.sendInvitationAcceptedNotificationEmail(sf, sharer, user);
         }
 
@@ -1337,11 +1349,31 @@ public class SPService implements ISPService
 
         _auditClient.event(AuditTopic.SHARING, "folder.leave")
                 .add("user", user.id())
-                .add("folder", sf.getName())
+                .add("folder_id", sf.id())
+                .add("folder_name", sf.getName(user))
                 .publish();
 
         _sqlTrans.commit();
 
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> setSharedFolderName(ByteString sid, String name)
+            throws Exception
+    {
+        if (name.isEmpty()) throw new ExBadArgs("Folder name cannot be empty");
+
+        _sqlTrans.begin();
+
+        User user = _sessionUser.getUser();
+        SharedFolder sf = _factSharedFolder.create(new SID(sid));
+
+        l.info("{} renames {} to {}", user, sf, name);
+
+        sf.setName(user, name);
+
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1361,7 +1393,7 @@ public class SPService implements ISPService
         for (PendingSharedFolder psf : psfs) {
             builder.addInvitation(PBFolderInvitation.newBuilder()
                     .setShareId(psf._sf.id().toPB())
-                    .setFolderName(psf._sf.getName())
+                    .setFolderName(psf._sf.getName(user))
                     .setSharer(psf._sharer.getString()));
         }
 
@@ -1781,7 +1813,7 @@ public class SPService implements ISPService
                 PBStoreACL.Builder aclBuilder = PBStoreACL.newBuilder();
                 aclBuilder.setStoreId(sf.id().toPB());
                 aclBuilder.setExternal(sf.isExternal(user));
-                aclBuilder.setName(sf.getName());
+                aclBuilder.setName(sf.getName(user));
                 for (Entry<User, Permissions> en : sf.getJoinedUsersAndRoles().entrySet()) {
                     aclBuilder.addSubjectPermissions(PBSubjectPermissions.newBuilder()
                             .setSubject(en.getKey().id().getString())
@@ -1832,7 +1864,8 @@ public class SPService implements ISPService
                     .add("admin_user", user.id())
                     .embed("new_role", role.toArray())
                     .embed("old_role", oldPermissions != null ? oldPermissions.toArray() : "")
-                    .add("folder", sf.getName())
+                    .add("folder_id", sf.id())
+                    .add("folder_name", sf.getName(user))
                     .publish();
 
             // always call publishACLs_() as the last step of the transaction
@@ -1860,7 +1893,8 @@ public class SPService implements ISPService
         _auditClient.event(AuditTopic.SHARING, "folder.permission.delete")
                 .add("target_user", subject.id())
                 .add("admin_user", user.id())
-                .add("folder", sf.getName())
+                .add("folder_id", sf.id())
+                .add("folder_name", sf.getName(user))
                 .publish();
 
         // always call this method as the last step of the transaction
@@ -2601,7 +2635,7 @@ public class SPService implements ISPService
         }
 
         List<PBSharedFolder> pbFolders = sharedFolders2pb(foldersBuilder.build(),
-                sessionUser.getOrganization());
+                sessionUser.getOrganization(), sessionUser);
         _sqlTrans.commit();
 
         return createReply(ListSharedFoldersReply.newBuilder()

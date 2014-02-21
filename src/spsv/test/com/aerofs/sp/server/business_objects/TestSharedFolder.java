@@ -50,16 +50,70 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         final String NAME = "haha";
 
         SharedFolder sf = newSharedFolder();
-        User user = saveUser();
-        sf.save(NAME, user);
-        assertEquals(sf.getName(), NAME);
+
+        // Check that the name is correct for the owner of the shared folder
+        User owner = saveUser();
+        sf.save(NAME, owner);
+        assertEquals(sf.getName(owner), NAME);
+
+        // Check that the name is correct for a new user that hasn't set a name for the folder yet.
+        User newUser = newUser();
+        assertEquals(sf.getName(newUser), NAME);
     }
 
     @Test(expected = ExNotFound.class)
     public void getName_shouldThrowIfFolderNotFound()
             throws ExNotFound, SQLException
     {
-        newSharedFolder().getName();
+        newSharedFolder().getName(newUser());
+    }
+
+    @Test
+    public void setName_shouldChangeName()
+            throws Exception
+    {
+        final String ORIGINAL_NAME = "haha";
+        final String NEW_NAME1 = "hehehe";
+        final String NEW_NAME2 = "hihihihihi";
+
+        SharedFolder sf = newSharedFolder();
+        User owner = saveUser();
+        User otherUser = saveUser();
+
+        sf.save(ORIGINAL_NAME, owner);
+
+        sf.setName(otherUser, NEW_NAME1);
+        assertEquals(sf.getName(otherUser), NEW_NAME1);
+        assertEquals(sf.getName(owner), ORIGINAL_NAME);
+
+        sf.setName(owner, NEW_NAME2);
+        assertEquals(sf.getName(otherUser), NEW_NAME1);
+        assertEquals(sf.getName(owner), NEW_NAME2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setName_shouldThrowIfEmptyName()
+            throws Exception
+    {
+        User user = saveUser();
+        SharedFolder sf = saveSharedFolder(user);
+        sf.setName(user, "");
+    }
+
+    @Test(expected = ExNotFound.class)
+    public void setName_shouldThrowIfFolderNotFound()
+            throws Exception
+    {
+        SharedFolder sf = newSharedFolder();
+        sf.setName(saveUser(), "aaa");
+    }
+
+    @Test(expected = ExNotFound.class)
+    public void setName_shouldThrowIfUserNotFound()
+            throws Exception
+    {
+        SharedFolder sf = saveSharedFolder(saveUser());
+        sf.setName(newUser(), "aaa");
     }
 
     @Test(expected = AssertionError.class)

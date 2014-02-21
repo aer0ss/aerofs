@@ -45,7 +45,9 @@ public class DBUtil
 
     /**
      * NOTE: if you're setting parameters in the updateParams using the .set functions of
-     * PreparedStatement these parameters will have indecies _after_ the field indecies
+     * PreparedStatement these parameters will have indices _after_ the field indices.
+     *
+     * Use insertedOrUpdatedOneRow() to check that this query affected exactly one row.
      *
      * @param table table to insert into
      * @param updateParams parameters to update
@@ -59,6 +61,24 @@ public class DBUtil
         return insertImpl(table, fields).append(" on duplicate key update ")
                 .append(updateParams)
                 .toString();
+    }
+
+    /**
+     * Checks that the result of a insertOnDuplicateUpdate() query successfully inserted or updated
+     * exactly one row.
+     */
+    public static boolean insertedOrUpdatedOneRow(int result)
+    {
+        /*
+         * The "INSERT ... ON DUPLICATE KEY UPDATE" function returns 1 for every succesful INSERT
+         * and 2 for every succesful UPDATE. That means that if you do the command on 5 rows,
+         * 3 of which result in INSERT, and 2 of which result in UPDATE, the return value
+         * will be 7 (3*1 + 2*2). In our case, we expect either a single UPDATE, or a single
+         * INSERT, so a return value of 1 or 2 is acceptable.
+         *
+         * See http://bugs.mysql.com/bug.php?id=2709 for more information
+         */
+        return (result == 1 || result == 2);
     }
 
     /**

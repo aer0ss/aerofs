@@ -99,7 +99,7 @@ public class UsersResource
         for (SharedFolder sf : user.getSharedFolders()) {
             // filter out root store
             if (sf.id().isUserRoot()) continue;
-            bd.add(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(), sf.getName(),
+            bd.add(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(), sf.getName(user),
                     SharedFolderResource.listMembers(sf)));
         }
         return bd.build();

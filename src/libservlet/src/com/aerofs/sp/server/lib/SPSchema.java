@@ -74,7 +74,12 @@ public final class SPSchema
 
             T_SF                            = "sp_shared_folder",
             C_SF_ID                         = "sf_id",
-            C_SF_NAME                       = "sf_name",
+            C_SF_ORIGINAL_NAME              = "sf_original_name",
+
+            T_SFN                           = "sp_shared_folder_names",
+            C_SFN_STORE_ID                  = "sn_sid",
+            C_SFN_USER_ID                   = "sn_user_id",
+            C_SFN_NAME                      = "sn_name",
 
             T_ES                            = "sp_email_subscriptions",
             C_ES_EMAIL                      = "es_email",

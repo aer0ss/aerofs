@@ -22,19 +22,19 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 
-import java.sql.SQLException;
-
-import static com.aerofs.sp.common.SharedFolderState.*;
-
-import com.google.common.collect.ImmutableList.Builder;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.sql.SQLException;
+
+import static com.aerofs.sp.common.SharedFolderState.JOINED;
+import static com.aerofs.sp.common.SharedFolderState.PENDING;
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class SharedFolder
 {
@@ -109,10 +109,41 @@ public class SharedFolder
         return _f._db.has(_sid);
     }
 
-    public String getName()
+    /**
+     * Return the name of this shared folder for a given user. If the user hasn't set a specific
+     * name yet, the original name (the one set when the folder was created) is returned.
+     *
+     * Note that it is ok to call this method with a non-existent user or a user that has no
+     * relationship with this folder. The original shared folder name will be returned.
+     *
+     * @param user user for which we want to get this shared folder's name.
+     * @throws ExNotFound if this shared folder isn't found in the db.
+     */
+    public String getName(User user)
             throws ExNotFound, SQLException
     {
-        return _f._db.getName(_sid);
+        return _f._db.getName(_sid, user.id());
+    }
+
+    /**
+     * Set the name of this shared folder for a given user.
+     *
+     * @param user the user for which we want to set the name. Must be an existing user, but it
+     * doesn't have to have any kind of relationship with this shared folder.
+     * @param name name of this shared folder. Cannot be empty.
+     *
+     * @throws ExNotFound if this shared folder or the user doesn't exist.
+     * @throws IllegalArgumentException if name is an empty string.
+     * @throws SQLException
+     */
+    public void setName(User user, String name)
+            throws SQLException, ExNotFound
+    {
+        if (!exists()) throw new ExNotFound("shared folder " + _sid);
+        if (!user.exists()) throw new ExNotFound("user " + user);
+        checkArgument(!name.isEmpty(), "name cannot be emtpy");
+
+        _f._db.setName(_sid, user.id(), name);
     }
 
     /**

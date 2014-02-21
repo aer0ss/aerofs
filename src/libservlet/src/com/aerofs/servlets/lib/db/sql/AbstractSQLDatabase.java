@@ -22,7 +22,7 @@ public abstract class AbstractSQLDatabase
     private IDatabaseConnectionProvider<Connection> _provider;
 
     // Not all subclasses need this. Added to here just for convenience.
-    protected static final Calendar UTC_CALANDER =
+    protected static final Calendar UTC_CALENDAR =
             Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
     public AbstractSQLDatabase(IDatabaseConnectionProvider<Connection> provider)

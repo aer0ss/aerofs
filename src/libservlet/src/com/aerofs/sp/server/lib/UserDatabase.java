@@ -351,7 +351,7 @@ public class UserDatabase extends AbstractSQLDatabase
 
         ps.setString(1, code);
         ps.setString(2, to.getString());
-        ps.setTimestamp(3, new Timestamp(currentTime), UTC_CALANDER);
+        ps.setTimestamp(3, new Timestamp(currentTime), UTC_CALENDAR);
         ps.executeUpdate();
     }
 

@@ -73,21 +73,11 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
         ps.setString(1, userId.getString());
         ps.setString(2, token);
         ps.setInt(3, sc.getCategoryID());
-        ps.setTimestamp(4, ts, UTC_CALANDER);
-        ps.setTimestamp(5, ts, UTC_CALANDER);
+        ps.setTimestamp(4, ts, UTC_CALENDAR);
+        ps.setTimestamp(5, ts, UTC_CALENDAR);
 
         int result = ps.executeUpdate();
-
-        /*
-         * The "INSERT ... ON DUPLICATE KEY UPDATE" function returns 1 for every succesful INSERT
-         * and 2 for every succesful UPDATE. That means that if you do the command on 5 rows,
-         * 3 of which result in INSERT, and 2 of which result in UPDATE, the return value
-         * will be 7 (3*1 + 2*2). In our case, we expect either a single UPDATE, or a single
-         * INSERT, so a return value of 1 or 2 is acceptable.
-         *
-         * See http://bugs.mysql.com/bug.php?id=2709 for more information
-         */
-        Util.verify(result == 1 || result == 2);
+        Util.verify(DBUtil.insertedOrUpdatedOneRow(result));
     }
 
     /**
@@ -226,7 +216,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
                         C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
                         C_ES_LAST_EMAILED));
 
-        ps.setTimestamp(1, new Timestamp(lastEmailTime), UTC_CALANDER);
+        ps.setTimestamp(1, new Timestamp(lastEmailTime), UTC_CALENDAR);
         ps.setString(2, userId.getString());
         ps.setInt(3, category.getCategoryID());
         Util.verify(ps.executeUpdate() == 1);

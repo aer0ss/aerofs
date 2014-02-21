@@ -647,6 +647,15 @@ service SPService {
     // Throws:
     //   ExNoPerm if the current user isn't an admin of her organization
     rpc ListWhitelistedUsers(Void) returns (ListWhitelistedUsersReply);
+
+    // Sets the name of a shared folder for the authenticated user
+    //
+    // Required Auth Level: user
+    // Throws:
+    //   ExNotFound if the shared folder wasn't found.
+    //   ExBadArgs if the name is an empty string
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE - Move this method after LeaveSharedFolder
+    rpc SetSharedFolderName(SetSharedFolderNameCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -793,6 +802,11 @@ message IgnoreSharedFolderCall {
 
 message LeaveSharedFolderCall {
     required bytes shared_id = 1;
+}
+
+message SetSharedFolderNameCall {
+    required bytes share_id = 1;
+    required string folder_name = 2;  // New name. Cannot be empty.
 }
 
 message ListPendingFolderInvitationsReply {

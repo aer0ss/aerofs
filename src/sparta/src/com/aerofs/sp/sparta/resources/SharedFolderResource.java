@@ -98,8 +98,8 @@ public class SharedFolderResource
         }
 
         return Response.ok()
-                .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(), sf.getName(),
-                        listMembers(sf)))
+                .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
+                        sf.getName(caller), listMembers(sf)))
                 .tag(etag)
                 .build();
     }
@@ -196,7 +196,8 @@ public class SharedFolderResource
                 .add("admin_user", caller.id())
                 .embed("new_role", req.toArray())
                 .embed("old_role", oldPermissions != null ? oldPermissions.toArray() : "")
-                .add("folder", sf.getName())
+                .add("folder_id", sf.id())
+                .add("folder_name", sf.getName(caller))
                 .publish();
 
         return Response.ok()
@@ -240,7 +241,8 @@ public class SharedFolderResource
         _audit.event(AuditTopic.SHARING, "folder.permission.delete")
                 .add("target_user", user.id())
                 .add("admin_user", caller.id())
-                .add("folder", sf.getName())
+                .add("folder_id", sf.id())
+                .add("folder_name", sf.getName(caller))
                 .publish();
 
         return Response.noContent()

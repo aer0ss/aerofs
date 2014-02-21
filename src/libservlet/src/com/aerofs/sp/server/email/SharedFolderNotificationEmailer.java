@@ -37,7 +37,7 @@ public class SharedFolderNotificationEmailer
     {
         NameFormatter nfInvitee = new NameFormatter(invitee);
 
-        String quotedFolderName = Util.quote(sf.getName());
+        String quotedFolderName = Util.quote(sf.getName(inviter));
         String subject = nfInvitee.nameOnly() + " accepted your invitation to " +
                 quotedFolderName;
 
@@ -83,7 +83,7 @@ public class SharedFolderNotificationEmailer
         describePermissionChange(roleChanges, newPermissions.bitmask() & ~oldPermissions.bitmask(),
                 "- You are now allowed to ");
 
-        String title = " Your role in the folder " + Util.quote(sf.getName()) + " has changed";
+        String title = " Your role in the folder " + Util.quote(sf.getName(subject)) + " has changed";
         String body = "\n" +
                 "This email is a confirmation that " +
                 (changer.id().isTeamServerID() ? "an organization admin" : "a folder owner (" + nfChanger.nameOnly() + ")") +
