@@ -5,6 +5,7 @@ import shutil
 import os
 import socket
 import re
+import markupsafe
 from web.util import str2bool
 from pyramid.security import NO_PERMISSION_REQUIRED, remember
 
@@ -328,7 +329,15 @@ def json_verify_smtp(request):
 
     if r.status_code != 200:
         log.error("send stmp verification email returns {}".format(r.status_code))
-        error("Unable to send email. Please check your SMTP settings.")
+
+        if r.status_code == 400:
+            # In this case we have a human readable error. Hopefully it will help them
+            # debug their smtp issues. Return the error string.
+            # We don't want to show stack dumps for internal failures (500 or any
+            # other unexpected failure...)
+            error("Unable to send email. The error is:<br>" + markupsafe.escape(r.text))
+        else:
+            error("Unable to send email. Please check your SMTP settings.")
 
     return {}
 

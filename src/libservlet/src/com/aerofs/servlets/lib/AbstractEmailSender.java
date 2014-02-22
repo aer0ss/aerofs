@@ -88,7 +88,8 @@ public abstract class AbstractEmailSender
         return _username.equals("") && _password.equals("");
     }
 
-    public Session getMailSession() {
+    public Session getMailSession() throws MessagingException
+    {
         Properties props = new Properties();
 
         if (l.isDebugEnabled()) {
@@ -125,9 +126,8 @@ public abstract class AbstractEmailSender
                     props.put("mail.smtp.ssl.socketFactory",
                             factory.getSSLContext().getSocketFactory());
                 } catch (Exception e) {
-                    // we can go on without the custom socket factory, it may fail to send mail
-                    // due to security exception, which will be reported to the caller
                     l.warn("Failed creating a custom SSL Socket Factory", e);
+                    throw new MessagingException(e.getMessage());
                 }
             }
         }

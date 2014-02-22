@@ -9,6 +9,7 @@ import com.aerofs.sp.server.email.SmtpVerificationEmailer;
 import com.mysql.jdbc.Util;
 import org.slf4j.Logger;
 
+import javax.mail.MessagingException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -68,9 +69,14 @@ public class SmtpVerificationServlet extends HttpServlet
 
             SmtpVerificationEmailer.sendSmtpVerificationEmail(fromEmail, toEmail, code, host, port,
                     username, password, enable_tls, cert);
-        }
-        catch (Exception e) {
+        } catch (MessagingException jmex) {
+            l.error("Error sending mail", jmex);
+            // the frontend will display the message of any exception that accompanies a 400 status
+            resp.setStatus(400);
+            resp.getWriter().print(jmex.getMessage());
+        } catch (Exception e) {
             l.error("Unable to send email: " + Util.stackTraceToString(e));
+            // the frontend will display the message of any exception that accompanies a 400 status
             resp.sendError(400, "unable to send email");
         }
     }
