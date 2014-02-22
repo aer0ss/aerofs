@@ -111,7 +111,7 @@ public class OSUtilWindows implements IOSUtil
     public String getDefaultRootAnchorParent()
     {
         Optional<String> value = RootAnchor.DEFAULT_LOCATION_WINDOWS;
-        if (value.isPresent()) {
+        if (value.isPresent() && (!value.get().isEmpty())) {
             return replaceEnvironmentVariables(value.get());
         }
 

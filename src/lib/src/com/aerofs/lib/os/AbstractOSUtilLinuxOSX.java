@@ -34,7 +34,7 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
 
     protected String getDefaultRootAnchorParentImpl(Optional<String> property)
     {
-        return property.isPresent()
+        return (property.isPresent() && (!property.get().isEmpty()))
                 ? replaceEnvironmentVariables(property.get())
                 : getUserHomeDir();
     }
