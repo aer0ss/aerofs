@@ -9,11 +9,14 @@ import com.aerofs.oauth.TokenVerifier;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.net.URI;
 import java.nio.channels.ClosedChannelException;
+import java.util.List;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
@@ -41,9 +44,26 @@ public class OAuthAuthenticator implements Authenticator
     public AuthenticatedPrincipal authenticate(HttpRequest request)
             throws UnauthorizedUserException
     {
-        String auth = request.getHeader(Names.AUTHORIZATION);
+
+        // reject requests with more than one Authorization header
+        List<String> authHeaders = request.getHeaders(Names.AUTHORIZATION);
+        String authHeader = authHeaders != null && authHeaders.size() == 1 ?
+                authHeaders.get(0) : null;
+
+        // reject requests with more than one token query param
+        List<String> tokenParams = new QueryStringDecoder(request.getUri())
+                .getParameters()
+                .get("token");
+        String queryToken = tokenParams != null && tokenParams.size() == 1 ?
+                tokenParams.get(0) : null;
+
+        // user must include token in either the header or the query params, but not both
+        if ((authHeader == null) == (queryToken == null)) throw new UnauthorizedUserException();
+
         try {
-            AuthenticatedPrincipal principal = _verifier.getPrincipal(auth);
+            AuthenticatedPrincipal principal = authHeader != null ?
+                    _verifier.getPrincipal(authHeader) :
+                    _verifier.verifyToken(queryToken).principal;
             if (principal != null) return principal;
         } catch (Exception e) {
             l.error("failed to verify token", BaseLogUtil.suppress(e.getCause(),

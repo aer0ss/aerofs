@@ -69,7 +69,7 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
         return token == null ? null : verifyToken(token);
     }
 
-    private final static Pattern BEARER_PATTERN = Pattern.compile("Bearer +([0-9a-zA-Z-._~+/]+=*)");
+    private final static Pattern BEARER_PATTERN = Pattern.compile("^Bearer ([0-9a-zA-Z-._~+/]+=*)$");
     private static @Nullable String accessToken(@Nullable String authorizationHeader)
     {
         if (authorizationHeader != null) {

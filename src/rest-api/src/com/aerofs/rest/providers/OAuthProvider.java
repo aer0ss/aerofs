@@ -10,6 +10,7 @@ import com.aerofs.rest.api.Error.Type;
 import com.aerofs.restless.Auth;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.HttpContext;
+import com.sun.jersey.api.core.HttpRequestContext;
 import com.sun.jersey.api.model.Parameter;
 import com.sun.jersey.core.spi.component.ComponentContext;
 import com.sun.jersey.core.spi.component.ComponentScope;
@@ -19,12 +20,14 @@ import com.sun.jersey.spi.inject.InjectableProvider;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.nio.channels.ClosedChannelException;
+import java.util.List;
 
 /**
  * Jersey injectable provider that validates OAuth access tokens in HTTP requests and extracts an
@@ -50,9 +53,20 @@ public class OAuthProvider
     @Override
     public AuthToken getValue(HttpContext context)
     {
-        String auth = context.getRequest().getHeaderValue(HttpHeaders.AUTHORIZATION);
+        // reject requests with multiple Authorization headers
+        List<String> authHeaders = context.getRequest().getRequestHeader(HttpHeaders.AUTHORIZATION);
+        String authHeader = authHeaders != null && authHeaders.size() == 1 ?
+                authHeaders.get(0) : null;
+
+        // reject requests with multiple token query params
+        List<String> tokenParams = context.getRequest().getQueryParameters().get("token");
+        String queryToken = tokenParams != null && tokenParams.size() == 1 ?
+                tokenParams.get(0) : null;
+
         try {
-            VerifyTokenResponse r = _verifier.verifyHeader(auth);
+            if ((authHeader == null) == (queryToken == null)) throw new Exception("invalid or missing oauth token");
+            VerifyTokenResponse r = authHeader != null ?
+                 _verifier.verifyHeader(authHeader) : _verifier.verifyToken(queryToken);
             if (r != null && r.principal != null) {
                 l.info("verified");
                 return new AuthToken(r);
