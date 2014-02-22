@@ -42,6 +42,16 @@ def get_principals(authed_userid, request):
     This method is used as the callback for SessionAuthenticationPolicy().
     This is THE function that dictates authorization.
     """
-    level = get_rpc_stub(request).get_authorization_level().level
+    try:
+        level = get_rpc_stub(request).get_authorization_level().level
+    except Exception:
+        # SP may throw ExNotAuthenticated because the web session and SP's
+        # session are maintained separately. In which case, we can safely
+        # assume the web user has no permissions to access any resource. If
+        # additional permission is required, the user will be redirected to
+        # login via error_view.forbidden_view().
+        log.warn('invalid SP session')
+        return []
+
     request.session[_SESSION_KEY_IS_ADMIN] = level == ADMIN
     return [GROUP_ID_ADMINS if level == ADMIN else GROUP_ID_USERS]

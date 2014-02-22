@@ -32,22 +32,6 @@ def forbidden_view(request):
 
 
 @view_config(
-    context=ExceptionReply,
-    permission=NO_PERMISSION_REQUIRED,
-    renderer='500.mako'
-)
-def protobuf_exception_view(context, request):
-    # SP throws NOT_AUTHENTICATED if the user is not logged in.
-    if context.get_type() == PBException.NOT_AUTHENTICATED:
-        log.warn("Not authenticated")
-        return force_login(request, 'login')
-    else:
-        log.error("default handling for ExceptionReply:", exc_info=context)
-        request.response_status = 500
-        return {}
-
-
-@view_config(
     context=Exception,
     permission=NO_PERMISSION_REQUIRED,
     renderer='500.mako'
