@@ -48,7 +48,6 @@ def download_logs(request):
     log files is done.
     """
 
-    # Use no prefix to discourage users from opening the file
     return get_file_download_response(LOG_ARCHIVE_PATH, 'application/zip',
                                'aerofs-appliance-logs_', '.zip')
 
@@ -64,9 +63,13 @@ def get_file_download_response(file_system_path, mime_type, name_prefix,
     for alternatives to send file content as responses.
     """
     # The browser will use this name as the name for the downloaded file
-    name = '{}{}{}'.format(name_prefix,
-                           datetime.today().strftime('%Y%m%d-%H%M%S'),
-                           name_suffix)
+    name = get_download_file_name(name_prefix, name_suffix)
     f = open(file_system_path)
     return Response(content_type=mime_type, app_iter=f,
                     content_disposition='attachment; filename={}'.format(name))
+
+
+def get_download_file_name(name_prefix, name_suffix):
+    return '{}{}{}'.format(name_prefix,
+                           datetime.today().strftime('%Y%m%d-%H%M%S'),
+                           name_suffix)

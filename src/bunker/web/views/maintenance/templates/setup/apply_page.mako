@@ -138,9 +138,7 @@ ${common.render_previous_button()}
             ##
             ## Call the methods below asynchronously. Ignore errors
             ${common.trackInitialTrialSetup('Completed Setup')}
-            $.post("${request.route_path('json_setup_set_data_collection')}", {
-                enable: false
-            });
+            $.post("${request.route_path('json_setup_disable_data_collection')}");
         }
     </script>
 </%def>

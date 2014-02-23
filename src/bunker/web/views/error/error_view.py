@@ -9,7 +9,7 @@ from web.views.error.error_view_util import force_login
 log = logging.getLogger(__name__)
 
 ######
-# N.B. both HTML and AJAX requests use these mthods to handle errors.
+# N.B. both HTML and AJAX requests use these methods to handle errors.
 ######
 
 @view_config(

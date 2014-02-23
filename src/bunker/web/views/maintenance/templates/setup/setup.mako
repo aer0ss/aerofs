@@ -42,20 +42,18 @@
     <%maintenance_alert:html/>
 
     %if page == 0:
-        ## Page 0 must be the license page. See setup_view.py:_setup_common()
-        ## See the logic in setup_view.py:setup()
-        %if is_license_present_and_valid:
-            <%namespace name="license_valid_page" file="license_valid_page.mako"/>
-            <%license_valid_page:body/>
-            <% local.page_scripts = license_valid_page.scripts %>
-        %elif is_license_present:
-            <%namespace name="license_expired_page" file="license_expired_page.mako"/>
-            <%license_expired_page:body/>
-            <% local.page_scripts = license_expired_page.scripts %>
+        %if is_configuration_initialized:
+            <%namespace name="license_page" file="license_page.mako"/>
+            <%license_page:body/>
+            <% local.page_scripts = license_page.scripts %>
+        %elif restored_from_backup:
+            <%namespace name="already_restored_page" file="already_restored_page.mako"/>
+            <%already_restored_page:body/>
+            <% local.page_scripts = already_restored_page.scripts %>
         %else:
-            <%namespace name="license_absent_page" file="license_absent_page.mako"/>
-            <%license_absent_page:body/>
-            <% local.page_scripts = license_absent_page.scripts %>
+            <%namespace name="create_or_restore_page" file="create_or_restore_page.mako"/>
+            <%create_or_restore_page:body/>
+            <% local.page_scripts = create_or_restore_page.scripts %>
         %endif
     %elif page == 1:
         <h3>Step 1 of 3</h3>

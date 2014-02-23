@@ -6,30 +6,23 @@ import os
 import socket
 import re
 import markupsafe
-from web.util import str2bool
+from web.util import str2bool, is_configuration_initialized_in_private_deployment
 from pyramid.security import NO_PERMISSION_REQUIRED, remember
 
 import requests
 from pyramid.view import view_config
-from pyramid.httpexceptions import HTTPFound, HTTPOk
+from pyramid.httpexceptions import HTTPOk, HTTPFound
 from aerofs_common.bootstrap import BootstrapClient
 from web.error import error
-from web.util import is_configuration_initialized
-from web.license import is_license_present_and_valid, is_license_present, \
-    get_license_shasum_from_session, \
-    set_license_file_and_attach_shasum_to_session
-from backup_view import BACKUP_FILE_PATH
+from web.license import set_license_file_and_attach_shasum_to_session
+from backup_view import BACKUP_FILE_PATH, example_backup_download_file_name
 from maintenance_util import write_pem_to_file, \
     format_pem, is_certificate_formatted_correctly, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \
-    is_key_formatted_correctly, get_conf, get_conf_client
+    is_key_formatted_correctly, get_conf_client, get_conf
 
 log = logging.getLogger(__name__)
 
-
-# ------------------------------------------------------------------------
-# Verification interface constants.
-# ------------------------------------------------------------------------
 
 # Base URL for all calls to the tomcat verification servlet.
 def verification_base_url(request):
@@ -52,65 +45,32 @@ _SMTP_VERIFICATION_SMTP_ENABLE_TLS = "email_sender_public_enable_tls"
 _SMTP_VERIFICATION_SMTP_CERT = "email_sender_public_cert"
 
 # ------------------------------------------------------------------------
-# Other
-# ------------------------------------------------------------------------
-
-# The value of this session key indicates whether the current setup session is a
-# restore from a backup file.
-_SESSION_KEY_RESTORED = 'restored'
-
-
-# ------------------------------------------------------------------------
 # Setup View
 # ------------------------------------------------------------------------
 
 @view_config(
     route_name='setup',
-    # Should not require permission. See docs/design/pyramid_auth.md.
-    permission=NO_PERMISSION_REQUIRED,
-    renderer='setup/setup.mako'
-)
-def setup(request):
-    conf = get_conf(request)
-    # See docs/design/pyramid_auth.md for explanation of the following logic.
-    if is_license_present_and_valid(conf):
-        log.info("license is valid. redirect to setup_authorized")
-        return HTTPFound(request.route_path("setup_authorized", _query=request.params))
-    else:
-        log.info("license is invalid. ask for license")
-        return _setup_common(request, conf, True)
-
-
-@view_config(
-    route_name='setup_authorized',
     permission='maintain',
     renderer='setup/setup.mako',
 )
-def setup_authorized(request):
-    return _setup_common(request, get_conf(request), False)
-
-
-def _setup_common(request, conf, license_page_only):
-
-    if license_page_only:
-        # We assume page 0 is the license page.
-        page = 0
-    else:
-        page = request.params.get('page')
-        page = int(page) if page else 0
+def setup(request):
+    conf = get_conf(request)
+    page = request.params.get('page')
+    page = int(page) if page else 0
 
     return {
         'page': page,
         'current_config': conf,
-        'is_configuration_initialized': is_configuration_initialized(conf),
+        'is_configuration_initialized': is_configuration_initialized_in_private_deployment(),
         'enable_data_collection': _is_data_collection_enabled(conf),
-        # The following two parameters are used by welcome_and_license.mako
-        'is_license_present': is_license_present(conf),
-        'is_license_present_and_valid': is_license_present_and_valid(conf),
+        'restored_from_backup': _is_restored_from_backup(conf),
+        # The following parameter is used by create_or_restore.mako
+        'example_backup_download_file_name': example_backup_download_file_name(),
         # The following parameter is used by email_page.mako
         'default_support_email': _get_default_support_email(conf['base.host.unified']),
-        # This parameter is used by SMTP verification and the apply code
-        'restored_from_backup': request.session.get(_SESSION_KEY_RESTORED, False)
+        # The following parameter is used by already_restored_page.mako.
+        # TODO (WW) This really smells. Refactor setup.mako.
+        'get_already_restored_html_message': _get_already_restored_html_message(request)
     }
 
 
@@ -165,32 +125,43 @@ def json_set_license(request):
     if not set_license_file_and_attach_shasum_to_session(request, license_bytes):
         error("The provided license file is invalid.")
 
-    # Since this method is the first step in a setup session, reset the
-    # "restored" flag here, assuming the restore code will set this flag later.
-    if _SESSION_KEY_RESTORED in request.session:
-        del request.session[_SESSION_KEY_RESTORED]
-
     headers = remember(request, 'fakeuser')
     return HTTPOk(headers=headers)
-
-
-@view_config(
-    route_name='json_get_license_shasum_from_session',
-    # Since this method returns the information already stored in the user's
-    # session cookie, it doesn't require authentication.
-    permission=NO_PERMISSION_REQUIRED,
-    renderer='json',
-    request_method='GET'
-)
-def json_get_license_shasum_from_session(request):
-    return {
-        'shasum': get_license_shasum_from_session(request)
-    }
 
 
 # ------------------------------------------------------------------------
 # Data collection
 # ------------------------------------------------------------------------
+
+@view_config(
+    route_name='setup_submit_data_collection_form',
+    permission='maintain',
+    request_method='POST'
+)
+def setup_submit_data_collection_form(request):
+    enable = request.params['data-collection']
+    _set_data_collection(request, enable)
+    return HTTPFound(location=_get_hostname_page_route_path(request))
+
+
+@view_config(
+    route_name='json_setup_disable_data_collection',
+    permission='permission',
+    renderer='json',
+    request_method='POST'
+)
+def json_setup_disable_data_collection(request):
+    _set_data_collection(request, "false")
+
+
+def _set_data_collection(request, enable):
+    """
+    @param enable string "true" or "false" to enable or disable data collection
+    """
+    log.info("appliance setup data collection: {}".format(enable))
+    config = get_conf_client(request)
+    config.set_external_property('enable_appliance_setup_data_collection', enable)
+
 
 def _is_data_collection_enabled(conf):
     enabled = conf['web.enable_appliance_setup_data_collection']
@@ -205,21 +176,9 @@ def _is_data_collection_enabled(conf):
     return enabled
 
 
-@view_config(
-    route_name='json_setup_set_data_collection',
-    # We call this method before the user uploads the license, so it can't
-    # require permission.
-    permission=NO_PERMISSION_REQUIRED,
-    renderer='json',
-    request_method='POST'
-)
-def json_setup_set_data_collection(request):
-    enable = request.params['enable']
-    log.info("appliance setup data collection: {}".format(enable))
-    config = get_conf_client(request)
-    config.set_external_property('enable_appliance_setup_data_collection',
-                                 enable)
-
+def _get_hostname_page_route_path(request):
+    # TODO (WW) fix this hack and have dedicated route for each setup page.
+    return request.route_path('setup', _query={'page': '1'})
 
 # ------------------------------------------------------------------------
 # Hostname
@@ -418,6 +377,10 @@ def json_setup_certificate(request):
     request_method='POST'
 )
 def json_upload_backup(request):
+    # We don't support restoring multiple time since restoration is not an idempotent operation.
+    if _is_restored_from_backup(get_conf(request)):
+        error(_get_already_restored_html_message(request))
+
     log.info("uploading backup file...")
     # Clean up old file
     if os.path.exists(BACKUP_FILE_PATH):
@@ -430,9 +393,32 @@ def json_upload_backup(request):
     with open(BACKUP_FILE_PATH, 'wb') as output_file:
         shutil.copyfileobj(input_file, output_file)
 
-    request.session[_SESSION_KEY_RESTORED] = True
-
     return HTTPOk()
+
+
+@view_config(
+    route_name='json_setup_set_restored_from_backup',
+    permission='maintain',
+    renderer='json',
+    request_method='POST'
+)
+def json_setup_set_restored_from_backup(request):
+    """
+    Call this method after restoration is completely successful
+    """
+    conf = get_conf_client(request)
+    conf.set_external_property('restored_from_backup', 'true')
+
+
+def _is_restored_from_backup(conf):
+    return str2bool(conf['restored_from_backup'])
+
+
+def _get_already_restored_html_message(request):
+    return 'This appliance is already restored from a backup file. Please' \
+           ' <a href="{}">click here</a> to finish the setup, or discard this appliance' \
+           ' and launch a new one to start over.'.format(
+           _get_hostname_page_route_path(request))
 
 
 # ------------------------------------------------------------------------

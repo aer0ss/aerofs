@@ -98,10 +98,8 @@
         }
 
         function gotoPage(page) {
-            ## If the user can navigate cross pages, he's guaranteed to be authenticated.
-            ## Therefore we use setup_authorized rather than setup to avoid redirects.
             ## Don't use "location.href =". It's not supported by old Firefox.
-            window.location.assign("${request.route_path('setup_authorized')}?page=" + page);
+            window.location.assign("${request.route_path('setup')}?page=" + page);
         }
 
         function disableNavButtons() {

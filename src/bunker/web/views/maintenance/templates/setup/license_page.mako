@@ -6,10 +6,7 @@
     <h3>Set up AeroFS Appliance</h3>
 
     <p>This page will guide you through setting up the appliance.
-        Review your license before continuing. Information on network and
-        firewall requirements can be found <a target="_blank"
-        href="https://support.aerofs.com/entries/22661589">
-        here</a>.</p>
+        Review your license before continuing.</p>
     <h4>Your license:</h4>
     <dl class="dl-horizontal">
         <dt>Licensed to:</dt>

@@ -1,14 +1,11 @@
 from web.util import add_routes
 
-# Use a set not list to speed up route queries by the clients of this data
-# structure (including RedirectMiddleware and the forbidden view).
-routes = {
+routes = [
     # Setup
-    # N.B. setup's resolved route path is referred to by RedirectMiddleware
     'setup',
-    'setup_authorized',
-    'json_set_license',
-    'json_setup_set_data_collection',
+    'setup_submit_data_collection_form',
+    'json_setup_set_restored_from_backup',
+    'json_setup_disable_data_collection',
     'json_setup_hostname',
     'json_setup_email',
     'json_verify_smtp',
@@ -16,7 +13,6 @@ routes = {
     'json_verify_ldap',
     'json_upload_backup',
     'json_setup_finalize',
-    'json_get_license_shasum_from_session',
 
     # Bootstrap
     'json_enqueue_bootstrap_task',
@@ -27,6 +23,7 @@ routes = {
     'login_submit',
     'identity',
     'json_set_identity_options',
+    'json_set_license',
     'backup',
     'upgrade',
     'logs',
@@ -41,7 +38,7 @@ routes = {
     'status',
     'toggle_maintenance_mode',
     'maintenance_mode'
-}
+]
 
 
 def includeme(config):

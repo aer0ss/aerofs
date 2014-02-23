@@ -1,6 +1,4 @@
 import logging
-from aerofs_common.exception import ExceptionReply
-from aerofs_sp.gen.common_pb2 import PBException
 from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config, forbidden_view_config
@@ -9,7 +7,7 @@ from web.views.error.error_view_util import force_login
 log = logging.getLogger(__name__)
 
 ######
-# N.B. both HTML and AJAX requests use these mthods to handle errors.
+# N.B. both HTML and AJAX requests use these methods to handle errors.
 ######
 
 

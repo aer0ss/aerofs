@@ -53,7 +53,7 @@
         ##      postLicenseUpload(onSuccess, onFailure).
         function submitForm(postLicenseUpload) {
             ## Go to the next page if no license file is specified. This is
-            ## needed for license_valid_page.mako to skip license upload if
+            ## needed for license_page.mako to skip license upload if
             ## the license already exists.
             if (!$('#${license_file_input_id}').val()) {
                 gotoNextPage();
