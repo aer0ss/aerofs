@@ -17,6 +17,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 
+@SuppressWarnings("unchecked")
 public class TestUsersResources extends AbstractResourceTest
 {
     static {
