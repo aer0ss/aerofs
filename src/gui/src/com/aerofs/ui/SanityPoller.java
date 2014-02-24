@@ -18,6 +18,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.error.ErrorMessages;
@@ -45,6 +46,8 @@ public class SanityPoller
 
     private Thread _t = null;
     private volatile boolean _stopping = false;
+
+    private volatile boolean _ignoreDiskFullErrors; // for users to suppress error notifications
 
     public void start()
     {
@@ -127,32 +130,83 @@ public class SanityPoller
         }
     }
 
-    private void checkDisk(String absPath)
+    private void checkDisk(final String absPath)
     {
-        if (isDiskFull(absPath)) {
+        if (_ignoreDiskFullErrors) return;
+
+        File f = new File(absPath);
+
+        /**
+         * N.B. there is a large number of users using NTFS on Win7 reporting false positives. I
+         * have not identified the root cause, but OpenJDK's source code showed that OpenJDK
+         * makes Win32 API to get those numbers but doesn't handle error cases. If these WIN32 API
+         * calls fail, the method will return 0 for all stats. I suspect this is likely the case,
+         * but I have no proof nor any idea on what could cause these API calls to fail.
+         */
+        if (f.getUsableSpace() == 0L || f.getFreeSpace() == 0L) {
+            // FIXME(AT) logging is probably not the best idea when the disk is full for real.
+            // but I want these information to further investigate the above issue.
+            l.warn(ObfuscatingFormatters.formatFileMessage("full disk detected at {}",
+                    f)._obfuscated);
+            l.info("usable: {}", f.getUsableSpace());
+            l.info("free: {}", f.getFreeSpace());
+            l.info("total: {}", f.getTotalSpace());
+
             blockingRitualCall();
 
-            boolean exit = true;
-            try {
-                // TODO: use a custom dialog that:
-                // 1. auto-close if some space is freed
-                // 2. suggest cleaning sync history
-                String message = "The disk is full on " + absPath + ".\n\n" +
-                        "Please free up more disk space by deleting unused files " +
-                        "so AeroFS can continue to function.";
+            String title = "The disk is full for " + L.product();
+            String message = "Click here for detail.";
+            final String details = "There are no free disk space on\n" + absPath + "\n\n" +
+                    "The disk may be full or missing, or the operating system may have " +
+                    "encountered an error while checking for disk usage.\n\n" +
+                    "If the disk is full, please free up more disk space by deleting unused " +
+                    "files and then restart AeroFS.";
 
-                exit = UI.get().ask(MessageType.WARN, message, "Quit AeroFS", "Close");
-            } catch (ExNoConsole e) {}
-            if (exit) ExitCode.SHUTDOWN_REQUESTED.exit();
-
-            restartDaemon();
+            if (UI.isGUI()) {
+                // use a notification because it is less disruptive. However, this also increases
+                // the complexity of the logic.
+                UI.get().notify(MessageType.WARN, title, message, new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        askUserToIgnoreDiskFullErrors(details);
+                    }
+                });
+            } else {
+                askUserToIgnoreDiskFullErrors(details);
+            }
         }
     }
 
-    private boolean isDiskFull(String absPath)
+    /**
+     * FIXME(AT): due to how event loops works, you get interesting behaviour when the user clicks
+     * on multiple notifications and opens multiple dialogs. When the user resolves the most
+     * recently opened dialog, its resolution will be carried out immediately. But if the user
+     * resolves an older dialog, its resolution will not be carried out until all younger dialogs
+     * are resolved.
+     *
+     * In the end, the client will exit if the user chooses to quit on one of the dialogs, and the
+     * client will ignore disk full errors iff the user chooses to ignore on all opened dialogs.
+     *
+     * This behaviour may not match the user's expectations, but it should be rare enough for us to
+     * ignore.
+     *
+     * May be called from any thread and may not return.
+     */
+    private void askUserToIgnoreDiskFullErrors(String message)
     {
-        File f = new File(absPath);
-        return f.getUsableSpace() == 0L || f.getFreeSpace() == 0L;
+        try {
+            _ignoreDiskFullErrors = !UI.get().ask(MessageType.WARN, message,
+                    "Quit " + L.product(), "Ignore Until Next Restart");
+            if (!_ignoreDiskFullErrors) ExitCode.SHUTDOWN_REQUESTED.exit();
+
+            // N.B. if the user choose to ignore disk full error, we will only restart
+            // the daemon once.
+            restartDaemon();
+        } catch (ExNoConsole e) {
+            l.warn("no Console is available to ask user to handle disk full error.");
+        }
     }
 
     /**
