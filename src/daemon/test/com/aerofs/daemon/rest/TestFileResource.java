@@ -37,6 +37,7 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Date;
 
+import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -194,6 +195,17 @@ public class TestFileResource extends AbstractRestTest
                 .body().asByteArray();
 
         Assert.assertArrayEquals(FILE_CONTENT, content);
+    }
+
+    @Test
+    public void shouldReturn401WhenGetContentWithoutToken() throws Exception
+    {
+        given()
+                .header("Accept", "*/*")
+        .expect()
+                .statusCode(401)
+        .when().get(RESOURCE + "/content", object("f1").toStringFormal())
+                .body().asByteArray();
     }
 
     @Test

@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.nio.channels.ClosedChannelException;
@@ -63,6 +64,7 @@ public class OAuthProvider
         throw new WebApplicationException(Response
                 .status(Status.UNAUTHORIZED)
                 .header(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"")
+                .header(Names.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .entity(new Error(Type.UNAUTHORIZED, "Missing or invalid access token"))
                 .build());
     }
