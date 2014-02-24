@@ -52,7 +52,6 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
@@ -207,9 +206,9 @@ public class SharedFolderResource
         boolean exists = false;
         if (sf.getPermissionsNullable(user) != null) {
             if (sf.getStateNullable(user) == SharedFolderState.JOINED) {
-                throw new WebApplicationException(Response.status(Status.CONFLICT)
+                return Response.status(Status.CONFLICT)
                         .entity(new Error(Type.CONFLICT, "Member already exists"))
-                        .build());
+                        .build();
             }
             exists = true;
         }

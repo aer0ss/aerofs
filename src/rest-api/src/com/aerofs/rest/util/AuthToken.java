@@ -33,6 +33,6 @@ public class AuthToken
 
     public boolean isAllowedToWrite()
     {
-        return scopes.contains("write");
+        return scopes.contains("files.write");
     }
 }

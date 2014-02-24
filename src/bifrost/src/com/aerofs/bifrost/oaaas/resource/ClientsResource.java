@@ -8,6 +8,7 @@ import com.aerofs.bifrost.oaaas.model.NewClientResponse;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.google.common.collect.Sets;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +26,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -87,7 +86,7 @@ public class ClientsResource
             client.setContactName(ncr.getContactName());
             client.setClientId(clientID);
             client.setSecret(secret);
-            client.setScopes(new HashSet<String>(Arrays.asList("read", "write")));
+            client.setScopes(Sets.newHashSet("files.read", "files.write")); // NB: do we actually use this?
             client.getRedirectUris().add(ncr.getRedirectUri());
 
             resourceServer.getClients().add(client);

@@ -13,6 +13,7 @@ import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.google.common.collect.Sets;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +28,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Resource for handling authorization codes
@@ -68,6 +67,7 @@ public class AuthorizeResource
             String state = formParameters.getFirst("state");
             String responseType = formParameters.getFirst("response_type");
             String nonce = formParameters.getFirst("nonce");
+            String[] scopes = formParameters.getFirst("scope").split(",");
 
             AuthenticatedPrincipal principal;
             try {
@@ -78,9 +78,10 @@ public class AuthorizeResource
                         "proof-of-identity nonce is invalid", state);
             }
 
-            Set<String> scopes = new HashSet<String>(client.getScopes()); // TODO: use scopes from request if present
+            // TODO: make client scopes meaningful and ensure request scopes <= client scopes?
             AuthorizationRequest authorizationRequest = new AuthorizationRequest(responseType,
-                    client, redirectUri, scopes, state, principal);
+                    client, redirectUri, Sets.newHashSet(scopes), state, principal);
+            authorizationRequest.setGrantedScopes(Sets.newHashSet(scopes));
 
             // we do a flush here so that if it fails, it is caught by the catch block below.
             // otherwise, a failure would not cause a socket disconnect instead of a 500 response.

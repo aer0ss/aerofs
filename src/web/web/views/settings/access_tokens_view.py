@@ -2,6 +2,8 @@ import logging
 from pyramid.httpexceptions import HTTPFound, HTTPBadRequest, HTTPInternalServerError
 from pyramid.security import authenticated_userid
 import requests
+import json
+import binascii
 
 from pyramid.view import view_config
 from web import util
@@ -71,9 +73,59 @@ def app_authorization(request):
             "error_description": "\"response_type\" param must be \"code\""
         })
 
+    scope = request.params.getall("scope")
+    if len(scope) != 1:
+        raise RedirectWithParams(location=redirect_uri, state=user_state, params={
+            "error": "invalid_request",
+            "error_description": "\"scope\" query param must be specified exactly once"
+        })
+    raw_scopes = scope[0].split(",")
+
     # get identity nonce so user can request an access code
     sp = util.get_rpc_stub(request)
     nonce = sp.get_mobile_access_code().accessCode
+
+    # get shared folder names, for fined-grained scopes
+    shares = {}
+    for store in sp.get_acl(0).store_acl:
+        shares[binascii.hexlify(store.store_id).lower()] = store.name
+
+    log.info(shares)
+
+    # filter invalid scopes, reorganize in more display-friendly fashion
+    valid_scopes = {
+        "files.read": True,
+        "files.write": True,
+        "user.read": False,
+        "user.write": False,
+        "user.password": False,
+        "acl.read": True,
+        "acl.write": True,
+        "acl.invitations": False,
+    }
+
+    scopes = {}
+    for s in raw_scopes:
+        ss = s.split(":")
+        if len(ss) == 1:
+            if s in valid_scopes:
+                scopes[s] = []
+        elif len(ss) == 2:
+            scope_name = ss[0]
+            scope_qual = ss[1].lower()
+            if scope_name in valid_scopes and valid_scopes[scope_name] and scope_qual in shares:
+                if scope_name not in scopes:
+                    scopes[scope_name] = [scope_qual]
+                elif len(scopes[scope_name]) > 0 and scope_qual not in scopes[scope_name]:
+                    scopes[scope_name].append(scope_qual)
+
+    if len(scopes) == 0:
+        raise RedirectWithParams(location=redirect_uri, state=user_state, params={
+            "error": "invalid_request",
+            "error_description": "\"scope\" query param must contain at least one valid scope."
+        })
+
+    log.info(scopes)
 
     return {
         'client_name': client_name,
@@ -82,6 +134,8 @@ def app_authorization(request):
         'identity_nonce': nonce,
         'redirect_uri': redirect_uri,
         'state': user_state,
+        'scopes': json.dumps(scopes),
+        'shares': json.dumps(shares)
     }
 
 

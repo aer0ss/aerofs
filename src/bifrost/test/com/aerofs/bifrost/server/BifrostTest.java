@@ -135,9 +135,9 @@ public abstract class BifrostTest extends AbstractTest
         Client client = createClient(rs, inj);
 
         createAccessToken(client, inj, RW_TOKEN, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("read", "write"));
+                ImmutableSet.of("files.read", "files.write"));
         createAccessToken(client, inj, RO_TOKEN, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("read"));
+                ImmutableSet.of("files.read"));
         createAccessToken(client, inj, EXPIRED, user, OrganizationID.PRIVATE_ORGANIZATION, 1,
                 ImmutableSet.of("read", "write"));
     }
@@ -151,7 +151,7 @@ public abstract class BifrostTest extends AbstractTest
         rs.setName("Auth server");
         rs.setKey(RESOURCEKEY);
         rs.setSecret(RESOURCESECRET);
-        rs.setScopes(ImmutableSet.of("read", "write"));
+        rs.setScopes(ImmutableSet.of("files.read", "files.write"));
         inj.getInstance(ResourceServerRepository.class).save(rs);
         return rs;
     }
@@ -168,7 +168,7 @@ public abstract class BifrostTest extends AbstractTest
         client.setContactName("Test contact");
         client.setIncludePrincipal(true);
         client.setSkipConsent(false);
-        client.setScopes(ImmutableSet.of("read", "write"));
+        client.setScopes(ImmutableSet.of("files.read", "files.write"));
         client.setResourceServer(rs);
         inj.getInstance(ClientRepository.class).save(client);
 
