@@ -378,9 +378,16 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                     // long to reach the core so the TDB is full of OIDs not actually deleted.
                     //
                     // TODO: schedule full scan?
+                    /**
+                     *  The following is commented out because the defects are overloading Rocklog.
+                     *  While this doesn't affect many users, each affected user tends to flood
+                     *  Rocklog with many defect reports thus overloading Rocklog.
+                     *
+                     *  TODO: investigate the issue and come up with a resolution
                     _rocklog.newDefect("daemon.linker.tdb")
                             .setMessage(ObfuscatingFormatters.obfuscatePath(path) + " " + oa)
                             .send();
+                     */
                     return false;
                 }
             }
