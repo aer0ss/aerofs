@@ -4,5 +4,8 @@ node "rocklog.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    include rocklog
+    # FIXME (AG): really, this should be triks.<domain>
+    class { "rocklog" :
+        triksdn => "triks.aerofs.com"
+    }
 }

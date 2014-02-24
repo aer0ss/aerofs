@@ -1,0 +1,9 @@
+# our cluster name (for both defects and metrics)
+cluster.name: aerofs
+
+# index scaling and replication settings (apply to all indices)
+index.number_of_shards: 5
+index.number_of_replicas: 1
+
+# automatically create an index (otherwise the client has to make an explicit PUT request)
+action.auto_create_index: true
