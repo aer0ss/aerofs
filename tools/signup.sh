@@ -13,6 +13,7 @@ WebHost=$WebHostDefault
 DbHostDefault=unified.syncfs.com
 DbHost=$DbHostDefault
 DbUser=vagrant
+DbKey=~/.vagrant.d/insecure_private_key
 UseridDefault=
 Userid=
 Verbose=0
@@ -85,7 +86,7 @@ SignupAll()
     QueryStr="select t_code, t_to from sp_signup_code order by t_ts"
 
     echo "$QueryStr" \
-        | ssh -l ${DbUser} ${DbHost} mysql -N -u root -h localhost aerofs_sp \
+        | ssh -l ${DbUser} -i {DbKey} ${DbHost} mysql -N -u root -h localhost aerofs_sp \
         | while read code user
         do
         # Arguably this shouldn't work without a 'sudo' but it sure do. What the what?
@@ -99,7 +100,7 @@ GetCode()
     [ $Verbose -eq 0 ] || set -x
     QueryStr="select t_code from sp_signup_code where t_to = '${Userid}' order by t_ts desc limit 1 "
     # Arguably this shouldn't work without a 'sudo' but it sure do. What the what?
-    echo "$QueryStr" | ssh -l ${DbUser} ${DbHost} mysql -N -u root -h localhost aerofs_sp \
+    echo "$QueryStr" | ssh -l ${DbUser} -i ${DbKey} ${DbHost} mysql -N -u root -h localhost aerofs_sp \
              || Die "mysql error getting the invite code"
 }
 
