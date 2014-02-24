@@ -15,6 +15,6 @@ CREATE TABLE IF NOT EXISTS `sp_shared_folder_names` (
   `sn_user_id` VARCHAR(320) NOT NULL,
   `sn_name` VARCHAR(255) CHARSET utf8 NOT NULL,
   PRIMARY KEY (`sn_sid`, `sn_user_id`),
-  CONSTRAINT `sn_sid_foreign` FOREIGN KEY (`sn_sid`) REFERENCES `sp_shared_folder` (`sf_id`),
-  CONSTRAINT `sn_user_foreign` FOREIGN KEY (`sn_user_id`) REFERENCES `sp_user` (`u_id`)
+  CONSTRAINT `sn_sid_foreign` FOREIGN KEY (`sn_sid`) REFERENCES `sp_shared_folder` (`sf_id`) ON DELETE CASCADE,
+  CONSTRAINT `sn_user_foreign` FOREIGN KEY (`sn_user_id`) REFERENCES `sp_user` (`u_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
