@@ -73,9 +73,9 @@ curl --insecure --request POST --data "$license_data" http://localhost:8484/json
 sudo aerofs-bootstrap-taskfile /opt/bootstrap/tasks/apply-config.tasks
 sudo aerofs-bootstrap-taskfile /opt/bootstrap/tasks/set-configuration-initialized.tasks
 
-sudo iptables-restore < /etc/iptables/rules.v4
+sudo cat /etc/iptables/rules.v4 | sudo iptables-restore
 sudo iptables -I INPUT 4 -p tcp -m multiport --dports 21337 -m comment --comment "signup code tools" -j ACCEPT
-sudo iptables-save > /etc/iptables/rules.v4
+sudo iptables-save | sudo tee /etc/iptables/rules.v4
 
 ip addr | grep 'inet 192' | sed -E 's/\s*inet (192(\.[0-9]{1,3}){3}).*/\1/g'
 
