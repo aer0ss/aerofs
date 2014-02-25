@@ -88,6 +88,8 @@ then
     echo "Updating cache for $cache_path"
     rm -rf "$cache_path"
     mkdir -p "$cache_path"
+    # Disable wheels (binary packages); OSX binaries won't run on Linux
+    export PIP_USE_WHEEL=0
     pip install -vvv --no-install --no-deps --ignore-installed --download=$cache_path/ --requirement=$requirements_file > $cache_path/install.log 2>&1
     # Sanity check - ensure all packages wound up with a name-matching source archive.
     if PackagesForRequirementsAreAllPresent "$cache_path" "$requirements_file" verbose ; then
