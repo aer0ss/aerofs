@@ -19,7 +19,7 @@ public abstract class AbstractHdIMC<E extends IEBIMC> implements IEventHandler<E
             handleThrows_(ev, prio);
             ev.okay();
         } catch (Exception e) {
-            l.debug(Util.e(e));
+            l.warn("{} failed: ", getClass(), e);
             ev.error(e);
         }
     }
