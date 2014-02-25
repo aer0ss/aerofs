@@ -32,6 +32,7 @@
     {# There's no good reason to manually change the state of the license once it is FILLED. #}
     {# You'll only confuse the service or break other invariants. #}
     {% if license.state == license.states.FILLED %}
+        <a href="{{ url_for('.license_download', license_id=license.id) }}"><div class="btn btn-primary">Download</div></a>
         <p>No state change allowed for FILLED licenses.</p>
     {% else %}
         <h3>Change request state</h3>

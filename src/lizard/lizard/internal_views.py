@@ -63,6 +63,15 @@ def license_actions(license_id):
     form.state.data = models.License.states.states[license.state]
     return render_template("license_actions.html", form=form, license=license)
 
+@blueprint.route("/licenses/<int:license_id>/download", methods=["GET"])
+def license_download(license_id):
+    license = models.License.query.get_or_404(license_id)
+    r = Response(license.blob,
+                mimetype='application/octet-stream',
+                headers={"Content-Disposition": "attachment; filename=aerofs-private-cloud.license"}
+                )
+    return r
+
 @blueprint.route("/all_customers", methods=["GET"])
 def all_customers():
     customers = models.Customer.query.all()
