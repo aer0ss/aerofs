@@ -40,5 +40,7 @@
     </footer>
 </%block>
 
-## Main body
-${next.body()}
+<div class="row">
+    ## Main body
+    ${next.body()}
+</div>

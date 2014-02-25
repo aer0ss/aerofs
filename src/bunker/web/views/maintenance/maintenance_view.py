@@ -22,6 +22,7 @@ _DEFAULT_NEXT = 'status'
 )
 def login(request):
     return {
+        'is_initialized': is_configuration_initialized_in_private_deployment(),
         'url_param_license': URL_PARAM_LICENSE,
         'url_param_next': URL_PARAM_NEXT,
         'next': get_next_url(request, _DEFAULT_NEXT)

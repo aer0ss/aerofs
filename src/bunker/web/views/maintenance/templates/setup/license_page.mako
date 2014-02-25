@@ -1,6 +1,5 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="setup_common" file="setup_common.mako"/>
-<%namespace name="license_common" file="../license_common.mako"/>
 
 <form method="post" onsubmit="submitForm(); return false;">
     <h3>Set up AeroFS Appliance</h3>
@@ -38,5 +37,43 @@
 </%def>
 
 <%def name="scripts()">
-    ${license_common.submit_scripts('license-file')}
+    <script>
+        ## @param postLicenseUpload a callback function after the license file
+        ##  is uploaded. May be null. Expected signature:
+        ##      postLicenseUpload(onSuccess, onFailure).
+        function submitForm(postLicenseUpload) {
+            ## Go to the next page if no license file is specified. This is
+            ## needed for license_page.mako to skip license upload if
+            ## the license already exists.
+            if (!$('#license-file').val()) {
+                gotoNextPage();
+                return;
+            }
+
+            disableNavButtons();
+
+            ## TODO (WW) use multipart/form-data as in login.mako
+            var file = document.getElementById('license-file').files[0];
+            var reader = new FileReader();
+            reader.onload = function() {
+                submitLicenseFile(this.result, postLicenseUpload);
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function submitLicenseFile(license, postLicenseUpload) {
+            var next;
+            if (postLicenseUpload) {
+                next = function() {
+                    postLicenseUpload(gotoNextPage, enableNavButtons);
+                };
+            } else {
+                next = gotoNextPage;
+            }
+
+            doPost("${request.route_path('json_set_license')}", {
+                'license': license
+            }, next, enableNavButtons);
+        }
+    </script>
 </%def>

@@ -7,6 +7,7 @@
 <%block name="css">
     <style>
         .btn-large {
+            ## keep the height consistent with login.mako
             height: 60px;
             margin-top: 40px;
         }
