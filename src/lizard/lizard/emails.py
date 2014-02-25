@@ -1,13 +1,12 @@
+import json
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from flask import render_template, url_for
+from flask import current_app, render_template, url_for
 
 # TODO: extract these into external configuration
 SENDER_ADDR = "AeroFS <support@aerofs.com>"
-SMTP_RELAY = "sv.aerofs.com"
-
 SUPPORT_ADDR = "business@aerofs.com"
 
 def _make_email_message(email_address, subject, text_body, html_body):
@@ -25,6 +24,11 @@ def _make_email_message(email_address, subject, text_body, html_body):
     # the HTML message, is best and preferred.
     msg.attach(part1)
     msg.attach(part2)
+
+    # Add a header to make Sendgrid not replace links with tracking codes, if using sendgrid
+    if "sendgrid" in current_app.config["MAIL_SERVER"].lower():
+        header = json.dumps({ "filters": {"clicktrack": {"settings": {"enable": 0}}}})
+        msg.add_header("X-SMTPAPI", header)
 
     return msg
 
@@ -79,8 +83,29 @@ def _password_reset_email_for(email_address, link):
     return _make_email_message(email_address, "AeroFS Private Cloud password reset",
             text_body, html_body)
 
+def _get_mail_connection():
+    conn = None
+    host = current_app.config["MAIL_SERVER"]
+    port = current_app.config["MAIL_PORT"]
+    if current_app.config["MAIL_USE_SSL"]:
+        conn = smtplib.SMTP_SSL(host, port)
+    else:
+        conn = smtplib.SMTP(host, port)
+    if current_app.config["MAIL_DEBUG"]:
+        conn.set_debuglevel(True)
+
+    if current_app.config["MAIL_USE_TLS"]:
+        conn.starttls()
+
+    username = current_app.config.get("MAIL_USERNAME", None)
+    password = current_app.config.get("MAIL_PASSWORD", None)
+    if username or password:
+        conn.login(username, password)
+
+    return conn
+
 def _send_email(email_address, msg):
-    s = smtplib.SMTP(SMTP_RELAY)
+    s = _get_mail_connection()
     try:
         s.sendmail(SENDER_ADDR, [email_address], msg.as_string())
     finally:

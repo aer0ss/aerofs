@@ -11,3 +11,13 @@ SEGMENTIO_SECRET_KEY="j85f4itjg9bxc6ogyh49"
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'state', 'database.db')
+
+# Email: in development use svmail
+# In production, prefer sendgrid
+MAIL_SERVER = "sv.aerofs.com"
+MAIL_PORT = 25
+MAIL_USE_TLS = False
+MAIL_USE_SSL = False
+MAIL_DEBUG = False
+MAIL_USERNAME = None
+MAIL_PASSWORD = None
