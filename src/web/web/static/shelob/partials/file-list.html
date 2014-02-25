@@ -1,0 +1,27 @@
+<h1>My Files</h1>
+
+<table ng-show="folders.length || files.length" class="table table-hover">
+  <thead>
+    <tr>
+      <th></th>
+      <th>Name</th>
+      <th>Last Modified</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr ng-repeat="folder in folders | orderBy:'name'" ng-init="folders=[]" class="folder">
+        <td></td>
+        <td><a href="#/{{folder.id}}">{{folder.name}}</a></td>
+        <td>--</td>
+      </tr>
+      <tr ng-repeat="file in files | orderBy:'name'" ng-init="files=[]" class="file">
+        <td></td>
+        <!--
+        The ng-click directive is what's executed; the href is only provided as
+        a no-op so that the link has the proper styling.
+        -->
+        <td><a ng-click="download(file.id)" href="javascript:;">{{file.name}}</a></td>
+        <td>{{file.last_modified}}</td>
+      </tr>
+  </tbody>
+</table>

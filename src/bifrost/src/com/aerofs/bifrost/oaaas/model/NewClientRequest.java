@@ -13,6 +13,7 @@ public class NewClientRequest
     private String contactEmail;
     private String contactName;
     private String redirectUri;
+    private String clientId;
 
     public static NewClientRequest fromMultiValuedFormParameters(MultivaluedMap<String, String> formParameters)
     {
@@ -23,6 +24,7 @@ public class NewClientRequest
         ncr.setContactEmail(formParameters.getFirst("contact_email"));
         ncr.setContactName(formParameters.getFirst("contact_name"));
         ncr.setRedirectUri(formParameters.getFirst("redirect_uri"));
+        ncr.setClientId(formParameters.getFirst("client_id"));
         return ncr;
     }
 
@@ -84,5 +86,15 @@ public class NewClientRequest
     public void setRedirectUri(String redirectUri)
     {
         this.redirectUri = redirectUri;
+    }
+
+    public String getClientId()
+    {
+        return clientId;
+    }
+
+    public void setClientId(String clientId)
+    {
+        this.clientId = clientId;
     }
 }

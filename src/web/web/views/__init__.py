@@ -14,5 +14,6 @@ __all__ = [
     'accept',
     'payment',
     'error',
-    'settings'
+    'settings',
+    'shelob',
 ]

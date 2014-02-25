@@ -73,6 +73,14 @@ function getInternalErrorText() {
         "support@aerofs.com</a> for assistance."
 }
 
+// N.B. this message should match the text in the iOS app. Make sure to keep
+// them in-sync.
+function getClientsOfflineErrorText() {
+    return "All AeroFS clients are offline. At least one AeroFS desktop client " +
+    "or Team Server must be online to process your request."
+}
+
+
 function getErrorTypeNullable(xhr) {
     return xhr.status == 400 ? $.parseJSON(xhr.responseText).type : null;
 }

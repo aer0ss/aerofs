@@ -76,7 +76,7 @@ public class ClientsResource
                 return Response.status(Status.BAD_REQUEST).build();
             }
 
-            String clientID = UUID.randomUUID().toString();
+            String clientID = ncr.getClientId() != null ? ncr.getClientId() : UUID.randomUUID().toString();
             String secret = UUID.randomUUID().toString();
 
             Client client = new Client();
