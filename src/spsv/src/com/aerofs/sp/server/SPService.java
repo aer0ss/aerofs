@@ -15,7 +15,6 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.base.ex.ExNoPerm;
@@ -139,7 +138,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
-import com.unboundid.ldap.sdk.LDAPSearchException;
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
@@ -172,7 +170,6 @@ public class SPService implements ISPService
     private final SharingRulesFactory _sharingRules;
 
     private ACLNotificationPublisher _aclPublisher;
-    private VerkehrAdmin _verkehrAdmin;
     private AuditClient _auditClient;
 
     private SPActiveUserSessionTracker _userTracker;
@@ -205,7 +202,7 @@ public class SPService implements ISPService
     private final Analytics _analytics;
 
     private final IdentitySessionManager _identitySessionManager;
-    private final Authenticator _authenticator;
+    private Authenticator _authenticator;
 
     private final InvitationHelper _invitationHelper;
 
@@ -287,9 +284,7 @@ public class SPService implements ISPService
         assert verkehrPublisher != null;
         assert verkehrAdmin != null;
 
-        _verkehrAdmin = verkehrAdmin;
         _commandDispatcher.setAdminClient(verkehrAdmin);
-
         _aclPublisher = new ACLNotificationPublisher(_factUser, verkehrPublisher);
     }
 
