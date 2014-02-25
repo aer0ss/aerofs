@@ -116,7 +116,7 @@ public class TestUsersResources extends AbstractResourceTest
     @Test
     public void shouldReturn304WhenEtagMatch() throws Exception
     {
-        SID sid = mkShare("Test", user.getString());
+        mkShare("Test", user.getString());
 
         String etag = sharesEtag(user);
         givenReadAccess()
@@ -381,8 +381,6 @@ public class TestUsersResources extends AbstractResourceTest
     @Test
     public void create_shouldFailNoBody() throws Exception
     {
-        User u = createApiUser();
-
         // dupe create attempt:
         givenAdminAccess()
                 .contentType(ContentType.JSON)

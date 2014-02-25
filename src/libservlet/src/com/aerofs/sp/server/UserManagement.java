@@ -56,22 +56,62 @@ public class UserManagement
         }
     }
 
+    // TODO: These two functions are ugly. But they beat the obvious alternatives.
+    // What I really want is,
+    //  deactivateUser( (throwIfNotSelfOrTSOf), caller, target, eraseDevices...
+    //  deactivateUser( (throwIfNotSelfOrAdminOf), caller, target, eraseDevices...
+
     /**
      * Remove the user from the organization, unlink their devices, notify peers of unlink,
      * and update ACLs. All the bookkeeping related to removing one user.
      *
+     * The caller is permitted by the fact they are a TS user.
+     *
      * Note: this MUST be called in a SQL transaction context
      */
-    public static void deactivateUser(
+    public static void deactivateByTS(
             User caller, User target,
             boolean eraseDevices,
             CommandDispatcher dispatcher,
             ACLNotificationPublisher aclPublisher)
             throws Exception
     {
-        target.throwIfNotFound();
-        if (!UserManagement.isSelfOrTSOf(caller, target)) throw new ExNoPerm("");
+        if (!UserManagement.isSelfOrTSOf(caller, target)) throw new ExNoPerm("Insufficient permissions");
+        deactivateUser(caller, target, eraseDevices, dispatcher, aclPublisher);
+    }
 
+    /**
+     * Remove the user from the organization, unlink their devices, notify peers of unlink,
+     * and update ACLs. All the bookkeeping related to removing one user.
+     *
+     * The caller is permitted by the fact they are an admin user.
+     *
+     * Note: this MUST be called in a SQL transaction context
+     */
+    public static void deactivateByAdmin(
+            User caller, User target,
+            boolean eraseDevices,
+            CommandDispatcher dispatcher,
+            ACLNotificationPublisher aclPublisher)
+            throws Exception
+    {
+        if (! (caller.equals(target)|| caller.isAdminOf(target))) throw new ExNoPerm("Insufficient permissions");
+        deactivateUser(caller, target, eraseDevices, dispatcher, aclPublisher);
+    }
+
+    /**
+     * Remove the user from the organization, unlink their devices, notify peers of unlink,
+     * and update ACLs. All the bookkeeping related to removing one user.
+     *
+     * Note: this MUST be called in a SQL transaction context
+     */
+    private static void deactivateUser(
+            User caller, User target,
+            boolean eraseDevices,
+            CommandDispatcher dispatcher,
+            ACLNotificationPublisher aclPublisher)
+            throws Exception
+    {
         // fetch device lists from target user before deactivation...
         Collection<Device> ownDevices = target.getDevices();
         Collection<Device> peerDevices = target.getPeerDevices();

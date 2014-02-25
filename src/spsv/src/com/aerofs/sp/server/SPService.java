@@ -2605,7 +2605,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         Organization org = user.getOrganization();
 
-        UserManagement.deactivateUser(caller, user, eraseDevices, _commandDispatcher, _aclPublisher);
+        UserManagement.deactivateByAdmin(caller, user, eraseDevices, _commandDispatcher, _aclPublisher);
 
         PBStripeData sd = getStripeData(org);
 

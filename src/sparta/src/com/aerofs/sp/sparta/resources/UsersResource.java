@@ -346,7 +346,7 @@ public class UsersResource
         throwIfNotSelfOrTSOf(caller, target);
 
         l.debug("API: user {} attempt delete {}", caller, target);
-        UserManagement.deactivateUser(caller, target, false, _commandDispatcher, _aclPublisher);
+        UserManagement.deactivateByTS(caller, target, false, _commandDispatcher, _aclPublisher);
         l.info("Deleted user {}", target.id().getString());
 
         return Response.noContent()
