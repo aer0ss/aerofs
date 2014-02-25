@@ -33,7 +33,6 @@ class RetraceClient:
             return dict(classname = response[0],
                         methodname = len(response) > 1 and response[1] or None)
         else:
-            self.logger.warning("Unobfuscation error! request:%s - response:%s" % (request, response))
             # Return the obfuscated classname and methodname
             return dict(classname = classname, methodname = methodname)
 
