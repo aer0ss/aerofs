@@ -69,7 +69,7 @@ public class FilesResource
     @Since("0.9")
     @GET
     @Path("/{file_id}/content")
-    @Produces({MediaType.APPLICATION_OCTET_STREAM, "multipart/byteranges", MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, "multipart/byteranges"})
     public Response content(@Auth AuthToken token,
             @PathParam("file_id") RestObject object,
             @HeaderParam(Names.IF_RANGE) String ifRange,
