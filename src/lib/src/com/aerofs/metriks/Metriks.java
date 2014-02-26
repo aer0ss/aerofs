@@ -15,7 +15,6 @@ import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -90,7 +89,6 @@ public final class Metriks implements IMetriks
      * @param os full platform name of the OS on which this client is installed
      * @param triksUrl url (in format http://...) to which metrics should be sent
      */
-    @Inject
     public Metriks(UserID localUser, DID did, String os, URL triksUrl)
     {
         _localUser = localUser;
