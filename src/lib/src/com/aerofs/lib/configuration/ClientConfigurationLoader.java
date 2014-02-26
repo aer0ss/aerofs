@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -126,24 +127,25 @@ public class ClientConfigurationLoader
      * Reads the static configuration file. First look in the classpath then in the current
      * directory.
      *
-     * @return An InputStream corresponding to the static configuration file. null if the static
-     * configuration file could not be found.
+     * @return An InputStream corresponding to the static configuration file.
+     * @throws java.io.FileNotFoundException if the static configuration file could not be found.
      */
-    protected @Nullable
-    InputStream getStaticConfigInputStream()
+    private InputStream getStaticConfigInputStream()
+            throws FileNotFoundException
     {
-        InputStream inputStream = null;
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         // Try context classloader.
         if (classLoader != null) {
-            inputStream = classLoader.getResourceAsStream(STATIC_CONFIG_FILE);
+            InputStream resource = classLoader.getResourceAsStream(STATIC_CONFIG_FILE);
+            if (resource != null) return resource;
         }
-        return inputStream;
+
+        throw new FileNotFoundException(STATIC_CONFIG_FILE);
     }
 
     protected Properties getStaticProperties()
-            throws IOException, ExBadArgs
+            throws ExBadArgs
     {
         Properties staticProperties = new Properties();
 
@@ -152,8 +154,7 @@ public class ClientConfigurationLoader
             InputStream inputStream = getStaticConfigInputStream();
             staticProperties.load(inputStream);
         } catch (IOException e) {
-            LOGGER.warn("Failed to open: " + STATIC_CONFIG_FILE + " with error {}. Assuming no " +
-                    "staticProperties.", e.toString());
+            LOGGER.warn("Failed to open {}. Assuming no staticProperties.", STATIC_CONFIG_FILE, e);
             staticProperties = new Properties();
         }
 
