@@ -311,7 +311,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     @Override
     public synchronized void disconnect(DID did, Exception cause)
     {
-        l.info("d:{} disconnect cause:{}", did, cause);
+        l.info("d:{} disconnect cause:{}", did, cause.getMessage());
         disconnectChannel(did, cause);
     }
 
