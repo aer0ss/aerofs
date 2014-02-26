@@ -491,13 +491,25 @@ public class TestUsersResources extends AbstractResourceTest
     }
 
     @Test
+    public void delete_shouldFailNotFound()
+    {
+        User u = createApiUser();
+        givenWriteAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when()
+                .delete(RESOURCE, u.id().getString());
+    }
+
+    @Test
     public void delete_shouldFailNoPerm()
     {
         User u = createApiUser();
         givenReadAccess()
         .expect()
-                .statusCode(404)
-                .body("type", equalTo("NOT_FOUND"))
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
         .when()
                 .delete(RESOURCE, u.id().getString());
     }
@@ -568,8 +580,8 @@ public class TestUsersResources extends AbstractResourceTest
                 .contentType(ContentType.JSON)
                 .body("\"new password\"")
         .expect()
-                .statusCode(404)
-                .body("type", equalTo("NOT_FOUND"))
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
         .when()
                 .put(RESOURCE + "/password", u.id().getString());
     }
@@ -606,8 +618,8 @@ public class TestUsersResources extends AbstractResourceTest
         User u = createApiUser();
         givenReadAccess()
         .expect()
-                .statusCode(404)
-                .body("type", equalTo("NOT_FOUND"))
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
         .when()
                 .delete(RESOURCE + "/password", u.id().getString());
     }

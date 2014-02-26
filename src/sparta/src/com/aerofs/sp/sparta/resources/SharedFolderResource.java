@@ -22,6 +22,7 @@ import com.aerofs.rest.api.*;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.AuthToken.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
@@ -83,7 +84,7 @@ import static com.google.common.base.Preconditions.checkState;
 @Path(Service.VERSION + "/shares")
 @Produces(MediaType.APPLICATION_JSON)
 @Transactional
-public class SharedFolderResource
+public class SharedFolderResource extends AbstractSpartaResource
 {
     private final User.Factory _factUser;
     private final SharedFolder.Factory _factSF;
@@ -116,6 +117,7 @@ public class SharedFolderResource
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws SQLException, ExNotFound
     {
+        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         throwIfNotAMember(sf, caller, "No such shared folder");
 
@@ -178,6 +180,7 @@ public class SharedFolderResource
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws SQLException, ExNotFound
     {
+        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         throwIfNotAMember(sf, caller, "No such shared folder");
 
@@ -202,6 +205,7 @@ public class SharedFolderResource
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws ExBadArgs, ExNotFound, SQLException
     {
+        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         throwIfNotAMember(sf, caller, "No such shared folder");
         Permissions p = throwIfNotAMember(sf, member, "No such member");
@@ -227,6 +231,7 @@ public class SharedFolderResource
             Member member)
             throws Exception
     {
+        requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         User user;
         try {
@@ -296,6 +301,7 @@ public class SharedFolderResource
             Member member)
             throws Exception
     {
+        requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         throwIfNotAMember(sf, caller, "No such shared folder");
         Permissions oldPermissions = throwIfNotAMember(sf, user, "No such member");
@@ -352,6 +358,7 @@ public class SharedFolderResource
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
             throws Exception
     {
+        requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         throwIfNotAMember(sf, caller, "No such shared folder");
 
@@ -394,6 +401,7 @@ public class SharedFolderResource
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws SQLException, ExNotFound
     {
+        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         throwIfNotAMember(sf, caller, "No such shared folder");
 
@@ -420,6 +428,7 @@ public class SharedFolderResource
             @PathParam("email") User user)
             throws SQLException, ExNotFound
     {
+        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         throwIfNotAMember(sf, caller, "No such shared folder");
 
@@ -442,6 +451,7 @@ public class SharedFolderResource
             PendingMember invitee)
             throws Exception
     {
+        requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         throwIfNotAMember(sf, caller, "No such shared folder");
         User user;
@@ -496,6 +506,7 @@ public class SharedFolderResource
             @PathParam("email") User user)
             throws SQLException, ExNotFound, ExNoPerm, ExBadArgs
     {
+        requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
         User caller = _factUser.create(token.user);
         throwIfNotAMember(sf, caller, "No such shared folder");
         sf.throwIfNoPrivilegeToChangeACL(caller);

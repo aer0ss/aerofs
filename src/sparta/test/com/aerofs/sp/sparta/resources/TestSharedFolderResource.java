@@ -262,7 +262,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         SID sid = mkShare("Test", user.getString());
 
-        givenReadAccess()
+        givenWriteAccess()
                 .contentType(ContentType.JSON)
                 .content(new Member(null, null, null, new String[]{"MANAGE"}),
                         ObjectMapperType.GSON)
@@ -279,7 +279,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         SID sid = mkShare("Test", user.getString());
 
-        givenReadAccess()
+        givenWriteAccess()
                 .header(Names.IF_MATCH, membersEtag(user))
                 .contentType(ContentType.JSON)
                 .content(new Member(null, null, null, new String[]{"MANAGE"}),
@@ -298,7 +298,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         SID sid = mkShare("Test", user.getString());
 
-        givenReadAccess()
+        givenWriteAccess()
                 .header(Names.IF_MATCH, "\"deadbeef\"")
                 .contentType(ContentType.JSON)
                 .content(new Member(null, null, null, new String[]{"MANAGE"}),
@@ -315,7 +315,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         SID sid = mkShare("Test", user.getString());
 
-        givenReadAccess()
+        givenWriteAccess()
                 .contentType(ContentType.JSON)
                 .content(new Member(null, null, null, new String[]{"WRITE"}), ObjectMapperType.GSON)
         .expect()
@@ -526,7 +526,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         SID sid = mkShare("Test", user.getString());
 
-        givenReadAccess()
+        givenWriteAccess()
                 .contentType(ContentType.JSON)
                 .body(new PendingMember(other.getString(), new String[] {"WRITE"}, "Join us"),
                         ObjectMapperType.GSON)
@@ -550,7 +550,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         SID sid = mkShare("Test", user.getString());
         invite(user, sid, UserID.fromInternal("a@b.c"), Permissions.EDITOR);
 
-        givenReadAccess()
+        givenWriteAccess()
                 .contentType(ContentType.JSON)
                 .body(new PendingMember(other.getString(), new String[]{"WRITE", "MANAGE"},
                         "Join us"), ObjectMapperType.GSON)
@@ -607,7 +607,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         SID sid = mkShare("Test", user.getString());
         invite(user, sid, other, Permissions.EDITOR);
 
-        givenReadAccess()
+        givenWriteAccess()
         .expect()
                 .statusCode(204)
         .when().log().everything()
@@ -619,7 +619,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         SID sid = mkShare("Test", user.getString());
 
-        givenReadAccess()
+        givenWriteAccess()
         .expect()
                 .statusCode(404)
         .when().log().everything()
@@ -707,7 +707,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         SID sid = mkShare("Test", user.getString());
 
-        givenReadAccess()
+        givenWriteAccess()
                 .contentType(ContentType.JSON)
                 .body(new Member("a@b.c", null, null, new String[]{"WRITE", "MANAGE"}),
                         ObjectMapperType.GSON)
@@ -777,7 +777,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         SID sid = mkShare("Test", user.getString());
 
-        givenReadAccess()
+        givenWriteAccess()
                 .contentType(ContentType.JSON)
                 .body(new Member(other.getString(), null, null, new String[]{"WRITE"}),
                         ObjectMapperType.GSON)

@@ -20,6 +20,8 @@ import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.lib.FullName;
+import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.AuthToken.Scope;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
@@ -159,13 +161,15 @@ public class AbstractResourceTest extends AbstractBaseTest
         Client client = createClient(rs, inj);
 
         createAccessToken(client, inj, RW_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("read", "write"));
+                ImmutableSet.of("user.read", "acl.read",
+                        "user.write", "acl.write", "acl.invitations"));
         createAccessToken(client, inj, RO_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("read"));
+                ImmutableSet.of("user.read", "acl.read", "acl.invitations"));
         createAccessToken(client, inj, ADMIN, OrganizationID.PRIVATE_ORGANIZATION.toTeamServerUserID(), OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("read", "write", "manage"));
+                ImmutableSet.of("user.read", "acl.read",
+                        "user.write", "user.password", "acl.write", "acl.invitations"));
         createAccessToken(client, inj, OTHER, other, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("read", "write"));
+                ImmutableSet.of("user.read", "acl.read", "user.write", "acl.write", "acl.invitations"));
 
         return inj;
     }
@@ -331,7 +335,9 @@ public class AbstractResourceTest extends AbstractBaseTest
     {
         sqlTrans.begin();
         MessageDigest md = BaseSecUtil.newMessageDigestMD5();
-        UsersResource.listShares(factUser.create(user), md);
+        AuthToken tok = mock(AuthToken.class);
+        when(tok.hasFolderPermission(any(Scope.class), any(SID.class))).thenReturn(true);
+        UsersResource.listShares(factUser.create(user), md, tok);
         String etag = "W/\""
                 + aclEtag(factUser.create(user))
                 + BaseUtil.hexEncode(md.digest())

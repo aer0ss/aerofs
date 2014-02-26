@@ -14,6 +14,7 @@ import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.rest.api.Invitation;
 import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.AuthToken.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
@@ -69,7 +70,7 @@ import static com.google.common.base.Preconditions.checkState;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Transactional
-public class UsersResource
+public class UsersResource extends AbstractSpartaResource
 {
     private static Logger l = LoggerFactory.getLogger(UsersResource.class);
     private final User.Factory _factUser;
@@ -98,13 +99,14 @@ public class UsersResource
             @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
+        requirePermission(Scope.READ_USER, token);
         User caller = _factUser.create(token.user);
         throwIfNotSelfOrTSOf(caller, user);
 
         FullName n = user.getFullName();
         return Response.ok()
                 .entity(new com.aerofs.rest.api.User(user.id().getString(), n._first, n._last,
-                        listShares(user, null), listInvitations(user)))
+                        listShares(user, null, token), listInvitations(user, token)))
                 .build();
     }
 
@@ -120,7 +122,7 @@ public class UsersResource
 
         MessageDigest md = BaseSecUtil.newMessageDigestMD5();
         // TODO: it'd be nice if there was an epoch for pending members to avoid this hashing...
-        ImmutableCollection<com.aerofs.rest.api.SharedFolder> shares = listShares(user, md);
+        ImmutableCollection<com.aerofs.rest.api.SharedFolder> shares = listShares(user, md, token);
         EntityTag etag = new EntityTag(aclEtag(caller) + BaseUtil.hexEncode(md.digest()), true);
         if (ifNoneMatch.isValid() && ifNoneMatch.matches(etag)) {
             return Response.notModified(etag).build();
@@ -139,11 +141,12 @@ public class UsersResource
             @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
+        requirePermission(Scope.MANAGE_INVITATIONS, token);
         User caller = _factUser.create(token.user);
         throwIfNotSelfOrTSOf(caller, user);
 
         return Response.ok()
-                .entity(listInvitations(user))
+                .entity(listInvitations(user, token))
                 .build();
     }
 
@@ -155,6 +158,7 @@ public class UsersResource
             @PathParam("sid") SharedFolder sf)
             throws ExNotFound, SQLException
     {
+        requirePermission(Scope.MANAGE_INVITATIONS, token);
         User caller = _factUser.create(token.user);
         throwIfNotSelfOrTSOf(caller, user);
 
@@ -176,6 +180,7 @@ public class UsersResource
             @Context Version version)
             throws Exception
     {
+        requirePermission(Scope.MANAGE_INVITATIONS, token);
         User caller = _factUser.create(token.user);
         throwIfNotSelfOrTSOf(caller, user);
 
@@ -203,6 +208,7 @@ public class UsersResource
             @PathParam("sid") SharedFolder sf)
             throws Exception
     {
+        requirePermission(Scope.MANAGE_INVITATIONS, token);
         User caller = _factUser.create(token.user);
         throwIfNotSelfOrTSOf(caller, user);
 
@@ -227,16 +233,18 @@ public class UsersResource
     }
 
     static ImmutableCollection<com.aerofs.rest.api.SharedFolder> listShares(User user,
-            MessageDigest md)
+            MessageDigest md, AuthToken token)
             throws ExNotFound, SQLException
     {
         ImmutableList.Builder<com.aerofs.rest.api.SharedFolder> bd = ImmutableList.builder();
         for (SharedFolder sf : user.getSharedFolders()) {
             // filter out root store
             if (sf.id().isUserRoot()) continue;
-            bd.add(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(), sf.getName(user),
+            com.aerofs.rest.api.SharedFolder s = new com.aerofs.rest.api.SharedFolder(
+                    sf.id().toStringFormal(), sf.getName(user),
                     SharedFolderResource.listMembers(sf),
-                    SharedFolderResource.listPendingMembers(sf, md)));
+                    SharedFolderResource.listPendingMembers(sf, md));
+            if (token.hasFolderPermission(Scope.READ_ACL, sf.id())) bd.add(s);
         }
         return bd.build();
     }
@@ -249,12 +257,14 @@ public class UsersResource
                 sf.getPermissionsNullable(invitee).toArray());
     }
 
-    static ImmutableCollection<Invitation> listInvitations(User user)
+    static ImmutableCollection<Invitation> listInvitations(User user, AuthToken token)
             throws ExNotFound, SQLException
     {
         ImmutableList.Builder<com.aerofs.rest.api.Invitation> bd = ImmutableList.builder();
-        for (PendingSharedFolder p : user.getPendingSharedFolders()) {
-            bd.add(invitation(p._sf, user));
+        if (token.hasPermission(Scope.MANAGE_INVITATIONS)) {
+            for (PendingSharedFolder p : user.getPendingSharedFolders()) {
+                bd.add(invitation(p._sf, user));
+            }
         }
         return bd.build();
     }
@@ -266,6 +276,7 @@ public class UsersResource
             com.aerofs.rest.api.User attrs,
             @Context Version version) throws Exception
     {
+        requirePermission(Scope.WRITE_USER, auth);
         checkArgument(attrs.email != null, "Request body missing required field: email");
         checkArgument(attrs.firstName != null, "Request body missing required field: first_name");
         checkArgument(attrs.lastName != null, "Request body missing required field: last_name");
@@ -300,7 +311,8 @@ public class UsersResource
                 + "/users/" + newUser.id().getString();
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.User(newUser.id().getString(), attrs.firstName,
-                        attrs.lastName, listShares(newUser, null), listInvitations(newUser)))
+                        attrs.lastName, listShares(newUser, null, auth),
+                        listInvitations(newUser, auth)))
                 .build();
     }
 
@@ -312,7 +324,7 @@ public class UsersResource
             @PathParam("email")User target,
             com.aerofs.rest.api.User attrs) throws Exception
     {
-        if (!target.exists()) throw new ExNotFound("No such user");
+        requirePermission(Scope.WRITE_USER, auth);
         checkArgument(attrs.firstName != null, "Request body missing required first_name");
         checkArgument(attrs.lastName != null, "Request body missing required last_name");
 
@@ -331,7 +343,7 @@ public class UsersResource
         l.warn("Updated user {}", attrs);
         return Response.ok()
                 .entity(new com.aerofs.rest.api.User(target.id().getString(), attrs.firstName,
-                        attrs.lastName, listShares(target, null), listInvitations(target)))
+                        attrs.lastName, listShares(target, null, auth), listInvitations(target, auth)))
                 .build();
     }
 
@@ -343,8 +355,7 @@ public class UsersResource
             @PathParam("email")User target)
             throws Exception
     {
-        if (!target.exists()) throw new ExNotFound("No such user");
-
+        requirePermission(Scope.WRITE_USER, auth);
         User caller = _factUser.create(auth.user);
         throwIfNotSelfOrTSOf(caller, target);
 
@@ -364,6 +375,7 @@ public class UsersResource
             @PathParam("email")User target,
             String newCredential) throws Exception
     {
+        requirePermission(Scope.MANAGE_PASSWORD, auth);
         checkArgument(!Strings.isNullOrEmpty(newCredential), "Cannot set an empty password value");
 
         User caller = _factUser.create(auth.user);
@@ -383,6 +395,7 @@ public class UsersResource
             @PathParam("email")User target)
             throws Exception
     {
+        requirePermission(Scope.MANAGE_PASSWORD, auth);
         User caller = _factUser.create(auth.user);
         throwIfNotSelfOrTSOf(caller, target);
 
