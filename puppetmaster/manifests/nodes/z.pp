@@ -50,6 +50,9 @@ node "z.arrowfs.org" inherits default {
     "web url http://www.aerofs.com",
     "sv url https://sv.aerofs.com/sv_beta/sv",
     "sp url-internalcert https://sp.aerofs.com/sp",
+    "api-1 port api.aerofs.com 443",
+    "api-2 port api.aerofs.com 4433",
+    "api-3 port api.aerofs.com 8084",
     # SSS is unstable right now and takes a long time to respond to a simple
     # GET request. Experiments show that it takes 2-8 seconds for the probe
     # to finish most of the times, hence the timeout is set to 10 seconds.

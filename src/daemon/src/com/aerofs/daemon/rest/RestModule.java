@@ -37,7 +37,7 @@ public class RestModule extends AbstractModule
             verifier = new TokenVerifier(
                     getStringProperty("daemon.oauth.id", "oauth-havre"),
                     getStringProperty("daemon.oauth.secret", "i-am-not-a-restful-secret"),
-                    URI.create(getStringProperty("daemon.oauth.url", "https://unified.syncfs.com:4433/auth/tokeninfo")),
+                    URI.create(getStringProperty("daemon.oauth.url", "https://api.aerofs.com:4433/auth/tokeninfo")),
                     timer,
                     cacert,
                     ChannelFactories.getClientChannelFactory()

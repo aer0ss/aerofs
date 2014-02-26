@@ -19,7 +19,7 @@ public class RestTunnelClient extends TunnelClient
     public RestTunnelClient(CfgLocalUser user, CfgLocalDID did, Timer timer,
             ClientSSLEngineFactory sslEngineFactory, final RestService service)
     {
-        super(getStringProperty("api.tunnel.host", "aerofs.com"),
+        super(getStringProperty("api.tunnel.host", "api.aerofs.com"),
                 getIntegerProperty("api.tunnel.port", 8084), user.get(), did.get(),
                 getClientChannelFactory(), sslEngineFactory,
                 new ChannelPipelineFactory()
