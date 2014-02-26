@@ -1,0 +1,25 @@
+{
+    "template": "defect*",
+    "mappings": {
+        "defect": {
+            "properties" : {
+                "name" : {
+                    "type" : "string",
+                    "index" : "not_analyzed"
+                },
+                "os_name" : {
+                    "type" : "string",
+                    "index" : "not_analyzed"
+                },
+                "os_family" : {
+                    "type" : "string",
+                    "index" : "not_analyzed"
+                },
+                "user_id" : {
+                    "type" : "string",
+                    "index" : "not_analyzed"
+                }
+            }
+        }
+    }
+}

@@ -59,6 +59,24 @@ class rocklog::elasticsearch {
         notify  => Service["elasticsearch"]
     }
 
+    file { "/etc/elasticsearch/templates":
+        ensure  => directory,
+        owner   => "elasticsearch",
+        group   => "elasticsearch",
+        mode    => "0444",
+        require => Package["elasticsearch"]
+    }
+
+    file { "/etc/elasticsearch/templates/defect.json":
+        ensure  => present,
+        owner   => "elasticsearch",
+        group   => "elasticsearch",
+        mode    => "0444",
+        source  => "puppet:///modules/rocklog/defect.json",
+        require => File["/etc/elasticsearch/templates"],
+        notify  => Service["elasticsearch"]
+    }
+
     #
     # elasticsearch old-index cleaner
     #
