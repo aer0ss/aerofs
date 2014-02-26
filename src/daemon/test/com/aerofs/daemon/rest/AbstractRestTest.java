@@ -12,7 +12,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.daemon.core.CoreEventDispatcher;
-import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
@@ -367,7 +366,7 @@ public class AbstractRestTest extends AbstractTest
                 bind(OutboundEventLogger.class).toInstance(oel);
                 bind(ImmigrantCreator.class).toInstance(ic);
                 bind(VersionUpdater.class).toInstance(vu);
-                bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));
+                bind(IIMCExecutor.class).toInstance(imce);
             }
         });
 

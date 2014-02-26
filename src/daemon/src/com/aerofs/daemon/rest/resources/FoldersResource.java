@@ -5,8 +5,6 @@
 package com.aerofs.daemon.rest.resources;
 
 import com.aerofs.base.Version;
-import com.aerofs.daemon.core.CoreIMCExecutor;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.daemon.rest.event.EIDeleteObject;
 import com.aerofs.daemon.rest.event.EIMoveObject;
@@ -15,13 +13,12 @@ import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.rest.util.AuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.rest.api.Folder;
+import com.aerofs.rest.util.AuthToken.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.aerofs.restless.util.EntityTagSet;
-import com.google.common.base.Preconditions;
 import com.google.common.net.HttpHeaders;
-import com.google.inject.Inject;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -38,24 +35,19 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 @Path(Service.VERSION + "/folders")
 @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_OCTET_STREAM})
-public class FoldersResource
+public class FoldersResource extends AbstractResource
 {
-    private final IIMCExecutor _imce;
-
-    @Inject
-    public FoldersResource(CoreIMCExecutor imce)
-    {
-        _imce = imce.imce();
-    }
-
     @Since("0.9")
     @GET
     @Path("/{folder_id}")
     public Response metadata(@Auth AuthToken token,
             @PathParam("folder_id") RestObject object)
     {
+        requirePermissionOnFolder(Scope.READ_FILES, token, object);
         return new EIObjectInfo(_imce, token, object, Type.FOLDER).execute();
     }
 
@@ -66,8 +58,9 @@ public class FoldersResource
             @Context Version version,
             Folder folder) throws IOException
     {
-        Preconditions.checkArgument(folder.parent != null);
-        Preconditions.checkArgument(folder.name != null);
+        checkArgument(folder.parent != null);
+        checkArgument(folder.name != null);
+        requirePermissionOnFolder(Scope.WRITE_FILES, token, new RestObject(folder.parent));
         return new EICreateObject(_imce, token, version, folder.parent, folder.name, true)
                 .execute();
     }
@@ -81,8 +74,10 @@ public class FoldersResource
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             Folder folder) throws IOException
     {
-        Preconditions.checkArgument(folder.parent != null);
-        Preconditions.checkArgument(folder.name != null);
+        checkArgument(folder.parent != null);
+        checkArgument(folder.name != null);
+        requirePermissionOnFolder(Scope.WRITE_FILES, token, object);
+        requirePermissionOnFolder(Scope.WRITE_FILES, token, new RestObject(folder.parent));
         return new EIMoveObject(_imce, token, object, folder.parent, folder.name, ifMatch)
                 .execute();
     }
@@ -96,6 +91,7 @@ public class FoldersResource
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
             throws IOException
     {
+        requirePermissionOnFolder(Scope.WRITE_FILES, token, object);
         return new EIDeleteObject(_imce, token, object, ifMatch).execute();
     }
 }

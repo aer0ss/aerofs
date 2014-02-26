@@ -6,15 +6,13 @@ package com.aerofs.daemon.rest.resources;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.CoreIMCExecutor;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.rest.util.AuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
+import com.aerofs.rest.util.AuthToken.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
-import com.google.inject.Inject;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -25,20 +23,14 @@ import javax.ws.rs.core.Response;
 
 @Path(Service.VERSION + "/children")
 @Produces(MediaType.APPLICATION_JSON)
-public class ChildrenResource
+public class ChildrenResource extends AbstractResource
 {
-    private final IIMCExecutor _imce;
-
-    @Inject
-    public ChildrenResource(CoreIMCExecutor imce)
-    {
-        _imce = imce.imce();
-    }
-
     @Since("0.8")
     @GET
     public Response listUserRoot(@Auth AuthToken token)
     {
+        // TODO: when files.read is restricted, list the accessible shared folders
+        requirePermissionOnFolder(Scope.READ_FILES, token, SID.rootSID(token.user));
         return new EIListChildren(_imce, token, new RestObject(SID.rootSID(token.user), OID.ROOT))
                 .execute();
     }
@@ -49,6 +41,7 @@ public class ChildrenResource
     public Response list(@Auth AuthToken token,
             @PathParam("folder_id") RestObject object)
     {
+        requirePermissionOnFolder(Scope.READ_FILES, token, object);
         return new EIListChildren(_imce, token, object).execute();
     }
 }

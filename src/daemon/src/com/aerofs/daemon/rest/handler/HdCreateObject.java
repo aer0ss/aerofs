@@ -2,7 +2,6 @@ package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -38,7 +37,6 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
     @Override
     protected void handleThrows_(EICreateObject ev) throws Exception
     {
-        if (!ev._token.isAllowedToWrite()) throw new ExNoPerm();
         OA oaParent = _access.resolveWithPermissions_(ev._parent, ev.user(), Permissions.EDITOR);
 
         Trans t = _tm.begin_();

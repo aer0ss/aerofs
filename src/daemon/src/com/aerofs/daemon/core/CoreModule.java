@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.SIDMap;
+import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.ACLDatabase;
 import com.aerofs.daemon.lib.db.ActivityLogDatabase;
@@ -130,10 +131,10 @@ public class CoreModule extends AbstractModule
         DaemonLaunchTasks.bindTasks(binder());
     }
 
-    @Provides
-    public CoreIMCExecutor provideCoreIMCExecutor(CoreQueue q)
+    @Provides @Singleton
+    public IIMCExecutor provideIIMCExecutor(CoreQueue q)
     {
-        return new CoreIMCExecutor(new QueueBasedIMCExecutor(q));
+        return new QueueBasedIMCExecutor(q);
     }
 
     @Provides

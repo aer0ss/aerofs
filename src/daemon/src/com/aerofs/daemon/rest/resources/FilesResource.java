@@ -5,8 +5,6 @@
 package com.aerofs.daemon.rest.resources;
 
 import com.aerofs.base.Version;
-import com.aerofs.daemon.core.CoreIMCExecutor;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.daemon.rest.event.EIDeleteObject;
 import com.aerofs.daemon.rest.event.EIFileContent;
@@ -15,17 +13,16 @@ import com.aerofs.daemon.rest.event.EIMoveObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
+import com.aerofs.rest.api.*;
 import com.aerofs.rest.util.AuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.util.UploadID;
-import com.aerofs.rest.api.File;
+import com.aerofs.rest.util.AuthToken.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.aerofs.restless.util.ContentRange;
 import com.aerofs.restless.util.EntityTagSet;
-import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
 import javax.ws.rs.Consumes;
@@ -45,24 +42,19 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 @Path(Service.VERSION + "/files")
 @Produces(MediaType.APPLICATION_JSON)
-public class FilesResource
+public class FilesResource extends AbstractResource
 {
-    private final IIMCExecutor _imce;
-
-    @Inject
-    public FilesResource(CoreIMCExecutor imce)
-    {
-        _imce = imce.imce();
-    }
-
     @Since("0.9")
     @GET
     @Path("/{file_id}")
     public Response metadata(@Auth AuthToken token,
             @PathParam("file_id") RestObject object)
     {
+        requirePermissionOnFolder(Scope.READ_FILES, token, object);
         return new EIObjectInfo(_imce, token, object, Type.FILE).execute();
     }
 
@@ -76,6 +68,7 @@ public class FilesResource
             @HeaderParam(Names.RANGE) String range,
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
     {
+        requirePermissionOnFolder(Scope.READ_FILES, token, object);
         EntityTag etIfRange = EntityTagUtil.parse(ifRange);
         return new EIFileContent(_imce, token, object, etIfRange, range, ifNoneMatch).execute();
     }
@@ -87,8 +80,9 @@ public class FilesResource
             @Context Version version,
             File file) throws IOException
     {
-        Preconditions.checkArgument(file.parent != null);
-        Preconditions.checkArgument(file.name != null);
+        checkArgument(file.parent != null);
+        checkArgument(file.name != null);
+        requirePermissionOnFolder(Scope.WRITE_FILES, token, new RestObject(file.parent));
         return new EICreateObject(_imce, token, version, file.parent, file.name, false).execute();
     }
 
@@ -103,6 +97,7 @@ public class FilesResource
             @HeaderParam("Upload-ID") @DefaultValue("") UploadID ulid,
             InputStream body) throws IOException
     {
+        requirePermissionOnFolder(Scope.WRITE_FILES, token, object);
         try {
             return new EIFileUpload(_imce, token, object, ifMatch, ulid, range, body).execute();
         } finally {
@@ -119,8 +114,10 @@ public class FilesResource
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             File file) throws IOException
     {
-        Preconditions.checkArgument(file.parent != null);
-        Preconditions.checkArgument(file.name != null);
+        checkArgument(file.parent != null);
+        checkArgument(file.name != null);
+        requirePermissionOnFolder(Scope.WRITE_FILES, token, object);
+        requirePermissionOnFolder(Scope.WRITE_FILES, token, new RestObject(file.parent));
         return new EIMoveObject(_imce, token, object, file.parent, file.name, ifMatch).execute();
     }
 
@@ -133,6 +130,7 @@ public class FilesResource
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
             throws IOException
     {
+        requirePermissionOnFolder(Scope.WRITE_FILES, token, object);
         return new EIDeleteObject(_imce, token, object, ifMatch).execute();
     }
 }

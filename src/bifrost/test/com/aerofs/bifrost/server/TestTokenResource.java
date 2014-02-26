@@ -7,8 +7,6 @@ package com.aerofs.bifrost.server;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.google.common.collect.Sets;

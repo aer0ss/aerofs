@@ -16,7 +16,6 @@ import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.metriks.IMetriks;
-import com.aerofs.metriks.Metriks;
 import com.aerofs.proto.Diagnostics.TransportTransfer;
 import com.aerofs.proto.Diagnostics.TransportTransferDiagnostics;
 import com.google.inject.Inject;

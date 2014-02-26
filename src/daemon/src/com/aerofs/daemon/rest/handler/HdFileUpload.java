@@ -132,7 +132,6 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     private OA checkSanity_(EIFileUpload ev)
             throws ExNotFound, ExNoPerm, SQLException
     {
-        if (!ev._token.isAllowedToWrite()) throw new ExNoPerm();
         OA oa = _access.resolveWithPermissions_(ev._object, ev.user(), Permissions.EDITOR);
 
         if (oa.isExpelled() || !oa.isFile()) throw new ExNotFound();
