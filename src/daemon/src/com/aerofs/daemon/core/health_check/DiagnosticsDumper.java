@@ -51,7 +51,7 @@ final class DiagnosticsDumper implements Runnable
     private final IMetriks _metriks;
 
     @Inject
-    DiagnosticsDumper(CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl, Metriks metriks)
+    DiagnosticsDumper(CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl, IMetriks metriks)
     {
         _q = q;
         _dp = dp;
