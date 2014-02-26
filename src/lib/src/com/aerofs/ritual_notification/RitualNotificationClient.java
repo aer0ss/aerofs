@@ -6,6 +6,7 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.net.AbstractNettyReconnectingClient;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
 import com.aerofs.proto.RitualNotifications.PBNotification;
@@ -104,7 +105,7 @@ public class RitualNotificationClient extends AbstractNettyReconnectingClient
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
         {
-            l.info("ex: ", e.getCause());
+            l.info("ex:", LogUtil.suppress(e.getCause(), java.net.SocketException.class));
             ctx.getChannel().close();
         }
 
