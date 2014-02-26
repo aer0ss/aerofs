@@ -76,8 +76,40 @@
 
     <%block name="tracking_codes">
         %if not is_private_deployment(request.registry.settings):
-            ${segment_io.code(request.registry.settings['segmentio.api_key'])}
+            ## because google analytics and pardot are critical to marketing, do not depend on
+            ## segment.io. In general, we should use segment.io for non "critical" flows
+            ## and when we're trying to test out new technologies
+
+            ## this is google analytics code
+            <script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-24554389-1', 'aerofs.com');
+              ga('send', 'pageview');
+
+            </script>
+
+            ## this is pardot code
+            <script>
+                piAId = '33882';
+                piCId = '1470';
+
+                (function() {
+                    function async_load(){
+                        var s = document.createElement('script'); s.type = 'text/javascript';
+                        s.src = ('https:' == document.location.protocol ? 'https://pi' : 'http://cdn') + '.pardot.com/pd.js';
+                        var c = document.getElementsByTagName('script')[0]; c.parentNode.insertBefore(s, c);
+                    }
+                    if(window.attachEvent) { window.attachEvent('onload', async_load); }
+                    else { window.addEventListener('load', async_load, false); }
+                })();
+            </script>
+            
             <script src="//cdn.optimizely.com/js/29642448.js"></script>
+            ${segment_io.code(request.registry.settings['segmentio.api_key'])}
         % else:
             ## Set the global analytics object to `false` so that we can do `if (analytics)` to check if mixpanel is enabled
             <script>window.analytics = false;</script>

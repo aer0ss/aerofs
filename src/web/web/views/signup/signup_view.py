@@ -32,7 +32,6 @@ URL_PARAM_TITLE = 'title'
 URL_PARAM_COMPANY = 'company'
 URL_PARAM_COMPANY_SIZE = 'company_size'
 URL_PARAM_PHONE = 'phone'
-URL_PARAM_COUNTRY = 'country'
 
 @view_config(
     route_name='signup',
@@ -65,7 +64,6 @@ def signup(request):
         'url_param_company': URL_PARAM_COMPANY,
         'url_param_company_size': URL_PARAM_COMPANY_SIZE,
         'url_param_phone': URL_PARAM_PHONE,
-        'url_param_country': URL_PARAM_COUNTRY,
         'url_param_password': URL_PARAM_PASSWORD,
         'url_param_remember_me': URL_PARAM_REMEMBER_ME,
         'url_param_next': URL_PARAM_NEXT,
@@ -98,10 +96,14 @@ def signup_code_not_found(request):
 def json_signup(request):
     _ = request.translate
 
-    code = request.params[URL_PARAM_SIGNUP_CODE]
-    email_address = request.params[URL_PARAM_EMAIL]
-    first_name = request.params[URL_PARAM_FIRST_NAME]
-    last_name = request.params[URL_PARAM_LAST_NAME]
+    code = markupsafe.escape(request.params[URL_PARAM_SIGNUP_CODE])
+    email_address = markupsafe.escape(request.params[URL_PARAM_EMAIL])
+    first_name = markupsafe.escape(request.params[URL_PARAM_FIRST_NAME])
+    last_name = markupsafe.escape(request.params[URL_PARAM_LAST_NAME])
+    company = markupsafe.escape(request.params[URL_PARAM_COMPANY])
+    job_title = markupsafe.escape(request.params[URL_PARAM_TITLE]),
+    employees = markupsafe.escape(request.params[URL_PARAM_COMPANY_SIZE])
+    phone = markupsafe.escape(request.params[URL_PARAM_PHONE])
     password = request.params[URL_PARAM_PASSWORD].encode("utf-8")
 
     (valid_password, invalid_message) = is_valid_password(request, password)
@@ -112,37 +114,14 @@ def json_signup(request):
         sp = get_rpc_stub(request)
         sp.sign_up_with_code(code, password, first_name, last_name)
 
-        # disable async because uWSGI seems to kill the analytics thread as soon as the process returns
-        # instead of allowing it to finish
-
-        if not is_private_deployment(request.registry.settings):
-            analytics.init(request.registry.settings['segmentio.secret_key'], flush_at=1, async=False)
-
-            context = {
-                'providers': {
-                    'Salesforce': 'true'
-                },
-                'Salesforce': {
-                    'object': 'Lead',
-                    'lookup': { 'email': markupsafe.escape(request.params['email']) }
-                }
-            }
-            analytics.identify(request.params[URL_PARAM_EMAIL],
-                {
-                    'email': markupsafe.escape(request.params[URL_PARAM_EMAIL]),
-                    'firstName': markupsafe.escape(request.params[URL_PARAM_FIRST_NAME]),
-                    'lastName': markupsafe.escape(request.params[URL_PARAM_LAST_NAME]),
-                    'company': markupsafe.escape(request.params[URL_PARAM_COMPANY]),
-                    'title': markupsafe.escape(request.params[URL_PARAM_TITLE]),
-                    'employees': markupsafe.escape(request.params[URL_PARAM_COMPANY_SIZE]),
-                    'phone': markupsafe.escape(request.params[URL_PARAM_PHONE]),
-                },
-                context=context
-            )
-            analytics.track(markupsafe.escape(request.params[URL_PARAM_EMAIL]), "Signed Up For Hybrid Cloud");
-
         return {
             'email_address': email_address,
+            'firstName': first_name,
+            'lastName': last_name,
+            'company': company,
+            'title': job_title,
+            'employees': employees,
+            'phone': phone
         }
     except ExceptionReply as e:
         if e.get_type() == common.PBException.BAD_CREDENTIAL:

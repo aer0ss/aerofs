@@ -30,25 +30,29 @@
                     <input type="hidden" name="${url_param_email}" value="${email_address}"/>
                     <input type="hidden" name="${url_param_signup_code}" value="${code}"/>
                     <label for="inputFirstName">First name: *</label>
-                    <input class="span6" id="inputFirstName" type="text" name="${url_param_first_name}">
+                    <input class="span6" id="inputFirstName" type="text" name="${url_param_first_name}" required>
                     <label for="inputLastName">Last name: *</label>
-                    <input class="span6" id="inputLastName" type="text" name="${url_param_last_name}">
+                    <input class="span6" id="inputLastName" type="text" name="${url_param_last_name}" required>
 
                     <div
                     %if is_private_deployment:
                         class="hidden"
                     %endif
                     >
-                        <label for="inputTitle">Job Title:</label>
-                        <input class="span6" id="inputTitle" type="text" name="${url_param_title}">
+                        <label for="inputPhone">Phone: *</label>
+                        <input class="span6" id="inputPhone" type="text" name="${url_param_phone}"
+                        %if not is_private_deployment:
+                        required
+                        %endif
+                        >
+
                         <label for="inputCompany">Company:</label>
                         <input class="span6" id="inputCompany" type="text" name="${url_param_company}">
-                        <label for="inputCompanySize">Size:</label>
+                        <label for="inputTitle">Job Title:</label>
+                        <input class="span6" id="inputTitle" type="text" name="${url_param_title}">
+                        <label for="inputCompanySize">Company Size:</label>
                         <input class="span6" id="inputCompanySize" type="text" name="${url_param_company_size}">
-                        <label for="inputCountry">Country:</label>
-                        <input class="span6" id="inputCountry" type="text" name="${url_param_country}">
-                        <label for="inputPhone">Phone:</label>
-                        <input class="span6" id="inputPhone" type="text" name="${url_param_phone}">
+
                     </div>
 
                     <label for="inputPasswd">Create password: *</label>
@@ -67,7 +71,11 @@
 </div>
 
 <%block name="scripts">
+    <script src="${request.static_path('web:static/js/jquery.validate.min.js')}"></script>
+
     <script type="text/javascript">
+        $("#signupForm").validate({ errorClass: 'error'});
+
         $(document).ready(function() {
             ## set focus on the first name field
             $("#inputFirstName").focus();
@@ -76,6 +84,7 @@
             ## http://stackoverflow.com/questions/5004233/jquery-ajax-post-example
             var request;
             $("#signupForm").submit(function(event) {
+                if (!$("#signupForm").valid()) return false;
                 ## abort pending request
                 if (request) request.abort();
 
@@ -99,12 +108,41 @@
                         ## automatically sign in once the AJAX call succeeds
 
                         if (analytics) {
-                            analytics.identify(response['email_address']);
 
-                            ## Wait 300 ms for the Analytics call to succeed and then proceed to sign in.
-                            ## This is the delay they recommend in their track_forms API.
-                            ## See: https://mixpanel.com/docs/integration-libraries/javascript-full-api#track_forms
-                            setTimeout(sign_in, 300);
+                            ## post to Pardot using hidden iframe tag so that the user is properly cookied
+                            ## this technique is recommended by pardot @ http://www.pardot.com/faqs/forms/form-handlers/
+                            $('body').append("<iframe id=\"pdiframe\" src=\"https://go.pardot.com/l/32882/2014-02-26/5m2y?first_name=" + encodeURIComponent(response['firstName']) +
+                                                "&last_name=" + encodeURIComponent(response['lastName']) +
+                                                "&email=" + encodeURIComponent(response['email_address']) +
+                                                "&company=" + encodeURIComponent(response['company']) +
+                                                "&company_size=" + encodeURIComponent(response['employees']) +
+                                                "&phone=" + encodeURIComponent(response['phone'])
+                                                +"\" width='1' height='1'></iframe>;");
+
+                            ## need to wait for pardot to finish loading
+                            ## before proceeding with signup. We have a lot of marketing dependencies on pardot
+                            ## so need to make sure the iframe fully loads and the data is passed into pardot before going on.
+
+                            $('iframe#pdiframe').load(function() {
+
+                                ## Wait 300 ms for the Analytics call to succeed and then proceed to sign in.
+                                ## This is the delay they recommend in their track_forms API.
+                                ## See: https://mixpanel.com/docs/integration-libraries/javascript-full-api#track_forms
+
+                                analytics.identify(response['email_address'],
+                                    {
+                                        'email': response['email_address'],
+                                        'firstName': response['firstName'],
+                                        'lastName': response['lastName'],
+                                        'company': response['company'],
+                                        'employees': response['employees'],
+                                        'phone': response['phone']
+
+                                    });
+                                analytics.track('Signed Up for AeroFS Hybrid Cloud');
+                                setTimeout(sign_in, 300);
+                            });
+
                         } else {
                             ## no analytics, proceed to sig-in directly
                             sign_in();
