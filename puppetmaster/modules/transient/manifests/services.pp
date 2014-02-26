@@ -16,7 +16,8 @@ class transient::services {
     # STUN
     # --------------
 
-    include stun
+    # Disable until we decide what to do with jingle.
+    #include stun
 
     # --------------
     # Devman
@@ -118,10 +119,11 @@ class transient::services {
         require => Package["aerofs-sanity"],
     }
 
-    file {"/opt/sanity/probes/restund.sh":
-        source => "puppet:///modules/transient/probes/restund.sh",
-        require => Package["aerofs-sanity"],
-    }
+    # Disable until we decide what to do with jingle.
+    #file {"/opt/sanity/probes/restund.sh":
+    #    source => "puppet:///modules/transient/probes/restund.sh",
+    #    require => Package["aerofs-sanity"],
+    #}
 
     file {"/opt/sanity/probes/tomcat6.sh":
         source => "puppet:///modules/transient/probes/tomcat6.sh",
