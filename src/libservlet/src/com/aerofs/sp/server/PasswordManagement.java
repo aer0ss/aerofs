@@ -2,6 +2,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExCannotResetPassword;
+import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
@@ -13,9 +14,9 @@ import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.Factory;
-import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
+import javax.inject.Inject;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -33,6 +34,7 @@ public class PasswordManagement
 
     private static final Logger l = Loggers.getLogger(PasswordManagement.class);
 
+    @Inject
     public PasswordManagement(SPDatabase db, Factory factUser,
             PasswordResetEmailer passwordResetEmailer, Authenticator authenticator)
     {
@@ -42,6 +44,9 @@ public class PasswordManagement
         _authenticator = authenticator;
     }
 
+    /**
+     * Generate a password reset token and email the user the reset token.
+     */
     public void sendPasswordResetEmail(User user) throws Exception
     {
         if (!user.exists()) {
@@ -64,34 +69,101 @@ public class PasswordManagement
     /**
      * Reset the password given a password-reset token and new cleartext credentials.
      */
-    public User resetPassword(String passwordResetToken, ByteString newCredentials)
+    public User resetPassword(String passwordResetToken, byte[] newCredentials)
             throws SQLException, ExNotFound, IOException, MessagingException,
-            GeneralSecurityException
+            GeneralSecurityException, ExExternalServiceUnavailable, ExCannotResetPassword
     {
         UserID userId = _db.resolvePasswordResetToken(passwordResetToken);
-        User user = _factUser.create(userId);
-        user.throwIfNotFound();
+        User user = getUserAndThrowIfNoPassword(userId);
         _db.updateUserCredentials(user.id(),
                 LocalCredential.hashScrypted(
-                        LocalCredential.deriveKeyForUser(userId, newCredentials.toByteArray())));
+                        LocalCredential.deriveKeyForUser(userId, newCredentials)));
         _db.deletePasswordResetToken(passwordResetToken);
-        l.info("Reset " + userId + "'s Password");
+
+        l.info("Reset {}'s Password", userId.getString());
         _passwordResetEmailer.sendPasswordResetConfirmation(user.id());
         return user;
     }
 
     // FIXME: update to use server-side SCrypt; must be updated along with CmdPassword
-    // TODO (WW) move it to the User class
-    public User changePassword(UserID userId, ByteString old_credentials,
-            ByteString new_credentials)
-            throws ExNotFound, IOException, SQLException, ExNoPerm
+    // TODO (WW) move it to the User class (jP: Why?)
+    /**
+     * Given a user and their current credentials, store a new credential.
+     *
+     * NOTE: for historical reasons, this expects a SCrypt'ed credential. That must change.
+     */
+    public User replacePassword(UserID userId, byte[] old_credentials, byte[] new_credentials)
+            throws SQLException, ExNotFound, ExExternalServiceUnavailable, ExCannotResetPassword,
+            ExNoPerm
     {
-        User user = _factUser.create(userId);
-        user.throwIfNotFound();
+        User user = getUserAndThrowIfNoPassword(userId);
+
         _db.checkAndUpdateUserCredentials(user.id(),
-                SPParam.getShaedSP(old_credentials.toByteArray()),
-                SPParam.getShaedSP(new_credentials.toByteArray()));
-        l.info(userId + "'s Password was successfully changed");
+                SPParam.getShaedSP(old_credentials),
+                SPParam.getShaedSP(new_credentials));
+        l.info("{}'s Password was successfully changed", userId.getString());
         return user;
+    }
+
+    /**
+     * Revoke the users' password (make this account inaccessible until the password is reset)
+     * and send a password reset token by email.
+     *
+     * This will throw an exception if the user does not exist, or does not have a local credential
+     * (and related errors)
+     */
+    public User revokePassword(UserID userId)
+            throws SQLException, ExCannotResetPassword, ExNotFound, ExExternalServiceUnavailable,
+            IOException, MessagingException
+    {
+        User u = getUserAndThrowIfNoPassword(userId);
+        String token = Base62CodeGenerator.generate();
+
+        _db.updateUserCredentials(userId, new byte[0]);
+        _db.insertPasswordResetToken(userId, token);
+
+        _passwordResetEmailer.sendPasswordRevokeNotification(userId, token);
+        l.info("Password revocation email sent to " + userId);
+
+        return u;
+    }
+
+    /**
+     * Set a user's credential.
+     *
+     * Authentication must occur outside this method - this does not take the existing
+     * credential. This may be the result of an administrative action.
+     *
+     * This expects a plaintext credential.
+     */
+    public User setPassword(UserID userId, byte[] newCredentials)
+            throws GeneralSecurityException, SQLException, ExNotFound, IOException,
+            MessagingException, ExExternalServiceUnavailable, ExCannotResetPassword
+    {
+        User user = getUserAndThrowIfNoPassword(userId);
+        _db.updateUserCredentials(user.id(),
+                LocalCredential.hashScrypted(
+                        LocalCredential.deriveKeyForUser(user.id(), newCredentials)));
+
+        _passwordResetEmailer.sendPasswordChangeNotification(userId);
+        l.info("Explicit password set for {}", userId);
+
+        return user;
+    }
+
+    /**
+     * Return a User object, only if the userId points to an existing account that has a
+     * local credential.
+     */
+    private User getUserAndThrowIfNoPassword(UserID userId)
+            throws SQLException, ExNotFound, ExCannotResetPassword, ExExternalServiceUnavailable
+    {
+        User u = _factUser.create(userId);
+        u.throwIfNotFound();
+
+        if (_authenticator.isLocallyManaged(userId)) return u;
+
+        l.info("Password action requested for " + userId + " but user has no local credential");
+        throw new ExCannotResetPassword();
     }
 }

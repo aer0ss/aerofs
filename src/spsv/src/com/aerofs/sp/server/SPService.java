@@ -1869,7 +1869,8 @@ public class SPService implements ISPService
         throws Exception
     {
         _sqlTrans.begin();
-        User user = _passwordManagement.resetPassword(password_reset_token, new_credentials);
+        User user = _passwordManagement.resetPassword(
+                password_reset_token, new_credentials.toByteArray());
         _sqlTrans.commit();
 
         _auditClient.event(AuditTopic.USER, "user.password.reset")
@@ -1885,8 +1886,10 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User user = _passwordManagement.changePassword(
-                _sessionUser.getUser().id(), old_credentials, new_credentials);
+        User user = _passwordManagement.replacePassword(
+                _sessionUser.getUser().id(),
+                old_credentials.toByteArray(),
+                new_credentials.toByteArray());
         _sqlTrans.commit();
 
         _auditClient.event(AuditTopic.USER, "user.password.change")

@@ -21,14 +21,17 @@ import com.aerofs.restless.util.EntityTagSet;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.CommandDispatcher;
+import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sp.server.lib.user.User.Factory;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.sparta.Transactional;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -51,7 +54,6 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.security.MessageDigest;
 import java.sql.SQLException;
@@ -74,18 +76,19 @@ public class UsersResource
     private final ACLNotificationPublisher _aclPublisher;
     private final VerkehrAdmin _verkehrAdmin;
     private final CommandDispatcher _commandDispatcher;
+    private PasswordManagement _passwordManagement;
 
     @Inject
-    public UsersResource(User.Factory factUser,
-            ACLNotificationPublisher aclPublisher,
-            CommandDispatcher commandDispatcher,
-            VerkehrAdmin verkerhAdmin)
+    public UsersResource(Factory factUser, ACLNotificationPublisher aclPublisher,
+            CommandDispatcher commandDispatcher, VerkehrAdmin verkerhAdmin,
+            PasswordManagement passwordManagement)
     {
         _factUser = factUser;
         _aclPublisher = aclPublisher;
         _verkehrAdmin = verkerhAdmin;
         _commandDispatcher = commandDispatcher;
         _commandDispatcher.setAdminClient(_verkehrAdmin);
+        _passwordManagement = passwordManagement;
     }
 
     @Since("1.1")
@@ -187,8 +190,8 @@ public class UsersResource
                 + "/shares/" + sf.id().toStringFormal();
 
         return Response.created(URI.create(location))
-                .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(), sf.getName(user),
-                        listMembers(sf), listPendingMembers(sf, null)))
+                .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
+                        sf.getName(user), listMembers(sf), listPendingMembers(sf, null)))
                 .build();
     }
 
@@ -351,5 +354,41 @@ public class UsersResource
 
         return Response.noContent()
                 .build();
+    }
+
+    @Since("1.1")
+    @PUT
+    @Path("/{email}/password")
+    public Response updatePassword(
+            @Auth AuthToken auth,
+            @PathParam("email")User target,
+            String newCredential) throws Exception
+    {
+        checkArgument(!Strings.isNullOrEmpty(newCredential), "Cannot set an empty password value");
+
+        User caller = _factUser.create(auth.user);
+        throwIfNotSelfOrTSOf(caller, target);
+
+        l.debug("API: user {} requests password update for {}", caller, target);
+        _passwordManagement.setPassword(target.id(), newCredential.getBytes("UTF-8"));
+
+        return Response.noContent().build();
+    }
+
+    @Since("1.1")
+    @DELETE
+    @Path("/{email}/password")
+    public Response deletePassword(
+            @Auth AuthToken auth,
+            @PathParam("email")User target)
+            throws Exception
+    {
+        User caller = _factUser.create(auth.user);
+        throwIfNotSelfOrTSOf(caller, target);
+
+        l.debug("API: user {} requests password delete for {}", caller, target);
+        _passwordManagement.revokePassword(target.id());
+
+        return Response.noContent().build();
     }
 }

@@ -17,7 +17,6 @@ import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.testlib.AbstractTest;
-import com.google.protobuf.ByteString;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -140,15 +139,14 @@ public class TestSP_Password extends AbstractTest
     {
         mockSPDatabaseGetUserByPasswordResetTokenNoUser();
         mockNonexistingUser();
-        _passwordManagement.resetPassword("dummy token", ByteString.copyFrom(("dummy new " +
-                "password").getBytes()));
+        _passwordManagement.resetPassword("dummy token", ("dummy new password").getBytes());
     }
 
     @Test
     public void shouldCallDatabaseUpdateUserCredentials()
         throws Exception
     {
-        _passwordManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
+        _passwordManagement.resetPassword("dummy token", "test123".getBytes());
         byte[] scrypted = SecUtil.scrypt("test123".toCharArray(), user.id());
         verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP(scrypted));
     }
@@ -157,20 +155,30 @@ public class TestSP_Password extends AbstractTest
     public void shouldCallDatabaseInvalidatePasswordResetToken()
         throws Exception
     {
-        _passwordManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
+        _passwordManagement.resetPassword("dummy token", "test123".getBytes());
         verify(db).deletePasswordResetToken("dummy token");
     }
 
     // Tests for changePassword
 
+    @Test(expected = ExCannotResetPassword.class)
+    public void shouldNotChangePasswordForExternalCred()
+            throws Exception
+    {
+        when(authenticator.isLocallyManaged(eq(userId))).thenReturn(false);
+
+        _passwordManagement.replacePassword(userId,
+                "old password".getBytes(),
+                "new password".getBytes());
+    }
+
     @Test
     public void shouldCheckUserExistence()
         throws Exception
     {
-        _passwordManagement.changePassword(user.id(),
-                ByteString.copyFrom("old password".getBytes()),
-                ByteString.copyFrom("new password".getBytes())
-        );
+        _passwordManagement.replacePassword(user.id(),
+                "old password".getBytes(),
+                "new password".getBytes());
         verify(user).throwIfNotFound();
     }
 
@@ -178,12 +186,59 @@ public class TestSP_Password extends AbstractTest
     public void shouldCallDatabaseTestAndCheckUserCredentials()
         throws Exception
     {
-        _passwordManagement.changePassword(user.id(),
-                ByteString.copyFrom("old password".getBytes()),
-                ByteString.copyFrom("new password".getBytes())
-        );
+        _passwordManagement.replacePassword(user.id(),
+                "old password".getBytes(),
+                "new password".getBytes());
         verify(db).checkAndUpdateUserCredentials(user.id(), SPParam.getShaedSP("old password"
                 .getBytes()),
                 SPParam.getShaedSP("new password".getBytes()));
+    }
+
+    // Tests for revokePassword
+    @Test
+    public void shouldRevoke() throws Exception
+    {
+        _passwordManagement.revokePassword(user.id());
+        verify(db).updateUserCredentials(user.id(), new byte[0]);
+        verify(db).insertPasswordResetToken(eq(user.id()), anyString());
+        verify(passwordResetEmailer).sendPasswordRevokeNotification(eq(user.id()), anyString());
+    }
+
+    @Test(expected = ExNotFound.class)
+    public void shouldFailNonExistentUser() throws Exception
+    {
+        mockNonexistingUser();
+        _passwordManagement.revokePassword(user.id());
+    }
+
+    @Test(expected = ExCannotResetPassword.class)
+    public void shouldFailToRevokeExternalCred() throws Exception
+    {
+        when(authenticator.isLocallyManaged(eq(user.id()))).thenReturn(false);
+        _passwordManagement.revokePassword(user.id());
+    }
+
+    // Test for setPassword
+    @Test
+    public void shouldSetPassword() throws Exception
+    {
+        _passwordManagement.setPassword(user.id(), "test".getBytes());
+        byte[] scrypted = SecUtil.scrypt("test".toCharArray(), user.id());
+        verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP(scrypted));
+        verify(passwordResetEmailer).sendPasswordChangeNotification(eq(user.id()));
+    }
+
+    @Test(expected = ExNotFound.class)
+    public void shouldFailSetForNonExistentUser() throws Exception
+    {
+        mockNonexistingUser();
+        _passwordManagement.setPassword(user.id(), "test".getBytes());
+    }
+
+    @Test(expected = ExCannotResetPassword.class)
+    public void shouldFailToSetForExternalCred() throws Exception
+    {
+        when(authenticator.isLocallyManaged(eq(user.id()))).thenReturn(false);
+        _passwordManagement.setPassword(user.id(), "test".getBytes());
     }
 }

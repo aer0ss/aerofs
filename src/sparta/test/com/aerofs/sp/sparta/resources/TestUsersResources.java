@@ -26,6 +26,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
 
 @SuppressWarnings("unchecked")
 public class TestUsersResources extends AbstractResourceTest
@@ -462,7 +465,6 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("type", equalTo("NOT_FOUND"))
         .when()
                 .put(RESOURCE, u.id().getString());
-
     }
 
     @Test
@@ -498,6 +500,116 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("type", equalTo("NOT_FOUND"))
         .when()
                 .delete(RESOURCE, u.id().getString());
+    }
+
+    // tests for updatePassword(..)
+
+    @Test
+    public void updatePassword_shouldSucceed() throws Exception
+    {
+        User u = createApiUser();
+        givenAdminAccess()
+                .contentType(ContentType.JSON)
+                .body("\"new password\"")
+        .expect()
+                .statusCode(204)
+        .when()
+                .put(RESOURCE + "/password", u.id().getString());
+
+        verify(passwordManagement).setPassword(eq(u.id()), any(byte[].class));
+    }
+
+    @Test
+    public void updatePassword_shouldFailNoBody()
+    {
+        User u = createApiUser();
+        givenAdminAccess()
+                .contentType(ContentType.JSON)
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+        .when()
+                .put(RESOURCE + "/password", u.id().getString());
+    }
+
+    @Test
+    public void updatePassword_shouldFailEmptyBody()
+    {
+        User u = createApiUser();
+        givenAdminAccess()
+                .contentType(ContentType.JSON)
+                .body("")
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+        .when()
+                .put(RESOURCE + "/password", u.id().getString());
+    }
+
+    @Test
+    public void updatePassword_shouldFailNonExistentUser()
+    {
+        User u = newUser();
+        givenAdminAccess()
+                .contentType(ContentType.JSON)
+                .body("\"new password\"")
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when()
+                .put(RESOURCE + "/password", u.id().getString());
+    }
+
+    @Test
+    public void updatePassword_shouldFailNoPerm()
+    {
+        User u = createApiUser();
+        givenReadAccess()
+                .contentType(ContentType.JSON)
+                .body("\"new password\"")
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when()
+                .put(RESOURCE + "/password", u.id().getString());
+    }
+
+    // tests for deletePassword(..)
+
+    @Test
+    public void deletePassword_shouldSucceed() throws Exception
+    {
+        User u = createApiUser();
+        givenAdminAccess()
+        .expect()
+                .statusCode(204)
+        .when()
+                .delete(RESOURCE + "/password", u.id().getString());
+        verify(passwordManagement).revokePassword(eq(u.id()));
+    }
+
+    @Test
+    public void deletePassword_shouldFailNonExistentUser()
+    {
+        User u = newUser();
+        givenAdminAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when()
+                .delete(RESOURCE + "/password", u.id().getString());
+    }
+
+    @Test
+    public void deletePassword_shouldFailNoPerm()
+    {
+        User u = createApiUser();
+        givenReadAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when()
+                .delete(RESOURCE + "/password", u.id().getString());
     }
 
     private ImmutableMap<String, String> userAttributes(User u)

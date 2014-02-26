@@ -25,6 +25,7 @@ import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.server.CommandDispatcher;
+import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -95,6 +96,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     @Mock VerkehrPublisher vkPub;
     @Mock VerkehrAdmin vkAdmin;
     @Mock CommandDispatcher commandDispatcher;
+    @Mock PasswordManagement passwordManagement;
 
     private final SPDatabaseParams dbParams = new SPDatabaseParams();
 
@@ -172,14 +174,15 @@ public class AbstractResourceTest extends AbstractBaseTest
     {
         return Guice.createInjector(
                 Sparta.spartaModule(new HashedWheelTimer(), new NioClientSocketChannelFactory()),
-                Sparta.databaseModule(dbParams.getProvider()),
-                new AbstractModule() {
+                Sparta.databaseModule(dbParams.getProvider()), new AbstractModule()
+        {
             @Override
             protected void configure()
             {
                 bind(VerkehrPublisher.class).toInstance(vkPub);
                 bind(VerkehrAdmin.class).toInstance(vkAdmin);
                 bind(CommandDispatcher.class).toInstance(commandDispatcher);
+                bind(PasswordManagement.class).toInstance(passwordManagement);
                 bind(AuditClient.class).toInstance(
                         new AuditClient().setAuditorClient(new IAuditorClient()
                         {
