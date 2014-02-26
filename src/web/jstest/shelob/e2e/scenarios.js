@@ -22,4 +22,22 @@ describe('Shelob App', function() {
         expect(repeater('tbody tr.folder').count()).toBe(0);
         expect(repeater('tbody tr.file').count()).toBe(0);
     });
+
+    it('should show folder icon for folder', function() {
+        browser().navigateTo('/index.html');
+        expect(element('tbody tr.folder:eq(1) td img').attr('src'))
+            .toEqual('/static/shelob/img/icons/40x40/filetype_folder.png');
+    });
+
+    it('should show text file icon for mimetype text/plain', function() {
+        browser().navigateTo('/index.html');
+        expect(element('tbody tr.file:eq(0) td img').attr('src'))
+            .toEqual('/static/shelob/img/icons/40x40/filetype_text.png');
+    });
+
+    it('should show generic file icon for unknown mimetype', function() {
+        browser().navigateTo('/index.html#/9f89f89f8');
+        expect(element('tbody tr.file:eq(0) td img').attr('src'))  // first element is otherfile
+            .toEqual('/static/shelob/img/icons/40x40/filetype_generic.png');
+    });
 });

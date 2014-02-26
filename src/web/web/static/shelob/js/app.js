@@ -2,6 +2,7 @@ var shelobApp = angular.module('shelobApp', [
     'ngRoute',
     'shelobControllers',
     'shelobServices',
+    'shelobDirectives',
 ]);
 
 shelobApp.config(['$routeProvider', function($routeProvider) {

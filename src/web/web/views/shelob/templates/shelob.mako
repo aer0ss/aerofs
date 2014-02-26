@@ -12,4 +12,5 @@
     <script src="${request.static_path('web:static/shelob/js/app.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/services.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/controllers.js')}"></script>
+    <script src="${request.static_path('web:static/shelob/js/directives.js')}"></script>
 </%block>
