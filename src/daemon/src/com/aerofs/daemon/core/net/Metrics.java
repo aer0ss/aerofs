@@ -8,7 +8,7 @@ import com.aerofs.daemon.lib.DaemonParam;
 
 public class Metrics {
 
-    private int _maxcastSize = DaemonParam.MAX_MAX_MAXCAST_MESSAGE_SIZE;
+    private int _maxcastSize = DaemonParam.MAX_MAXCAST_MESSAGE_SIZE;
 
     public void setRecommendedMaxcastSize_(int size)
     {

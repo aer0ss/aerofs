@@ -4,7 +4,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
 import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.net.NSL;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
@@ -22,17 +22,17 @@ import java.sql.SQLException;
 
 public class UpdateSenderFilter
 {
-    private final NSL _nsl;
+    private final TransportRoutingLayer _trl;
     private final MapSIndex2Store _sidx2s;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
 
 
     @Inject
-    public UpdateSenderFilter(NSL nsl, MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid,
+    public UpdateSenderFilter(TransportRoutingLayer trl, MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid,
             IMapSID2SIndex sid2sidx)
     {
-        _nsl = nsl;
+        _trl = trl;
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
@@ -46,7 +46,7 @@ public class UpdateSenderFilter
                     .setSenderFilterIndex(sfidx)
                     .setSenderFilterUpdateSeq(updateSeq))
                     .build();
-        _nsl.sendUnicast_(did, pb);
+        _trl.sendUnicast_(did, pb);
     }
 
     public void process_(DigestedMessage msg)

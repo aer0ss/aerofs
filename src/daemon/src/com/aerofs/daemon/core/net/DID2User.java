@@ -37,16 +37,16 @@ public class DID2User
     private static final Logger l = Loggers.getLogger(DID2User.class);
 
     private final Map<DID, Set<TCB>> _d2waiters = Maps.newHashMap();
-    private final NSL _nsl;
+    private final TransportRoutingLayer _trl;
     private final TokenManager _tokenManager;
     private final IDID2UserDatabase _db;
     private final TransManager _tm;
 
     @Inject
-    public DID2User(TokenManager tokenManager, NSL nsl, IDID2UserDatabase db, TransManager tm)
+    public DID2User(TokenManager tokenManager, TransportRoutingLayer trl, IDID2UserDatabase db, TransManager tm)
     {
         _tokenManager = tokenManager;
-        _nsl = nsl;
+        _trl = trl;
         _db = db;
         _tm = tm;
     }
@@ -97,7 +97,7 @@ public class DID2User
 
         l.debug("resolving user 4 " + did);
 
-        _nsl.sendUnicast_(did, CoreUtil.newCall(Type.NOP).build());
+        _trl.sendUnicast_(did, CoreUtil.newCall(Type.NOP).build());
 
         Token tk = _tokenManager.acquireThrows_(Cat.DID2USER, did.toString());
         try {

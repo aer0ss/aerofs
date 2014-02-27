@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.net.NSL;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -38,7 +38,7 @@ public class ComputeHashCall
 {
     private static Logger l = Loggers.getLogger(ComputeHashCall.class);
     private final RPC _rpc;
-    private final NSL _nsl;
+    private final TransportRoutingLayer _trl;
     private final Hasher _hasher;
     private final DirectoryService _ds;
     private final NativeVersionControl _nvc;
@@ -48,13 +48,13 @@ public class ComputeHashCall
 
     @Inject
     public ComputeHashCall(NativeVersionControl nvc, DirectoryService ds, Hasher hasher, RPC rpc,
-            TokenManager tokenManager, NSL nsl, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
+            TokenManager tokenManager, TransportRoutingLayer trl, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
     {
         _nvc = nvc;
         _ds = ds;
         _hasher = hasher;
         _rpc = rpc;
-        _nsl = nsl;
+        _trl = trl;
         _tokenManager = tokenManager;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
@@ -85,7 +85,7 @@ public class ComputeHashCall
         }
         // Reply that the hash has been computed with an empty message
         PBCore core = CoreUtil.newReply(msg.pb()).build();
-        _nsl.sendUnicast_(msg.did(), core);
+        _trl.sendUnicast_(msg.did(), core);
     }
 
     public void processCall_(DigestedMessage msg) throws Exception

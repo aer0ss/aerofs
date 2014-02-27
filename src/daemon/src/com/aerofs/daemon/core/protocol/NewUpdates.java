@@ -17,8 +17,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.net.Metrics;
-import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
@@ -57,7 +57,7 @@ public class NewUpdates implements IVersionControlListener
 
     private Metrics _m;
     private NativeVersionControl _nvc;
-    private NSL _nsl;
+    private TransportRoutingLayer _trl;
     private TransManager _tm;
     private MapSIndex2Store _sidx2s;
     private IMapSIndex2SID _sidx2sid;
@@ -69,12 +69,12 @@ public class NewUpdates implements IVersionControlListener
     private DelayedScheduler _dsNewUpdateMessage;
 
     @Inject
-    public void inject_(TransManager tm, NSL nsl, NativeVersionControl nvc, Metrics m,
+    public void inject_(TransManager tm, TransportRoutingLayer trl, NativeVersionControl nvc, Metrics m,
             MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, LocalACL lacl,
             CfgLocalUser cfgLocalUser, CoreScheduler sched)
     {
         _tm = tm;
-        _nsl = nsl;
+        _trl = trl;
         _nvc = nvc;
         _m = m;
         _sidx2s = sidx2s;
@@ -167,14 +167,14 @@ public class NewUpdates implements IVersionControlListener
                     .writeDelimitedTo(os);
 
             if (os.size() >= _m.getRecommendedMaxcastSize_()) {
-                _nsl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
+                _trl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
                         CoreUtil.NOT_RPC, os);
                 os = null;
             }
         }
 
         if (os != null) {
-            _nsl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
+            _trl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
                     CoreUtil.NOT_RPC, os);
         }
     }

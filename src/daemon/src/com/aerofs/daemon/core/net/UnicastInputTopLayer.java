@@ -42,7 +42,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
 
     public static class Factory
     {
-        private final NSL _nsl;
+        private final TransportRoutingLayer _trl;
         private final DID2User _d2u;
         private final RPC _rpc;
         private final GetComponentCall _pgcc;
@@ -56,7 +56,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         @Inject
         public Factory(IncomingStreams iss, ComputeHashCall computeHashCall, UpdateSenderFilter pusf,
                 GetVersCall pgvc, NewUpdates pnu, GetComponentCall pgcc, RPC rpc, DID2User d2u,
-                NSL nsl, CoreDeviceLRU dlru)
+                TransportRoutingLayer trl, CoreDeviceLRU dlru)
         {
             _iss = iss;
             _computeHashCall = computeHashCall;
@@ -66,7 +66,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _pgcc = pgcc;
             _rpc = rpc;
             _d2u = d2u;
-            _nsl = nsl;
+            _trl = trl;
             _dlru = dlru;
         }
 
@@ -207,7 +207,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         }
 
         assert error != null;
-        _f._nsl.sendUnicast_(msg.did(), error);
+        _f._trl.sendUnicast_(msg.did(), error);
     }
 
     private void processNonCall_(DigestedMessage msg)

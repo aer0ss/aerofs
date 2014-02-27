@@ -88,7 +88,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
             To to = _f._factTo.create_(_sidx, To.RANDCAST);
             try {
                 // Normally the rpc is passed a To object, and the DID chosen
-                // in the NSL layer. However, GetVersCall needs to know the
+                // in the TransportRoutingLayer layer. However, GetVersCall needs to know the
                 // DID from which it is pulling
                 DID didTo = to.pick_();
                 checkNotNull(didTo);

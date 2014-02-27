@@ -47,16 +47,16 @@ public class RPC
         DigestedMessage _reply;
     }
 
-    private final NSL _nsl;
+    private final TransportRoutingLayer _trl;
     private final DevicePresence _dp;
 
     private final Map<Integer, MapEntry> _waiters = Maps.newTreeMap();
 
     @Inject
-    public RPC(DevicePresence dp, NSL nsl, CoreExecutor coreExecutor, LinkStateService lss)
+    public RPC(DevicePresence dp, TransportRoutingLayer trl, CoreExecutor coreExecutor, LinkStateService lss)
     {
         _dp = dp;
-        _nsl = nsl;
+        _trl = trl;
 
         lss.addListener(new ILinkStateListener()
         {
@@ -100,7 +100,7 @@ public class RPC
     {
         Endpoint ep = null;
         try {
-            ep = _nsl.sendUnicast_(did, call);
+            ep = _trl.sendUnicast_(did, call);
             return recvReply_(call.getRpcid(), tk, reason);
         } catch (ExTimeout e) {
             handleTimeout_(call, ep);
@@ -113,7 +113,7 @@ public class RPC
     {
         Endpoint ep = null;
         try {
-            ep = _nsl.sendUnicast_(did, CoreUtil.typeString(call), call.getRpcid(), out);
+            ep = _trl.sendUnicast_(did, CoreUtil.typeString(call), call.getRpcid(), out);
             return recvReply_(call.getRpcid(), tk, reason);
         } catch (ExTimeout e) {
             handleTimeout_(call, ep);

@@ -11,8 +11,8 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.net.RPC;
-import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -63,7 +63,7 @@ public class GetComponentCall
     private DirectoryService _ds;
     private IPhysicalStorage _ps;
     private LocalACL _lacl;
-    private NSL _nsl;
+    private TransportRoutingLayer _trl;
     private GCCSendContent _sendContent;
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
@@ -71,12 +71,12 @@ public class GetComponentCall
     private OutboundEventLogger _oel;
 
     @Inject
-    public void inject_(NSL nsl, LocalACL lacl, IPhysicalStorage ps, OutboundEventLogger oel,
+    public void inject_(TransportRoutingLayer trl, LocalACL lacl, IPhysicalStorage ps, OutboundEventLogger oel,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
             IEmigrantTargetSIDLister emc, GCCSendContent sendContent, MapAlias2Target a2t,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser)
     {
-        _nsl = nsl;
+        _trl = trl;
         _lacl = lacl;
         _ps = ps;
         _ds = ds;
@@ -304,7 +304,7 @@ public class GetComponentCall
 
         bdReply.setMeta(bdMeta);
 
-        _nsl.sendUnicast_(did, bdCore.setGetComReply(bdReply).build());
+        _trl.sendUnicast_(did, bdCore.setGetComReply(bdReply).build());
     }
 
     private static PBMeta.Type toPB(OA.Type type)

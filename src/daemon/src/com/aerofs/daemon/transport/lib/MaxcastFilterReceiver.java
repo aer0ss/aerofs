@@ -2,7 +2,7 @@
  * MaxcastFilterReceiver
  * @author markj
  * With MaxcastFilterSender, this pair of classes assigns a unique maxcast ID
- * to each maxcast packet that is sent over multiple transports in NSL.
+ * to each maxcast packet that is sent over multiple transports in TransportRoutingLayer.
  * Duplicate/redundant packets will inevitably be received by each peer for
  * each network interface/transport. Thus, upon receiving a maxcast payload
  * packet, each transport must check whether that particular mcast ID has
@@ -12,7 +12,7 @@
  *
  * Shortcomings:
  * - Mcast IDs are packaged into the EOMaxcastMessage class, so we do not filter
- *   packets sent over many unicasts (see NSL layer).
+ *   packets sent over many unicasts (see TransportRoutingLayer layer).
  * - In "isRedundant" we only check for equality of mcast ID's, so if packets
  *   arrive out of order, they will not be filtered away. This is not incorrect,
  *   it simply results in occasionally unfiltered packets.

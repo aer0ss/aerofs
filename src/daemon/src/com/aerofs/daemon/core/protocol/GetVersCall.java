@@ -20,6 +20,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import com.aerofs.daemon.core.net.IncomingStreams;
@@ -45,7 +46,6 @@ import com.aerofs.daemon.core.collector.SenderFilters.SenderFilterAndIndex;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.Metrics;
-import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
 import com.aerofs.daemon.core.net.RPC;
@@ -88,7 +88,7 @@ public class GetVersCall
     private final NativeVersionControl _nvc;
     private final ImmigrantVersionControl _ivc;
     private final RPC _rpc;
-    private final NSL _nsl;
+    private final TransportRoutingLayer _trl;
     private final GetVersReply _pgvr;
     private final Metrics _m;
     private final IncomingStreams _iss;
@@ -111,7 +111,7 @@ public class GetVersCall
 
     @Inject
     public GetVersCall(IncomingStreams iss, OutgoingStreams oss, Metrics m, GetVersReply pgvr,
-            NSL nsl, RPC rpc, NativeVersionControl nvc, ImmigrantVersionControl ivc,
+            TransportRoutingLayer trl, RPC rpc, NativeVersionControl nvc, ImmigrantVersionControl ivc,
             MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb, TokenManager tokenManager,
             DirectoryService ds, TransManager tm, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
             MapSIndex2Contributors sidx2contrib, LocalACL lacl, CfgLocalUser cfgLocalUser)
@@ -121,7 +121,7 @@ public class GetVersCall
         _m = m;
         _pgvr = pgvr;
         _rpc = rpc;
-        _nsl = nsl;
+        _trl = trl;
         _nvc = nvc;
         _ivc = ivc;
         _sidx2s = sidx2s;
@@ -429,7 +429,7 @@ public class GetVersCall
         void done_() throws Exception
         {
             if (_stream == null) {
-                _nsl.sendUnicast_(_ep.did(), _msgType, _rpcid, _os);
+                _trl.sendUnicast_(_ep.did(), _msgType, _rpcid, _os);
             } else {
                 _stream.sendChunk_(_os.toByteArray());
                 _streamOkay = true;

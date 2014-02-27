@@ -4,7 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.net.NSL;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.lib.Util;
@@ -54,16 +54,16 @@ public abstract class AbstractListRevChildrenHistory<LISTENER>
 
     protected final MapSIndex2Store _sidx2s;
     protected final DirectoryService _ds;
-    protected final NSL _nsl;
+    protected final TransportRoutingLayer _trl;
 
     int _seqNext;
     private final Map<Path, Integer> _path2seq = Maps.newHashMap();
     private final Map<Integer, Path> _seq2path = Maps.newHashMap();
     private final Map<Path, RCHListeners> _path2ls = Maps.newHashMap();
 
-    protected AbstractListRevChildrenHistory(NSL nsl, DirectoryService ds, MapSIndex2Store sidx2s)
+    protected AbstractListRevChildrenHistory(TransportRoutingLayer trl, DirectoryService ds, MapSIndex2Store sidx2s)
     {
-        _nsl = nsl;
+        _trl = trl;
         _ds = ds;
         _sidx2s = sidx2s;
     }
@@ -106,7 +106,7 @@ public abstract class AbstractListRevChildrenHistory<LISTENER>
 
         // can't use maxcast as it exposes private information
         for (DID did : s.getOnlinePotentialMemberDevices_().keySet()) {
-            _nsl.sendUnicast_(did, core);
+            _trl.sendUnicast_(did, core);
         }
     }
 

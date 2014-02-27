@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.net.Metrics;
-import com.aerofs.daemon.core.net.NSL;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -59,7 +59,7 @@ public class GCCSendContent
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
     private final Metrics _m;
-    private final NSL _nsl;
+    private final TransportRoutingLayer _trl;
     private final OutgoingStreams _oss;
     private final UploadState _ulstate;
     private final TokenManager _tokenManager;
@@ -105,12 +105,12 @@ public class GCCSendContent
     private final Ongoing _ongoing = new Ongoing();
 
     @Inject
-    public GCCSendContent(UploadState ulstate, OutgoingStreams oss, NSL nsl, IPhysicalStorage ps,
+    public GCCSendContent(UploadState ulstate, OutgoingStreams oss, TransportRoutingLayer trl, IPhysicalStorage ps,
             NativeVersionControl nvc, Metrics m, DirectoryService ds, TokenManager tokenManager)
     {
         _ulstate = ulstate;
         _oss = oss;
-        _nsl = nsl;
+        _trl = trl;
         _m = m;
         _ds = ds;
         _ps = ps;
@@ -205,7 +205,7 @@ public class GCCSendContent
     private void sendContentSame_(DID did, ByteArrayOutputStream os, PBCore reply)
             throws Exception
     {
-        _nsl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
+        _trl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
     }
 
     private void sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply,
@@ -226,7 +226,7 @@ public class GCCSendContent
                 throw new ExUpdateInProgress();
             }
 
-            _nsl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
+            _trl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
         } finally {
             if (is != null) {
                 is.close();

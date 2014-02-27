@@ -75,7 +75,7 @@ public class DaemonParam
 
     // it is the initial limit of maxcast message sizes. the limit may be further
     // reduced at runtime based on metrics feedback from transports
-    public static final int MAX_MAX_MAXCAST_MESSAGE_SIZE    = 1 * C.KB;
+    public static final int MAX_MAXCAST_MESSAGE_SIZE = 1 * C.KB;
 
     // 16+ KB is the maximum TLS application buffer size
     // it defines the maximum size for atomic messages and chunks
@@ -85,7 +85,7 @@ public class DaemonParam
     // this is to prevent DOS attacks ONLY. * 3 is to accommodate transport
     // headers, size increment due to encryption, etc
     public static final int MAX_TRANSPORT_MESSAGE_SIZE  =
-        Math.max(MAX_UNICAST_MESSAGE_SIZE, MAX_MAX_MAXCAST_MESSAGE_SIZE) * 3;
+        Math.max(MAX_UNICAST_MESSAGE_SIZE, MAX_MAXCAST_MESSAGE_SIZE) * 3;
 
     public static final long ANTI_ENTROPY_INTERVAL = 30 * C.SEC;
 
