@@ -35,8 +35,6 @@ node "z.arrowfs.org" inherits default {
     "sv df90 pagerduty@sv.aerofs.com 22 /data",
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
     "x df90 pagerduty@x.aerofs.com 22 /dev/sda",
-    "sss-root df90 pagerduty@sss.aerofs.com 22 /dev/xvda1",
-    "sss-data df90 pagerduty@sss.aerofs.com 22 /dev/xvdf",
   ]:
     hour => "14",
     minute => "0",
@@ -53,13 +51,6 @@ node "z.arrowfs.org" inherits default {
     "api-1 port api.aerofs.com 443",
     "api-2 port api.aerofs.com 4433",
     "api-3 port api.aerofs.com 8084",
-    # SSS is unstable right now and takes a long time to respond to a simple
-    # GET request. Experiments show that it takes 2-8 seconds for the probe
-    # to finish most of the times, hence the timeout is set to 10 seconds.
-    #
-    # AMEND: it turns out the probes are still failing. So it's disabled for
-    # the time being
-    # "sss url-internalcert https://sss.aerofs.com/syncstat 10",
     "verkehr port verkehr.aerofs.com 443",
     "zephyr checkzephyr zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
