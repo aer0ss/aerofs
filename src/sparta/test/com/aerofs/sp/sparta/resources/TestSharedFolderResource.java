@@ -12,6 +12,7 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.rest.api.Member;
 import com.aerofs.rest.api.PendingMember;
+import com.aerofs.rest.api.SharedFolder;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -23,6 +24,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 
 @SuppressWarnings("unchecked")
 public class TestSharedFolderResource extends AbstractResourceTest
@@ -32,7 +34,8 @@ public class TestSharedFolderResource extends AbstractResourceTest
         LogUtil.enableConsoleLogging();
     }
 
-    private final String RESOURCE = "/v1.1/shares/{sid}";
+    private final String BASE_RESOURCE = "/v1.1/shares";
+    private final String RESOURCE = BASE_RESOURCE + "/{sid}";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -570,8 +573,8 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenOtherAccess()
                 .contentType(ContentType.JSON)
-                .body(new PendingMember("a@b.c", new String[]{"WRITE"},
-                        "Join us"), ObjectMapperType.GSON)
+                .body(new PendingMember("a@b.c", new String[]{"WRITE"}, "Join us"),
+                        ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -784,5 +787,23 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .body("message", equalTo("Not allowed to bypass invitation process"))
         .when().log().everything()
                 .post(RESOURCE + "/members", sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldCreateSharedFolder() throws Exception
+    {
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .body(new SharedFolder(null, "Shareme", null, null),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(201)
+                .header(Names.LOCATION,
+                        startsWith("https://localhost:" + sparta.getListeningPort() + "/v1.1/shares/"))
+                .body("name", equalTo("Shareme"))
+                .body("members.email", hasItem(user.getString()))
+                .body("pending", emptyIterable())
+        .when().log().everything()
+                .post(BASE_RESOURCE);
     }
 }

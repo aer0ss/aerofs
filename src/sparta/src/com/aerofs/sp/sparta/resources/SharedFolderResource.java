@@ -10,10 +10,12 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Version;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
@@ -52,6 +54,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
@@ -63,6 +66,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -84,6 +88,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class SharedFolderResource
 {
     private final User.Factory _factUser;
+    private final SharedFolder.Factory _factSF;
     private final SharingRulesFactory _sharingRules;
     private final InvitationHelper _invitationHelper;
     private final SharedFolderNotificationEmailer _sfnEmailer;
@@ -92,10 +97,12 @@ public class SharedFolderResource
 
     @Inject
     public SharedFolderResource(SharingRulesFactory sharingRules, User.Factory factUser,
-            InvitationHelper invitationHelper, ACLNotificationPublisher aclNotifier,
-            SharedFolderNotificationEmailer sfnEmailer, AuditClient audit)
+            SharedFolder.Factory factSF, InvitationHelper invitationHelper,
+            ACLNotificationPublisher aclNotifier, SharedFolderNotificationEmailer sfnEmailer,
+            AuditClient audit)
     {
         _factUser = factUser;
+        _factSF = factSF;
         _sharingRules = sharingRules;
         _invitationHelper = invitationHelper;
         _aclNotifier = aclNotifier;
@@ -123,6 +130,42 @@ public class SharedFolderResource
         }
 
         return Response.ok()
+                .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
+                        sf.getName(caller), listMembers(sf), pending))
+                .tag(etag)
+                .build();
+    }
+
+    @Since("1.1")
+    @POST
+    public Response create(@Auth AuthToken token,
+            @Context Version version,
+            com.aerofs.rest.api.SharedFolder share)
+            throws Exception
+    {
+        checkArgument(share.name != null, "Request body missing required field: name");
+        User caller = _factUser.create(token.user);
+
+        // in the unlikely event that we generate a UUID that's already taken,
+        // retry up to 10 times before returning a 5xx
+        int attempts = 10;
+        SharedFolder sf;
+        do {
+            sf = _factSF.create(SID.generate());
+        } while (sf.exists() && --attempts > 0);
+
+        _aclNotifier.publish_(sf.save(share.name, caller));
+
+        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
+        List<PendingMember> pending = listPendingMembers(sf, md);
+        // TODO: it'd be nice if there was an epoch for pending members to avoid this hashing...
+        EntityTag etag = new EntityTag(aclEtag(caller) + BaseUtil.hexEncode(md.digest()), true);
+
+        String location = Service.DUMMY_LOCATION
+                + 'v' + version
+                + "/shares/" + sf.id().toStringFormal();
+
+        return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
                         sf.getName(caller), listMembers(sf), pending))
                 .tag(etag)
