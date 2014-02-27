@@ -1,4 +1,17 @@
-<h1>My Files</h1>
+<ol class="breadcrumb">
+    <li ng-if="!breadcrumbs.length" class="active">My Files</li>
+    <li ng-if="breadcrumbs.length"><a href="#/">My Files</a></li>
+
+    <li ng-repeat="folder in breadcrumbs.slice(0,-1)">
+      <span class="divider">&rsaquo;</span>
+      <a href="#/{{folder.id}}">{{folder.name}}</a>
+    </li>
+
+    <li ng-repeat="folder in breadcrumbs.slice(-1)" class="active">
+      <span class="divider">&rsaquo;</span>
+      {{folder.name}}
+    </li>
+</ol>
 
 <table ng-show="folders.length || files.length" class="table table-hover">
   <thead>

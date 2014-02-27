@@ -1,11 +1,11 @@
 var shelobControllers = angular.module('shelobControllers', []);
 
-shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', 'FileList', 'Token',
-        function ($scope, $http, $log, $routeParams, $window, FileList, Token) {
+shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', 'API', 'Token',
+        function ($scope, $http, $log, $routeParams, $window, API, Token) {
 
     var oid = typeof $routeParams.oid === "undefined" ? '' : $routeParams.oid;
 
-    FileList.get(oid).then(function(data) {
+    API.get('/children/' + oid).then(function(data) {
         // success callback
         $scope.files = data.files;
         $scope.folders = data.folders;
@@ -18,6 +18,35 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             showErrorMessage(getInternalErrorText());
         }
     });
+
+    if ($scope.breadcrumbs === undefined) $scope.breadcrumbs = [];
+    if (oid == '') {
+        $scope.breadcrumbs = [];
+    } else {
+        API.get('/folders/' + oid).then(function(data) {
+            // success callback
+            var crumb = {id: data.id, name: data.name};
+            for (var i = 0; i < $scope.breadcrumbs.length; i++) {
+                if ($scope.breadcrumbs[i].id == data.id) {
+                    // if the trail reads Home > Folder > Subfolder > SubSubFolder
+                    // and the user clicks the link to Folder, remove everything in the
+                    // breadcrumb trail from Folder onward
+                    $scope.breadcrumbs.splice(i, Number.MAX_VALUE);
+                    break;
+                }
+            }
+            // append the folder to the breadcrumb trail
+            $scope.breadcrumbs.push(data);
+        }, function(status) {
+            // failure callback
+            $log.error('get folder info call failed with ' + status);
+            if (status == 503) {
+                showErrorMessage("All AeroFS clients are offline. At least one AeroFS desktop client or Team Server must be online to process your request.");
+            } else {
+                showErrorMessage(getInternalErrorText());
+            }
+        });
+    }
 
     // This is called when a user clicks on a link to a file
     //
@@ -41,5 +70,5 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             // called when getting a new token fails
             showErrorMessage(getInternalErrorText());
         });
-    }
+    };
 }]);

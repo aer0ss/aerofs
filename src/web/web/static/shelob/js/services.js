@@ -30,15 +30,16 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
     }
 }}]);
 
-shelobServices.factory('FileList', ['$http', '$q', '$log', 'Token',
+shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
     function($http, $q, $log, Token) { return {
-      get: function(oid) {
-          $log.debug('FileList.get(' + oid + ')');
+      // path arg must be prepended with a slash
+      // i.e. call with '/children', not 'children'
+      get: function(path) {
           var deferred = $q.defer();
 
-          // get an OAuth token and make call to /children
+          // get an OAuth token and make call
           Token.get().then(function(token) {
-              $http.get('/api/v1.0/children/' + oid, {headers: {'Authorization': 'Bearer ' + token}})
+              $http.get('/api/v1.0' + path, {headers: {'Authorization': 'Bearer ' + token}})
                 .success(function(data, status, headers, config) {
                     // if the call succeeds, return the data
                     deferred.resolve(data);
@@ -47,7 +48,7 @@ shelobServices.factory('FileList', ['$http', '$q', '$log', 'Token',
                     if (status == 401) {
                         // if the call got 401, the token may have expired, so try a new one
                         Token.getNew().then(function(token) {
-                          $http.get('/api/v1.0/children/' + oid, {headers: {'Authorization': 'Bearer ' + token}})
+                          $http.get('/api/v1.0' + path, {headers: {'Authorization': 'Bearer ' + token}})
                             .success(function(data, status, headers, config) {
                                 // if the call succeeds, return the data
                                 deferred.resolve(data);
@@ -75,3 +76,4 @@ shelobServices.factory('FileList', ['$http', '$q', '$log', 'Token',
       }
     }}
 ]);
+

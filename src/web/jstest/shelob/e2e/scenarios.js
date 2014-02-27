@@ -11,13 +11,13 @@ describe('Shelob App', function() {
 
     it('should show contents of subfolder when navigated to #/:oid', function() {
         browser().navigateTo('/index.html#/9f89f89f8');
-        expect(repeater('tbody tr.folder').count()).toBe(0);
+        expect(repeater('tbody tr.folder').count()).toBe(1);
         expect(repeater('tbody tr.file').count()).toBe(2);
     });
 
     it('should navigate to subfolder when subfolder link is clicked', function() {
         browser().navigateTo('/index.html');
-        element('tbody tr.folder:eq(0) a').click();  // click the first link, which is empty_folder
+        element('tbody tr.folder:eq(0) a').click();  // empty_folder
         expect(browser().location().url()).toBe('/01a01a01a');
         expect(repeater('tbody tr.folder').count()).toBe(0);
         expect(repeater('tbody tr.file').count()).toBe(0);
@@ -37,7 +37,33 @@ describe('Shelob App', function() {
 
     it('should show generic file icon for unknown mimetype', function() {
         browser().navigateTo('/index.html#/9f89f89f8');
-        expect(element('tbody tr.file:eq(0) td img').attr('src'))  // first element is otherfile
+        expect(element('tbody tr.file:eq(0) td img').attr('src'))  // otherfile
             .toEqual('/static/shelob/img/icons/40x40/filetype_generic.png');
+    });
+
+    it('should show "Home" link in breadcrumb trail when page is loaded', function() {
+        browser().navigateTo('/index.html');
+        expect(element('ol.breadcrumb li').count()).toEqual(1);
+        element('ol.breadcrumb li').click();
+        expect(browser().location().url()).toBe('/');
+    });
+
+    it('should add folders to breadcrumb trail as subfolder links are clicked', function() {
+        browser().navigateTo('/index.html');
+        expect(element('ol.breadcrumb li').count()).toEqual(1);
+        element('tbody tr.folder:eq(1) a').click();  // other_folder
+        expect(element('ol.breadcrumb li').count()).toEqual(2);
+        element('tbody tr.folder:eq(0) a').click();  // deeper_folder
+        expect(element('ol.breadcrumb li').count()).toEqual(3);
+    });
+
+    it('should should remove folders from breadcrumb trail if a breadcrumb link is clicked ', function() {
+        browser().navigateTo('/index.html');
+        element('tbody tr.folder:eq(1) a').click();  // other_folder
+        element('tbody tr.folder:eq(0) a').click();  // deeper_folder
+        expect(element('ol.breadcrumb li').count()).toEqual(3);
+        element('ol.breadcrumb li:eq(1) a').click();  // other_folder
+        expect(browser().location().url()).toBe('/9f89f89f8');
+        expect(element('ol.breadcrumb li').count()).toEqual(2);
     });
 });
