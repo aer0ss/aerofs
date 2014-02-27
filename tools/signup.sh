@@ -86,7 +86,7 @@ SignupAll()
     QueryStr="select t_code, t_to from sp_signup_code order by t_ts"
 
     echo "$QueryStr" \
-        | ssh -l ${DbUser} -i {DbKey} ${DbHost} mysql -N -u root -h localhost aerofs_sp \
+        | ssh -l ${DbUser} -i ${DbKey} ${DbHost} mysql -N -u root -h localhost aerofs_sp \
         | while read code user
         do
         # Arguably this shouldn't work without a 'sudo' but it sure do. What the what?
