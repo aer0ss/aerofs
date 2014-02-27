@@ -134,6 +134,7 @@ public class S3Backend implements IBlockStorageBackend
                 @Override
                 public void close() throws IOException
                 {
+                    super.close();
                     d.encodedLength = getLength();
                     d.md5 = md.digest();
                 }
@@ -180,7 +181,7 @@ public class S3Backend implements IBlockStorageBackend
                 try {
                     _s3Client.putObject(bucketName, s3Key, input, metadata);
                 } finally {
-                    // caller guarantess that calling reset will bring the input stream back to the
+                    // caller guarantees that calling reset will bring the input stream back to the
                     // start of the block without losing any data
                     input.reset();
                 }

@@ -27,6 +27,7 @@ public class ResettableFileInputStream extends InputStream
     @Override
     public synchronized void reset() throws IOException
     {
+        _i.close();
         _i = new FileInputStream(_f);
     }
 
