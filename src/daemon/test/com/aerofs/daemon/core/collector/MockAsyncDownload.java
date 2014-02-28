@@ -62,7 +62,12 @@ public class MockAsyncDownload implements Answer<Boolean>
         ITokenReclamationListener trl = _trl;
         _continuation = false;
         _trl = null;
-        trl.tokenReclaimed_();
+        // TODO: it'd be nice to be able to test cascading reclamation listeners
+        trl.tokenReclaimed_(new Runnable() {
+            @Override
+            public void run()
+            {}
+        });
     }
 
     /**

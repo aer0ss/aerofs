@@ -17,6 +17,7 @@ import com.aerofs.daemon.lib.db.CollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.CollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
+import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
@@ -122,6 +123,14 @@ public class TestCollector extends AbstractTest
         idbcw.init_();
 
         when(tm.begin_()).thenReturn(t);
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable
+            {
+                ((ITransListener)invocation.getArguments()[0]).committed_();
+                return null;
+            }
+        }).when(t).addListener_(any(ITransListener.class));
 
         doAnswer(new Answer<Void>()
         {

@@ -12,6 +12,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.transfers.download.Downloads;
 import com.aerofs.daemon.core.transfers.download.ExUnsatisfiedDependency;
 import com.aerofs.daemon.core.ex.ExWrapped;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
@@ -41,6 +42,8 @@ import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class Collector implements IDumpStatMisc
 {
@@ -101,13 +104,22 @@ public class Collector implements IDumpStatMisc
      * been added to the db before this method is called. otherwise the method
      * would discard the filter without attempting downloading these objects
      */
-    public void add_(DID did, @Nonnull BFOID filter, Trans t) throws SQLException
+    public void add_(final DID did, final @Nonnull BFOID filter, Trans t) throws SQLException
     {
         if (_cfs.addDBFilter_(did, filter, t)) {
-            l.debug("adding filter to {} triggers collector 4 {}", did, _sidx);
-            resetBackoffInterval_();
-            if (_it.started()) _cfs.addCSFilter_(did, _it.cs_(), filter);
-            else start_(t);
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committed_()
+                {
+                    l.debug("adding filter to {} triggers collector 4 {}", did, _sidx);
+                    resetBackoffInterval_();
+                    if (_it.started()) {
+                        _cfs.addCSFilter_(did, _it.cs_(), filter);
+                    } else {
+                        start_();
+                    }
+                }
+            });
         }
     }
 
@@ -122,8 +134,11 @@ public class Collector implements IDumpStatMisc
                 if (_cfs.loadDBFilter_(did)) {
                     l.debug("{} online triggers collector 4 {}", did, _sidx);
                     resetBackoffInterval_();
-                    if (_it.started()) _cfs.setCSFilterFromDB_(did, _it.cs_());
-                    else start_(null);
+                    if (_it.started()) {
+                        _cfs.setCSFilterFromDB_(did, _it.cs_());
+                    } else {
+                        start_();
+                    }
                 }
 
                 return null;
@@ -142,36 +157,18 @@ public class Collector implements IDumpStatMisc
      * start an iteration immediately. the caller must guarantee that _it.started_()
      * returns false.
      */
-    private void start_(@Nullable final Trans t)
+    private void start_()
     {
-        assert !_it.started();
+        checkState(!_it.started());
         final int startSeq = ++_startSeq;
 
-        _f._er.retry("start", new Callable<Void>()
-        {
-            boolean _first = true;
-
+        _f._er.retry("start", new Callable<Void>() {
             @Override
             public Void call() throws Exception
             {
-                /**
-                 * The Trans object is only valid on the first call (ExpRetry will schedule any sub-
-                 * sequent retries as separate self-handling events) so we need to make sure we
-                 * reset it before we call collect_ as it may throw...
-                 *
-                 * NB: using ExpRetry within a transaction is Bad(tm) but I'm not familiar enough
-                 * with the code to refactor it now...
-                 *
-                 * TODO(hugues): schedule collection in a trans listener instead?
-                 */
-                boolean isFirst = _first;
-                _first = false;
-
                 // stop this retry thread if someone called start_() again
                 if (startSeq != _startSeq) return null;
-
-                assert !(isFirst && _it.started()) : isFirst + " " + Collector.this;
-                collect_(isFirst ? t : null);
+                collect_();
                 return null;
             }
         });
@@ -187,7 +184,7 @@ public class Collector implements IDumpStatMisc
             _cfs.deleteAllCSFilters_();
             _cfs.setAllCSFiltersFromDB_(_it.cs_());
         } else {
-            start_(null);
+            start_();
         }
     }
 
@@ -218,20 +215,20 @@ public class Collector implements IDumpStatMisc
     }
 
     /**
-     * Wrap the collection loop in a transaction, if not called within a "covering" transaction
+     * Wrap the collection loop in a transaction
      */
-    private void collect_(@Nullable Trans covering) throws SQLException
+    private void collect_() throws SQLException
     {
-        Trans t = covering != null ? covering : _f._tm.begin_();
+        Trans t = _f._tm.begin_();
         try {
             collectLoop_(t);
 
             l.debug("collect {} ret. {}", _sidx, _it);
             attemptToStopAndFinalizeCollection_(t);
 
-            if (t != covering) t.commit_();
+            t.commit_();
         } finally {
-            if (t != covering) t.end_();
+            t.end_();
         }
     }
 
@@ -372,7 +369,7 @@ public class Collector implements IDumpStatMisc
     private class ContinuationTrigger implements ITokenReclamationListener
     {
         @Override
-        public void tokenReclaimed_()
+        public void tokenReclaimed_(final @Nonnull Runnable cascade)
         {
             l.debug("start continuation");
             _f._er.retry("continuation", new Callable<Void>()
@@ -380,8 +377,9 @@ public class Collector implements IDumpStatMisc
                 @Override
                 public Void call() throws Exception
                 {
-                    assert _it.started();
-                    collect_(null);
+                    checkState(_it.started());
+                    collect_();
+                    cascade.run();
                     return null;
                 }
             });

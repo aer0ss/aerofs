@@ -57,6 +57,21 @@ public class TokenManager implements IDumpStatMisc
         // for dumping only
         private final Set<Token> _hi = Sets.newHashSet();
 
+        private final Runnable _reclaimNotifier = new Runnable() {
+            @Override
+            public void run()
+            {
+                // if the reclamation listener does not acquire a token we need
+                // to recursively notify other waiting listeners, otherwise we
+                // may end up with a bunch of listeners waiting despite tokens
+                // being available.
+                if (_total < _quota) {
+                    ITokenReclamationListener l = _ls.removeFirstListener_();
+                    if (l != null) l.tokenReclaimed_(this);
+                }
+            }
+        };
+
         private final EnumMap<Prio, Set<Token>> _tokenSetMap = new EnumMap<Prio, Set<Token>>(
             Prio.class);
         {
@@ -161,16 +176,16 @@ public class TokenManager implements IDumpStatMisc
 
     void reclaim_(Token tk, Prio prio, boolean notifyReclaimListener)
     {
-        CatInfo info = _cat2info.get(tk.getCat());
+        final CatInfo info = _cat2info.get(tk.getCat());
         Preconditions.checkState(info._total > 0);
         info._total--;
 
         Util.verify(info._tokenSetMap.get(prio).remove(tk));
         if (notifyReclaimListener) {
-            ITokenReclamationListener l = info._ls.removeFirstListener_();
-            if (l != null) l.tokenReclaimed_();
+            info._reclaimNotifier.run();
         }
     }
+
 
     /**
      * Add a listener for when a token gets reclaimed and space is available
