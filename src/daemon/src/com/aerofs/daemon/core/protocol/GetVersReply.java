@@ -183,8 +183,10 @@ public class GetVersReply
 
         void refreshKnowledge_() throws SQLException
         {
-            _vKwlgLocal = _nvc.getKnowledgeExcludeSelf_(_sidx);
-            _vImmKwlgLocal = _ivc.getKnowledgeExcludeSelf_(_sidx);
+            if (_sidx != null) {
+                _vKwlgLocal = _nvc.getKnowledgeExcludeSelf_(_sidx);
+                _vImmKwlgLocal = _ivc.getKnowledgeExcludeSelf_(_sidx);
+            }
         }
 
         void process_(PBGetVersReplyBlock block, Trans t)
