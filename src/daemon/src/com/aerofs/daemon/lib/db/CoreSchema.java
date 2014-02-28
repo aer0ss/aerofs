@@ -213,6 +213,8 @@ public class CoreSchema implements ISchema
             T_SPQ           = "spq",
             C_SPQ_IDX       = "spq_i",
             C_SPQ_SID       = "spq_s",
+            C_SPQ_TYPE      = "spq_t",
+            C_SPQ_NAME      = "spq_n",
 
             // pending external folders
             T_PENDING_ROOT      = "pr",
@@ -534,7 +536,7 @@ public class CoreSchema implements ISchema
         createStoreTables(s, dbcw);
         createActivityLogTables(s, dbcw);
         createSyncStatusPushQueueTable(s, dbcw);
-        createLeaveQueueTable(s, dbcw);
+        createUpdateQueueTable(s, dbcw);
         createPendingRootTable(s, dbcw);
         createStoreContributorsTable(s, dbcw);
     }
@@ -618,11 +620,13 @@ public class CoreSchema implements ISchema
                 ")");
     }
 
-    public static void createLeaveQueueTable(Statement s, IDBCW dbcw) throws SQLException
+    public static void createUpdateQueueTable(Statement s, IDBCW dbcw) throws SQLException
     {
         s.executeUpdate("create table if not exists " + T_SPQ + "(" +
                 C_SPQ_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
-                C_SPQ_SID + dbcw.uniqueIdType() + " not null" +
+                C_SPQ_SID + dbcw.uniqueIdType() + " not null," +
+                C_SPQ_TYPE + " integer not null," +
+                C_SPQ_NAME + " text" +
                 ")");
     }
 

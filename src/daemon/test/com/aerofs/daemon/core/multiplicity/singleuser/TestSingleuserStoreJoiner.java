@@ -49,7 +49,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     @Mock DirectoryService ds;
     @Mock CfgRootSID cfgRootSID;
     @Mock RitualNotificationServer rns;
-    @Mock SharedFolderAutoLeaver lod;
+    @Mock SharedFolderAutoUpdater lod;
     @Mock IMapSIndex2SID sidx2sid;
     @Mock PendingRootDatabase prdb;
     @Mock RitualNotifier _ritualNotifier;
@@ -92,7 +92,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
         SID sid = SID.generate();
         ssj.joinStore_(sidx, sid, "test", true, t);
 
-        verify(lod).removeFromQueue_(sid, t);
+        verify(lod).removeLeaveCommandsFromQueue_(sid, t);
         verify(prdb).addPendingRoot(sid, "test", t);
 
         verifyZeroInteractions(oc, od, os, sd);
@@ -104,7 +104,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
         SID sid = SID.generate();
         ssj.joinStore_(sidx, sid, "test", false, t);
 
-        verify(lod).removeFromQueue_(sid, t);
+        verify(lod).removeLeaveCommandsFromQueue_(sid, t);
         verifyAnchorCreated(sid, "test");
         verifyZeroInteractions(od, os, sd, prdb);
     }
@@ -116,7 +116,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
 
         ssj.joinStore_(sidx, sid, "*test", false, t);
 
-        verify(lod).removeFromQueue_(sid, t);
+        verify(lod).removeLeaveCommandsFromQueue_(sid, t);
         verifyAnchorCreated(sid, "*test");
 
         verifyZeroInteractions(od, os, sd, prdb);

@@ -48,14 +48,14 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final DirectoryService _ds;
     private final CfgRootSID _cfgRootSID;
     private final RitualNotificationServer _rns;
-    private final SharedFolderAutoLeaver _lod;
+    private final SharedFolderAutoUpdater _lod;
     private final IMapSIndex2SID _sidx2sid;
     private final PendingRootDatabase _prdb;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
-            SharedFolderAutoLeaver lod, StoreDeleter sd, IMapSIndex2SID sidx2sid,
+            SharedFolderAutoUpdater lod, StoreDeleter sd, IMapSIndex2SID sidx2sid,
             PendingRootDatabase prdb)
     {
         _ds = ds;
@@ -81,7 +81,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         if (sid.equals(_cfgRootSID.get())) return;
 
         // make sure we don't have an old "leave request" queued
-        _lod.removeFromQueue_(sid, t);
+        _lod.removeLeaveCommandsFromQueue_(sid, t);
 
         // external folders are not auto-joined (user interaction is needed)
         if (external) {

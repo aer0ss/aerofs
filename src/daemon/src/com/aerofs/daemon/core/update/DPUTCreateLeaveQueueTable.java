@@ -43,7 +43,7 @@ public class DPUTCreateLeaveQueueTable implements IDaemonPostUpdateTask
             @Override
             public void run_(Statement s) throws SQLException
             {
-                CoreSchema.createLeaveQueueTable(s, _dbcw);
+                CoreSchema.createUpdateQueueTable(s, _dbcw);
 
                 ResultSet rs = s.executeQuery(DBUtil.selectWhere(T_OA,
                         C_OA_TYPE + "=" + Type.ANCHOR.ordinal(),
