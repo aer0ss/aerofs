@@ -28,14 +28,17 @@
     </style>
 </%block>
 
+<%! from web.util import is_private_deployment %>
+
 <div class="row page-block">
     <div class="span8">
         <h2>${page_heading}</h2>
-        <div class="well well-small footnote">
-            This is a list of shared folder names only. Please use an AeroFS
-            client to see the actual content of your folders and files.
-        </div>
-
+            %if not is_private_deployment(request.registry.settings):
+              <div class="well well-small footnote">
+                  This is a list of shared folder names only. Please use an AeroFS
+                  client to see the actual content of your folders and files.
+              </div>
+            %endif
         <table id="folders_table" class="table table-hover">
             <thead><tr><th>Folder</th><th>Members</th><th></th></tr></thead>
             <tbody></tbody>

@@ -1,4 +1,4 @@
-<ol class="breadcrumb">
+<ul class="breadcrumb">
     <li ng-if="!breadcrumbs.length" class="active">My Files</li>
     <li ng-if="breadcrumbs.length"><a href="#/">My Files</a></li>
 
@@ -11,9 +11,9 @@
       <span class="divider">&rsaquo;</span>
       {{folder.name}}
     </li>
-</ol>
+</ul>
 
-<table ng-show="folders.length || files.length" class="table table-hover">
+<table ng-show="folders.length || files.length" class="table table-hover" id="file-list">
   <thead>
     <tr>
       <th></th>
@@ -23,18 +23,18 @@
   </thead>
   <tbody>
       <tr ng-repeat="folder in folders | orderBy:'name'" ng-init="folders=[]" class="folder">
-        <td><img src="/static/shelob/img/icons/40x40/filetype_folder.png"></td>
-        <td><a href="#/{{folder.id}}">{{folder.name}}</a></td>
-        <td>--</td>
+        <td class="icon"><img src="/static/shelob/img/icons/40x40/filetype_folder.png"></td>
+        <td class="name"><a href="#/{{folder.id}}">{{folder.name}}</a></td>
+        <td class="last-modified">--</td>
       </tr>
       <tr ng-repeat="file in files | orderBy:'name'" ng-init="files=[]" class="file">
-        <td><div aero-icon data-mime-type={{file.mime_type}}></div></td>
+        <td class="icon"><div aero-icon data-mime-type={{file.mime_type}}></div></td>
         <!--
         The ng-click directive is what's executed; the href is only provided as
         a no-op so that the link has the proper styling.
         -->
-        <td><a ng-click="download(file.id)" href="javascript:;">{{file.name}}</a></td>
-        <td>{{file.last_modified}}</td>
+        <td class="name"><a ng-click="download(file.id)" href="javascript:;">{{file.name}}</a></td>
+        <td class="last-modified">{{file.last_modified | date: 'short'}}</td>
       </tr>
   </tbody>
 </table>

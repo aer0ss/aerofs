@@ -1,0 +1,14 @@
+#file-list td {
+    padding: 5px;
+    vertical-align: middle;
+}
+#file-list td.icon {
+    width: 45px;
+}
+#file-list td.name {
+    width: 60%;
+}
+.breadcrumb {
+    font-size: 1.5em;
+    background-color: transparent;
+}

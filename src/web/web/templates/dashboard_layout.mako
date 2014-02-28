@@ -116,10 +116,11 @@
 
 <%def name="render_nonadmin_links()">
     <%
-        links = [
-            ('my_shared_folders', _("My Shared Folders")),
-            ('accept', _("My Invitations")),
-        ]
+        links = []
+        if is_private_deployment(request.registry.settings):
+            links.append(('files', _("My Files")))
+        links.append(('my_shared_folders', _("My Shared Folders")))
+        links.append(('accept', _("My Invitations")))
     %>
     % for link in links:
         ${navigation.link(link)}
