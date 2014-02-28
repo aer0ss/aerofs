@@ -6,6 +6,10 @@ DEV_ROOT=$(pwd)
 SRC_ROOT="$DEV_ROOT"/../..
 ENV="$HOME/bunker-env"
 
+# prompt for sudo privilege
+echo "This script requires sudo privileges, please enter your password"
+sudo echo >> /dev/null
+
 # Create a directory and touch a flag that's needed to serve bunker locally
 # because bunker assumes the web server is running on the appliance
 sudo mkdir -p /opt/bunker/state && sudo chmod 777 /opt/bunker/state
