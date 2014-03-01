@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
     _TCHAR msg[MAX_MESSAGE_LENGTH];
     _TCHAR approot[MAX_APPROOT_LENGTH];
 
-    if (!launcher_get_approot(approot, sizeof(approot), &errmsg)) {
+    if (!launcher_get_approot(approot, sizeof(approot), &errmsg, false)) {
         _sprintf(msg, sizeof(msg), _T("%s\n%s"), _T("Could not find approot:"), errmsg);
         show_error(msg);
         return EXIT_FAILURE;

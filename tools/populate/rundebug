@@ -196,6 +196,7 @@ GetOs()
     if [ `uname -s` == Darwin ]
     then
         Platform=osx
+        JavaCmd="$AppRoot/jre/bin/java"
     elif [ `uname -s` == Linux ]; then
         if [ `uname -m` == x86_64 ]; then
             Platform=linux64

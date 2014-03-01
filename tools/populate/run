@@ -8,19 +8,19 @@ PPWD=`dirname $0`
 # convert '/cygdrive/X/' to 'X:/'. otherwise JVM wouldn't recognize the path
 PPWD=`echo $PPWD | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 
+
 if [ x`uname -s | grep -i 'cygwin\|mingw'` != x ]; then
     S=';'
-    JAVA="$PPWD/jre/bin/java"
 else
     EXEC=exec
     S=':'
-    JAVA="java"
 fi
 
-
 OS=`"$PPWD"/os`
-
-if [ $OS == osx ]; then
+if [ $OS == win ]; then
+    JAVA="$PPWD/jre/bin/java"
+elif [ $OS == osx ]; then
+    JAVA="$PPWD/jre/bin/java"
     VMARGS="$VMARGS -XstartOnFirstThread"
     export DYLD_LIBRARY_PATH=$PPWD:$DYLD_LIBRARY_PATH
 elif [ x`echo $OS | grep linux` != x ]; then
@@ -40,6 +40,7 @@ elif [ x`echo $OS | grep linux` != x ]; then
     if [ -d "$JRE_BASE/jre" ]; then
         JRE_BASE="$JRE_BASE/jre"
     fi
+    JAVA="$JRE_BASE/bin/java"
     JRE_LIB="$JRE_BASE/lib/$JRE_LIB_ARCH"
     export LD_LIBRARY_PATH=$PPWD:$JRE_LIB:$JRE_LIB/server:$LD_LIBRARY_PATH
 fi

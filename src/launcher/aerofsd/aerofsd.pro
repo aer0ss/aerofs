@@ -4,11 +4,14 @@ include(../common.pri)
 TEMPLATE = app
 CONFIG += console
 CONFIG -= app_bundle
-DESTDIR = $$PWD/../bin/$$OS
 TARGET = aerofsd
+DESTDIR = $$RESOURCE_CLIENT
 
 macx {
-    LIBS += -framework JavaVM
+    #LIBS += -L"$$RESOURCE_CLIENT/jre/lib/server" -ljvm
+
+    # Tells the linker where to find libjvm.dylib at run time
+    QMAKE_LFLAGS += "-Wl,-rpath,@executable_path/jre/lib/server"
 }
 linux {
     LIBS += -ljava -lverify

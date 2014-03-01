@@ -15,12 +15,14 @@ SOURCES += \
 
 macx {
     SOURCES += \
-        util_nix.cpp
+        util_nix.cpp \
+        util_osx.cpp
 }
 
 linux {
     SOURCES += \
-        util_nix.cpp
+        util_nix.cpp \
+        util_linux.cpp
 }
 
 win32 {

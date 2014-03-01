@@ -24,7 +24,7 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 {
     SetLastError(ERROR_SUCCESS);
 #else
-int main(int argc, char* argv)
+int main(int argc, char** argv)
 {
     // Util.execBackground closes all our output streams, so we need to ignore
     // SIGPIPE if we want to be able to print any debugging information
@@ -36,7 +36,13 @@ int main(int argc, char* argv)
     _TCHAR msg[MAX_MESSAGE_LENGTH];
     _TCHAR approot[MAX_APPROOT_LENGTH];
 
-    if (!launcher_get_approot(approot, sizeof(approot), &errmsg)) {
+#ifdef __APPLE__
+    bool fromOSXBundle = true;
+#else
+    bool fromOSXBundle = false;
+#endif
+
+    if (!launcher_get_approot(approot, sizeof(approot), &errmsg, fromOSXBundle)) {
         _sprintf(msg, sizeof(msg), _T("%s\n%s"), _T("Could not find approot:"), errmsg);
         show_error(msg);
         return EXIT_FAILURE;

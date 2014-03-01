@@ -7,7 +7,19 @@ DESTDIR = $$PWD/../bin/$$OS
 TARGET = aerofs
 
 macx {
-    LIBS += -framework JavaVM
+    # Put the binary in the AeroFS.app bundle
+    DESTDIR = $$AEROFS_ROOT/tools/build/osx/aerofs.app.template/Contents/MacOS
+    TARGET = AeroFSClient
+
+    # After building, copy the executable over to the Team Server bundle
+    QMAKE_POST_LINK += cp \
+                $$AEROFS_ROOT/tools/build/osx/aerofs.app.template/Contents/MacOS/AeroFSClient \
+                $$AEROFS_ROOT/tools/build/osx/aerofsts.app.template/Contents/MacOS/AeroFSTeamServerClient
+
+    #LIBS += -L"$$RESOURCE_CLIENT/jre/lib/server" -ljvm
+
+    # Tells the linker where to find libjvm.dylib at run time
+    QMAKE_LFLAGS += "-Wl,-rpath,@executable_path/../Resources/Java/jre/lib/server"
 }
 linux {
     LIBS += -ljava -lverify
@@ -21,6 +33,7 @@ linux-g++-64 {
     LIBS += -L "$$(JAVA_HOME)/jre/lib/amd64"
 }
 win32 {
+    DESTDIR = $$RESOURCE_CLIENT
     DEFINES += _UNICODE UNICODE
     LIBS += -ladvapi32 -luser32
 }
