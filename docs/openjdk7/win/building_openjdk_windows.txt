@@ -1,0 +1,91 @@
+Building OpenJDK 7 on Windows
+=============================
+
+Note (greg): this is an old document that I wrote explaining the steps to make a Windows XP build machine.
+
+
+The information below is based on the following helpful resources:
+
+- http://hg.openjdk.java.net/jdk7/build/raw-file/tip/README-builds.html
+- http://stas-blogspot.blogspot.com/2012/09/building-openjdk-on-windows.html
+- https://github.com/alexkasko/openjdk-unofficial-builds/blob/master/README.md
+
+1. Set up a clean, fully patched Windows XP VM
+	Fresh Windows XP VM
+	Updated
+	Installed Google Chrome
+	Installed Visual Studio 2010
+
+2. Install Cygwin. Make sure the following packages are installed: (they aren't by default)
+	binutils, make, m4, cpio, awk, file, zip, unzip, procps
+
+3. Update make. The make version that ships with Cygwin doesn't work because it doesn't handle the paths properly.
+    - Rename C:\cygwin\bin\make.exe to make_cygwin.exe
+	- Download make.exe from http://www.cmake.org/files/cygwin/make.exe and put it in C:\cygwin\bin
+	- Copy C:\cygwin\bin\cygintl-8.dll to C:\cygwin\bin\cygintl-3.dll
+
+4. Install DirectX SDK. OpenJDK recommends using a very old version, but that caused some problems. I ended up using the latest SDK recommended by Microsoft (DirectX SDK June 2010)
+
+5. Install a Java 6 JDK to serve as a bootstrap JDK. I used Oracle's JDK 6u43. Make sure to install it in a path with NO SPACES
+
+6. Install Apache Ant and make sure it's in the path. No spaces in the path!
+
+Note: In environment variables, make sure all paths use forward slashes, exept for the PATH variable itself.
+
+7. Download and build Freetype:
+	1. Download FreeType v.2.4.7 from http://download.savannah.gnu.org/releases/freetype/
+	2. Unpack it somewhere and open '\builds\win32\vc2010\freetype.sln' in Visual Studio.
+	3. Click on Build -> Configuration Manager and make sure "Release Multithreaded" is selected
+	4. Goto the project properties (right click on "freetype" in project tree) and in 'Configuration Properties / General':
+		- Target name: 'freetype'
+		- Target extension: '.dll'
+		- Configuration type: 'Dynamic Library (.dll)'
+	5. Update ftoption.h, add following two lines:
+		#define FT_EXPORT(x) __declspec(dllexport) x
+		#define FT_BASE(x) __declspec(dllexport) x
+	6. Make a build and you will get dll & lib in 'objs\win32\vc2010'.
+	7. Do not forget to assign appropriate values to 'ALT_FREETYPE_LIB_PATH' and 'ALT_FREETYPE_HEADERS_PATH' variables. Use forward slashes.
+
+8. Checkout the OpenJDK7u sources in OS X. Follow instructions in the build readme. Basically:
+
+	hg clone http://hg.openjdk.java.net/jdk7/jdk7 YourOpenJDK
+	cd YourOpenJDK
+	sh ./get_source.sh
+
+	Pick the version that you want to check out. I used the latest release, 7u14 build 15:
+
+	sh ./make/scripts/hgforest.sh pull -u
+	sh ./make/scripts/hgforest.sh checkout jdk7u14-b15
+
+	(OpenJDK is made of several sub-repositories. You need to use the make/scripts/hgforest.sh script to apply the same mercurial command to all of them.)
+
+9. Share the openjdk sources folder with your Windows XP VM
+
+10. Make sure the following environment variables are set. (Use an env var editor such as RapidEE.exe, much more practical than the default Windows interface)
+	ALT_BOOTDIR=C:/path/to/jdk6
+	ANT_HOME=C:/path/to/ant
+
+11. Had to add OPENJDK=true at the top of hotspot/make/windows/makefiles/generated.make
+
+12. Launch a Cygwin terminal.
+	$ cd /path/to/openjdk
+	$ sh ./make/scripts/vsvars.sh -v10 > settings && eval `cat settings`
+	$ make ARCH_DATA_MODEL=32 ALT_FREETYPE_LIB_PATH=C:/path/to/freetype-2.4.7/objs/win32/vc2010 ALT_FREETYPE_HEADERS_PATH=C:/path/to/freetype-2.4.7/include UNLIMITED_CRYPTO=true FULL_DEBUG_SYMBOLS=0 HOTSPOT_BUILD_JOBS=4 PARALLEL_COMPILE_JOBS=4
+
+
+===================================
+
+Post build
+
+## For some reason all files have the executable bit set. Fix this:
+
+$ cd build/j2sdk-image
+$ find . -type f -print | xargs chmod -x
+$ find . -iname "*.exe" | xargs chmod +x
+$ find . -iname "*.dll" | xargs chmod +x
+
+## CA CERTS
+
+
+
+
