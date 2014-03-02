@@ -55,6 +55,7 @@ import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 public abstract class BaseSecUtil
@@ -811,5 +812,15 @@ public abstract class BaseSecUtil
             retval = false;
         }
         return retval;
+    }
+
+    /**
+     * Return true if the given certificate expiry is at least 'requiredMs' millis in the future.
+     * Does not check other elements of cert validity.
+     */
+    public static boolean validForAtLeast(X509Certificate entityCertificate, long requiredMs)
+    {
+        long remainingMillis = entityCertificate.getNotAfter().getTime() - new Date().getTime();
+        return (remainingMillis >= requiredMs);
     }
 }

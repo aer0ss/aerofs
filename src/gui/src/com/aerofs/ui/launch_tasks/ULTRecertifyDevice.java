@@ -4,7 +4,9 @@
 
 package com.aerofs.ui.launch_tasks;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.cli.CLI;
 import com.aerofs.controller.CredentialUtil;
@@ -25,45 +27,73 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newOneWayAuthClientFactory;
 
 public class ULTRecertifyDevice extends UILaunchTask
 {
-    private final SPBlockingClient.Factory _spfact;
     private static final Logger l = Loggers.getLogger(ULTRecertifyDevice.class);
+    private static final int REFRESH_MARGIN_DAYS = 150;
+    private UserID _userId;
+    private DID _deviceId;
 
     @Inject
-    ULTRecertifyDevice(IScheduler sched)
+    ULTRecertifyDevice(IScheduler sched, UserID userId, DID deviceId)
     {
         super(sched);
-        _spfact = newOneWayAuthClientFactory();
+        _userId = userId;
+        _deviceId = deviceId;
     }
 
     @Override
-    protected void run_()
-            throws Exception
+    protected void run_() throws Exception
     {
-        // Determine if the certificate is signed by current CA or needs to be reissued.
-        // Check if RTROOT/cert is signed by APPROOT/cacert.pem
-        // If so, we're done.
-        // TODO: recertify ahead of time (e.g. every 6 month)to avoid service disruption on cert
-        // expiration
-        if (SecUtil.signingPathExists(Cfg.cert(), Cfg.cacert())) {
-            l.debug("client cert is signed by CA, good");
-            return;
-        }
+        // First, if the existing cert signing path is invalid (we upgraded the CA or it has
+        // expired?) then ask the user for authentication info so we can recertify.
+        // If the signing path exists, check if about half of the life of the cert is left; within
+        // let's REFRESH_MARGIN_DAYS, we will use the existing certificate to sign in this device
+        // and request a new cert.
+        // Or, maybe everything is okay. In which case, do nothing.
+        if (!SecUtil.signingPathExists(Cfg.cert(), Cfg.cacert())) {
+            recertify(new NullCallable() {
+                // FIXME: this needs an update to a new UI element, this one is obsolete
+                @Override
+                public void call() throws Exception {
+                    if (L.isMultiuser()) {
+                        recertifyTeamServer();
+                    } else {
+                        recertifyClient();
+                    }
+                }
+            });
+        } else if (Cfg.recertify(Cfg.absRTRoot())
+                || (!SecUtil.validForAtLeast(Cfg.cert(), REFRESH_MARGIN_DAYS * C.DAY))) {
+            recertify(new NullCallable() {
+                @Override
+                public void call() throws Exception {
+                    l.info("Attempting to refresh the device certificate...");
 
+                    SPBlockingClient mutualAuthClient = newMutualAuthClientFactory().create();
+                    mutualAuthClient.signInDevice(_userId.getString(), _deviceId.toPB());
+                    CredentialUtil.recertifyDevice(_userId, mutualAuthClient);
+
+                    l.info("Successfully refreshed the device certificate.");
+                }
+            });
+        } else {
+            l.debug("client cert is signed by CA, good");
+        }
+    }
+
+    static interface NullCallable { void call() throws Exception; }
+
+    private void recertify(NullCallable recertifyAction) throws Exception
+    {
         UIGlobals.dm().stopIgnoreException();
         try {
-            if (L.isMultiuser()) {
-                recertifyTeamServer();
-            } else {
-                recertifyClient();
-            }
-            // Reload the cert in memory
+            recertifyAction.call();
             Cfg.init_(Cfg.absRTRoot(), false);
         } finally {
-            // restart the daemon regardless of whether we succeed.
             UIGlobals.dm().start();
         }
     }
@@ -125,7 +155,7 @@ public class ULTRecertifyDevice extends UILaunchTask
         assert ac._userID != null;
         assert ac._password != null;
 
-        SPBlockingClient sp = _spfact.create();
+        SPBlockingClient sp = newOneWayAuthClientFactory().create();
         sp.credentialSignIn(ac._userID.getString(),
                 ByteString.copyFrom(new String(ac._password).getBytes()));
         CredentialUtil.recertifyTeamServerDevice(Cfg.user(), sp);
@@ -143,12 +173,11 @@ public class ULTRecertifyDevice extends UILaunchTask
     // FIXME : this function depends on the sha'ed password being stored locally.
     // This will be an unsafe assumption very soon. Should prompt the user to re-authenticate
     // their identity - either using an AeroFS password or using an identity system like OpenID.
-    private void recertifyClient()
-            throws Exception
+    private void recertifyClient() throws Exception
     {
         l.info("attempting to recertify client {}", Cfg.did());
         // We have a cert that is not trusted by the current CA.  Try to get a new one.
-        SPBlockingClient sp = _spfact.create();
+        SPBlockingClient sp = newOneWayAuthClientFactory().create();
         sp.signInUser(Cfg.user().getString(), Cfg.scryptedPB());
 
         CredentialUtil.recertifyDevice(Cfg.user(), sp);

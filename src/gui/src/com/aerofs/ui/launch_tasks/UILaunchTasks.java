@@ -4,6 +4,7 @@
 
 package com.aerofs.ui.launch_tasks;
 
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.UIGlobals;
 
 /**
@@ -18,7 +19,7 @@ public class UILaunchTasks
     public UILaunchTasks()
     {
         _tasks = new UILaunchTask[] {
-                new ULTRecertifyDevice(UIGlobals.scheduler())
+                new ULTRecertifyDevice(UIGlobals.scheduler(), Cfg.user(), Cfg.did())
         };
     }
 

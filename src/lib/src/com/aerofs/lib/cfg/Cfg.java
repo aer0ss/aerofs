@@ -9,6 +9,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
@@ -403,6 +404,14 @@ public class Cfg
     public static boolean lotsOfLotsOfLog(String rtRoot)
     {
         return new File(Util.join(rtRoot, LibParam.LOLOL)).exists();
+    }
+
+    public synchronized static boolean recertify(String rtRoot)
+    {
+        File marker = new File(Util.join(rtRoot, LibParam.RECERT));
+        boolean doRecertify = marker.exists();
+        FileUtil.deleteOrOnExit(marker);
+        return doRecertify;
     }
 
     public static boolean useProfiler()

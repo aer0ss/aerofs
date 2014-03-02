@@ -104,7 +104,7 @@ public final class TestXMPPConnectionService
         {
             linkStateChangedSemaphore.release();
         }
-    };
+    }
 
     @Before
     public void setup()

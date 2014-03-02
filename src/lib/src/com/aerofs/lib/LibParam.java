@@ -52,6 +52,7 @@ public class LibParam extends BaseParam
     public static final String NOXFF                   = "noxff";
     public static final String LOL                     = "lol";
     public static final String LOLOL                   = "lolol";
+    public static final String RECERT                  = "recert";
     public static final String AGGRESSIVE_CHECKS       = "ac";
     public static final String VERSION                 = "version";
     public static final String DEFAULT_RTROOT          = "DEFAULT";

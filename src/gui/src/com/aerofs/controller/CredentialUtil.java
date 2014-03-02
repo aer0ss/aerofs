@@ -6,13 +6,13 @@ package com.aerofs.controller;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sp.RecertifyDeviceReply;
@@ -75,8 +75,8 @@ public class CredentialUtil
                     throws Exception
             {
                 IOSUtil osu = OSUtil.get();
-                return sp.registerTeamServerDevice(did, csr,
-                        osu.getOSFamily().getString(), osu.getFullOSName(), deviceName);
+                return sp.registerTeamServerDevice(did, csr, osu.getOSFamily().getString(),
+                        osu.getFullOSName(), deviceName);
             }
         });
     }
