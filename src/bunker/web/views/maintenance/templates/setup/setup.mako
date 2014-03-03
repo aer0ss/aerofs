@@ -58,26 +58,21 @@
             <% local.page_scripts = license_absent_page.scripts %>
         %endif
     %elif page == 1:
-        <h3>Step 1 of 4</h3>
+        <h3>Step 1 of 3</h3>
         <%namespace name="hostname_page" file="hostname_page.mako"/>
         <%hostname_page:body/>
         <% local.page_scripts = hostname_page.scripts %>
     %elif page == 2:
-        <h3>Step 2 of 4</h3>
-        <%namespace name="identity_page" file="identity_page.mako"/>
-        <%identity_page:body/>
-        <% local.page_scripts = identity_page.scripts %>
+        <h3>Step 2 of 3</h3>
+        <%namespace name="cert_page" file="cert_page.mako"/>
+        <%cert_page:body/>
+        <% local.page_scripts = cert_page.scripts %>
     %elif page == 3:
-        <h3>Step 3 of 4</h3>
+        <h3>Step 3 of 3</h3>
         <%namespace name="email_page" file="email_page.mako"/>
         <%email_page:body/>
         <% local.page_scripts = email_page.scripts %>
     %elif page == 4:
-        <h3>Step 4 of 4</h3>
-        <%namespace name="cert_page" file="cert_page.mako"/>
-        <%cert_page:body/>
-        <% local.page_scripts = cert_page.scripts %>
-    %elif page == 5:
         <h3>Sit back and relax</h3>
         <%namespace name="apply_page" file="apply_page.mako"/>
         <%apply_page:body/>

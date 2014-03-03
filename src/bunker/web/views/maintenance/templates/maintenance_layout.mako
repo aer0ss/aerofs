@@ -14,6 +14,7 @@
                 links = [
                     ('registered_apps', _("Registered Apps")),
                     ('auditing', _("Auditing")),
+                    ('identity', _("Identity")),
                     ('setup', _("Setup")),
                 ]
             %>

@@ -31,8 +31,10 @@ function hideAllMessages() {
 }
 
 // hide messages when a modal pops up
+// hide all other modals when a modal is about to show
 $(document).ready(function() {
     $('div.modal').on('shown', hideAllMessages);
+    $('div.modal').on('show', hideAllModals);
 })
 
 function fadeOutErrorMessage() {

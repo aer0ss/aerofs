@@ -13,7 +13,6 @@ routes = {
     'json_setup_email',
     'json_verify_smtp',
     'json_setup_certificate',
-    'json_setup_identity',
     'json_verify_ldap',
     'json_upload_backup',
     'json_setup_finalize',
@@ -26,6 +25,8 @@ routes = {
     # Other maintenance routes
     'login',
     'login_submit',
+    'identity',
+    'json_set_identity_options',
     'backup',
     'upgrade',
     'logs',

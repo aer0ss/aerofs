@@ -11,7 +11,7 @@ from pyramid.security import NO_PERMISSION_REQUIRED, remember
 
 import requests
 from pyramid.view import view_config
-from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError
+from pyramid.httpexceptions import HTTPFound, HTTPOk
 from aerofs_common.bootstrap import BootstrapClient
 from web.error import error
 from web.util import is_configuration_initialized
@@ -32,12 +32,13 @@ log = logging.getLogger(__name__)
 # ------------------------------------------------------------------------
 
 # Base URL for all calls to the tomcat verification servlet.
-def _verification_base_url(request):
+def verification_base_url(request):
     return request.registry.settings["deployment.verification_server_uri"]
+
 
 # This is a tomcat servlet that is part of the SP package.
 def _email_verification_url(request):
-    return _verification_base_url(request) + "/email"
+    return verification_base_url(request) + "/email"
 
 # N.B. these params are also defined in Java land in SmtpVerificationServlet.java
 _SMTP_VERIFICATION_FROM_EMAIL = "from_email"
@@ -49,11 +50,6 @@ _SMTP_VERIFICATION_SMTP_USERNAME = "email_sender_public_username"
 _SMTP_VERIFICATION_SMTP_PASSWORD = "email_sender_public_password"
 _SMTP_VERIFICATION_SMTP_ENABLE_TLS = "email_sender_public_enable_tls"
 _SMTP_VERIFICATION_SMTP_CERT = "email_sender_public_cert"
-
-# LDAP verification servlet URL.
-def _ldap_verification_url(request):
-    return _verification_base_url(request) + "/ldap"
-
 
 # ------------------------------------------------------------------------
 # Other
@@ -113,7 +109,7 @@ def _setup_common(request, conf, license_page_only):
         'is_license_present_and_valid': is_license_present_and_valid(conf),
         # The following parameter is used by email_page.mako
         'default_support_email': _get_default_support_email(conf['base.host.unified']),
-        # This parameter is used by SMTP & LDAP verification and the apply code
+        # This parameter is used by SMTP verification and the apply code
         'restored_from_backup': request.session.get(_SESSION_KEY_RESTORED, False)
     }
 
@@ -409,89 +405,6 @@ def json_setup_certificate(request):
     finally:
         os.unlink(certificate_filename)
         os.unlink(key_filename)
-
-
-# ------------------------------------------------------------------------
-# Identity
-# ------------------------------------------------------------------------
-
-@view_config(
-    route_name='json_verify_ldap',
-    permission='maintain',
-    renderer='json',
-    request_method='POST'
-)
-def json_verify_ldap(request):
-    cert = request.params['ldap_server_ca_certificate']
-    if cert and not is_certificate_formatted_correctly(write_pem_to_file(cert)):
-        error("The certificate you provided is invalid. "
-              "Please provide one in PEM format.")
-
-    payload = {}
-    for key in _get_ldap_specific_parameters(request.params):
-        # N.B. need to convert to ascii. The request params given to us in
-        # unicode format.
-        payload[key] = request.params[key].encode('ascii', 'ignore')
-
-    r = requests.post(_ldap_verification_url(request), data=payload)
-
-    if r.status_code == 200:
-        return {}
-
-    # In this case we have a human readable error. Hopefully it will help them
-    # debug their LDAP issues. Return the error string.
-    if r.status_code == 400:
-        error("We couldn't connect to the LDAP server. Please check your "
-              "settings. The error is:<br>" + r.text)
-
-    # Server failure. No human readable error message is available.
-    raise HTTPInternalServerError()
-
-
-@view_config(
-    route_name='json_setup_identity',
-    permission='maintain',
-    renderer='json',
-    request_method='POST'
-)
-def json_setup_identity(request):
-    log.info("setup identity")
-
-    auth = request.params['authenticator']
-    ldap = auth == 'external_credential'
-
-    # All is well - set the external properties.
-    conf = get_conf_client(request)
-    conf.set_external_property('authenticator', auth)
-    if ldap:
-        _write_ldap_properties(conf, request.params)
-
-    return HTTPOk()
-
-
-def _write_ldap_properties(conf, request_params):
-    for key in _get_ldap_specific_parameters(request_params):
-        if key == 'ldap_server_ca_certificate':
-            cert = request_params[key]
-            if cert:
-                conf.set_external_property(key, format_pem(cert))
-            else:
-                conf.set_external_property(key, '')
-        else:
-            conf.set_external_property(key, request_params[key])
-
-
-def _get_ldap_specific_parameters(request_params):
-    """
-    N.B. This method assumes that an HTTP parameter is LDAP specific iff. it has
-    the "ldap_" prefix.
-    """
-    ldap_params = []
-    for key in request_params:
-        if key[:5] == 'ldap_':
-            ldap_params.append(key)
-
-    return ldap_params
 
 
 # ------------------------------------------------------------------------
