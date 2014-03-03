@@ -18,6 +18,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
@@ -33,8 +34,9 @@ public class RockLog
 
     private final Executor _e = new ThreadPoolExecutor(
             0, 1,                                           // at most 1 thread
-            1, TimeUnit.SECONDS,                            // idle thread TTL
-            Queues.<Runnable>newLinkedBlockingQueue(100));  // bounded event queue
+            1, TimeUnit.MINUTES,                            // idle thread TTL
+            Queues.<Runnable>newLinkedBlockingQueue(100),   // bounded event queue
+            new CallerRunsPolicy());                        // blocking submit on queue overflow
 
     @Inject
     public RockLog()

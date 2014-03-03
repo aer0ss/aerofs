@@ -102,4 +102,20 @@ public class TestRockLog extends AbstractTest
         boolean success = rockLog.rpc(defect);
         assertFalse(success);
     }
+
+    @Test
+    public void shouldNotDieWhenSubmittingManyRequests()
+    {
+        _server.setRequestProcessor(new RequestProcessor()
+        {
+            @Override
+            public HttpResponse process(HttpRequest request) throws Exception
+            {
+                // Return a 502 response
+                return new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.GATEWAY_TIMEOUT);
+            }
+        });
+        RockLog rockLog = new RockLog(TEST_URL, _cfg);
+        for (int i = 0; i < 1000; ++i) rockLog.newDefect(DEFECT_NAME).send();
+    }
 }
