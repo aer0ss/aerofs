@@ -131,6 +131,16 @@ class Multicast implements IMaxcast, ILinkStateListener
             ImmutableSet<NetworkInterface> added,
             ImmutableSet<NetworkInterface> removed)
     {
+        for (NetworkInterface iface : removed) {
+            MulticastSocket s = ifaceToMulticastSocket.remove(iface);
+            if (s == null) continue;
+
+            l.info("linkStateChanged->mc:rem:");
+            l.info("-> {}", iface);
+
+            close(s);
+        }
+
         for (NetworkInterface iface : added) {
             try {
                 if (!iface.supportsMulticast()) continue;
@@ -172,26 +182,6 @@ class Multicast implements IMaxcast, ILinkStateListener
             } catch (IOException e) {
                 l.warn("send ping or pong: " + Util.e(e));
             }
-        }
-
-        // We don't have to send offline messages if the the links are physically down. But in
-        // case of a logical mark-down (LinkStateService#markLinksDown()), we need manual
-        // disconnection. N.B. this needs to be done *before* closing the sockets.
-
-        try {
-            sendControlMessage(tcp.newGoOfflineMessage());
-        } catch (IOException e) {
-            l.warn("send offline: " + Util.e(e));
-        }
-
-        for (NetworkInterface iface : removed) {
-            MulticastSocket s = ifaceToMulticastSocket.remove(iface);
-            if (s == null) continue;
-
-            l.info("linkStateChanged->mc:rem:");
-            l.info("-> {}", iface);
-
-            close(s);
         }
 
         l.trace("mc:current ifs:");
