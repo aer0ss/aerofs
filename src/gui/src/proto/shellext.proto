@@ -25,6 +25,7 @@ message ShellextCall {
 
     optional GreetingCall greeting = 2;
     optional ShareFolderCall share_folder = 3;
+    // TODO (MP) remove this when the shell ext is rebuilt.
     optional SyncStatusCall sync_status = 4;
     optional VersionHistoryCall version_history = 5;
     optional GetPathStatusCall get_path_status = 6;

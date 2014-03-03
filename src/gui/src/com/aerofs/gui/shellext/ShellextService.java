@@ -122,8 +122,7 @@ public class ShellextService
             shareFolder(call.getShareFolder().getPath());
             break;
         case SYNC_STATUS:
-            assert (call.hasSyncStatus());
-            syncStatus(call.getSyncStatus().getPath());
+            // TODO (MP) remove this when the shell ext is rebuilt.
             break;
         case VERSION_HISTORY:
             assert (call.hasVersionHistory());
@@ -171,20 +170,6 @@ public class ShellextService
         }
 
         GUIUtil.createOrManageSharedFolder(mkpath(absRootAnchor, absPath));
-    }
-
-    /**
-     * @param absPath the absolute path
-     */
-    private void syncStatus(final String absPath)
-    {
-        String absRootAnchor = Cfg.absDefaultRootAnchor();
-        if (!Path.isUnder(absRootAnchor, absPath)) {
-            l.warn("shellext provided an external path " + absPath);
-            return;
-        }
-
-        GUIUtil.showSyncStatus(mkpath(absRootAnchor, absPath));
     }
 
     private void versionHistory(final String absPath)

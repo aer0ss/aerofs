@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.serverstatus;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.serverstatus.IConnectionStatusNotifier.IListener;
-import com.aerofs.daemon.core.syncstatus.SyncStatusConnection;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -31,7 +30,7 @@ public class ServerConnectionStatus
 {
     public static enum Server
     {
-        VERKEHR, SYNCSTAT
+        VERKEHR
     }
 
     /**
@@ -81,10 +80,9 @@ public class ServerConnectionStatus
             = Maps.newEnumMap(Server.class);
 
     @Inject
-    ServerConnectionStatus(VerkehrNotificationSubscriber vks, SyncStatusConnection ssc)
+    ServerConnectionStatus(VerkehrNotificationSubscriber vks)
     {
         addListener_(vks, Server.VERKEHR);
-        addListener_(ssc, Server.SYNCSTAT);
     }
 
     private synchronized void setStatus(Server server, boolean connected)

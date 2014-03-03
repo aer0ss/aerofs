@@ -318,9 +318,6 @@ public final class CommandNotificationSubscriber
                 case REFRESH_CRL:
                     // TODO (MP) finish this - for now ignore.
                     break;
-                case CLEAN_SSS_DATABASE:
-                    // TODO (MP) finish this - for now ignore.
-                    break;
                 case UPLOAD_DATABASE:
                     UIGlobals.ic().startUploadDatabase();
                     break;

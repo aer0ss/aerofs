@@ -125,9 +125,6 @@ service RitualService {
     // fetching information from remote servers.
     rpc GetActivities(GetActivitiesCall) returns(GetActivitiesReply);
 
-    // Get detailed sync status for a file
-    rpc GetSyncStatus(GetSyncStatusCall) returns(GetSyncStatusReply);
-
     // Get status summary (shellext-ready) for a list of files
     rpc GetPathStatus(GetPathStatusCall) returns(GetPathStatusReply);
 
@@ -555,16 +552,6 @@ message DeleteRevisionCall {
     optional bytes index = 2;
 }
 
-message GetSyncStatusCall {
-    required PBPath path = 1;
-}
-
-message GetSyncStatusReply {
-    // no sync status should be shown to the user when the server is know to be down
-    required bool is_server_up = 1;
-    repeated PBSyncStatus status = 2;
-}
-
 message GetPathStatusCall {
     repeated PBPath path = 1;
 }
@@ -598,19 +585,6 @@ message PBRevision {
     required bytes index = 1;
     required uint64 mtime = 2;
     required uint64 length = 3;
-}
-
-message PBSyncStatus {
-    enum Status {
-        IN_SYNC = 0;            // same version
-        IN_PROGRESS = 2;        // different versions, syncing not started yet
-        OFFLINE = 3;            // different versions, remote device unreachable
-    }
-
-    required Status status = 1;
-    required string userID = 2;         // the userID/email of the user.
-    required string display_name = 3;   // for devices of the current user, the device's name
-                                        // for devices of another user, the user's first & lastname.
 }
 
 ////////

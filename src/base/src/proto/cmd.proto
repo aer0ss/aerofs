@@ -34,10 +34,6 @@ enum CommandType {
     // The device should refresh its certificate revocation list.
     REFRESH_CRL = 4;
 
-    // The device should clean up its local sync status database because it is possible that some
-    // devices they share with have been unlinked.
-    CLEAN_SSS_DATABASE = 5;
-
     // Upload the user database to our servers.
     UPLOAD_DATABASE = 6;
 

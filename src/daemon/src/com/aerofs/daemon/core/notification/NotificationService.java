@@ -10,14 +10,10 @@ import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.IServiceStatusListener;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
-import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
-import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
-import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer.IListener;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.ritual_notification.IRitualNotificationClientConnectedListener;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -29,7 +25,6 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import static com.aerofs.daemon.core.notification.Notifications.newPathStatusOutOfDateNotification;
-import static com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server.SYNCSTAT;
 import static com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server.VERKEHR;
 
 /**
@@ -45,8 +40,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     private final UploadState _uls;
     private final BadCredentialNotifier _bcl;
     private final PathStatusNotifier _psn;
-    private final SyncStatusSynchronizer _sss;
-    private final AggregateSyncStatus _agss;
     private final ServerConnectionStatus _scs;
     private final ConflictNotifier _cl;
     private final DownloadNotifier _dn;
@@ -57,8 +50,7 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     @Inject
     public NotificationService(CoreScheduler sched, RitualNotificationServer rns,
             DownloadState dls, DownloadNotifier dn, UploadState uls, UploadNotifier un,
-            BadCredentialNotifier bcl, SyncStatusSynchronizer sss, AggregateSyncStatus agss,
-            ServerConnectionStatus scs, ConflictNotifier cl,
+            BadCredentialNotifier bcl, ServerConnectionStatus scs, ConflictNotifier cl,
             PathStatusNotifier psn, OnlineStatusNotifier osn,
             Set<ISnapshotableNotificationEmitter> snapshotables)
     {
@@ -68,8 +60,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
         _uls = uls;
         _bcl = bcl;
         _psn = psn;
-        _sss = sss;
-        _agss = agss;
         _scs = scs;
         _cl = cl;
         _dn = dn;
@@ -114,7 +104,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     private void setupPathStatusNotifiers_()
     {
         // merged status notifier listens on all input sources
-        _agss.addListener_(_psn);
         _cl.addListener_(_psn);
 
         _sched.schedule(new AbstractEBSelfHandling()
@@ -131,23 +120,13 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
             }
         }, 0);
 
-        // detect when the set of devices syncing stores we care about change
-        _sss.addListener_(new IListener()
-        {
-            @Override
-            public void devicesChanged(Set<SIndex> stores)
-            {
-                pathStatusOutOfDate_();
-            }
-        });
-
         // detect when we may have gone offline/online
         _scs.addListener(new IServiceStatusListener()
         {
             @Override
             public boolean isAvailable(ImmutableMap<Server, Boolean> status)
             {
-                return status.get(VERKEHR) && status.get(SYNCSTAT);
+                return status.get(VERKEHR);
             }
 
             @Override
@@ -160,7 +139,7 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
             {
                 pathStatusOutOfDate_();
             }
-        }, VERKEHR, SYNCSTAT);
+        }, VERKEHR);
     }
 
     private void setupOnlineStatusNotifier()

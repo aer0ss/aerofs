@@ -10,7 +10,6 @@ import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.common.RateLimitedTask;
 import com.aerofs.gui.tray.Progresses.ProgressUpdatedListener;
-import com.aerofs.gui.tray.RootStoreSyncStatusMonitor.RootStoreSyncStatusListener;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
@@ -20,7 +19,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
@@ -77,8 +75,6 @@ public class TrayIcon implements ITrayMenuListener
     private String _iconName;
 
     private final ProgressListener _progressListener = new ProgressListener();
-    // null if the monitor isn't used.
-    private final @Nullable RootStoreSyncStatusMonitor _syncStatusMonitor;
 
     // TrayIcon needs to have its own RNC to prevent a race condition between registering listener
     // and starting the client leading to the tray icon missing notifications.
@@ -144,27 +140,6 @@ public class TrayIcon implements ITrayMenuListener
         addOnlineStatusListener();
         UIGlobals.progresses().addListener(_progressListener);
 
-        if (L.isMultiuser()) {
-            // Do not monitor root store sync status if we are running the Team Server.
-            // In which case, the status will remain forever UNKNOWN.
-            _syncStatusMonitor = null;
-        } else {
-            _syncStatusMonitor = new RootStoreSyncStatusMonitor(iconImpl(), _rnc,
-                    UIGlobals.ritualClientProvider(), _localUser, new CfgRootSID());
-            _syncStatusMonitor.setListener(new RootStoreSyncStatusListener()
-            {
-                @Override
-                public void onSyncStatusChanged(RootStoreSyncStatus status)
-                {
-                    _syncStatus = status;
-
-                    updateToolTipText();
-                    refreshTrayIconImage();
-                }
-            });
-            _syncStatusMonitor.start();
-        }
-
         updateToolTipText();
         refreshTrayIconImage();
 
@@ -186,7 +161,6 @@ public class TrayIcon implements ITrayMenuListener
         UIGlobals.progresses().removeListener(_progressListener);
         UIGlobals.progresses().removeAllProgresses();
 
-        if (_syncStatusMonitor != null) _syncStatusMonitor.stop();
         _rnc.stop();
 
         if (_ti != null) _ti.dispose();

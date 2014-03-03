@@ -54,7 +54,6 @@ import com.aerofs.daemon.event.fs.EIListPendingRoots;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
-import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.daemon.event.test.EITestGetAliasObject;
 import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.Path;
@@ -78,7 +77,6 @@ import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.GetDiagnosticsReply;
 import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
-import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.GetTransferStatsReply;
 import com.aerofs.proto.Ritual.IRitualService;
 import com.aerofs.proto.Ritual.LinkRootReply;
@@ -95,7 +93,6 @@ import com.aerofs.proto.Ritual.ListUserRootsReply;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
-import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.TestGetAliasObjectReply;
 import com.aerofs.proto.Ritual.TestGetObjectIdentifierReply;
 import com.aerofs.sv.client.SVClient;
@@ -558,18 +555,6 @@ public class RitualService implements IRitualService
         return createVoidReply();
     }
 
-    @Override
-    public ListenableFuture<GetSyncStatusReply> getSyncStatus(PBPath path) throws Exception
-    {
-        EIGetSyncStatus ev = new EIGetSyncStatus(Path.fromPB(path), Core.imce());
-        ev.execute(PRIO);
-        GetSyncStatusReply.Builder bd = GetSyncStatusReply.newBuilder();
-        bd.setIsServerUp(ev._isServerUp);
-        for (PBSyncStatus dss : ev._peers) bd.addStatus(dss);
-        return createReply(bd.build());
-    }
-
-    @Override
     public ListenableFuture<GetPathStatusReply> getPathStatus(List<PBPath> pbPaths)
             throws Exception
     {

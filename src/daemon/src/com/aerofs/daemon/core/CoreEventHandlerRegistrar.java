@@ -49,7 +49,6 @@ import com.aerofs.daemon.core.net.HdStreamBegun;
 import com.aerofs.daemon.core.net.HdTransportMetricsUpdated;
 import com.aerofs.daemon.core.net.HdUnicastMessage;
 import com.aerofs.daemon.core.status.HdGetStatusOverview;
-import com.aerofs.daemon.core.syncstatus.HdGetSyncStatus;
 import com.aerofs.daemon.core.test.HdTestGetAliasObject;
 import com.aerofs.daemon.event.admin.EICreateSeedFile;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
@@ -96,7 +95,6 @@ import com.aerofs.daemon.event.net.rx.EIStreamAborted;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
-import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.daemon.event.test.EITestGetAliasObject;
 import com.google.inject.Inject;
 
@@ -141,7 +139,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     @Inject HdListRevHistory _hdListRevHistory;
     @Inject HdExportRevision _hdExportRevision;
     @Inject HdDeleteRevision _hdDeleteRevision;
-    @Inject HdGetSyncStatus _hdGetSyncStatus;
     @Inject HdGetStatusOverview _hdGetStatusOverview;
     @Inject HdHeartbeat _hdHeartbeat;
     @Inject HdGetActivities _hdGetActivities;
@@ -197,7 +194,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIGetTransferStat.class, _hdGetTransferStat)
 
                 // status events
-                .setHandler_(EIGetSyncStatus.class, _hdGetSyncStatus)
                 .setHandler_(EIGetStatusOverview.class, _hdGetStatusOverview)
 
                 // net events

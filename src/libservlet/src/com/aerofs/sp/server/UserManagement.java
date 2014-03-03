@@ -48,12 +48,6 @@ public class UserManagement
                 dispatcher.enqueueCommand(peer.id(), CommandType.REFRESH_CRL);
             }
         }
-
-        // TODO: remove this step, yes?
-        // Sync status database cleaning occurs even if we didn't revoke any certs
-        for (Device peer : peerDevices) {
-            dispatcher.enqueueCommand(peer.id(), CommandType.CLEAN_SSS_DATABASE);
-        }
     }
 
     // TODO: These two functions are ugly. But they beat the obvious alternatives.

@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.notification.ConflictNotifier.IConflictStateListener;
 import com.aerofs.daemon.core.status.PathFlagAggregator;
 import com.aerofs.daemon.core.status.PathStatus;
-import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus.ISyncStatusChangeListener;
 import com.aerofs.daemon.core.transfers.ITransferStateListener;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
@@ -25,7 +24,6 @@ import org.slf4j.Logger;
 
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.Set;
 
 import static com.aerofs.daemon.core.notification.Notifications.newConflictCountNotification;
 import static com.aerofs.daemon.core.notification.Notifications.newPathStatusNotification;
@@ -36,8 +34,7 @@ import static com.aerofs.daemon.core.notification.Notifications.newPathStatusNot
  *
  * See {@link PathStatus}
  */
-public class PathStatusNotifier implements ISyncStatusChangeListener, IConflictStateListener,
-        ISnapshotableNotificationEmitter
+public class PathStatusNotifier implements IConflictStateListener, ISnapshotableNotificationEmitter
 {
     private static final Logger l = Loggers.getLogger(PathStatusNotifier.class);
 
@@ -92,12 +89,6 @@ public class PathStatusNotifier implements ISyncStatusChangeListener, IConflictS
              */
             l.warn(Util.e(e));
         }
-    }
-
-    @Override
-    public void onSyncStatusChanged_(Set<Path> changes)
-    {
-        sendPathStatusNotification_(_ps.notificationsForSyncStatusChanges_(changes));
     }
 
     void sendConflictCountNotification_()

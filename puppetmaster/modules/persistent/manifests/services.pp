@@ -62,11 +62,6 @@ class persistent::services (
         redis_bindaddr => $redis_bind_address,
     }
 
-    # Redis in diskstore mode. Used by sync status.
-    class {'redis::diskstore':
-        redis_bindaddr => $redis_bind_address,
-    }
-
     # --------------
     # Sanity
     # --------------

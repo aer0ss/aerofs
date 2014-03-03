@@ -1,17 +1,8 @@
 package com.aerofs.proto;
 option optimize_for = LITE_RUNTIME; // remove reflection
 
-import "sync_status.proto";
-
 // This file should only contain messages which are pushed by SP through verkher
 
 message PBACLNotification {
     required uint64 acl_epoch = 1;
-}
-
-// The notification will include the sync status for the sid/oid pair that was updated most
-// recently.
-message PBSyncStatNotification {
-    required uint64 ss_epoch = 1;
-    optional syncstat.GetSyncStatusReply.DevicesSyncStatus status = 2;
 }

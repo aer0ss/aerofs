@@ -16,7 +16,6 @@ import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.store.IStores;
-import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -49,7 +48,6 @@ public class Core implements IModule
     private final TokenManager _tokenManager;
     private final VerkehrNotificationSubscriber _vksub;
     private final ACLNotificationSubscriber _aclsub;
-    private final SyncStatusNotificationSubscriber _sssub;
     private final UnicastInputOutputStack _stack;
     private final ILinker _linker;
     private final NotificationService _ns;
@@ -76,7 +74,6 @@ public class Core implements IModule
             CoreDBCW dbcw,
             VerkehrNotificationSubscriber vksub,
             ACLNotificationSubscriber aclsub,
-            SyncStatusNotificationSubscriber sssub,
             UnicastInputOutputStack stack,
             RitualNotificationServer rns,
             NotificationService ns,
@@ -103,7 +100,6 @@ public class Core implements IModule
         _dbcw = dbcw;
         _vksub = vksub;
         _aclsub = aclsub;
-        _sssub = sssub;
         _stack = stack;
         _linker = linker;
         _rns = rns;
@@ -152,7 +148,6 @@ public class Core implements IModule
         _ss.init_();
         _stack.init_();
         _aclsub.init_();
-        _sssub.init_();
         _ns.init_();
     }
 

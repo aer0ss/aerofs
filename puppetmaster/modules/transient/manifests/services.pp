@@ -32,7 +32,6 @@ class transient::services {
     include servlet::base
 
     include servlet::sp
-    include servlet::syncstat
     include servlet::verification
     include servlet::identity
 

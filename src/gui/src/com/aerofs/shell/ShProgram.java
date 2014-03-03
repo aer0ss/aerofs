@@ -139,11 +139,6 @@ public class ShProgram implements IProgram, ICallback
         // Hidden commands
         _runner.addCommand_(new CmdDstat());
         _runner.addCommand_(new CmdSeed());
-
-        // TODO(huguesb): remove conditional when sync stat is enabled in prod
-        if (Cfg.user().isAeroFSUser()) {
-            _runner.addCommand_(new CmdSyncStatus());
-        }
     }
 
     // return the abolute path. path can be null to represent pwd

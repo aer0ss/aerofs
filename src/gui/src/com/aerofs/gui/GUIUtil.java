@@ -6,7 +6,6 @@ import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
-import com.aerofs.gui.syncstatus.SyncStatusDialog;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
@@ -336,21 +335,6 @@ public class GUIUtil
                 } else {
                     new DlgManageSharedFolder(GUI.get().sh(), path).openDialog();
                 }
-            }
-        });
-    }
-
-    /**
-     * This method can be run in a non-UI thread
-     */
-    public static void showSyncStatus(final Path path)
-    {
-        GUI.get().asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                new SyncStatusDialog(GUI.get().sh(), path).openDialog();
             }
         });
     }
