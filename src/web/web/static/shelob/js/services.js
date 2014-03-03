@@ -31,15 +31,16 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
 }}]);
 
 shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
-    function($http, $q, $log, Token) { return {
-      // path arg must be prepended with a slash
-      // i.e. call with '/children', not 'children'
-      get: function(path) {
+    function($http, $q, $log, Token) {
+
+      var request = function(method, path, headers) {
           var deferred = $q.defer();
 
           // get an OAuth token and make call
           Token.get().then(function(token) {
-              $http.get('/api/v1.0' + path, {headers: {'Authorization': 'Bearer ' + token}})
+              if (headers === undefined) headers = {};
+              headers.Authorization = 'Bearer ' + token;
+              $http({method: method, url: '/api/v1.0' + path, headers: headers})
                 .success(function(data, status, headers, config) {
                     // if the call succeeds, return the data
                     deferred.resolve(data);
@@ -48,7 +49,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
                     if (status == 401) {
                         // if the call got 401, the token may have expired, so try a new one
                         Token.getNew().then(function(token) {
-                          $http.get('/api/v1.0' + path, {headers: {'Authorization': 'Bearer ' + token}})
+                          $http({method: method, url: '/api/v1.0' + path, headers: headers})
                             .success(function(data, status, headers, config) {
                                 // if the call succeeds, return the data
                                 deferred.resolve(data);
@@ -73,7 +74,13 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
               deferred.reject(500);
           });
           return deferred.promise;
-      }
+      };
+
+      return {
+          // path arg must be prepended with a slash
+          // i.e. call with '/children', not 'children'
+          get: function(path, headers) { return request('GET', path, headers); },
+          head: function(path, headers) { return request('HEAD', path, headers); }
     }}
 ]);
 

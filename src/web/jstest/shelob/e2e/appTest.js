@@ -19,28 +19,28 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
     $httpBackend.whenGET('/api/v1.0/folders/01a01a01a').respond(empty_folder_obj);
     $httpBackend.whenGET('/api/v1.0/folders/9f89f89f8').respond(other_folder_obj);
     $httpBackend.whenGET('/api/v1.0/folders/78f78f78f').respond(deeper_folder_obj);
-    $httpBackend.whenGET('/api/v1.0/children/').respond(
+    $httpBackend.whenGET(/^\/api\/v1.0\/children\/?(\?.*)?$/).respond(
         {
             parent: "",
             folders: [empty_folder_obj, other_folder_obj],
             files: [website_html_obj]
         }
     );
-    $httpBackend.whenGET('/api/v1.0/children/01a01a01a').respond(
+    $httpBackend.whenGET(/^\/api\/v1.0\/children\/01a01a01a\/?(\?.*)?$/).respond(
         {
             parent: "01a01a01a",
             folders: [],
             files: [],
         }
     );
-    $httpBackend.whenGET('/api/v1.0/children/9f89f89f8').respond(
+    $httpBackend.whenGET(/^\/api\/v1.0\/children\/9f89f89f8\/?(\?.*)?$/).respond(
         {
             parent: "9f89f89f8",
             folders: [deeper_folder_obj],
             files: [textfile_txt_obj, otherfile_obj],
         }
     );
-    $httpBackend.whenGET('/api/v1.0/children/78f78f78f').respond(
+    $httpBackend.whenGET(/^\/api\/v1.0\/children\/78f78f78f\/?(\?.*)?$/).respond(
         {
             parent: "78f78f78f",
             folders: [],

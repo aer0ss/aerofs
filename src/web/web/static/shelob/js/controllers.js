@@ -5,7 +5,8 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
 
     var oid = typeof $routeParams.oid === "undefined" ? '' : $routeParams.oid;
 
-    API.get('/children/' + oid).then(function(data) {
+    // N.B. add a random query param to prevent caching
+    API.get('/children/' + oid + '?t=' + Math.random()).then(function(data) {
         // success callback
         $scope.files = data.files;
         $scope.folders = data.folders;
@@ -14,6 +15,8 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         $log.error('list children call failed with ' + status);
         if (status == 503) {
             showErrorMessage(getClientsOfflineErrorText());
+        } else if (status == 404) {
+            showErrorMessage("The folder you requested was not found.");
         } else {
             showErrorMessage(getInternalErrorText());
         }
@@ -57,18 +60,32 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     //   oid: the oid of the file to download
     //
     $scope.download = function(oid) {
-        // TODO: use Token.get() and verify the token so that we don't send the user to a
-        // 401 page if the token's expired. Until we do this, we play safe and get a brand
-        // new token.
-        Token.getNew().then(function(token) {
-            // N.B replace(url) will replace the current history with url, whereas
-            // assign(url) will append url to the history chain. We use replace() so
-            // that a user can navigate from folder Foo to folder Bar, click to download
-            // a file, and then use the back button to return to Foo.
-            $window.location.replace("/api/v1.0/files/" + oid + "/content?token=" + token);
+        // Do a HEAD request for the file, and proceed only if the HEAD returns 2xx
+        // We do this so that we can handle errors before directing the user away from
+        // Shelob to the API
+        //
+        // N.B. add a random query param to prevent caching
+        API.head("/files/" + oid + "/content?t=" + Math.random()).then(function(data) {
+            Token.get().then(function(token) {
+                // N.B replace(url) will replace the current history with url, whereas
+                // assign(url) will append url to the history chain. We use replace() so
+                // that a user can navigate from folder Foo to folder Bar, click to download
+                // a file, and then use the back button to return to Foo.
+                $window.location.replace("/api/v1.0/files/" + oid + "/content?token=" + token);
+            }, function(status) {
+                // somehow failed to get token despite the fact that a request just succeeded
+                showErrorMessage(getInternalErrorText());
+            });
         }, function(status) {
-            // called when getting a new token fails
-            showErrorMessage(getInternalErrorText());
+            // HEAD request failed
+            $log.error('HEAD /files/' + oid + ' failed with status ' + status);
+            if (status == 503) {
+                showErrorMessage(getClientsOfflineErrorText());
+            } else if (status == 404) {
+                showErrorMessage("The file you requested was not found.");
+            } else {
+                showErrorMessage(getInternalErrorText());
+            }
         });
     };
 }]);
