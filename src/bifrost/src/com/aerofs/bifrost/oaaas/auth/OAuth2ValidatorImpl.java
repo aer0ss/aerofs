@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.CLIENT_CREDENTIALS_NOT_PERMITTED;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.IMPLICIT_GRANT_NOT_PERMITTED;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.IMPLICIT_GRANT_REDIRECT_URI;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE;
@@ -56,7 +55,6 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
     
     GRANT_TYPES.add(GRANT_TYPE_AUTHORIZATION_CODE);
     GRANT_TYPES.add(GRANT_TYPE_REFRESH_TOKEN);
-    GRANT_TYPES.add(GRANT_TYPE_CLIENT_CREDENTIALS);
   }
 
   @Inject
@@ -162,8 +160,6 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
       
       validateAttributes(request);
       
-      validateAccessTokenRequest(request);
-      
     } catch (ValidationResponseException e) {
       return e.v;
     }
@@ -189,20 +185,4 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
       }
     }
   }
-  
-  protected void validateAccessTokenRequest(AccessTokenRequest accessTokenRequest) {
-    if (accessTokenRequest.getGrantType().equals(GRANT_TYPE_CLIENT_CREDENTIALS)) {
-      String clientId = accessTokenRequest.getClientId();
-      Client client = StringUtils.isBlank(clientId) ? null : clientRepository.findByClientId(clientId);
-      if (client == null) {
-        throw new ValidationResponseException(UNKNOWN_CLIENT_ID);
-      }
-      if (!client.isAllowedClientCredentials()) {
-        throw new ValidationResponseException(CLIENT_CREDENTIALS_NOT_PERMITTED);
-      }
-      accessTokenRequest.setClient(client);
-    }
-
-  }
-
 }

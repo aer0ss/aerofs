@@ -95,6 +95,8 @@ public class ClientsResource
             client.setExpireDuration(expires);
             client.setSecret(secret);
             client.setScopes(Sets.newHashSet("files.read", "files.write")); // NB: do we actually use this?
+            client.setAllowedClientCredentials(false);
+            client.setAllowedImplicitGrant(false);
             client.getRedirectUris().add(ncr.getRedirectUri());
 
             resourceServer.getClients().add(client);

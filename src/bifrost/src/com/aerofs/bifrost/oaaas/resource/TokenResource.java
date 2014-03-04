@@ -63,7 +63,6 @@ import java.util.List;
 
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.BEARER;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_AUTHORIZATION_CODE;
-import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_CLIENT_CREDENTIALS;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_REFRESH_TOKEN;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.UNKNOWN_CLIENT_ID;
@@ -164,9 +163,6 @@ public class TokenResource
                 formParameters);
         UserPassCredentials credentials = getUserPassCredentials(authorization, accessTokenRequest);
         String grantType = accessTokenRequest.getGrantType();
-        if (GRANT_TYPE_CLIENT_CREDENTIALS.equals(grantType)) {
-            accessTokenRequest.setClientId(credentials.getUsername());
-        }
         ValidationResponse vr = oAuth2Validator.validate(accessTokenRequest);
         if (!vr.valid()) {
             return sendErrorResponse(vr);
@@ -177,14 +173,6 @@ public class TokenResource
                 request = authorizationCodeToken(accessTokenRequest);
             } else if (GRANT_TYPE_REFRESH_TOKEN.equals(grantType)) {
                 request = refreshTokenToken(accessTokenRequest);
-            } else if (GRANT_TYPE_CLIENT_CREDENTIALS.equals(grantType)) {
-                request = new AuthorizationRequest();
-                request.setClient(accessTokenRequest.getClient());
-                // We have to construct a AuthenticatedPrincipal on-the-fly as there is only key-secret authentication
-                request.setPrincipal(new AuthenticatedPrincipal(request.getClient().getClientId()));
-                // Apply all client scopes to the access token.
-                // TODO: take into account given scopes from the request
-                request.setGrantedScopes(request.getClient().getScopes());
             } else {
                 return sendErrorResponse(ValidationResponse.UNSUPPORTED_GRANT_TYPE);
             }
