@@ -1,14 +1,21 @@
-#file-list td {
+table#file-list td {
     padding: 5px;
     vertical-align: middle;
 }
-#file-list td.icon {
+table#file-list td.icon {
     width: 45px;
 }
-#file-list td.name {
+table#file-list td.name {
     width: 60%;
 }
 .breadcrumb {
     font-size: 1.5em;
     background-color: transparent;
+}
+div#actions {
+    float: right;
+    padding-top: 4px;
+}
+table#file-list tr#new-folder input {
+    margin-bottom: 0;
 }

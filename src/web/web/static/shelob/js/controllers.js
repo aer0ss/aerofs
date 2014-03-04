@@ -8,6 +8,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     // N.B. add a random query param to prevent caching
     API.get('/children/' + oid + '?t=' + Math.random()).then(function(data) {
         // success callback
+        $scope.parent = data.parent;
         $scope.files = data.files;
         $scope.folders = data.folders;
     }, function(status) {
@@ -88,4 +89,53 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             }
         });
     };
+
+    // data controlling the "new folder" table row and input
+    $scope.newFolder = {
+        hidden: true,
+        name: '',
+    };
+
+    // This is called when a user submits the name for a new folder
+    //
+    //
+    // It should submit an API request to create a folder and update
+    // the view, or do nothing if the user did not enter any text.
+    //
+    // The name that the user entered is at $scope.newFolder.name
+    //
+    $scope.submitNewFolder = function() {
+        $log.debug("new folder: " + $scope.newFolder.name);
+        if ($scope.newFolder.name != '') {
+            folderData = {name: $scope.newFolder.name, parent: $scope.parent};
+            API.post('/folders', folderData).then(function(data) {
+                // POST /folders returns the new folder object
+                $scope.folders.push(data);
+                showSuccessMessage("Successfully created a new folder.");
+            }, function(status) {
+                // create new folder failed
+                if (status == 503) {
+                    showErrorMessage(getClientsOfflineErrorText());
+                } else if (status == 409) {
+                    showErrorMessage("A file or folder with that name already exists.");
+                } else {
+                    showErrorMessage(getInternalErrorText());
+                }
+            });
+        } else {
+            showErrorMessage('Enter a name for the new folder');
+        }
+        $scope.cancelNewFolder();
+    };
+
+    // This is called when a user presses escape while entering the name of a
+    // new folder.
+    //
+    // It should reset the new folder view.
+    //
+    $scope.cancelNewFolder = function() {
+        $scope.newFolder.hidden = true;
+        $scope.newFolder.name = '';
+        $scope.$apply();
+    }
 }]);

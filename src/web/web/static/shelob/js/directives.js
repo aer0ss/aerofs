@@ -1,21 +1,62 @@
 var shelobDirectives = angular.module('shelobDirectives', []);
 
+shelobDirectives.directive('inPlaceEdit', function($timeout) { return {
+    restrict: 'EA',
+
+    scope: {
+        focusOn: '=',
+        onSubmit: '&',
+        onCancel: '&',
+    },
+
+    link: function(scope, elem, attrs) {
+        // autofocus on input when focus-on attr changes to true
+        scope.$watch('focusOn', function() {
+            if (scope.focusOn) {
+                // Setting element.focus() directly does not work, because
+                // the element has not yet been transformed by the directive.
+                // Setting it in a timeout waits until the "behind the scenes"
+                // directive magic is done so that the element exists when you
+                // try to focus on it. See:
+                // http://lorenzmerdian.blogspot.com/2013/03/how-to-handle-dom-updates-in-angularjs.html
+                $timeout(function() { elem[0].focus(); });
+            }
+        });
+
+        // sigh, bind to "keyup" because "keydown" doesn't work in Firefox and
+        // "keypress" doesn't work in Chrome
+        elem.bind("keyup", function(event) {
+            if (event.which === 13) {
+                // handle Return keypress
+                scope.onSubmit();
+            } else if (event.which === 27) {
+                // handle Escape keypress
+                scope.onCancel();
+            }
+        });
+
+        // bind the "blur" event to the onSubmit function so that clicking away
+        // from the input submits the new text
+        elem.bind("blur", function(event) {
+            scope.onSubmit();
+        });
+    },
+}});
+
+
 shelobDirectives.directive('aeroIcon', function() { return {
     restrict: 'EA',
 
     template: '<img ng-src="/static/shelob/img/icons/40x40/{{filename}}"/>',
 
-    link: function(scope, elem, attrs) {
-        scope.$watch(attrs.mimeType, function(value) {
-            var mimeType = attrs.mimeType;
-            // N.B. this function could be run before the DOM is initialized, so we perform
-            // the following checks to avoid unpredictable behaviour
-            if ((value !== null) && (value !== undefined) && (value !== '') &&
-                    (mimeType !== null) && (mimeType !== undefined) && (mimeType !== '')) {
+    replace: true,
 
-                scope.filename = getFilename(mimeType);
-            }
-        });
+    scope: {
+        mimeType: '@',
+    },
+
+    link: function(scope, elem, attrs) {
+        scope.filename = getFilename(scope.mimeType);
     },
 }});
 

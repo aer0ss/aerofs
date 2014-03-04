@@ -33,14 +33,14 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
 shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
     function($http, $q, $log, Token) {
 
-      var request = function(method, path, headers) {
+      var request = function(method, path, data, headers) {
           var deferred = $q.defer();
 
           // get an OAuth token and make call
           Token.get().then(function(token) {
               if (headers === undefined) headers = {};
               headers.Authorization = 'Bearer ' + token;
-              $http({method: method, url: '/api/v1.0' + path, headers: headers})
+              $http({method: method, url: '/api/v1.0' + path, data: data, headers: headers})
                 .success(function(data, status, headers, config) {
                     // if the call succeeds, return the data
                     deferred.resolve(data);
@@ -50,7 +50,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
                         // if the call got 401, the token may have expired, so try a new one
                         Token.getNew().then(function(token) {
                           headers.Authorization = 'Bearer ' + token;
-                          $http({method: method, url: '/api/v1.0' + path, headers: headers})
+                          $http({method: method, url: '/api/v1.0' + path, data: data, headers: headers})
                             .success(function(data, status, headers, config) {
                                 // if the call succeeds, return the data
                                 deferred.resolve(data);
@@ -80,8 +80,10 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
       return {
           // path arg must be prepended with a slash
           // i.e. call with '/children', not 'children'
-          get: function(path, headers) { return request('GET', path, headers); },
-          head: function(path, headers) { return request('HEAD', path, headers); }
+          get: function(path, headers) { return request('GET', path, null, headers); },
+          head: function(path, headers) { return request('HEAD', path, null, headers); },
+          put: function(path, data, headers) { return request('PUT', path, data, headers); },
+          post: function(path, data, headers) { return request('POST', path, data, headers); },
     }}
 ]);
 
