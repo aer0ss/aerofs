@@ -79,6 +79,6 @@ public class TestTokenVerificationClient extends BifrostTest
         Assert.assertNull(response.error);
         Assert.assertEquals(USERNAME, response.principal.getName());
         Assert.assertEquals(0L, response.expiresIn.longValue());
-        Assert.assertEquals(ImmutableSet.of("read", "write"), response.scopes);
+        Assert.assertEquals(ImmutableSet.of("files.read", "files.write"), response.scopes);
     }
 }

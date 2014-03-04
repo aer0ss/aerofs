@@ -165,6 +165,13 @@ public class AuthorizeResource
                     "not specified: nonce", state);
         }
 
+        String scope = formParameters.getFirst("scope");
+        if (scope == null) {
+            l.warn("not specified: scope");
+            return sendErrorToRedirectUri(redirectUri, "invalid_request",
+                    "not specified: scope", state);
+        }
+
         return null;
     }
 

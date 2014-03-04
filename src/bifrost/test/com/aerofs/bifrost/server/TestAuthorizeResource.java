@@ -43,6 +43,7 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("response_type", "code")
                 .formParam("nonce", GOODNONCE)
                 .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
     }
 
@@ -56,6 +57,7 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("response_type", "code")
                 .formParam("nonce", GOODNONCE)
                 .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
     }
 
@@ -68,6 +70,7 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("client_id", CLIENTID)
                 .formParam("response_type", "code")
                 .formParam("nonce", GOODNONCE)
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
     }
 
@@ -83,6 +86,7 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("response_type", "code")
                 .formParam("nonce", GOODNONCE)
                 .formParam("redirect_uri", "http://www.malicious.com/passwordstealer.php")
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
     }
 
@@ -97,6 +101,7 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("response_type", "code")
                 .formParam("client_id", CLIENTID)
                 .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
     }
 
@@ -112,6 +117,7 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("client_id", CLIENTID)
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("nonce", BADNONCE)
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
     }
 
@@ -123,6 +129,22 @@ public class TestAuthorizeResource extends BifrostTest
                 .response().header("Location", startsWith(CLIENTREDIRECT)).and()
                 .response().header("Location", containsString("error=invalid_request"))
         .given()
+                .formParam("client_id", CLIENTID)
+                .formParam("nonce", GOODNONCE)
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "user.read")
+                .post(AUTH_URL);
+    }
+
+    @Test
+    public void testShouldRedirectErrorIfScopeTypeIsMissing()
+    {
+        expect()
+                .statusCode(302).and()
+                .response().header("Location", startsWith(CLIENTREDIRECT)).and()
+                .response().header("Location", containsString("error=invalid_request"))
+        .given()
+                .formParam("response_type", "code")
                 .formParam("client_id", CLIENTID)
                 .formParam("nonce", GOODNONCE)
                 .formParam("redirect_uri", CLIENTREDIRECT)
@@ -141,6 +163,7 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("client_id", CLIENTID)
                 .formParam("nonce", GOODNONCE)
                 .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
     }
 
@@ -157,6 +180,7 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("nonce", GOODNONCE)
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("state", "echoechoechoechoecho")
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
     }
 
@@ -174,6 +198,7 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("nonce", GOODNONCE)
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("state", "echoechoechoechoecho")
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
     }
 }

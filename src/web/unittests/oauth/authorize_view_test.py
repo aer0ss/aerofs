@@ -64,6 +64,7 @@ class AuthorizeViewTest(TestBase):
                 "response_type": "code",
                 "redirect_uri": REDIRECT_URI,
                 "state": "1234567890",
+                "scope": "user.read"
             })
         # bad client_id
         with self.assertRaises(HTTPBadRequest):
@@ -72,6 +73,7 @@ class AuthorizeViewTest(TestBase):
                 "client_id": "alksjdflksdjf",
                 "redirect_uri": REDIRECT_URI,
                 "state": "1234567890",
+                "scope": "user.read"
             })
         # missing redirect_uri
         with self.assertRaises(HTTPBadRequest):
@@ -79,6 +81,7 @@ class AuthorizeViewTest(TestBase):
                 "response_type": "code",
                 "client_id": CLIENT_ID,
                 "state": "1234567890",
+                "scope": "user.read"
             })
         # bad redirect_uri
         with self.assertRaises(HTTPBadRequest):
@@ -87,6 +90,7 @@ class AuthorizeViewTest(TestBase):
                 "client_id": CLIENT_ID,
                 "redirect_uri": "http://malicious.com",
                 "state": "1234567890",
+                "scope": "user.read"
             })
 
     def test_should_redirect_error_if_invalid_response_type(self):
@@ -96,6 +100,7 @@ class AuthorizeViewTest(TestBase):
                 "client_id": CLIENT_ID,
                 "redirect_uri": REDIRECT_URI,
                 "state": "1234567890",
+                "scope": "user.read"
             })
         except HTTPFound as e:
             self.assertIn(REDIRECT_URI, e.location)
@@ -109,10 +114,24 @@ class AuthorizeViewTest(TestBase):
                 "client_id": CLIENT_ID,
                 "redirect_uri": REDIRECT_URI,
                 "state": "1234567890",
+                "scope": "user.read"
             })
         except HTTPFound as e:
             self.assertIn(REDIRECT_URI, e.location)
             self.assertIn("error=unsupported_response_type", e.location)
+            self.assertIn("state=1234567890", e.location)
+
+    def test_should_redirect_error_if_missing_scope(self):
+        try:
+            self._make_req({
+                "response_type": "code",
+                "client_id": CLIENT_ID,
+                "redirect_uri": REDIRECT_URI,
+                "state": "1234567890",
+            })
+        except HTTPFound as e:
+            self.assertIn(REDIRECT_URI, e.location)
+            self.assertIn("error=invalid_request", e.location)
             self.assertIn("state=1234567890", e.location)
 
     def test_should_return_consent_page_if_valid_request(self):
@@ -121,6 +140,7 @@ class AuthorizeViewTest(TestBase):
             "client_id": CLIENT_ID,
             "redirect_uri": REDIRECT_URI,
             "state": "1234567890",
+            "scope": "user.read"
         })
 
         # to_render is the dict that is passed to the consent page mako file

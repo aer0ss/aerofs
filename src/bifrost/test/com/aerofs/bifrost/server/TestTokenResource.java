@@ -7,6 +7,8 @@ package com.aerofs.bifrost.server;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.google.common.collect.Sets;
@@ -124,6 +126,7 @@ public class TestTokenResource extends BifrostTest
                 .formParam("nonce", "noooooonce")
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("state", "echoechoechoechoecho")
+                .formParam("scope", "user.read")
                 .post(AUTH_URL);
 
         assertEquals(302, response.getStatusCode());
