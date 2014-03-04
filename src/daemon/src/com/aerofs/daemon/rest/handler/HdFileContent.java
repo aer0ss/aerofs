@@ -1,5 +1,6 @@
 package com.aerofs.daemon.rest.handler;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.CA;
@@ -90,11 +91,33 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
                 : fullContent(bd, oa.name(), pf, ca));
     }
 
+    /**
+     * Provide both ASCII-clean'd filename and UTF-8/percent-encoded filename* params, as described
+     * in RFCs 6266 and 5987
+     *
+     * Both Firefox (25) and Safari (6.1) handle filename* correctly, however, not all User Agents
+     * can deal with this relatively new extension of the HTTP spec (2011):
+     *   - Chrome (32) does not consistently pick the filename* value
+     *   - wget (1.14) concatenates both values and fails to decode the percent-encoding
+     */
+    private String filename(String s)
+    {
+        StringBuilder bd = new StringBuilder("filename=\"");
+        bd.append(s.replaceAll("[^a-zA-Z0-9!#$&+-._`|~^]", "-"));
+        bd.append("\" ; filename*=UTF-8''");
+        // TODO: no need to encode attr-char
+        String encoded = BaseUtil.hexEncode(BaseUtil.string2utf(s));
+        for (int i = 0; i < encoded.length(); i += 2) {
+            bd.append("%").append(encoded.charAt(i)).append(encoded.charAt(i + 1));
+        }
+        return bd.toString();
+    }
+
     private ResponseBuilder fullContent(ResponseBuilder ok, String name, IPhysicalFile pf, CA ca)
     {
         return ok
                 .type(_detector.detect(name))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; " + filename(name))
                 .header(HttpHeaders.CONTENT_LENGTH, ca.length())
                 .entity(new SimpleStream(pf, ca, 0, ca.length()));
     }
