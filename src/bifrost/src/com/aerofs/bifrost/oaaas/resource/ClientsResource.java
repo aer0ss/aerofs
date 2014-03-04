@@ -75,6 +75,13 @@ public class ClientsResource
                 return Response.status(Status.BAD_REQUEST).build();
             }
 
+            long expires;
+            try {
+                expires = ncr.getExpires() == null ? 0 : Long.valueOf(ncr.getExpires());
+            } catch (NumberFormatException e) {
+                return Response.status(Status.BAD_REQUEST).build();
+            }
+
             String clientID = ncr.getClientId() != null ? ncr.getClientId() : UUID.randomUUID().toString();
             String secret = UUID.randomUUID().toString();
 
@@ -85,6 +92,7 @@ public class ClientsResource
             client.setContactEmail(ncr.getContactEmail());
             client.setContactName(ncr.getContactName());
             client.setClientId(clientID);
+            client.setExpireDuration(expires);
             client.setSecret(secret);
             client.setScopes(Sets.newHashSet("files.read", "files.write")); // NB: do we actually use this?
             client.getRedirectUris().add(ncr.getRedirectUri());

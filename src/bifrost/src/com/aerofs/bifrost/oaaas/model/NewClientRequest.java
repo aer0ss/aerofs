@@ -14,6 +14,7 @@ public class NewClientRequest
     private String contactName;
     private String redirectUri;
     private String clientId;
+    private String expires;
 
     public static NewClientRequest fromMultiValuedFormParameters(MultivaluedMap<String, String> formParameters)
     {
@@ -25,6 +26,7 @@ public class NewClientRequest
         ncr.setContactName(formParameters.getFirst("contact_name"));
         ncr.setRedirectUri(formParameters.getFirst("redirect_uri"));
         ncr.setClientId(formParameters.getFirst("client_id"));
+        ncr.setExpires(formParameters.getFirst("expires"));
         return ncr;
     }
 
@@ -96,5 +98,15 @@ public class NewClientRequest
     public void setClientId(String clientId)
     {
         this.clientId = clientId;
+    }
+
+    public String getExpires()
+    {
+        return expires;
+    }
+
+    public void setExpires(String expires)
+    {
+        this.expires = expires;
     }
 }

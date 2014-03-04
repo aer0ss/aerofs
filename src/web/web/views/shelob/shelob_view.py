@@ -47,6 +47,7 @@ def get_shelob_secret(request):
                 'client_name': 'AeroFS Web Access',
                 'redirect_uri': 'aerofs://redirect',
                 'resource_server_key': 'oauth-havre',
+                'expires': 900,  # expiry time of 900 seconds (15 minutes)
             }
         )
         r.raise_for_status()
