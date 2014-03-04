@@ -50,7 +50,7 @@ class BlockFile implements IPhysicalFile
         try {
             return _s.getFileInfo_(_sokid)._length;
         } catch (SQLException e) {
-            l.warn("Failed to determine length", e);
+            l.warn("Failed to determine length of {}", _sokid, e);
             return 0;
         }
     }
@@ -70,6 +70,17 @@ class BlockFile implements IPhysicalFile
     public boolean wasModifiedSince(long mtime, long len) throws IOException
     {
         return false;
+    }
+
+    @Override
+    public boolean exists_()
+    {
+        try {
+            return _s.getFileInfo_(_sokid).exists();
+        } catch (SQLException e) {
+            l.warn("Failed to determine existence of {}", _sokid, e);
+            return false;
+        }
     }
 
     @Override

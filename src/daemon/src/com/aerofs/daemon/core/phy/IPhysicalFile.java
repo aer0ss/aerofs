@@ -30,6 +30,8 @@ public interface IPhysicalFile extends IPhysicalObject
      */
     String getAbsPath_();
 
+    boolean exists_();
+
     InputStream newInputStream_() throws IOException;
 
     /**

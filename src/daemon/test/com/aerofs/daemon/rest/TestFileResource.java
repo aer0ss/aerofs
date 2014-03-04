@@ -73,6 +73,7 @@ public class TestFileResource extends AbstractRestTest
     {
         mds.root().file(path).caMaster(content.length, FILE_MTIME);
         IPhysicalFile pf = mock(IPhysicalFile.class);
+        when(pf.exists_()).thenReturn(true);
         when(pf.newInputStream_()).thenAnswer(new Answer<InputStream>() {
             @Override
             public InputStream answer(InvocationOnMock invocation) throws Throwable
@@ -177,6 +178,25 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(406)
                 .header("Access-Control-Allow-Origin", "*")
         .when().get(RESOURCE + "/content", object("f1").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404ForDisappearingFile() throws Exception
+    {
+        mds.root().file("foobar").caMaster(12, FILE_MTIME);
+        IPhysicalFile pf = mock(IPhysicalFile.class);
+        when(pf.exists_()).thenReturn(false);
+        when(pf.newInputStream_()).thenThrow(new IOException());
+        when(ps.newFile_(eq(ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, "foobar")))),
+                eq(KIndex.MASTER)))
+                .thenReturn(pf);
+
+        givenAccess()
+        .expect()
+                .statusCode(404)
+                .header("Access-Control-Allow-Origin", "*")
+                .body("type", equalTo("NOT_FOUND"))
+        .when().get(RESOURCE + "/content", object("foobar").toStringFormal());
     }
 
     @Test

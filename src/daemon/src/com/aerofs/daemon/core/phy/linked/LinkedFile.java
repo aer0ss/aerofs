@@ -196,6 +196,12 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
     }
 
     @Override
+    public boolean exists_()
+    {
+        return _f.exists();
+    }
+
+    @Override
     public String getAbsPath_()
     {
         return _f.getAbsolutePath();

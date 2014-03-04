@@ -84,6 +84,12 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
 
         IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
 
+        // Deletions take ~6s to register in the VFS which leaves a sizable window where files
+        // remain listed but their content is gone.
+        // Check for existence of physical file before returning a 200 to avoid closing the
+        // connection when reading the content fails.
+        if (!pf.exists_()) throw new ExNotFound();
+
         // TODO: send CONTENT_COMPLETION from ContentStream
 
         ev.setResult_(ranges != null
