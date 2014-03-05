@@ -164,13 +164,13 @@ public class DevicePresence implements IDiagnosable
     {
         Device dev = _did2dev.get(did);
         if (dev == null) {
-            dev = new Device(did);
-            _did2dev.put(did, dev);
+            l.info("{}: already offline", did);
+            return;
         }
 
         if (dev.isBeingPulsed_(tp)) return;
 
-        l.info("d:{} {} start pulse", did, tp);
+        l.info("{}: start pulse", did, tp);
 
         boolean wasFormerlyAvailable = dev.isAvailable_();
         removeDIDFromStores_(did, dev.pulseStarted_(tp));
@@ -184,7 +184,7 @@ public class DevicePresence implements IDiagnosable
             AbstractEBIMC ev = new EOStartPulse(_tps.getIMCE_(tp), did);
             CoreIMC.enqueueBlocking_(ev, _tokenManager);
         } catch (Exception e) {
-            l.warn("d:{} t:{} fail start pulse err:{}", did, tp, Util.e(e));
+            l.warn("{}: t:{} fail start pulse err:{}", did, tp, Util.e(e));
             pulseStopped_(tp, did);
         }
     }
@@ -192,7 +192,10 @@ public class DevicePresence implements IDiagnosable
     public void pulseStopped_(ITransport tp, DID did)
     {
         Device dev = _did2dev.get(did);
-        assert dev != null && dev.isAvailable_();
+        if (dev == null) {
+            l.warn("{}: pulse stopped but device not found", did);
+            return;
+        }
 
         Collection<SIndex> sidcsOnline = dev.pulseStopped_(tp);
         onlineImpl_(dev, sidcsOnline);
