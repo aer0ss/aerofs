@@ -35,6 +35,7 @@ import com.aerofs.daemon.transport.tcp.ARP.IARPVisitor;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
 import com.aerofs.proto.Diagnostics.TCPDevice;
@@ -50,6 +51,7 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
@@ -237,7 +239,7 @@ public class TCP implements ITransport, IUnicastCallbacks
                         multicast.sendControlMessage(pong);
                     }
                 } catch (Exception e) {
-                    l.warn("fail mc pong", e);
+                    l.warn("fail mc pong", LogUtil.suppress(e, IOException.class));
                 }
 
                 scheduler.schedule(this, HEARTBEAT_INTERVAL);
