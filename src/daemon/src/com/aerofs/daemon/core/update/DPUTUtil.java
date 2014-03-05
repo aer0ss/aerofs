@@ -10,9 +10,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-class DPUTUtil
+public class DPUTUtil
 {
-    static interface IDatabaseOperation
+    public static interface IDatabaseOperation
     {
         void run_(Statement s)
                 throws SQLException;
@@ -22,7 +22,7 @@ class DPUTUtil
      * This method calls op.run_() in a single database transaction. The transaction is committed
      * only if run_() returns without throwing.
      */
-    static void runDatabaseOperationAtomically_(IDBCW dbcw, IDatabaseOperation op)
+    static public void runDatabaseOperationAtomically_(IDBCW dbcw, IDatabaseOperation op)
             throws SQLException
     {
         Connection c = dbcw.getConnection();

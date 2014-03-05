@@ -32,6 +32,7 @@ public class DaemonLaunchTasks
     public static void bindTasks(Binder binder)
     {
         GuiceUtil.multibind(binder, DaemonLaunchTask.class, DLTFetchStoreNames.class);
+        GuiceUtil.multibind(binder, DaemonLaunchTask.class, DLTCleanActivityLog.class);
     }
 
     public void run()
