@@ -94,13 +94,10 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
 
     public synchronized void stop()
     {
-        synchronized (this) {
-            if (!running) return;
+        if (!running) return;
 
-            pauseAccept();
-
-            running = false;
-        }
+        pauseAccept();
+        running = false;
 
         disconnectAll(new ExTransportUnavailable("transport shutting down"));
 

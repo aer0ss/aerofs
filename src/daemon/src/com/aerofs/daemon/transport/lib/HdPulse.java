@@ -9,6 +9,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.IPulseEvent;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExTransport;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.lib.event.Prio;
 import org.slf4j.Logger;
 
@@ -80,11 +83,19 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
             l.trace("d:{} prevtok:{} tok:{} send pulse", did, printtok(prevtok), ret.tok());
 
             uc.send(did, null, Prio.HI, newControl(ret.hdr()), null);
-        } catch (Exception e) {
-            l.warn("d:{} pulse resched", did, e);
-        }
 
-        ph.schednextpulse_(ev);
+            ph.schednextpulse_(ev);
+        } catch (ExTransportUnavailable e) {
+            stopPulse(did, e);
+        } catch (ExDeviceUnavailable e) {
+            stopPulse(did, e);
+        }
+    }
+
+    private void stopPulse(DID did, ExTransport e)
+    {
+        pm.delInProgressPulse(did);
+        l.warn("d:{} stop in-progress pulse", did, e);
     }
 
     private static String printtok(PulseToken prevtok)
