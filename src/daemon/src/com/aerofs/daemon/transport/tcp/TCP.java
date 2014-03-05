@@ -41,7 +41,6 @@ import com.aerofs.proto.Diagnostics.TCPDevice;
 import com.aerofs.proto.Diagnostics.TCPDiagnostics;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Transport.PBTPHeader;
-import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -73,7 +72,6 @@ public class TCP implements ITransport, IUnicastCallbacks
     private final TransportEventQueue transportEventQueue;
     private final EventDispatcher dispatcher;
     private final Scheduler scheduler;
-    private final DID localdid;
     private final String id;
     private final int pref;
     private final ARP arp;
@@ -105,7 +103,6 @@ public class TCP implements ITransport, IUnicastCallbacks
         this.transportEventQueue = new TransportEventQueue(id, this.dispatcher);
         this.scheduler = new Scheduler(this.transportEventQueue, id + "-sched");
 
-        this.localdid = localdid;
         this.id = id;
         this.pref = pref;
         this.arp = new ARP();
@@ -115,7 +112,7 @@ public class TCP implements ITransport, IUnicastCallbacks
         this.multicast = new Multicast(localdid, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
         linkStateService.addListener(multicast, sameThreadExecutor()); // can notify on the link-state thread because Multicast is thread-safe
 
-        this.stores = new Stores(this.localdid, this, arp, multicast);
+        this.stores = new Stores(localdid, this, arp, multicast);
         multicast.setStores(stores);
 
         // unicast
@@ -190,7 +187,6 @@ public class TCP implements ITransport, IUnicastCallbacks
     public void init() throws Exception
     {
         // must be called *after* the Unicast object is initialized.
-
         setupCommonHandlersAndListeners(this, dispatcher, scheduler, outgoingEventSink, stores, streamManager, pulseManager, unicast, presenceService);
         setupMulticastHandler(dispatcher, multicast);
 
@@ -234,7 +230,7 @@ public class TCP implements ITransport, IUnicastCallbacks
             public void handle_()
             {
                 try {
-                    l.debug("arp sender: sched pong");
+                    l.trace("arp sender: sched pong");
 
                     PBTPHeader pong = stores.newPongMessage(true);
                     if (pong != null) {
@@ -383,13 +379,5 @@ public class TCP implements ITransport, IUnicastCallbacks
     public long bytesOut()
     {
         return transportStats.getBytesSent();
-    }
-
-    PBTPHeader newGoOfflineMessage()
-    {
-        return PBTPHeader.newBuilder()
-                .setType(Type.TCP_GO_OFFLINE)
-                .setTcpMulticastDeviceId(localdid.toPB())
-                .build();
     }
 }

@@ -94,12 +94,20 @@ class Multicast implements IMaxcast, ILinkStateListener
             public void run()
             {
                 try {
-                    sendControlMessage(tcp.newGoOfflineMessage());
+                    sendControlMessage(newGoOfflineMessage());
                 } catch (IOException e) {
                     l.warn("error sending offline notification. ignored" + e);
                 }
             }
         }));
+    }
+
+    private PBTPHeader newGoOfflineMessage()
+    {
+        return PBTPHeader.newBuilder()
+                .setType(Type.TCP_GO_OFFLINE)
+                .setTcpMulticastDeviceId(localdid.toPB())
+                .build();
     }
 
     void start()
@@ -250,7 +258,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                     checkArgument(h.hasMcastId());
                     // filter packets from core that were sent on other interface
                     if (!maxcastFilterReceiver.isRedundant(did, h.getMcastId())) {
-                        tcp.sink().enqueueThrows( new EIMaxcastMessage(new Endpoint(tcp, did), is, pkt.getLength()), Prio.LO);
+                        tcp.sink().enqueueThrows(new EIMaxcastMessage(new Endpoint(tcp, did), is, pkt.getLength()), Prio.LO);
                     }
                 } else {
                     InetAddress rem = ((InetSocketAddress) pkt.getSocketAddress()).getAddress();
