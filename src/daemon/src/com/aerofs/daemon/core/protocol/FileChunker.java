@@ -4,9 +4,11 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.google.common.collect.Queues;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +22,8 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class FileChunker
 {
+    private final static Logger l = Loggers.getLogger(FileChunker.class);
+
     static final int QUEUE_SIZE_WINDOWS = 128; // See comment below
 
     private final IPhysicalFile _file;
@@ -120,7 +124,11 @@ public class FileChunker
         // To avoid race conditions and potential corruptions we need to explicitly check
         // for changes to the physical file before loaded chunks can be used
         if (_file.wasModifiedSince(_mtime, _fileLength)) {
-            throw new ExUpdateInProgress("mtime and/or length changed");
+            String msg = "mtime,length changed: expected=("
+                    + _mtime +  "," + _fileLength + ") actual=("
+                    + _file.getLastModificationOrCurrentTime_() + "," + _file.getLength_() + ")";
+            l.info(msg);
+            throw new ExUpdateInProgress(msg);
         }
 
         // On Windows, a FileInputStream holds a shared read lock and a delete lock on the file,

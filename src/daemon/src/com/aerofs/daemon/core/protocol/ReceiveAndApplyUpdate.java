@@ -1022,7 +1022,11 @@ public class ReceiveAndApplyUpdate
                 // BUGBUG NB there is still a tiny time window between the
                 // test above and the apply_() below that the file is
                 // updated via the filesystem.
-                throw new ExAborted(k + " has changed locally");
+                String err = k + " has changed locally: expected=("
+                        + ca.mtime() + "," + ca.length() + ") actual=("
+                        + pf.getLastModificationOrCurrentTime_() + "," + pf.getLength_() + ")";
+                l.debug(err);
+                throw new ExAborted(err);
             }
 
             assert reply.hasMtime();

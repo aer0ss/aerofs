@@ -192,7 +192,12 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
     @Override
     public boolean wasModifiedSince(long mtime, long len) throws IOException
     {
-        return _f.wasModifiedSince(mtime, len);
+        // Only enforce mtime/length consistency for files that are watched by the linker.
+        // Conflict branches and NROs should not be manually modified by the user, otherwise
+        // all bets are off. In any case, being overzealous in this case is a bad idea as it
+        // puts the system in a state of persistent failure that can only be escaped by unlinking
+        // and reinstalling.
+        return _path.isRepresentable() && _f.wasModifiedSince(mtime, len);
     }
 
     @Override

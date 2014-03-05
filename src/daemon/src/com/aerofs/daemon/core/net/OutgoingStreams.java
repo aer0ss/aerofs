@@ -70,14 +70,14 @@ public class OutgoingStreams
 
         public void abort_(InvalidationReason reason)
         {
-            l.warn("abort " + this);
+            l.warn("abort {} {}", this, reason.name());
 
             if (_strmid != null) {
                 _streams.remove(_strmid);
                 try {
                     _stack.output().abortOutgoingStream_(_strmid, reason, _ep);
                 } catch (Exception e) {
-                    l.warn("fail abort " + this + ". backlogged: " + Util.e(e));
+                    l.warn("fail abort {}. backlogged: ", this, Util.e(e));
                     _invalidationReason = reason;
                     _failedToAbort.add(this);
                 }
@@ -86,7 +86,7 @@ public class OutgoingStreams
 
         public void end_()
         {
-            l.info("end " + this);
+            l.info("end {}", this);
 
             if (_strmid != null) {
                 _streams.remove(_strmid);
@@ -184,7 +184,7 @@ public class OutgoingStreams
 
         OutgoingStream stream = new OutgoingStream(ep, tk);
         _streams.put(stream._strmid, stream);
-        l.info("create " + stream);
+        l.info("create {}", stream);
         return stream;
     }
 

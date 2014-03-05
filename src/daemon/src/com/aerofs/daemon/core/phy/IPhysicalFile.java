@@ -22,6 +22,15 @@ public interface IPhysicalFile extends IPhysicalObject
      */
     long getLastModificationOrCurrentTime_() throws IOException;
 
+    /**
+     * Use this function when race conditions between remotely-initated file I/O and action
+     * by the local user are a concern.
+     *
+     * NB: this method will return false for physical files that are not supposed to be modified
+     * manually by the user (anything in block storage, conflict branches, NROs, ...)
+     *
+     * @return whether the underlying physical mtime or length differ from the expected values
+     */
     boolean wasModifiedSince(long mtime, long len) throws IOException;
 
     /**

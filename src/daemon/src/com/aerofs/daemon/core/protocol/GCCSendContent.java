@@ -222,8 +222,11 @@ public class GCCSendContent
             long copied = is != null ? ByteStreams.copy(is, os) : 0;
 
             if (copied != len || pf.wasModifiedSince(mtime, len)) {
-                l.debug(k + " updated while being sent. nak");
-                throw new ExUpdateInProgress();
+                String msg = k + " has changed locally: expected=("
+                        + mtime + "," + len + ") actual=("
+                        + pf.getLastModificationOrCurrentTime_() + "," + pf.getLength_() + ")";
+                l.info(msg);
+                throw new ExUpdateInProgress(msg);
             }
 
             _trl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
