@@ -12,8 +12,8 @@ import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.lib.sched.IScheduler;
 import org.slf4j.Logger;
 
-import static com.aerofs.daemon.lib.DaemonParam.INIT_PULSE_TIMEOUT;
-import static com.aerofs.daemon.lib.DaemonParam.MAX_PULSE_TIMEOUT;
+import static com.aerofs.daemon.lib.DaemonParam.Pulse.INIT_PULSE_TIMEOUT;
+import static com.aerofs.daemon.lib.DaemonParam.Pulse.MAX_PULSE_TIMEOUT;
 import static com.aerofs.daemon.transport.lib.PulseManager.AddPulseResult;
 import static com.aerofs.daemon.transport.lib.PulseManager.PulseToken;
 import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulse;

@@ -11,7 +11,7 @@ import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
 import com.aerofs.lib.sched.IScheduler;
 import org.slf4j.Logger;
 
-import static com.aerofs.daemon.lib.DaemonParam.MAX_PULSE_FAILURES;
+import static com.aerofs.daemon.lib.DaemonParam.Pulse.MAX_PULSE_FAILURES;
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.doEOSubsequentPulsePrePulseChecks;
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.schedule_;
 

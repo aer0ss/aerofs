@@ -27,9 +27,12 @@ public class DaemonParam
     // pulsing parameters
     //
 
-    public static final int MAX_PULSE_FAILURES      = 3;
-    public static final long INIT_PULSE_TIMEOUT     = 1 * C.SEC;
-    public static final long MAX_PULSE_TIMEOUT      = 60 * C.SEC;
+    public static class Pulse
+    {
+        public static final int MAX_PULSE_FAILURES      = 3;
+        public static final long INIT_PULSE_TIMEOUT     = 10 * C.SEC;
+        public static final long MAX_PULSE_TIMEOUT      = 120 * C.SEC;
+    }
 
     public static class TCP
     {
