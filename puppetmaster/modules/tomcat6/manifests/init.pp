@@ -12,6 +12,14 @@ class tomcat6 {
         ensure => latest,
     }
 
+    file { "/etc/default/tomcat6":
+      source => "puppet:///modules/tomcat6/tomcat6",
+      owner   => "root",
+      group   => "root",
+      require => Package["tomcat6"],
+      notify  => Service["tomcat6"],
+    }
+
     service { "tomcat6":
         tag => ['autostart-overridable'],
         ensure     => running,
