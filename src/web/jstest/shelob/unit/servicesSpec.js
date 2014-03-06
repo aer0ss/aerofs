@@ -17,9 +17,13 @@ describe('Shelob Services', function() {
             Token.get = function() {
                 return {then: function(succeed, fail) { succeed('stale_token'); }};
             };
-            $httpBackend.expectGET('/api/v1.0/children/').respond(401);
+            $httpBackend.expectGET('/api/v1.0/children/', function(headers) {
+                return headers.Authorization == 'Bearer stale_token';
+            }).respond(401);
             $httpBackend.expectGET('/json_new_token').respond({token: 'new_token'});
-            $httpBackend.expectGET('/api/v1.0/children/').respond(200);
+            $httpBackend.expectGET('/api/v1.0/children/', function(headers) {
+                return headers.Authorization == 'Bearer new_token';
+            }).respond(200);
 
             var success = jasmine.createSpy();
             API.get('/children/').then(success);

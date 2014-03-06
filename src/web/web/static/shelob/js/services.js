@@ -10,7 +10,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
           .success(function(data, status, headers, config) {
               deferred.resolve(data.token);
           })
-          .error(function(data, status, headers, config) {
+          .error(function(data, status) {
               deferred.reject(status);
           });
         return deferred.promise;
@@ -23,7 +23,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
           .success(function(data, status, headers, config) {
               deferred.resolve(data.token);
           })
-          .error(function(data, status, headers, config) {
+          .error(function(data, status) {
               deferred.reject(status);
           });
         return deferred.promise;
@@ -45,16 +45,17 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
                     // if the call succeeds, return the data
                     deferred.resolve(data);
                 })
-                .error(function(data, status, headers, config) {
+                .error(function(data, status) {
                     if (status == 401) {
                         // if the call got 401, the token may have expired, so try a new one
                         Token.getNew().then(function(token) {
+                          headers.Authorization = 'Bearer ' + token;
                           $http({method: method, url: '/api/v1.0' + path, headers: headers})
                             .success(function(data, status, headers, config) {
                                 // if the call succeeds, return the data
                                 deferred.resolve(data);
                             })
-                            .error(function(data, status, headers, config) {
+                            .error(function(data, status) {
                                 // if the call fails with the new token, stop trying and return the status code
                                 deferred.reject(status);
                             });
