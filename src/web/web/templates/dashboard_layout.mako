@@ -7,7 +7,7 @@
 <%!
     from web.auth import is_admin
     from pyramid.security import  authenticated_userid
-    from web.util import is_private_deployment
+    from web.util import is_private_deployment, str2bool
 %>
 
 ## N.B. maintenance_layout.mako uses the same layout
@@ -75,9 +75,23 @@
             <li><a href="${request.route_path('download')}">
                 AeroFS Desktop
             </a></li>
-            <li><a href="${request.route_path('add_mobile_device')}">
-                Mobile Apps
-            </a></li>
+
+            <%
+                settings = request.registry.settings
+                prop = 'web.disable_download_mobile_client'
+
+                ## the intended default behaviour is to _display_ the item
+                ## so this value is true iff everything points to true
+                disable_download_mobile_client = \
+                    is_private_deployment(settings) \
+                    and prop in settings \
+                    and str2bool(settings[prop])
+            %>
+            %if not disable_download_mobile_client:
+                <li><a href="${request.route_path('add_mobile_device')}">
+                    Mobile Apps
+                </a></li>
+            %endif
 
             %if admin:
                 <li><a href="${request.route_path('download_team_server')}">
