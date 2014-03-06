@@ -14,7 +14,7 @@ runScTest() {
     startDate=`date`
     echo SC Test Started: $startDate
     echo $'\n'"$startDate: Test Started for $instancesPerUser instances per user, $numberOfFiles files per instance and $userCount users" > $logFileName
-    echo "Total number of files expected: $fileNumberGoal"$'\n' >> $logFileName
+    echo "Total number of shared folders: $sharesCount, total files expected: $fileNumberGoal"$'\n' >> $logFileName
     START=$(date +%s)
     while true;
     do
@@ -22,7 +22,7 @@ runScTest() {
         current=$(date +%s)
         currDiff=$(( $current - $START ))
         echo "$currDiff sec:"$'\t'"Files synced: $fileCount"
-        echo "$currDiff sec:"$'\t'"Files synced: $fileCount" >> $logFileName
+            echo "$currDiff sec:"$'\t'"Files synced: $fileCount" >> $logFileName
         if (($fileCount >= $fileNumberGoal )); then
             break
         fi
@@ -36,18 +36,18 @@ runScTest() {
 
 DIRECTORY='.aerofsts'
 
-[ "$#" -eq 3 ] || die "3 arguments required (instancesPerUser, fileCount, userCount), $# provided"
+[ "$#" -eq 2 ] || die "2 arguments required (fileCount, userCount), $# provided"
 echo $1 | grep -E -q '^[0-9]+$' || die "Numeric argument required, $1 provided"
 echo $2 | grep -E -q '^[0-9]+$' || die "Numeric argument required, $2 provided"
-echo $3 | grep -E -q '^[0-9]+$' || die "Numeric argument required, $3 provided"
 
-instancesPerUser=$1
-numberOfFiles=$2
-userCount=$3
+instancesPerUser=1
+numberOfFiles=$1
+userCount=$2
 
-fileNumberGoal=$(($instancesPerUser*$numberOfFiles*$userCount))
+sharesCount=$(($userCount*($userCount-1)/2))
+fileNumberGoal=$(($instancesPerUser*$numberOfFiles*$sharesCount))
 echo "Test Started for $instancesPerUser instances per user, $numberOfFiles files per instance and $userCount users"
-echo "Total number of files expected: $fileNumberGoal"
+echo "Total number of shared folders: $sharesCount, total files expected: $fileNumberGoal"
 if [ -d "$DIRECTORY" ]; then
     # Cleanup
     echo Cleaning up
@@ -60,7 +60,7 @@ if [ -d "$DIRECTORY" ]; then
     # prepare test results dir and file
     parentDir="testResults"
     mkdir -p $parentDir
-    dirName=$parentDir"/tsTest_"$instancesPerUser"inst_"$numberOfFiles"files_"$userCount"users"
+    dirName=$parentDir"/sharedFoldersTsTest_"$instancesPerUser"inst_"$numberOfFiles"files_"$userCount"users_"$sharesCount"shares"
     mkdir -p $dirName
 
     # check next available ordinal for log file
