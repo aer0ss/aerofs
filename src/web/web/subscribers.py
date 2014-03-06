@@ -16,7 +16,8 @@ def validate_csrf_token(event):
     if csrf is None:
         csrf = request.params.get('csrf_token')
 
-    if request.method != 'GET' and csrf != unicode(request.session.get_csrf_token()):
+    if request.method != 'GET' and is_authenticated(request) and \
+            csrf != unicode(request.session.get_csrf_token()):
         logging.getLogger(__name__).warn("CSRF validation failed. user {} path {}"
                 .format(authenticated_userid(request), request.path))
         raise HTTPUnauthorized
