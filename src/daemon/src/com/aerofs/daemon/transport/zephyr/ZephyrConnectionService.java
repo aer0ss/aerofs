@@ -471,6 +471,16 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                 try {
                     consumeHandshake(did, handshake);
                 } catch (ExHandshakeRenegotiation e) {
+                    // the zephyr server breaks both legs of a connection
+                    // if it detects that one leg has died
+                    // there are cases where the remote peer knows
+                    // that a connection is broken before the server does
+                    // this may cause the remote peer to attempt to re-establish
+                    // a connection. we want to detect this case and:
+                    // 1. immediately teardown the old connection with zephyr
+                    // 2. immediately start negotiating the next connection
+                    // doing this allows us to avoid an expensive handshake timeout
+                    // on the remote peer and multiple additional roundtrips
                     rockLog.newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION).send();
                     disconnectChannel(did, new IllegalStateException("attempted renegotiation of zephyr channel to " + did, e));
                     consumeHandshake(did, handshake);

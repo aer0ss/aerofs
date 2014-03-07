@@ -10,7 +10,6 @@ import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelDI
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportMessage;
 import com.aerofs.lib.log.LogUtil;
-import com.aerofs.zephyr.client.IZephyrSignallingClient;
 import com.aerofs.zephyr.client.exceptions.ExBadZephyrMessage;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeRenegotiation;
@@ -137,7 +136,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
 
         boolean succeeded = disconnectCause.compareAndSet(null, cause);
         if (succeeded) {
-            l.debug("{} close channel cause:{}", this, cause);
+            l.debug("{} close channel cause:", this, cause);
 
             // FIXME (AG): this happens when you throw an exception
             // handlers will call close first, which triggers the close future, followed by the exception event
@@ -287,16 +286,14 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
     public void consumeHandshake(ZephyrHandshake handshake)
             throws ExHandshakeRenegotiation, ExHandshakeFailed
     {
-        IZephyrSignallingClient signallingClient = zephyrProtocolHandler.getZephyrSignallingClient();
-
         // we're getting a handshake message after the handshake has succeeded
         // this means that for some reason the remote device is trying to establish a
         // connection to us again.
-        if (signallingClient == null) {
+        if (zephyrProtocolHandler.hasHandshakeCompleted()) {
             throw new ExHandshakeRenegotiation("attempted to renegotiate zephyr handshake on incoming signalling");
         }
 
-        signallingClient.processIncomingZephyrSignallingMessage(handshake);
+        zephyrProtocolHandler.processIncomingZephyrSignallingMessage(handshake);
     }
 
     @Override
