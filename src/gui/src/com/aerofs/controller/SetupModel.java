@@ -47,7 +47,7 @@ public class SetupModel
     public void doSignIn() throws Exception
     {
         assert _signInActor != null : "SetupModel sign-in state error";
-        _signInActor.signInUser(_setup, this);
+        _signInActor.signInUser(this);
         assertConnected();
     }
 

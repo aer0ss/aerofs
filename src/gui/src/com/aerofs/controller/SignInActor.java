@@ -34,7 +34,7 @@ public abstract class SignInActor
      * If the user cannot be signed in, implementation must signal this case with an
      * appropriate exception.
      */
-    public abstract void signInUser(Setup setup, SetupModel model) throws Exception;
+    public abstract void signInUser(SetupModel model) throws Exception;
 
     /**
      * An actor that signs in using stored credentials (requires userID and password
@@ -43,7 +43,7 @@ public abstract class SignInActor
     public static class CredentialActor extends SignInActor
     {
         @Override
-        public void signInUser(Setup setup, SetupModel model) throws Exception {
+        public void signInUser(SetupModel model) throws Exception {
             SPBlockingClient sp = newOneWayAuthClientFactory().create();
 
             // FIXME: Soon we will remove this if() statement. The client
@@ -66,7 +66,7 @@ public abstract class SignInActor
     public static class OpenIdGUIActor extends SignInActor
     {
         @Override
-        public void signInUser(Setup setup, SetupModel model) throws Exception
+        public void signInUser(SetupModel model) throws Exception
         {
             OpenIdHelper helper = new OpenIdHelper(model);
 
@@ -81,7 +81,7 @@ public abstract class SignInActor
         public OpenIdCLIActor(CLI cli) { _out = cli; }
 
         @Override
-        public void signInUser(Setup setup, SetupModel model) throws Exception
+        public void signInUser(SetupModel model) throws Exception
         {
             OpenIdHelper helper = new OpenIdHelper(model);
 

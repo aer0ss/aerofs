@@ -214,12 +214,12 @@ public class S
 
             CHILD_ALREADY_SHARED = "You can't share a folder that contains a shared folder.",
             PARENT_ALREADY_SHARED = "You can't share a folder under an already shared folder.",
-            TYPE_ADMIN_PASSWORD_TO_RECERTIFY_TEAM_SERVER = "We've made a security update that " +
-                    "requires you to enter an admin's credentials on this Team Server. " +
-                    "Once you enter the password, the Team Server will shutdown, and you will need" +
-                    " to manually restart it. We apologize for the inconvenience. " +
-                    "Email " +
-                    WWW.SUPPORT_EMAIL_ADDRESS + " if you have questions.",
+            SIGN_IN_TO_RECERTIFY_EXPLANATION = "For your security, " + L.product() +
+                    " creates a private certificate for each computer you authorize " +
+                    "to share and sync your files. These certificates are " +
+                    "automatically renewed before they expire. Unfortunately, this device " +
+                    "was unable to renew your certificate and requires explicit authorization.",
+            SIGN_IN_TO_RECERTIFY_ACTION = "To continue syncing files, please sign in now:",
             ADMIN_EMAIL = "Admin email",
             ADMIN_PASSWD = "Admin password",
             PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password",
