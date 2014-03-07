@@ -2,6 +2,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
+import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
@@ -102,6 +103,8 @@ import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
+import com.aerofs.sp.server.audit.AuditCaller;
+import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
@@ -1079,6 +1082,14 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
+    private AuditableEvent auditSharing(SharedFolder sf, User caller, String event)
+            throws SQLException, ExNotFound
+    {
+        return _auditClient.event(AuditTopic.SHARING, event)
+                .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
+                .embed("caller", new AuditCaller(caller.id()));
+    }
+
     @Override
     public ListenableFuture<Void> shareFolder(String folderName, ByteString shareId,
             List<PBSubjectPermissions> subjectPermissionsList, @Nullable String note,
@@ -1101,7 +1112,10 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         ISharingRules rules = _sharingRules.create(sharer);
 
+        List<AuditableEvent> events = Lists.newArrayList();
         boolean created = saveSharedFolderIfNecessary(folderName, sf, sharer, external);
+        if (created) events.add(auditSharing(sf, sharer, "folder.create"));
+
         ImmutableCollection<UserID> users = sf.getJoinedUserIDs();
 
         // The sending of invitation emails is deferred to the end of the transaction to ensure
@@ -1115,18 +1129,17 @@ public class SPService implements ISPService
                     _invitationHelper.createFolderInvitationAndEmailer(sf, sharer, sharee,
                             actualPermissions, note, folderName));
 
-            _auditClient.event(AuditTopic.SHARING, "folder.invite")
-                    .add("folder", folderName)
-                    .add("sharer", sharer.id())
+            events.add(auditSharing(sf, sharer, "folder.invite")
                     .add("target", sharee.id())
-                    .embed("role", actualPermissions.toArray())
-                    .publish();
+                    .embed("role", actualPermissions.toArray()));
         }
 
         if (!suppressSharingRulesWarnings) rules.throwIfAnyWarningTriggered();
 
         // send verkehr notification as the last step of the transaction
         if (created || rules.shouldBumpEpoch()) _aclPublisher.publish_(users);
+        
+        for (AuditableEvent e : events) e.publish();
 
         _sqlTrans.commit();
 
@@ -1167,11 +1180,9 @@ public class SPService implements ISPService
         joinSharedFolderImpl(external, user, sf);
 
         Permissions perm = sf.getPermissionsNullable(user);
-        _auditClient.event(AuditTopic.SHARING, "folder.join")
-                .add("user", user.id())
-                .add("user_type", external ? "external" : "internal")
-                .add("folder_id", sf.id())
-                .add("folder_name", sf.getName(user))
+        auditSharing(sf, user, "folder.join")
+                .add("join_as", external ? "external" : "internal")
+                .add("target", user.id())
                 .embed("role", perm == null ? "" : perm.toArray())
                 .publish();
         _sqlTrans.commit();
@@ -1246,6 +1257,10 @@ public class SPService implements ISPService
         // Ignore the invitation by deleting the user.
         sf.removeUser(user);
 
+        auditSharing(sf, user, "folder.delete_invitation")
+                .add("target", user.id())
+                .publish();
+
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -1282,10 +1297,8 @@ public class SPService implements ISPService
             _aclPublisher.publish_(users);
         }
 
-        _auditClient.event(AuditTopic.SHARING, "folder.leave")
-                .add("user", user.id())
-                .add("folder_id", sf.id())
-                .add("folder_name", sf.getName(user))
+        auditSharing(sf, user, "folder.leave")
+                .add("target", user.id())
                 .publish();
 
         _sqlTrans.commit();
@@ -1795,13 +1808,10 @@ public class SPService implements ISPService
 
             _sfnEmailer.sendRoleChangedNotificationEmail(sf, user, subject, oldPermissions, role);
 
-            _auditClient.event(AuditTopic.SHARING, "folder.permission.update")
-                    .add("target_user", subject.id())
-                    .add("admin_user", user.id())
+            auditSharing(sf, user, "folder.permission.update")
+                    .add("target", subject.id())
                     .embed("new_role", role.toArray())
                     .embed("old_role", oldPermissions != null ? oldPermissions.toArray() : "")
-                    .add("folder_id", sf.id())
-                    .add("folder_name", sf.getName(user))
                     .publish();
 
             // always call publishACLs_() as the last step of the transaction
@@ -1826,11 +1836,8 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         sf.throwIfNoPrivilegeToChangeACL(user);
 
-        _auditClient.event(AuditTopic.SHARING, "folder.permission.delete")
-                .add("target_user", subject.id())
-                .add("admin_user", user.id())
-                .add("folder_id", sf.id())
-                .add("folder_name", sf.getName(user))
+        auditSharing(sf, user, "folder.permission.delete")
+                .add("target", subject.id())
                 .publish();
 
         // always call this method as the last step of the transaction

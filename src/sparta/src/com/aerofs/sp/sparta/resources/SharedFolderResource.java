@@ -6,6 +6,7 @@ package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
+import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Version;
@@ -31,6 +32,8 @@ import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.InvitationHelper;
 import com.aerofs.sp.server.UserManagement;
+import com.aerofs.sp.server.audit.AuditCaller;
+import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -45,6 +48,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -68,21 +72,9 @@ import java.util.Map.Entry;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
-/**
- *
- * GET    /{sid}                    get info
- * GET    /{sid}/members            list members
- * POST   /{sid}/members            add member [admin only, bypass invitation]
- * GET    /{sid}/members/{email}    get permissions
- * PUT    /{sid}/members/{email}    set permissions
- * DELETE /{sid}/members/{email}    remove member (or leave, if self)
- * GET    /{sid}/invited            list pending members
- * POST   /{sid}/invited            invite new member
- * GET    /{sid}/invited/{email}    get permissions and inviter
- * DELETE /{sid}/invited/{email}    revoke invitation
- */
 @Path(Service.VERSION + "/shares")
 @Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 @Transactional
 public class SharedFolderResource extends AbstractSpartaResource
 {
@@ -107,6 +99,14 @@ public class SharedFolderResource extends AbstractSpartaResource
         _aclNotifier = aclNotifier;
         _sfnEmailer = sfnEmailer;
         _audit = audit;
+    }
+
+    private AuditableEvent audit(SharedFolder sf, User caller, AuthToken token, String event)
+            throws SQLException, ExNotFound
+    {
+        return _audit.event(AuditTopic.SHARING, event)
+                .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
+                .embed("caller", new AuditCaller(caller.id(), token.did));
     }
 
     @Since("1.1")
@@ -160,6 +160,9 @@ public class SharedFolderResource extends AbstractSpartaResource
         List<PendingMember> pending = listPendingMembers(sf, md);
         // TODO: it'd be nice if there was an epoch for pending members to avoid this hashing...
         EntityTag etag = new EntityTag(aclEtag(caller) + BaseUtil.hexEncode(md.digest()), true);
+
+        audit(sf, caller, token, "folder.create")
+                .publish();
 
         String location = Service.DUMMY_LOCATION
                 + 'v' + version
@@ -271,9 +274,7 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         _aclNotifier.publish_(sf.getJoinedUserIDs());
 
-        _audit.event(AuditTopic.SHARING, "folder.add")
-                .add("folder", sf.getName(user))
-                .add("sharer", caller.id())
+        audit(sf, caller, token, "folder.add")
                 .add("target", user.id())
                 .embed("role", req.toArray())
                 .publish();
@@ -331,13 +332,11 @@ public class SharedFolderResource extends AbstractSpartaResource
         // rules.throwIfAnyWarningTriggered();
 
         _aclNotifier.publish_(affected);
-        _audit.event(AuditTopic.SHARING, "folder.permission.update")
-                .add("target_user", user.id())
-                .add("admin_user", caller.id())
+
+        audit(sf, caller, token, "folder.permission.update")
+                .add("target", user.id())
                 .embed("new_role", req.toArray())
                 .embed("old_role", oldPermissions != null ? oldPermissions.toArray() : "")
-                .add("folder_id", sf.id())
-                .add("folder_name", sf.getName(caller))
                 .publish();
 
         // TODO: outside transaction
@@ -382,11 +381,8 @@ public class SharedFolderResource extends AbstractSpartaResource
         }
 
         _aclNotifier.publish_(affected);
-        _audit.event(AuditTopic.SHARING, "folder.permission.delete")
-                .add("target_user", user.id())
-                .add("admin_user", caller.id())
-                .add("folder_id", sf.id())
-                .add("folder_name", sf.getName(caller))
+        audit(sf, caller, token, caller.equals(user) ? "folder.leave" : "folder.permission.delete")
+                .add("target", user.id())
                 .publish();
 
         return Response.noContent()
@@ -477,9 +473,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         // rules.throwIfAnyWarningTriggered();
         if (rules.shouldBumpEpoch()) _aclNotifier.publish_(users);
 
-        _audit.event(AuditTopic.SHARING, "folder.invite")
-                .add("folder", folderName)
-                .add("sharer", caller.id())
+        audit(sf, caller, token, "folder.invite")
                 .add("target", user.id())
                 .embed("role", req.toArray())
                 .publish();
@@ -515,6 +509,10 @@ public class SharedFolderResource extends AbstractSpartaResource
         if (p == null  || sf.getStateNullable(user) != SharedFolderState.PENDING) {
             throw new ExNotFound("No such pending member");
         }
+
+        audit(sf, caller, token, "folder.delete_invitation")
+                .add("target", user.id())
+                .publish();
 
         try {
             checkState(sf.removeUser(user).isEmpty());

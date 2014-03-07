@@ -4,6 +4,9 @@
 
 package com.aerofs.sp.sparta.resources;
 
+import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.AuditClient.AuditTopic;
+import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Version;
@@ -24,6 +27,8 @@ import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.UserManagement;
+import com.aerofs.sp.server.audit.AuditCaller;
+import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -77,12 +82,13 @@ public class UsersResource extends AbstractSpartaResource
     private final ACLNotificationPublisher _aclPublisher;
     private final VerkehrAdmin _verkehrAdmin;
     private final CommandDispatcher _commandDispatcher;
-    private PasswordManagement _passwordManagement;
+    private final PasswordManagement _passwordManagement;
+    private final AuditClient _audit;
 
     @Inject
     public UsersResource(Factory factUser, ACLNotificationPublisher aclPublisher,
             CommandDispatcher commandDispatcher, VerkehrAdmin verkerhAdmin,
-            PasswordManagement passwordManagement)
+            PasswordManagement passwordManagement, AuditClient audit)
     {
         _factUser = factUser;
         _aclPublisher = aclPublisher;
@@ -90,6 +96,14 @@ public class UsersResource extends AbstractSpartaResource
         _commandDispatcher = commandDispatcher;
         _commandDispatcher.setAdminClient(_verkehrAdmin);
         _passwordManagement = passwordManagement;
+        _audit = audit;
+    }
+
+    private AuditableEvent audit(User caller, AuthToken token, AuditTopic topic, String event)
+            throws SQLException, ExNotFound
+    {
+        return _audit.event(topic, event)
+                .embed("caller", new AuditCaller(caller.id(), token.did));
     }
 
     @Since("1.1")
@@ -190,6 +204,12 @@ public class UsersResource extends AbstractSpartaResource
 
         _aclPublisher.publish_(sf.setState(user, SharedFolderState.JOINED));
 
+        audit(caller, token, AuditTopic.SHARING, "folder.join")
+                .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
+                .add("target", user.id())
+                .embed("role", sf.getPermissionsNullable(user))
+                .publish();
+
         String location = Service.DUMMY_LOCATION
                 + 'v' + version
                 + "/shares/" + sf.id().toStringFormal();
@@ -221,6 +241,11 @@ public class UsersResource extends AbstractSpartaResource
         } catch (ExNoAdminOrOwner e) {
             throw new ExBadArgs(e.getMessage());
         }
+
+        audit(caller, token, AuditTopic.SHARING, "folder.delete_invitation")
+                .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
+                .add("target", user.id())
+                .publish();
 
         return Response.noContent()
                 .build();
@@ -306,6 +331,10 @@ public class UsersResource extends AbstractSpartaResource
 
         l.info("Created user {}", newUser);
 
+        audit(caller, auth, AuditTopic.USER, "user.create")
+                .add("email", newUser.id())
+                .publish();
+
         String location = Service.DUMMY_LOCATION
                 + 'v' + version
                 + "/users/" + newUser.id().getString();
@@ -321,7 +350,7 @@ public class UsersResource extends AbstractSpartaResource
     @Path("/{email}")
     public Response update(
             @Auth AuthToken auth,
-            @PathParam("email")User target,
+            @PathParam("email") User target,
             com.aerofs.rest.api.User attrs) throws Exception
     {
         requirePermission(Scope.WRITE_USER, auth);
@@ -340,6 +369,10 @@ public class UsersResource extends AbstractSpartaResource
             _commandDispatcher.enqueueCommand(peer.id(), CommandType.INVALIDATE_USER_NAME_CACHE);
         }
 
+        audit(caller, auth, AuditTopic.USER, "user.update")
+                .add("email", target.id())
+                .publish();
+
         l.warn("Updated user {}", attrs);
         return Response.ok()
                 .entity(new com.aerofs.rest.api.User(target.id().getString(), attrs.firstName,
@@ -352,7 +385,7 @@ public class UsersResource extends AbstractSpartaResource
     @Path("/{email}")
     public Response delete(
             @Auth AuthToken auth,
-            @PathParam("email")User target)
+            @PathParam("email") User target)
             throws Exception
     {
         requirePermission(Scope.WRITE_USER, auth);
@@ -363,6 +396,10 @@ public class UsersResource extends AbstractSpartaResource
         UserManagement.deactivateByTS(caller, target, false, _commandDispatcher, _aclPublisher);
         l.info("Deleted user {}", target.id().getString());
 
+        audit(caller, auth, AuditTopic.USER, "user.delete")
+                .add("email", target.id())
+                .publish();
+
         return Response.noContent()
                 .build();
     }
@@ -372,7 +409,7 @@ public class UsersResource extends AbstractSpartaResource
     @Path("/{email}/password")
     public Response updatePassword(
             @Auth AuthToken auth,
-            @PathParam("email")User target,
+            @PathParam("email") User target,
             String newCredential) throws Exception
     {
         requirePermission(Scope.MANAGE_PASSWORD, auth);
@@ -384,6 +421,10 @@ public class UsersResource extends AbstractSpartaResource
         l.debug("API: user {} requests password update for {}", caller, target);
         _passwordManagement.setPassword(target.id(), newCredential.getBytes("UTF-8"));
 
+        audit(caller, auth, AuditTopic.USER, "user.password.update")
+                .add("email", target.id())
+                .publish();
+
         return Response.noContent().build();
     }
 
@@ -392,7 +433,7 @@ public class UsersResource extends AbstractSpartaResource
     @Path("/{email}/password")
     public Response deletePassword(
             @Auth AuthToken auth,
-            @PathParam("email")User target)
+            @PathParam("email") User target)
             throws Exception
     {
         requirePermission(Scope.MANAGE_PASSWORD, auth);
@@ -401,6 +442,10 @@ public class UsersResource extends AbstractSpartaResource
 
         l.debug("API: user {} requests password delete for {}", caller, target);
         _passwordManagement.revokePassword(target.id());
+
+        audit(caller, auth, AuditTopic.USER, "user.password.revoke")
+                .add("email", target.id())
+                .publish();
 
         return Response.noContent().build();
     }
