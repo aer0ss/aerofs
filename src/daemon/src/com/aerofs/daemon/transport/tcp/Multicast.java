@@ -57,6 +57,7 @@ class Multicast implements IMaxcast, ILinkStateListener
     private final int multicastPort;
     private final String multicastAddress;
     private final int maxMulticastDatagramSize;
+    private final int multicastTTL;
     private final long multicastReconnectInterval;
 
     private Stores stores; // the only reason this isn't final is because of a circular dependency between the two
@@ -73,6 +74,7 @@ class Multicast implements IMaxcast, ILinkStateListener
         multicastPort = DaemonParam.TCP.MCAST_PORT;
         multicastAddress = DaemonParam.TCP.MCAST_ADDRESS;
         maxMulticastDatagramSize = DaemonParam.TCP.MCAST_MAX_DGRAM_SIZE;
+        multicastTTL = DaemonParam.TCP.IP_MULTICAST_TTL;
         multicastReconnectInterval = DaemonParam.TCP.RETRY_INTERVAL;
     }
 
@@ -157,7 +159,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                 // N.B. Setting loopback mode to true _disables_ TCP multicast on local loopback
                 // See http://docs.oracle.com/javase/6/docs/api/java/net/MulticastSocket.html#setLoopbackMode(boolean)
                 s.setLoopbackMode(!listenToMulticastOnLoopback);
-                s.joinGroup(new InetSocketAddress(multicastAddress, multicastPort), iface);
+                s.joinGroup(new InetSocketAddress(multicastAddress, multicastPort), iface); // FIXME (AG): java api docs have this doing InetAddress.getByName
 
                 MulticastSocket old = ifaceToMulticastSocket.put(iface, s);
                 if (old != null) close(old);
@@ -332,6 +334,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                                     iface, sendingAddress, pkt.getSocketAddress(), h.getType().name());
 
                             s.setInterface(sendingAddress);
+                            s.setTimeToLive(multicastTTL);
                             s.send(pkt);
                         } catch (IOException e) {
                             l.error("fail send mc iface:{} send_addr:{} dest_addr:{}", iface, sendingAddress, pkt.getSocketAddress());

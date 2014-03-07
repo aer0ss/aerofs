@@ -39,6 +39,7 @@ public class DaemonParam
         public static final String MCAST_ADDRESS        = "225.7.8.9";
         public static final int MCAST_PORT              = 29871;
         public static final int MCAST_MAX_DGRAM_SIZE    = 1024;
+        public static final int IP_MULTICAST_TTL        = 8;
         public static final long HEARTBEAT_INTERVAL     = 15 * C.SEC;
         public static final long RETRY_INTERVAL         = 5 * C.SEC;
         public static final long ARP_GC_INTERVAL        = HEARTBEAT_INTERVAL * 6;
