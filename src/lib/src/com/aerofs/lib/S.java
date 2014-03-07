@@ -172,7 +172,7 @@ public class S
                 "An important update has been downloaded for " + L.product() + ".",
             NO_CONSOLE = "No console is found.",
             VENDOR = "Air Computing Inc.",
-            COPYRIGHT = "2010-2013 " + VENDOR + " All Rights Reserved.",
+            COPYRIGHT = "2010-2014 " + VENDOR + " All Rights Reserved.",
             BTN_ADVANCED = "Advanced...",
             BTN_CHANGE = "Change...",
             COULDNT_UNLINK_DEVICE = "Sorry, we could not unlink your computer.",
