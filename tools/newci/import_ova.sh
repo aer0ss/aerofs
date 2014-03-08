@@ -60,7 +60,7 @@ done
 set -e
 
 echo Reading license file...
-license_data=$(cat "$license_file" | python -c 'import sys,urllib; print urllib.urlencode({"license": sys.stdin.read().decode("latin1").encode("utf-8")})')
+license_data=$(cat "$license_file" | python -c 'import sys,urllib,base64; print urllib.urlencode({"license_file": base64.urlsafe_b64encode(sys.stdin.read())})')
 
 echo Provisioning everything else...
 scp -P $fwport $SSH_OPTS "$properties_file" ubuntu@localhost:external.properties
@@ -68,7 +68,7 @@ ssh -p $fwport $SSH_OPTS ubuntu@localhost <<EOSSH
 
 sudo cp external.properties /opt/config/properties/
 
-curl --insecure --request POST --data "$license_data" http://localhost:8484/json_set_license
+curl --insecure --request POST --data "$license_data" http://localhost:5434/set_license_file
 
 sudo aerofs-bootstrap-taskfile /opt/bootstrap/tasks/apply-config.tasks
 sudo aerofs-bootstrap-taskfile /opt/bootstrap/tasks/set-configuration-initialized.tasks
