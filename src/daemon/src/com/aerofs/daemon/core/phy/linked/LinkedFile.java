@@ -103,7 +103,9 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
 
         switch (op) {
         case APPLY:
-            _fidm.throwIfFIDInconsistent_();
+            // NROs are not managed by the linker/scanner so we have to be more
+            // forgiving in case of inconsistency to avoid getting stuck
+            if (_path.isRepresentable()) _fidm.throwIfFIDInconsistent_();
 
             _s.move_(this, lf, t);
             // fallthrough
@@ -130,9 +132,20 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
 
         switch (op) {
         case APPLY:
-            _fidm.throwIfFIDInconsistent_();
+            // NROs are not managed by the linker/scanner so we have to be more
+            // forgiving in case of inconsistency to avoid getting stuck
+            if (_path.isRepresentable()) _fidm.throwIfFIDInconsistent_();
 
-            _s.moveToRev_(this, t);
+            // don't fail if the file to delete is missing
+            // this can only happen in two cases:
+            //   * race condition, which are not a concern as the final state is the
+            //     same from the user's perspective and from the core perspective we
+            //     avoid db write and meta transfers resulting in false conflicts.
+            //   * conflict/nro whose physical file disappeared for some reason, leaving
+            //     the db inconsistent with the filesystem. In such a case, being overly
+            //     strict will essentially cause a live-lock where the deletion fails
+            //     forever
+            if (_f.exists()) _s.moveToRev_(this, t);
             // fallthrough
         case MAP:
             _s.onDeletion_(this, t);
