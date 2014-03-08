@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -26,6 +27,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
@@ -118,7 +120,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
                 rh,
                 mock(IStores.class), mock(IMapSIndex2SID.class), mock(CfgAbsRoots.class),
                 mock(CfgStoragePolicy.class), il, mock(SharedFolderTagFileAndIcon.class),
-                mock(LinkedRevProvider.class));
+                mock(LinkedRevProvider.class), mock(RockLog.class), mock(CoreScheduler.class));
 
 
         obj = createPhysicalObject(s, sokid, lp);

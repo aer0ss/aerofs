@@ -51,4 +51,6 @@ public interface IPhysicalFile extends IPhysicalObject
      */
     void move_(ResolvedPath to, KIndex kidx, PhysicalOp op, Trans t)
             throws IOException, SQLException;
+
+    void onUnexpectedModification_(long expectedMtime) throws IOException;
 }

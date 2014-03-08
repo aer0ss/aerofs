@@ -318,7 +318,7 @@ public class LinkerRootMap
         return _map.values();
     }
 
-    private LinkerRoot get_(SID sid)
+    public LinkerRoot get_(SID sid)
     {
         return _map.get(sid);
     }

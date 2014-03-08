@@ -8,6 +8,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -44,6 +45,7 @@ import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -179,7 +181,8 @@ public class TestLinkedStorage extends AbstractTest
 
         storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
                 rh, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, null,
-                new LinkedRevProvider(lrm, factFile, new LinkedRevProvider.TimeSource()));
+                new LinkedRevProvider(lrm, factFile, new LinkedRevProvider.TimeSource()),
+                mock(RockLog.class), mock(CoreScheduler.class));
 
         tm = new TransManager(new Trans.Factory(dbcw));
 

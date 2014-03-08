@@ -19,10 +19,15 @@ import java.io.OutputStream;
 public class SimpleStream implements ContentStream
 {
     // null after last chunk is written
+    private final IPhysicalFile _pf;
+    private final long _mtime;
+
     private @Nullable FileChunker _chunker;
 
     public SimpleStream(IPhysicalFile pf, CA ca, long start, long span)
     {
+        _pf = pf;
+        _mtime = ca.mtime();
         _chunker = new FileChunker(pf, ca.mtime(), ca.length(),
                 start, start + span, 16 * C.KB, OSUtil.isWindows());
     }
@@ -42,6 +47,7 @@ public class SimpleStream implements ContentStream
         try {
             chunk = _chunker.getNextChunk_();
         } catch (ExUpdateInProgress e) {
+            _pf.onUnexpectedModification_(_mtime);
             _chunker.close_();
             throw new IOException(e);
         }

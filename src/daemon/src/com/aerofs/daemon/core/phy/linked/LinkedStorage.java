@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
@@ -21,8 +23,10 @@ import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -64,6 +68,8 @@ public class LinkedStorage implements IPhysicalStorage
     private final IMapSIndex2SID _sidx2sid;
     private final LinkedRevProvider _revProvider;
     final RepresentabilityHelper _rh;
+    private final RockLog _rl;
+    private final CoreScheduler _sched;
 
     private final TransLocal<Boolean> _tlUseHistory = new TransLocal<Boolean>() {
         @Override
@@ -84,7 +90,9 @@ public class LinkedStorage implements IPhysicalStorage
             CfgStoragePolicy cfgStoragePolicy,
             IgnoreList il,
             SharedFolderTagFileAndIcon sfti,
-            LinkedRevProvider revProvider)
+            LinkedRevProvider revProvider,
+            RockLog rl,
+            CoreScheduler sched)
     {
         _il = il;
         _rh = rh;
@@ -97,6 +105,8 @@ public class LinkedStorage implements IPhysicalStorage
         _sidx2sid = sidx2sid;
         _cfgAbsRoots = cfgAbsRoots;
         _revProvider = revProvider;
+        _rl = rl;
+        _sched = sched;
     }
 
     @Override
@@ -340,5 +350,46 @@ public class LinkedStorage implements IPhysicalStorage
     void onDeletion_(AbstractLinkedObject o, Trans t) throws SQLException, IOException
     {
         _rh.updateNonRepresentableObjectsOnDeletion_(o, t);
+    }
+
+    void onUnexpectedModification_(IPhysicalFile pf, long expected) throws IOException
+    {
+        final LinkedFile f = (LinkedFile)pf;
+        long actual = f._f.lastModified();
+        final LinkerRoot r = _lrm.get_(f._path.virtual.sid());
+        if (r == null) {
+            l.warn("no linker root");
+        } else {
+            /**
+             * Some users appear to not get filesystem notifications in some cases which breaks a
+             * number of assumptions in the core and usually results in no-sync/very slow sync
+             *
+             * This stupid behavior can fairly consistently be reproduced on OSX by keeping
+             * a file handle open over the entire lifetime of a program. In that case, FSEvents
+             * only sends two notifications (first and last), regardless of the actual modification
+             * pattern of the file.
+             */
+            l.warn("modified: {} {} {}", f, actual, expected);
+
+            // only send defect if the mismatch is large enough that it is unlikely to
+            // arise from a race condition
+            if (actual - expected > 2 * C.SEC) {
+                _rl.newDefect("linked.mtime")
+                        .addData("actual", actual)
+                        .addData("expected", expected)
+                        .send();
+            }
+
+            // NB: this can result in duplicate notifications in case of race conditions but
+            // MightCreate can safely handle that. Better safe than sorry.
+            _sched.schedule(new AbstractEBSelfHandling() {
+                @Override
+                public void handle_()
+                {
+                    l.info("attempt to fix mtime lag on {}", f);
+                    r.mightCreate_(f._path.physical);
+                }
+            }, 0);
+        }
     }
 }

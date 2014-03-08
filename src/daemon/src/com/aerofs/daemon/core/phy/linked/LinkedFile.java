@@ -210,7 +210,16 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
         // all bets are off. In any case, being overzealous in this case is a bad idea as it
         // puts the system in a state of persistent failure that can only be escaped by unlinking
         // and reinstalling.
-        return _path.isRepresentable() && _f.wasModifiedSince(mtime, len);
+        if (!(_path.isRepresentable() && _f.wasModifiedSince(mtime, len))) return false;
+        l.warn("{} has changed locally: expect=({},{}) actual=({},{})", _sokid, mtime, len,
+                _f.lastModified(), _f.getLengthOrZeroIfNotFile());
+        return true;
+    }
+
+    @Override
+    public void onUnexpectedModification_(long expectedMtime) throws IOException
+    {
+        _s.onUnexpectedModification_(this, expectedMtime);
     }
 
     @Override

@@ -144,6 +144,20 @@ public class GCCSendContent
         assert mtime >= 0 : Joiner.on(' ').join(k, oa, mtime);
         bdReply.setMtime(mtime);
 
+        try {
+            send_(ep, k, bdCore, bdReply, vLocal, prefixLen, vPrefix, remoteHash, vRemote, pf,
+                    fileLength, mtime);
+        } catch (ExUpdateInProgress e) {
+            pf.onUnexpectedModification_(mtime);
+            throw e;
+        }
+    }
+
+    private void send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply,
+            Version vLocal, long prefixLen, Version vPrefix, @Nullable ContentHash remoteHash,
+            Version vRemote, IPhysicalFile pf, long fileLength, long mtime)
+            throws Exception
+    {
         // Send hash if available.
         int hashLength = 0;
         ContentHash h = _ds.getCAHash_(k.sokid());
@@ -222,11 +236,9 @@ public class GCCSendContent
             long copied = is != null ? ByteStreams.copy(is, os) : 0;
 
             if (copied != len || pf.wasModifiedSince(mtime, len)) {
-                String msg = k + " has changed locally: expected=("
+                throw new ExUpdateInProgress(k + " has changed locally: expected=("
                         + mtime + "," + len + ") actual=("
-                        + pf.getLastModificationOrCurrentTime_() + "," + pf.getLength_() + ")";
-                l.info(msg);
-                throw new ExUpdateInProgress(msg);
+                        + pf.getLastModificationOrCurrentTime_() + "," + pf.getLength_() + ")");
             }
 
             _trl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);

@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Date;
 
+import static com.google.common.base.Preconditions.checkState;
+
 
 class BlockFile implements IPhysicalFile
 {
@@ -70,6 +72,13 @@ class BlockFile implements IPhysicalFile
     public boolean wasModifiedSince(long mtime, long len) throws IOException
     {
         return false;
+    }
+
+    @Override
+    public void onUnexpectedModification_(long expectedMtime) throws IOException
+    {
+        l.error("corrupted block file {} {}", this, expectedMtime);
+        checkState(false, "corrupted block file {} {}", this, expectedMtime);
     }
 
     @Override

@@ -379,9 +379,10 @@ public class Hasher
             {
                 try {
                     if (pf.wasModifiedSince(mtime, len)) {
+                        pf.onUnexpectedModification_(mtime);
                         throw new ExAborted(FILE_MODIFIED_MSG);
                     }
-                } catch (Exception e) {
+                } catch (IOException e) {
                     throw new ExAborted(e);
                 }
             }

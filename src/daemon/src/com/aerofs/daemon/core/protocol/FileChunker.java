@@ -124,11 +124,9 @@ public class FileChunker
         // To avoid race conditions and potential corruptions we need to explicitly check
         // for changes to the physical file before loaded chunks can be used
         if (_file.wasModifiedSince(_mtime, _fileLength)) {
-            String msg = "mtime,length changed: expected=("
+            throw new ExUpdateInProgress("mtime,length changed: expected=("
                     + _mtime +  "," + _fileLength + ") actual=("
-                    + _file.getLastModificationOrCurrentTime_() + "," + _file.getLength_() + ")";
-            l.info(msg);
-            throw new ExUpdateInProgress(msg);
+                    + _file.getLastModificationOrCurrentTime_() + "," + _file.getLength_() + ")");
         }
 
         // On Windows, a FileInputStream holds a shared read lock and a delete lock on the file,

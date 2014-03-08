@@ -64,6 +64,7 @@ public class MultipartStream implements ContentStream
         try {
             chunk = _chunker != null ? _chunker.getNextChunk_() : null;
         } catch (ExUpdateInProgress e) {
+            _pf.onUnexpectedModification_(_mtime);
             _chunker.close_();
             throw new IOException(e);
         }

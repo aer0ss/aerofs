@@ -63,6 +63,7 @@ public class HdDownloadPacket extends AbstractHdIMC<EIDownloadPacket>
         if (ev._inFileLength != EIDownloadPacket.UNDEFINED_LENGTH &&
                 ev._inFileModTime != EIDownloadPacket.UNDEFINED_MOD_TIME &&
                 pf.wasModifiedSince(ev._inFileModTime, ev._inFileLength)) {
+            pf.onUnexpectedModification_(ev._inFileModTime);
             throw mismatch();
         }
 

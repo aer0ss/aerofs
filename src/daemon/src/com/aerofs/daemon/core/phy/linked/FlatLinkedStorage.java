@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
@@ -23,6 +24,7 @@ import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 
 import java.io.IOException;
@@ -52,10 +54,12 @@ public class FlatLinkedStorage extends LinkedStorage
             SharedFolderTagFileAndIcon sfti,
             LocalACL lacl,
             IOSUtil os,
-            LinkedRevProvider revProvider)
+            LinkedRevProvider revProvider,
+            RockLog rl,
+            CoreScheduler sched)
     {
         super(factFile, factFIDMan, lrm, rh, stores, sidx2sid, cfgAbsRoots,
-                cfgStoragePolicy, il, sfti, revProvider);
+                cfgStoragePolicy, il, sfti, revProvider, rl, sched);
         _os = os;
         _lacl = lacl;
         _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.USERS_DIR));

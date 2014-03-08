@@ -153,9 +153,14 @@ public abstract class Util
         return getAllThreadStackTraces(new Thread[] {t});
     }
 
+    public static String getAllThreadStackTraces()
+    {
+        return getAllThreadStackTraces(ThreadUtil.getAllThreads());
+    }
+
     public static void logAllThreadStackTraces()
     {
-        l.error("==== BEGIN STACKS ====\n{}\n==== END STACKS ====", getAllThreadStackTraces(ThreadUtil.getAllThreads()));
+        l.error("==== BEGIN STACKS ====\n{}\n==== END STACKS ====", getAllThreadStackTraces());
     }
 
     private static Set<Class<?>> s_suppressStackTrace = newHashSet();
