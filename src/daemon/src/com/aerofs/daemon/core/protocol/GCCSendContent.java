@@ -313,6 +313,7 @@ public class GCCSendContent
                     InvalidationReason.UPDATE_IN_PROGRESS : InvalidationReason.INTERNAL_ERROR;
             outgoing.abort_(reason);
             _ulstate.ended_(k.socid(), ep, true);
+            throw e;
         } finally {
             _ongoing.stop(k, ongoing);
             chunker.close_();
