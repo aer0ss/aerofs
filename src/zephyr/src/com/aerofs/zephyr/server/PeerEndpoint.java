@@ -6,10 +6,10 @@
 package com.aerofs.zephyr.server;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.zephyr.server.ServerConstants.EndpointState;
 import com.aerofs.zephyr.server.core.ExAlreadyBound;
 import com.aerofs.zephyr.server.core.FatalIOEventHandlerException;
 import com.aerofs.zephyr.server.core.IIOEventHandler;
-import com.aerofs.zephyr.server.ServerConstants.EndpointState;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -25,14 +25,14 @@ import static com.aerofs.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
 import static com.aerofs.zephyr.Constants.ZEPHYR_MAGIC;
 import static com.aerofs.zephyr.Constants.ZEPHYR_MSG_BYTE_ORDER;
 import static com.aerofs.zephyr.Constants.ZEPHYR_REG_MSG_LEN;
-import static com.aerofs.zephyr.server.core.ZUtil.addInterest;
-import static com.aerofs.zephyr.server.core.ZUtil.getSocketChannel;
 import static com.aerofs.zephyr.server.ServerConstants.EndpointState.BOUND;
 import static com.aerofs.zephyr.server.ServerConstants.EndpointState.CONNECTED;
 import static com.aerofs.zephyr.server.ServerConstants.EndpointState.REGISTERED;
 import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.EOF;
 import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.HAS_BYTES;
 import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.NO_BYTES;
+import static com.aerofs.zephyr.server.core.ZUtil.addInterest;
+import static com.aerofs.zephyr.server.core.ZUtil.getSocketChannel;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -185,7 +185,10 @@ public class PeerEndpoint implements IIOEventHandler
             }
 
             int len = _bindb.getInt(); // ignore length value; simply use to move the position
-            checkArgument(len == ZEPHYR_BIND_PAYLOAD_LEN, "bad bind payload len exp:" + ZEPHYR_BIND_PAYLOAD_LEN + " act:" + len);
+            if (len != ZEPHYR_BIND_PAYLOAD_LEN) { // some very old clients had a bug where the payload length was incorrect
+                terminate("bad bind payload len exp:" + ZEPHYR_BIND_PAYLOAD_LEN + " act:" + len);
+                return;
+            }
 
             int dstid = _bindb.getInt(); // get the dst id we're trying to bind to
             PeerEndpoint dstpe = null;
