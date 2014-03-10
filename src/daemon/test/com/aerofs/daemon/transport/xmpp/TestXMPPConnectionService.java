@@ -43,8 +43,6 @@ import static org.mockito.Mockito.mock;
 
 // TODO (AG): can use the listener/semaphores to wait instead of timeouts
 
-@Ignore // FIXME: 03/05/2014: disabled as they started dying in CI unrelated to any commit. Is there
-        // an external dependency that is not obvious? does it talk to X? Z? gawker.com?
 public final class TestXMPPConnectionService
 {
     static
