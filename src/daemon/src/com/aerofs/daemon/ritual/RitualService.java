@@ -55,7 +55,7 @@ import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.test.EITestGetAliasObject;
-import com.aerofs.lib.ITransferStat;
+import com.aerofs.daemon.lib.ITransferStat;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;

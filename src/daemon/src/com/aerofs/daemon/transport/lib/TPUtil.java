@@ -29,6 +29,8 @@ import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.sched.IScheduler;
+import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
+import com.aerofs.proto.Diagnostics.ServerStatus;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBStream.Type;
@@ -38,18 +40,26 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_FOUND;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This class provides a number of thread-safe {@link com.aerofs.daemon.transport.ITransport} and
  * {@link IUnicast} utility functions
  */
-public class TPUtil
+public abstract class TPUtil
 {
     private static final Logger l = Loggers.getLogger(TPUtil.class);
+
+    private TPUtil() { } // to prevent instantiation
 
     public static byte[][] newDatagramPayload(byte[] data)
     {
@@ -186,13 +196,23 @@ public class TPUtil
         return null;
     }
 
-    private static PBTPHeader newAbortIncomingStreamHeader(StreamID streamId,
-            InvalidationReason reason)
+    public static PBTPHeader newAbortIncomingStreamHeader(StreamID streamId, InvalidationReason reason)
     {
         return PBTPHeader.newBuilder()
                 .setType(STREAM)
                 .setStream(PBStream.newBuilder()
                         .setType(Type.RX_ABORT_STREAM)
+                        .setStreamId(streamId.getInt())
+                        .setReason(reason))
+                .build();
+    }
+
+    public static PBTPHeader newAbortOutgoingStreamHeader(StreamID streamId, InvalidationReason reason)
+    {
+        return PBTPHeader.newBuilder()
+                .setType(STREAM)
+                .setStream(PBStream.newBuilder()
+                        .setType(Type.TX_ABORT_STREAM)
                         .setStreamId(streamId.getInt())
                         .setReason(reason))
                 .build();
@@ -294,7 +314,7 @@ public class TPUtil
     public static void sessionEnded(Endpoint ep, IBlockingPrioritizedEventSink<IEvent> sink,
             StreamManager sm, boolean outbound, boolean inbound)
     {
-        l.debug("closing streams " + ep + " out " + outbound + " in " + inbound);
+        l.debug("{} closing {} streams ob:{} ib:{}", ep.did(), ep.tp(), outbound, inbound);
 
         if (outbound) {
             sm.removeAllOutgoingStreams(ep.did());
@@ -306,7 +326,7 @@ public class TPUtil
         try {
             if (inbound) {
                 for (StreamID sid : sm.removeAllIncomingStreams(ep.did())) {
-                    l.info("remove instrm " + ep.did() + ":" + sid);
+                    l.info("{} remove in stream sid:{}", ep.did(), sid);
                     sink.enqueueThrows(new EIStreamAborted(ep, sid, STREAM_NOT_FOUND), Prio.LO);
                 }
             }
@@ -320,5 +340,96 @@ public class TPUtil
         PBTPHeader.Type type = transportHeader.getType();
 
         return (type == STREAM && transportHeader.getStream().getType() == Type.PAYLOAD) || type == DATAGRAM;
+    }
+
+    /**
+     * Helpful logging method to print an {@link java.net.InetSocketAddress} in a consistent way
+     *
+     * @param a address to print
+     * @return log string of the form: addr:port
+     */
+    public static String prettyPrint(InetSocketAddress a)
+    {
+        checkNotNull(a);
+        return a.getAddress() + ":" + a.getPort();
+    }
+
+    /**
+     * Attempts to return a resolved address, and if not, null
+     */
+    public static @Nullable String getResolvedAddress(InetSocketAddress a)
+    {
+        checkNotNull(a);
+
+        InetAddress resolved = null;
+
+        if (a.isUnresolved()) {
+            String host = a.getHostName();
+            try {
+                resolved = InetAddress.getByName(host);
+            } catch (UnknownHostException e) {
+                l.warn("fail name resolution host:{}", host);
+            }
+        } else {
+            resolved = a.getAddress();
+        }
+
+        return (resolved == null ? null : resolved.getHostAddress());
+    }
+
+    public static PBInetSocketAddress fromInetSockAddress(InetSocketAddress a)
+    {
+        checkNotNull(a);
+
+        PBInetSocketAddress.Builder builder = PBInetSocketAddress
+                .newBuilder()
+                .setHost(a.getHostName())
+                .setPort(a.getPort());
+
+        String resolved = getResolvedAddress(a);
+        if (resolved != null) builder.setResolvedHost(resolved);
+
+        return builder.build();
+    }
+
+    public static Socket newConnectedSocket(InetSocketAddress serverAddress, int ioTimeout)
+            throws IOException
+    {
+        Socket s = null;
+        try {
+            InetSocketAddress address = serverAddress;
+            if (address.isUnresolved()) {
+                address = new InetSocketAddress(address.getHostName(), address.getPort());
+            }
+
+            s = new Socket();
+            s.connect(address, ioTimeout);
+            s.setSoTimeout(ioTimeout);
+            return s;
+        } catch (IOException e) {
+            try {
+                if (s!= null) s.close();
+            } catch (IOException closeException) {
+                l.warn("fail close socket err:{}", closeException.getMessage());
+            }
+
+            throw e;
+        }
+    }
+
+    public static String getReachabilityErrorString(ServerStatus.Builder serverStatus, IOException e)
+    {
+        return getUserFacingIOExceptionMessage(e) + ": " + serverStatus.getServerAddress().getHost();
+    }
+
+    private static String getUserFacingIOExceptionMessage(IOException e)
+    {
+        if (e instanceof NoRouteToHostException) {
+            return "no route to host";
+        } else if (e instanceof UnknownHostException) {
+            return "unknown host";
+        } else {
+            return e.getMessage();
+        }
     }
 }

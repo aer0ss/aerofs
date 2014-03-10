@@ -19,7 +19,7 @@ import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
-import com.aerofs.lib.ITransferStat;
+import com.aerofs.daemon.lib.ITransferStat;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgEnabledTransports;

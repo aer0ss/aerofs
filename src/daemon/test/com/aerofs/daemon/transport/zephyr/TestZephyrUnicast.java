@@ -23,7 +23,6 @@ import com.google.common.base.Charsets;
 import org.hamcrest.MatcherAssert;
 import org.jboss.netty.channel.Channel;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -39,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public final class TestZephyrUnicast
 {
@@ -57,6 +57,8 @@ public final class TestZephyrUnicast
     private LinkStateService otherLinkStateService;
     private UnicastZephyrDevice localDevice;
     private UnicastZephyrDevice otherDevice;
+
+    // FIXME (AG): check renegotiation
 
     @Rule
     public LoggingRule loggingRule = new LoggingRule(l);
@@ -84,7 +86,7 @@ public final class TestZephyrUnicast
         otherDevice.start();
     }
 
-    // returns the ClientHandler used to send the packet
+    // returns the MessageHandler used to send the packet
     private Channel sendPacketAndWaitForItToBeReceived(UnicastZephyrDevice senderDevice, UnicastZephyrDevice receiverDevice, byte[] data)
             throws ExDeviceOffline, InterruptedException, ExecutionException
     {
@@ -101,7 +103,6 @@ public final class TestZephyrUnicast
         return channel ;
     }
 
-    @Ignore
     @Test
     public void shouldDisconnectChannelAndNotifyUnicastListenerOfDeviceDisconnectionWhenLinkGoesDown()
             throws Exception
@@ -131,7 +132,6 @@ public final class TestZephyrUnicast
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener).onUnicastReady();
         localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did);
-        // localInOrder.verify(localDevice.unicastListener).onUnicastUnavailable(); <-- FIXME (AG): figure out why this sometimes gets triggered _after_ the next call
         localInOrder.verify(localDevice.unicastListener).onDeviceDisconnected(otherDevice.did);
 
         // verify the order of calls for the other device (ignore link going down, because we only care that it happened on the local device)
@@ -139,6 +139,9 @@ public final class TestZephyrUnicast
         otherInOrder.verify(otherDevice.unicastListener).onUnicastReady();
         otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did);
         otherInOrder.verify(otherDevice.unicastListener).onDeviceDisconnected(localDevice.did);
+
+        verify(localDevice.unicastListener).onUnicastUnavailable();
+        verify(otherDevice.unicastListener).onUnicastUnavailable();
     }
 
     @Test

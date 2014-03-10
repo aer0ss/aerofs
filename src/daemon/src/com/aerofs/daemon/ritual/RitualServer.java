@@ -3,7 +3,7 @@ package com.aerofs.daemon.ritual;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.ex.AbstractExWirable;
-import com.aerofs.daemon.transport.lib.TransportUtil;
+import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -80,7 +80,7 @@ public class RitualServer
                 new InetSocketAddress(port) : new InetSocketAddress(host, port);
         bootstrap.bind(address);
 
-        l.info("The ritual has begun on " + TransportUtil.prettyPrint(address));
+        l.info("The ritual has begun on " + TPUtil.prettyPrint(address));
     }
 
     /**

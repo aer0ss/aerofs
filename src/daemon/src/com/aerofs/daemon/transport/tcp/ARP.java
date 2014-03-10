@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import static com.aerofs.daemon.transport.lib.TransportUtil.prettyPrint;
+import static com.aerofs.daemon.transport.lib.TPUtil.prettyPrint;
 import static com.google.common.collect.Maps.newConcurrentMap;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newCopyOnWriteArraySet;

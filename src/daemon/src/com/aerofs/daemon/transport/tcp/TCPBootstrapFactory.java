@@ -8,12 +8,14 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
+import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
+import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
-import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
-import com.aerofs.daemon.transport.lib.handlers.ServerHandler;
-import com.aerofs.daemon.transport.lib.handlers.ServerHandler.IServerHandlerListener;
+import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
+import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -44,6 +46,9 @@ final class TCPBootstrapFactory
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
     private final IUnicastListener unicastListener;
+    private final TransportProtocolHandler protocolHandler;
+    private final TCPProtocolHandler tcpProtocolHandler;
+    private final IncomingChannelHandler incomingChannelHandler;
     private final TransportStats transportStats;
 
     TCPBootstrapFactory(
@@ -52,6 +57,9 @@ final class TCPBootstrapFactory
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IUnicastListener unicastListener,
+            IIncomingChannelListener serverHandlerListener,
+            TransportProtocolHandler protocolHandler,
+            TCPProtocolHandler tcpProtocolHandler,
             TransportStats stats)
     {
         this.localuser = localuser;
@@ -59,6 +67,9 @@ final class TCPBootstrapFactory
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.unicastListener = unicastListener;
+        this.protocolHandler = protocolHandler;
+        this.tcpProtocolHandler = tcpProtocolHandler;
+        this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
         this.transportStats = stats;
     }
 
@@ -68,40 +79,43 @@ final class TCPBootstrapFactory
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
-            public ChannelPipeline getPipeline() throws Exception
+            public ChannelPipeline getPipeline()
+                    throws Exception
             {
-                ClientHandler clientHandler = new ClientHandler(unicastListener);
+                MessageHandler messageHandler = new MessageHandler();
+                CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
 
-                return Channels.pipeline(addressResolver,
+                return Channels.pipeline(
+                        addressResolver,
                         newStatsHandler(transportStats),
                         newSslHandler(clientSslEngineFactory),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
-                        newCNameVerificationHandler(clientHandler, localuser, localdid),
-                        clientHandler,
+                        newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                        verifiedHandler,
+                        messageHandler,
+                        tcpProtocolHandler,
+                        protocolHandler,
                         clientChannelTeardownHandler);
             }
         });
         return bootstrap;
     }
 
-    ServerBootstrap newServerBootstrap(
-            ServerSocketChannelFactory channelFactory,
-            final IServerHandlerListener serverHandlerListener,
-            final TCPProtocolHandler tcpProtocolHandler,
-            final TransportProtocolHandler protocolHandler,
-            final ChannelTeardownHandler serverChannelTeardownHandler)
+    ServerBootstrap newServerBootstrap(ServerSocketChannelFactory channelFactory, final ChannelTeardownHandler serverChannelTeardownHandler)
     {
         ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
         bootstrap.setParentHandler(new ShouldKeepAcceptedChannelHandler());
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
-            public ChannelPipeline getPipeline() throws Exception
+            public ChannelPipeline getPipeline()
+                    throws Exception
             {
-                ServerHandler serverHandler = new ServerHandler(unicastListener, serverHandlerListener);
+                MessageHandler messageHandler = new MessageHandler();
+                CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.SERVER);
 
                 return Channels.pipeline(
                         addressResolver,
@@ -111,8 +125,10 @@ final class TCPBootstrapFactory
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
-                        newCNameVerificationHandler(serverHandler, localuser, localdid),
-                        serverHandler,
+                        newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                        verifiedHandler,
+                        messageHandler,
+                        incomingChannelHandler,
                         tcpProtocolHandler,
                         protocolHandler,
                         serverChannelTeardownHandler);

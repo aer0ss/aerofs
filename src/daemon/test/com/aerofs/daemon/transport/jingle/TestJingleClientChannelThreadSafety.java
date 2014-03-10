@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport.jingle;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.daemon.transport.LoggingRule;
+import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.jingle.SignalThread.IIncomingTunnelListener;
 import com.aerofs.daemon.transport.jingle.SignalThread.ISignalThreadListener;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
@@ -25,7 +26,6 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -43,6 +43,8 @@ public final class TestJingleClientChannelThreadSafety
     {
         System.loadLibrary("aerofsd");
         System.loadLibrary("aerofsj");
+
+        TransportLoggerSetup.init();
     }
 
     private static final Logger l = LoggerFactory.getLogger(TestJingleClientChannelThreadSafety.class);
@@ -189,7 +191,6 @@ public final class TestJingleClientChannelThreadSafety
 
     // Test that attempts to trigger the race condition
 
-    @Ignore
     @Test
     public void shouldNotCrash()
             throws Exception

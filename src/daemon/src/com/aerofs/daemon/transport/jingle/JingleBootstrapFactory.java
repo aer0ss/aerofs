@@ -7,18 +7,19 @@ package com.aerofs.daemon.transport.jingle;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
+import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
+import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
-import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
-import com.aerofs.daemon.transport.lib.handlers.ServerHandler;
-import com.aerofs.daemon.transport.lib.handlers.ServerHandler.IServerHandlerListener;
+import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
+import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
 
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
 import static com.aerofs.base.net.NettyUtil.newSslHandler;
@@ -27,6 +28,7 @@ import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newLengthFiel
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newMagicReader;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newMagicWriter;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newStatsHandler;
+import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
  * Creates {@link org.jboss.netty.bootstrap.ServerBootstrap} and
@@ -39,8 +41,11 @@ final class JingleBootstrapFactory
     private final DID localdid;
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
+    private final IncomingChannelHandler incomingChannelHandler;
+    private final TransportProtocolHandler protocolHandler;
     private final IUnicastListener unicastListener;
     private final TransportStats transportStats;
+    private final SignalThread signalThread;
     private final JingleChannelWorker channelWorker;
 
     JingleBootstrapFactory(
@@ -49,70 +54,81 @@ final class JingleBootstrapFactory
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IUnicastListener unicastListener,
+            IIncomingChannelListener serverHandlerListener,
+            TransportProtocolHandler protocolHandler,
             TransportStats transportStats,
+            SignalThread signalThread,
             JingleChannelWorker channelWorker)
     {
         this.localuser = localuser;
         this.localdid = localdid;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
+        this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
+        this.protocolHandler = protocolHandler;
         this.unicastListener = unicastListener;
         this.transportStats = transportStats;
+        this.signalThread = signalThread;
         this.channelWorker = channelWorker;
     }
 
-    ClientBootstrap newClientBootstrap(SignalThread signalThread, final ChannelTeardownHandler clientChannelTeardownHandler)
+    ClientBootstrap newClientBootstrap(final ChannelTeardownHandler clientChannelTeardownHandler)
     {
         ClientBootstrap bootstrap = new ClientBootstrap(new JingleClientChannelFactory(signalThread, channelWorker));
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
-            public ChannelPipeline getPipeline() throws Exception
+            public ChannelPipeline getPipeline()
+                    throws Exception
             {
-                ClientHandler clientHandler = new ClientHandler(unicastListener);
+                MessageHandler messageHandler = new MessageHandler();
+                CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
 
-                return Channels.pipeline(
+                return pipeline(
                         newStatsHandler(transportStats),
                         newSslHandler(clientSslEngineFactory),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
-                        newCNameVerificationHandler(clientHandler, localuser, localdid),
-                        clientHandler,
+                        newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                        verifiedHandler,
+                        messageHandler,
+                        protocolHandler,
                         clientChannelTeardownHandler);
             }
         });
         return bootstrap;
     }
 
-    ServerBootstrap newServerBootstrap(
-            SignalThread signalThread,
-            final IServerHandlerListener serverHandlerListener,
-            final TransportProtocolHandler protocolHandler,
-            final ChannelTeardownHandler serverChannelTeardownHandler)
+    ServerBootstrap newServerBootstrap(final ChannelTeardownHandler serverChannelTeardownHandler)
     {
         ServerBootstrap bootstrap = new ServerBootstrap(new JingleServerChannelFactory(signalThread, channelWorker));
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
-            public ChannelPipeline getPipeline() throws Exception
+            public ChannelPipeline getPipeline()
+                    throws Exception
             {
-                ServerHandler serverHandler = new ServerHandler(unicastListener, serverHandlerListener);
+                MessageHandler messageHandler = new MessageHandler();
+                CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.SERVER);
 
-                return Channels.pipeline(
+                return pipeline(
                         newStatsHandler(transportStats),
                         newSslHandler(serverSslEngineFactory),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
-                        newCNameVerificationHandler(serverHandler, localuser, localdid),
-                        serverHandler,
+                        newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                        verifiedHandler,
+                        messageHandler,
+                        incomingChannelHandler,
                         protocolHandler,
                         serverChannelTeardownHandler);
             }
         });
         return bootstrap;
     }
+
 }

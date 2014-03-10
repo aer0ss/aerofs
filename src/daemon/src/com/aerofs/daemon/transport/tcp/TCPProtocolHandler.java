@@ -4,10 +4,12 @@
 
 package com.aerofs.daemon.transport.tcp;
 
+import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.Unicast;
 import com.aerofs.daemon.transport.lib.handlers.TransportMessage;
 import com.aerofs.proto.Transport.PBTPHeader;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 
@@ -29,6 +31,20 @@ final class TCPProtocolHandler extends SimpleChannelUpstreamHandler
     {
         this.stores = stores;
         this.unicast = unicast;
+    }
+
+    @Override
+    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e)
+            throws Exception
+    {
+        // this message should be the first one sent out
+        // it indicates which stores this device is part of
+        PBTPHeader pong = stores.newPongMessage(false);
+        if (pong != null) {
+            e.getChannel().write(TPUtil.newControl(pong));
+        }
+
+        super.channelOpen(ctx, e);
     }
 
     @Override

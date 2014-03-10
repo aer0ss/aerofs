@@ -2,17 +2,17 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.daemon.transport.zephyr;
+package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.daemon.transport.lib.TPUtil;
-import com.aerofs.daemon.transport.lib.handlers.TransportMessage;
 import com.aerofs.proto.Transport.PBHeartbeat;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.util.Timeout;
@@ -25,15 +25,13 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
-import static org.jboss.netty.channel.Channels.fireExceptionCaughtLater;
 import static org.jboss.netty.channel.Channels.future;
 import static org.jboss.netty.channel.Channels.write;
 
 /**
  * Handler that sends heartbeats to a remote peer at predefined intervals.
  */
-final class HeartbeatHandler extends SimpleChannelHandler
+public final class HeartbeatHandler extends SimpleChannelHandler
 {
     private static final int MINIMUM_ADDITIONAL_INTERVAL = 20;
 
@@ -123,7 +121,7 @@ final class HeartbeatHandler extends SimpleChannelHandler
                             .newBuilder()
                             .setHeartbeatId(heartbeatId))
                     .build();
-            write(ctx, future(ctx.getChannel()), wrappedBuffer(TPUtil.newControl(reply)));
+            write(ctx, future(ctx.getChannel()), TPUtil.newControl(reply));
             l.debug("respond to heartbeat id:{}", heartbeatId);
         } else {
             // we've received a heartbeat reply
@@ -162,7 +160,8 @@ final class HeartbeatHandler extends SimpleChannelHandler
                 int unansweredHeartbeats = getUnansweredHeartbeatCount();
 
                 if (unansweredHeartbeats >= maxFailedHeartbeats) {
-                    fireExceptionCaughtLater(channel, new ExHeartbeatTimedOut("fail " + maxFailedHeartbeats + " consecutive heartbeats"));
+                    Channels.fireExceptionCaughtLater(channel, new ExHeartbeatTimedOut(
+                            "fail " + maxFailedHeartbeats + " consecutive heartbeats"));
                     return;
                 }
 
@@ -195,7 +194,7 @@ final class HeartbeatHandler extends SimpleChannelHandler
                                 .setHeartbeatId(heartbeatId))
                         .build();
 
-                write(ctx, future(channel), wrappedBuffer(TPUtil.newControl(heartbeat)));
+                write(ctx, future(channel), TPUtil.newControl(heartbeat));
 
                 onHeartbeatSent(heartbeatId);
 

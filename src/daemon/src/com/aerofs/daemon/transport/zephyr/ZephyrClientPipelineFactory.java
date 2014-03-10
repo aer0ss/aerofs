@@ -7,9 +7,13 @@ import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
+import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
+import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ConnectTunnelHandler;
+import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
+import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ProxiedConnectionHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
@@ -31,6 +35,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 {
+    private static final String CNAME_VERIFIED_HANDLER_NAME = "verified";
+    private static final String MESSAGE_HANDLER_NAME = "message";
     private static final String ZEPHYR_CLIENT_HANDLER_NAME = "client";
 
     private final UserID localid;
@@ -43,7 +49,6 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     private final IZephyrSignallingService zephyrSignallingService;
     private final IUnicastListener unicastListener;
     private final AddressResolverHandler resolver;
-    private final CoreFrameEncoder coreFrameEncoder;
     private final Proxy proxy;
     private final long zephyrHandshakeTimeout;
     private final long heartbeatInterval;
@@ -78,7 +83,6 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         this.zephyrSignallingService = zephyrSignallingService;
         this.unicastListener = unicastListener;
         this.resolver = new AddressResolverHandler(null);
-        this.coreFrameEncoder = new CoreFrameEncoder();
         this.proxy = proxy;
         this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
         this.heartbeatInterval = heartbeatInterval;
@@ -105,18 +109,21 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         pipeline.addLast("protocol", zephyrProtocolHandler);
 
         // ssl
-        CNameVerificationHandler cNameVerificationHandler = newCNameVerificationHandler();
+        CNameVerificationHandler verificationHandler = newCNameVerificationHandler();
         pipeline.addLast("standinssl", newStandInSslHandler(zephyrProtocolHandler));
-        pipeline.addLast("cname", cNameVerificationHandler);
-        pipeline.addLast("coredecoder", new CoreFrameDecoder());
-        pipeline.addLast("coreencoder", coreFrameEncoder);
+        pipeline.addLast("cname", verificationHandler);
+
+        // set up the cname listener
+        CNameVerifiedHandler verifiedHandler = newCNameVerifiedHandler();
+        pipeline.addLast(CNAME_VERIFIED_HANDLER_NAME, verifiedHandler);
+        verificationHandler.setListener(verifiedHandler);
+
+        // set up the message handler
+        pipeline.addLast(MESSAGE_HANDLER_NAME, newMessageHandler());
 
         // zephyr client
         ZephyrClientHandler zephyrClientHandler = newZephyrClientHandler(zephyrProtocolHandler);
         pipeline.addLast(ZEPHYR_CLIENT_HANDLER_NAME, zephyrClientHandler);
-
-        // set up the cname listener
-        cNameVerificationHandler.setListener(zephyrClientHandler);
 
         // setup the heartbeat handler
         pipeline.addLast("hbsend", new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer));
@@ -162,16 +169,44 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         return new StandInSslHandler(clientSslEngineFactory, serverSslEngineFactory, zephyrProtocolHandler);
     }
 
+    private CNameVerifiedHandler newCNameVerifiedHandler()
+    {
+        return new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
+    }
+
+    private MessageHandler newMessageHandler()
+    {
+        return new MessageHandler();
+    }
+
     private ZephyrClientHandler newZephyrClientHandler(ZephyrProtocolHandler zephyrProtocolHandler)
     {
-        return new ZephyrClientHandler(localdid, unicastListener, zephyrProtocolHandler);
+        return new ZephyrClientHandler(unicastListener, zephyrProtocolHandler);
+    }
+
+    /**
+     * Convenience method to return the {@code CNameVerifiedHandler} instance from a channel
+     * @param channel Channel from which to get the handler instance
+     */
+    static CNameVerifiedHandler getCNameVerifiedHandler(Channel channel)
+    {
+        return (CNameVerifiedHandler) channel.getPipeline().get(CNAME_VERIFIED_HANDLER_NAME);
+    }
+
+    /**
+     * Convenience method to return the {@code MessageHandler} instance from a channel
+     * @param channel Channel from which to get the handler instance
+     */
+    static MessageHandler getMessageHandler(Channel channel)
+    {
+        return (MessageHandler) channel.getPipeline().get(MESSAGE_HANDLER_NAME);
     }
 
     /**
      * Convenience method to return the {@code ZephyrClientHandler} instance from a channel
      * @param channel Channel from which to get the handler instance
      */
-    static ZephyrClientHandler getZephyrClientHandler(Channel channel)
+    static ZephyrClientHandler getZephyrClient(Channel channel)
     {
         return (ZephyrClientHandler) channel.getPipeline().get(ZEPHYR_CLIENT_HANDLER_NAME);
     }

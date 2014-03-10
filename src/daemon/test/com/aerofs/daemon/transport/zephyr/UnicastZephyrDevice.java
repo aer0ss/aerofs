@@ -79,7 +79,7 @@ public final class UnicastZephyrDevice
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
         SSLEngineFactory serverSSLEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
-        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager, pulseManager, workaround);
+        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager, pulseManager);
         ChannelTeardownHandler twowayChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.SERVER);
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);

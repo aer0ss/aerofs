@@ -6,17 +6,17 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
-import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
-import com.aerofs.daemon.transport.lib.handlers.ServerHandler;
-import com.aerofs.daemon.transport.lib.handlers.ServerHandler.IServerHandlerListener;
+import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
+import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.SortedSetMultimap;
+import com.google.common.collect.TreeMultimap;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -29,20 +29,15 @@ import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Maps.newConcurrentMap;
-import static com.google.common.util.concurrent.Futures.addCallback;
 
-public final class Unicast implements ILinkStateListener, IUnicastInternal, IServerHandlerListener
+public final class Unicast implements ILinkStateListener, IUnicastInternal, IIncomingChannelListener
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
-    private final ConcurrentMap<DID, ClientHandler> clients = newConcurrentMap();
-    private final ConcurrentMap<DID, ServerHandler> servers = newConcurrentMap();
-    private final IUnicastCallbacks unicastCallbacks;
+    private final SortedSetMultimap<DID, Channel> channels = Multimaps.synchronizedSortedSetMultimap(TreeMultimap.<DID, Channel>create());
+    private final IAddressResolver unicastCallbacks;
     private final TransportStats transportStats;
 
     private ServerBootstrap serverBootstrap;
@@ -52,8 +47,9 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
     private Channel serverChannel;
     private volatile boolean paused;
     private volatile boolean running;
+    private volatile boolean reuseChannels = true;
 
-    public Unicast(IUnicastCallbacks unicastCallbacks, TransportStats transportStats)
+    public Unicast(IAddressResolver unicastCallbacks, TransportStats transportStats)
     {
         this.unicastCallbacks = unicastCallbacks;
         this.transportStats = transportStats;
@@ -61,7 +57,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
 
     // NOTE: these fields cannot be final due to a
     // circular dependency between the TCP and the underlying handlers
-    // FIXME (AG): consider using the ZephyrUnicastProxy to resolve this
+    // FIXME (AG): consider using the UnicastProxy to resolve this
     public void setBootstraps(ServerBootstrap serverBootstrap, ClientBootstrap clientBootstrap)
     {
         this.serverBootstrap = serverBootstrap;
@@ -133,11 +129,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
 
     private void disconnectAll(Exception cause)
     {
-        Set<DID> connectedDIDs = Sets.newHashSet();
-        connectedDIDs.addAll(clients.keySet());
-        connectedDIDs.addAll(servers.keySet());
-
-        for (DID did : connectedDIDs) {
+        for (DID did : channels.keySet()) {
             disconnect(did, cause);
         }
     }
@@ -169,33 +161,13 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
     }
 
     /**
-     * Called by the ServerHandler when the server has accepted a connection form a remote client
+     * Called by the IncomingChannelHandler when the server has accepted a connection form a remote client
      */
     @Override
     public void onIncomingChannel(final DID did, Channel channel)
     {
-        final ServerHandler server = channel.getPipeline().get(ServerHandler.class);
-        channel.setAttachment(new DIDWrapper(did));
-
-        ServerHandler old = servers.put(did, checkNotNull(server));
-        if (old != null) old.disconnect();
-
-        channel.getCloseFuture().addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture)
-                    throws Exception
-            {
-                // Remove only if its still the same server in the map.
-                if (servers.remove(did, server)) {
-                    l.info("remove incoming connection from did:{}", did);
-
-                    if (!clients.containsKey(did)) {
-                        unicastListener.onDeviceDisconnected(did);
-                    }
-                }
-            }
-        });
+        addChannelCloseFuture(did, channel);
+        channels.put(did, channel);
 
         // if we've paused syncing or have stopped the system, disconnect
         // NOTE: I do this after setting the close future above so that
@@ -203,7 +175,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
         // I realize that this means that extra work is done, but it's safer than
         // trying to replicate the necessary steps
         if (!isServiceAvailable()) {
-            server.disconnect();
+            channel.close();
         }
     }
 
@@ -213,16 +185,12 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
     @Override
     public void disconnect(DID did, Exception cause)
     {
-        l.info("disconnect from did:{} cause:{}", did, cause);
+        l.info("{} disconnect", did, LogUtil.suppress(cause));
 
-        ClientHandler client = clients.get(did);
-        if (client != null) {
-            client.disconnect();
-        }
-
-        ServerHandler server = servers.get(did);
-        if (server != null) {
-            server.disconnect();
+        Set<Channel> active = channels.get(did); // FIXME (AG): do we want to remove instead?
+        for (Channel channel : active) {
+            channel.getPipeline().get(MessageHandler.class).setDisconnectReason(cause);
+            channel.close();
         }
     }
 
@@ -234,11 +202,22 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
         return serverChannel.getLocalAddress();
     }
 
+    /**
+     * Reuse an existing channel for outgoing messages if one exists.
+     * This should <em>only</em> be used in unit tests.
+     *
+     * @param reuseChannels set to true if channels should be reused, false otherwise.
+     */
+    void setReuseChannels(boolean reuseChannels)
+    {
+        this.reuseChannels = reuseChannels;
+    }
+
     @Override
-    public Object send(final DID did, final @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, Object cookie)
+    public Object send(final DID did, final @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cookie)
         throws ExTransportUnavailable, ExDeviceUnavailable
     {
-        // Use the ClientHandler as the cookie to send the packet if the cookie is present.
+        // Use the MessageHandler as the cookie to send the packet if the cookie is present.
         // This is to bind an outgoing stream to a particular connection, needed for the
         // following scenario:
         //
@@ -249,36 +228,59 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
         // 5. the rest of the chunks in the stream will be sent via the latter link, which violates
         // streams' guarantee of in-order delivery.
 
-        ClientHandler client;
+        Channel channel = null;
         synchronized (this) {
-            client = (cookie == null) ? clients.get(did) : (ClientHandler) cookie;
-            if (client == null) client = newConnection(did);
-        }
-
-        ListenableFuture<Void> sendFuture = client.send(bss);
-
-        addCallback(sendFuture, new FutureCallback<Void>()
-        {
-            @Override
-            public void onSuccess(Void v)
-            {
-                if (wtr != null) wtr.okay();
+            if (cookie != null) {
+                channel = (Channel) cookie; // use the channel that was used before
+            } else { // apparently the caller has no preference on the channel to be used
+                if (reuseChannels) { // we should pick an existing channel if there is one
+                    // check if we've any channels
+                    // to this did and simply pick one
+                    Set<Channel> active = channels.get(did);
+                    if (!active.isEmpty()) {
+                        channel = active.iterator().next();
+                    }
+                }
             }
 
+            // no cookie was specified and no active channel exists
+            // let's create a channel for them
+            // FWIW, it's _definitely_ possible for this channel to be null - don't believe the IDE
+            // noinspection ConstantConditions
+            if (channel == null) {
+                channel = newChannel(did);
+            }
+        }
+
+        ChannelFuture writeFuture = channel.write(bss);
+        writeFuture.addListener(new ChannelFutureListener()
+        {
             @Override
-            public void onFailure(Throwable throwable)
+            public void operationComplete(ChannelFuture channelFuture)
+                    throws Exception
             {
-                if (wtr != null) {
-                    if (throwable instanceof Exception) {
-                        wtr.error((Exception)throwable);
-                    } else {
-                        SystemUtil.fatal(throwable);
+                if (channelFuture.isSuccess()) {
+                    if (wtr != null) {
+                        wtr.okay();
+                    }
+                } else {
+                    if (wtr != null) {
+                        Throwable throwable = channelFuture.getCause();
+                        if (throwable == null) {
+                            throwable = new ExDeviceUnavailable("write failed");
+                        }
+
+                        if (throwable instanceof Exception) {
+                            wtr.error((Exception) throwable);
+                        } else {
+                            SystemUtil.fatal(throwable);
+                        }
                     }
                 }
             }
         });
 
-        return client;
+        return channel;
     }
 
     public void sendControl(DID did, PBTPHeader h)
@@ -293,7 +295,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
      * @throws ExTransportUnavailable if the unicast service is paused or has already been shut down
      * @throws ExDeviceUnavailable if we cannot find a remote address for the device
      */
-    private ClientHandler newConnection(final DID did)
+    private Channel newChannel(final DID did)
             throws ExTransportUnavailable, ExDeviceUnavailable
     {
         if (!isServiceAvailable()) {
@@ -301,16 +303,20 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
         }
 
         SocketAddress remoteAddress = unicastCallbacks.resolve(did);
-        Channel channel = clientBootstrap.connect(remoteAddress).getChannel();
-        channel.setAttachment(new DIDWrapper(did));
+        final Channel channel = clientBootstrap.connect(remoteAddress).getChannel();
+        addChannelCloseFuture(did, channel);
 
-        final ClientHandler client = channel.getPipeline().get(ClientHandler.class);
-        l.debug("registering new connection to did:{}", did);
-        clients.put(did, checkNotNull(client));
+        l.debug("{} created new channel", did);
 
-        client.setExpectedRemoteDid(did);
+        CNameVerifiedHandler verifiedHandler = channel.getPipeline().get(CNameVerifiedHandler.class);
+        verifiedHandler.setExpectedRemoteDID(did);
+        channels.put(did, channel);
 
-        // Remove the client when the channel is closed
+        return channel;
+    }
+
+    private void addChannelCloseFuture(final DID did, final Channel channel)
+    {
         channel.getCloseFuture().addListener(new ChannelFutureListener()
         {
             @Override
@@ -318,18 +324,14 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, ISer
                     throws Exception
             {
                 // Remove only if its still the same client in the map.
-                if (clients.remove(did, client)) {
-                    l.info("remove outgoing connection to did:{}", did);
+                if (channels.remove(did, channel)) {
+                    l.info("{} remove connection", did);
 
-                    if (!servers.containsKey(did)) {
+                    if (!channels.containsKey(did)) {
                         unicastListener.onDeviceDisconnected(did);
                     }
                 }
             }
         });
-
-        unicastCallbacks.onClientCreated(client);
-
-        return client;
     }
 }

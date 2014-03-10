@@ -59,7 +59,7 @@ public final class TransportEventQueue implements IBlockingPrioritizedEventSink<
                         TransportEventQueue.this.dispatcher.dispatch_(ev, Prio.LO);
                     }
                 } catch (InterruptedException e) {
-                    l.warn("{}: interrupted during poll", eventQueueReaderId, e);
+                    l.trace("{}: interrupted during poll", eventQueueReaderId, e);
                 }
             }
         }, eventQueueReaderId);

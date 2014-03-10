@@ -6,12 +6,16 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.net.MagicHeader.ExBadMagicHeader;
+import com.aerofs.base.net.NettyUtil;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.lib.IChannelData;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.log.LogUtil;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -20,6 +24,12 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import java.io.IOException;
+import java.nio.channels.UnresolvedAddressException;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -50,11 +60,6 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
             this.closeOutbound = closeOutbound;
             this.closeInbound = closeInbound;
         }
-    }
-
-    public interface ChannelDIDProvider
-    {
-        DID getRemoteDID();
     }
 
     private final ITransport transport;
@@ -94,13 +99,9 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
 
     private void teardown(Channel channel)
     {
-        Object attachment = channel.getAttachment();
-
-        if (attachment != null) {
-            DID did = ((ChannelDIDProvider) attachment).getRemoteDID();
-
-            l.debug("{}: teardown streams for d:{}", transport.id(), did);
-
+        DID did = getDID(channel);
+        if (did != null) {
+            l.debug("{} teardown {} streams", did, transport.id());
             TPUtil.sessionEnded(new Endpoint(transport, did), sink, streamManager, channelMode.closeOutbound, channelMode.closeInbound);
         }
     }
@@ -109,7 +110,31 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
             throws Exception
     {
-        l.warn("closing channel because of uncaught err:{}", e.getCause().getMessage());
-        e.getChannel().close();
+        DID did = getDID(e.getChannel());
+
+        Throwable cause = NettyUtil.truncateMessageIfNecessary(e.getCause());
+        Channel channel = e.getChannel();
+
+        l.warn("{} closing channel because of uncaught err on {}",
+                did,
+                channel,
+                LogUtil.suppress(
+                        cause,
+                        ExBadMagicHeader.class,
+                        UnresolvedAddressException.class,
+                        IOException.class,
+                        SSLException.class,
+                        SSLHandshakeException.class));
+
+        channel.close();
+    }
+
+    private static @Nullable DID getDID(Channel channel)
+    {
+        DID did = null;
+        if (channel.getAttachment() != null) {
+            did = ((IChannelData) channel.getAttachment()).getRemoteDID();
+        }
+        return did;
     }
 }

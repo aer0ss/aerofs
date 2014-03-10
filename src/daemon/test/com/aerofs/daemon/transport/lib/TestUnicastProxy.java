@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.lib.event.Prio;
 import org.junit.Test;
 
@@ -21,6 +22,11 @@ import static org.mockito.Mockito.when;
 
 public final class TestUnicastProxy
 {
+    static
+    {
+        TransportLoggerSetup.init();
+    }
+
     private final IUnicast unicast = mock(IUnicast.class);
     private final Object cookie = new Object();
 

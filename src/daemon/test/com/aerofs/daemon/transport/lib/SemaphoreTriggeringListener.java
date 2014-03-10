@@ -29,6 +29,7 @@ public class SemaphoreTriggeringListener implements IUnicastListener
     public void onUnicastUnavailable()
     {
         unicastUnavailableSemaphore.release();
+        l.debug("released unicast unavailable semaphore");
     }
 
     @Override

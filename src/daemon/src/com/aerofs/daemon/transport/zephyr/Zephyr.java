@@ -21,7 +21,6 @@ import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportEventQueue;
 import com.aerofs.daemon.transport.lib.TransportStats;
-import com.aerofs.daemon.transport.lib.UnicastProxy;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
@@ -48,10 +47,10 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.Set;
 
+import static com.aerofs.daemon.transport.lib.TPUtil.fromInetSockAddress;
+import static com.aerofs.daemon.transport.lib.TPUtil.getReachabilityErrorString;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupCommonHandlersAndListeners;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupMulticastHandler;
-import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
-import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode.TWOWAY;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -106,7 +105,7 @@ public final class Zephyr implements ITransport
     {
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
 
-        // this is a unicastProxy for NullPointerException during authentication
+        // this is required to avoid a NullPointerException during authentication
         // see http://www.igniterealtime.org/community/thread/35976
         SASLAuthentication.supportSASLMechanism("PLAIN", 0);
 
@@ -139,9 +138,8 @@ public final class Zephyr implements ITransport
         XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, outgoingEventSink, presenceService);
         presenceService.addListener(xmppPresenceProcessor);
 
-        UnicastProxy unicastProxy = new UnicastProxy();
         SignallingService signallingService = new SignallingService(id, xmppServerDomain, xmppConnectionService);
-        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager, unicastProxy);
+        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager);
         ChannelTeardownHandler channelTeardownHandler = new ChannelTeardownHandler(this, outgoingEventSink, streamManager, TWOWAY);
         this.zephyrAddress = zephyrAddress;
         this.zephyrConnectionService = new ZephyrConnectionService(
@@ -159,7 +157,6 @@ public final class Zephyr implements ITransport
                 clientSocketChannelFactory,
                 this.zephyrAddress,
                 proxy);
-        unicastProxy.setRealUnicast(zephyrConnectionService);
 
         presenceService.addListener(new DevicePresenceListener(id, zephyrConnectionService, pulseManager, rockLog));
 

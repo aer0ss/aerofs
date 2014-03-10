@@ -108,7 +108,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     public void channelConnected(final ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
-        l.debug("sending handshake");
+        l.trace("sending handshake");
 
         CNameVerificationInfo verificationInfo = CNameVerificationInfo.newBuilder()
                 .setUser(_user.getString())
@@ -152,7 +152,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             }
 
             _state = State.Handshaken;
-            l.debug("cname verified {} - {}", user, did);
+            l.debug("{} cname verified {}", did, user);
 
             // Notify upstream that the connection has been established
 

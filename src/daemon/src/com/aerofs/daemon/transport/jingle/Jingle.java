@@ -13,7 +13,7 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
-import com.aerofs.daemon.transport.lib.IUnicastCallbacks;
+import com.aerofs.daemon.transport.lib.IAddressResolver;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.PulseManager;
@@ -23,7 +23,6 @@ import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.Unicast;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
-import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.multicast.Multicast;
@@ -47,13 +46,13 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.Set;
 
+import static com.aerofs.daemon.transport.lib.TPUtil.fromInetSockAddress;
+import static com.aerofs.daemon.transport.lib.TPUtil.getReachabilityErrorString;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupCommonHandlersAndListeners;
 import static com.aerofs.daemon.transport.lib.TPUtil.setupMulticastHandler;
-import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
-import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
-public class Jingle implements ITransport, IUnicastCallbacks
+public class Jingle implements ITransport, IAddressResolver
 {
     private final TransportEventQueue transportEventQueue;
     private final EventDispatcher dispatcher;
@@ -134,10 +133,11 @@ public class Jingle implements ITransport, IUnicastCallbacks
 
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
-        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, this.outgoingEventSink, streamManager, pulseManager, unicast);
-        JingleBootstrapFactory bootstrapFactory = new JingleBootstrapFactory(localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, transportStats, channelWorker);
-        ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(signalThread, unicast, protocolHandler, serverChannelTeardownHandler);
-        ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(signalThread, clientChannelTeardownHandler);
+        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, this.outgoingEventSink, streamManager, pulseManager);
+        // FIXME (AG): if I can somehow remove the circular dependency for IServerHandlerListener I can completely remove the setBootstraps call!
+        JingleBootstrapFactory bootstrapFactory = new JingleBootstrapFactory(localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, unicast, protocolHandler, transportStats, signalThread, channelWorker);
+        ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelTeardownHandler);
+        ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
 
         // process presence messages that come via XMPP
@@ -289,11 +289,5 @@ public class Jingle implements ITransport, IUnicastCallbacks
         }
 
         return diagnostics.build();
-    }
-
-    @Override
-    public void onClientCreated(ClientHandler client)
-    {
-        // nothing to do
     }
 }

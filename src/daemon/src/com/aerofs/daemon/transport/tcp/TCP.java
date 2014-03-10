@@ -16,18 +16,16 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
-import com.aerofs.daemon.transport.lib.IUnicastCallbacks;
+import com.aerofs.daemon.transport.lib.IAddressResolver;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
-import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportEventQueue;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.Unicast;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
-import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.tcp.ARP.ARPEntry;
 import com.aerofs.daemon.transport.tcp.ARP.IARPListener;
@@ -65,7 +63,7 @@ import static com.google.common.collect.Lists.newLinkedList;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 // FIXME (AG): remove direct call from Stores and make this final
-public class TCP implements ITransport, IUnicastCallbacks
+public class TCP implements ITransport, IAddressResolver
 {
     private static final Logger l = Loggers.getLogger(TCP.class);
 
@@ -122,10 +120,10 @@ public class TCP implements ITransport, IUnicastCallbacks
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
-        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager, unicast);
-        TCPBootstrapFactory bsFact = new TCPBootstrapFactory(localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, transportStats);
-        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, unicast, tcpProtocolHandler, protocolHandler, serverChannelTeardownHandler);
-        ClientBootstrap clientBootstrap = bsFact.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);
+        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager);
+        TCPBootstrapFactory bootstrapFactory = new TCPBootstrapFactory(localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, unicast, protocolHandler, tcpProtocolHandler, transportStats);
+        ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelFactory, serverChannelTeardownHandler);
+        ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
         linkStateService.addListener(unicast, sameThreadExecutor());
 
@@ -314,17 +312,6 @@ public class TCP implements ITransport, IUnicastCallbacks
             throws ExDeviceUnavailable
     {
         return arp.getThrows(did).remoteAddress;
-    }
-
-    // FIXME (AG): remove this by creating a TCP-specific pong handler for the outgoing connection
-    // one complication is that this _has_ to be the first message sent out
-    // this also allows me to completely remove IUnicastCallbacks and replace resolve with an IAddressResolver
-    @Override
-    public void onClientCreated(ClientHandler client)
-    {
-        // Send a TCP_PONG so that the peer knows our listening port and our stores
-        PBTPHeader pong = stores.newPongMessage(false);
-        if (pong != null) client.send(TPUtil.newControl(pong));
     }
 
     @Override

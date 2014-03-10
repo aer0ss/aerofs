@@ -2,13 +2,17 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.transport.lib;
+package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.daemon.transport.lib.ChannelData;
+import com.aerofs.daemon.transport.lib.StreamManager;
+import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -81,7 +85,7 @@ public final class TestChannelTeardownHandler
         final ChannelFuture closeFuture = new DefaultChannelFuture(channel, false);
 
         when(channel.getCloseFuture()).thenReturn(closeFuture);
-        when(channel.getAttachment()).thenReturn(new DIDWrapper(DID.generate()));
+        when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, DID.generate()));
         doAnswer(new Answer<Void>()
         {
             @Override
@@ -118,7 +122,7 @@ public final class TestChannelTeardownHandler
         final ChannelFuture closeFuture = new DefaultChannelFuture(channel, false);
 
         when(channel.getCloseFuture()).thenReturn(closeFuture);
-        when(channel.getAttachment()).thenReturn(new DIDWrapper(DID.generate()));
+        when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, DID.generate()));
         doAnswer(new Answer<Void>()
         {
             @Override
@@ -155,7 +159,7 @@ public final class TestChannelTeardownHandler
         final ChannelFuture closeFuture = new DefaultChannelFuture(channel, false);
 
         when(channel.getCloseFuture()).thenReturn(closeFuture);
-        when(channel.getAttachment()).thenReturn(new DIDWrapper(DID.generate()));
+        when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, DID.generate()));
         doAnswer(new Answer<Void>()
         {
             @Override

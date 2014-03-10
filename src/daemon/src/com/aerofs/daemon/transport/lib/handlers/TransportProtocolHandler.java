@@ -7,19 +7,16 @@ package com.aerofs.daemon.transport.lib.handlers;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.FrameParams;
-import com.aerofs.daemon.transport.lib.IUnicast;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
@@ -32,6 +29,8 @@ import javax.annotation.Nullable;
 
 import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.jboss.netty.channel.Channels.future;
+import static org.jboss.netty.channel.Channels.write;
 
 /**
  * Decodes a {@link com.aerofs.daemon.transport.lib.handlers.TransportMessage}
@@ -54,20 +53,17 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventsink;
     private final StreamManager streamManager;
     private final PulseManager pulseManager;
-    private final IUnicast unicast;
 
     public TransportProtocolHandler(
             ITransport transport,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventsink,
             StreamManager streamManager,
-            PulseManager pulseManager,
-            IUnicast unicast)
+            PulseManager pulseManager)
     {
         this.outgoingEventsink = outgoingEventsink;
         this.transport = transport;
         this.streamManager = streamManager;
         this.pulseManager = pulseManager;
-        this.unicast = unicast;
     }
 
     @Override
@@ -81,18 +77,24 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
         final TransportMessage message = (TransportMessage) e.getMessage();
         Endpoint endpoint = new Endpoint(transport, message.getDID());
 
+        PBTPHeader reply;
+
         if (message.isPayload()) {
-            processUnicastPayload(message, endpoint);
+            reply = processUnicastPayload(message, endpoint);
         } else {
-            processUnicastControl(message.getHeader(), endpoint);
+            reply = processUnicastControl(message.getHeader(), endpoint);
+        }
+
+        if (reply != null) {
+            write(ctx, future(e.getChannel()), TPUtil.newControl(reply));
         }
     }
 
-    private void processUnicastPayload(TransportMessage message, Endpoint endpoint)
+    private @Nullable PBTPHeader processUnicastPayload(TransportMessage message, Endpoint endpoint)
             throws Exception
     {
         int wireLength = message.getPayload().available() + FrameParams.HEADER_SIZE;
-        PBTPHeader reply = TPUtil.processUnicastPayload(
+        return TPUtil.processUnicastPayload(
                 endpoint,
                 message.getUserID(),
                 message.getHeader(),
@@ -100,11 +102,9 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
                 wireLength,
                 outgoingEventsink,
                 streamManager);
-
-        sendControl(endpoint.did(), reply);
     }
 
-    private void processUnicastControl(PBTPHeader header, Endpoint endpoint)
+    private @Nullable PBTPHeader processUnicastControl(PBTPHeader header, Endpoint endpoint)
             throws ExNoResource, ExProtocolError, ExTransportUnavailable, ExDeviceUnavailable
     {
         PBTPHeader reply = null;
@@ -134,15 +134,6 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
         }
         }
 
-        sendControl(endpoint.did(), reply);
-    }
-
-    // FIXME (AG): send on this channel itself when we have bidirectional channels
-    private void sendControl(DID did, @Nullable PBTPHeader reply)
-            throws ExTransportUnavailable, ExDeviceUnavailable
-    {
-        if (reply != null) {
-            unicast.send(did, null, Prio.LO, TPUtil.newControl(reply), null);
-        }
+        return reply;
     }
 }

@@ -22,6 +22,8 @@ import java.util.TreeSet;
 // NB. access to this object must be protected by synchronized, as transports
 // may be multi-threaded.
 //
+// FIXME (AG): This class should be refactored and replaced with atomic maps. (Thanks JP!)
+//
 public class StreamManager
 {
     private static final Logger l = Loggers.getLogger(StreamManager.class);
@@ -165,5 +167,11 @@ public class StreamManager
             strms.put(sid, strm);
             return false;
         }
+    }
+
+    public synchronized boolean streamExists(DID did, StreamID streamID)
+    {
+        Map<StreamID, IncomingStream> streams = _did2istrms.get(did);
+        return streams != null && streams.containsKey(streamID);
     }
 }

@@ -6,13 +6,14 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
-import com.aerofs.daemon.transport.lib.handlers.ClientHandler;
 
 import java.net.SocketAddress;
 
-// FIXME (AG): this interface is deprecated and should not be used anymore
-public interface IUnicastCallbacks
+/**
+ * Implemented by classes that can resolve a DID into
+ * a remote address that the network stack can connect to.
+ */
+public interface IAddressResolver
 {
     public SocketAddress resolve(DID did) throws ExDeviceUnavailable;
-    public void onClientCreated(ClientHandler client);
 }

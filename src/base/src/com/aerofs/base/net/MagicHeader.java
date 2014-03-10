@@ -81,7 +81,7 @@ public class MagicHeader
             Channels.write(ctx, Channels.future(ctx.getChannel()), buffer);
             ctx.getPipeline().remove(this);
 
-            l.debug("wrote magic header 0x{}", hexEncode(_magic));
+            l.trace("wrote magic header 0x{}", hexEncode(_magic));
         }
     }
 
@@ -110,7 +110,7 @@ public class MagicHeader
                 throw new ExBadMagicHeader(_magic, magic);
             }
 
-            l.debug("read magic header 0x{}", hexEncode(_magic));
+            l.trace("read magic header 0x{}", hexEncode(_magic));
 
             return (buffer.readable()) ? buffer : null;
         }

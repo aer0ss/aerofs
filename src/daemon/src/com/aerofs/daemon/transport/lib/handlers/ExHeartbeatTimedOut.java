@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.daemon.transport.zephyr;
+package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.daemon.transport.ExTransport;
 

@@ -16,7 +16,6 @@ import com.aerofs.lib.event.Prio;
 import com.google.common.collect.Maps;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
@@ -60,7 +59,7 @@ public final class TestTransports
     @Parameters
     public static Collection<Object[]> transports()
     {
-        Object[][] data = new Object[][]{{TransportType.LANTCP}, {TransportType.ZEPHYR}};
+        Object[][] data = new Object[][]{{TransportType.LANTCP}, {TransportType.ZEPHYR}}; // jingle cannot be tested in-process
         return Arrays.asList(data);
     }
 
@@ -264,4 +263,7 @@ public final class TestTransports
 
         assertThat(sentDigest, equalTo(receiverDigest));
     }
+
+    // FIXME (AG): send multiple streams simultaneously from both directions
+    // FIXME (AG): send multiple streams and kill one
 }

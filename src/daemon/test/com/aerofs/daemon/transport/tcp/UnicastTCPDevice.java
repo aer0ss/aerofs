@@ -17,7 +17,7 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.PrivateKeyProvider;
 import com.aerofs.daemon.transport.TransportReader;
-import com.aerofs.daemon.transport.lib.IUnicastCallbacks;
+import com.aerofs.daemon.transport.lib.IAddressResolver;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.SemaphoreTriggeringListener;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -28,6 +28,7 @@ import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.lib.event.IEvent;
+import com.sun.corba.se.pept.protocol.ProtocolHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -48,15 +49,13 @@ public final class UnicastTCPDevice
     public BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(100);
     public UserID userID;
     public InetSocketAddress listeningAddress; // <----- UNIQUE TO TCP AND REQUIRED BY TESTS
-    public IUnicastCallbacks unicastCallbacks; // <----- UNIQUE TO TCP AND REQUIRED BY TESTS
+    public IAddressResolver addressResolver; // <----- UNIQUE TO TCP AND REQUIRED BY TESTS
     public SemaphoreTriggeringListener unicastListener;
     public Unicast unicast;
     public UnicastTransportListener transportListener;
     public TransportReader transportReader;
 
     private final TCPBootstrapFactory tcpBootstrapFactory;
-    private final TCPProtocolHandler tcpProtocolHandler;
-    private final TransportProtocolHandler transportProtocolHandler;
     private final ChannelTeardownHandler clientChannelTeardownHandler;
     private final ChannelTeardownHandler serverChannelTeardownHandler;
 
@@ -77,7 +76,7 @@ public final class UnicastTCPDevice
         when(transport.id()).thenReturn(transportId);
 
         Stores stores = mock(Stores.class);
-        unicastCallbacks = mock(IUnicastCallbacks.class);
+        addressResolver = mock(IAddressResolver.class);
         unicastListener = spy(new SemaphoreTriggeringListener());
 
         userID = UserID.fromExternal(String.format("user%d@arrowfs.org", random.nextInt(10)));
@@ -87,18 +86,18 @@ public final class UnicastTCPDevice
         StreamManager streamManager = new StreamManager();
         PulseManager pulseManager = new PulseManager();
 
+        unicast = new Unicast(addressResolver, transportStats);
+        linkStateService.addListener(unicast, sameThreadExecutor());
+
+        TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
+        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager, pulseManager);
+        clientChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.CLIENT);
+        serverChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.SERVER);
+
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
         SSLEngineFactory serverSSLEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
-        tcpBootstrapFactory =  new TCPBootstrapFactory(userID, did, clientSSLEngineFactory, serverSSLEngineFactory, unicastListener, transportStats);
-
-        unicast = new Unicast(unicastCallbacks, transportStats);
-        linkStateService.addListener(unicast, sameThreadExecutor());
-
-        tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
-        transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager, pulseManager, unicast);
-        clientChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.CLIENT);
-        serverChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.SERVER);
+        tcpBootstrapFactory =  new TCPBootstrapFactory(userID, did, clientSSLEngineFactory, serverSSLEngineFactory, unicastListener, unicast, transportProtocolHandler, tcpProtocolHandler, transportStats);
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);
     }
@@ -106,7 +105,7 @@ public final class UnicastTCPDevice
     public void start(ServerSocketChannelFactory serverSocketChannelFactory, ClientSocketChannelFactory clientSocketChannelFactory)
             throws Exception
     {
-        ServerBootstrap serverBootstrap = tcpBootstrapFactory.newServerBootstrap(serverSocketChannelFactory, unicast, tcpProtocolHandler, transportProtocolHandler, serverChannelTeardownHandler);
+        ServerBootstrap serverBootstrap = tcpBootstrapFactory.newServerBootstrap(serverSocketChannelFactory, serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = tcpBootstrapFactory.newClientBootstrap(clientSocketChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
         unicast.setUnicastListener(unicastListener);

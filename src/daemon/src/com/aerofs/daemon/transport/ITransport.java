@@ -1,10 +1,11 @@
 package com.aerofs.daemon.transport;
 
-import com.aerofs.lib.ITransferStat;
+import com.aerofs.daemon.lib.ITransferStat;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 
+// FIXME (AG): this API is deprecated and will broken up.
 /**
  * Implemented by classes that provide a message transport mechanism.
  */
