@@ -13,7 +13,6 @@ import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;

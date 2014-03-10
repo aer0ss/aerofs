@@ -10,7 +10,6 @@ import com.aerofs.rest.api.Error.Type;
 import com.aerofs.restless.Auth;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.HttpContext;
-import com.sun.jersey.api.core.HttpRequestContext;
 import com.sun.jersey.api.model.Parameter;
 import com.sun.jersey.core.spi.component.ComponentContext;
 import com.sun.jersey.core.spi.component.ComponentScope;
@@ -20,7 +19,6 @@ import com.sun.jersey.spi.inject.InjectableProvider;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;

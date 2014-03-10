@@ -1,6 +1,5 @@
 package com.aerofs.lib;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 

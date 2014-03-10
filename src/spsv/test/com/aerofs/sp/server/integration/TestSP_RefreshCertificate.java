@@ -5,13 +5,10 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;

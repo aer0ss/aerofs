@@ -7,8 +7,6 @@ package com.aerofs.lib;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Sp.PBFullName;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.google.gson.annotations.SerializedName;
 
 import javax.annotation.Nonnull;
