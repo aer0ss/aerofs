@@ -1,5 +1,87 @@
 var shelobDirectives = angular.module('shelobDirectives', []);
 
+shelobDirectives.directive('aeroFileUpload', function($rootScope, $log, $modal, $timeout, API) {  return {
+
+    restrict: 'EA',
+
+    templateUrl: '/static/shelob/partials/file-upload.html',
+
+    replace: true,
+
+    link: function(scope, elem, attrs) {
+
+        scope.doChunkedUpload = function(fileJSON, file, etag) {
+            var headers = {'If-Match': etag};
+            //TODO: use page size (4M or 8M) chunks, and increase nginx's max body size
+            var chunkSize = 1024 * 1024;
+            API.chunkedUpload(fileJSON.id, file, chunkSize, headers).then(function(r) {
+                // file upload succeeded
+                $log.info('file upload succeeded');
+                $timeout(function() {
+                    scope.progressModal.close();
+                    showSuccessMessage('Successfully uploaded ' + fileJSON.name);
+                    $rootScope.files.push(fileJSON);
+                }, 500);
+            }, function(r) {
+                // file upload failed
+                scope.progressModal.dismiss();
+                if (r.reason == 'read') {
+                    showErrorMessage("Upload failed: could not read file from disk.");
+                } else if (r.reason == 'upload') {
+                    if (r.status == 503) showErrorMessage(getClientsOfflineErrorText());
+                    else if (r.status == 409) showErrorMessage("A file or folder with that name already exists.");
+                    else showErrorMessage(getInternalErrorText());
+                } else showErrorMessage(getInternalErrorText());
+            }, function(r) {
+                // file upload notification
+                $log.debug('progress report:', r.progress);
+                $rootScope.$broadcast('modal.progress', {progress: r.progress});
+            });
+        };
+
+        scope.upload = function() {
+            if (!window.File || !window.FileReader) {
+                showErrorMessage("File uploads are not supported in this browser.");
+                return;
+            }
+
+            // get file object from <input>
+            var file = elem[0].children[1].files[0];
+            if (file === undefined) return;
+
+            // open progress modal
+            scope.progressModal = $modal.open({
+                templateUrl: '/static/shelob/partials/file-download-modal.html',
+                // don't close modal when clicking the backdrop or hitting escape
+                backdrop: 'static',
+                keyboard: false,
+                controller: function($scope) {
+                    $scope.$on('modal.progress', function(event, args) {
+                        $scope.progress = Math.round(100 * args.progress);
+                    });
+                }
+            });
+
+            // create an empty file before upload
+            var fileObj = {parent: $rootScope.parent, name: file.name};
+            $log.debug("creating file:", fileObj);
+            var headers = {'Endpoint-Consistency': 'strict'};
+            API.post('/files', fileObj, headers).then(function(r) {
+                // file creation succeeded
+                $log.info('file creation succeeded');
+                scope.doChunkedUpload(r.data, file, r.headers('ETag'));
+            }, function(r) {
+                // file creation failed
+                $log.error('file creation failed with status ' + r.status);
+                scope.progressModal.dismiss();
+                if (r.status == 503) showErrorMessage(getClientsOfflineErrorText());
+                else if (r.status == 409) showErrorMessage("A file or folder with that name already exists.");
+                else showErrorMessage(getInternalErrorText());
+            });
+        };
+    },
+}});
+
 shelobDirectives.directive('inPlaceEdit', function($timeout) { return {
     restrict: 'EA',
 
@@ -121,4 +203,4 @@ getFilename = function(mimeType) {
     else {
         return 'filetype_generic.png';
     }
-}
+};

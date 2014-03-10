@@ -6,17 +6,17 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     var oid = typeof $routeParams.oid === "undefined" ? '' : $routeParams.oid;
 
     // N.B. add a random query param to prevent caching
-    API.get('/children/' + oid + '?t=' + Math.random()).then(function(data) {
+    API.get('/children/' + oid + '?t=' + Math.random()).then(function(r) {
         // success callback
-        $scope.parent = data.parent;
-        $scope.files = data.files;
-        $scope.folders = data.folders;
-    }, function(status) {
+        $scope.parent = r.data.parent;
+        $scope.files = r.data.files;
+        $scope.folders = r.data.folders;
+    }, function(r) {
         // failure callback
-        $log.error('list children call failed with ' + status);
-        if (status == 503) {
+        $log.error('list children call failed with ' + r.status);
+        if (r.status == 503) {
             showErrorMessage(getClientsOfflineErrorText());
-        } else if (status == 404) {
+        } else if (r.status == 404) {
             showErrorMessage("The folder you requested was not found.");
         } else {
             showErrorMessage(getInternalErrorText());
@@ -27,11 +27,11 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     if (oid == '') {
         $scope.breadcrumbs = [];
     } else {
-        API.get('/folders/' + oid).then(function(data) {
+        API.get('/folders/' + oid).then(function(r) {
             // success callback
-            var crumb = {id: data.id, name: data.name};
+            var crumb = {id: r.data.id, name: r.data.name};
             for (var i = 0; i < $scope.breadcrumbs.length; i++) {
-                if ($scope.breadcrumbs[i].id == data.id) {
+                if ($scope.breadcrumbs[i].id == r.data.id) {
                     // if the trail reads Home > Folder > Subfolder > SubSubFolder
                     // and the user clicks the link to Folder, remove everything in the
                     // breadcrumb trail from Folder onward
@@ -40,11 +40,11 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
                 }
             }
             // append the folder to the breadcrumb trail
-            $scope.breadcrumbs.push(data);
-        }, function(status) {
+            $scope.breadcrumbs.push(r.data);
+        }, function(r) {
             // failure callback
-            $log.error('get folder info call failed with ' + status);
-            if (status == 503) {
+            $log.error('get folder info call failed with ' + r.status);
+            if (r.status == 503) {
                 showErrorMessage("All AeroFS clients are offline. At least one AeroFS desktop client or Team Server must be online to process your request.");
             } else {
                 showErrorMessage(getInternalErrorText());
@@ -66,23 +66,24 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         // Shelob to the API
         //
         // N.B. add a random query param to prevent caching
-        API.head("/files/" + oid + "/content?t=" + Math.random()).then(function(data) {
-            Token.get().then(function(token) {
+        API.head("/files/" + oid + "/content?t=" + Math.random()).then(function(r) {
+            $log.info('HEAD /files/' + oid + '/content succeeded');
+            Token.get().then(function(r) {
                 // N.B replace(url) will replace the current history with url, whereas
                 // assign(url) will append url to the history chain. We use replace() so
                 // that a user can navigate from folder Foo to folder Bar, click to download
                 // a file, and then use the back button to return to Foo.
-                $window.location.replace("/api/v1.0/files/" + oid + "/content?token=" + token);
-            }, function(status) {
+                $window.location.replace("/api/v1.0/files/" + oid + "/content?token=" + r.token);
+            }, function(r) {
                 // somehow failed to get token despite the fact that a request just succeeded
                 showErrorMessage(getInternalErrorText());
             });
-        }, function(status) {
+        }, function(r) {
             // HEAD request failed
-            $log.error('HEAD /files/' + oid + ' failed with status ' + status);
-            if (status == 503) {
+            $log.error('HEAD /files/' + oid + '/content failed with status ' + r.status);
+            if (r.status == 503) {
                 showErrorMessage(getClientsOfflineErrorText());
-            } else if (status == 404) {
+            } else if (r.status == 404) {
                 showErrorMessage("The file you requested was not found.");
             } else {
                 showErrorMessage(getInternalErrorText());
@@ -108,15 +109,15 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         $log.debug("new folder: " + $scope.newFolder.name);
         if ($scope.newFolder.name != '') {
             folderData = {name: $scope.newFolder.name, parent: $scope.parent};
-            API.post('/folders', folderData).then(function(data) {
+            API.post('/folders', folderData).then(function(r) {
                 // POST /folders returns the new folder object
-                $scope.folders.push(data);
+                $scope.folders.push(r.data);
                 showSuccessMessage("Successfully created a new folder.");
-            }, function(status) {
+            }, function(r) {
                 // create new folder failed
-                if (status == 503) {
+                if (r.status == 503) {
                     showErrorMessage(getClientsOfflineErrorText());
-                } else if (status == 409) {
+                } else if (r.status == 409) {
                     showErrorMessage("A file or folder with that name already exists.");
                 } else {
                     showErrorMessage(getInternalErrorText());

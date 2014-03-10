@@ -1,5 +1,6 @@
 var shelobApp = angular.module('shelobApp', [
     'ngRoute',
+    'ui.bootstrap',
     'shelobControllers',
     'shelobServices',
     'shelobDirectives',

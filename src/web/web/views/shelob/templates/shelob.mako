@@ -9,6 +9,7 @@
 <%block name="scripts">
     <script src="${request.static_path('web:static/shelob/lib/angular/angular.min.js')}"></script>
     <script src="${request.static_path('web:static/shelob/lib/angular/angular-route.min.js')}"></script>
+    <script src="${request.static_path('web:static/shelob/lib/angular-ui/ui-bootstrap-tpls-0.8.0.min.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/app.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/services.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/controllers.js')}"></script>

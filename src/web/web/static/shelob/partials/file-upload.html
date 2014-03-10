@@ -1,0 +1,21 @@
+<div style="position:relative">
+  <span>Upload File</span>
+
+  <!--
+    The look of the <input type="file"> is not very customizable. To get around
+    this, we make it invisible and expand it to 100% of its container. This chunk of
+    html can then be put on top of a bootstrap button or other element.
+
+    http://stackoverflow.com/questions/11235206/twitter-bootstrap-form-file-element-upload-button
+  -->
+  <input type="file" onchange="angular.element(this).scope().upload()"
+         style="position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 100%;
+                direction: ltr;
+                opacity: 0;
+                filter: alpha(opacity=0);
+                cursor: pointer;"/>
+</div>
