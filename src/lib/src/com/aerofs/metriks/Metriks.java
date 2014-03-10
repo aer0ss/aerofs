@@ -167,7 +167,8 @@ public final class Metriks implements IMetriks
     private HttpURLConnection getTriksConnection()
             throws IOException
     {
-        URL url = new URL(_triksUrl.toExternalForm());
+        String path = "/";
+        URL url = new URL(_triksUrl.toExternalForm() + path);
 
         HttpURLConnection triksConnection = (HttpURLConnection) url.openConnection();
         triksConnection.setUseCaches(false);
