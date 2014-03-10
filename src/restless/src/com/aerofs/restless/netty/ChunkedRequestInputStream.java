@@ -4,6 +4,8 @@ import com.aerofs.base.Loggers;
 import com.google.common.collect.Queues;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
@@ -56,6 +58,13 @@ public class ChunkedRequestInputStream extends InputStream
         _sendContinue = new AtomicBoolean(sendContinue);
         _channel = channel;
         _state = State.STREAMING;
+        _channel.getCloseFuture().addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture cf) throws Exception
+            {
+                if (_state == State.STREAMING) close();
+            }
+        });
     }
 
     @Override
