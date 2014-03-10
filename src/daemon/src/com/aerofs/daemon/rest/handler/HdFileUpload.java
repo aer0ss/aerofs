@@ -217,7 +217,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         }
 
         Long len = range.totalLength();
-        if (len == null || len < prefixLength) {
+        if (len == null || prefixLength < len) {
             // ack chunk
             return Response.ok()
                     .header("Upload-ID", uploadId.toStringFormal())
@@ -246,7 +246,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                 // and schedule a self-handling event to apply the prefix at the end of the
                 // transfer
                 // TODO: compute ContentHash as bytes are received (NB: deal with interruption)
-                OutputStream out = pf.newOutputStream_(false);
+                OutputStream out = pf.newOutputStream_(true);
                 try {
                     return ByteStreams.copy(in, out);
                 } finally {

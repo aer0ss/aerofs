@@ -80,6 +80,7 @@ public class FilesResource extends AbstractResource
             @Context Version version,
             File file) throws IOException
     {
+        checkArgument(file != null);
         checkArgument(file.parent != null);
         checkArgument(file.name != null);
         requirePermissionOnFolder(Scope.WRITE_FILES, token, new RestObject(file.parent));
@@ -114,6 +115,7 @@ public class FilesResource extends AbstractResource
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             File file) throws IOException
     {
+        checkArgument(file != null);
         checkArgument(file.parent != null);
         checkArgument(file.name != null);
         requirePermissionOnFolder(Scope.WRITE_FILES, token, object);

@@ -480,6 +480,17 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn400IfNoFileObjectGiven() throws Exception
+    {
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body("")
+        .expect()
+                .statusCode(400)
+        .when().post("/v0.10/files");
+    }
+
+    @Test
     public void shouldReturn403WhenViewerTriesToCreate() throws Exception
     {
         doThrow(new ExNoPerm())
@@ -972,7 +983,7 @@ public class TestFileResource extends AbstractRestTest
         SOID soid = mds.root().file("foo.txt").soid();
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
+        when(pf.newOutputStream_(true)).thenReturn(baos);
         when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
             @Override
             public Integer answer(InvocationOnMock invocation) throws Throwable
