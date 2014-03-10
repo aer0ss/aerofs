@@ -21,6 +21,10 @@ message PBTPHeader {
         // Messages to test liveness of the link
         TRANSPORT_CHECK_PULSE_CALL = 11;
         TRANSPORT_CHECK_PULSE_REPLY = 12;
+
+        // Messages to maintain link liveness
+        HEARTBEAT_CALL = 14;
+        HEARTBEAT_REPLY = 15;
     }
 
     required Type type = 1;
@@ -41,6 +45,9 @@ message PBTPHeader {
 
     // only in TRANSPORT_CHECK_PULSE_* messages
     optional PBCheckPulse check_pulse = 10;
+
+    // only for HEARTBEAT messages
+    optional PBHeartbeat heartbeat = 11;
 }
 
 message PBStream {
@@ -90,4 +97,8 @@ message PBTCPPong {
 
 message PBCheckPulse {
     required int32 pulse_id = 1;
+}
+
+message PBHeartbeat {
+    required int32 heartbeat_id = 1;
 }

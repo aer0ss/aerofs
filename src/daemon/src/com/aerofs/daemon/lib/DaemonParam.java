@@ -52,7 +52,9 @@ public class DaemonParam
 
     public static class Zephyr
     {
-        public static final long HANDSHAKE_TIMEOUT = 10 * C.SEC;
+        public static final long HANDSHAKE_TIMEOUT    = 10 * C.SEC;
+        public static final long HEARTBEAT_INTERVAL   = 5 * C.SEC;
+        public static final int MAX_FAILED_HEARTBEATS = 3;
     }
 
     public static class Jingle

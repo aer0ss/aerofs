@@ -9,7 +9,7 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
-import com.aerofs.daemon.transport.ExIOOFailed;
+import com.aerofs.daemon.transport.ExIOFailed;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.IUnicastInternal;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
@@ -54,6 +54,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HANDSHAKE_TIMEOUT;
+import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HEARTBEAT_INTERVAL;
+import static com.aerofs.daemon.lib.DaemonParam.Zephyr.MAX_FAILED_HEARTBEATS;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.getZephyrClientHandler;
@@ -124,7 +126,9 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                         this,
                         unicastListener,
                         proxy,
-                        HANDSHAKE_TIMEOUT));
+                        HANDSHAKE_TIMEOUT,
+                        HEARTBEAT_INTERVAL,
+                        MAX_FAILED_HEARTBEATS));
 
         this.transportStats = transportStats;
         this.rockLog = rockLog;
@@ -376,7 +380,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                 if (future.isSuccess()) {
                     if (wtr != null) wtr.okay();
                 } else {
-                    if (wtr != null) wtr.error(new ExIOOFailed("fail send packet to " + did, future.getCause()));
+                    if (wtr != null) wtr.error(new ExIOFailed("fail send packet to " + did, future.getCause()));
                 }
             }
         });

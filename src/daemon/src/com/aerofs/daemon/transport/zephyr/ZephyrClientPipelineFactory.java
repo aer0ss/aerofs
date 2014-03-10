@@ -46,6 +46,8 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     private final CoreFrameEncoder coreFrameEncoder;
     private final Proxy proxy;
     private final long zephyrHandshakeTimeout;
+    private final long heartbeatInterval;
+    private final int maxFailedHeartbeats;
     private final TimeUnit zephyrHandshakeTimeoutTimeunit;
     private final HashedWheelTimer timer = new HashedWheelTimer(500, MILLISECONDS);
 
@@ -60,7 +62,9 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
             IZephyrSignallingService zephyrSignallingService,
             IUnicastListener unicastListener,
             Proxy proxy,
-            long zephyrHandshakeTimeout)
+            long zephyrHandshakeTimeout,
+            long heartbeatInterval,
+            int maxFailedHeartbeats)
     {
         checkArgument(proxy.type() == DIRECT || proxy.type() == HTTP, "cannot support proxy type:" + proxy.type());
 
@@ -77,6 +81,8 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         this.coreFrameEncoder = new CoreFrameEncoder();
         this.proxy = proxy;
         this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
+        this.heartbeatInterval = heartbeatInterval;
+        this.maxFailedHeartbeats = maxFailedHeartbeats;
         this.zephyrHandshakeTimeoutTimeunit = MILLISECONDS;
     }
 
@@ -111,6 +117,9 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 
         // set up the cname listener
         cNameVerificationHandler.setListener(zephyrClientHandler);
+
+        // setup the heartbeat handler
+        pipeline.addLast("hbsend", new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer));
 
         // setup the actual transport protocol handler
         pipeline.addLast("tpprotocol", transportProtocolHandler);

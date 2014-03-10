@@ -4,16 +4,16 @@
 
 package com.aerofs.daemon.transport;
 
-public final class ExIOOFailed extends ExTransport
+public final class ExIOFailed extends ExTransport
 {
     private static final long serialVersionUID = 1L;
 
-    public ExIOOFailed(String message)
+    public ExIOFailed(String message)
     {
         super(message);
     }
 
-    public ExIOOFailed(String message, Throwable cause)
+    public ExIOFailed(String message, Throwable cause)
     {
         super(message, cause);
     }

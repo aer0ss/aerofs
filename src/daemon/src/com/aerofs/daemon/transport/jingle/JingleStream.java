@@ -9,7 +9,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
-import com.aerofs.daemon.transport.ExIOOFailed;
+import com.aerofs.daemon.transport.ExIOFailed;
 import com.aerofs.j.StreamEvent;
 import com.aerofs.j.StreamInterface;
 import com.aerofs.j.StreamInterface_EventSlot;
@@ -115,7 +115,7 @@ class JingleStream
     }
 
     private void onStreamEvent(int event, int error)
-            throws ExDeviceUnavailable, ExIOOFailed
+            throws ExDeviceUnavailable, ExIOFailed
     {
         if (streamClosed) {
             l.warn("{}: dropping StreamEvent because stream is closed", this);
@@ -198,7 +198,7 @@ class JingleStream
 
         try {
             if (streamClosed) {
-                throw new ExIOOFailed(String.format("%s: attempting write after close", this));
+                throw new ExIOFailed(String.format("%s: attempting write after close", this));
             }
 
             boolean success = sendQueue.offer(new SendEvent(event));
@@ -245,7 +245,7 @@ class JingleStream
             } else if (res == SR_ERROR || res == SR_EOS) {
                 String msg = String.format("%s: fail write: cause:%s (code:%d)", this, res, error[0]);
                 l.warn(msg);
-                event.getWriteFuture().setFailure(new ExIOOFailed(msg));
+                event.getWriteFuture().setFailure(new ExIOFailed(msg));
                 sendQueue.poll(); // remove the head of the queue
 
             } else if (res == SR_BLOCK) {
@@ -261,10 +261,10 @@ class JingleStream
     /**
      * Read chunks out of libjingle and send them to the listener for processing.
      *
-     * @throws ExIOOFailed if we couldn't read from the stream
+     * @throws com.aerofs.daemon.transport.ExIOFailed if we couldn't read from the stream
      */
     private void read()
-            throws ExIOOFailed
+            throws ExIOFailed
     {
         int[] read = { 0 };
         int[] error = { 0 };
@@ -282,7 +282,7 @@ class JingleStream
             }
 
             if (res == SR_ERROR || res == SR_EOS) {
-                throw new ExIOOFailed(String.format("%s: fail read: cause:%s (code:%d)", this, res, error[0]));
+                throw new ExIOFailed(String.format("%s: fail read: cause:%s (code:%d)", this, res, error[0]));
             }
         }
     }
