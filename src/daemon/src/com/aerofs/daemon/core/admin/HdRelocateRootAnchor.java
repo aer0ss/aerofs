@@ -117,7 +117,16 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 
         Trans t = _tm.begin_();
         try {
-            relocator.doWork(t);
+            try {
+                relocator.doWork(t);
+            } catch (IOException e) {
+                if (OSUtil.isWindows()) {
+                    throw new ExInUse("files in the " + L.product() + " folder are in use. " +
+                            "Please close all programs interacting with files in " +
+                            L.product());
+                }
+                throw e;
+            }
 
             if (isDefaultRoot) {
                 Cfg.db().set(Key.ROOT, absNewRoot);
@@ -173,7 +182,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     private static abstract class AbstractRelocator implements IRelocator
     {
         protected final boolean _isS3Storage;
-        private final InjectableFile.Factory _factFile;
+        protected final InjectableFile.Factory _factFile;
 
 
         AbstractRelocator(InjectableFile.Factory factFile)
@@ -204,6 +213,14 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         }
 
         /**
+         * Called before the root directory is copied.
+         *
+         * The default implementation does nothing
+         */
+        protected void beforeRootRelocation(Trans t) throws Exception
+        {}
+
+        /**
          * Called after the root directory has been copied.
          *
          * The default implementation does nothing
@@ -223,23 +240,16 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         @Override
         public void doWork(Trans t) throws Exception
         {
-            try {
-                _oldRoot.moveInSameFileSystem(_newRoot);
+            beforeRootRelocation(t);
 
-                // TeamServer does not have a default aux root
-                if (!(_isDefaultRoot && L.isMultiuser())) {
-                    _oldAuxRoot.moveInSameFileSystem(_newAuxRoot);
-                }
+            _oldRoot.moveInSameFileSystem(_newRoot);
 
-                afterRootRelocation(t);
-            } catch (IOException e) {
-                if (OSUtil.isWindows()) {
-                    throw new ExInUse("files in the " + L.product() + " folder are in use. " +
-                            "Please close all programs interacting with files in " +
-                            L.product());
-                }
-                throw e;
+            // TeamServer does not have a default aux root
+            if (!(_isDefaultRoot && L.isMultiuser())) {
+                _oldAuxRoot.moveInSameFileSystem(_newAuxRoot);
             }
+
+            afterRootRelocation(t);
         }
 
         @Override
@@ -277,12 +287,17 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         @Override
         public void doWork(Trans t) throws Exception
         {
+            beforeRootRelocation(t);
+
             if (!_isS3Storage) {
                 OSUtil.get().copyRecursively(_oldRoot, _newRoot, true, true);
             }
 
             // TeamServer does not have a default aux root
             if (!(_isDefaultRoot && L.isMultiuser())) {
+                // if the new aux root already exists the copy may silently fail
+                // which is BAD because conflicts and nros MUST NOT be lost
+                _newAuxRoot.deleteOrThrowIfExistRecursively();
                 OSUtil.get().copyRecursively(_oldAuxRoot, _newAuxRoot, false, false);
                 OSUtil.get().markHiddenSystemFile(_newAuxRoot.getAbsolutePath());
             }

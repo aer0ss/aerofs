@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.BaseLogUtil;
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.CrossFSRelocator;
@@ -17,7 +17,6 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -26,7 +25,6 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -40,15 +38,25 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
     private final static Logger l = Loggers.getLogger(LinkedCrossFSRelocator.class);
 
     private final LinkerRootMap _lrm;
+    private final FileSystemProber _prober;
     private final RepresentabilityHelper _rh;
 
     @Inject
-    public LinkedCrossFSRelocator(InjectableFile.Factory factFile,
+    public LinkedCrossFSRelocator(InjectableFile.Factory factFile, FileSystemProber prober,
             DirectoryService ds, InjectableDriver dr, LinkerRootMap lrm, RepresentabilityHelper rh)
     {
         super(factFile, ds, dr);
         _lrm = lrm;
+        _prober = prober;
         _rh = rh;
+    }
+
+    @Override
+    protected void beforeRootRelocation(Trans t) throws Exception
+    {
+        if (_prober.isStricterThan(_newAuxRoot.getAbsolutePath(), _lrm.get_(_sid).properties())) {
+            throw new ExBadArgs("The target location is on a more restrictive filesystem than the source location.");
+        }
     }
 
     @Override

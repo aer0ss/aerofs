@@ -18,6 +18,8 @@ public class FileSystemProber
 
     private final InjectableFile.Factory _factFile;
 
+    // NB: isStricterThan assumes that all properties are restrictions and will
+    // need to be updated if this ever changes
     public enum FileSystemProperty
     {
         CaseInsensitive,
@@ -57,5 +59,11 @@ public class FileSystemProber
             l.error("failed to probe filesystem properties");
             throw e;
         }
+    }
+
+    public boolean isStricterThan(String path, EnumSet<FileSystemProperty> prop) throws IOException
+    {
+        // NB: this check only works if all properties are restrictions
+        return !prop.containsAll(probe(path));
     }
 }

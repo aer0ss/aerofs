@@ -125,6 +125,11 @@ public class LinkerRoot
         return _og;
     }
 
+    public EnumSet<FileSystemProperty> properties()
+    {
+        return EnumSet.copyOf(_properties);
+    }
+
     boolean isPhysicallyEquivalent(String a, String b)
     {
         if (_properties.contains(FileSystemProperty.NormalizationInsensitive)) {
