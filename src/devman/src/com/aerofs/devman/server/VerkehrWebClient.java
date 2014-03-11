@@ -24,7 +24,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.util.Collection;
 
-import static com.aerofs.base.BaseParam.VerkehrTopics.SSS_CHANNEL_TOPIC_PREFIX;
+import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
 import static com.aerofs.base.BaseParam.VerkehrTopics.TOPIC_SEPARATOR;
 
 /**
@@ -134,7 +134,9 @@ public class VerkehrWebClient
         for (Object topicObject : topics) {
             String topic = (String) topicObject;
 
-            if (topic.startsWith(SSS_CHANNEL_TOPIC_PREFIX)) {
+            // N.B. we must use a channel topic prefix that is unique per device. The command
+            // channel prefix will suffice.
+            if (topic.startsWith(CMD_CHANNEL_TOPIC_PREFIX)) {
                 String[] split = topic.split(TOPIC_SEPARATOR);
 
                 if (split.length != 2) {

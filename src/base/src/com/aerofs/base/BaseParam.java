@@ -146,7 +146,6 @@ public class BaseParam
         public static final String TOPIC_SEPARATOR = "/";
         public static final String CMD_CHANNEL_TOPIC_PREFIX = "cmd" + TOPIC_SEPARATOR;
         public static final String ACL_CHANNEL_TOPIC_PREFIX = "acl" + TOPIC_SEPARATOR;
-        public static final String SSS_CHANNEL_TOPIC_PREFIX = "sss" + TOPIC_SEPARATOR;
     }
 
     public static class Mixpanel
