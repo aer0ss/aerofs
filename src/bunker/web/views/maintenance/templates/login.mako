@@ -35,14 +35,14 @@
                         %endif
                     </button>
                 </p>
-                <p class="footnote">
+                <p>
                     Your license file ends in <em>.license</em>
                 </p>
             </div>
         </div>
     </form>
 
-    <div class="footnote">
+    <div>
         %if is_initialized:
             <p>Download your license file at
                 <a href="https://privatecloud.aerofs.com" target="_blank">privatecloud.aerofs.com</a>.
