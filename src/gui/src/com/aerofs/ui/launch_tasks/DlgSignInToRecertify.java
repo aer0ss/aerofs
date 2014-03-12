@@ -4,6 +4,7 @@
 
 package com.aerofs.ui.launch_tasks;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdGUIActor;
@@ -22,10 +23,12 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
@@ -64,13 +67,6 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
         gridLayout.numColumns = 2;
         container.setLayout(gridLayout);
 
-        // row 1
-
-        Label label = new Label(container, SWT.WRAP | SWT.BORDER);
-        GridData gd = new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1);
-        gd.widthHint = 300;
-        label.setLayoutData(gd);
-        label.setText(S.SIGN_IN_TO_RECERTIFY_EXPLANATION);
 
         // row 1a : call to action
 
@@ -80,13 +76,21 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
         labelAction.setLayoutData(gdAction);
         labelAction.setText(S.SIGN_IN_TO_RECERTIFY_ACTION);
 
+        // row 1b : explanatory link
+        Link lnkHistory = new Link(container, SWT.NONE);
+        lnkHistory.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 2, 1));
+        lnkHistory.setText(S.SIGN_IN_TO_RECERTIFY_EXPLANATION);
+        lnkHistory.addSelectionListener(
+                GUIUtil.createUrlLaunchListener(WWW.RECERTIFY_SUPPORT_URL));
+
         if (LibParam.OpenId.enabled()) {
 
             // optional row 1 : OpenID button
             Button signInButton = GUIUtil.createButton(container, SWT.PUSH);
             signInButton.setText("Sign in with " + Identity.SERVICE_IDENTIFIER);
-            signInButton.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
-            signInButton.addSelectionListener(new SelectionAdapter() {
+            signInButton.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1));
+            signInButton.addSelectionListener(new SelectionAdapter()
+            {
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {

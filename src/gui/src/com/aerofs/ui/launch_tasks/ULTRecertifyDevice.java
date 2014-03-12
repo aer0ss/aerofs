@@ -4,6 +4,7 @@
 
 package com.aerofs.ui.launch_tasks;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
@@ -131,7 +132,9 @@ public class ULTRecertifyDevice extends UILaunchTask
 
             private void typeCredentialsInCLI()
             {
-                CLI.get().show(MessageType.INFO, S.SIGN_IN_TO_RECERTIFY_EXPLANATION);
+                CLI.get().show(MessageType.INFO, S.SIGN_IN_TO_RECERTIFY_ACTION);
+                CLI.get().show(MessageType.INFO, "To learn more about why this is needed, see: "
+                        + WWW.RECERTIFY_SUPPORT_URL);
                 try {
                     setupModel.setSignInActor(new CredentialActor());
 

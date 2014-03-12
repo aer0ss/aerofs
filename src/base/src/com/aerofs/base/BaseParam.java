@@ -101,6 +101,8 @@ public class BaseParam
         public static final String DOWNLOAD_URL = DASHBOARD_HOST_URL + "/download";
 
         public static final String TOS_URL = MARKETING_HOST_URL+ "/terms#privacy";
+
+        public static final String RECERTIFY_SUPPORT_URL = "https://support.aerofs.com/hc/en-us/articles/201439354";
     }
 
     public static class SV

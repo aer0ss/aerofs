@@ -213,12 +213,9 @@ public class S
 
             CHILD_ALREADY_SHARED = "You can't share a folder that contains a shared folder.",
             PARENT_ALREADY_SHARED = "You can't share a folder under an already shared folder.",
-            SIGN_IN_TO_RECERTIFY_EXPLANATION = "For your security, " + L.product() +
-                    " creates a private certificate for each computer you authorize " +
-                    "to share and sync your files. These certificates are " +
-                    "automatically renewed before they expire. Unfortunately, this device " +
-                    "was unable to renew your certificate and requires explicit authorization.",
-            SIGN_IN_TO_RECERTIFY_ACTION = "To continue syncing files, please sign in now:",
+            SIGN_IN_TO_RECERTIFY_ACTION = "To continue syncing files with " + L.product() +
+                    " on this device, please sign in to your account now.",
+            SIGN_IN_TO_RECERTIFY_EXPLANATION = "(<a>Why is this needed?</a>)",
             ADMIN_EMAIL = "Admin email",
             ADMIN_PASSWD = "Admin password",
             PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password",
