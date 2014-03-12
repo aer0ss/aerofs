@@ -98,3 +98,16 @@ def maintenance_mode(request):
     return {
         'support_email': get_conf(request)['base.www.support_email_address']
     }
+
+
+@view_config(
+    route_name='license_expired',
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='license_expired.mako'
+)
+def license_expired(request):
+    # Return status 503 Service Unavailable
+    request.response.status = 503
+    return {
+        'support_email': get_conf(request)['base.www.support_email_address']
+    }

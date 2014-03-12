@@ -11,7 +11,7 @@ server {
         rewrite ^ http://$host:8484/maintenance_mode break;
     }
     if (-f /var/aerofs/license-expired-flag) {
-        rewrite ^ http://$host:8484/setup break;
+        rewrite ^ http://$host:8484/license_expired break;
     }
 
     rewrite ^ https://$host$request_uri permanent;
@@ -45,7 +45,7 @@ server {
         rewrite ^ http://$host:8484/maintenance_mode break;
     }
     if (-f /var/aerofs/license-expired-flag) {
-        rewrite ^ http://$host:8484/setup break;
+        rewrite ^ http://$host:8484/license_expired break;
     }
 
     include /etc/nginx/backends-enabled/* ;

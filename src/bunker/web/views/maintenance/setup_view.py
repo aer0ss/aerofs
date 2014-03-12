@@ -14,7 +14,7 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPOk, HTTPFound
 from aerofs_common.bootstrap import BootstrapClient
 from web.error import error
-from web.license import set_license_file_and_attach_shasum_to_session
+from web.license import set_license_file_and_attach_shasum_to_session, is_license_present_and_valid
 from backup_view import BACKUP_FILE_PATH, example_backup_download_file_name
 from maintenance_util import write_pem_to_file, \
     format_pem, is_certificate_formatted_correctly, \
@@ -64,6 +64,8 @@ def setup(request):
         'is_configuration_initialized': is_configuration_initialized_in_private_deployment(),
         'enable_data_collection': _is_data_collection_enabled(conf),
         'restored_from_backup': _is_restored_from_backup(conf),
+        # The following parameter is used by license_page.mako
+        'is_license_present_and_valid': is_license_present_and_valid(conf),
         # The following parameter is used by create_or_restore.mako
         'example_backup_download_file_name': example_backup_download_file_name(),
         # The following parameter is used by email_page.mako

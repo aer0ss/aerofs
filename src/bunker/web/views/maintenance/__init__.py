@@ -37,7 +37,10 @@ routes = [
     'download_backup_file',
     'status',
     'toggle_maintenance_mode',
-    'maintenance_mode'
+
+    # Routes referred to by nginx. See puppetmaster/modules/unified/files/nginx/web
+    'maintenance_mode',
+    'license_expired'
 ]
 
 
