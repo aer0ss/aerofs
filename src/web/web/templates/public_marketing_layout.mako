@@ -27,6 +27,8 @@
 <%block name="top_navigation_bar_mobile">
         <li><a href="${request.route_path('product_overview')}">Product</a></li>
         <li><a href="${request.route_path('solutions_overview')}">Solutions</a></li>
+        <li><a href="${request.route_path('personal_usage')}">Personal</a></li>
+        <li><a href="${request.route_path('business_usage')}">Business</a></li>
         <li><a href="${request.route_path('security_overview')}">Security</a></li>
         <li><a href="${request.route_path('pricing')}">Pricing</a></li>
         <li class="divider"></li>
@@ -67,6 +69,9 @@
             <%navigation:solutions_items/>
         </ul>
     </li>
+
+    <li><a href="${request.route_path('personal_usage')}">Personal</a></li>
+    <li><a href="${request.route_path('business_usage')}">Business</a></li>
 
     <li class="dropdown">
         <a class="dropdown-toggle link-with-dropdown" data-toggle="dropdown"
