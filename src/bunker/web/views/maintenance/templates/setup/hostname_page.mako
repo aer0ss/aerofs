@@ -36,7 +36,7 @@
     <%def name="footer()">
         <a href="#" class="btn" data-dismiss="modal">Cancel</a>
         <a href="#" class="btn btn-primary"
-            onclick="askHostnameChangeConfirmationOrSubmit(); return false;">
+            onclick="confirmHostnameChange(); return false;">
             This appliance has a fixed IP. Proceed</a>
     </%def>
 </%modal:modal>
@@ -51,7 +51,33 @@
         <a href="#" class="btn"
            onclick="restoreHostname(); return false;">Undo Change</a>
         <a href="#" class="btn btn-danger"
-           onclick="confirmHostnameChange(); return false;">Proceed</a>
+           onclick="confirmFirewall(); return false;">Proceed</a>
+    </%def>
+</%modal:modal>
+
+<%modal:modal>
+    <%def name="id()">confirm-firewall-modal</%def>
+    <%def name="title()">Firewall rules</%def>
+
+    <p>The following ports need to be open for AeroFS desktop clients and Team
+        Servers to connect to the appliance:</p>
+    <ul>
+        ## N.B. REMEMBER TO UPDATE https://support.aerofs.com/entries/22661589 as well
+        <li>TCP ports: 80, 443, 3478, 4433, 5222, 8084, 8484, 8888, and 29438.</li>
+        <li>UDP port: 3478.</li>
+    </ul>
+
+    <p>Your firewall or VPN may require configuration to unblock these ports for
+        your AeroFS clients. Please check this now.</p>
+    <p><a target="_blank"
+        href="https://support.aerofs.com/entries/22661589">
+        Read more about network requirements</a>.</p>
+
+    <%def name="footer()">
+        <a class="btn" href="#" data-dismiss="modal">Cancel</a>
+        <a class="btn btn-primary"
+            onclick="$('#confirm-firewall-modal').modal('hide'); doSubmit(); return false;">
+            I've unblocked all the ports. Continue</a>
     </%def>
 </%modal:modal>
 
@@ -83,50 +109,50 @@
             if (verifyPresence("base-host-unified", "Please specify a hostname.")) {
 
                 var val = $('#base-host-unified').val();
-                ## Warn about using the IP address if the hostname is changed and
-                ## the new value is an IP address.
-                if (val != "${current_config['base.host.unified']}" &&
-                        isIPv4Address(val)) {
-                    $('#confirm-ip-address-modal').modal('show');
+                var changedOrInitialConfiguration = val != "${current_config['base.host.unified']}";
+                if (changedOrInitialConfiguration) {
+                    ## Show various warning dialogs
+                    if (isIPv4Address(val)) confirmIPAddress();
+                    else confirmHostnameChange();
                 } else {
-                    askHostnameChangeConfirmationOrSubmit();
+                    ## No change. No warning dialogs
+                    doSubmit();
                 }
             }
         }
 
-        ## Show a confirmation dialog if the hostname is changed from the
-        ## previous value; otherwise submit the form.
-        function askHostnameChangeConfirmationOrSubmit() {
-            ## Hide the confirm-ip-address-modal
-            hideAllModals();
-            var val = $('#base-host-unified').val();
-            ## Show a warning if the user changes the hostname.
-            if (${1 if is_configuration_initialized else 0} &&
-                    val != "${current_config['base.host.unified']}") {
-                $('#confirm-change-modal').modal('show');
-            } else {
-                disableNavButtons();
-                doSubmit();
-            }
+        function confirmIPAddress() {
+            $('#confirm-ip-address-modal').modal('show');
         }
 
+        ## Show a confirmation dialog if the hostname is changed from the
+        ## previous value; otherwise proceed to the next step
         function confirmHostnameChange() {
-            ## Hide the confirm-change-modal
-            hideAllModals();
-            doSubmit();
+            var newVal = $('#base-host-unified').val();
+            ## Show a warning if the user changes the hostname.
+            if (${1 if is_configuration_initialized else 0} &&
+                    newVal != "${current_config['base.host.unified']}") {
+                $('#confirm-change-modal').modal('show');
+            } else {
+                confirmFirewall();
+            }
         }
 
         function restoreHostname() {
             ## Hide the confirm-change-modal
             hideAllModals();
-            enableNavButtons();
             $('#base-host-unified').val("${current_config['base.host.unified']}");
         }
 
+        function confirmFirewall() {
+            $('#confirm-firewall-modal').modal('show');
+        }
+
         function doSubmit() {
-            var serializedData = $('form').serialize();
+            hideAllModals();
+            disableNavButtons();
             doPost("${request.route_path('json_setup_hostname')}",
-                    serializedData, gotoNextPage, enableNavButtons);
+                    $('form').serialize(), gotoNextPage, enableNavButtons);
         }
 
         function isIPv4Address(hostname) {

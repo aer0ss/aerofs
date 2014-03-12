@@ -22,7 +22,7 @@
     <p><a href="mailto:support@aerofs.com">Contact us</a> to request a new license.</p>
     <p><input id="license-file" type="file"></p>
     <p><a target="_blank" href="https://support.aerofs.com/entries/25408319">
-        You can read here what happens if a license expires.</a></p>
+        What happens if the license expires?</a></p>
 
     <hr />
     ${setup_common.render_next_button()}
