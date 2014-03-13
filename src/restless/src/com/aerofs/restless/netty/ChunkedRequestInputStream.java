@@ -105,7 +105,7 @@ public class ChunkedRequestInputStream extends InputStream
     {
         if(_state == State.CLOSED) throw new IOException("stream closed");
         // send 100 Continue on first attempt to read from buffer (if request expects it)
-        if (_sendContinue.compareAndSet(false, true)) {
+        if (_sendContinue.compareAndSet(true, false)) {
             _channel.write(new DefaultHttpResponse(HttpVersion.HTTP_1_1,
                     HttpResponseStatus.CONTINUE));
         }
