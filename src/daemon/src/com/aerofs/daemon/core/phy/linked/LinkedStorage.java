@@ -267,6 +267,8 @@ public class LinkedStorage implements IPhysicalStorage
         f._f.setLastModified(mtime);
         f.created_(t);
 
+        l.info("applied {} {} {} {}", f._sokid, mtime, f._f.lastModified(), f.getLength_());
+
         return f._f.lastModified();
     }
 

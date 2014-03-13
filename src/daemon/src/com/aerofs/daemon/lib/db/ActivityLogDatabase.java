@@ -99,20 +99,11 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
         }
 
         @Override
-        public boolean next_() throws SQLException
-        {
-            if (!_rs.next()) return false;
-
-            // ignore entries relative to absent stores
-            return _sidx2sid.getNullable_(new SIndex(_rs.getInt(2))) != null || next_();
-        }
-
-        @Override
         public ActivityRow get_() throws SQLException
         {
             long idx = _rs.getLong(1);
             SIndex sidx = new SIndex(_rs.getInt(2));
-            SID sid = _sidx2sid.get_(_stores.getPhysicalRoot_(sidx));
+            SID sid = _sidx2sid.getLocalOrAbsent_(_stores.getPhysicalRoot_(sidx));
             OID oid = new OID(_rs.getBytes(3));
             int activities = _rs.getInt(4);
             Path path = Path.fromString(sid, _rs.getString(5));

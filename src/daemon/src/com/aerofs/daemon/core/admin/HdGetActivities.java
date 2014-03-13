@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.DID2User;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
@@ -55,10 +56,12 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
     private final UserAndDeviceNames _udinfo;
     private final CfgLocalUser _cfgLocalUser;
     private final CfgLocalDID _cfgLocalDID;
+    private final IMapSIndex2SID _sidx2sid;
 
     @Inject
     public HdGetActivities(ActivityLog al, DirectoryService ds, DID2User d2u,
-            UserAndDeviceNames udinfo, CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID)
+            UserAndDeviceNames udinfo, CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID,
+            IMapSIndex2SID sidx2sid)
     {
         _al = al;
         _ds = ds;
@@ -66,6 +69,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
         _udinfo = udinfo;
         _cfgLocalUser = cfgLocalUser;
         _cfgLocalDID = cfgLocalDID;
+        _sidx2sid = sidx2sid;
     }
 
     @Override
@@ -114,6 +118,9 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
             int count = 0;
             while (iter.next_()) {
                 ActivityRow ar = iter.get_();
+
+                // hide activities for expelled stores
+                if (_sidx2sid.getNullable_(ar._soid.sidx()) == null) continue;
 
                 // outbound events are for auditing only and therefore hidden from the GUI
                 if (ActivityLog.isOutbound(ar)) continue;

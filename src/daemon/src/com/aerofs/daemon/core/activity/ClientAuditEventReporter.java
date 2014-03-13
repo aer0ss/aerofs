@@ -239,10 +239,10 @@ public final class ClientAuditEventReporter // this can be final because it's no
                 // report
                 try {
                     reportEvents_();
-                } catch (Exception e) {
-                    SVClient.logSendDefectAsync(true, "fail post events from caer to auditor", e);
                 } catch (Throwable t) {
-                    SystemUtil.fatal("caught unhandled throwable:" + t);
+                    // having auditing cause a dameon crash loop is unacceptable
+                    l.error("unhandled exception in caer", t);
+                    SVClient.logSendDefectAsync(true, "fail post events from caer to auditor", t);
                 }
 
                 // reschedule
@@ -269,14 +269,14 @@ public final class ClientAuditEventReporter // this can be final because it's no
                 reportToAuditor_(eventBatch);
             }
 
-            // were there any events let in the db?
+            // were there any events left in the db?
             if (eventBatch.lastActivityLogIndex == lastActivityLogIndex) {
                 l.debug("terminate run - no events in al");
                 break;
             }
 
             // we always have to indicate that we've moved our position in the al table
-            persistLastReportedActivityLogIndex(eventBatch.lastActivityLogIndex);
+            persistLastReportedActivityLogIndex_(eventBatch.lastActivityLogIndex);
 
             // check if we can still report events or whether we should wait for the next run
             if (!continueIterating(initialActivityLogIndex, eventBatch.lastActivityLogIndex)) {
@@ -327,7 +327,12 @@ public final class ClientAuditEventReporter // this can be final because it's no
     private boolean isSelfGeneratedEvent(Set<DID> sourceDids)
     {
         // self-generated events include those made on behalf of a mobile device
-        return (sourceDids.size() == 1 || sourceDids.size() == 2) && sourceDids.contains(_localdid);
+        // NB: when expelling and re-admitting it is possible to get a modify event with
+        // multiple devices that include the local device. These should NOT be treated as
+        // self-generated events
+        return sourceDids.contains(_localdid)
+                && (sourceDids.size() == 1
+                         || (sourceDids.size() == 2 && otherDevice(sourceDids).isMobileDevice()));
     }
 
     private DID otherDevice(Set<DID> dids)
@@ -401,7 +406,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
         }
     }
 
-    private void persistLastReportedActivityLogIndex(long lastReportedActivityLogIndex)
+    private void persistLastReportedActivityLogIndex_(long lastReportedActivityLogIndex)
             throws SQLException
     {
         Trans t = _tm.begin_();

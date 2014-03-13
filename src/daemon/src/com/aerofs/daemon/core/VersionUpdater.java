@@ -72,12 +72,15 @@ public class VersionUpdater
             // The linker relies on these fields to detect file changes.
             IPhysicalFile pf = _ps.newFile_(_ds.resolve_(k.soid()), k.kidx());
 
+            long length = pf.getLength_();
             long mtime = pf.getLastModificationOrCurrentTime_();
+
+            l.info("update ca {} {} {}", k, length, mtime);
 
             // We are about to set a null hash, which is allowed only on master branches. See Hasher
             // for detail.
             assert k.kidx().equals(KIndex.MASTER) : k;
-            _ds.setCA_(k.sokid(), pf.getLength_(), mtime, null, t);
+            _ds.setCA_(k.sokid(), length, mtime, null, t);
         }
     }
 }

@@ -445,7 +445,7 @@ class MightCreateOperations
             _ds.createCA_(soid, KIndex.MASTER, t);
         }
 
-        l.info("modify {}", soid);
+        l.info("modify {} ({},{}) != {}", soid, f.getLengthOrZeroIfNotFile(), f.lastModified(), ca);
         _vu.update_(new SOCKID(soid, CID.CONTENT), t);
         _saveCounter.inc();
     }
