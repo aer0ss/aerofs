@@ -383,6 +383,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         SOID target = ds.resolveNullable_(mkpath("foo/bar/world"));
 
+        mockPhyFile(mockPhyDir(absRootAnchor, "foo", "bar"), "world");
         op("foo/bar/world", fnt, Replace);
 
         verify(ds).setFID_(eq(source), any(FID.class), eq(t));
