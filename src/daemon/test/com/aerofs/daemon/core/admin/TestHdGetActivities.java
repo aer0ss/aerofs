@@ -126,6 +126,7 @@ public class TestHdGetActivities extends AbstractTest
         when(stores.getPhysicalRoot_(any(SIndex.class))).thenReturn(rootSidx);
         when(sidx2sid.get_(rootSidx)).thenReturn(rootSID);
         when(sidx2sid.getNullable_(rootSidx)).thenReturn(rootSID);
+        when(sidx2sid.getLocalOrAbsent_(rootSidx)).thenReturn(rootSID);
         aldb = new ActivityLogDatabase(dbcw.getCoreDBCW(), stores, sidx2sid);
 
         dbcw.init_();
@@ -135,7 +136,7 @@ public class TestHdGetActivities extends AbstractTest
         al = new ActivityLog(ds, nvc, aldb);
         UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tokenManager,  tm, d2u, udndb, factSP);
 
-        hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID);
+        hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID, sidx2sid);
 
         when(cfgLocalUser.get()).thenReturn(me);
 
