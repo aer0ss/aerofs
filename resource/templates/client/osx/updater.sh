@@ -21,12 +21,20 @@ fi
 
 while ps -e -o pid,user,command | grep $USERNAME | grep [AEROFS_PRODUCT_SPACEFREE]Client | grep -v grep > /dev/null; do
   GET_PID=`ps -e -o pid,user,command | grep $USERNAME | grep [AEROFS_PRODUCT_SPACEFREE]Client | grep -v grep | awk '{ print $1 }'`
-  kill -9 $GET_PID
+  # builtin kill, when given a PID that is not valid, or no argument at all, will cause
+  # the script to exit. Regardless of set -e status. And there is a possible race condition
+  # no matter how we get the pid of the process - it could exit between the 'ps' and the
+  # actual kill. Therefore we use /bin/kill whose error-handling is predictable.
+  /bin/kill -9 $GET_PID
 done
 
 while ps -e -o pid,user,command | grep $USERNAME | grep aerofsd | grep -v grep > /dev/null; do
   GET_PID=`ps -e -o pid,user,command | grep $USERNAME | grep aerofsd | grep -v grep | awk '{ print $1 }'`
-  kill -9 $GET_PID
+  # builtin kill, when given a PID that is not valid, or no argument at all, will cause
+  # the script to exit. Regardless of set -e status. And there is a possible race condition
+  # no matter how we get the pid of the process - it could exit between the 'ps' and the
+  # actual kill. Therefore we use /bin/kill whose error-handling is predictable.
+  /bin/kill -9 $GET_PID
 done
 
 TMPDIR="/tmp/aerofs-$UPDATE_VER-$USERNAME"
