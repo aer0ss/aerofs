@@ -78,6 +78,7 @@ import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -919,8 +920,19 @@ public class ReceiveAndApplyUpdate
                     assert !(remaining < 0) : k + " " + msg.ep() + " " + remaining;
                 }
             }
-
         } finally {
+            // we want to be extra sure that the file is synced to the disk and no write operation
+            // is languishing in a kernel buffer for two reasons:
+            //   * if the transaction commits we have to serve this file to other peers and it
+            //     would be terribly uncool to serve a corrupted/partially synced copy
+            //   * once the contents are written we adjust the file's mtime and if we allow a
+            //     race between write() and utimes() we will end up with a timestamp mismatch
+            //     between db and filesystem that cause spurious updates later on, thereby
+            //     wasting CPU and bandwidth and causing extreme confusion for the end user.
+            os.flush();
+            if (os instanceof FileOutputStream) {
+                ((FileOutputStream)os).getChannel().force(true);
+            }
             os.close();
         }
     }
