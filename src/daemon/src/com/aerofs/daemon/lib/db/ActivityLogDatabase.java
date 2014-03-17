@@ -7,6 +7,7 @@ package com.aerofs.daemon.lib.db;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -103,7 +104,18 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
         {
             long idx = _rs.getLong(1);
             SIndex sidx = new SIndex(_rs.getInt(2));
-            SID sid = _sidx2sid.getLocalOrAbsent_(_stores.getPhysicalRoot_(sidx));
+            SID sid = _sidx2sid.getNullable_(sidx);
+            if (sid != null) {
+                SIndex root = _stores.getPhysicalRoot_(sidx);
+                if (root != sidx) sid = _sidx2sid.get_(root);
+            } else {
+                // if the store is expelled we cannot determine the physical root
+                // in which case we specify an invalid SID
+                // To preserve accuracy it might be preferrable to store the SID
+                // in the activity log but for now we're just concerned with preventing
+                // expelled stores from causing a stall in the auditing reporter
+                sid = new SID(UniqueID.ZERO);
+            }
             OID oid = new OID(_rs.getBytes(3));
             int activities = _rs.getInt(4);
             Path path = Path.fromString(sid, _rs.getString(5));
