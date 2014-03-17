@@ -57,7 +57,7 @@ readonly VERSION=$2
 readonly SECTION='utility'
 readonly PRIORITY='optional'
 
-readonly DEPENDS='java6-runtime, procps, coreutils'
+readonly DEPENDS='java7-runtime, procps, coreutils'
 readonly MAINTAINER='AeroFS Team <support@aerofs.com>'
 readonly DESCRIPTION='AeroFS: Private file sync and share.'
 
