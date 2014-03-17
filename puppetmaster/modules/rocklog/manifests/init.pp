@@ -44,6 +44,8 @@ class rocklog(
         notify  => Service["nginx"],
     }
 
+    logrotate::log{"elasticsearch":}
+
     include rocklog::elasticsearch
     include rocklog::kibana
     include rocklog::retrace
