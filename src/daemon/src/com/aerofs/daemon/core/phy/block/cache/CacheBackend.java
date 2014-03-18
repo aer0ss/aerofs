@@ -14,7 +14,7 @@ import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.lib.DelayedScheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
@@ -95,15 +95,15 @@ public class CacheBackend implements IBlockStorageBackend
         }
     }
 
-    private final Map<ContentHash, CacheStatus> _statusMap = Maps.newHashMap();
+    private final Map<ContentBlockHash, CacheStatus> _statusMap = Maps.newHashMap();
 
     private final Object _accessTimeSync = new Object();
 
-    private final Cache<ContentHash, Date> _accessTimeCache =
+    private final Cache<ContentBlockHash, Date> _accessTimeCache =
             CacheBuilder.newBuilder().maximumSize(MAX_CACHE_SIZE).build();
 
-    private Map<ContentHash, Date> _accessTimeDirtyMap = Maps.newHashMap();
-    private Map<ContentHash, Date> _oldAccessTimeDirtyMap = Maps.newHashMap();
+    private Map<ContentBlockHash, Date> _accessTimeDirtyMap = Maps.newHashMap();
+    private Map<ContentBlockHash, Date> _oldAccessTimeDirtyMap = Maps.newHashMap();
 
     private final SpaceFreer _spaceFreer = new SpaceFreer();
 
@@ -167,7 +167,7 @@ public class CacheBackend implements IBlockStorageBackend
     }
 
     @Override
-    public InputStream getBlock(final ContentHash key) throws IOException
+    public InputStream getBlock(final ContentBlockHash key) throws IOException
     {
         File file = acquireBlock(key);
         boolean ok = false;
@@ -206,14 +206,14 @@ public class CacheBackend implements IBlockStorageBackend
     }
 
     @Override
-    public void putBlock(ContentHash key, InputStream input, long decodedLength, Object encoderData)
+    public void putBlock(ContentBlockHash key, InputStream input, long decodedLength, Object encoderData)
             throws IOException
     {
         _bsb.putBlock(key, input, decodedLength, encoderData);
     }
 
     @Override
-    public void deleteBlock(ContentHash key, TokenWrapper tk) throws IOException
+    public void deleteBlock(ContentBlockHash key, TokenWrapper tk) throws IOException
     {
         try {
             deleteFromCache_(key);
@@ -247,7 +247,7 @@ public class CacheBackend implements IBlockStorageBackend
     private byte[] getKeyFromFile(File file)
     {
         String name = file.getName();
-        int hexSize = ContentHash.UNIT_LENGTH * 2;
+        int hexSize = ContentBlockHash.UNIT_LENGTH * 2;
         if (name.length() != hexSize + SUFFIX.length()) return null;
         if (!name.endsWith(SUFFIX)) return null;
         byte[] bytes;
@@ -269,7 +269,7 @@ public class CacheBackend implements IBlockStorageBackend
      * @param key block key
      * @return file containing chunk data
      */
-    File acquireBlock(final ContentHash key) throws IOException
+    File acquireBlock(final ContentBlockHash key) throws IOException
     {
         // TODO: pipeline chunk download
         Date date = new Date();
@@ -331,7 +331,7 @@ public class CacheBackend implements IBlockStorageBackend
      *
      * @param key block key
      */
-    void releaseBlock(ContentHash key)
+    void releaseBlock(ContentBlockHash key)
     {
         synchronized (_statusMap) {
             CacheStatus status = _statusMap.get(key);
@@ -342,7 +342,7 @@ public class CacheBackend implements IBlockStorageBackend
         }
     }
 
-    private void downloadBlock(ContentHash key, File file) throws IOException
+    private void downloadBlock(ContentBlockHash key, File file) throws IOException
     {
         if (file.exists()) return;
         FileUtil.ensureDirExists(file.getParentFile());
@@ -369,7 +369,7 @@ public class CacheBackend implements IBlockStorageBackend
         FileUtil.rename(tempFile, file);
     }
 
-    private void access(ContentHash hash, Date date) throws SQLException
+    private void access(ContentBlockHash hash, Date date) throws SQLException
     {
         synchronized (_accessTimeSync) {
             Date oldAccessTime = _accessTimeCache.getIfPresent(hash);
@@ -413,7 +413,7 @@ public class CacheBackend implements IBlockStorageBackend
 
     private void writeDirtyMap_() throws SQLException
     {
-        final Map<ContentHash, Date> map;
+        final Map<ContentBlockHash, Date> map;
         synchronized (_accessTimeSync) {
             // swap maps to minimize time holding the lock
             map = _accessTimeDirtyMap;
@@ -427,8 +427,8 @@ public class CacheBackend implements IBlockStorageBackend
         }
         Trans t = _tm.begin_();
         try {
-            for (Map.Entry<ContentHash, Date> entry : map.entrySet()) {
-                ContentHash key = entry.getKey();
+            for (Map.Entry<ContentBlockHash, Date> entry : map.entrySet()) {
+                ContentBlockHash key = entry.getKey();
                 Date accessTime = entry.getValue();
                 if (accessTime != null) {
                     _cdb.setCacheAccess(key.getBytes(), accessTime.getTime(), t);
@@ -491,7 +491,7 @@ public class CacheBackend implements IBlockStorageBackend
             long freeSpaceHigh = (long)(totalSpace * FREE_SPACE_HIGH);
             long needed = freeSpaceHigh - freeSpace;
             long reclaimed = 0;
-            IDBIterator<ContentHash> it = _cdb.getSortedCacheAccessesIter();
+            IDBIterator<ContentBlockHash> it = _cdb.getSortedCacheAccessesIter();
             try {
                 while (reclaimed < needed) {
                     if (getFreeSpace() >= freeSpaceHigh) break;
@@ -504,7 +504,7 @@ public class CacheBackend implements IBlockStorageBackend
         }
     }
 
-    private long deleteFromCache_(ContentHash b) throws SQLException
+    private long deleteFromCache_(ContentBlockHash b) throws SQLException
     {
         byte[] key = b.getBytes();
         synchronized (_statusMap) {

@@ -308,7 +308,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-   private PreparedStatement _psSCAH;
+    private PreparedStatement _psSCAH;
     @Override
     public void setCAHash_(SOID soid, KIndex kidx, @Nonnull ContentHash h, Trans t)
         throws SQLException

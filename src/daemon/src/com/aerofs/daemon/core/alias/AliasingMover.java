@@ -237,7 +237,7 @@ public class AliasingMover
             // DS.setCA_() requires non-null hashes on these branches. See Hasher for detail.
             // The computation on the alias must be done _before_ moving the physical file to
             // the target.
-            if (hAlias == null && !kidxTarget.equals(KIndex.MASTER)) {
+            if (hAlias == null && !kidxTarget.isMaster()) {
                 hAlias = _hasher.computeHashBlocking_(alias.sokid());
             }
 

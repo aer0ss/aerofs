@@ -19,10 +19,11 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIImportFile;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
+import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.ContentHash;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFile;
@@ -39,6 +40,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 
 public class HdImportFile  extends AbstractHdIMC<EIImportFile>
 {
@@ -108,7 +111,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         SOCKID sockid = new SOCKID(soid, CID.CONTENT, KIndex.MASTER);
         IPhysicalPrefix pp = _ps.newPrefix_(sockid, null);
 
-        ContentHash h;
+        ContentHash h = null;
         Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "import-file");
         try {
             // copy source file to prefix (with core lock released)
@@ -116,10 +119,12 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
             try {
                 InputStream in = null;
                 OutputStream out = null;
+                MessageDigest md = SecUtil.newMessageDigest();
                 try {
                     in = new FileInputStream(f);
-                    out = pp.newOutputStream_(false);
+                    out = new DigestOutputStream(pp.newOutputStream_(false), md);
                     ByteStreams.copy(in, out);
+                    h = new ContentHash(md.digest());
                 } finally {
                     if (in != null) in.close();
                     if (out != null) out.close();
@@ -129,7 +134,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
             }
 
             // prepare prefix for persistent storage
-            h = pp.prepare_(tk);
+            pp.prepare_(tk);
         } finally {
             tk.reclaim_();
         }
@@ -142,11 +147,12 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
             IPhysicalFile pf = _ps.newFile_(path, sockid.kidx());
 
             // move prefix to persistent storage
-            _ps.apply_(pp, pf, wasPresent, mtime, t);
+            long length = pp.getLength_();
+            mtime = _ps.apply_(pp, pf, wasPresent, mtime, t);
 
             // update CA
             if (!wasPresent) _ds.createCA_(soid, KIndex.MASTER, t);
-            _ds.setCA_(sockid.sokid(), pp.getLength_(), mtime, h, t);
+            _ds.setCA_(sockid.sokid(), length, mtime, h, t);
 
             // increment version number after local update
             _vu.update_(sockid, t);

@@ -8,7 +8,7 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.google.common.collect.Lists;
@@ -101,7 +101,7 @@ public class HashStream
         return _digests;
     }
 
-    public ContentHash getHashAttrib() {
+    public ContentBlockHash getHashAttrib() {
         assert isClosed();
         int len = 0;
         for (byte[] digest : _digests) len += digest.length;
@@ -112,7 +112,7 @@ public class HashStream
             off += digest.length;
         }
         assert off == bytes.length;
-        return new ContentHash(bytes);
+        return new ContentBlockHash(bytes);
     }
 
     private static class HashOutputStream extends OutputStream

@@ -21,6 +21,8 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIFileUpload;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.UploadID;
+import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.restless.util.ContentRange;
 import com.aerofs.restless.util.HttpStatus;
 import com.aerofs.daemon.rest.util.MetadataBuilder;
@@ -47,6 +49,8 @@ import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.sql.SQLException;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -97,7 +101,9 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
 
         try {
             // TODO: limit max upload size?
-            long chunkLength = uploadPrefix_(ev._content, pf);
+            // TODO: avoid hashing when we know for sure the chunk cannot end the upload
+            MessageDigest md = SecUtil.newMessageDigest();
+            long chunkLength = uploadPrefix_(ev._content, pf, md);
 
             if (ev._range != null) {
                 Object r = postValidateChunk(uploadId, ev._range, chunkLength, pf);
@@ -111,7 +117,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             final OA newOA = checkSanity_(ev);
             if (newOA == null) return;
 
-            applyPrefix_(pf, newOA);
+            applyPrefix_(pf, newOA, new ContentHash(md.digest()));
 
             ev.setResult_(Response.ok()
                     .tag(_etags.etagForObject(newOA.soid())));
@@ -232,7 +238,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         return null;
     }
 
-    private long uploadPrefix_(InputStream in, IPhysicalPrefix pf)
+    private long uploadPrefix_(InputStream in, IPhysicalPrefix pf, MessageDigest md)
             throws ExNoResource, ExAborted, IOException
     {
         Token tk = _tokenManager.acquireThrows_(Cat.CLIENT, "rest-upload");
@@ -245,8 +251,12 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                 // we really should just pipe incoming packets into the prefix as they arrive
                 // and schedule a self-handling event to apply the prefix at the end of the
                 // transfer
-                // TODO: compute ContentHash as bytes are received (NB: deal with interruption)
+                if (md != null) {
+                    ByteStreams.copy(pf.newInputStream_(),
+                            new DigestOutputStream(ByteStreams.nullOutputStream(), md));
+                }
                 OutputStream out = pf.newOutputStream_(true);
+                if (md != null) out = new DigestOutputStream(out, md);
                 try {
                     return ByteStreams.copy(in, out);
                 } finally {
@@ -260,20 +270,22 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         }
     }
 
-    private void applyPrefix_(IPhysicalPrefix pf, OA oa)
+    private void applyPrefix_(IPhysicalPrefix pf, OA oa, ContentHash h)
             throws SQLException, IOException
     {
         SOID soid = oa.soid();
         Trans t = _tm.begin_();
         try {
             ResolvedPath path = _ds.resolve_(oa);
+            // NB: MUST get prefix length BEFORE apply_
+            long length = pf.getLength_();
             long mtime = System.currentTimeMillis();
             boolean wasPresent = (oa.caMasterNullable() != null);
-            _ps.apply_(pf, _ps.newFile_(path, KIndex.MASTER), wasPresent, mtime, t);
+            mtime = _ps.apply_(pf, _ps.newFile_(path, KIndex.MASTER), wasPresent, mtime, t);
 
             // update CA
             if (!wasPresent) _ds.createCA_(soid, KIndex.MASTER, t);
-            _ds.setCA_(new SOKID(soid, KIndex.MASTER), pf.getLength_(), mtime, null, t);
+            _ds.setCA_(new SOKID(soid, KIndex.MASTER), length, mtime, h, t);
 
             // increment version number after update
             _vu.update_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER), t);

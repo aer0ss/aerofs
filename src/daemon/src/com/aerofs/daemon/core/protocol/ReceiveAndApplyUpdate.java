@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
@@ -52,6 +53,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
@@ -83,6 +85,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.DigestException;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -90,6 +94,7 @@ import java.util.List;
 import java.util.SortedMap;
 
 import static com.aerofs.daemon.core.protocol.GetComponentReply.fromPB;
+import static com.google.common.base.Preconditions.checkState;
 
 public class ReceiveAndApplyUpdate
 {
@@ -764,10 +769,10 @@ public class ReceiveAndApplyUpdate
      * @param isStreaming Whether we are streaming the content or receiving it in a datagram.
      * @return an OutputStream that writes to the prefix file
      */
-    private OutputStream createPrefixOutputStreamAndUpdatePrefixState_(IPhysicalPrefix prefix,
+    private PrefixDownloadStream createPrefixOutputStreamAndUpdatePrefixState_(IPhysicalPrefix prefix,
             SOCKID k, Version vRemote, long prefixLength,
-            boolean contentPresentLocally, boolean isStreaming)
-            throws ExNotFound, SQLException, IOException
+            boolean contentPresentLocally, boolean isStreaming, Token tk)
+            throws ExNotFound, SQLException, IOException, ExAborted
     {
         if (prefixLength == 0 || contentPresentLocally) {
             l.debug("update prefix version");
@@ -776,9 +781,10 @@ public class ReceiveAndApplyUpdate
             updatePrefixVersion_(k, vRemote, isStreaming);
 
             // This truncates the file to size zero
-            return prefix.newOutputStream_(false);
+            return new PrefixDownloadStream(prefix.newOutputStream_(false));
+        }
 
-        } else if (KIndex.MASTER.equals(k.kidx())) {
+        if (KIndex.MASTER.equals(k.kidx())) {
             // if vPrefixOld != vRemote, the prefix version must be updated in the
             // persistent store (see above).
             Version vPrefixOld = _pvc.getPrefixVersion_(k.soid(), k.kidx());
@@ -786,8 +792,6 @@ public class ReceiveAndApplyUpdate
             assert vPrefixOld.equals(vRemote) : Joiner.on(' ').join(vPrefixOld, vRemote, k);
 
             l.debug("prefix accepted: " + prefixLength);
-            return prefix.newOutputStream_(true);
-
         } else {
             // kidx of the prefix file has been changed. this may happen if
             // after the last partial download and before the current download,
@@ -798,8 +802,30 @@ public class ReceiveAndApplyUpdate
             movePrefixFile_(k.socid(), KIndex.MASTER, k.kidx(), vRemote);
 
             l.debug("prefix transferred " + KIndex.MASTER + "->" + k.kidx() + ": " + prefixLength);
-            return prefix.newOutputStream_(true);
         }
+
+        checkState(prefix.getLength_() == prefixLength,
+                "Prefix length mismatch {} {}", prefixLength, prefix.getLength_());
+
+        MessageDigest md = SecUtil.newMessageDigest();
+        if (prefixLength > 0) {
+            // do not release core lock if the prefix is small
+            TCB tcb = prefixLength > 4 * C.KB ? tk.pseudoPause_("rehash") : null;
+            try {
+                // re-hash prefix. this is not great because it stalls the download
+                // an alternative would be to hash the prefix in a different thread
+                // but the increased complexity make this option unattractive.
+                // If we trusted the filesystem and had a way to (de)serialize the
+                // internal state of the SHA256 computation we could avoid the
+                // redundant computation altogether. For now this will have to do.
+                ByteStreams.copy(prefix.newInputStream_(),
+                        new DigestOutputStream(ByteStreams.nullOutputStream(), md));
+            } finally {
+                if (tcb != null) tcb.pseudoResumed_();
+            }
+        }
+
+        return new PrefixDownloadStream(prefix.newOutputStream_(true), md);
     }
 
     /**
@@ -825,20 +851,58 @@ public class ReceiveAndApplyUpdate
         return null;
     }
 
-    private void writeContentToPrefixFile_(IPhysicalPrefix pfPrefix, DigestedMessage msg,
+    private class PrefixDownloadStream extends DigestOutputStream
+    {
+        private ContentHash h;
+        public PrefixDownloadStream(OutputStream stream)
+        {
+            this(stream, SecUtil.newMessageDigest());
+        }
+
+        public PrefixDownloadStream(OutputStream stream, MessageDigest md)
+        {
+            super(stream, md);
+        }
+
+        public ContentHash digest()
+        {
+            if (h == null) h = new ContentHash(digest.digest());
+            return h;
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            super.flush();
+            // we want to be extra sure that the file is synced to the disk and no write operation
+            // is languishing in a kernel buffer for two reasons:
+            //   * if the transaction commits we have to serve this file to other peers and it
+            //     would be terribly uncool to serve a corrupted/partially synced copy
+            //   * once the contents are written we adjust the file's mtime and if we allow a
+            //     race between write() and utimes() we will end up with a timestamp mismatch
+            //     between db and filesystem that cause spurious updates later on, thereby
+            //     wasting CPU and bandwidth and causing extreme confusion for the end user.
+            if (out instanceof FileOutputStream) {
+                ((FileOutputStream)out).getChannel().force(true);
+            }
+            super.close();
+        }
+    }
+
+    private @Nonnull ContentHash writeContentToPrefixFile_(IPhysicalPrefix prefix, DigestedMessage msg,
             final long totalFileLength, final long prefixLength, SOCKID k,
-            Version vRemote, @Nullable KIndex localBranchWithMatchingContent, Token tk)
+            Version vRemote, @Nullable KIndex matchingLocalBranch, Token tk)
             throws ExOutOfSpace, ExNotFound, ExStreamInvalid, ExAborted, ExNoResource, ExTimeout,
             SQLException, IOException, DigestException
     {
         final boolean isStreaming = msg.streamKey() != null;
 
         // Open the prefix file for writing, updating it as required
-        final OutputStream os = createPrefixOutputStreamAndUpdatePrefixState_(pfPrefix, k,
-                vRemote, prefixLength, localBranchWithMatchingContent != null, isStreaming);
+        final PrefixDownloadStream prefixStream = createPrefixOutputStreamAndUpdatePrefixState_(
+                prefix, k, vRemote, prefixLength, matchingLocalBranch != null, isStreaming, tk);
 
         try {
-            if (localBranchWithMatchingContent != null && isStreaming) {
+            if (matchingLocalBranch != null && isStreaming) {
                 // We have this file locally and we are receiving the remote content via a stream.
                 // We can cancel the stream here and use the local content.
                 l.debug("reading content from local branch");
@@ -848,7 +912,7 @@ public class ReceiveAndApplyUpdate
 
                 // Use the content from the local branch
                 IPhysicalFile file = _ps.newFile_(_ds.resolve_(k.soid()),
-                        localBranchWithMatchingContent);
+                        matchingLocalBranch);
 
                 try {
                     InputStream is = file.newInputStream_();
@@ -856,7 +920,7 @@ public class ReceiveAndApplyUpdate
                         // release core lock to avoid blocking while copying a large prefix
                         TCB tcb = tk.pseudoPause_("cp-prefix");
                         try {
-                            Util.copy(is, os);
+                            Util.copy(is, prefixStream);
                         } finally {
                             tcb.pseudoResumed_();
                         }
@@ -864,14 +928,14 @@ public class ReceiveAndApplyUpdate
                         is.close();
                     }
                 } catch (FileNotFoundException e) {
-                    SOCKID conflict = new SOCKID(k.socid(), localBranchWithMatchingContent);
+                    SOCKID conflict = new SOCKID(k.socid(), matchingLocalBranch);
 
-                    if (!localBranchWithMatchingContent.equals(KIndex.MASTER)) {
+                    if (!matchingLocalBranch.equals(KIndex.MASTER)) {
                         // A conflict branch does not exist, even though there is an entry
                         // in our database. This is an inconsistency, we must remove the
                         // entry in our database. AeroFS will redownload the conflict at a later
                         // point.
-                        l.error("known conflict branch has no associated file: " + conflict);
+                        l.error("known conflict branch has no associated file: {}", conflict);
 
                         Trans t = _tm.begin_();
                         try {
@@ -882,7 +946,7 @@ public class ReceiveAndApplyUpdate
                         }
                     }
 
-                    l.warn("can't copy content from local branch " + conflict);
+                    l.warn("can't copy content from local branch {}", conflict);
 
                     throw new ExAborted(e.getMessage());
                 }
@@ -895,14 +959,14 @@ public class ReceiveAndApplyUpdate
 
                 // assert after opening the stream otherwise the file length may
                 // have changed after the assertion and before newOutputStream()
-                assert pfPrefix.getLength_() == prefixLength :
-                        k + " " + pfPrefix.getLength_() + " != " + prefixLength;
+                checkState(prefix.getLength_() == prefixLength,
+                        "{} {} != {}", k, prefix.getLength_(), prefixLength);
 
                 ElapsedTimer timer = new ElapsedTimer();
 
                 // Read from the incoming message/stream
                 InputStream is = msg.is();
-                long copied = ByteStreams.copy(is, os);
+                long copied = ByteStreams.copy(is, prefixStream);
 
                 if (isStreaming) {
                     // it's a stream
@@ -915,57 +979,15 @@ public class ReceiveAndApplyUpdate
                             timer.restart();
                         }
                         is = _iss.recvChunk_(msg.streamKey(), tk);
-                        remaining -= ByteStreams.copy(is, os);
+                        remaining -= ByteStreams.copy(is, prefixStream);
                     }
-                    assert !(remaining < 0) : k + " " + msg.ep() + " " + remaining;
+                    checkState(remaining == 0, "{} {} {}", k, msg.ep(), remaining);
                 }
             }
         } finally {
-            // we want to be extra sure that the file is synced to the disk and no write operation
-            // is languishing in a kernel buffer for two reasons:
-            //   * if the transaction commits we have to serve this file to other peers and it
-            //     would be terribly uncool to serve a corrupted/partially synced copy
-            //   * once the contents are written we adjust the file's mtime and if we allow a
-            //     race between write() and utimes() we will end up with a timestamp mismatch
-            //     between db and filesystem that cause spurious updates later on, thereby
-            //     wasting CPU and bandwidth and causing extreme confusion for the end user.
-            os.flush();
-            if (os instanceof FileOutputStream) {
-                ((FileOutputStream)os).getChannel().force(true);
-            }
-            os.close();
+            prefixStream.close();
         }
-    }
-
-    /**
-     * Computes the content hash for the downloaded SOCKID. If the remote sent us the content hash
-     * then use that, otherwise try computing the content hash for conflict branches. We do not
-     * compute the hash for the master branch because it might change often (local edits).
-     *
-     * @param k The SOCKID of the downloaded file
-     * @param prefix The physical temporary file which holds the SOCKID's content
-     * @param remoteHash The content hash the remote sent us for this SOCKID
-     * @param tk A token to use when releasing the CoreLock
-     * @return The content hash of the downloaded file, or null if no hash will be calculated
-     */
-    private @Nullable ContentHash computeNewContentHash_(SOCKID k, IPhysicalPrefix prefix,
-            @Nullable ContentHash remoteHash, Token tk)
-            throws IOException, ExAborted, ExTimeout, DigestException
-    {
-        // Use the hash supplied by the sender, if available. Hash of content should be available
-        // for non-master branches and hence if not sent by sender then compute it.
-        @Nullable ContentHash h = prefix.prepare_(tk);
-        if (h == null) {
-            if (remoteHash != null) {
-                // res._hash may be null if the remote version vector is dominating or sender didn't
-                // send hash.
-                return remoteHash;
-            } else if (!k.kidx().equals(KIndex.MASTER)) {
-                // Computing hash may pause hence it can't be done in middle of transaction.
-                return _hasher.computeHash_(prefix, tk);
-            }
-        }
-        return h;
+        return prefixStream.digest();
     }
 
     public Trans applyContent_(DigestedMessage msg, SOCKID k, Version vRemote,
@@ -998,16 +1020,28 @@ public class ReceiveAndApplyUpdate
             return _tm.begin_();
         }
 
-        final IPhysicalPrefix pfPrefix = _ps.newPrefix_(k, null);
+        final IPhysicalPrefix prefix = _ps.newPrefix_(k, null);
 
         // Write the new content to the prefix file
-        writeContentToPrefixFile_(pfPrefix, msg, reply.getFileTotalLength(),
+        // TODO: ideally we'd release the core lock around this entire call
+        @Nonnull ContentHash h = writeContentToPrefixFile_(prefix, msg, reply.getFileTotalLength(),
                 reply.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
 
-        @Nullable ContentHash newContentHash = computeNewContentHash_(k, pfPrefix, res._hash, tk);
+        if (res._hash != null && !h.equals(res._hash)) {
+            l.info("hash mismatch: {} {}", res._hash, h);
+            // hash mismatch can be caused by data corruption on either end of the transfer or
+            // inside the transport. Whatever the case may be, we simply can't commit the change.
+            // Discard tainted prefix
+            prefix.truncate_(0);
+            // TODO: more specific exception
+            throw new ExAborted("hash mismatch");
+        }
+
+        // TODO: pipelined chunking in BlockStorage to get rid of this step
+        prefix.prepare_(tk);
 
         // get length of the prefix before the actual transaction.
-        long len = pfPrefix.getLength_();
+        long len = prefix.getLength_();
         boolean okay = false;
         Trans t = _tm.begin_();
         try {
@@ -1043,7 +1077,7 @@ public class ReceiveAndApplyUpdate
             assert reply.hasMtime();
             long replyMTime = reply.getMtime();
             assert replyMTime >= 0 : Joiner.on(' ').join(replyMTime, k, vRemote, wasPresent);
-            long mtime = _ps.apply_(pfPrefix, pf, wasPresent, replyMTime, t);
+            long mtime = _ps.apply_(prefix, pf, wasPresent, replyMTime, t);
 
             assert msg.streamKey() == null ||
                 _pvc.getPrefixVersion_(k.soid(), k.kidx()).equals(vRemote);
@@ -1059,7 +1093,7 @@ public class ReceiveAndApplyUpdate
                 }
                 _ds.createCA_(k.soid(), k.kidx(), t);
             }
-            _ds.setCA_(k.sokid(), len, mtime, newContentHash, t);
+            _ds.setCA_(k.sokid(), len, mtime, h, t);
 
             okay = true;
             return t;

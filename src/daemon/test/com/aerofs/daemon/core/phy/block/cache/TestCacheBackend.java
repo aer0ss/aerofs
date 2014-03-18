@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.google.common.io.ByteStreams;
@@ -78,7 +78,7 @@ public class TestCacheBackend extends AbstractBlockTest
     @Test
     public void shouldThrowWhenTryingToFetchInvalidBlock() throws Exception
     {
-        when(bsb.getBlock(any(ContentHash.class))).thenThrow(new FileNotFoundException());
+        when(bsb.getBlock(any(ContentBlockHash.class))).thenThrow(new FileNotFoundException());
 
         boolean ok = false;
         try {
@@ -93,7 +93,7 @@ public class TestCacheBackend extends AbstractBlockTest
     public void shouldFetchUncachedBlock() throws Exception
     {
         byte[] content = new byte[] {0, 1, 2, 3};
-        ContentHash key = contentHash(content);
+        ContentBlockHash key = contentHash(content);
 
         when(bsb.getBlock(eq(key))).thenReturn(new ByteArrayInputStream(content));
 
@@ -106,7 +106,7 @@ public class TestCacheBackend extends AbstractBlockTest
     public void shouldNotFetchCachedBlock() throws Exception
     {
         byte[] content = new byte[] {0, 1, 2, 3};
-        ContentHash key = contentHash(content);
+        ContentBlockHash key = contentHash(content);
 
         when(bsb.getBlock(eq(key))).thenReturn(new ByteArrayInputStream(content));
 

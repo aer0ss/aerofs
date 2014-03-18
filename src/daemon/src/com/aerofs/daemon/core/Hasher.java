@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.google.common.collect.Maps;
@@ -27,7 +28,6 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.daemon.core.ex.ExAborted;
@@ -38,16 +38,17 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class computes content hash. Because one of AeroFS's fundamental advantages is to sync large
  * files and large file sets quickly, and hash computation is expensive in these scenarios, we want
  * to avoid it as much as possible. Therefore, AeroFS computes hashes only when it detects potential
- * content conflicts, and uses hashes to eliminate false conflicts. This leads to the following
- * INVARIANT:
- *
- * Hashes on the master branch are optional, whereas non-master branches must have non-null hashes.
+ * content conflicts, and uses hashes to eliminate false conflicts.
  *
  * The reasons to put the hasher into a separate thread, instead of using the core threads:
  *  1. Hasher is disk-heavy. We cannot do non-blocking I/O for disks. Therefore a pure event model
@@ -79,11 +80,11 @@ public class Hasher
 
     private final Map<SOKID, Set<TCB>> _map = Maps.newHashMap();
 
-    private void mergeBranches_(SOKID sokid, ContentHash h)
+    private void mergeBranches_(SOKID sokid, @Nonnull ContentHash h)
             throws SQLException, IOException, ExNotFound
     {
-        assert h != null;
-        assert h.equals(_ds.getCAHash_(sokid));
+        checkArgument(h != null);
+        checkArgument(h.equals(_ds.getCAHash_(sokid)));
         SOID soid = sokid.soid();
 
         Map<KIndex, Version> delList = Maps.newHashMap();
@@ -100,11 +101,10 @@ public class Hasher
 
             SOCKID kBranch = new SOCKID(soid, CID.CONTENT , kidx);
             ContentHash hBranch = _ds.getCAHash_(kBranch.sokid());
-            assert hBranch != null;
-            if (h.equals(hBranch)) {
+            if (hBranch != null && h.equals(hBranch)) {
                 // If MASTER branch has matching hash then MASTER branch
                 // should be chosen as the branch to apply the merge.
-                if (kidx.equals(KIndex.MASTER)) {
+                if (kidx.isMaster()) {
                     Version vApply = _nvc.getLocalVersion_(
                         new SOCKID(soid, CID.CONTENT, kidxApply));
                     vAddLocal = vAddLocal.add_(vApply);
@@ -116,7 +116,7 @@ public class Hasher
                     delList.put(kidx, vBranch);
                 }
 
-                l.debug("kidx: " + kidx + " vAddLocal: " + vAddLocal);
+                l.debug("kidx: {} vAddLocal: {}", kidx, vAddLocal);
             }
         }
 
@@ -126,19 +126,19 @@ public class Hasher
             try {
                 for (Entry<KIndex, Version> en : delList.entrySet()) {
                     KIndex kidx = en.getKey();
-                    assert !kidx.equals(KIndex.MASTER);
+                    checkState(!kidx.isMaster());
 
                     SOCKID kDel = new SOCKID(soid, CID.CONTENT, kidx);
                     Version vDel = en.getValue();
 
-                    l.debug("Hash: Branch to be deleted " + kidx);
+                    l.debug("Hash: Branch to be deleted {}", kidx);
                     _bd.deleteBranch_(kDel, vDel, true, t);
                 }
                 // See comments "@@" above.
                 Version vApply = _nvc.getLocalVersion_(new SOCKID(soid, CID.CONTENT, kidxApply));
                 vAddLocal = vAddLocal.sub_(vApply);
 
-                l.debug("Final vAddLocal: " + vAddLocal + " kApply: " + kidxApply);
+                l.debug("Final vAddLocal: {} kApply: {}", vAddLocal, kidxApply);
                 _nvc.addLocalVersion_(new SOCKID(soid, CID.CONTENT, kidxApply), vAddLocal, t);
                 t.commit_();
             } finally {
@@ -295,62 +295,18 @@ public class Hasher
             @Nullable IAborter aborter) throws IOException, ExAborted, DigestException
     {
         MessageDigest md = SecUtil.newMessageDigest();
-        int chunkSize = LibParam.FILE_BLOCK_SIZE;
 
-        int hashSize = md.getDigestLength();
-        // TODO: what happens if you have a file so large that fileLen / chunkSize * hashSize
-        // overflows int?
-        final int totalHashLength = (fileLen == 0) ? hashSize :
-            (int)((fileLen + chunkSize - 1) / chunkSize) * hashSize;
-        byte[] hash = new byte[totalHashLength];
-        byte[] dataBytes = new byte[LibParam.FILE_BUF_SIZE];
-        int outPos = 0;
-        long totalBytesRead = 0;
+        long bytesRead = 0;
+        byte[] buffer = new byte[LibParam.FILE_BUF_SIZE];
 
-        // We want to compute hash of zero length file and hence
-        // loop should run at least once.
-        do {
-            int chunkBytes = 0;
-            int numRead;
-            int toRead = Math.min(chunkSize, dataBytes.length);
+        int n;
+        while (bytesRead < fileLen && (n = is.read(buffer)) != -1) {
+            md.update(buffer, 0, n);
+            bytesRead += n;
+            if (n != 0 && aborter != null) aborter.checkAbortion();
+        }
 
-            // Investigate whether other IO techniques like
-            // BufferedInputStream will be better?
-            while ((numRead = is.read(dataBytes, 0, toRead)) != -1 &&
-                   chunkBytes < chunkSize) {
-                md.update(dataBytes, 0, numRead);
-                chunkBytes += numRead;
-
-                // Ensure next read doesn't go beyond LibParam.FILE_BLOCK_SIZE
-                if (chunkBytes + toRead > chunkSize) {
-                    toRead = chunkSize - chunkBytes;
-                    assert toRead >= 0;
-                    if (toRead == 0) {
-                        break;
-                    }
-                }
-            }
-            assert numRead == -1 || chunkBytes == chunkSize;
-
-            if (aborter != null) aborter.checkAbortion();
-
-            // Store hash of the chunk
-            assert outPos + hashSize <= totalHashLength : "\n\toutpos: " + outPos +
-                    "\n\thashSize: " +
-                    hashSize + "\n\ttotalHashLength: " + totalHashLength + "\n\ttotalBytesRead: "
-                    + totalBytesRead;
-            // Verified it's okay to compute hash of zero length file wherein
-            // md.digest() will be invoked without any md.update() calls.
-            final int outLen = md.digest(hash, outPos, hashSize);
-            assert outLen == hashSize;
-
-            outPos += hashSize;
-            totalBytesRead += chunkBytes;
-            l.debug("Hashed " + totalBytesRead + " bytes of " + fileLen);
-        } while (totalBytesRead < fileLen);
-
-        assert outPos == totalHashLength;
-        return new ContentHash(hash);
+        return new ContentHash(md.digest());
     }
 
     private final class PrepareToComputeHashResult {
@@ -398,7 +354,7 @@ public class Hasher
     public ContentHash computeHashBlocking_(SOKID sokid)
             throws ExNotFound, SQLException, ExAborted, IOException, DigestException
     {
-        l.debug("computeHashBlocking for " + sokid);
+        l.debug("computeHashBlocking for {}", sokid);
 
         ContentHash h = _ds.getCAHash_(sokid);
         if (h != null) return h;
@@ -412,7 +368,7 @@ public class Hasher
         } finally {
             in.close();
         }
-        assert h != null;
+        checkState(h != null);
         return h;
     }
 }

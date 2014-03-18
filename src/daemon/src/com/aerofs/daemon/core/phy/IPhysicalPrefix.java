@@ -6,7 +6,6 @@ import java.io.OutputStream;
 
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ContentHash;
 
 /**
  * This class represents temporary files used for downloads.
@@ -27,7 +26,7 @@ public interface IPhysicalPrefix
 
     void moveTo_(IPhysicalPrefix pf, Trans t) throws IOException;
 
-    ContentHash prepare_(Token tk) throws IOException;
+    void prepare_(Token tk) throws IOException;
 
     void delete_() throws IOException;
 

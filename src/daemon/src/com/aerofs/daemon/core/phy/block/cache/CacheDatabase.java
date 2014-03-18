@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.phy.block.BlockStorageDatabase;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
@@ -105,7 +105,7 @@ public class CacheDatabase extends AbstractDatabase
         }
     }
 
-    private static class DBIterSortedAccessesRow extends AbstractDBIterator<ContentHash>
+    private static class DBIterSortedAccessesRow extends AbstractDBIterator<ContentBlockHash>
     {
         public DBIterSortedAccessesRow(ResultSet rs)
         {
@@ -113,13 +113,13 @@ public class CacheDatabase extends AbstractDatabase
         }
 
         @Override
-        public ContentHash get_() throws SQLException {
-            return new ContentHash(_rs.getBytes(1));
+        public ContentBlockHash get_() throws SQLException {
+            return new ContentBlockHash(_rs.getBytes(1));
         }
     }
 
     private PreparedStatementWrapper _pswGetSortedAccesses = new PreparedStatementWrapper();
-    public IDBIterator<ContentHash> getSortedCacheAccessesIter() throws SQLException
+    public IDBIterator<ContentBlockHash> getSortedCacheAccessesIter() throws SQLException
     {
         PreparedStatementWrapper psw = _pswGetSortedAccesses;
         try {

@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.phy.block.local;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.ex.ExFileNotFound;
@@ -50,7 +50,7 @@ public class LocalBackend implements IBlockStorageBackend
     }
 
     @Override
-    public InputStream getBlock(ContentHash key) throws IOException
+    public InputStream getBlock(ContentBlockHash key) throws IOException
     {
         InjectableFile block = getBlockFile(key);
         if (!block.exists()) throw new FileNotFoundException();
@@ -64,7 +64,7 @@ public class LocalBackend implements IBlockStorageBackend
     }
 
     @Override
-    public void putBlock(ContentHash key, InputStream input, long decodedLength, Object encoderData)
+    public void putBlock(ContentBlockHash key, InputStream input, long decodedLength, Object encoderData)
             throws IOException
     {
         InjectableFile block = getBlockFile(key);
@@ -76,7 +76,7 @@ public class LocalBackend implements IBlockStorageBackend
     }
 
     @Override
-    public void deleteBlock(ContentHash key, TokenWrapper tk) throws IOException
+    public void deleteBlock(ContentBlockHash key, TokenWrapper tk) throws IOException
     {
         InjectableFile block = getBlockFile(key);
         if (block.exists()) block.delete();
@@ -85,7 +85,7 @@ public class LocalBackend implements IBlockStorageBackend
     // 2 hex digits per level -> 256-ary prefix tree
     private static final int HEX_DIGITS_PER_LEVEL = 2;
 
-    private InjectableFile getBlockFile(ContentHash key)
+    private InjectableFile getBlockFile(ContentBlockHash key)
     {
         assert isOneBlock(key);
         String k = key.toHex();

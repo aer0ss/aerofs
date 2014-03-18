@@ -26,6 +26,7 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
@@ -34,7 +35,6 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
@@ -367,7 +367,7 @@ class BlockStorage implements IPhysicalStorage
     }
 
 
-    public InputStream readChunks(ContentHash hash) throws IOException
+    public InputStream readChunks(ContentBlockHash hash) throws IOException
     {
         return new BlockInputStream(_bsb, hash);
     }
@@ -379,9 +379,9 @@ class BlockStorage implements IPhysicalStorage
      *
      * We use this method to perform the actual movement as the backend may use remote storage.
      */
-    ContentHash prepare_(BlockPrefix prefix, Token tk) throws IOException
+    ContentBlockHash prepare_(BlockPrefix prefix, Token tk) throws IOException
     {
-        ContentHash h;
+        ContentBlockHash h;
         try {
             l.debug(">>> preparing prefix for " + prefix._sockid);
             h = new Chunker(prefix._f, tk, _bsb).splitAndStore();
@@ -408,7 +408,7 @@ class BlockStorage implements IPhysicalStorage
             _tk = tk;
         }
 
-        public ContentHash splitAndStore() throws IOException, SQLException, ExAborted
+        public ContentBlockHash splitAndStore() throws IOException, SQLException, ExAborted
         {
             try {
                 pseudoPause_();
@@ -685,9 +685,9 @@ class BlockStorage implements IPhysicalStorage
         _bsdb.deleteHistFileInfo_(info._id, info._ver, t);
     }
 
-    private void derefBlocks_(ContentHash h, Trans t) throws SQLException
+    private void derefBlocks_(ContentBlockHash h, Trans t) throws SQLException
     {
-        for (ContentHash b : BlockUtil.splitBlocks(h)) _bsdb.decBlockCount_(b, t);
+        for (ContentBlockHash b : BlockUtil.splitBlocks(h)) _bsdb.decBlockCount_(b, t);
     }
 
     /**
@@ -727,7 +727,7 @@ class BlockStorage implements IPhysicalStorage
     private class DeadBlocksIterator implements TokenWrapper
     {
         private final Token _tk;
-        private IDBIterator<ContentHash> _it;
+        private IDBIterator<ContentBlockHash> _it;
         private TCB _tcb;
 
         DeadBlocksIterator()
@@ -755,7 +755,7 @@ class BlockStorage implements IPhysicalStorage
             _tcb.pseudoResumed_();
         }
 
-        IDBIterator<ContentHash> iterator() throws SQLException
+        IDBIterator<ContentBlockHash> iterator() throws SQLException
         {
             if (_it == null) _it = _bsdb.getDeadBlocks_();
             return _it;
@@ -775,7 +775,7 @@ class BlockStorage implements IPhysicalStorage
         DeadBlocksIterator it = new DeadBlocksIterator();
         try {
             while (it.iterator().next_()) {
-                ContentHash h = it.iterator().get_();
+                ContentBlockHash h = it.iterator().get_();
                 Trans t = _tm.begin_();
                 try {
                     _bsdb.deleteBlock_(h, t);

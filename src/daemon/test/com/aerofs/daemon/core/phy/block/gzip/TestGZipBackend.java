@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.phy.block.gzip;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import org.junit.Assert;
@@ -34,14 +34,14 @@ public class TestGZipBackend extends AbstractBlockTest
 {
     private static class InMemoryBackend implements IBlockStorageBackend
     {
-        private final Map<ContentHash, byte[]> _blocks = Maps.newHashMap();
+        private final Map<ContentBlockHash, byte[]> _blocks = Maps.newHashMap();
 
         @Override
         public void init_() throws IOException
         {}
 
         @Override
-        public InputStream getBlock(ContentHash key)
+        public InputStream getBlock(ContentBlockHash key)
                 throws IOException
         {
             byte[] d = _blocks.get(key);
@@ -58,7 +58,7 @@ public class TestGZipBackend extends AbstractBlockTest
         }
 
         @Override
-        public void putBlock(ContentHash key, InputStream input, long decodedLength,
+        public void putBlock(ContentBlockHash key, InputStream input, long decodedLength,
                 @Nullable Object encoderData)
                 throws IOException
         {
@@ -70,7 +70,7 @@ public class TestGZipBackend extends AbstractBlockTest
         }
 
         @Override
-        public void deleteBlock(ContentHash key, TokenWrapper tk) throws IOException
+        public void deleteBlock(ContentBlockHash key, TokenWrapper tk) throws IOException
         {
             _blocks.remove(key);
         }

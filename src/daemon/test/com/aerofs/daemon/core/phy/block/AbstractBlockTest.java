@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.daemon.lib.HashStream;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.UnitTestTempDir;
@@ -28,7 +28,7 @@ public class AbstractBlockTest extends AbstractTest
     @Rule
     public final UnitTestTempDir testTempDirFactory = new UnitTestTempDir();
 
-    protected static ContentHash contentHash(byte[] content)
+    protected static ContentBlockHash contentHash(byte[] content)
     {
         HashStream hs = HashStream.newFileHasher();
         hs.update(content, 0, content.length);
@@ -38,7 +38,7 @@ public class AbstractBlockTest extends AbstractTest
 
     protected static class TestBlock
     {
-        public final ContentHash _key;
+        public final ContentBlockHash _key;
         public final byte[] _content;
 
         TestBlock(byte[] content)
@@ -68,5 +68,5 @@ public class AbstractBlockTest extends AbstractTest
                 block._content.length, wrapping.encoderData);
     }
 
-    protected static ContentHash forKey(byte[] c) { return eq(contentHash(c)); }
+    protected static ContentBlockHash forKey(byte[] c) { return eq(contentHash(c)); }
 }

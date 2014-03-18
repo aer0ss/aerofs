@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.injectable.InjectableFile;
 
@@ -23,7 +23,7 @@ class BlockPrefix implements IPhysicalPrefix
     private final BlockStorage _s;
     final SOCKID _sockid;
     final InjectableFile _f;
-    ContentHash _hash;
+    ContentBlockHash _hash;
 
     BlockPrefix(BlockStorage s, SOCKID sockid, InjectableFile f)
     {
@@ -59,10 +59,9 @@ class BlockPrefix implements IPhysicalPrefix
     }
 
     @Override
-    public ContentHash prepare_(Token tk) throws IOException
+    public void prepare_(Token tk) throws IOException
     {
         if (_hash == null) _hash = _s.prepare_(this, tk);
-        return _hash;
     }
 
     @Override

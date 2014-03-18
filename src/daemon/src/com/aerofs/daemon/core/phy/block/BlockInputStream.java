@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.LibParam;
 import com.google.common.base.Preconditions;
 
@@ -16,7 +16,7 @@ import static com.aerofs.daemon.core.phy.block.BlockUtil.*;
 public class BlockInputStream extends InputStream
 {
     private final IBlockStorageBackend _bsb;
-    private final ContentHash _hash;
+    private final ContentBlockHash _hash;
     private final int _numChunks;
 
     private int _chunkIndex;
@@ -24,7 +24,7 @@ public class BlockInputStream extends InputStream
 
     private InputStream _in;
 
-    public BlockInputStream(IBlockStorageBackend bsb, ContentHash hash)
+    public BlockInputStream(IBlockStorageBackend bsb, ContentBlockHash hash)
     {
         _bsb = bsb;
         _hash = hash;

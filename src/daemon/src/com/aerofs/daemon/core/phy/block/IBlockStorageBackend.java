@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -28,7 +28,7 @@ public interface IBlockStorageBackend
     /**
      * Read a block from the storage backend
      */
-    InputStream getBlock(ContentHash key) throws IOException;
+    InputStream getBlock(ContentBlockHash key) throws IOException;
 
     /**
      * Allows backends to perform arbitrary data encoding through wrapper output streams and pass
@@ -58,7 +58,7 @@ public interface IBlockStorageBackend
      * NOTE: the input stream is guaranteed to be repeatable, i.e calling reset() will bring the
      * position back to the start of the block without any loss.
      */
-    void putBlock(ContentHash key, InputStream input, long decodedLength,
+    void putBlock(ContentBlockHash key, InputStream input, long decodedLength,
             @Nullable Object encoderData) throws IOException;
 
     public interface TokenWrapper
@@ -70,5 +70,5 @@ public interface IBlockStorageBackend
     /**
      * Remove a block from the storage backend
      */
-    void deleteBlock(ContentHash key, TokenWrapper tk) throws IOException;
+    void deleteBlock(ContentBlockHash key, TokenWrapper tk) throws IOException;
 }

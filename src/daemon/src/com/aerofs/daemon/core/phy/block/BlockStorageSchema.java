@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.daemon.lib.db.ISchema;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.db.TableDumper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
@@ -97,7 +97,7 @@ public class BlockStorageSchema implements ISchema
     @Override
     public void create_(Statement s, IDBCW dbcw) throws SQLException
     {
-        String chunkType = " binary(" + ContentHash.UNIT_LENGTH + ") ";
+        String chunkType = " binary(" + ContentBlockHash.UNIT_LENGTH + ") ";
         String chunkListType = " blob ";
 
         s.execute("create table " + T_FileInfo + "( " +

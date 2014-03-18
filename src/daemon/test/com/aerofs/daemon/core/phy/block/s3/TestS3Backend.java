@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
 import org.junit.After;
@@ -51,7 +51,7 @@ public class TestS3Backend extends AbstractBlockTest
         assertBlockNotFound(b._key);
     }
 
-    void assertBlockNotFound(ContentHash key) {
+    void assertBlockNotFound(ContentBlockHash key) {
         try {
             bsb.getBlock(key);
             Assert.assertTrue(false);

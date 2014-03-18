@@ -23,6 +23,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.StorageType;
@@ -43,7 +44,6 @@ import javax.annotation.Nullable;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -550,12 +550,7 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     {
         OA oa = getOAThrows_(sokid.soid());
         oa.caThrows(sokid.kidx());
-        ContentHash ret = _mdb.getCAHash_(sokid.soid(), sokid.kidx());
-
-        // Hashes of non-master branches should never be null.
-        assert sokid.kidx().equals(KIndex.MASTER) || ret != null : sokid;
-
-        return ret;
+        return _mdb.getCAHash_(sokid.soid(), sokid.kidx());
     }
 
     @Override

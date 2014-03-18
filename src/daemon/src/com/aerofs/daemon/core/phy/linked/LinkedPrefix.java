@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 
@@ -56,9 +55,8 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
     }
 
     @Override
-    public ContentHash prepare_(Token tk) throws IOException
+    public void prepare_(Token tk) throws IOException
     {
-        return null;
     }
 
     @Override

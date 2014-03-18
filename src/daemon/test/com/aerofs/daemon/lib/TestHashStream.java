@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
 
+import com.aerofs.lib.ContentBlockHash;
+import com.aerofs.lib.ContentHash;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -17,9 +19,11 @@ import org.junit.rules.TemporaryFolder;
 
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.LibParam;
 import com.aerofs.testlib.AbstractTest;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class TestHashStream extends AbstractTest
 {
@@ -28,9 +32,8 @@ public class TestHashStream extends AbstractTest
 
     private Random _random = new Random(0);
 
-    private ContentHash _hasherAttrib;
-    private ContentHash _outHashAttrib;
-    private ContentHash _inHashAttrib;
+    private ContentBlockHash _outHashAttrib;
+    private ContentBlockHash _inHashAttrib;
 
     public static interface RandomWriter
     {
@@ -64,7 +67,6 @@ public class TestHashStream extends AbstractTest
         });
     }
 
-    @Ignore
     @Test
     public void shouldChunkProperly() throws Exception
     {
@@ -100,26 +102,25 @@ public class TestHashStream extends AbstractTest
         } finally {
             out.close();
         }
-        Assert.assertEquals(tempFile.length(), outHashStream.getLength());
+        assertEquals(tempFile.length(), outHashStream.getLength());
         _outHashAttrib = outHashStream.getHashAttrib();
         l.debug("outHashAttrib: " + _outHashAttrib);
 
+        ContentHash hash;
         HashStream inHashStream = HashStream.newFileHasher();
         InputStream in = inHashStream.wrap(new FileInputStream(tempFile));
         try {
-            _hasherAttrib = Hasher.computeHashImpl(in, tempFile.length(), null);
+            hash = Hasher.computeHashImpl(in, tempFile.length(), null);
         } finally {
             in.close();
         }
         _inHashAttrib = inHashStream.getHashAttrib();
-        l.debug("inHashAttrib:  " + _outHashAttrib);
 
-        l.debug("hasherAttrib:  " + _hasherAttrib);
-
-        Assert.assertEquals(_hasherAttrib, _outHashAttrib);
-        Assert.assertArrayEquals(_hasherAttrib.getBytes(), _outHashAttrib.getBytes());
-        Assert.assertEquals(_hasherAttrib, _inHashAttrib);
-        Assert.assertArrayEquals(_hasherAttrib.getBytes(), _inHashAttrib.getBytes());
+        assertEquals(_inHashAttrib, _outHashAttrib);
+        assertArrayEquals(_inHashAttrib.getBytes(), _inHashAttrib.getBytes());
+        if (_inHashAttrib.getBytes().length == ContentHash.LENGTH) {
+            assertArrayEquals(_inHashAttrib.getBytes(), hash.getBytes());
+        }
 
         FileUtil.deleteNow(tempFile);
     }

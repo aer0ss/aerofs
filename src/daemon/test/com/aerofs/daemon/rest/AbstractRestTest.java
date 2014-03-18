@@ -57,7 +57,6 @@ import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
-import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -85,10 +84,16 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.Permission;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -107,7 +112,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -162,7 +166,58 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock ImmigrantCreator ic;
     protected @Mock VersionUpdater vu;
 
-    protected @Mock IPhysicalPrefix pf;
+    protected @Spy InMemoryPrefix pf = new InMemoryPrefix();
+
+    protected class InMemoryPrefix implements IPhysicalPrefix
+    {
+        private ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        public byte[] data()
+        {
+            return baos.toByteArray();
+        }
+
+        @Override
+        public long getLength_()
+        {
+            return baos.toByteArray().length;
+        }
+
+        @Override
+        public OutputStream newOutputStream_(boolean append) throws IOException
+        {
+            if (!append) baos = new ByteArrayOutputStream();
+            return baos;
+        }
+
+        @Override
+        public InputStream newInputStream_() throws IOException
+        {
+            return new ByteArrayInputStream(data());
+        }
+
+        @Override
+        public void moveTo_(IPhysicalPrefix pf, Trans t) throws IOException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void prepare_(Token tk) throws IOException {}
+
+        @Override
+        public void delete_() throws IOException
+        {
+            baos = new ByteArrayOutputStream();
+        }
+
+        @Override
+        public void truncate_(long length) throws IOException
+        {
+            baos = new ByteArrayOutputStream();
+            baos.write(Arrays.copyOf(data(), (int)length));
+        }
+    }
 
     protected  @Mock OutboundEventLogger oel;
 
@@ -299,7 +354,6 @@ public class AbstractRestTest extends AbstractTest
         mds.root();  // setup sid<->sidx mapping for root..
 
         when(ps.newPrefix_(any(SOCKID.class), anyString())).thenReturn(pf);
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(ByteStreams.nullOutputStream());
 
         when(localUser.get()).thenReturn(user);
         when(localDID.get()).thenReturn(did);

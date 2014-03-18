@@ -29,6 +29,7 @@ import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -433,6 +434,11 @@ class MightCreateOperations
             return;
         }
 
+        final long length = f.getLength();
+        final long mtime = f.lastModified();
+        ContentHash newHash = null;
+        final SOKID sokid = new SOKID(soid, KIndex.MASTER);
+
         if (ca == null) {
             // The master CA is absent. This may happen when a file's metadata has been downloaded
             // but the content hasn't been so. Create the master CA in this case.
@@ -440,7 +446,8 @@ class MightCreateOperations
             _ds.createCA_(soid, KIndex.MASTER, t);
         }
 
-        l.info("modify {} ({},{}) != {}", soid, f.getLengthOrZeroIfNotFile(), f.lastModified(), ca);
+        l.info("modify {} ({},{}) != {}", soid, length, mtime, ca);
+        _ds.setCA_(sokid, length, mtime, newHash, t);
         _vu.update_(new SOCKID(soid, CID.CONTENT), t);
         _saveCounter.inc();
     }

@@ -31,10 +31,8 @@ import org.mockito.stubbing.Answer;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -46,11 +44,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -844,9 +840,6 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
-
         givenAccess()
                 .content(FILE_CONTENT)
         .expect()
@@ -854,16 +847,13 @@ public class TestFileResource extends AbstractRestTest
         .when()
                 .put("/v0.10/files/" + id(soid) + "/content");
 
-        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, pf.data());
     }
 
     @Test
     public void shouldUploadContentWhenEtagMatch() throws Exception
     {
         SOID soid = mds.root().file("foo.txt").soid();
-
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
 
         givenAccess()
                 .header(Names.IF_MATCH, CURRENT_ETAG)
@@ -873,7 +863,7 @@ public class TestFileResource extends AbstractRestTest
         .when()
                 .put("/v0.10/files/" + id(soid) + "/content");
 
-        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, pf.data());
     }
 
     @Test
@@ -1009,16 +999,6 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
-        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
-            @Override
-            public Integer answer(InvocationOnMock invocation) throws Throwable
-            {
-                return baos.size();
-            }
-        });
-
         givenAccess()
                 .header(Names.CONTENT_RANGE, "bytes 0-" + (FILE_CONTENT.length - 1) + "/*")
                 .content(FILE_CONTENT)
@@ -1029,7 +1009,7 @@ public class TestFileResource extends AbstractRestTest
         .when()
                 .put("/v0.10/files/" + id(soid) + "/content");
 
-        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, pf.data());
     }
 
     @Test
@@ -1037,7 +1017,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        when(pf.getLength_()).thenReturn(42L);
+        pf.newOutputStream_(false).write(new byte[42]);
 
         UploadID id = UploadID.generate();
 
@@ -1075,17 +1055,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        when(pf.newOutputStream_(true)).thenReturn(baos);
-        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
-            @Override
-            public Integer answer(InvocationOnMock invocation) throws Throwable
-            {
-                return baos.size();
-            }
-        });
-
-        baos.write(FILE_CONTENT);
+        pf.newOutputStream_(false).write(FILE_CONTENT);
 
         UploadID id = UploadID.generate();
 
@@ -1102,7 +1072,7 @@ public class TestFileResource extends AbstractRestTest
                 .put("/v0.10/files/" + id(soid) + "/content");
 
         assertArrayEquals("Output Does Not match", BaseUtil.concatenate(FILE_CONTENT, FILE_CONTENT),
-                baos.toByteArray());
+                pf.data());
     }
 
     @Test
@@ -1110,17 +1080,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
-        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
-            @Override
-            public Integer answer(InvocationOnMock invocation) throws Throwable
-            {
-                return baos.size();
-            }
-        });
-
-        baos.write(FILE_CONTENT);
+        pf.newOutputStream_(false).write(FILE_CONTENT);
 
         UploadID id = UploadID.generate();
 
@@ -1140,7 +1100,7 @@ public class TestFileResource extends AbstractRestTest
         verify(ps).apply_(eq(pf), any(IPhysicalFile.class), eq(true), anyLong(), eq(t));
 
         assertArrayEquals("Output Does Not match", BaseUtil.concatenate(FILE_CONTENT, FILE_CONTENT),
-                baos.toByteArray());
+                pf.data());
     }
 
     @Test
@@ -1148,17 +1108,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
-        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
-            @Override
-            public Integer answer(InvocationOnMock invocation) throws Throwable
-            {
-                return baos.size();
-            }
-        });
-
-        baos.write(FILE_CONTENT);
+        pf.newOutputStream_(false).write(FILE_CONTENT);
 
         UploadID id = UploadID.generate();
 
@@ -1174,7 +1124,7 @@ public class TestFileResource extends AbstractRestTest
 
         verify(ps).apply_(eq(pf), any(IPhysicalFile.class), eq(true), anyLong(), eq(t));
 
-        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, pf.data());
     }
 
     @Test
@@ -1182,17 +1132,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
-        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
-            @Override
-            public Integer answer(InvocationOnMock invocation) throws Throwable
-            {
-                return baos.size();
-            }
-        });
-
-        baos.write(FILE_CONTENT);
+        pf.newOutputStream_(false).write(FILE_CONTENT);
 
         UploadID id = UploadID.generate();
 
@@ -1208,26 +1148,7 @@ public class TestFileResource extends AbstractRestTest
 
         verify(ps, never()).apply_(eq(pf), any(IPhysicalFile.class), eq(true), anyLong(), eq(t));
 
-        assertArrayEquals("Output Does Not match", FILE_CONTENT, baos.toByteArray());
-    }
-
-    private static class Buffer extends OutputStream
-    {
-        final byte[] d;
-        int p;
-
-        Buffer(int capacity)
-        {
-            p = 0;
-            d = new byte[capacity];
-        }
-
-        @Override
-        public void write(int b) throws IOException
-        {
-            d[p] = (byte)b;
-            ++p;
-        }
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, pf.data());
     }
 
     @Test
@@ -1237,25 +1158,7 @@ public class TestFileResource extends AbstractRestTest
 
         UploadID id = UploadID.generate();
 
-        final Buffer buf = new Buffer(2 * FILE_CONTENT.length);
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(buf);
-        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
-            @Override
-            public Integer answer(InvocationOnMock invocation) throws Throwable
-            {
-                return buf.p;
-            }
-        });
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
-            {
-                buf.p = (((Long)invocation.getArguments()[0]).intValue());
-                return null;
-            }
-        }).when(pf).truncate_(anyLong());
-
-        buf.p = FILE_CONTENT.length;
+        pf.newOutputStream_(false).write(new byte[42]);
 
         givenAccess()
                 .header("Upload-ID", id.toStringFormal())
@@ -1270,8 +1173,7 @@ public class TestFileResource extends AbstractRestTest
 
         verify(pf).truncate_(0L);
 
-        assertArrayEquals("Output Does Not match",
-                FILE_CONTENT, Arrays.copyOf(buf.d, FILE_CONTENT.length));
+        assertArrayEquals("Output Does Not match", FILE_CONTENT, pf.data());
     }
 
     @Test
@@ -1279,7 +1181,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        when(pf.getLength_()).thenReturn(42L);
+        pf.newOutputStream_(false).write(new byte [42]);
 
         givenAccess()
                 .header(Names.CONTENT_RANGE, "bytes 100-199/*")
@@ -1297,7 +1199,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        when(pf.getLength_()).thenReturn(42L);
+        pf.newOutputStream_(false).write(new byte [42]);
 
         UploadID id = UploadID.generate();
 
@@ -1318,17 +1220,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        when(pf.newOutputStream_(anyBoolean())).thenReturn(baos);
-        when(pf.getLength_()).thenAnswer(new Answer<Integer>() {
-            @Override
-            public Integer answer(InvocationOnMock invocation) throws Throwable
-            {
-                return baos.size();
-            }
-        });
-
-        baos.write(FILE_CONTENT);
+        pf.newOutputStream_(false).write(FILE_CONTENT);
 
         UploadID id = UploadID.generate();
 

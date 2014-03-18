@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2014.
+ */
+
 package com.aerofs.lib;
 
 import com.aerofs.base.BaseUtil;
@@ -6,26 +10,22 @@ import com.google.protobuf.LeanByteString;
 
 import java.util.Arrays;
 
-/**
- * This class represents content hash of a file. Its value is a concatenation of one or more file
- * block hashes.
- */
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class ContentHash extends LeanByteString
 {
-    /**
-     * The byte count of a single block hash value
-     */
-    public static final int UNIT_LENGTH = SecUtil.newMessageDigest().getDigestLength();
+    public static final int LENGTH = SecUtil.newMessageDigest().getDigestLength();
 
     public ContentHash(byte[] hash)
     {
         super(hash);
-        assert hash.length % UNIT_LENGTH == 0;
+        checkArgument(hash.length == LENGTH);
     }
 
     public ContentHash(ByteString pb)
     {
         super(pb);
+        checkArgument(pb.size() == LENGTH);
     }
 
     public ByteString toPB()

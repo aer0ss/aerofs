@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.phy.block.s3;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.base.Base64;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.base.BaseSecUtil.CipherFactory;
 import com.aerofs.lib.SystemUtil.ExitCode;
@@ -74,7 +74,7 @@ public class S3Backend implements IBlockStorageBackend
     }
 
     @Override
-    public InputStream getBlock(ContentHash k) throws IOException
+    public InputStream getBlock(ContentBlockHash k) throws IOException
     {
         String key = getBlockKey(k.toHex());
         S3Object o;
@@ -150,7 +150,7 @@ public class S3Backend implements IBlockStorageBackend
     }
 
     @Override
-    public void putBlock(final ContentHash key, final InputStream input, final long decodedLength,
+    public void putBlock(final ContentBlockHash key, final InputStream input, final long decodedLength,
             final Object encoderData) throws IOException
     {
         AWSRetry.retry(new Callable<Void>()
@@ -191,7 +191,7 @@ public class S3Backend implements IBlockStorageBackend
     }
 
     @Override
-    public void deleteBlock(final ContentHash key, TokenWrapper tk) throws IOException
+    public void deleteBlock(final ContentBlockHash key, TokenWrapper tk) throws IOException
     {
         try {
             tk.pseudoPause("s3-del");

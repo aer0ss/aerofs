@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.phy.block;
 import com.aerofs.base.C;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.daemon.lib.HashStream;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.lib.LibParam;
@@ -51,36 +51,36 @@ public abstract class AbstractChunker
         _skipEmpty = skip;
     }
 
-    public ContentHash splitAndStore_() throws IOException, SQLException
+    public ContentBlockHash splitAndStore_() throws IOException, SQLException
     {
-        if (_length == 0 && _skipEmpty) return new ContentHash(new byte[0]);
+        if (_length == 0 && _skipEmpty) return new ContentBlockHash(new byte[0]);
 
         // To avoid integer overflows, make sure the hashBytes buffer can be 32bit-indexed
         // With a block size of 4MB and a hash size of 16bytes that means a file size cutoff of
         // 500TB so we should be safe...
         Preconditions.checkArgument(_length <
-                (long)Integer.MAX_VALUE * LibParam.FILE_BLOCK_SIZE * ContentHash.UNIT_LENGTH);
+                (long)Integer.MAX_VALUE * LibParam.FILE_BLOCK_SIZE * ContentBlockHash.UNIT_LENGTH);
 
         int trailing = (int)(_length % LibParam.FILE_BLOCK_SIZE);
         int numBlocks = (int)(_length / LibParam.FILE_BLOCK_SIZE) +
                 (trailing > 0 || _length == 0 ? 1 : 0);
 
-        byte[] hashBytes = new byte[numBlocks * ContentHash.UNIT_LENGTH];
+        byte[] hashBytes = new byte[numBlocks * ContentBlockHash.UNIT_LENGTH];
 
         for (int i = 0; i < numBlocks; ++i) {
             int blockSize = i == numBlocks - 1 ? trailing : LibParam.FILE_BLOCK_SIZE;
-            ContentHash h = storeOneBlock_(i, blockSize);
-            System.arraycopy(h.getBytes(), 0, hashBytes, i * ContentHash.UNIT_LENGTH,
-                    ContentHash.UNIT_LENGTH);
+            ContentBlockHash h = storeOneBlock_(i, blockSize);
+            System.arraycopy(h.getBytes(), 0, hashBytes, i * ContentBlockHash.UNIT_LENGTH,
+                    ContentBlockHash.UNIT_LENGTH);
         }
 
-        return new ContentHash(hashBytes);
+        return new ContentBlockHash(hashBytes);
     }
 
     public class Block
     {
         long _length;
-        ContentHash _hash;
+        ContentBlockHash _hash;
         Object _encoderData;
     }
 
@@ -166,7 +166,7 @@ public abstract class AbstractChunker
     protected abstract StorageState prePutBlock_(Block block) throws SQLException;
     protected abstract void postPutBlock_(Block block) throws SQLException;
 
-    private ContentHash storeOneBlock_(long index, int blockSize) throws IOException, SQLException
+    private ContentBlockHash storeOneBlock_(long index, int blockSize) throws IOException, SQLException
     {
         InputSupplier<? extends InputStream> input
                 = ByteStreams.slice(_input, index * LibParam.FILE_BLOCK_SIZE, LibParam.FILE_BLOCK_SIZE);
@@ -216,7 +216,7 @@ public abstract class AbstractChunker
                 public void close() throws IOException
                 {
                     super.close();
-                    ContentHash hash = hs.getHashAttrib();
+                    ContentBlockHash hash = hs.getHashAttrib();
                     if (!BlockUtil.isOneBlock(hash)) {
                         throw new IOException("Too much data for one chunk!");
                     }

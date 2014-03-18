@@ -13,7 +13,7 @@ import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.phy.block.IBlockStorageInitable;
 import com.aerofs.daemon.lib.HashStream;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
@@ -47,7 +47,7 @@ class S3MagicChunk implements IBlockStorageInitable
     private IBlockStorageBackend _bsb;
 
     private static final byte[] MAGIC = {};
-    private static ContentHash MAGIC_HASH;
+    private static ContentBlockHash MAGIC_HASH;
 
     @Override
     public void init_(IBlockStorageBackend bsb) throws IOException
@@ -184,7 +184,7 @@ class S3MagicChunk implements IBlockStorageInitable
         };
         upload.setSkipEmpty(false);
         try {
-            ContentHash hash = upload.splitAndStore_();
+            ContentBlockHash hash = upload.splitAndStore_();
             if (!hash.equals(MAGIC_HASH)) {
                 throw new IOException("Upload returns magic hash: " + hash.toHex()
                         + " expected: " + MAGIC_HASH.toHex());

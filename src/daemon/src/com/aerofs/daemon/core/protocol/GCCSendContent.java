@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
@@ -17,6 +18,7 @@ import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
@@ -24,6 +26,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.SOCKID;
@@ -42,6 +45,9 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map;
@@ -127,7 +133,7 @@ public class GCCSendContent
     }
 
     // raw file bytes are appended after BPCore
-    void send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply, Version vLocal,
+    ContentHash send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply, Version vLocal,
             long prefixLen, Version vPrefix, @Nullable ContentHash remoteHash, Version vRemote)
             throws Exception
     {
@@ -145,7 +151,7 @@ public class GCCSendContent
         bdReply.setMtime(mtime);
 
         try {
-            send_(ep, k, bdCore, bdReply, vLocal, prefixLen, vPrefix, remoteHash, vRemote, pf,
+            return send_(ep, k, bdCore, bdReply, vLocal, prefixLen, vPrefix, remoteHash, vRemote, pf,
                     fileLength, mtime);
         } catch (ExUpdateInProgress e) {
             pf.onUnexpectedModification_(mtime);
@@ -153,14 +159,14 @@ public class GCCSendContent
         }
     }
 
-    private void send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply,
+    private ContentHash send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply,
             Version vLocal, long prefixLen, Version vPrefix, @Nullable ContentHash remoteHash,
             Version vRemote, IPhysicalFile pf, long fileLength, long mtime)
             throws Exception
     {
         // Send hash if available.
         int hashLength = 0;
-        ContentHash h = _ds.getCAHash_(k.sokid());
+        final ContentHash h = _ds.getCAHash_(k.sokid());
         boolean contentIsSame = false;
         if (h == null) {
             if (!vRemote.sub_(vLocal).isZero_()) {
@@ -178,6 +184,7 @@ public class GCCSendContent
             } else {
                 hashLength = h.toPB().size();
                 l.debug("Sending hash length: {}", hashLength);
+                // TODO: drop hash length on next proto version bump
                 bdReply.setHashLength(hashLength);
             }
         }
@@ -187,7 +194,7 @@ public class GCCSendContent
         if (os.size() <= _m.getMaxUnicastSize_() && contentIsSame) {
             sendContentSame_(ep.did(), os, core);
         } else if (os.size() + hashLength + fileLength <= _m.getMaxUnicastSize_()) {
-            sendSmall_(ep.did(), k, os, core, mtime, fileLength, h, pf);
+            return sendSmall_(ep.did(), k, os, core, mtime, fileLength, h, pf);
         } else {
             long newPrefixLen = vLocal.equals(vPrefix) ? prefixLen : 0;
 
@@ -209,11 +216,12 @@ public class GCCSendContent
 
             Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "GCRSendBig");
             try {
-                sendBig_(ep, k, os, newPrefixLen, tk, mtime, fileLength, h, pf);
+                return sendBig_(ep, k, os, newPrefixLen, tk, mtime, fileLength, h, pf);
             } finally {
                 tk.reclaim_();
             }
         }
+        return null;
     }
 
     private void sendContentSame_(DID did, ByteArrayOutputStream os, PBCore reply)
@@ -222,8 +230,8 @@ public class GCCSendContent
         _trl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
     }
 
-    private void sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply,
-            long mtime, long len, ContentHash hash, IPhysicalFile pf)
+    private ContentHash sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply,
+            long mtime, long len, @Nullable ContentHash hash, IPhysicalFile pf)
             throws Exception
     {
         if (hash != null) {
@@ -231,6 +239,9 @@ public class GCCSendContent
         }
         // the file might not exist if len is 0
         InputStream is = len == 0 ? null : pf.newInputStream_();
+
+        MessageDigest md = hash == null ? SecUtil.newMessageDigest() : null;
+        if (is != null && md != null) is = new DigestInputStream(is, md);
 
         try {
             long copied = is != null ? ByteStreams.copy(is, os) : 0;
@@ -247,13 +258,14 @@ public class GCCSendContent
                 is.close();
             }
         }
+        return md != null ? new ContentHash(md.digest()) : null;
     }
 
     // TODO: ideally that whole method could run wo/ core lock being held
     // depends on: network refactor, rework upload progress notifications
-    private void sendBig_(Endpoint ep, SOCKID k, ByteArrayOutputStream os,
+    private ContentHash sendBig_(Endpoint ep, SOCKID k, ByteArrayOutputStream os,
             long prefixLen, Token tk, final long mtime, final long len,
-            ContentHash hash, IPhysicalFile pf)
+            @Nullable ContentHash hash, IPhysicalFile pf)
             throws Exception
     {
         l.debug("sendBig_: os.size() = " + os.size());
@@ -262,6 +274,17 @@ public class GCCSendContent
         final OutgoingStream outgoing = _oss.newStream(ep, tk);
         final FileChunker chunker = new FileChunker(pf, mtime, len, prefixLen,
                 _m.getMaxUnicastSize_(), OSUtil.isWindows());
+
+        MessageDigest md = hash == null ? SecUtil.newMessageDigest() : null;
+        if (md != null && prefixLen > 0) {
+            TCB tcb = prefixLen > 4 * C.KB ? tk.pseudoPause_("rehash") : null;
+            try {
+                ByteStreams.copy(ByteStreams.limit(pf.newInputStream_(), prefixLen),
+                        new DigestOutputStream(ByteStreams.nullOutputStream(), md));
+            } finally {
+                if (tcb != null) tcb.pseudoResumed_();
+            }
+        }
 
         Object ongoing = _ongoing.start(k);
         try {
@@ -301,6 +324,7 @@ public class GCCSendContent
 
                 // TODO: an async stream API would allow pipelining disk and network I/O
                 outgoing.sendChunk_(buf);
+                if (md != null) md.update(buf);
                 done += buf.length;
             }
 
@@ -318,5 +342,8 @@ public class GCCSendContent
             _ongoing.stop(k, ongoing);
             chunker.close_();
         }
+
+        // TODO: send computed hash after content to detect corruption during transfer?
+        return md != null ? new ContentHash(md.digest()) : null;
     }
 }

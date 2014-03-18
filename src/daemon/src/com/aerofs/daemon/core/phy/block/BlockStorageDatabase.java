@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
@@ -69,9 +69,9 @@ public class BlockStorageDatabase extends AbstractDatabase
 
     public static final long DELETED_FILE_LEN = -1; //C.S3_DELETED_FILE_LEN;
     public static final long DELETED_FILE_DATE = 0;
-    public static final ContentHash DELETED_FILE_CHUNKS = new ContentHash(new byte[0]);
+    public static final ContentBlockHash DELETED_FILE_CHUNKS = new ContentBlockHash(new byte[0]);
 
-    public static final ContentHash EMPTY_FILE_CHUNKS = new ContentHash(new byte[0]);
+    public static final ContentBlockHash EMPTY_FILE_CHUNKS = new ContentBlockHash(new byte[0]);
 
     public BlockStorageDatabase(IDBCW dbcw)
     {
@@ -165,7 +165,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         public final long _ver;
         public final long _length;
         public final long _mtime;
-        public final ContentHash _chunks;
+        public final ContentBlockHash _chunks;
 
         public boolean exists()
         {
@@ -177,7 +177,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             return info != null && info.exists();
         }
 
-        public FileInfo(long id, long ver, long length, long mtime, ContentHash chunks)
+        public FileInfo(long id, long ver, long length, long mtime, ContentBlockHash chunks)
         {
             _id = id;
             _ver = ver;
@@ -219,7 +219,7 @@ public class BlockStorageDatabase extends AbstractDatabase
                             rs.getLong(1),
                             rs.getLong(2),
                             rs.getLong(3),
-                            new ContentHash(hash));
+                            new ContentBlockHash(hash));
                 }
             } finally {
                 rs.close();
@@ -409,7 +409,7 @@ public class BlockStorageDatabase extends AbstractDatabase
                             idx[1],
                             rs.getLong(1),
                             rs.getLong(2),
-                            new ContentHash(hash));
+                            new ContentBlockHash(hash));
                 }
             } finally {
                 rs.close();
@@ -426,7 +426,7 @@ public class BlockStorageDatabase extends AbstractDatabase
 
 
     private PreparedStatementWrapper _pswPrePutBlock = new PreparedStatementWrapper();
-    public void prePutBlock_(ContentHash chunk, long length, Trans t) throws SQLException
+    public void prePutBlock_(ContentBlockHash chunk, long length, Trans t) throws SQLException
     {
         if (l.isDebugEnabled()) l.debug("start chunk upload: " + chunk);
         assert isOneBlock(chunk);
@@ -452,7 +452,7 @@ public class BlockStorageDatabase extends AbstractDatabase
     }
 
     private PreparedStatementWrapper _pswPostPutBlock = new PreparedStatementWrapper();
-    public void postPutBlock_(ContentHash chunk, Trans t) throws SQLException
+    public void postPutBlock_(ContentBlockHash chunk, Trans t) throws SQLException
     {
         if (l.isDebugEnabled()) l.debug("finish chunk upload: " + chunk);
         assert isOneBlock(chunk);
@@ -475,18 +475,18 @@ public class BlockStorageDatabase extends AbstractDatabase
             throw detectCorruption(e);
         }
     }
-    public void incBlockCount_(ContentHash chunk, Trans t) throws SQLException
+    public void incBlockCount_(ContentBlockHash chunk, Trans t) throws SQLException
     {
         adjustBlockCount_(chunk, 1, t);
     }
 
-    public void decBlockCount_(ContentHash chunk, Trans t) throws SQLException
+    public void decBlockCount_(ContentBlockHash chunk, Trans t) throws SQLException
     {
         adjustBlockCount_(chunk, -1, t);
     }
 
     private PreparedStatementWrapper _pswGetChunkState = new PreparedStatementWrapper();
-    public BlockState getBlockState_(ContentHash chunk) throws SQLException
+    public BlockState getBlockState_(ContentBlockHash chunk) throws SQLException
     {
         PreparedStatementWrapper psw = _pswGetChunkState;
         try {
@@ -514,7 +514,7 @@ public class BlockStorageDatabase extends AbstractDatabase
     }
 
     private PreparedStatementWrapper _pswGetChunkCount = new PreparedStatementWrapper();
-    public long getBlockCount_(ContentHash chunk) throws SQLException
+    public long getBlockCount_(ContentBlockHash chunk) throws SQLException
     {
         PreparedStatementWrapper psw = _pswGetChunkCount;
         try {
@@ -542,7 +542,7 @@ public class BlockStorageDatabase extends AbstractDatabase
     }
 
     private PreparedStatement _psDeleteBlock;
-    public void deleteBlock_(ContentHash chunk, Trans t) throws SQLException
+    public void deleteBlock_(ContentBlockHash chunk, Trans t) throws SQLException
     {
         try {
             if (_psDeleteBlock == null) {
@@ -561,7 +561,7 @@ public class BlockStorageDatabase extends AbstractDatabase
     }
 
     private PreparedStatement _psGetDeadBlocks;
-    public IDBIterator<ContentHash> getDeadBlocks_() throws SQLException
+    public IDBIterator<ContentBlockHash> getDeadBlocks_() throws SQLException
     {
         try {
             if (_psGetDeadBlocks == null) {
@@ -763,7 +763,7 @@ public class BlockStorageDatabase extends AbstractDatabase
     {
         // update file info
         writeNewFileInfo_(info, t);
-        for (ContentHash chunk : splitBlocks(info._chunks)) {
+        for (ContentBlockHash chunk : splitBlocks(info._chunks)) {
             incBlockCount_(chunk, t);
         }
     }
@@ -904,7 +904,7 @@ public class BlockStorageDatabase extends AbstractDatabase
     }
 
     private PreparedStatementWrapper _pswAdjustBlockCount = new PreparedStatementWrapper();
-    private void adjustBlockCount_(ContentHash chunk, int delta, Trans t) throws SQLException
+    private void adjustBlockCount_(ContentBlockHash chunk, int delta, Trans t) throws SQLException
     {
         assert isOneBlock(chunk);
         PreparedStatementWrapper psw = _pswAdjustBlockCount;
@@ -928,7 +928,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private static class DBIterDeadBlocks extends AbstractDBIterator<ContentHash>
+    private static class DBIterDeadBlocks extends AbstractDBIterator<ContentBlockHash>
     {
         public DBIterDeadBlocks(ResultSet rs)
         {
@@ -936,9 +936,9 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
 
         @Override
-        public ContentHash get_() throws SQLException
+        public ContentBlockHash get_() throws SQLException
         {
-            return new ContentHash(_rs.getBytes(1));
+            return new ContentBlockHash(_rs.getBytes(1));
         }
     }
 }

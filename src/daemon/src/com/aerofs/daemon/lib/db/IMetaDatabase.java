@@ -88,7 +88,8 @@ public interface IMetaDatabase
 
     void setCAHash_(SOID soid, KIndex kidx, @Nullable ContentHash h, Trans t) throws SQLException;
 
-    @Nullable ContentHash getCAHash_(SOID soid, KIndex kidx) throws SQLException;
+    @Nullable
+    ContentHash getCAHash_(SOID soid, KIndex kidx) throws SQLException;
 
     IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException;
 

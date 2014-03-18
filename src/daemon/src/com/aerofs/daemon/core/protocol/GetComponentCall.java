@@ -16,6 +16,8 @@ import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.daemon.core.ex.ExAborted;
@@ -23,6 +25,8 @@ import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOKID;
+import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -44,6 +48,8 @@ import com.aerofs.proto.Core.PBMeta;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBGetComCall;
 import com.aerofs.proto.Core.PBGetComCall.Builder;
+
+import javax.annotation.Nonnull;
 
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.*;
 
@@ -69,12 +75,15 @@ public class GetComponentCall
     private IMapSID2SIndex _sid2sidx;
     private CfgLocalUser _cfgLocalUser;
     private OutboundEventLogger _oel;
+    private TransManager _tm;
+    private RockLog _rl;
 
     @Inject
     public void inject_(TransportRoutingLayer trl, LocalACL lacl, IPhysicalStorage ps, OutboundEventLogger oel,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
             IEmigrantTargetSIDLister emc, GCCSendContent sendContent, MapAlias2Target a2t,
-            IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser)
+            IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser,
+            TransManager tm, RockLog rl)
     {
         _trl = trl;
         _lacl = lacl;
@@ -90,6 +99,8 @@ public class GetComponentCall
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
         _cfgLocalUser = cfgLocalUser;
+        _tm = tm;
+        _rl = rl;
     }
 
     /**
@@ -156,9 +167,6 @@ public class GetComponentCall
         }
     }
 
-    // maximum content hash size advertised in a GetComponentCall
-    private final int HASH_THRESHOLD = 64 * ContentHash.UNIT_LENGTH;
-
     private void setIncrementalDownloadInfo_(SOCID socid, Builder bd)
             throws SQLException, ExNotFound
     {
@@ -169,7 +177,7 @@ public class GetComponentCall
         SOCKID branch = new SOCKID(socid, KIndex.MASTER);
 
         ContentHash h = oa.caMasterNullable() != null ? _ds.getCAHash_(branch.sokid()) : null;
-        if (h != null && h.toPB().size() <= HASH_THRESHOLD) {
+        if (h != null) {
             bd.setHashContent(h.toPB());
             l.info("advertise hash in gcc {}", socid);
         }
@@ -252,14 +260,55 @@ public class GetComponentCall
         if (k.cid().isMeta()) {
             sendMeta_(msg.did(), k, bdCore, bdReply);
         } else if (k.cid().equals(CID.CONTENT)) {
-            _sendContent.send_(msg.ep(), k, bdCore, bdReply, vLocal,
+            ContentHash th = _sendContent.send_(msg.ep(), k, bdCore, bdReply, vLocal,
                     pbgcc.getPrefixLength(), Version.fromPB(pbgcc.getPrefixVersion()),
                     h, Version.fromPB(pbgcc.getLocalVersion()));
+            if (th != null) updateHash_(k.sokid(), th);
         } else {
             SystemUtil.fatal("unsupported CID: " + k.cid());
         }
 
         if (k.cid().isContent()) _oel.log_(CONTENT_COMPLETION, k.soid(), msg.did());
+    }
+
+    private void updateHash_(SOKID sokid, @Nonnull ContentHash h)
+    {
+        try {
+            ContentHash db = _ds.getCAHash_(sokid);
+            l.debug("hash {} {} {}", sokid, db, h);
+            if (db != null) {
+                if (!db.equals(h)) {
+                    // It would be unsafe to overwrite a conflicting hash value from here.
+                    //
+                    // It's possible the file was updated while we were sending the last chunk,
+                    // in which case the db would actually be more up-to-date.
+                    //
+                    // It's also possible for the "transfer" hash to be more up-to-date if a file
+                    // was written to and the application doing the writing prevented the timestamp
+                    // from changing, in which case we should force a linker/scanner update somehow.
+                    //
+                    // Both seem fairly unlikely though so a good first step is to simply be log and
+                    // send a rocklog defect.
+                    // TODO: force linker update or something?
+                    l.info("hash mismatch {} {} {}", sokid, db, h);
+                    _rl.newDefect("gcc.hash.mismatch")
+                            .addData("sokid", sokid)
+                            .addData("db_hash", db)
+                            .addData("fs_hash", h)
+                            .send();
+                }
+                return;
+            }
+            Trans t = _tm.begin_();
+            try {
+                _ds.setCAHash_(sokid, h, t);
+                t.commit_();
+            } finally {
+                t.end_();
+            }
+        } catch (Exception e) {
+            l.warn("failed to update ca hash", e);
+        }
     }
 
     /* TODO
