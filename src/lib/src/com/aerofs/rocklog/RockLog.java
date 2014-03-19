@@ -7,6 +7,8 @@ package com.aerofs.rocklog;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.collect.Queues;
 import com.google.common.net.HttpHeaders;
@@ -84,6 +86,15 @@ public class RockLog
 
     boolean rpc(Defect defect)
     {
+        // [sigh]
+        // this is a little ugly.
+        // instead of creating a noop defect object I simply
+        // check if it's a private depolyment scenario and return early
+        // before creating a connection and sending.
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
+            return false;
+        }
+
         if (_rocklogUrl == null) return false;
         try {
             String url = _rocklogUrl + defect.getURLPath();
