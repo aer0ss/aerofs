@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.MakePulseResult;
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.makepulse_;
 import static com.aerofs.daemon.transport.lib.PulseManager.PulseToken;
-import static com.aerofs.daemon.transport.lib.TPUtil.newControl;
 
 /**
  * Event handler that handles all {@link IPulseEvent} events. This includes events
@@ -82,7 +81,7 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
             ev.tok_(ret.tok());
             l.trace("d:{} prevtok:{} tok:{} send pulse", did, printtok(prevtok), ret.tok());
 
-            uc.send(did, null, Prio.HI, newControl(ret.hdr()), null);
+            uc.send(did, null, Prio.HI, TransportProtocolUtil.newControl(ret.hdr()), null);
 
             ph.schednextpulse_(ev);
         } catch (ExTransportUnavailable e) {

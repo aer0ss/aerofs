@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.ElapsedTimer;
-import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.proto.Transport.PBHeartbeat;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
@@ -121,7 +121,7 @@ public final class HeartbeatHandler extends SimpleChannelHandler
                             .newBuilder()
                             .setHeartbeatId(heartbeatId))
                     .build();
-            write(ctx, future(ctx.getChannel()), TPUtil.newControl(reply));
+            write(ctx, future(ctx.getChannel()), TransportProtocolUtil.newControl(reply));
             l.debug("respond to heartbeat id:{}", heartbeatId);
         } else {
             // we've received a heartbeat reply
@@ -194,7 +194,7 @@ public final class HeartbeatHandler extends SimpleChannelHandler
                                 .setHeartbeatId(heartbeatId))
                         .build();
 
-                write(ctx, future(channel), TPUtil.newControl(heartbeat));
+                write(ctx, future(channel), TransportProtocolUtil.newControl(heartbeat));
 
                 onHeartbeatSent(heartbeatId);
 

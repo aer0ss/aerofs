@@ -20,7 +20,7 @@ import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_CONNE
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_SLOW_CONNECT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public final class DiagnosticsHandler extends SimpleChannelHandler
+public final class ConnectionStatsHandler extends SimpleChannelHandler
 {
     private final String _transportId;
     private final RockLog _rockLog;
@@ -29,7 +29,7 @@ public final class DiagnosticsHandler extends SimpleChannelHandler
 
     private volatile long _channelOpenTime = 0;
 
-    public DiagnosticsHandler(String transportId, RockLog rockLog, Timer timer)
+    public ConnectionStatsHandler(String transportId, RockLog rockLog, Timer timer)
     {
         _transportId = transportId;
         _rockLog = rockLog;

@@ -32,11 +32,13 @@ import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.sched.Scheduler;
+import com.aerofs.proto.Diagnostics.JingleChannel;
 import com.aerofs.proto.Diagnostics.JingleDevice;
 import com.aerofs.proto.Diagnostics.JingleDiagnostics;
 import com.aerofs.proto.Diagnostics.ServerStatus;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.rocklog.RockLog;
+import com.google.protobuf.Message;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 
@@ -46,10 +48,10 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.Set;
 
-import static com.aerofs.daemon.transport.lib.TPUtil.fromInetSockAddress;
-import static com.aerofs.daemon.transport.lib.TPUtil.getReachabilityErrorString;
-import static com.aerofs.daemon.transport.lib.TPUtil.setupCommonHandlersAndListeners;
-import static com.aerofs.daemon.transport.lib.TPUtil.setupMulticastHandler;
+import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupCommonHandlersAndListeners;
+import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupMulticastHandler;
+import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
+import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 public class Jingle implements ITransport, IAddressResolver
@@ -128,7 +130,7 @@ public class Jingle implements ITransport, IAddressResolver
         this.presenceService = new PresenceService();
 
         // unicast
-        this.unicast = new Unicast(this, transportStats);
+        this.unicast = new Unicast(this);
         linkStateService.addListener(unicast, sameThreadExecutor()); // can be notified on any thread since Unicast is thread-safe
 
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
@@ -251,7 +253,7 @@ public class Jingle implements ITransport, IAddressResolver
 
         ServerStatus.Builder xmppServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(XMPP.SERVER_ADDRESS));
+                .setServerAddress(fromInetSockAddress(XMPP.SERVER_ADDRESS, true));
 
         try {
             xmppServerStatus.setReachable(xmppConnectionService.isReachable());
@@ -266,7 +268,7 @@ public class Jingle implements ITransport, IAddressResolver
 
         ServerStatus.Builder stunServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(DaemonParam.Jingle.STUN_SERVER_ADDRESS));
+                .setServerAddress(fromInetSockAddress(DaemonParam.Jingle.STUN_SERVER_ADDRESS, true));
 
         // FIXME (AG): actually check STUN reachability
         //
@@ -285,7 +287,15 @@ public class Jingle implements ITransport, IAddressResolver
 
         Set<DID> available = presenceService.allPotentiallyAvailable();
         for (DID did : available) {
-            diagnostics.addReachableDevices(JingleDevice.newBuilder().setDid(did.toPB()));
+            JingleDevice.Builder deviceBuilder = JingleDevice
+                    .newBuilder()
+                    .setDid(did.toPB());
+
+            for (Message message : unicast.getChannelDiagnostics(did)) {
+                deviceBuilder.addChannel((JingleChannel) message);
+            }
+
+            diagnostics.addReachableDevices(deviceBuilder);
         }
 
         return diagnostics.build();

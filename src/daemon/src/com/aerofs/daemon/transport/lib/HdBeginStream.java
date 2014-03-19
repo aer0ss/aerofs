@@ -40,9 +40,9 @@ public class HdBeginStream implements IEventHandler<EOBeginStream>
 
             // NB. we will not catch failures of sending ctrl msg. however it
             // will be reflected when sending the payload data below
-            Object strmCookie = unicast.send(did, null, prio, TPUtil.newControl(h), null);
+            Object strmCookie = unicast.send(did, null, prio, TransportProtocolUtil.newControl(h), null);
             streamManager.newOutgoingStream(ev._streamId, new OutgoingStream(did, strmCookie));
-            unicast.send(did, ev, prio, TPUtil.newPayload(ev._streamId, 0, ev.byteArray()), strmCookie);
+            unicast.send(did, ev, prio, TransportProtocolUtil.newPayload(ev._streamId, 0, ev.byteArray()), strmCookie);
         } catch (Exception e) {
             ev.error(e);
         }

@@ -12,8 +12,7 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.StreamManager;
-import com.aerofs.daemon.transport.lib.TPUtil;
-import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -47,10 +46,10 @@ import static org.mockito.Mockito.when;
 //
 // I hate the fact that I had to _COPY AND PASTE_ the damn test three times,
 // but using PowerMockito makes it very hard to do the right thing (and I have
-// to use PowerMockito due to TPUtil
+// to use PowerMockito due to TransportProtocolUtil
 //
 // the right thing to do is use ChannelTeardownHandler in TCP, Jingle and Zephyr and then
-// inline the TPUtil.sessionEnded method into ChannelTeardownHandler (thus removing
+// inline the TransportProtocolUtil.sessionEnded method into ChannelTeardownHandler (thus removing
 // the need for PowerMockito entirely, allowing me to use Parameterized runners, etc.)
 //
 // till then, this will have to do, and I will live with this shame
@@ -58,7 +57,7 @@ import static org.mockito.Mockito.when;
 // I have to put PowerMockIgnore here because of this:
 // http://stackoverflow.com/questions/8179399/javax-xml-parsers-saxparserfactory-classcastexception
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(TPUtil.class)
+@PrepareForTest(TransportProtocolUtil.class)
 @PowerMockIgnore({"javax.management.*", "javax.xml.parsers.*", "com.sun.org.apache.xerces.internal.jaxp.*", "ch.qos.logback.*", "org.slf4j.*"})
 public final class TestChannelTeardownHandler
 {
@@ -77,7 +76,7 @@ public final class TestChannelTeardownHandler
     public void shouldCloseOutboundPeerStreamsWhenChannelCloseIsCalled()
             throws Exception
     {
-        mockStatic(TPUtil.class);
+        mockStatic(TransportProtocolUtil.class);
 
         ITransport transport = mock(ITransport.class);
 
@@ -107,14 +106,14 @@ public final class TestChannelTeardownHandler
         channel.close();
 
         verifyStatic();
-        TPUtil.sessionEnded(any(Endpoint.class), eq(outgoingEventSink), eq(streamManager), eq(true), eq(false));
+        TransportProtocolUtil.sessionEnded(any(Endpoint.class), eq(outgoingEventSink), eq(streamManager), eq(true), eq(false));
     }
 
     @Test
     public void shouldCloseInboundPeerStreamsWhenChannelCloseIsCalled()
             throws Exception
     {
-        mockStatic(TPUtil.class);
+        mockStatic(TransportProtocolUtil.class);
 
         ITransport transport = mock(ITransport.class);
 
@@ -144,14 +143,14 @@ public final class TestChannelTeardownHandler
         channel.close();
 
         verifyStatic();
-        TPUtil.sessionEnded(any(Endpoint.class), eq(outgoingEventSink), eq(streamManager), eq(false), eq(true));
+        TransportProtocolUtil.sessionEnded(any(Endpoint.class), eq(outgoingEventSink), eq(streamManager), eq(false), eq(true));
     }
 
     @Test
     public void shouldCloseBothInboundAndOutboundPeerStreamsWhenChannelCloseIsCalled()
             throws Exception
     {
-        mockStatic(TPUtil.class);
+        mockStatic(TransportProtocolUtil.class);
 
         ITransport transport = mock(ITransport.class);
 
@@ -181,7 +180,7 @@ public final class TestChannelTeardownHandler
         channel.close();
 
         verifyStatic();
-        TPUtil.sessionEnded(any(Endpoint.class), eq(outgoingEventSink), eq(streamManager), eq(true), eq(true));
+        TransportProtocolUtil.sessionEnded(any(Endpoint.class), eq(outgoingEventSink), eq(streamManager), eq(true), eq(true));
     }
 
     @Test

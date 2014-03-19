@@ -12,8 +12,8 @@ import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
-import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
+import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
@@ -41,6 +41,8 @@ import static java.util.concurrent.Executors.newSingleThreadExecutor;
 final class TCPBootstrapFactory
 {
     private final AddressResolverHandler addressResolver = new AddressResolverHandler(newSingleThreadExecutor());
+    private final TCPChannelDiagnosticsHandler clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT);
+    private final TCPChannelDiagnosticsHandler serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER);
     private final UserID localuser;
     private final DID localdid;
     private final SSLEngineFactory clientSslEngineFactory;
@@ -98,6 +100,7 @@ final class TCPBootstrapFactory
                         messageHandler,
                         tcpProtocolHandler,
                         protocolHandler,
+                        clientChannelDiagnosticsHandler,
                         clientChannelTeardownHandler);
             }
         });
@@ -131,6 +134,7 @@ final class TCPBootstrapFactory
                         incomingChannelHandler,
                         tcpProtocolHandler,
                         protocolHandler,
+                        serverChannelDiagnosticsHandler,
                         serverChannelTeardownHandler);
             }
         });

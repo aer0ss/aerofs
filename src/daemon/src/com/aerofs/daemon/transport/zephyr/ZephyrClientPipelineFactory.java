@@ -8,7 +8,7 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
-import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler.HandlerMode;
+import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ConnectTunnelHandler;
 import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
@@ -95,9 +95,12 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     {
         ChannelPipeline pipeline = Channels.pipeline();
 
-        // non-protocol-specific
+        // address resolution
         pipeline.addLast("resolver", getResolverHandler());
-        pipeline.addLast("stats", newStatsHandler());
+
+        // statistics
+        IOStatsHandler ioStatsHandler = newStatsHandler();
+        pipeline.addLast("stats", ioStatsHandler);
 
         // proxy
         if (proxy.type() == HTTP) addProxyHandlers(pipeline);
@@ -122,7 +125,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         pipeline.addLast(MESSAGE_HANDLER_NAME, newMessageHandler());
 
         // zephyr client
-        ZephyrClientHandler zephyrClientHandler = newZephyrClientHandler(zephyrProtocolHandler);
+        ZephyrClientHandler zephyrClientHandler = newZephyrClientHandler(ioStatsHandler, zephyrProtocolHandler);
         pipeline.addLast(ZEPHYR_CLIENT_HANDLER_NAME, zephyrClientHandler);
 
         // setup the heartbeat handler
@@ -179,9 +182,9 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         return new MessageHandler();
     }
 
-    private ZephyrClientHandler newZephyrClientHandler(ZephyrProtocolHandler zephyrProtocolHandler)
+    private ZephyrClientHandler newZephyrClientHandler(IOStatsHandler ioStatsHandler, ZephyrProtocolHandler zephyrProtocolHandler)
     {
-        return new ZephyrClientHandler(unicastListener, zephyrProtocolHandler);
+        return new ZephyrClientHandler(unicastListener, ioStatsHandler, zephyrProtocolHandler);
     }
 
     /**

@@ -9,7 +9,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
-import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler.HandlerMode;
 import com.google.common.collect.Lists;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelEvent;

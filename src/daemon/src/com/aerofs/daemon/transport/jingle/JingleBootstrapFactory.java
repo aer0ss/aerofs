@@ -11,8 +11,8 @@ import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
-import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
+import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
@@ -37,6 +37,8 @@ import static org.jboss.netty.channel.Channels.pipeline;
  */
 final class JingleBootstrapFactory
 {
+    private final JingleChannelDiagnosticsHandler clientChannelDiagnosticsHandler = new JingleChannelDiagnosticsHandler(HandlerMode.CLIENT);
+    private final JingleChannelDiagnosticsHandler serverChannelDiagnosticsHandler = new JingleChannelDiagnosticsHandler(HandlerMode.SERVER);
     private final UserID localuser;
     private final DID localdid;
     private final SSLEngineFactory clientSslEngineFactory;
@@ -95,6 +97,7 @@ final class JingleBootstrapFactory
                         verifiedHandler,
                         messageHandler,
                         protocolHandler,
+                        clientChannelDiagnosticsHandler,
                         clientChannelTeardownHandler);
             }
         });
@@ -125,6 +128,7 @@ final class JingleBootstrapFactory
                         messageHandler,
                         incomingChannelHandler,
                         protocolHandler,
+                        serverChannelDiagnosticsHandler,
                         serverChannelTeardownHandler);
             }
         });

@@ -17,7 +17,7 @@ import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.PulseManager.AddPulseResult;
 import com.aerofs.daemon.transport.lib.StreamManager;
-import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
@@ -46,9 +46,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 
-import static com.aerofs.daemon.transport.lib.TPUtil.newControl;
-import static com.aerofs.daemon.transport.lib.TPUtil.newDatagramPayload;
-import static com.aerofs.daemon.transport.lib.TPUtil.newStreamPayload;
+import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.newControl;
+import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.newDatagramPayload;
+import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.newStreamPayload;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -113,13 +113,11 @@ public final class TestTransportProtocolHandler
             throws Exception
     {
         ChannelBuffer pulseCallBuffer = serializeToChannelBuffer(
-                TPUtil.newControl(PBTPHeader
-                        .newBuilder()
-                        .setType(Type.TRANSPORT_CHECK_PULSE_CALL)
-                        .setCheckPulse(PBCheckPulse
+                TransportProtocolUtil.newControl(PBTPHeader
                                 .newBuilder()
-                                .setPulseId(PULSE_ID))
-                        .build()
+                                .setType(Type.TRANSPORT_CHECK_PULSE_CALL)
+                                .setCheckPulse(PBCheckPulse.newBuilder().setPulseId(PULSE_ID))
+                                .build()
                 ));
 
         TransportMessage pulseCallMessage = new TransportMessage(pulseCallBuffer, DID_0, USER_0);
@@ -152,13 +150,11 @@ public final class TestTransportProtocolHandler
 
         // pretend that we received a CHECK_PULSE_REPLY for this pulse message id
         ChannelBuffer pulseCallBuffer = serializeToChannelBuffer(
-                TPUtil.newControl(PBTPHeader
-                        .newBuilder()
-                        .setType(Type.TRANSPORT_CHECK_PULSE_REPLY)
-                        .setCheckPulse(PBCheckPulse
+                TransportProtocolUtil.newControl(PBTPHeader
                                 .newBuilder()
-                                .setPulseId(result.msgid()))
-                        .build()
+                                .setType(Type.TRANSPORT_CHECK_PULSE_REPLY)
+                                .setCheckPulse(PBCheckPulse.newBuilder().setPulseId(result.msgid()))
+                                .build()
                 ));
 
         TransportMessage pulseCallMessage = new TransportMessage(pulseCallBuffer, DID_0, USER_0);
@@ -343,7 +339,10 @@ public final class TestTransportProtocolHandler
         // send abort outgoing stream message
         //
 
-        ChannelBuffer abortStreamBuffer = serializeToChannelBuffer(TPUtil.newControl(TPUtil.newAbortOutgoingStreamHeader(streamId, InvalidationReason.UPDATE_IN_PROGRESS)));
+        ChannelBuffer abortStreamBuffer = serializeToChannelBuffer(
+                TransportProtocolUtil.newControl(TransportProtocolUtil.newAbortOutgoingStreamHeader(
+                        streamId,
+                        InvalidationReason.UPDATE_IN_PROGRESS)));
         TransportMessage abortStreamMessage = new TransportMessage(abortStreamBuffer, DID_0, USER_0);
         handler.messageReceived(ctx, new UpstreamMessageEvent(channel, abortStreamMessage, REMOTE_ADDRESS_0));
 

@@ -35,12 +35,6 @@ public final class CNameVerifiedHandler extends SimpleChannelHandler implements 
     private volatile DID expected;
     private IUnicastListener unicastListener;
 
-    public static enum HandlerMode
-    {
-        CLIENT,
-        SERVER
-    }
-
     public CNameVerifiedHandler(IUnicastListener unicastListener, HandlerMode mode)
     {
         this.unicastListener = unicastListener;

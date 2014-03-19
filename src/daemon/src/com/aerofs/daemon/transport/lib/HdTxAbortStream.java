@@ -46,7 +46,7 @@ public class HdTxAbortStream implements IEventHandler<EOTxAbortStream>
                             .setReason(ev._reason))
                     .build();
 
-            unicast.send(ostrm._did, null, prio, TPUtil.newControl(h), ostrm._cookie);
+            unicast.send(ostrm._did, null, prio, TransportProtocolUtil.newControl(h), ostrm._cookie);
         } catch (Exception e) {
             l.warn("cannot abort stream " + ev._streamId + ". ignored: " + Util.e(e, ExDeviceOffline.class));
         }

@@ -17,6 +17,7 @@ public final class IOStatsHandler extends SimpleChannelHandler
 {
     // this channel only
 
+    private final long channelCreationTime = System.currentTimeMillis();
     private final AtomicLong bytesSent = new AtomicLong(0);
     private final AtomicLong bytesReceived = new AtomicLong(0);
 
@@ -60,5 +61,10 @@ public final class IOStatsHandler extends SimpleChannelHandler
     public long getBytesReceivedOnChannel()
     {
         return bytesReceived.get();
+    }
+
+    public long getChannelCreationTime()
+    {
+        return channelCreationTime;
     }
 }

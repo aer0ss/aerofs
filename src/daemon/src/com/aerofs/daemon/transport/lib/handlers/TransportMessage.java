@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
@@ -34,7 +34,7 @@ public final class TransportMessage
         this.did = checkNotNull(did);
         this.userID = checkNotNull(userID);
         this.payloadInputStream = new ChannelBufferInputStream(channelBuffer);
-        this.header = TPUtil.processUnicastHeader(payloadInputStream);
+        this.header = TransportProtocolUtil.processUnicastHeader(payloadInputStream);
     }
 
     public PBTPHeader getHeader()
@@ -63,7 +63,7 @@ public final class TransportMessage
      */
     public boolean isPayload()
     {
-        return TPUtil.isPayload(header);
+        return TransportProtocolUtil.isPayload(header);
     }
 
     /**

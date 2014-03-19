@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.tcp;
 
-import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.Unicast;
 import com.aerofs.daemon.transport.lib.handlers.TransportMessage;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -41,7 +41,7 @@ final class TCPProtocolHandler extends SimpleChannelUpstreamHandler
         // it indicates which stores this device is part of
         PBTPHeader pong = stores.newPongMessage(false);
         if (pong != null) {
-            e.getChannel().write(TPUtil.newControl(pong));
+            e.getChannel().write(TransportProtocolUtil.newControl(pong));
         }
 
         super.channelOpen(ctx, e);

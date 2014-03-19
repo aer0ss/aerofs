@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.transport.lib.ChannelDataUtil;
+import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.daemon.transport.lib.IChannelData;
 import com.google.common.collect.Queues;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -25,9 +25,9 @@ import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.aerofs.daemon.transport.lib.ChannelDataUtil.getChannelData;
-import static com.aerofs.daemon.transport.lib.ChannelDataUtil.hasValidChannelData;
-import static com.aerofs.daemon.transport.lib.ChannelDataUtil.isChannelConnected;
+import static com.aerofs.daemon.transport.lib.TransportUtil.getChannelData;
+import static com.aerofs.daemon.transport.lib.TransportUtil.hasValidChannelData;
+import static com.aerofs.daemon.transport.lib.TransportUtil.isChannelConnected;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.jboss.netty.channel.Channels.fireMessageReceived;
@@ -106,7 +106,7 @@ public final class MessageHandler extends SimpleChannelHandler
 
         checkState(hasValidChannelData(channel), "message received for %s before peer verified", channel);
 
-        IChannelData channelData = ChannelDataUtil.getChannelData(e);
+        IChannelData channelData = TransportUtil.getChannelData(e.getChannel());
         TransportMessage message = new TransportMessage((ChannelBuffer) e.getMessage(), channelData.getRemoteDID(), channelData.getRemoteUserID());
         fireMessageReceived(ctx, message);
     }
@@ -117,7 +117,7 @@ public final class MessageHandler extends SimpleChannelHandler
     {
         Channel channel = ctx.getChannel();
 
-        checkState(ChannelDataUtil.hasValidChannelData(channel), "connnected event fired for %s before peer verified", channel);
+        checkState(TransportUtil.hasValidChannelData(channel), "connnected event fired for %s before peer verified", channel);
 
         sendPendingWrites();
         super.channelConnected(ctx, e);

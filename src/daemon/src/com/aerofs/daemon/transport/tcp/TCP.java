@@ -23,6 +23,7 @@ import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportEventQueue;
 import com.aerofs.daemon.transport.lib.TransportStats;
+import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.daemon.transport.lib.Unicast;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
@@ -36,6 +37,7 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
+import com.aerofs.proto.Diagnostics.TCPChannel;
 import com.aerofs.proto.Diagnostics.TCPDevice;
 import com.aerofs.proto.Diagnostics.TCPDiagnostics;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
@@ -43,6 +45,7 @@ import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.protobuf.Message;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -57,9 +60,8 @@ import java.util.List;
 
 import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.HEARTBEAT_INTERVAL;
-import static com.aerofs.daemon.transport.lib.TPUtil.setupCommonHandlersAndListeners;
-import static com.aerofs.daemon.transport.lib.TPUtil.setupMulticastHandler;
-import static com.google.common.collect.Lists.newLinkedList;
+import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupCommonHandlersAndListeners;
+import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupMulticastHandler;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 // FIXME (AG): remove direct call from Stores and make this final
@@ -116,7 +118,7 @@ public class TCP implements ITransport, IAddressResolver
         multicast.setStores(stores);
 
         // unicast
-        this.unicast = new Unicast(this, transportStats);
+        this.unicast = new Unicast(this);
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
@@ -322,7 +324,7 @@ public class TCP implements ITransport, IAddressResolver
 
     private TCPDiagnostics getDiagnostics()
     {
-        TCPDiagnostics.Builder diagnostics = TCPDiagnostics.newBuilder();
+        final TCPDiagnostics.Builder diagnostics = TCPDiagnostics.newBuilder();
 
         // listening port
 
@@ -335,25 +337,23 @@ public class TCP implements ITransport, IAddressResolver
 
         // reachable_devices
 
-        final List<TCPDevice> reachableDevices = newLinkedList();
         arp.visitARPEntries(new IARPVisitor()
         {
             @Override
             public void visit(DID did, ARPEntry arp)
             {
-                TCPDevice device = TCPDevice.newBuilder()
+                TCPDevice.Builder deviceBuilder = TCPDevice
+                        .newBuilder()
                         .setDid(did.toPB())
-                        .setDeviceAddress(PBInetSocketAddress.newBuilder()
-                                .setHost(arp.remoteAddress
-                                        .getAddress()
-                                        .getHostAddress()) // always numeric
-                                .setPort(arp.remoteAddress.getPort()))
-                        .build();
+                        .setDeviceAddress(TransportUtil.fromInetSockAddress(arp.remoteAddress, false));
 
-                reachableDevices.add(device);
+                for (Message message : unicast.getChannelDiagnostics(did)) {
+                    deviceBuilder.addChannel((TCPChannel) message);
+                }
+
+                diagnostics.addReachableDevices(deviceBuilder);
             }
         });
-        diagnostics.addAllReachableDevices(reachableDevices);
 
         return diagnostics.build();
     }

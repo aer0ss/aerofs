@@ -2,8 +2,9 @@ package com.aerofs.daemon.transport.zephyr;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.lib.ChannelDataUtil;
+import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
+import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeRenegotiation;
 import com.aerofs.zephyr.client.handlers.ZephyrProtocolHandler;
@@ -14,6 +15,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 
+import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.getCNameVerifiedHandler;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -22,6 +24,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler
     private static final Logger l = Loggers.getLogger(ZephyrClientHandler.class);
 
     private final IUnicastListener unicastListener;
+    private final IOStatsHandler ioStatsHandler;
     private final ZephyrProtocolHandler zephyrProtocolHandler;
 
     // set both these fields _once_ _before_ channel is connected!
@@ -31,15 +34,18 @@ final class ZephyrClientHandler extends SimpleChannelHandler
     /**
      * @param zephyrProtocolHandler this is the instance of {@link ZephyrProtocolHandler} used in this pipeline
      */
-    ZephyrClientHandler(IUnicastListener unicastListener, ZephyrProtocolHandler zephyrProtocolHandler)
+    ZephyrClientHandler(IUnicastListener unicastListener, IOStatsHandler ioStatsHandler, ZephyrProtocolHandler zephyrProtocolHandler)
     {
         this.unicastListener = unicastListener;
+        this.ioStatsHandler = ioStatsHandler;
         this.zephyrProtocolHandler = zephyrProtocolHandler;
     }
 
     void init(DID did, Channel ourChannel)
     {
+        // this is the DID we expect the remote peer to have
         checkState(remotedid == null, "attempt reset remote did old:" + remotedid);
+        getCNameVerifiedHandler(channel).setExpectedRemoteDID(did);
         remotedid = did;
 
         checkState(channel == null, "attempt reset channel old:" + channel);
@@ -51,6 +57,48 @@ final class ZephyrClientHandler extends SimpleChannelHandler
         checkValid();
 
         return remotedid;
+    }
+
+    boolean isClosed()
+    {
+        checkValid();
+
+        return channel.getCloseFuture().isDone();
+    }
+
+    long getLocalZid()
+    {
+        checkValid();
+
+        return zephyrProtocolHandler.getLocalZid();
+    }
+
+    long getRemoteZid()
+    {
+        checkValid();
+
+        return zephyrProtocolHandler.getRemoteZid();
+    }
+
+    long getBytesSent()
+    {
+        checkValid();
+
+        return ioStatsHandler.getBytesSentOnChannel();
+    }
+
+    long getChannelLifetime()
+    {
+        checkValid();
+
+        return System.currentTimeMillis() - ioStatsHandler.getChannelCreationTime();
+    }
+
+    long getBytesReceived()
+    {
+        checkValid();
+
+        return ioStatsHandler.getBytesReceivedOnChannel();
     }
 
     boolean hasHandshakeCompleted()
@@ -89,7 +137,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler
     {
         checkValid();
 
-        if (ChannelDataUtil.isChannelConnected(e.getChannel())) {
+        if (TransportUtil.isChannelConnected(e.getChannel())) {
             l.info("{} channel closed - notify listener", this);
             unicastListener.onDeviceDisconnected(remotedid);
         }

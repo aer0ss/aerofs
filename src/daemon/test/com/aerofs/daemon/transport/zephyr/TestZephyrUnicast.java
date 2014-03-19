@@ -13,7 +13,7 @@ import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
-import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
 import com.aerofs.daemon.transport.lib.Waiter;
@@ -95,8 +95,7 @@ public final class TestZephyrUnicast
             throws ExDeviceOffline, InterruptedException, ExecutionException
     {
         Waiter waiter = new Waiter();
-        Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TPUtil.newDatagramPayload(
-                data), null);
+        Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(data), null);
 
         // wait until we trigger that the packet is sent
         waiter.future.get();
@@ -198,7 +197,8 @@ public final class TestZephyrUnicast
 
         // send a packet to the remote device (which will force a new channel to be created)
         Waiter waiter = new Waiter();
-        localDevice.unicast.send(unreachableDevice, waiter, Prio.LO, TPUtil.newDatagramPayload(TEST_DATA), null); // send a valid packet to a fake DID
+        localDevice.unicast.send(unreachableDevice, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(
+                TEST_DATA), null); // send a valid packet to a fake DID
 
         // verification
         //    |

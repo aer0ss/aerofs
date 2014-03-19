@@ -45,12 +45,13 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.Collection;
 import java.util.Set;
 
-import static com.aerofs.daemon.transport.lib.TPUtil.fromInetSockAddress;
-import static com.aerofs.daemon.transport.lib.TPUtil.getReachabilityErrorString;
-import static com.aerofs.daemon.transport.lib.TPUtil.setupCommonHandlersAndListeners;
-import static com.aerofs.daemon.transport.lib.TPUtil.setupMulticastHandler;
+import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
+import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
+import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupCommonHandlersAndListeners;
+import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupMulticastHandler;
 import static com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode.TWOWAY;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -267,7 +268,7 @@ public final class Zephyr implements ITransport
 
         ServerStatus.Builder xmppServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(XMPP.SERVER_ADDRESS));
+                .setServerAddress(fromInetSockAddress(XMPP.SERVER_ADDRESS, true));
 
         try {
             xmppServerStatus.setReachable(xmppConnectionService.isReachable());
@@ -282,7 +283,7 @@ public final class Zephyr implements ITransport
 
         ServerStatus.Builder zephyrServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(zephyrAddress));
+                .setServerAddress(fromInetSockAddress(zephyrAddress, true));
 
         try {
             zephyrServerStatus.setReachable(zephyrConnectionService.isReachable());
@@ -293,12 +294,27 @@ public final class Zephyr implements ITransport
 
         diagnostics.setZephyrServer(zephyrServerStatus);
 
-        // presence
+        // devices
 
-        Set<DID> available = presenceService.allPotentiallyAvailable();
-        for (DID did : available) {
+        // get all devices available to the presence service
+        Set<DID> availableDevices = presenceService.allPotentiallyAvailable();
+
+        // get all devices for which we have connections
+        Collection<ZephyrDevice> connectedDevices = zephyrConnectionService.getDeviceDiagnostics();
+
+        // remove all devices that we know for which we have connections
+        for (ZephyrDevice device : connectedDevices) {
+            availableDevices.remove(new DID(device.getDid()));
+
+        }
+
+        // add these 'empty' devices first
+        for (DID did : availableDevices) {
             diagnostics.addReachableDevices(ZephyrDevice.newBuilder().setDid(did.toPB()));
         }
+
+        // now add all the devices for which we have connections
+        diagnostics.addAllReachableDevices(connectedDevices);
 
         return diagnostics.build();
     }

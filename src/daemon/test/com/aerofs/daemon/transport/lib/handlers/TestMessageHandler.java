@@ -8,7 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
-import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -348,7 +348,7 @@ public final class TestMessageHandler
         int payloadSize = 4;
         byte[] randomBytes = new byte[payloadSize];
         r.nextBytes(randomBytes);
-        ChannelBuffer incomingBuffer = ChannelBuffers.wrappedBuffer(TPUtil.newDatagramPayload(randomBytes));
+        ChannelBuffer incomingBuffer = ChannelBuffers.wrappedBuffer(TransportProtocolUtil.newDatagramPayload(randomBytes));
 
         // this is the upstream event
         UpstreamMessageEvent messageEvent = new UpstreamMessageEvent(channel, incomingBuffer, remoteAddress);
@@ -381,7 +381,7 @@ public final class TestMessageHandler
         // incoming _valid_ packet
         byte[] randomBytes = new byte[4];
         r.nextBytes(randomBytes);
-        ChannelBuffer incomingBuffer = ChannelBuffers.wrappedBuffer(TPUtil.newDatagramPayload(randomBytes));
+        ChannelBuffer incomingBuffer = ChannelBuffers.wrappedBuffer(TransportProtocolUtil.newDatagramPayload(randomBytes));
 
         // this is the upstream event
         UpstreamMessageEvent messageEvent = new UpstreamMessageEvent(channel, incomingBuffer, remoteAddress);

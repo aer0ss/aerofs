@@ -49,7 +49,7 @@ public final class TestDiagnosticsHandler
     private Defect defect = mock(Defect.class);
     private Timeout timeout = mock(Timeout.class);
 
-    private DiagnosticsHandler diagnosticsHandler;
+    private ConnectionStatsHandler connectionStatsHandler;
     private TimerTask timerTask;
 
     @Before
@@ -74,7 +74,7 @@ public final class TestDiagnosticsHandler
             }
         });
 
-        diagnosticsHandler = new DiagnosticsHandler("z", rockLog, timer);
+        connectionStatsHandler = new ConnectionStatsHandler("z", rockLog, timer);
     }
 
     @Test
@@ -83,7 +83,7 @@ public final class TestDiagnosticsHandler
     {
         when(channel.isOpen()).thenReturn(true); // haven't disconnected yet
 
-        diagnosticsHandler.channelOpen(ctx, e); // created the channel
+        connectionStatsHandler.channelOpen(ctx, e); // created the channel
 
         assertTrue(timerTask != null);
         timerTask.run(timeout); // timeout passed; channel still open, still connecting
@@ -97,11 +97,11 @@ public final class TestDiagnosticsHandler
     {
         when(channel.isOpen()).thenReturn(true); // haven't disconnected yet
 
-        diagnosticsHandler.channelOpen(ctx, e); // create the channel
+        connectionStatsHandler.channelOpen(ctx, e); // create the channel
 
         assertTrue(timerTask != null);
 
-        diagnosticsHandler.channelConnected(ctx, e); // we've connected
+        connectionStatsHandler.channelConnected(ctx, e); // we've connected
 
         timerTask.run(timeout); // now the timeout triggers
 
@@ -114,11 +114,11 @@ public final class TestDiagnosticsHandler
     {
         when(channel.isOpen()).thenReturn(false); // by the time the timer triggers the channel is already closed
 
-        diagnosticsHandler.channelOpen(ctx, e); // create the channel
+        connectionStatsHandler.channelOpen(ctx, e); // create the channel
 
         assertTrue(timerTask != null);
 
-        diagnosticsHandler.channelClosed(ctx, e); // channel closes before we connect
+        connectionStatsHandler.channelClosed(ctx, e); // channel closes before we connect
 
         timerTask.run(timeout); // now the timer runs
 

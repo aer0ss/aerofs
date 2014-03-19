@@ -53,7 +53,7 @@ public final class TestTCPUnicast
     private static final Logger l = LoggerFactory.getLogger(TestTCPUnicast.class);
 
     private static final byte[] TEST_DATA = "hello".getBytes(Charsets.US_ASCII);
-    private static final byte[][] TEST_PAYLOAD = TPUtil.newDatagramPayload(TEST_DATA);
+    private static final byte[][] TEST_PAYLOAD = TransportProtocolUtil.newDatagramPayload(TEST_DATA);
 
     private final LinkStateService linkStateService = new LinkStateService();
 
@@ -90,7 +90,7 @@ public final class TestTCPUnicast
             throws ExTransportUnavailable, ExDeviceUnavailable, InterruptedException, ExecutionException
     {
         Waiter waiter = new Waiter();
-        Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TPUtil.newDatagramPayload(data), sendingChannel);
+        Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(data), sendingChannel);
 
         // wait until we trigger that the packet is sent
         waiter.future.get();

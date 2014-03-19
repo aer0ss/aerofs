@@ -14,7 +14,7 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.FrameParams;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
-import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Transport.PBStream;
@@ -86,7 +86,7 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
         }
 
         if (reply != null) {
-            write(ctx, future(e.getChannel()), TPUtil.newControl(reply));
+            write(ctx, future(e.getChannel()), TransportProtocolUtil.newControl(reply));
         }
     }
 
@@ -94,7 +94,7 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
             throws Exception
     {
         int wireLength = message.getPayload().available() + FrameParams.HEADER_SIZE;
-        return TPUtil.processUnicastPayload(
+        return TransportProtocolUtil.processUnicastPayload(
                 endpoint,
                 message.getUserID(),
                 message.getHeader(),
@@ -130,7 +130,7 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
             checkArgument(type == Type.STREAM, "d:%s recv invalid hdr:%s", endpoint.did(), type.name());
             checkArgument(header.getStream().getType() != PBStream.Type.PAYLOAD,
                     "d:%s recv invalid stream hdr type:%s", endpoint.did(), header.getStream().getType());
-            reply = TPUtil.processUnicastControl(endpoint, header, outgoingEventsink, streamManager);
+            reply = TransportProtocolUtil.processUnicastControl(endpoint, header, outgoingEventsink, streamManager);
         }
         }
 

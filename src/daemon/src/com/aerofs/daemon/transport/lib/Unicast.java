@@ -14,9 +14,11 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
+import com.google.protobuf.Message;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -28,6 +30,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -37,8 +41,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
     private final SortedSetMultimap<DID, Channel> channels = Multimaps.synchronizedSortedSetMultimap(TreeMultimap.<DID, Channel>create());
-    private final IAddressResolver unicastCallbacks;
-    private final TransportStats transportStats;
+    private final IAddressResolver addressResolver;
 
     private ServerBootstrap serverBootstrap;
     private ClientBootstrap clientBootstrap;
@@ -49,10 +52,9 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
     private volatile boolean running;
     private volatile boolean reuseChannels = true;
 
-    public Unicast(IAddressResolver unicastCallbacks, TransportStats transportStats)
+    public Unicast(IAddressResolver addressResolver)
     {
-        this.unicastCallbacks = unicastCallbacks;
-        this.transportStats = transportStats;
+        this.addressResolver = addressResolver;
     }
 
     // NOTE: these fields cannot be final due to a
@@ -298,7 +300,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
     public void sendControl(DID did, PBTPHeader h)
             throws ExTransportUnavailable, ExDeviceUnavailable
     {
-        send(did, null, Prio.LO, TPUtil.newControl(h), null);
+        send(did, null, Prio.LO, TransportProtocolUtil.newControl(h), null);
     }
 
     /**
@@ -314,7 +316,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
             throw new ExTransportUnavailable("transport unavailable running:" + running + " paused:" + paused);
         }
 
-        SocketAddress remoteAddress = unicastCallbacks.resolve(did);
+        SocketAddress remoteAddress = addressResolver.resolve(did);
         final Channel channel = clientBootstrap.connect(remoteAddress).getChannel();
         addChannelCloseFuture(did, channel);
 
@@ -345,5 +347,19 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
                 }
             }
         });
+    }
+
+    public Collection<Message> getChannelDiagnostics(DID did)
+    {
+        List<Message> diagnostics = Lists.newArrayList();
+
+        for (Channel channel : getActiveChannels(did)) {
+            IChannelDiagnosticsHandler handler = channel.getPipeline().get(IChannelDiagnosticsHandler.class);
+            if (handler != null) {
+                diagnostics.add(handler.getDiagnostics(channel));
+            }
+        }
+
+        return diagnostics;
     }
 }

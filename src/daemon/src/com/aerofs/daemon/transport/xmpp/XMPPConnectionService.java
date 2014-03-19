@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_XSC_CONNECTION_EXISTED_ON_LINK_DOWN_TO_UP_LSC;
-import static com.aerofs.daemon.transport.lib.TPUtil.newConnectedSocket;
+import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.lib.Util.exponentialRetryNewThread;
 import static com.google.common.collect.Maps.newConcurrentMap;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;

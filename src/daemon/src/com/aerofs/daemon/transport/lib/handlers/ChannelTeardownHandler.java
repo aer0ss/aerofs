@@ -12,7 +12,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IChannelData;
 import com.aerofs.daemon.transport.lib.StreamManager;
-import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.log.LogUtil;
@@ -102,7 +102,7 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
         DID did = getDID(channel);
         if (did != null) {
             l.debug("{} teardown {} streams", did, transport.id());
-            TPUtil.sessionEnded(new Endpoint(transport, did), sink, streamManager, channelMode.closeOutbound, channelMode.closeInbound);
+            TransportProtocolUtil.sessionEnded(new Endpoint(transport, did), sink, streamManager, channelMode.closeOutbound, channelMode.closeInbound);
         }
     }
 

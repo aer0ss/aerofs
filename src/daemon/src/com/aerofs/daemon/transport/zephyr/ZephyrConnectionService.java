@@ -19,6 +19,9 @@ import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.signalling.ISignallingService;
 import com.aerofs.daemon.transport.xmpp.signalling.ISignallingServiceListener;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.proto.Diagnostics.ChannelState;
+import com.aerofs.proto.Diagnostics.ZephyrChannel;
+import com.aerofs.proto.Diagnostics.ZephyrDevice;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
@@ -27,6 +30,7 @@ import com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -44,6 +48,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Proxy;
 import java.net.Socket;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -55,9 +60,8 @@ import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HANDSHAKE_TIMEOUT;
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HEARTBEAT_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.MAX_FAILED_HEARTBEATS;
-import static com.aerofs.daemon.transport.lib.TPUtil.newConnectedSocket;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
-import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.getCNameVerifiedHandler;
+import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.getZephyrClient;
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -83,7 +87,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
     private static Logger l = Loggers.getLogger(ZephyrConnectionService.class);
 
-    private final TransportStats transportStats;
     private final RockLog rockLog;
     private final LinkStateService linkStateService;
     private final ISignallingService signallingService;
@@ -129,7 +132,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                         HEARTBEAT_INTERVAL,
                         MAX_FAILED_HEARTBEATS));
 
-        this.transportStats = transportStats;
         this.rockLog = rockLog;
 
         this.linkStateService = linkStateService;
@@ -260,12 +262,10 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         // set up the ZephyrClientHandler
         getZephyrClient(channel).init(did, channel);
 
-        // setup the DID we expect from the remote peer
-        getCNameVerifiedHandler(channel).setExpectedRemoteDID(did);
-
         // now add the channel (IMPORTANT: do the add before setting up the close future)
         // we do this because we don't want to fail in an operation and then add the failed
         // channel to the map
+        // FIXME (AG): I'm not sure the logic here is correct
         addChannel(did, channel);
 
         // now, connect
@@ -336,7 +336,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     }
 
     @Override
-    public Object send(final DID did, final IResultWaiter wtr, Prio pri, byte[][] bss, Object cke)
+    public Object send(final DID did, @Nullable final IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
     {
         l.trace("{} send cke:{}", did, cke);
 
@@ -532,6 +532,45 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     //
     // debugging/printing
     //
+
+    public synchronized Collection<ZephyrDevice> getDeviceDiagnostics()
+    {
+        Collection<ZephyrDevice> devices = Lists.newArrayListWithCapacity(channels.size());
+
+        for (Map.Entry<DID, Channel> entry : channels.entrySet()) {
+            DID did = entry.getKey();
+            Channel channel = entry.getValue();
+
+            ZephyrClientHandler client = getZephyrClient(channel);
+            ZephyrDevice device = ZephyrDevice
+                    .newBuilder()
+                    .setDid(did.toPB())
+                    .addChannel(ZephyrChannel
+                            .newBuilder()
+                            .setState(getChannelState(client))
+                            .setZidLocal(client.getLocalZid())
+                            .setZidRemote(client.getRemoteZid())
+                            .setBytesSent(client.getBytesSent())
+                            .setBytesReceived(client.getBytesReceived())
+                            .setLifetime(client.getChannelLifetime()))
+                    .build();
+
+            devices.add(device);
+        }
+
+        return devices;
+    }
+
+    private static ChannelState getChannelState(ZephyrClientHandler client)
+    {
+        if (client.isClosed()) {
+            return ChannelState.CLOSED;
+        } else if (client.hasHandshakeCompleted()) {
+            return ChannelState.VERIFIED;
+        } else {
+            return ChannelState.CONNECTING;
+        }
+    }
 
     public boolean isReachable()
             throws IOException

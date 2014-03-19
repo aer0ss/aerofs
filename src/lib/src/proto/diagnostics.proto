@@ -76,6 +76,12 @@ message Transport {
 // transport diagnostics messages and types
 //
 
+enum ChannelState {
+    CONNECTING = 1;
+    VERIFIED = 2;
+    CLOSED = 3;
+}
+
 message TransportDiagnostics {
     optional TCPDiagnostics tcp_diagnostics = 1;
     optional JingleDiagnostics jingle_diagnostics = 2;
@@ -89,7 +95,17 @@ message TCPDiagnostics {
 
 message TCPDevice {
     required bytes did = 1;
-    required PBInetSocketAddress device_address = 2;
+    required PBInetSocketAddress device_address = 2; // FIXME (AG): remove this
+    repeated TCPChannel channel = 3;
+}
+
+message TCPChannel {
+    optional ChannelState state = 1;
+    optional uint64 bytes_sent = 2;
+    optional uint64 bytes_received = 3;
+    optional uint64 lifetime = 4;
+    optional bool originator = 5;
+    optional PBInetSocketAddress remote_address = 6;
 }
 
 message JingleDiagnostics {
@@ -100,6 +116,15 @@ message JingleDiagnostics {
 
 message JingleDevice {
     required bytes did = 1;
+    repeated JingleChannel channel = 2;
+}
+
+message JingleChannel {
+    optional ChannelState state = 1;
+    optional uint64 bytes_sent = 2;
+    optional uint64 bytes_received = 3;
+    optional uint64 lifetime = 4;
+    optional bool originator = 5;
 }
 
 message ZephyrDiagnostics {
@@ -110,6 +135,16 @@ message ZephyrDiagnostics {
 
 message ZephyrDevice {
     required bytes did = 1;
+    repeated ZephyrChannel channel = 2;
+}
+
+message ZephyrChannel {
+    optional ChannelState state = 1;
+    optional uint64 zid_local = 2;
+    optional uint64 zid_remote = 3;
+    optional uint64 bytes_sent = 4;
+    optional uint64 bytes_received = 5;
+    optional uint64 lifetime = 6;
 }
 
 message ServerStatus {

@@ -15,7 +15,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 
-import static com.aerofs.daemon.transport.lib.ChannelDataUtil.getChannelData;
+import static com.aerofs.daemon.transport.lib.TransportUtil.getChannelData;
 import static com.google.common.base.Preconditions.checkState;
 
 @Sharable
@@ -36,7 +36,7 @@ public final class IncomingChannelHandler extends SimpleChannelHandler
     {
         checkState(e.getChannel().getAttachment() != null);
 
-        IChannelData channelData = getChannelData(e);
+        IChannelData channelData = getChannelData(e.getChannel());
         DID did = channelData.getRemoteDID();
         Channel channel = e.getChannel();
 
