@@ -238,7 +238,7 @@ public class TokenResource
         authReq.setGrantedScopes(client.getScopes());
 
         String uri = accessTokenRequest.getRedirectUri();
-        if (uri != null && (!authReq.getRedirectUri().equalsIgnoreCase(uri))) {
+        if (uri != null && (!uri.equalsIgnoreCase(authReq.getRedirectUri()))) {
             throw new ValidationResponseException(ValidationResponse.REDIRECT_URI_DIFFERENT);
         }
 
