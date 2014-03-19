@@ -119,7 +119,7 @@ public final class Metriks implements IMetriks
                             // remove from the queue if the send succeeds.
                             //
                             // realistically, however, it's nbd if not all metriks make it
-                            l.warn("pusher: send failed: {}", e);
+                            l.warn("pusher: send failed", e);
                             Thread.sleep(SLEEP_TIME_ON_FAILURE);
                         }
                     }
