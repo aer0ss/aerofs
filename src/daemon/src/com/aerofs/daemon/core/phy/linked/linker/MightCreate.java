@@ -8,6 +8,7 @@ import java.util.Set;
 
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.*;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
@@ -20,7 +21,6 @@ import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.rocklog.RockLog;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
@@ -272,18 +272,10 @@ public class MightCreate
     private Set<Operation> determineUpdateOperation_(PathCombo pc, @Nullable SOID sourceSOID,
             @Nullable SOID targetSOID, FIDAndType fnt) throws SQLException
     {
-        if (targetSOID == null) {
-            if (sourceSOID == null) return EnumSet.of(Create);
-            OA sourceOA = _ds.getOA_(sourceSOID);
-            if (sourceOA.isDirOrAnchor() == fnt._dir) return EnumSet.of(Update);
-            // same FID, diff path, diff types
-            // This may happen if either:
-            //    1) the OS deletes an object and soon reuses the same FID to create a new object
-            //       of a different type. This has been observed on a Ubuntu test VM.
-            //    2) the filesystems has ephemeral FIDs, such as FAT on Linux.
-            // In either case, we need to assign the logical object with a random FID
-            return EnumSet.of(Create, RandomizeSourceFID);
-        }
+        OA sourceOA = sourceSOID != null ? _ds.getOA_(sourceSOID) : null;
+        boolean sourceSameType = sourceOA != null && sourceOA.isDirOrAnchor() == fnt._dir;
+
+        if (targetSOID == null) return updateSource(sourceSOID, sourceSameType);
 
         OA targetOA = _ds.getOA_(targetSOID);
 
@@ -306,30 +298,41 @@ public class MightCreate
         //
         // The only safe way to deal with such corner cases is to rename the NRO
         if (_rh.isNonRepresentable(targetOA)) {
-            return Sets.union(renameTargetOp(sourceSOID, targetSOID),
+            l.info("nro in mc {} {}", targetSOID, _rh.conflict(targetSOID));
+            return Sets.union(renameTargetAndUpdateSource(sourceSOID, sourceSameType),
                     EnumSet.of(NonRepresentableTarget));
         }
 
-        boolean sameType = (targetOA.isDirOrAnchor() == fnt._dir);
+        if (sourceSameType && targetSOID.equals(sourceSOID)) return EnumSet.of(Update);
 
-        if (sameType && targetSOID.equals(sourceSOID)) return EnumSet.of(Update);
-
-        if (canSafelyReplaceFID(pc, sourceSOID, targetOA, sameType)) {
-            // The assertion below is guaranteed by the above code. N.B. oa.fid() may be null if
-            // no branch is present.
-            Preconditions.checkState(!fnt._fid.equals(targetOA.fid()));
+        if (canSafelyReplaceFID(pc, sourceSOID, targetOA, fnt._dir)) {
+            // The assertion below is guaranteed by the above code.
+            // N.B: oa.fid() may be null if no branch is present.
+            checkState(!fnt._fid.equals(targetOA.fid()));
             return EnumSet.of(Replace);
         }
 
         // The logical object can't simply link to the physical object by replacing the FID.
-        return renameTargetOp(sourceSOID, targetSOID);
+        return renameTargetAndUpdateSource(sourceSOID, sourceSameType);
     }
 
-    private static Set<Operation> renameTargetOp(SOID source, SOID target)
+    private static Set<Operation> updateSource(SOID source, boolean sourceSameType)
     {
-        return EnumSet.of(RenameTarget, source == null || target.equals(source) ? Create : Update);
+        if (source == null) return EnumSet.of(Create);
+        if (sourceSameType) return EnumSet.of(Update);
+        // same FID, different types
+        // This may happen if either:
+        //    1) the OS deletes an object and soon reuses the same FID to create a new object
+        //       of a different type. This has been observed on a Ubuntu test VM.
+        //    2) the filesystems has ephemeral FIDs, such as FAT on Linux.
+        // In either case, we need to assign the logical object with a random FID
+        return EnumSet.of(Create, RandomizeSourceFID);
     }
 
+    private static Set<Operation> renameTargetAndUpdateSource(SOID source, boolean sourceSameType)
+    {
+        return Sets.union(EnumSet.of(RenameTarget), updateSource(source, sourceSameType));
+    }
 
     /**
      * For locally present files, we can always safely use the Replace operation that adjusts the
@@ -365,7 +368,7 @@ public class MightCreate
      * Regular folders can still be eligible for FID replacement provided the new FID is not
      * associated with any existing SOID.
      */
-    private boolean canSafelyReplaceFID(PathCombo pc, SOID sourceSOID, OA target, boolean sameType)
+    private boolean canSafelyReplaceFID(PathCombo pc, SOID sourceSOID, OA target, boolean dir)
     {
         if (target.isExpelled()) return false;
 
@@ -379,6 +382,6 @@ public class MightCreate
             }
         }
 
-        return sameType && (target.isFile() || sourceSOID == null);
+        return (target.isDirOrAnchor() == dir) && (target.isFile() || sourceSOID == null);
     }
 }

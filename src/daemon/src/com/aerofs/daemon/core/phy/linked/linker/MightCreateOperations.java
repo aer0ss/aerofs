@@ -12,6 +12,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
@@ -231,19 +232,14 @@ class MightCreateOperations
 
     /**
      * Assign the specified object a randomly generated FID which is not used by other objects
+     *
+     * NB: use a random UUID to avoid conflicts with real FIDs
      */
     private void assignRandomFID_(SOID soid, Trans t) throws SQLException
     {
         l.info("set random fid for {}", soid);
-        byte[] bs = new byte[_dr.getFIDLength()];
-        while (true) {
-            Util.rand().nextBytes(bs);
-            FID fid = new FID(bs);
-            if (_ds.getSOIDNullable_(fid) == null) {
-                _ds.setFID_(soid, fid, t);
-                return;
-            }
-        }
+        FID fid = new FID(UniqueID.generate().getBytes());
+        _ds.setFID_(soid, fid, t);
     }
 
     /**

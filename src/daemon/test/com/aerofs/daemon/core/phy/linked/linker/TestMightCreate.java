@@ -302,9 +302,9 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("d0"));
         SOID src = ds.resolveNullable_(mkpath("f1"));
         generateDirFnt(soid);
-        FIDAndType fnt = generateDirFnt(src);
+        FIDAndType fnt = generateFileFnt(src);
 
-        assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
+        assertEquals(Result.FILE, mightCreate("d0", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
                 src, soid, "d0");
@@ -443,6 +443,40 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
                 source, target, "d0");
+    }
+
+    @Test
+    public void shouldCreateRandomizeFIDAndRenameTarget() throws Exception
+    {
+        SOID target = ds.resolveNullable_(mkpath("d0"));
+        generateDirFnt(target);
+
+        SOID source = ds.resolveNullable_(mkpath("d4"));
+        FIDAndType fnt = generateFileFnt(source);
+
+        assertEquals(Result.FILE, mightCreate("d0", fnt));
+
+        verifyOperationExecuted(
+                EnumSet.of(Operation.Create, Operation.RandomizeSourceFID, Operation.RenameTarget),
+                source, target, "d0");
+    }
+
+    @Test
+    public void shouldCreateRandomizeFIDAndRenameNROTarget() throws Exception
+    {
+        SOID target = ds.resolveNullable_(mkpath("f1"));
+        generateFileFnt(target);
+
+        when(rh.isNonRepresentable(oaAt("f1"))).thenReturn(true);
+
+        SOID source = ds.resolveNullable_(mkpath("d4"));
+        FIDAndType fnt = generateFileFnt(source);
+
+        assertEquals(Result.FILE, mightCreate("f1", fnt));
+
+        verifyOperationExecuted(
+                EnumSet.of(Operation.Create, Operation.RandomizeSourceFID, Operation.RenameTarget, Operation.NonRepresentableTarget),
+                source, target, "f1");
     }
 
     @Test
