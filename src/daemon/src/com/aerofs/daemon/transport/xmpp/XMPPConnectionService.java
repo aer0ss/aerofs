@@ -28,6 +28,7 @@ import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -502,7 +503,7 @@ public final class XMPPConnectionService implements ILinkStateListener
         newConnection.addPacketListener(new PacketListener()
         {
             @Override
-            public void processPacket(Packet packet)
+            public void processPacket(@Nullable Packet packet)
             {
                 if (packet == null || packet.getFrom() == null) {
                     return;
