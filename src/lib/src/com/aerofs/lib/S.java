@@ -175,7 +175,7 @@ public class S
             BTN_ADVANCED = "Advanced...",
             BTN_CHANGE = "Change...",
             COULDNT_UNLINK_DEVICE = "Sorry, we could not unlink your computer.",
-            UNLINK_THIS_COMPUTER = "Unlink This Computer...",
+            UNLINK_THIS_COMPUTER = "Unlink Computer...",
             UNLINK_THIS_COMPUTER_CONFIRM = "Unlink this computer from your " + L.product() +
                 " account and quit the program?" +
                 " The computer will no longer stay in sync, but will keep files it currently has.",
@@ -223,7 +223,7 @@ public class S
             ADMIN_PASSWD = "Admin password",
             PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password",
 
-            ENABLE_SYNC_HISTORY = "Keep Sync History on this computer",
+            ENABLE_SYNC_HISTORY = "Keep Sync History",
             SYNC_HISTORY_CONFIRM = "Are you sure? Without Sync History, " + L.product()
                     + " cannot restore any files you modify or delete on other devices.";
 }

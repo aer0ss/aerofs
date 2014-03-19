@@ -13,6 +13,7 @@ import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.misc.DlgAbout;
 import com.aerofs.gui.misc.DlgDefect;
+import com.aerofs.gui.transport_diagnostics.DlgTransportDiagnostics;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.S;
@@ -108,6 +109,19 @@ public class TrayMenuPopulator
                 GUIUtil.launch("http://support.aerofs.com");
             }
         });
+
+        addMenuSeparator();
+
+        addMenuItem(S.TXT_TRANSPORT_DIAGNOSTICS_TITLE, new AbstractListener(null)
+        {
+            @Override
+            protected void handleEventImpl(Event event)
+            {
+                new DlgTransportDiagnostics(GUI.get().sh()).openDialog();
+            }
+        });
+
+        addMenuSeparator();
 
         addMenuItem("About " + L.product(), new AbstractListener(null)
         {

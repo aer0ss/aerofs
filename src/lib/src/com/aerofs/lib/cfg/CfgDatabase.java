@@ -107,7 +107,7 @@ public class CfgDatabase
         // storage type
         STORAGE_TYPE("storage_type", null),
 
-        // connecting to the REST API gateway to enable web access
+        // connecting to the REST API gateway to enable API access
         // DO NOT use this directly, use CfgRestService instead
         REST_SERVICE("rest_service", null)
         ;
