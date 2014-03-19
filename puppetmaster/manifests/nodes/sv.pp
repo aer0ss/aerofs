@@ -19,9 +19,9 @@ node "sv.aerofs.com" inherits default {
 
     cron{"remove old defects":
         command => '/usr/bin/clean_defects && symlinks -dr /var/svlogs_prod/defect > /dev/null 2>&1',
-        # trigger at t=50m because pagerduty probes will trigger at t=0m
-        minute  => "50",
-        hour    => "*",
+        minute  => "0",
+        # runs 4 times a day and at 23h UTC which is 1-2h before the pagerduty probe fires
+        hour    => "5,11,17,23",
     }
     cron{"remove empty defects":
         command => 'find /var/svlogs_prod/defect/ -iname log.defect\* -size 0 | xargs rm',
