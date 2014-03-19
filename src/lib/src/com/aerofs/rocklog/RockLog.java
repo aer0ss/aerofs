@@ -79,9 +79,14 @@ public class RockLog
             @Override
             public void run()
             {
-                rpc(defect);
+                sendBlocking(defect);
             }
         });
+    }
+
+    void sendBlocking(Defect defect)
+    {
+        rpc(defect);
     }
 
     boolean rpc(Defect defect)

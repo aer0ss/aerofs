@@ -5,9 +5,11 @@
 package com.aerofs.daemon.core.health_check;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.daemon.DaemonDefects;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.sv.client.SVClient;
+import com.aerofs.rocklog.Defect;
+import com.aerofs.rocklog.RockLog;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.lang.management.ManagementFactory;
@@ -19,6 +21,13 @@ final class DeadlockDetector implements Runnable
     private static final Logger l = Loggers.getLogger(DeadlockDetector.class);
 
     private final ThreadMXBean _threadMXBean = ManagementFactory.getThreadMXBean();
+    private final RockLog _rockLog;
+
+    @Inject
+    DeadlockDetector(RockLog rockLog)
+    {
+        _rockLog = rockLog;
+    }
 
     @Override
     public void run()
@@ -41,10 +50,16 @@ final class DeadlockDetector implements Runnable
         ThreadInfo[] deadlockedThreads = _threadMXBean.getThreadInfo(deadlockedTids, true, true);
         ThreadInfo[] allThreads = _threadMXBean.dumpAllThreads(true, true);
 
-        String errorMesage = constructErrorMessage(deadlockedThreads, allThreads);
-        l.error("\n\n==== BEGIN DEADLOCK INFO ====\n{}\n==== END DEADLOCK_INFO ====", errorMesage);
+        String threadStacks = constructErrorMessage(deadlockedThreads, allThreads);
+        l.error("\n\n==== BEGIN DEADLOCK INFO ====\n{}\n==== END DEADLOCK_INFO ====", threadStacks);
 
-        SVClient.logSendDefectSyncIgnoreErrors(true, "deadlock", new ExTimeout("deadlock"));
+        // NOTE: I want to send this in a blocking fashion so
+        // that we get the data to RockLog before the system goes down
+        Defect deadlockDefect = _rockLog.newDefect(DaemonDefects.DAEMON_DEADLOCK);
+        deadlockDefect.addData("threads", threadStacks);
+        deadlockDefect.sendBlocking();
+
+        // this makes a synchronous call to SV under the hood
         SystemUtil.fatal("deadlock");
     }
 

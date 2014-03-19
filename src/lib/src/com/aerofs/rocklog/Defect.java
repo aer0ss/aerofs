@@ -88,12 +88,20 @@ public class Defect
 
     /**
      * Send the message to RockLog asynchronously.
-     * Note: do not make a sync (blocking) version of this call, to avoid performance costs when
-     * RockLog is not available (ie: in deployed environments)
      */
     public void send()
     {
         _rockLog.send(this);
+    }
+
+    /**
+     * Send the message to RockLog synchronously.
+     * Be very careful when using this call, especially in an environment
+     * where RockLog may not be available.
+     */
+    public void sendBlocking()
+    {
+        _rockLog.sendBlocking(this);
     }
 
     String getURLPath()
