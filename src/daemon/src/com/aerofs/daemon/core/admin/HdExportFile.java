@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.CoreLockReleasingExecutor;
 import com.aerofs.daemon.event.admin.EIExportFile;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.ex.ExNotFile;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.IOSUtil;
@@ -34,6 +35,7 @@ public class HdExportFile extends AbstractHdExport<EIExportFile>
     {
         SOID soid = _ds.resolveThrows_(ev._src);
         OA oa = _ds.getOAThrows_(soid);
+        if (!oa.isFile()) throw new ExNotFile();
         oa.caMasterThrows();
         IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
 
