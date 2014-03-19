@@ -118,7 +118,8 @@ public class GetVersReply
 
         void finalizeStore_(Trans t) throws SQLException, ExNotFound
         {
-            assert _sidx != null;
+            // ignored store (expelled locally or receiving ticks form user wo/ WRITE perm)
+            if (_sidx == null) return;
 
             l.debug("finalize {} {}", _sidx, _filter);
 
