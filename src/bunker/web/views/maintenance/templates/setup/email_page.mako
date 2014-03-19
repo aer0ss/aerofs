@@ -116,6 +116,7 @@
 
 <div id="verify-modal-email-input" class="modal hide small-modal" tabindex="-1" role="dialog">
     <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4>Test SMTP settings</h4>
     </div>
 
@@ -140,6 +141,7 @@
 
 <div id="verify-modal-code-input" class="modal hide small-modal" tabindex="-1" role="dialog">
     <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4>Enter test verification code</h4>
     </div>
 
