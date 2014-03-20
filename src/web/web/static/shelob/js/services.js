@@ -153,10 +153,10 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
                         } else {
                             deferred.resolve({uploaded: end + 1});
                         }
-                    }, function(r) {
+                    }, function(response) {
                         // PUT failed
-                        $log.error('PUT failed', r);
-                        deferred.reject({reason: 'upload', status: r.status});
+                        $log.error('PUT failed', response);
+                        deferred.reject({reason: 'upload', status: response.status});
                     });
                 };
                 reader.onerror = function(e) {

@@ -14,7 +14,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $log, $modal, 
             var headers = {'If-Match': etag};
             //TODO: use page size (4M or 8M) chunks, and increase nginx's max body size
             var chunkSize = 1024 * 1024;
-            API.chunkedUpload(fileJSON.id, file, chunkSize, headers).then(function(r) {
+            API.chunkedUpload(fileJSON.id, file, chunkSize, headers).then(function(response) {
                 // file upload succeeded
                 $log.info('file upload succeeded');
                 $timeout(function() {
@@ -22,20 +22,20 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $log, $modal, 
                     showSuccessMessage('Successfully uploaded ' + fileJSON.name);
                     $rootScope.files.push(fileJSON);
                 }, 500);
-            }, function(r) {
+            }, function(response) {
                 // file upload failed
                 scope.progressModal.dismiss();
-                if (r.reason == 'read') {
+                if (response.reason == 'read') {
                     showErrorMessage("Upload failed: could not read file from disk.");
-                } else if (r.reason == 'upload') {
-                    if (r.status == 503) showErrorMessage(getClientsOfflineErrorText());
-                    else if (r.status == 409) showErrorMessage("A file or folder with that name already exists.");
+                } else if (response.reason == 'upload') {
+                    if (response.status == 503) showErrorMessage(getClientsOfflineErrorText());
+                    else if (response.status == 409) showErrorMessage("A file or folder with that name already exists.");
                     else showErrorMessage(getInternalErrorText());
                 } else showErrorMessage(getInternalErrorText());
-            }, function(r) {
+            }, function(response) {
                 // file upload notification
-                $log.debug('progress report:', r.progress);
-                $rootScope.$broadcast('modal.progress', {progress: r.progress});
+                $log.debug('progress report:', response.progress);
+                $rootScope.$broadcast('modal.progress', {progress: response.progress});
             });
         };
 
@@ -66,16 +66,16 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $log, $modal, 
             var fileObj = {parent: $rootScope.parent, name: file.name};
             $log.debug("creating file:", fileObj);
             var headers = {'Endpoint-Consistency': 'strict'};
-            API.post('/files', fileObj, headers).then(function(r) {
+            API.post('/files', fileObj, headers).then(function(response) {
                 // file creation succeeded
                 $log.info('file creation succeeded');
-                scope.doChunkedUpload(r.data, file, r.headers('ETag'));
-            }, function(r) {
+                scope.doChunkedUpload(response.data, file, response.headers('ETag'));
+            }, function(response) {
                 // file creation failed
-                $log.error('file creation failed with status ' + r.status);
+                $log.error('file creation failed with status ' + response.status);
                 scope.progressModal.dismiss();
-                if (r.status == 503) showErrorMessage(getClientsOfflineErrorText());
-                else if (r.status == 409) showErrorMessage("A file or folder with that name already exists.");
+                if (response.status == 503) showErrorMessage(getClientsOfflineErrorText());
+                else if (response.status == 409) showErrorMessage("A file or folder with that name already exists.");
                 else showErrorMessage(getInternalErrorText());
             });
         };
