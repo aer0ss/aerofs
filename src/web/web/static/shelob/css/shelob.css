@@ -19,3 +19,13 @@ div#actions {
 table#file-list tr#new-folder input {
     margin-bottom: 0;
 }
+a {
+    /*
+     * <a href=""> elements show the cursor as a pointer by default, but
+     * <a ng-click=""> elements do not
+     */
+    cursor: pointer;
+}
+img.action {
+    cursor: pointer;
+}

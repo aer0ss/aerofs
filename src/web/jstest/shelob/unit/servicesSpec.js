@@ -1,10 +1,10 @@
 describe('Shelob Services', function() {
 
+    beforeEach(module('shelobServices'));
+
     describe('API service', function() {
 
         var injector, $httpBackend, Token, API;
-
-        beforeEach(module('shelobServices'));
 
         beforeEach(inject(function($injector) {
             injector = $injector;
@@ -145,4 +145,3 @@ describe('Shelob Services', function() {
         });
     });
 });
-

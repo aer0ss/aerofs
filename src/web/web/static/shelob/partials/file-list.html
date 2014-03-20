@@ -26,6 +26,7 @@
       <th></th>
       <th>Name</th>
       <th>Last Modified</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -41,22 +42,39 @@
           />
         </td>
         <td class="last-modified">--</td>
+        <td class="actions"></td>
       </tr>
 
-      <tr ng-repeat="folder in folders | orderBy:'name'" ng-init="folders=[]" class="folder">
-        <td class="icon"><img src="/static/shelob/img/icons/40x40/filetype_folder.png"></td>
-        <td class="name"><a href="#/{{folder.id}}">{{folder.name}}</a></td>
-        <td class="last-modified">--</td>
+      <tr ng-repeat="object in objects | orderBy:['-type', 'name']"
+          ng-init="mousedOver.object = null;"
+          ng-mouseenter="mousedOver.object = object"
+          ng-mouseleave="mousedOver.object = null"
+          class="object">
+        <td class="icon">
+          <img ng-if="object.type == 'folder'" src="/static/shelob/img/icons/40x40/filetype_folder.png">
+          <div ng-if="object.type == 'file'" aero-icon data-mime-type={{object.mime_type}}></div>
+        </td>
+        <td class="name">
+          <a ng-if="object.type == 'folder'" ng-hide="object.edit" ng-href="#/{{object.id}}">{{object.name}}</a>
+          <a ng-if="object.type == 'file'" ng-hide="object.edit" ng-click="download(object.id)">{{object.name}}</a>
+          <input in-place-edit
+                 ng-show="object.edit"
+                 type="text"
+                 ng-model="object.newName"
+                 focus-on="object.edit"
+                 on-submit="submitRename(object)"
+                 on-cancel="cancelRename(object)"/>
+        </td>
+        <td class="last-modified">{{object.last_modified | date: 'short'}}</td>
+        <td class="actions">
+          <div ng-show="mousedOver.object.id == object.id">
+            <img src="/static/shelob/img/glyphicons/glyphicons_150_edit.png"
+                 tooltip="Rename"
+                 ng-click="startRename(object)"
+                 class="action action-rename"/>
+          </div>
+        </td>
       </tr>
 
-      <tr ng-repeat="file in files | orderBy:'name'" ng-init="files=[]" class="file">
-        <td class="icon"><div aero-icon data-mime-type={{file.mime_type}}></div></td>
-        <!--
-        The ng-click directive is what's executed; the href is only provided as
-        a no-op so that the link has the proper styling.
-        -->
-        <td class="name"><a ng-click="download(file.id)" href="javascript:;">{{file.name}}</a></td>
-        <td class="last-modified">{{file.last_modified | date: 'short'}}</td>
-      </tr>
   </tbody>
 </table>

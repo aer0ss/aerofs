@@ -101,7 +101,10 @@ shelobDirectives.directive('inPlaceEdit', function($timeout) { return {
                 // directive magic is done so that the element exists when you
                 // try to focus on it. See:
                 // http://lorenzmerdian.blogspot.com/2013/03/how-to-handle-dom-updates-in-angularjs.html
-                $timeout(function() { elem[0].focus(); });
+                $timeout(function() {
+                    elem[0].focus();
+                    elem[0].select();
+                });
             }
         });
 

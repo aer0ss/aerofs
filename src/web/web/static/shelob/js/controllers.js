@@ -9,8 +9,14 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     API.get('/children/' + oid + '?t=' + Math.random()).then(function(r) {
         // success callback
         $scope.parent = r.data.parent;
-        $scope.files = r.data.files;
-        $scope.folders = r.data.folders;
+        for (var i = 0; i < r.data.folders.length; i++) {
+            r.data.folders[i].type = 'folder';
+            r.data.folders[i].last_modified = '--';
+        }
+        for (var i = 0; i < r.data.files.length; i++) {
+            r.data.files[i].type = 'file';
+        }
+        $scope.objects = r.data.folders.concat(r.data.files);
     }, function(r) {
         // failure callback
         $log.error('list children call failed with ' + r.status);
@@ -97,8 +103,12 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         name: '',
     };
 
+    // data controlling which object is moused over, and should display action icons
+    $scope.mousedOver = {
+        object: null
+    };
+
     // This is called when a user submits the name for a new folder
-    //
     //
     // It should submit an API request to create a folder and update
     // the view, or do nothing if the user did not enter any text.
@@ -108,7 +118,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     $scope.submitNewFolder = function() {
         $log.debug("new folder: " + $scope.newFolder.name);
         if ($scope.newFolder.name != '') {
-            folderData = {name: $scope.newFolder.name, parent: $scope.parent};
+            var folderData = {name: $scope.newFolder.name, parent: $scope.parent};
             API.post('/folders', folderData).then(function(r) {
                 // POST /folders returns the new folder object
                 $scope.folders.push(r.data);
@@ -138,5 +148,58 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         $scope.newFolder.hidden = true;
         $scope.newFolder.name = '';
         $scope.$apply();
-    }
+    };
+
+    // This is called when a user clicks the "rename" action icon
+    //
+    // It should replace the object's name with a text input initialized with
+    // the object's name.
+    //
+    $scope.startRename = function(object) {
+        object.newName = object.name;
+        object.edit = true;
+    };
+
+    // This is called when a user submits a new name for an object
+    //
+    // It should attempt to rename the object if the new name is different, and handle
+    // success and failure scenarios. In any case, it should reset the view at the end
+    // so that the input is hidden and the object's name is displayed as a link.
+    //
+    $scope.submitRename = function(object) {
+        $log.info("attempting rename from " + object.name + " to " + object.newName);
+        if (object.name == object.newName || object.newName == "") {
+            $scope.cancelRename(object);
+            return;
+        }
+        var path = '/' + object.type + 's/' + object.id;
+        API.put(path, {parent: $scope.parent, name: object.newName}).then(function(r) {
+            // rename succeeded
+            object.name = r.data.name;
+            if (r.data.last_modified) object.last_modified = r.data.last_modified;
+            showSuccessMessage("Successfully renamed " + object.type);
+        }, function(r) {
+            // rename failed
+            if (r.status == 503) {
+                showErrorMessage(getClientsOfflineErrorText());
+            } else if (r.status == 409) {
+                showErrorMessage("A file or folder with that name already exists.");
+            } else {
+                showErrorMessage(getInternalErrorText());
+            }
+        }).finally(function() {
+            // after success or failure
+            object.edit = false;
+        });
+    };
+
+    // This is called when a user presses Escape while renaming an object
+    //
+    // It should reset the view so that the input is hidden and the object's
+    // name is displayed as a link
+    //
+    $scope.cancelRename = function(object) {
+        object.edit = false;
+        $scope.$apply();
+    };
 }]);

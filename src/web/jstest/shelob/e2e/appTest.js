@@ -14,6 +14,7 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
     var website_html_obj = {id:"46d46d46d", name:"website.html", last_modified: "2013-12-14T02:19:59Z", mime_type: "text/plain"};
     var textfile_txt_obj = {id:"23b23b23b", name:"textfile.txt", last_modified: "2013-12-14T02:19:59Z", mime_type: "text/plain"};
     var otherfile_obj = {id:"67e67e67e", name:"otherfile", last_modified: "2013-12-14T02:19:59Z", mime_type: "not/a/mime/type"};
+    var anotherfile_obj = {id:"42b42b42b", name:"anotherfile", last_modified: "2013-12-14T02:19:59Z", mime_type: "not/a/mime/type"};
 
     // mock out the API responses according to the folder structure describe above
     $httpBackend.whenGET('/api/v1.0/folders/01a01a01a').respond(empty_folder_obj);
@@ -37,7 +38,7 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
         {
             parent: "9f89f89f8",
             folders: [deeper_folder_obj],
-            files: [textfile_txt_obj, otherfile_obj],
+            files: [textfile_txt_obj, otherfile_obj, anotherfile_obj],
         }
     );
     $httpBackend.whenGET(/^\/api\/v1.0\/children\/78f78f78f\/?(\?.*)?$/).respond(
