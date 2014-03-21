@@ -27,12 +27,12 @@ import com.aerofs.daemon.rest.RestTunnelClient;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgModule;
+import com.aerofs.lib.cfg.CfgRestService;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
 import com.aerofs.proto.Common.PBException.Type;
@@ -121,7 +121,7 @@ public class DaemonProgram implements IProgram
         // TODO (HB): control Rest service through GUI
         // NB: the RestService MUST be started AFTER creation of the Daemon instance or Guice
         // throws a fit
-        if (Cfg.user().isAeroFSUser() || PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
+        if (new CfgRestService().isEnabled()) {
             injCore.getInstance(RestService.class).start();
             injCore.getInstance(RestTunnelClient.class).start();
         }

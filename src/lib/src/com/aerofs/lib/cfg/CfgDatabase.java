@@ -105,7 +105,11 @@ public class CfgDatabase
         SYNC_HISTORY("sync_history", true),
 
         // storage type
-        STORAGE_TYPE("storage_type", null)
+        STORAGE_TYPE("storage_type", null),
+
+        // connecting to the REST API gateway to enable web access
+        // DO NOT use this directly, use CfgRestService instead
+        REST_SERVICE("rest_service", null)
         ;
 
         private final String _str;
@@ -337,5 +341,17 @@ public class CfgDatabase
     public boolean getBoolean(Key key)
     {
         return Boolean.parseBoolean(get(key));
+    }
+
+    /**
+     * @return the boolean value for key {@paramref key} if the boolean value is set,
+     *   returns {@paramref defaultValue} otherwise.
+     *
+     * N.B. this method disregards the default value declared in the Key enum.
+     * N.B. frequently calling this method is inefficient. COnsider caching the result
+     */
+    public boolean getBoolean(Key key, boolean defaultValue)
+    {
+        return getNullable(key) == null ? defaultValue : getBoolean(key);
     }
 }
