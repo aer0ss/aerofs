@@ -31,6 +31,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.analytics.AnalyticsEventCounter;
@@ -46,6 +47,7 @@ import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -65,6 +67,7 @@ import static com.aerofs.daemon.core.ds.OA.Type.FILE;
 import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.obfuscatePath;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class is in charge of executing whatever filesystem and db operations {@link MightCreate}
@@ -80,11 +83,12 @@ class MightCreateOperations
     private final VersionUpdater _vu;
     private final InjectableFile.Factory _factFile;
     private final SharedFolderTagFileAndIcon _sfti;
-    private final InjectableDriver _dr;
     private final AnalyticsEventCounter _saveCounter;
     private final CoreScheduler _sched;
     private final IMapSID2SIndex _sid2sidx;
     private final ImmigrantCreator _imc;
+    private final HashQueue _hq;
+    private final RockLog _rl;
 
     static enum Operation
     {
@@ -112,9 +116,9 @@ class MightCreateOperations
 
     @Inject
     public MightCreateOperations(DirectoryService ds, ObjectMover om, ObjectCreator oc,
-            InjectableDriver driver, VersionUpdater vu, InjectableFile.Factory factFile,
+            VersionUpdater vu, InjectableFile.Factory factFile,
             SharedFolderTagFileAndIcon sfti, Analytics analytics, CoreScheduler sched,
-            IMapSID2SIndex sid2sidx, ImmigrantCreator imc)
+            IMapSID2SIndex sid2sidx, ImmigrantCreator imc, HashQueue hq, RockLog rl)
     {
         _ds = ds;
         _oc = oc;
@@ -123,9 +127,10 @@ class MightCreateOperations
         _imc = imc;
         _factFile = factFile;
         _sfti = sfti;
-        _dr = driver;
         _sched = sched;
         _sid2sidx = sid2sidx;
+        _rl = rl;
+        _hq = hq;
         _saveCounter = new AnalyticsEventCounter("analytics-save-file", analytics)
         {
             @Override
@@ -256,8 +261,8 @@ class MightCreateOperations
         l.info("rename conflict {} {}", oa.soid(), pc);
 
         // can't rename the root
-        Preconditions.checkState(!pc._path.isEmpty());
-        Preconditions.checkState(pc._path.equals(_ds.resolve_(oa)),
+        checkState(!pc._path.isEmpty());
+        checkState(pc._path.equals(_ds.resolve_(oa)),
                 "pc._path " + pc._path + " does not match resolved oa " + _ds.resolve_(oa));
 
         // generate a new name for the logical object
@@ -419,6 +424,14 @@ class MightCreateOperations
         }
     }
 
+    /**
+     * Bump local tick for a given file if the content has changed
+     *
+     * Change is determined by a heuristic based on length and mtime. Content hashing may also be
+     * used to avoid false positives when only the timestamp has changed.
+     *
+     * @param force Always bump local tick, regardless of length and mtime
+     */
     private void detectAndApplyModification_(SOID soid, String absPath, boolean force, Trans t)
             throws IOException, SQLException
     {
@@ -436,18 +449,28 @@ class MightCreateOperations
 
         final long length = f.getLength();
         final long mtime = f.lastModified();
-        ContentHash newHash = null;
         final SOKID sokid = new SOKID(soid, KIndex.MASTER);
-
         if (ca == null) {
             // The master CA is absent. This may happen when a file's metadata has been downloaded
             // but the content hasn't been so. Create the master CA in this case.
             l.warn("create master CA for {}", soid);
             _ds.createCA_(soid, KIndex.MASTER, t);
+        } else if (!force && ca.length() == length) {
+            ContentHash h;
+            try {
+                h = _ds.getCAHash_(sokid);
+            } catch (ExNotFound e) {
+                throw new AssertionError(soid.toString());
+            }
+            if (h != null) {
+                l.info("recomputing hash {} {} {}", soid, ca.mtime(), mtime);
+                _hq.requestHash_(soid, f, length, mtime, h, t);
+                return;
+            }
         }
 
         l.info("modify {} ({},{}) != {}", soid, length, mtime, ca);
-        _ds.setCA_(sokid, length, mtime, newHash, t);
+        _ds.setCA_(sokid, length, mtime, null, t);
         _vu.update_(new SOCKID(soid, CID.CONTENT), t);
         _saveCounter.inc();
     }
