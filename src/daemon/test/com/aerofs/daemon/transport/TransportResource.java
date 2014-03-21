@@ -18,6 +18,7 @@ import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
+import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
@@ -41,6 +42,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.SecureRandom;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -60,6 +63,7 @@ public final class TransportResource extends ExternalResource
 
     private final long seed = System.nanoTime();
     private final Random random = new Random(seed);
+    private final LinkStateService linkStateService = new LinkStateService();
     private final SecureRandom secureRandom = new SecureRandom();
     private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(DaemonParam.QUEUE_LENGTH_DEFAULT);
     private final ClientSocketChannelFactory clientSocketChannelFactory = new NioClientSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2, 2);
@@ -67,7 +71,6 @@ public final class TransportResource extends ExternalResource
     private final TransferStatisticsManager transferStatisticsManager = mock(TransferStatisticsManager.class);
     private final TransportType transportType;
     private final String transportId;
-    private final LinkStateService linkStateService;
     private final MockCA mockCA;
     private final MockRockLog mockRockLog;
 
@@ -77,7 +80,7 @@ public final class TransportResource extends ExternalResource
     private TransportReader transportReader;
     private boolean readerSet;
 
-    public TransportResource(TransportType transportType, LinkStateService linkStateService, MockCA mockCA, MockRockLog mockRockLog)
+    public TransportResource(TransportType transportType, MockCA mockCA, MockRockLog mockRockLog)
     {
         l.info("seed:{}", seed);
 
@@ -85,7 +88,6 @@ public final class TransportResource extends ExternalResource
 
         this.transportType = transportType;
         this.transportId = String.format("%s-%d", this.transportType.getId(), Math.abs(random.nextInt()));
-        this.linkStateService = linkStateService;
         this.mockCA = mockCA;
         this.mockRockLog = mockRockLog;
     }
@@ -144,6 +146,7 @@ public final class TransportResource extends ExternalResource
         transport = transportFactory.newTransport(transportType, transportId, 1);
         transport.init();
         transport.start();
+        linkStateService.markLinksUp();
     }
 
     private SSLEngineFactory newServerSSLEngineFactory(IPrivateKeyProvider privateKeyProvider, ICertificateProvider caCertificateProvider)
@@ -175,6 +178,8 @@ public final class TransportResource extends ExternalResource
 
         serverSocketChannelFactory.shutdown();
         serverSocketChannelFactory.releaseExternalResources();
+
+        linkStateService.markLinksDown();
     }
 
     //
@@ -228,6 +233,52 @@ public final class TransportResource extends ExternalResource
     public void send(DID remoteDID, byte[] payload, Prio prio)
     {
         getTransport().q().enqueueBlocking(new EOUnicastMessage(remoteDID, payload), prio);
+    }
+
+    public void sendBlocking(DID remoteDID, byte[] payload, Prio prio)
+            throws Exception
+    {
+        final AtomicReference<Exception> sendExceptionReference = new AtomicReference<Exception>(null);
+        final Semaphore sendSemaphore = new Semaphore(0);
+
+        // we actually want to be notified when the packet was sent
+        EOUnicastMessage unicastMessage = new EOUnicastMessage(remoteDID, payload);
+        unicastMessage.setWaiter(new IResultWaiter()
+        {
+            @Override
+            public void okay()
+            {
+                sendSemaphore.release();
+            }
+
+            @Override
+            public void error(Exception e)
+            {
+                sendExceptionReference.set(e);
+                sendSemaphore.release();
+            }
+        });
+
+        getTransport().q().enqueueBlocking(unicastMessage, prio);
+
+        // wait until the packet was sent
+        sendSemaphore.acquire();
+
+        // if there was an exception in sending the packet let us know
+        Exception exception = sendExceptionReference.get();
+        if (exception != null) {
+            throw exception;
+        }
+    }
+
+    public void pauseSyncing()
+    {
+        linkStateService.markLinksDown();
+    }
+
+    public void resumeSyncing()
+    {
+        linkStateService.markLinksUp();
     }
 
     public OutputStream newOutgoingStream(DID did)

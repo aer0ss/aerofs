@@ -20,5 +20,7 @@ public class TransportListener
 
     public void onDeviceAvailable(DID did, Collection<SID> sids) {}
 
+    public void onDeviceUnavailable(DID did, Collection<SID> sids) {}
+
     public void onIncomingPacket(DID did, UserID userID, byte[] packet) {}
 }

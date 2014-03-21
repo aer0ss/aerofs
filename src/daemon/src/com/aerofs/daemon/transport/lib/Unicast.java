@@ -129,7 +129,8 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
 
     private void disconnectAll(Exception cause)
     {
-        for (DID did : channels.keySet()) {
+        ImmutableSet<DID> dids = ImmutableSet.copyOf(channels.keySet());
+        for (DID did : dids) {
             disconnect(did, cause);
         }
     }
@@ -187,7 +188,12 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
     {
         l.info("{} disconnect", did, LogUtil.suppress(cause));
 
-        Set<Channel> active = channels.get(did); // FIXME (AG): do we want to remove instead?
+        // IMPORTANT: we do _not_ want to remove all the channels
+        // for the DID here. This is because the close future handlers
+        // use the presence of the DID, Channel pair in the map
+        // to determine whether to notify listeners of a disconnection
+        // or not
+        Set<Channel> active = getActiveChannels(did);
         for (Channel channel : active) {
             channel.getPipeline().get(MessageHandler.class).setDisconnectReason(cause);
             channel.close();
@@ -236,7 +242,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
                 if (reuseChannels) { // we should pick an existing channel if there is one
                     // check if we've any channels
                     // to this did and simply pick one
-                    Set<Channel> active = channels.get(did);
+                    Set<Channel> active = getActiveChannels(did);
                     if (!active.isEmpty()) {
                         channel = active.iterator().next();
                     }
@@ -281,6 +287,12 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         });
 
         return channel;
+    }
+
+    private Set<Channel> getActiveChannels(DID did)
+    {
+        // take a copy to avoid a ConcurrentModificationException
+        return ImmutableSet.copyOf(channels.get(did));
     }
 
     public void sendControl(DID did, PBTPHeader h)

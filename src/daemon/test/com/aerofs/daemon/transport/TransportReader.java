@@ -115,6 +115,8 @@ public final class TransportReader
         for (Map.Entry<DID, Collection<SID>> entry : presence._did2sids.entrySet()) {
             if (presence._online) {
                 transportListener.onDeviceAvailable(entry.getKey(), entry.getValue());
+            } else {
+                transportListener.onDeviceUnavailable(entry.getKey(), entry.getValue());
             }
         }
     }

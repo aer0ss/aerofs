@@ -28,6 +28,10 @@ public class HdUnicastMessage implements IEventHandler<EOUnicastMessage>
             unicast.send(ev._to, ev.getWaiter(), prio, payload, null);
         } catch (Exception e) {
             l.warn("uc " + ev._to + ": " + Util.e(e, ExDeviceOffline.class, XMPPException.class));
+
+            if (ev.getWaiter() != null) {
+                ev.getWaiter().error(e);
+            }
         }
     }
 }
