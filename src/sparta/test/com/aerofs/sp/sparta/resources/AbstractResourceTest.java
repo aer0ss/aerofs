@@ -21,7 +21,7 @@ import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.lib.FullName;
 import com.aerofs.rest.util.AuthToken;
-import com.aerofs.rest.util.AuthToken.Scope;
+import com.aerofs.oauth.Scope;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;

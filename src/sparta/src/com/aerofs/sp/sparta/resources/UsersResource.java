@@ -17,7 +17,7 @@ import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.rest.api.Invitation;
 import com.aerofs.rest.util.AuthToken;
-import com.aerofs.rest.util.AuthToken.Scope;
+import com.aerofs.oauth.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;

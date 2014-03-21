@@ -9,7 +9,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.rest.util.AuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
-import com.aerofs.rest.util.AuthToken.Scope;
+import com.aerofs.oauth.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;

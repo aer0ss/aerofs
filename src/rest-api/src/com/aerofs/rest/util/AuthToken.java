@@ -11,13 +11,13 @@ import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.oauth.Scope;
 import com.aerofs.oauth.VerifyTokenResponse;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -27,49 +27,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class AuthToken
 {
-    /**
-     * OAuth scopes supported by the API
-     *
-     * some scopes are "qualifiable", i.e. they can be restricted to a specific
-     * subset of the data controlled by the scope. For now the only qualifiers
-     * supported are shared folders but in the future it is conceivable that
-     * SIDOID or path could be supported as well.
-     */
-    public static enum Scope
-    {
-        READ_FILES("files.read", true),
-        WRITE_FILES("files.write", true),
-        READ_ACL("acl.read", true),
-        WRITE_ACL("acl.write", true),
-        MANAGE_INVITATIONS("acl.invitations", false),
-        READ_USER("user.read", false),
-        WRITE_USER("user.write", false),
-        MANAGE_PASSWORD("user.password", false),
-        ORG_ADMIN("organization.admin", false),
-        ;
-        // FIXME Note the admin scope above; no way to communicate "admin"-ness to the bifrost
-        // component since the dependencies run the wrong way. See
-
-        private final String name;
-        private final boolean qualifiable;
-
-        Scope(String name, boolean qualifiable)
-        {
-            this.name = name;
-            this.qualifiable = qualifiable;
-        }
-
-        private final static Map<String, Scope> NAMES;
-        static {
-            NAMES = Maps.newHashMap();
-            for (Scope scope : values()) checkState(NAMES.put(scope.name, scope) == null);
-        }
-
-        static @Nullable Scope fromName(String name)
-        {
-            return NAMES.get(name);
-        }
-    }
 
     private final static Logger l = LoggerFactory.getLogger(AuthToken.class);
 
@@ -100,7 +57,7 @@ public class AuthToken
             }
             if (s.length == 1) {
                 m.put(scope, Collections.<SID>emptySet());
-            } else if (s.length == 2 && scope.qualifiable) {
+            } else if (s.length == 2 && Scope.isQualifiable(scope)) {
                 Set<SID> sids = m.get(scope);
                 SID sid;
                 try {
@@ -125,14 +82,14 @@ public class AuthToken
 
     public boolean hasPermission(Scope scope)
     {
-        checkArgument(!scope.qualifiable);
+        checkArgument(!Scope.isQualifiable(scope));
         Set<SID> sids = scopes.get(scope);
         return sids != null && sids.isEmpty();
     }
 
     public boolean hasFolderPermission(Scope scope, SID sid)
     {
-        checkArgument(scope.qualifiable);
+        checkArgument(Scope.isQualifiable(scope));
         Set<SID> sids = scopes.get(scope);
         return sids != null && (sids.isEmpty() || sids.contains(sid));
     }

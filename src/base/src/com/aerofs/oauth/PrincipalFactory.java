@@ -23,21 +23,24 @@ public class PrincipalFactory
     {
         AuthorizeMobileDeviceReply auth = spFactory.create().authorizeMobileDevice(nonce, devName);
 
-        OrganizationID          orgID;
-        boolean                 isAdmin = false;
-
         // is this a request for admin privilege; if so, throw if the caller is not allowed
-        for (String s : requestedScopes) {
-            if (s.contains("admin")) isAdmin = true; // FIXME
-        }
+        boolean isAdmin = isAdminRequest(requestedScopes);
         if (isAdmin && (!auth.getIsOrgAdmin())) {
             throw new ExNoPerm("User does not have admin privilege");
         }
 
-        orgID = new OrganizationID(Integer.valueOf(auth.getOrgId()));
+        OrganizationID orgID = new OrganizationID(Integer.valueOf(auth.getOrgId()));
         return new AuthenticatedPrincipal(
                 auth.getUserId(),
                 isAdmin ? orgID.toTeamServerUserID() : UserID.fromExternal(auth.getUserId()),
                 orgID);
+    }
+
+    private boolean isAdminRequest(Collection<String> requestedScopes)
+    {
+        for (String s : requestedScopes) {
+            if (Scope.requiresAdmin(Scope.fromName(s))) return true;
+        }
+        return false;
     }
 }

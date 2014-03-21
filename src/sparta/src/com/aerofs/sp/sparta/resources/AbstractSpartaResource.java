@@ -8,7 +8,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.aerofs.rest.util.AuthToken;
-import com.aerofs.rest.util.AuthToken.Scope;
+import com.aerofs.oauth.Scope;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;

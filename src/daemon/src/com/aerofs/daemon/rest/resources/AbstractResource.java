@@ -9,7 +9,7 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.util.AuthToken;
-import com.aerofs.rest.util.AuthToken.Scope;
+import com.aerofs.oauth.Scope;
 
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
