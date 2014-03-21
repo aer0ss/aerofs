@@ -12,7 +12,7 @@ import org.apache.commons.cli.Options;
 
 import java.text.SimpleDateFormat;
 
-public class CmdActivities implements IShellCommand<ShProgram>
+public class CmdActivities extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -27,23 +27,11 @@ public class CmdActivities implements IShellCommand<ShProgram>
     }
 
     @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
     public Options getOpts()
     {
         return new Options()
                 .addOption("c", "count", true, "maximum number of recent activities to display")
                 .addOption("b", "brief", false, "display activities in brief");
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 
     @Override

@@ -18,7 +18,7 @@ import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBRevChild;
 
-public class CmdList implements IShellCommand<ShProgram>
+public class CmdList extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
@@ -151,11 +151,5 @@ public class CmdList implements IShellCommand<ShProgram>
                 .addOption("l", "long", false, "use long format")
                 .addOption("h", "history", false, "list Sync History tree." +
                         " see also 'history' and 'export -h' commands");
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

@@ -15,7 +15,6 @@ import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.google.common.collect.Lists;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import java.util.List;
 
@@ -23,7 +22,7 @@ import java.util.List;
  * no arg: list all conflict branches
  * 1+ arg: list conflict branches for the given file(s)
  */
-public class CmdConflicts implements IShellCommand<ShProgram>
+public class CmdConflicts extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -41,18 +40,6 @@ public class CmdConflicts implements IShellCommand<ShProgram>
     public String getOptsSyntax()
     {
         return "[PATH]";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 
     @Override

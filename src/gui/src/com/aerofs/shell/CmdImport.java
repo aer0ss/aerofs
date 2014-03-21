@@ -7,11 +7,10 @@ package com.aerofs.shell;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBPath;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import java.io.File;
 
-public class CmdImport implements IShellCommand<ShProgram>
+public class CmdImport extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -32,12 +31,6 @@ public class CmdImport implements IShellCommand<ShProgram>
     }
 
     @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
     {
         String[] args = cl.getArgs();
@@ -47,11 +40,5 @@ public class CmdImport implements IShellCommand<ShProgram>
         PBPath dest = s.d().buildPBPath_(args[1]);
 
         s.d().getRitualClient_().importFile(dest, source.getAbsolutePath());
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

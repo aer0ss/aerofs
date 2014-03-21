@@ -16,7 +16,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang.WordUtils;
 
-public class CmdInvite implements IShellCommand<ShProgram>
+public class CmdInvite extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -67,12 +67,6 @@ public class CmdInvite implements IShellCommand<ShProgram>
         return new Options().addOption("r", "role", true, "specify the role ("
                 + prettyJoin(Permissions.ROLE_NAMES.values(), "or") + "). Default is "
                 + Permissions.EDITOR.roleName() + ".");
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 
     @Override

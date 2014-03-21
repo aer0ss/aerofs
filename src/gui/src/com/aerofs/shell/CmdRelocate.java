@@ -7,9 +7,8 @@ package com.aerofs.shell;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.base.ex.ExBadArgs;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
-public class CmdRelocate implements IShellCommand<ShProgram>
+public class CmdRelocate extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -31,12 +30,6 @@ public class CmdRelocate implements IShellCommand<ShProgram>
     }
 
     @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
             throws Exception
     {
@@ -46,11 +39,5 @@ public class CmdRelocate implements IShellCommand<ShProgram>
 
         s.d().getRitualClient_().relocate(RootAnchorUtil.adjustRootAnchor(cl.getArgs()[0], null),
                 null);
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

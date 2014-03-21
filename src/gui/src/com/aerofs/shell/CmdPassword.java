@@ -10,9 +10,8 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.protobuf.ByteString;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
-public class CmdPassword implements IShellCommand<ShProgram>
+public class CmdPassword extends AbstractShellCommand<ShProgram>
 {
 
     @Override
@@ -25,12 +24,6 @@ public class CmdPassword implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "change your password";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
     }
 
     @Override
@@ -53,11 +46,5 @@ public class CmdPassword implements IShellCommand<ShProgram>
         sp.changePassword(
                 ByteString.copyFrom(oldPassword),
                 ByteString.copyFrom(newPassword));
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

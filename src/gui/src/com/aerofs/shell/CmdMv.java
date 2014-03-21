@@ -3,9 +3,8 @@ package com.aerofs.shell;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.Path;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
-public class CmdMv implements IShellCommand<ShProgram>
+public class CmdMv extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
@@ -35,17 +34,5 @@ public class CmdMv implements IShellCommand<ShProgram>
     public String getOptsSyntax()
     {
         return "[FROM] [TO]";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

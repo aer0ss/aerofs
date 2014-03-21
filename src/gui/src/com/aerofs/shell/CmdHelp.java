@@ -6,12 +6,11 @@ import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExBadArgs;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
-public class CmdHelp<T> implements IShellCommand<T>
+public class CmdHelp<T> extends AbstractShellCommand<T>
 {
     private static final String INDENT = "    ";
     private static final int INDENT_WIDTH = 4;
@@ -129,17 +128,5 @@ public class CmdHelp<T> implements IShellCommand<T>
     public String getOptsSyntax()
     {
         return "[COMMAND]...";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

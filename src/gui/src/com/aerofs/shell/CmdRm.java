@@ -9,7 +9,7 @@ import com.google.protobuf.ByteString;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-public class CmdRm implements IShellCommand<ShProgram>
+public class CmdRm extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
@@ -67,11 +67,5 @@ public class CmdRm implements IShellCommand<ShProgram>
         return new Options()
                 .addOption("r", "recursive", false, "recursively delete directories")
                 .addOption("h", "history", false, "delete old version(s)");
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

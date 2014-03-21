@@ -20,10 +20,9 @@ import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.error.ErrorMessages;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
 
-public class CmdDefect implements IShellCommand<ShProgram>
+public class CmdDefect extends AbstractShellCommand<ShProgram>
 {
     public static void sendDefect(RitualBlockingClient ritual, String message,
             boolean dumpFileNames)
@@ -123,17 +122,5 @@ public class CmdDefect implements IShellCommand<ShProgram>
     public String getOptsSyntax()
     {
         return "DESCRIPTION";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

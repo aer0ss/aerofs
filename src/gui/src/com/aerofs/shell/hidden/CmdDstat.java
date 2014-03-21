@@ -6,13 +6,13 @@ import com.aerofs.lib.Util;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.proto.Ritual.DumpStatsReply;
-import com.aerofs.shell.IShellCommand;
+import com.aerofs.shell.AbstractShellCommand;
 import com.aerofs.shell.ShProgram;
 import com.aerofs.shell.ShellCommandRunner;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-public class CmdDstat implements IShellCommand<ShProgram>
+public class CmdDstat extends AbstractShellCommand<ShProgram>
 {
 
     @Override
@@ -58,12 +58,6 @@ public class CmdDstat implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "dump the daemon's internal state";
-    }
-
-    @Override
-    public String getOptsSyntax()
-    {
-        return "";
     }
 
     @Override

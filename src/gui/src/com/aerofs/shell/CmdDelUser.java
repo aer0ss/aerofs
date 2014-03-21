@@ -3,9 +3,8 @@ package com.aerofs.shell;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.Path;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
-public class CmdDelUser implements IShellCommand<ShProgram>
+public class CmdDelUser extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -26,12 +25,6 @@ public class CmdDelUser implements IShellCommand<ShProgram>
     }
 
     @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
             throws Exception
     {
@@ -39,11 +32,5 @@ public class CmdDelUser implements IShellCommand<ShProgram>
 
         Path path = s.d().buildPath_(cl.getArgs()[0]);
         s.d().getRitualClient_().deleteACL(path.toPB(), cl.getArgs()[1]);
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

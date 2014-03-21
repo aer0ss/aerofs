@@ -6,14 +6,13 @@ package com.aerofs.shell;
 
 import com.aerofs.lib.Path;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
 import com.aerofs.proto.Ritual.PBRevision;
 
-public class CmdSyncHistory implements IShellCommand<ShProgram>
+public class CmdSyncHistory extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName() {
@@ -28,17 +27,6 @@ public class CmdSyncHistory implements IShellCommand<ShProgram>
     @Override
     public String getOptsSyntax() {
         return "FILE_PATH";
-    }
-
-    @Override
-    public Options getOpts() {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 
     @Override

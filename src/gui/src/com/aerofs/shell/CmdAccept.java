@@ -2,11 +2,10 @@ package com.aerofs.shell;
 
 import com.aerofs.base.id.SID;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import com.aerofs.base.ex.ExBadArgs;
 
-public class CmdAccept implements IShellCommand<ShProgram>
+public class CmdAccept extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
@@ -36,17 +35,5 @@ public class CmdAccept implements IShellCommand<ShProgram>
     public String getOptsSyntax()
     {
         return "SHARED_FOLDER_IDENTIFIER...";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

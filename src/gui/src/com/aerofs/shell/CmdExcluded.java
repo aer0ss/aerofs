@@ -4,11 +4,10 @@ import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBPath;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import java.util.List;
 
-public class CmdExcluded implements IShellCommand<ShProgram>
+public class CmdExcluded extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
@@ -30,23 +29,5 @@ public class CmdExcluded implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "list excluded folders";
-    }
-
-    @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

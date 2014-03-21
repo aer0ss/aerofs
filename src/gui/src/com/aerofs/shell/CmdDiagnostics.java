@@ -8,13 +8,12 @@ import com.aerofs.proto.Diagnostics.DeviceDiagnostics;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Ritual.GetDiagnosticsReply;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import java.io.PrintStream;
 
 import static com.aerofs.lib.JsonFormat.prettyPrint;
 
-public class CmdDiagnostics implements IShellCommand<ShProgram>
+public class CmdDiagnostics extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -26,24 +25,6 @@ public class CmdDiagnostics implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "print diagnostics";
-    }
-
-    @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 
     @Override

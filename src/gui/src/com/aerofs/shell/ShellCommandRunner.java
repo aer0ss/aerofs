@@ -10,6 +10,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -137,6 +138,10 @@ public class ShellCommandRunner<T>
             assert out() == System.out;
             new HelpFormatter().printHelp(cmd.getName() + " [OPTIONS] " +
                     cmd.getOptsSyntax(), cmd.getOpts());
+        }
+
+        if (!StringUtils.isEmpty(cmd.getFooter())) {
+            out().println(cmd.getFooter());
         }
     }
 

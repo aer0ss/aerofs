@@ -23,6 +23,13 @@ public interface IShellCommand<T>
     Options getOpts();
 
     /**
+     * N.B. we can also add opts header, but it's not required right now.
+     *
+     * @return a footer text to be printed before the options
+     */
+    String getFooter();
+
+    /**
      * @return whether the command is hidden from listing of available commands via 'help'.
      * Useful for internal commands that shouldn't be exposed to the end user.
      */

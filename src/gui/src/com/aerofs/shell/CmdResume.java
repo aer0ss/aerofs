@@ -1,12 +1,11 @@
 package com.aerofs.shell;
 
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import com.aerofs.base.ex.ExBadArgs;
 
 
-public class CmdResume implements IShellCommand<ShProgram>
+public class CmdResume extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
@@ -27,23 +26,5 @@ public class CmdResume implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "resume syncing activities";
-    }
-
-    @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

@@ -8,11 +8,10 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import java.util.Map.Entry;
 
-public class CmdRoots implements IShellCommand<ShProgram>
+public class CmdRoots extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -27,18 +26,6 @@ public class CmdRoots implements IShellCommand<ShProgram>
     }
 
     @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
     {
         if (Cfg.storageType() == StorageType.LINKED) {
@@ -50,11 +37,5 @@ public class CmdRoots implements IShellCommand<ShProgram>
         for (Entry<SID, String> e : s.d().getRoots().entrySet()) {
             s.out().println(e.getKey().toStringFormal() + " | " + e.getValue());
         }
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

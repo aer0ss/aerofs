@@ -7,11 +7,10 @@ package com.aerofs.shell;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import java.util.List;
 
-public class CmdInvitations implements IShellCommand<ShProgram>
+public class CmdInvitations extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -23,18 +22,6 @@ public class CmdInvitations implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "list pending shared folder invitations. use the \"accept\" command to accept them";
-    }
-
-    @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
     }
 
     @Override
@@ -55,11 +42,5 @@ public class CmdInvitations implements IShellCommand<ShProgram>
             s.out().println(new SID(inv.getShareId()).toStringFormal() + " " +
                     inv.getFolderName() + " " + inv.getSharer() + " ");
         }
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

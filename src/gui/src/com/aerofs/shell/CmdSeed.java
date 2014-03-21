@@ -7,9 +7,8 @@ package com.aerofs.shell;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
-public class CmdSeed implements IShellCommand<ShProgram>
+public class CmdSeed extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -21,18 +20,6 @@ public class CmdSeed implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "Create a seed file";
-    }
-
-    @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
     }
 
     @Override

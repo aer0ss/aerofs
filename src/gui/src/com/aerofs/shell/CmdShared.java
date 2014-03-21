@@ -4,11 +4,10 @@ import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import java.util.List;
 
-public class CmdShared implements IShellCommand<ShProgram>
+public class CmdShared extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
@@ -36,23 +35,5 @@ public class CmdShared implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "list shared folders";
-    }
-
-    @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

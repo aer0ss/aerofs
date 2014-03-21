@@ -6,9 +6,8 @@ import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
-public class CmdCd implements IShellCommand<ShProgram>
+public class CmdCd extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
@@ -44,17 +43,5 @@ public class CmdCd implements IShellCommand<ShProgram>
     public String getOptsSyntax()
     {
         return "PATH";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

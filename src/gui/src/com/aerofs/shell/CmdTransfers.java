@@ -12,13 +12,12 @@ import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.ui.UIUtil;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class CmdTransfers implements IShellCommand<ShProgram>
+public class CmdTransfers extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(final ShellCommandRunner<ShProgram> s, CommandLine cl)
@@ -62,24 +61,6 @@ public class CmdTransfers implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "shows active file transfers until the process is killed";
-    }
-
-    @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 
     public void print(PBNotification pb, PrintStream ps, boolean debug)

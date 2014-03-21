@@ -2,12 +2,11 @@ package com.aerofs.shell;
 
 import com.aerofs.labeling.L;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 
-public class CmdVersion implements IShellCommand<ShProgram>
+public class CmdVersion extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
@@ -26,23 +25,5 @@ public class CmdVersion implements IShellCommand<ShProgram>
     public String getDescription()
     {
         return "display " + L.product() + " version infomation";
-    }
-
-    @Override
-    public String getOptsSyntax()
-    {
-        return "";
-    }
-
-    @Override
-    public Options getOpts()
-    {
-        return ShellCommandRunner.EMPTY_OPTS;
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

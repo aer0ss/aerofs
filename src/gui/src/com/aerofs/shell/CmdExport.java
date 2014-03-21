@@ -19,7 +19,7 @@ import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.google.protobuf.ByteString;
 
-public class CmdExport implements IShellCommand<ShProgram>
+public class CmdExport extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -132,11 +132,5 @@ public class CmdExport implements IShellCommand<ShProgram>
             Downloader downloader = new Downloader(s);
             downloader.download(source, dest);
         }
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }

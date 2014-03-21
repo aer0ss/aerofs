@@ -13,7 +13,7 @@ import com.aerofs.proto.Ritual.PBObjectAttributes;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-public class CmdResolve implements IShellCommand<ShProgram>
+public class CmdResolve extends AbstractShellCommand<ShProgram>
 {
     @Override
     public String getName()
@@ -63,11 +63,5 @@ public class CmdResolve implements IShellCommand<ShProgram>
             if (b.getKidx() == KIndex.MASTER.getInt()) continue;
             r.deleteConflict(path, b.getKidx());
         }
-    }
-
-    @Override
-    public boolean isHidden()
-    {
-        return false;
     }
 }
