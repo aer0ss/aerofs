@@ -38,7 +38,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 public final class TestZephyrUnicast
 {
@@ -91,7 +90,8 @@ public final class TestZephyrUnicast
             throws ExDeviceOffline, InterruptedException, ExecutionException
     {
         Waiter waiter = new Waiter();
-        Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TPUtil.newDatagramPayload(data), null);
+        Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TPUtil.newDatagramPayload(
+                data), null);
 
         // wait until we trigger that the packet is sent
         waiter.future.get();
@@ -139,9 +139,6 @@ public final class TestZephyrUnicast
         otherInOrder.verify(otherDevice.unicastListener).onUnicastReady();
         otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did);
         otherInOrder.verify(otherDevice.unicastListener).onDeviceDisconnected(localDevice.did);
-
-        verify(localDevice.unicastListener).onUnicastUnavailable();
-        verify(otherDevice.unicastListener).onUnicastUnavailable();
     }
 
     @Test
