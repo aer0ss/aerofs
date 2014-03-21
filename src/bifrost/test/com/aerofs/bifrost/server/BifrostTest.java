@@ -76,6 +76,7 @@ public abstract class BifrostTest extends AbstractTest
     protected ClientRepository _clientRepository;
     protected AccessTokenRepository _accessTokenRepository;
     protected ResourceServerRepository _resourceServerRepository;
+    protected static AuthorizationRequestDAO _authRequestDb;
 
     @Before
     public void setUp() throws Exception
@@ -205,11 +206,13 @@ public abstract class BifrostTest extends AbstractTest
             @Override
             protected void configure()
             {
+                _authRequestDb = new MockAuthRequestDAO(sessionFactory);
+
                 bind(SessionFactory.class).toInstance(sessionFactory);
 
                 bind(ClientDAO.class).toInstance(new MockClientDAO(sessionFactory));
                 bind(AccessTokenDAO.class).to(MockAccessTokenDAO.class);
-                bind(AuthorizationRequestDAO.class).to(MockAuthRequestDAO.class);
+                bind(AuthorizationRequestDAO.class).toInstance(_authRequestDb);
                 bind(ResourceServerDAO.class).to(MockResourceServerDAO.class);
             }
         };
@@ -227,21 +230,5 @@ public abstract class BifrostTest extends AbstractTest
                 when(_spClientFactory.create()).thenReturn(_spClient);
             }
         };
-    }
-
-    protected RequestSpecification oauthReq()
-    {
-        return given()
-                .param("response_type", "code")
-                .param("client_id", CLIENTID)
-                .param("redirect_uri", CLIENTREDIRECT)
-                .param("state", "client_state");
-    }
-
-    /** Return an AUTH_STATE to use for authenticating */
-    protected String oauthBegin()
-    {
-        String resp = oauthReq().get(AUTH_URL).asString();
-        return from(resp).get("auth_state");
     }
 }

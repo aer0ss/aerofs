@@ -37,6 +37,7 @@ import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.oauth.PrincipalFactory;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import org.apache.commons.lang.StringUtils;
@@ -60,6 +61,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.BEARER;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_AUTHORIZATION_CODE;
@@ -93,7 +95,7 @@ public class TokenResource
     private ClientRepository clientRepository;
 
     @Inject
-    private SPBlockingClient.Factory spFactory;
+    private PrincipalFactory _principalFactory;
 
     @GET
     @Path("/tokenlist")
@@ -215,15 +217,24 @@ public class TokenResource
 
     private AuthorizationRequest authorizationCodeToken(AccessTokenRequest accessTokenRequest)
     {
-        return (accessTokenRequest.hasDeviceAuthorizationNonce()) ? handleDeviceAuthorization(
-                accessTokenRequest) : handleAccessCode(accessTokenRequest);
+        return (accessTokenRequest.hasDeviceAuthorizationNonce())
+                ? handleDeviceAuthorization(accessTokenRequest) : handleAccessCode(accessTokenRequest);
     }
 
+    /**
+     * Authorize a token request that arrives with a device authorization nonce.
+     * In this case, we don't have an access code record to look up, therefore we have to
+     * get the principal information (it comes from SP via getDeviceAuthorization).
+     */
     private AuthorizationRequest handleDeviceAuthorization(AccessTokenRequest accessTokenRequest)
     {
         AuthenticatedPrincipal principal;
+        Client client = getClientForRequest(accessTokenRequest);
+        Set<String> scopes = client.getScopes();
+
         try {
-            principal = getDeviceAuthorization(accessTokenRequest);
+            principal = _principalFactory.authenticate(
+                    accessTokenRequest.getDeviceAuthorizationNonce(), "todo", scopes);
         } catch (Exception e) {
             l.info("Error handling device authorization nonce {}.",
                     accessTokenRequest.getDeviceAuthorizationNonce(), LogUtil.suppress(e));
@@ -232,10 +243,9 @@ public class TokenResource
         }
 
         AuthorizationRequest authReq = new AuthorizationRequest();
-        Client client = getClientForRequest(accessTokenRequest);
         authReq.setPrincipal(principal);
         authReq.setClient(client);
-        authReq.setGrantedScopes(client.getScopes());
+        authReq.setGrantedScopes(scopes);
 
         String uri = accessTokenRequest.getRedirectUri();
         if (uri != null && (!uri.equalsIgnoreCase(authReq.getRedirectUri()))) {
@@ -256,6 +266,11 @@ public class TokenResource
         return client;
     }
 
+    /**
+     * Authorize a request that arrives with an OAuth access code. In this case, the principal
+     * information comes from the original authorization request (stored in the db when
+     * the access code was granted)
+     */
     private AuthorizationRequest handleAccessCode(AccessTokenRequest accessTokenRequest)
     {
         AuthorizationRequest authReq = authorizationRequestRepository.findByAuthorizationCode(
@@ -271,22 +286,6 @@ public class TokenResource
         }
         authorizationRequestRepository.delete(authReq);
         return authReq;
-    }
-
-    private AuthenticatedPrincipal getDeviceAuthorization(AccessTokenRequest tokenRequest)
-            throws Exception
-    {
-        AuthorizeMobileDeviceReply authReply = spFactory.create()
-                .authorizeMobileDevice(tokenRequest.getDeviceAuthorizationNonce(), "todo");
-
-        AuthenticatedPrincipal principal = new AuthenticatedPrincipal();
-        principal.setName(authReply.getUserId());
-
-        principal.setUserID(UserID.fromExternal(authReply.getUserId()));
-        principal.setOrganizationID(new OrganizationID(Integer.valueOf(authReply.getOrgId())));
-        principal.setAdminPrincipal(authReply.getIsOrgAdmin());
-
-        return principal;
     }
 
     private AuthorizationRequest refreshTokenToken(AccessTokenRequest accessTokenRequest)
@@ -320,17 +319,6 @@ public class TokenResource
                 accessTokenRequest.getClientSecret()) : new UserPassCredentials(authorization);
     }
 
-    private Response sendAuthorizationCodeResponse(AuthorizationRequest authReq)
-    {
-        String uri = authReq.getRedirectUri();
-        String authorizationCode = getAuthorizationCodeValue();
-        authReq.setAuthorizationCode(authorizationCode);
-        authorizationRequestRepository.save(authReq);
-        uri = uri + appendQueryMark(uri) + "code=" + authorizationCode +
-                appendStateParameter(authReq);
-        return Response.seeOther(UriBuilder.fromUri(uri).build()).build();
-    }
-
     protected String getTokenValue(boolean isRefreshToken)
     {
         return UniqueID.generate().toStringFormal();
@@ -351,19 +339,6 @@ public class TokenResource
     private Response sendErrorResponse(ValidationResponse response)
     {
         return sendErrorResponse(response.getValue(), response.getDescription());
-    }
-
-    private Response sendImplicitGrantResponse(AuthorizationRequest authReq,
-            AccessToken accessToken)
-    {
-        String uri = authReq.getRedirectUri();
-        String fragment = String.format("access_token=%s&token_type=bearer&expires_in=%s&scope=%s" +
-                appendStateParameter(authReq), accessToken.getToken(), accessToken.getExpires(),
-                StringUtils.join(authReq.getGrantedScopes(), ','));
-        if (authReq.getClient().isIncludePrincipal()) {
-            fragment += String.format("&principal=%s", authReq.getPrincipal().getDisplayName());
-        }
-        return Response.seeOther(UriBuilder.fromUri(uri).fragment(fragment).build()).build();
     }
 
     private String appendQueryMark(String uri)

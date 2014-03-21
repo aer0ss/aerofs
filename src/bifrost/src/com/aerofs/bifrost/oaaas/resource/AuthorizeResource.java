@@ -4,15 +4,12 @@
 
 package com.aerofs.bifrost.oaaas.resource;
 
-import com.aerofs.base.id.OrganizationID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
-import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.oauth.PrincipalFactory;
 import com.google.common.collect.Sets;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -28,6 +25,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Set;
 
 /**
  * Resource for handling authorization codes
@@ -36,7 +34,7 @@ import java.net.URLEncoder;
 public class AuthorizeResource
 {
     @Inject
-    private SPBlockingClient.Factory spFactory;
+    private PrincipalFactory _principalFactory;
 
     @Inject
     private ClientRepository clientRepository;
@@ -49,6 +47,17 @@ public class AuthorizeResource
 
     private static Logger l = LoggerFactory.getLogger(AuthorizeResource.class);
 
+    /*
+     * This is a non-documented API endpoint.
+     *
+     * Following params are expected:
+     *  client_id
+     *  redirect_uri
+     *  state
+     *  response_type
+     *  nonce
+     *  scope
+     */
     @POST
     @Consumes("application/x-www-form-urlencoded")
     public Response createAuthorization(final MultivaluedMap<String, String> formParameters)
@@ -67,11 +76,11 @@ public class AuthorizeResource
             String state = formParameters.getFirst("state");
             String responseType = formParameters.getFirst("response_type");
             String nonce = formParameters.getFirst("nonce");
-            String[] scopes = formParameters.getFirst("scope").split(",");
+            Set<String> scopes = Sets.newHashSet(formParameters.getFirst("scope").split(","));
 
             AuthenticatedPrincipal principal;
             try {
-                principal = authenticateNonce(nonce);
+                principal = _principalFactory.authenticate(nonce, "todo", scopes);
             } catch (Exception e) {
                 l.warn("tried to authenticate nonce {}, got exception {}", nonce, e.toString());
                 return sendErrorToRedirectUri(redirectUri, "invalid_request",
@@ -80,8 +89,8 @@ public class AuthorizeResource
 
             // TODO: make client scopes meaningful and ensure request scopes <= client scopes?
             AuthorizationRequest authorizationRequest = new AuthorizationRequest(responseType,
-                    client, redirectUri, Sets.newHashSet(scopes), state, principal);
-            authorizationRequest.setGrantedScopes(Sets.newHashSet(scopes));
+                    client, redirectUri, scopes, state, principal);
+            authorizationRequest.setGrantedScopes(scopes);
 
             // we do a flush here so that if it fails, it is caught by the catch block below.
             // otherwise, a failure would not cause a socket disconnect instead of a 500 response.
@@ -203,27 +212,5 @@ public class AuthorizeResource
         return Response.status(302)
                 .header("Location", location)
                 .build();
-    }
-
-    /**
-     * Check a nonce with SP to make sure it's authentic
-     *
-     * @param nonce a proof-of-identity nonce created by SP
-     * @return an object containing at least the userid associated with the nonce
-     */
-    private AuthenticatedPrincipal authenticateNonce(String nonce) throws Exception
-    {
-        SPBlockingClient client = spFactory.create();
-
-        AuthorizeMobileDeviceReply authReply = client.authorizeMobileDevice(nonce, "todo");
-
-        AuthenticatedPrincipal principal = new AuthenticatedPrincipal();
-        principal.setName(authReply.getUserId());
-
-        principal.setUserID(UserID.fromExternal(authReply.getUserId()));
-        principal.setOrganizationID(new OrganizationID(Integer.valueOf(authReply.getOrgId())));
-        principal.setAdminPrincipal(authReply.getIsOrgAdmin());
-
-        return principal;
     }
 }

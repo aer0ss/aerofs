@@ -45,7 +45,10 @@ public class AuthToken
         READ_USER("user.read", false),
         WRITE_USER("user.write", false),
         MANAGE_PASSWORD("user.password", false),
+        ORG_ADMIN("organization.admin", false),
         ;
+        // FIXME Note the admin scope above; no way to communicate "admin"-ness to the bifrost
+        // component since the dependencies run the wrong way. See
 
         private final String name;
         private final boolean qualifiable;

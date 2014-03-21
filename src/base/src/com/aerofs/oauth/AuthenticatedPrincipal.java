@@ -30,73 +30,38 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * {@link Principal} that can contain roles and additional attributes. This is
- * the return Object for AbstractAuthenticator implementations.
+ * {@link Principal} that can contain roles and additional attributes.
  */
 @NoObfuscation
 public class AuthenticatedPrincipal implements Serializable, Principal
 {
-    private static final long serialVersionUID = 1L;
-
+    public static final String USERID_ATTRIB = "userid";
+    public static final String ORGID_ATTRIB = "orgid";
+    private static final long serialVersionUID = -667145001740406817L;
     private String name;
-
+    // FIXME: can these be safely removed without breaking serialized data?
+    // FIXME 2: update the schema and get rid of all this serialized nonsense
     private Collection<String> roles;
-
     private Collection<String> groups;
-
-    private boolean adminPrincipal;
-
     /*
      * Extra attributes, depending on the authentication implementation. Note that we only support
      * String - String attributes as we need to be able to persist the Principal generically
      */
     private Map<String, String> attributes;
 
-    // AeroFS-specific attributes
-    public static final String USERID_ATTRIB = "userid";
-    public static final String ORGID_ATTRIB = "orgid";
-
-
-    public AuthenticatedPrincipal() {
-        super();
+    AuthenticatedPrincipal(String username, UserID userID, OrganizationID orgID) {
+        this(username);
+        setOrganizationID(orgID);
+        setUserID(userID);
     }
 
+    // FIXME: make this go away
     public AuthenticatedPrincipal(String username) {
-        this(username, Lists.<String>newArrayList());
-    }
-
-    public AuthenticatedPrincipal(String username, Collection<String> roles) {
-        this(username, roles, Maps.<String, String>newHashMap());
-    }
-
-    public AuthenticatedPrincipal(String username, Collection<String> roles, Map<String, String> attributes) {
-        this(username, roles, attributes, Lists.<String>newArrayList());
-    }
-
-    public AuthenticatedPrincipal(String username, Collection<String> roles, Map<String, String> attributes, Collection<String> groups) {
-        this(username, roles, attributes, groups, false);
-    }
-
-    public AuthenticatedPrincipal(String username, Collection<String> roles, Map<String, String> attributes, Collection<String> groups, boolean adminPrincipal) {
         this.name = username;
-        this.roles = roles;
-        this.attributes = attributes;
-        this.groups = groups;
-        this.adminPrincipal = adminPrincipal;
-    }
-
-    /**
-     * @return the roles
-     */
-    public Collection<String> getRoles() {
-        return roles;
-    }
-
-    /**
-     * @return the attributes
-     */
-    public Map<String, String> getAttributes() {
-        return attributes;
+        this.attributes = Maps.<String, String>newHashMap();
+        // useless junk:
+        this.roles = Lists.<String>newArrayList();
+        this.groups = Lists.<String>newArrayList();
     }
 
     /**
@@ -116,74 +81,14 @@ public class AuthenticatedPrincipal implements Serializable, Principal
         attributes.put(key, value);
     }
 
-    public void addGroup(String name) {
-        if (groups == null) groups = Lists.newArrayList();
-        groups.add(name);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.security.Principal#getName()
-     */
     @Override
     public String getName() {
         return name;
     }
 
-    public String getDisplayName() {
-        return name;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return getClass().getName() + " [name=" + name + ", roles=" + roles + ", attributes=" + attributes + "]";
-    }
-
-    /**
-     * @param name the name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * @param roles the roles to set
-     */
-    public void setRoles(Collection<String> roles) {
-        this.roles = roles;
-    }
-
-    /**
-     * @param attributes the attributes to set
-     */
-    public void setAttributes(Map<String, String> attributes) {
-        this.attributes = attributes;
-    }
-
-    public Collection<String> getGroups() {
-        return groups;
-    }
-
-    public void setGroups(Collection<String> groups) {
-        this.groups = groups;
-    }
-
-    public boolean isGroupAware() {
-        return groups != null && !groups.isEmpty();
-    }
-
-    public boolean isAdminPrincipal() {
-        return adminPrincipal;
-    }
-
-    public void setAdminPrincipal(boolean adminPrincipal) {
-        this.adminPrincipal = adminPrincipal;
     }
 
     public UserID getUserID()
