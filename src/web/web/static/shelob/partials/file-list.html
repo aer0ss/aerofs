@@ -68,6 +68,10 @@
         <td class="last-modified">{{object.last_modified | date: 'short'}}</td>
         <td class="actions">
           <div ng-show="mousedOver.object.id == object.id">
+            <img src="/static/shelob/img/glyphicons/glyphicons_434_redo.png"
+                 tooltip="Move"
+                 ng-click="startMove(object)"
+                 class="action action-move"/>
             <img src="/static/shelob/img/glyphicons/glyphicons_150_edit.png"
                  tooltip="Rename"
                  ng-click="startRename(object)"

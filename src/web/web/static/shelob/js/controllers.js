@@ -1,7 +1,7 @@
 var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', 'API', 'Token', 'API_LOCATION',
-        function ($scope, $http, $log, $routeParams, $window, API, Token, API_LOCATION) {
+shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', 'API', 'Token', 'RootId', 'API_LOCATION',
+        function ($scope, $http, $log, $routeParams, $window, $modal, API, Token, RootId, API_LOCATION) {
 
     var FOLDER_LAST_MODIFIED = '--';
 
@@ -11,6 +11,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     API.get('/children/' + oid + '?t=' + Math.random()).then(function(response) {
         // success callback
         $scope.parent = response.data.parent;
+        if (oid == '') RootId.set($scope.parent);
         for (var i = 0; i < response.data.folders.length; i++) {
             response.data.folders[i].type = 'folder';
             response.data.folders[i].last_modified = FOLDER_LAST_MODIFIED;
@@ -53,7 +54,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             // failure callback
             $log.error('get folder info call failed with ' + response.status);
             if (response.status == 503) {
-                showErrorMessage("All AeroFS clients are offline. At least one AeroFS desktop client or Team Server must be online to process your request.");
+                showErrorMessage(getClientsOfflineErrorText());
             } else {
                 showErrorMessage(getInternalErrorText());
             }
@@ -204,10 +205,113 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     // This is called when a user presses Escape while renaming an object
     //
     // It should reset the view so that the input is hidden and the object's
-    // name is displayed as a link
+    // name is displayed as a link.
     //
     $scope.cancelRename = function(object) {
         object.edit = false;
         $scope.$apply();
     };
+
+    // This is called when a user chooses a destination for an object and
+    // confirms that they would like to move it.
+    //
+    // It should attempt to perform the move action and update the view.
+    $scope.submitMove = function(object, destination) {
+
+        var _submitMove = function(object, destination) {
+            var data = {parent: destination.id, name: object.name};
+            API.put('/' + object.type + 's/' + object.id, data).then(function(response) {
+                for (var i = 0; i < $scope.objects.length; i++) {
+                    if ($scope.objects[i].id == object.id) {
+                        $scope.objects.splice(i, 1);
+                        break;
+                    }
+                }
+                showSuccessMessage("Successfully moved to " + destination.label);
+            }, function(response) {
+                // move failed
+                if (response.status == 503) {
+                    showErrorMessage(getClientsOfflineErrorText());
+                } else if (response.status == 409) {
+                    showErrorMessage("A file or folder with that name already exists.");
+                } else {
+                    showErrorMessage(getInternalErrorText());
+                }
+            });
+        };
+
+        // exit early if move is a no-op
+        if (destination.id == oid) return;
+
+        // exit early if you try to move a folder into itself
+        if (destination.id == object.id) {
+            showErrorMessage("A folder cannot be moved into itself.");
+            return;
+        }
+
+        // moving under the root anchor requires a separate case because the id
+        // of the root anchor may not be known. This branching and the RootId
+        // service will go away with API v1.2 where the alias "root" will work as
+        // the anchor's ID everywhere.
+        if (destination.id == '') {
+            RootId.get().then(function(rootId) {
+                _submitMove(object, {id: rootId, label: "AeroFS"});
+            }, function(response) {
+                if (response.status == 503) showErrorMessage(getClientsOfflineErrorText());
+                else showErrorMessage(getInternalErrorText());
+            });
+        } else {
+            _submitMove(object, destination);
+        }
+    };
+
+    // This is called when a user clicks the move icon on a file/folder
+    //
+    // It should open a modal with a tree view of the AeroFS folder and
+    // allow the user to select a destination folder or cancel with no action
+    //
+    $scope.startMove = function(object) {
+        // treedata is a list of folder objects with label, id, and children attrs,
+        // where children is a treedata object
+        $scope.treedata = [{label: "AeroFS", id: '', children: []}];
+
+        $scope.moveModal = $modal.open({
+            templateUrl: '/static/shelob/partials/object-move-modal.html'
+        });
+
+        $scope.moveModal.result.then(function(folder) {
+            // user submitted the move request
+            $log.debug("move submitted", folder);
+            $scope.submitMove(object, folder);
+        }, function() {
+            // user cancelled the move request
+            $log.debug("move cancelled");
+        });
+    };
+
+    // This is called when a user expands a folder in the modal treeview
+    //
+    // It should fetch the children of that folder if necessary, and update
+    // the treeview
+    //
+    $scope.onMoveFolderExpanded = function(folder) {
+        //TODO: don't GET /children if we already know there are no children
+        if (folder.children.length > 0) return;
+        API.get('/children/' + folder.id + '?t=' + Math.random()).then(function(response) {
+            // get children succeeded
+            for (var i = 0; i < response.data.folders.length; i++) {
+                $log.debug('adding child');
+                folder.children.push({
+                    label: response.data.folders[i].name,
+                    id: response.data.folders[i].id,
+                    children: []
+                });
+            }
+        }, function(response) {
+            // get children failed
+            $log.error("fetching children failed");
+            if (response.status == 503) showErrorMessage(getClientsOfflineErrorText());
+            else showErrorMessage(getInternalErrorText());
+        });
+    }
 }]);

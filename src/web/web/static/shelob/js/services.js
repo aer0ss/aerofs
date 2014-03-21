@@ -219,3 +219,23 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
     }
 ]);
 
+shelobServices.factory('RootId', ['$q', '$log', 'API',
+    function($q, $log, API) {
+        var rootId = null;
+        return {
+            set: function(val) { rootId = val; },
+            get: function() {
+                var deferred = $q.defer();
+                if (rootId) deferred.resolve(rootId);
+                else API.get('/children', {cache: true}).then(function(response) {
+                    rootId = response.data.parent;
+                    deferred.resolve(rootId);
+                }, function(response) {
+                    deferred.reject(response);
+                });
+                return deferred.promise;
+            }
+        }
+    }
+]);
+

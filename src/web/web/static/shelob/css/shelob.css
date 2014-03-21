@@ -28,4 +28,9 @@ a {
 }
 img.action {
     cursor: pointer;
+    display: inline-block;
+    padding-left: 2px;
+}
+td.actions {
+    white-space: nowrap;
 }
