@@ -28,7 +28,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.specification.RequestSpecification;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.junit.After;
@@ -38,10 +37,8 @@ import org.mockito.Mock;
 import java.util.Map;
 import java.util.Set;
 
-import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.config.RedirectConfig.redirectConfig;
 import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
-import static com.jayway.restassured.path.json.JsonPath.from;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 

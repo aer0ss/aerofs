@@ -1,7 +1,6 @@
 package com.aerofs.bifrost.server;
 
 import com.aerofs.base.ex.ExExternalAuthFailure;
-import com.aerofs.bifrost.module.AuthorizationRequestDAO;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
@@ -10,8 +9,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.inject.Inject;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import static com.jayway.restassured.RestAssured.expect;
@@ -19,10 +16,8 @@ import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**

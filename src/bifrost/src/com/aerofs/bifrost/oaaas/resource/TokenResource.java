@@ -18,9 +18,7 @@
  */
 package com.aerofs.bifrost.oaaas.resource;
 
-import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
 import com.aerofs.bifrost.oaaas.auth.ValidationResponseException;
 import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
@@ -38,8 +36,6 @@ import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.PrincipalFactory;
-import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
-import com.aerofs.sp.client.SPBlockingClient;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +54,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

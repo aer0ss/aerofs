@@ -7,7 +7,6 @@ package com.aerofs.rocklog;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.collect.Queues;

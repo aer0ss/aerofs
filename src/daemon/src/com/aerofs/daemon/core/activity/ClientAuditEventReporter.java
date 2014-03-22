@@ -26,7 +26,6 @@ import com.aerofs.daemon.lib.db.IAuditDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
