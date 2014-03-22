@@ -207,7 +207,7 @@ public class UsersResource extends AbstractSpartaResource
         audit(caller, token, AuditTopic.SHARING, "folder.join")
                 .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
                 .add("target", user.id())
-                .embed("role", sf.getPermissionsNullable(user))
+                .embed("role", sf.getPermissionsNullable(user).toArray())
                 .publish();
 
         String location = Service.DUMMY_LOCATION
