@@ -43,7 +43,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertEquals;
 
 // FIXME (AG): send multiple streams simultaneously from both directions
 // FIXME (AG): send multiple streams and kill one
