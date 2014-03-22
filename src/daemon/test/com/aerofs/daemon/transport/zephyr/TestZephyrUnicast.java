@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.zephyr;
 
 import com.aerofs.base.BaseParam;
+import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.link.LinkStateService;
@@ -25,6 +26,7 @@ import org.jboss.netty.channel.Channel;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.mockito.InOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +60,9 @@ public final class TestZephyrUnicast
     private UnicastZephyrDevice otherDevice;
 
     // FIXME (AG): check renegotiation
+
+    @Rule
+    public Timeout timeoutRule = new Timeout((int) (1 * C.MIN));
 
     @Rule
     public LoggingRule loggingRule = new LoggingRule(l);
