@@ -263,7 +263,6 @@ public class TrayIcon implements ITrayMenuListener
                 !UIGlobals.progresses().getProgresses().isEmpty(),
                 _localUser.get().isAeroFSUser(),
                 _syncStatus,
-                false, // TODO: implement detecting HDPI
                 OSUtil.isWindows() && !OSUtil.isWindowsXP());
 
         // N.B. don't schedule refresh unless the icon actually changed

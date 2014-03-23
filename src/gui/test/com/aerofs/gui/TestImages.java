@@ -17,18 +17,16 @@ public class TestImages
     @Test
     public void shouldProduceCorrectTrayIconName()
     {
-        assertEquals("tray", getTrayIconName(true, false, false, false, OUT_OF_SYNC, false, false));
-        assertEquals("tray_off", getTrayIconName(false, false, false, false, OUT_OF_SYNC, false, false));
-        assertEquals("tray_n", getTrayIconName(true, true, false, false, OUT_OF_SYNC, false, false));
-        assertEquals("tray_sip", getTrayIconName(true, false, true, false, OUT_OF_SYNC, false, false));
-        assertEquals("tray_sip", getTrayIconName(true, false, true, true, IN_SYNC, false, false));
-        assertEquals("tray_sip", getTrayIconName(true, false, true, false, OUT_OF_SYNC, false, false));
-        assertEquals("tray", getTrayIconName(true, false, false, true, UNKNOWN, false, false));
-        assertEquals("tray_is", getTrayIconName(true, false, false, true, IN_SYNC, false, false));
-        assertEquals("tray_oos", getTrayIconName(true, false, false, true, OUT_OF_SYNC, false, false));
-        assertEquals("tray@2x", getTrayIconName(true, false, false, false, OUT_OF_SYNC, true, false));
-        assertEquals("tray_win", getTrayIconName(true, false, false, false, OUT_OF_SYNC, false, true));
-        assertEquals("tray_off_n_sip_win@2x", getTrayIconName(false, true, true, false, OUT_OF_SYNC, true,
+        assertEquals("tray", getTrayIconName(true, false, false, false, OUT_OF_SYNC, false));
+        assertEquals("tray_off", getTrayIconName(false, false, false, false, OUT_OF_SYNC, false));
+        assertEquals("tray_n", getTrayIconName(true, true, false, false, OUT_OF_SYNC, false));
+        assertEquals("tray_sip", getTrayIconName(true, false, true, false, OUT_OF_SYNC, false));
+        assertEquals("tray_sip", getTrayIconName(true, false, true, true, IN_SYNC, false));
+        assertEquals("tray", getTrayIconName(true, false, false, true, UNKNOWN, false));
+        assertEquals("tray_is", getTrayIconName(true, false, false, true, IN_SYNC, false));
+        assertEquals("tray_oos", getTrayIconName(true, false, false, true, OUT_OF_SYNC, false));
+        assertEquals("tray_win", getTrayIconName(true, false, false, false, OUT_OF_SYNC, true));
+        assertEquals("tray_off_n_sip_win", getTrayIconName(false, true, true, false, OUT_OF_SYNC,
                 true));
     }
 }
