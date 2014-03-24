@@ -238,8 +238,7 @@ class MightCreateOperations
     private void assignRandomFID_(SOID soid, Trans t) throws SQLException
     {
         l.info("set random fid for {}", soid);
-        FID fid = new FID(UniqueID.generate().getBytes());
-        _ds.setFID_(soid, fid, t);
+        _ds.randomizeFID_(soid, t);
     }
 
     /**

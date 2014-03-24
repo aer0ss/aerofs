@@ -20,8 +20,11 @@ import org.mockito.Mock;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -109,6 +112,29 @@ public class TestFIDMaintainers extends AbstractTest
         verifyZeroInteractions(ds);
         verifyZeroInteractions(dr);
         verifyZeroInteractions(f);
+    }
+
+    @Test
+    public void shouldUpdateFIDOnCreation() throws Exception
+    {
+        IFIDMaintainer fidm = newMasterFIDMaintainer(soid1);
+
+        fidm.physicalObjectCreated_(t);
+
+        verify(ds).setFID_(soid1, fid, t);
+        verify(ds, never()).setFID_(not(eq(soid1)), any(FID.class), eq(t));
+    }
+
+    @Test
+    public void shouldRandomizeFIDOnCreationConflict() throws Exception
+    {
+        IFIDMaintainer fidm = newMasterFIDMaintainer(soid1);
+        when(ds.getSOIDNullable_(fid)).thenReturn(soid2);
+
+        fidm.physicalObjectCreated_(t);
+
+        verify(ds).setFID_(eq(soid2), not(eq(fid)), eq(t));
+        verify(ds).setFID_(soid1, fid, t);
     }
 
     private IFIDMaintainer newMasterFIDMaintainer(SOID soid)

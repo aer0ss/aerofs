@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.phy.linked.fid;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ex.ExFileNotFound;
@@ -68,8 +69,19 @@ public class MasterFIDMaintainer implements IFIDMaintainer
 
         SOID soidOld = _ds.getSOIDNullable_(fid);
 
-        // unmap the FID first if it exist for other objects
-        if (soidOld != null && !_soid.equals(soidOld)) _ds.unsetFID_(soidOld, t);
+        if (soidOld != null && !_soid.equals(soidOld)) {
+            // can't have two objects with the same FID
+            // to the best of my knowledge this can only occur in the following cases:
+            //  * user playing with hardlinks, which is unsupported
+            //  * filesystem reusing FID (i.e. inode number) eagerly after deletion
+            //    and the associated logical object still being in the TimeoutDeletionBuffer
+            //
+            // Previously we'd reset the FID of the conflicting OID but that violates some
+            // strong assertions in the rest of the core. The safe thing to do instead is to
+            // RANDOMIZE it.
+            l.info("fid conflict, randomize: {} {} {}", _soid, soidOld, fid);
+            _ds.randomizeFID_(soidOld, t);
+        }
 
         _ds.setFID_(_soid, fid, t);
     }
@@ -80,7 +92,6 @@ public class MasterFIDMaintainer implements IFIDMaintainer
         if (to instanceof NonMasterFIDMaintainer) {
             // reset the FID of the source object
             _ds.unsetFID_(_soid, t);
-
         } else {
             assert to instanceof MasterFIDMaintainer;
             MasterFIDMaintainer mfmTo = (MasterFIDMaintainer) to;

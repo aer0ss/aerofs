@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.ds;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
@@ -298,6 +299,17 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     public abstract void unsetFID_(SOID soid, Trans t) throws SQLException;
 
     public abstract void setFID_(SOID soid, @Nonnull FID fid, Trans t) throws SQLException;
+
+    /**
+     * Assign the specified object a randomly generated FID which is not used by other objects
+     *
+     * NB: use a random UUID to avoid conflicts with real FIDs
+     */
+    public final void randomizeFID_(SOID soid, Trans t) throws SQLException
+    {
+        FID fid = new FID(UniqueID.generate().getBytes());
+        setFID_(soid, fid, t);
+    }
 
     /**
      * @pre the CA must already exists
