@@ -121,6 +121,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
                 relocator.doWork(t);
             } catch (IOException e) {
                 if (OSUtil.isWindows()) {
+                    l.warn("relocation failed", e);
                     throw new ExInUse("files in the " + L.product() + " folder are in use. " +
                             "Please close all programs interacting with files in " +
                             L.product());
@@ -246,6 +247,9 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 
             // TeamServer does not have a default aux root
             if (!(_isDefaultRoot && L.isMultiuser())) {
+                // if the new aux root already exists the move may silently fail
+                // which is BAD because conflicts and nros MUST NOT be lost
+                _newAuxRoot.deleteOrThrowIfExistRecursively();
                 _oldAuxRoot.moveInSameFileSystem(_newAuxRoot);
             }
 

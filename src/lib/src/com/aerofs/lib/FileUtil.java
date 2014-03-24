@@ -234,7 +234,8 @@ public abstract class FileUtil
         // create the whole missing hierarchy
         if (dir.getPath().startsWith("\\\\?\\")) {
             File p = dir.getParentFile();
-            if (p != null && !p.exists()) mkdirs(p);
+            // File.exists always return false for drive roots when using the magic prefix
+            if (p != null && !p.getPath().endsWith(":") && !p.exists()) mkdirs(p);
         }
         if (!dir.mkdirs() && !dir.isDirectory()) {
             throw new ExFileIO("couldn't make the directories", dir);
