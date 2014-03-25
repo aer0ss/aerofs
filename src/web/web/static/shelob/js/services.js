@@ -1,4 +1,4 @@
-var shelobServices = angular.module('shelobServices', []);
+var shelobServices = angular.module('shelobServices', ['shelobConfig']);
 
 shelobServices.factory('Token', ['$http', '$q', '$log',
     function($http, $q, $log) { return {
@@ -38,8 +38,8 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
 //              function(r) { // handle success using r.data or r.headers },
 //              function(r) { // handle failure using r.data or r.status });
 //
-shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
-    function($http, $q, $log, Token) {
+shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
+    function($http, $q, $log, Token, API_LOCATION) {
 
         function _request(config) {
             var deferred = $q.defer();
@@ -47,7 +47,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token',
             // get an OAuth token and make call
             Token.get().then(function (r) {
                 config.headers.Authorization = 'Bearer ' + r.token;
-                config.url = '/api/v1.0' + config.path;
+                config.url = API_LOCATION + '/api/v1.0' + config.path;
                 // if data is an array buffer, send the bytes directly. Otherwise, allow
                 // angular to apply the default transforms (handling encoding, etc.)
                 config.transformRequest = function(data) {

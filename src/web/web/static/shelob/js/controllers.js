@@ -1,7 +1,7 @@
-var shelobControllers = angular.module('shelobControllers', []);
+var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', 'API', 'Token',
-        function ($scope, $http, $log, $routeParams, $window, API, Token) {
+shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', 'API', 'Token', 'API_LOCATION',
+        function ($scope, $http, $log, $routeParams, $window, API, Token, API_LOCATION) {
 
     var oid = typeof $routeParams.oid === "undefined" ? '' : $routeParams.oid;
 
@@ -79,7 +79,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
                 // assign(url) will append url to the history chain. We use replace() so
                 // that a user can navigate from folder Foo to folder Bar, click to download
                 // a file, and then use the back button to return to Foo.
-                $window.location.replace("/api/v1.0/files/" + oid + "/content?token=" + response.token);
+                $window.location.replace(API_LOCATION + "/api/v1.0/files/" + oid + "/content?token=" + response.token);
             }, function(response) {
                 // somehow failed to get token despite the fact that a request just succeeded
                 showErrorMessage(getInternalErrorText());

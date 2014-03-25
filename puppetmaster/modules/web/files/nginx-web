@@ -39,4 +39,25 @@ server {
         uwsgi_param UWSGI_SCHEME https;
         uwsgi_param SCRIPT_NAME "";
     }
+    # For security, Bifrost can only be hit directly from webadmin (this is
+    # configured in the AWS security group settings). There is one case where
+    # the browser must hit Bifrost directly--submitting authorization for an
+    # app through the consent page. That call is made by the browser to webadmin
+    # and this section routes it to Bifrost to bypass the security group settings.
+    location /auth/authorize$ {
+        proxy_pass http://api.aerofs.com:8700/auth/authorize;
+        proxy_cache off;
+        proxy_buffering off;
+        proxy_cookie_path / /auth/;
+        proxy_http_version 1.1;
+        proxy_set_header Connection $http_connection;
+        proxy_ignore_headers X-Accel-Charset X-Accel-Buffering X-Accel-Limit-Rate X-Accel-Redirect X-Accel-Expires Expires Cache-Control Set-Cookie;
+        proxy_read_timeout 60;
+        proxy_send_timeout 60;
+        proxy_set_header Verify $ssl_client_verify;
+        proxy_set_header Serial $ssl_client_serial;
+        proxy_set_header DName $ssl_client_s_dn;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
 }

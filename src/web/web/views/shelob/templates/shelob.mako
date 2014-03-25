@@ -14,6 +14,13 @@
     <script src="${request.static_path('web:static/shelob/js/services.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/controllers.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/directives.js')}"></script>
+
+    <%! from web.util import is_private_deployment %>
+    %if is_private_deployment(request.registry.settings):
+        <script src="${request.static_path('web:static/shelob/js/config/config_private.js')}"></script>
+    %else:
+        <script src="${request.static_path('web:static/shelob/js/config/config_hybrid.js')}"></script>
+    %endif
 </%block>
 
 <%block name="css">
