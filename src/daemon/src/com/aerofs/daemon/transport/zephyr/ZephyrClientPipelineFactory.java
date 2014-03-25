@@ -5,6 +5,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.daemon.transport.lib.BootstrapFactoryUtil;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
@@ -120,6 +121,12 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         CNameVerifiedHandler verifiedHandler = newCNameVerifiedHandler();
         pipeline.addLast(CNAME_VERIFIED_HANDLER_NAME, verifiedHandler);
         verificationHandler.setListener(verifiedHandler);
+
+        // framing
+        pipeline.addLast("length-decoder", BootstrapFactoryUtil.newFrameDecoder());
+        pipeline.addLast("length-encoder", BootstrapFactoryUtil.newLengthFieldPrepender());
+        pipeline.addLast("version-reader", BootstrapFactoryUtil.newCoreProtocolVersionReader());
+        pipeline.addLast("version-writer", BootstrapFactoryUtil.newCoreProtocolVersionWriter());
 
         // set up the message handler
         pipeline.addLast(MESSAGE_HANDLER_NAME, newMessageHandler());
