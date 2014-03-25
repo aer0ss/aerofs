@@ -417,7 +417,7 @@ def _is_restored_from_backup(conf):
 
 
 def _get_already_restored_html_message(request):
-    return 'This appliance is already restored from a backup file. Please' \
+    return 'This appliance has already been restored from a backup file. Please' \
            ' <a href="{}">click here</a> to finish the setup, or discard this appliance' \
            ' and launch a new one to start over.'.format(
            _get_hostname_page_route_path(request))
