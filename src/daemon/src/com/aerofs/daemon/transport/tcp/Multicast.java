@@ -241,8 +241,8 @@ class Multicast implements IMaxcast, ILinkStateListener
 
                 // read magic
                 int pktmagic = new DataInputStream(is).readInt();
-                if (pktmagic != LibParam.CORE_MAGIC) {
-                    l.warn("magic mismatch exp:" + LibParam.CORE_MAGIC + " act:" + pktmagic);
+                if (pktmagic != LibParam.CORE_PROTOCOL_VERSION) {
+                    l.warn("magic mismatch exp:" + LibParam.CORE_PROTOCOL_VERSION + " act:" + pktmagic);
                     continue;
                 }
 
@@ -305,7 +305,7 @@ class Multicast implements IMaxcast, ILinkStateListener
         CRCByteArrayOutputStream cos = new CRCByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(cos);
         try {
-            dos.writeInt(LibParam.CORE_MAGIC);
+            dos.writeInt(LibParam.CORE_PROTOCOL_VERSION);
             dos.flush();
 
             h.writeDelimitedTo(cos);

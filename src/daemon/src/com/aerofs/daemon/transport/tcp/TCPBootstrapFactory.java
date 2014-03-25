@@ -30,8 +30,8 @@ import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
 import static com.aerofs.base.net.NettyUtil.newSslHandler;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newFrameDecoder;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newLengthFieldPrepender;
-import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newMagicReader;
-import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newMagicWriter;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionReader;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionWriter;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newStatsHandler;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
@@ -93,8 +93,8 @@ final class TCPBootstrapFactory
                         newSslHandler(clientSslEngineFactory),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
-                        newMagicReader(),
-                        newMagicWriter(),
+                        newCoreProtocolVersionReader(),
+                        newCoreProtocolVersionWriter(),
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
                         verifiedHandler,
                         messageHandler,
@@ -126,8 +126,8 @@ final class TCPBootstrapFactory
                         newSslHandler(serverSslEngineFactory),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
-                        newMagicReader(),
-                        newMagicWriter(),
+                        newCoreProtocolVersionReader(),
+                        newCoreProtocolVersionWriter(),
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
                         verifiedHandler,
                         messageHandler,

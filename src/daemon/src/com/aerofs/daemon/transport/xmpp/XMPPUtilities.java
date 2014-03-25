@@ -64,7 +64,7 @@ public abstract class XMPPUtilities
         try {
             DataOutputStream os = new DataOutputStream(new Base64.OutputStream(bos));
 
-            os.writeInt(LibParam.CORE_MAGIC);
+            os.writeInt(LibParam.CORE_PROTOCOL_VERSION);
 
             // TODO consider adding mcastid to chksum?
             // if so, don't forget to check in decodeBody
@@ -103,8 +103,8 @@ public abstract class XMPPUtilities
             is = new DataInputStream(new Base64.InputStream(bos));
 
             int magic = is.readInt();
-            if (magic != LibParam.CORE_MAGIC) {
-                l.warn("magic mismatch d:" + did + " exp:" + LibParam.CORE_MAGIC + " act:" + magic + " bdy:" + body);
+            if (magic != LibParam.CORE_PROTOCOL_VERSION) {
+                l.warn("magic mismatch d:" + did + " exp:" + LibParam.CORE_PROTOCOL_VERSION + " act:" + magic + " bdy:" + body);
                 return null;
             }
 

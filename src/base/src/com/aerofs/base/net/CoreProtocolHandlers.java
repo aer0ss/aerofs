@@ -23,19 +23,23 @@ import java.util.Arrays;
 
 import static com.aerofs.base.BaseUtil.hexEncode;
 
-public class MagicHeader
+public abstract class CoreProtocolHandlers
 {
-    private static final Logger l = Loggers.getLogger(MagicHeader.class);
+    private static final Logger l = Loggers.getLogger(CoreProtocolHandlers.class);
 
-    public static class WriteMagicHeaderHandler extends SimpleChannelHandler
+    private CoreProtocolHandlers() { } // private to prevent instantiation
+
+    public static final class SendCoreProtocolVersionHandler extends SimpleChannelHandler
     {
-        private final byte[] _magic;
-        private boolean _done = false;
+        private final byte[] protocolVersion;
+        private boolean versionHeaderSent = false; // protected by 'this'
 
-        public WriteMagicHeaderHandler(byte[] magic)
+        public SendCoreProtocolVersionHandler(byte[] protocolVersion)
         {
-            _magic = magic;
+            this.protocolVersion = protocolVersion;
         }
+
+        // TODO (AG): I believe that I can simply store the future and write the header in channelConnected
 
         @Override
         public void connectRequested(final ChannelHandlerContext ctx, final ChannelStateEvent event)
@@ -74,49 +78,50 @@ public class MagicHeader
 
         private synchronized void writeHeader(ChannelHandlerContext ctx)
         {
-            if (_done) return;
-            _done = true;
-            ChannelBuffer buffer = ChannelBuffers.buffer(_magic.length);
-            buffer.writeBytes(_magic);
+            if (versionHeaderSent) return;
+            versionHeaderSent = true;
+
+            ChannelBuffer buffer = ChannelBuffers.buffer(protocolVersion.length);
+            buffer.writeBytes(protocolVersion);
             Channels.write(ctx, Channels.future(ctx.getChannel()), buffer);
             ctx.getPipeline().remove(this);
 
-            l.trace("wrote magic header 0x{}", hexEncode(_magic));
+            l.trace("wrote magic header 0x{}", hexEncode(protocolVersion));
         }
     }
 
-    public static class ReadMagicHeaderHandler extends FrameDecoder
+    public static final class RecvCoreProtocolVersionHandler extends FrameDecoder
     {
-        private final byte[] _magic;
+        private final byte[] protocolVersion;
 
-        public ReadMagicHeaderHandler(byte[] magic)
+        public RecvCoreProtocolVersionHandler(byte[] protocolVersion)
         {
-            _magic = magic;
+            this.protocolVersion = protocolVersion;
         }
 
         @Override
         protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer)
                 throws Exception
         {
-            if (buffer.readableBytes() < _magic.length) return null;
+            if (buffer.readableBytes() < protocolVersion.length) return null;
             final int readerIndex = buffer.readerIndex();
             ctx.getPipeline().remove(this);
 
-            byte[] magic = new byte[_magic.length];
+            byte[] magic = new byte[protocolVersion.length];
             buffer.readBytes(magic);
 
-            if (!Arrays.equals(_magic, magic)) {
+            if (!Arrays.equals(protocolVersion, magic)) {
                 buffer.readerIndex(readerIndex);
-                throw new ExBadMagicHeader(_magic, magic);
+                throw new ExBadMagicHeader(protocolVersion, magic);
             }
 
-            l.trace("read magic header 0x{}", hexEncode(_magic));
+            l.trace("read magic header 0x{}", hexEncode(protocolVersion));
 
             return (buffer.readable()) ? buffer : null;
         }
     }
 
-    public static class ExBadMagicHeader extends IOException
+    public static final class ExBadMagicHeader extends IOException
     {
         private static final long serialVersionUID = 1;
 

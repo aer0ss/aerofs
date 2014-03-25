@@ -5,8 +5,8 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.C;
-import com.aerofs.base.net.MagicHeader.ReadMagicHeaderHandler;
-import com.aerofs.base.net.MagicHeader.WriteMagicHeaderHandler;
+import com.aerofs.base.net.CoreProtocolHandlers.RecvCoreProtocolVersionHandler;
+import com.aerofs.base.net.CoreProtocolHandlers.SendCoreProtocolVersionHandler;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.lib.LibParam;
@@ -19,9 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 public abstract class BootstrapFactoryUtil
 {
-    private BootstrapFactoryUtil() // private to prevent instantiation
-    {
-    }
+    private BootstrapFactoryUtil() { } // private to prevent instantiation
 
     /**
      * This class encapsulates the framing parameters that we use
@@ -30,8 +28,8 @@ public abstract class BootstrapFactoryUtil
     {
         public static final int LENGTH_FIELD_SIZE = 2; // bytes
         public static final int MAX_MESSAGE_SIZE = DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
-        public static final byte[] MAGIC_BYTES = ByteBuffer.allocate(C.INTEGER_SIZE).putInt(LibParam.CORE_MAGIC).array();
-        public static final int HEADER_SIZE = LENGTH_FIELD_SIZE + MAGIC_BYTES.length;
+        public static final byte[] CORE_PROTOCOL_VERSION_BYTES = ByteBuffer.allocate(C.INTEGER_SIZE).putInt(LibParam.CORE_PROTOCOL_VERSION).array();
+        public static final int HEADER_SIZE = LENGTH_FIELD_SIZE + CORE_PROTOCOL_VERSION_BYTES.length;
 
         static {
             // Check that the maximum message size is smaller than the maximum number that can be
@@ -47,18 +45,22 @@ public abstract class BootstrapFactoryUtil
 
     public static LengthFieldBasedFrameDecoder newFrameDecoder()
     {
-        return new LengthFieldBasedFrameDecoder(FrameParams.MAX_MESSAGE_SIZE, 0,
-                FrameParams.LENGTH_FIELD_SIZE, 0, FrameParams.LENGTH_FIELD_SIZE);
+        return new LengthFieldBasedFrameDecoder(
+                FrameParams.MAX_MESSAGE_SIZE,
+                0,
+                FrameParams.LENGTH_FIELD_SIZE,
+                0,
+                FrameParams.LENGTH_FIELD_SIZE);
     }
 
-    public static ReadMagicHeaderHandler newMagicReader()
+    public static RecvCoreProtocolVersionHandler newCoreProtocolVersionReader()
     {
-        return new ReadMagicHeaderHandler(FrameParams.MAGIC_BYTES);
+        return new RecvCoreProtocolVersionHandler(FrameParams.CORE_PROTOCOL_VERSION_BYTES);
     }
 
-    public static WriteMagicHeaderHandler newMagicWriter()
+    public static SendCoreProtocolVersionHandler newCoreProtocolVersionWriter()
     {
-        return new WriteMagicHeaderHandler(FrameParams.MAGIC_BYTES);
+        return new SendCoreProtocolVersionHandler(FrameParams.CORE_PROTOCOL_VERSION_BYTES);
     }
 
     public static IOStatsHandler newStatsHandler(TransportStats stats)

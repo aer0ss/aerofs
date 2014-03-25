@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.net.MagicHeader.ExBadMagicHeader;
+import com.aerofs.base.net.CoreProtocolHandlers.ExBadMagicHeader;
 import com.aerofs.base.net.NettyUtil;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;

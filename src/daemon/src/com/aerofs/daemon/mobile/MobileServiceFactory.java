@@ -5,8 +5,8 @@
 package com.aerofs.daemon.mobile;
 
 import com.aerofs.base.C;
-import com.aerofs.base.net.MagicHeader.ReadMagicHeaderHandler;
-import com.aerofs.base.net.MagicHeader.WriteMagicHeaderHandler;
+import com.aerofs.base.net.CoreProtocolHandlers.RecvCoreProtocolVersionHandler;
+import com.aerofs.base.net.CoreProtocolHandlers.SendCoreProtocolVersionHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
@@ -73,8 +73,8 @@ public class MobileServiceFactory implements ChannelPipelineFactory
         p.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0,
                 LENGTH_FIELD_SIZE, 0, LENGTH_FIELD_SIZE));
         p.addLast("frameEncoder", new LengthFieldPrepender(LENGTH_FIELD_SIZE));
-        p.addLast("magicHeaderWriter", new WriteMagicHeaderHandler(MAGIC_BYTES));
-        p.addLast("magicHeaderReader", new ReadMagicHeaderHandler(MAGIC_BYTES));
+        p.addLast("magicHeaderWriter", new SendCoreProtocolVersionHandler(MAGIC_BYTES));
+        p.addLast("magicHeaderReader", new RecvCoreProtocolVersionHandler(MAGIC_BYTES));
         p.addLast("cname", cnameHandler);
         p.addLast("mobileServiceHandler", new MobileServiceHandler(mobileService));
     }
