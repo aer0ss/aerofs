@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.admin;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -249,11 +250,38 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             if (!(_isDefaultRoot && L.isMultiuser())) {
                 // if the new aux root already exists the move may silently fail
                 // which is BAD because conflicts and nros MUST NOT be lost
-                _newAuxRoot.deleteOrThrowIfExistRecursively();
+                // However we must be careful not to delete the auxroot when a
+                // the new root resides under the same parent as the old...
+                if (_newAuxRoot.exists() && isDistinct(_oldAuxRoot, _newAuxRoot)) {
+                    _newAuxRoot.deleteOrThrowIfExistRecursively();
+                }
                 _oldAuxRoot.moveInSameFileSystem(_newAuxRoot);
             }
 
             afterRootRelocation(t);
+        }
+
+        /**
+         * Check whether two path points to distinct folders by creating a randomly named
+         * file under the first one and checking if it appears under the second one.
+         */
+        private boolean isDistinct(InjectableFile oldAuxRoot, InjectableFile newAuxRoot)
+        {
+            String name = UniqueID.generate().toStringFormal();
+            try {
+                InjectableFile f = oldAuxRoot.newChild(name);
+                InjectableFile g = newAuxRoot.newChild(name);
+                f.createNewFile();
+                boolean distinct = !(g.exists()
+                                             && g.isFile()
+                                             && f.lastModified() == g.lastModified()
+                                             && f.getLengthOrZeroIfNotFile() == g.getLengthOrZeroIfNotFile());
+                f.deleteIgnoreError();
+                return distinct;
+            } catch (IOException e) {
+                l.info("could not determine distinctness {} {}", oldAuxRoot, newAuxRoot, e);
+                return false;
+            }
         }
 
         @Override
