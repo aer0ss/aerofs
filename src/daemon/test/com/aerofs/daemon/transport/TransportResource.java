@@ -29,6 +29,7 @@ import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.google.common.io.Files;
+import org.jboss.netty.buffer.ChannelBufferFactory;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
@@ -138,7 +139,9 @@ public final class TransportResource extends ExternalResource
                 mockRockLog.getRockLog(),
                 linkStateService,
                 new MaxcastFilterReceiver(),
-                null, clientSocketChannelFactory, serverSocketChannelFactory,
+                null,
+                clientSocketChannelFactory,
+                serverSocketChannelFactory,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory
         );
@@ -147,6 +150,7 @@ public final class TransportResource extends ExternalResource
         transport.init();
         transport.start();
         linkStateService.markLinksUp();
+        ChannelBufferFactory factory;
     }
 
     private SSLEngineFactory newServerSSLEngineFactory(IPrivateKeyProvider privateKeyProvider, ICertificateProvider caCertificateProvider)

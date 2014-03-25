@@ -452,11 +452,9 @@ public final class TestTransports
         assertThat(caughtException, equalTo(true));
     }
 
-
     private static byte[] getTestPacketBytes()
             throws UnsupportedEncodingException
     {
         return TEST_PACKET.getBytes(Charsets.US_ASCII.name());
     }
-
 }

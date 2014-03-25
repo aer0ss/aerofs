@@ -110,7 +110,8 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             TransportProtocolHandler transportProtocolHandler,
             ChannelTeardownHandler channelTeardownHandler,
             TransportStats transportStats,
-            RockLog rockLog, ChannelFactory channelFactory,
+            RockLog rockLog,
+            ChannelFactory channelFactory,
             InetSocketAddress zephyrAddress,
             Proxy proxy)
     {
