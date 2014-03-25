@@ -43,13 +43,14 @@ final class ZephyrClientHandler extends SimpleChannelHandler
 
     void init(DID did, Channel ourChannel)
     {
-        // this is the DID we expect the remote peer to have
-        checkState(remotedid == null, "attempt reset remote did old:" + remotedid);
-        getCNameVerifiedHandler(channel).setExpectedRemoteDID(did);
-        remotedid = did;
-
+        // set our internal channel
         checkState(channel == null, "attempt reset channel old:" + channel);
         channel = ourChannel;
+
+        // this is the DID we expect the remote peer to have
+        checkState(remotedid == null, "attempt reset remote did old:" + remotedid);
+        getCNameVerifiedHandler(ourChannel).setExpectedRemoteDID(did);
+        remotedid = did;
     }
 
     DID getExpectedRemoteDID()
