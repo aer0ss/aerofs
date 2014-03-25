@@ -36,9 +36,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 {
-    private static final String CNAME_VERIFIED_HANDLER_NAME = "verified";
+    private static final String CNAME_VERIFIED_HANDLER_NAME = "cname-verified";
     private static final String MESSAGE_HANDLER_NAME = "message";
-    private static final String ZEPHYR_CLIENT_HANDLER_NAME = "client";
+    private static final String ZEPHYR_CLIENT_HANDLER_NAME = "zephyr-client";
 
     private final UserID localid;
     private final DID localdid;
@@ -97,7 +97,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         ChannelPipeline pipeline = Channels.pipeline();
 
         // address resolution
-        pipeline.addLast("resolver", getResolverHandler());
+        pipeline.addLast("address-resolver", getResolverHandler());
 
         // statistics
         IOStatsHandler ioStatsHandler = newStatsHandler();
@@ -110,7 +110,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         // since this is removed from the pipeline, I need to keep
         // this instance around and pass it to any handler that needs it
         ZephyrProtocolHandler zephyrProtocolHandler = newZephyrProtocolHandler();
-        pipeline.addLast("protocol", zephyrProtocolHandler);
+        pipeline.addLast("zephyr-protocol", zephyrProtocolHandler);
 
         // ssl
         CNameVerificationHandler verificationHandler = newCNameVerificationHandler();
@@ -125,10 +125,12 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         // framing
         pipeline.addLast("length-decoder", BootstrapFactoryUtil.newFrameDecoder());
         pipeline.addLast("length-encoder", BootstrapFactoryUtil.newLengthFieldPrepender());
+
+        // core-protocol-version
         pipeline.addLast("version-reader", BootstrapFactoryUtil.newCoreProtocolVersionReader());
         pipeline.addLast("version-writer", BootstrapFactoryUtil.newCoreProtocolVersionWriter());
 
-        // set up the message handler
+        // set up the main send/recv message handler
         pipeline.addLast(MESSAGE_HANDLER_NAME, newMessageHandler());
 
         // zephyr client
@@ -136,10 +138,10 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         pipeline.addLast(ZEPHYR_CLIENT_HANDLER_NAME, zephyrClientHandler);
 
         // setup the heartbeat handler
-        pipeline.addLast("hbsend", new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer));
+        pipeline.addLast("heartbeat", new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer));
 
         // setup the actual transport protocol handler
-        pipeline.addLast("tpprotocol", transportProtocolHandler);
+        pipeline.addLast("transport-protocol", transportProtocolHandler);
 
         // set up the handler to teardown sessions on disconnect
         pipeline.addLast("teardown", channelTeardownHandler);
