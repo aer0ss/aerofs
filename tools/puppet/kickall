@@ -16,7 +16,5 @@ if [ x"$PUPPET_MASTER" == x ]; then
     exit 3
 fi
 
-KICKLIST="sp.aerofs.com sv.aerofs.com verkehr.aerofs.com webadmin.aerofs.com x.aerofs.com"
-
 ssh ${PUPPET_MASTER} -C "echo `date` >> /var/log/aerofs/kickall.log"
-ssh ${PUPPET_MASTER} -C "set -o pipefail; puppet kick --foreground --parallel 2 --debug $KICKLIST | tee -a /var/log/aerofs/kickall.log"
+ssh ${PUPPET_MASTER} -C "set -o pipefail; kickall | tee -a /var/log/aerofs/kickall.log"

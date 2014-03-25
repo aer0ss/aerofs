@@ -5,7 +5,16 @@ require "net/https"
 require "pry"
 require 'thread'
 
-NUMBER_OF_THREADS = 8
+# FIXME: Is this stupid? Yes, it's stupid. Let's experiment with
+# using this script (which has a long http timeout baked in) in our
+# CI infrastructure (which has an underpowered...everything). Running
+# 8 puppet agents against the CI puppetmaster causes him to flip out
+# and return empty docs to some of them. Running proper puppet kick
+# causes breakage when a system takes more than 120 seconds to update.
+#
+# TL;DR: *sound of hair tearing out*
+#
+NUMBER_OF_THREADS = 1
 
 class Kick
   attr_reader :update_status, :useful_logs
