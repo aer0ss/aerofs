@@ -4,7 +4,8 @@
 <%block name="scripts">
     <script type="text/javascript">
         var SCOPES = [
-            {"name": "user.read", "qualified": false, "description": "View your email and name."},
+            {"name": "organization.admin", "qualified": false, "description": "Take administrative actions, as well as any action below, on behalf of other users in your organization."},
+            {"name": "user.read", "qualified": false, "description": "View your name and email address."},
             {"name": "user.write", "qualified": false, "description": "Update your name."},
             {"name": "user.password", "qualified": false, "description": "Reset and modify your password."},
             {"name": "files.read", "qualified": true, "description": "List folders and download files."},
@@ -48,9 +49,8 @@
         function addRequestedScope(scope, scope_quals) {
             var id = scope.name.replace('.', '_');
 
-            $("<div></div>")
-                .append($("<hr></hr>"))
-                .append($("<h4></h4>")
+            $("<div><ul></ul></div>")
+                .append($("<li style=\"margin-top: 20px\"></li>")
                     .attr("id", "title_" + id)
                     .addClass("scope")
                     .text(scope.description))
@@ -85,7 +85,7 @@
 
     <hr/>
 
-    <p style="margin-top: 60px">
+    <p style="margin-top: 20px">
         <form method="post" action="auth/authorize" method="post">
             ${self.csrf.token_input()}
             <input type="hidden" name="response_type" value="${response_type}"/>

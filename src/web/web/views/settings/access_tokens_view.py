@@ -102,6 +102,7 @@ def app_authorization(request):
         "acl.read": True,
         "acl.write": True,
         "acl.invitations": False,
+        "organization.admin": False,
     }
 
     scopes = {}
