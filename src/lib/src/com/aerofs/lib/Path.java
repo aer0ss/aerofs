@@ -211,11 +211,15 @@ public class Path implements Comparable<Path>
      */
     public static Path fromAbsoluteString(SID sid, String absRoot, String absPath)
     {
+        return new Path(sid, splitPath(relativePath(absRoot, absPath), FILE_SEP_PATTERN));
+    }
+
+    public static String relativePath(String absRoot, String absPath)
+    {
         assert isUnder(absRoot, absPath) : absRoot + " " + absPath;
         // strip root from the path. +1 to remove the separator
         String relative = absPath.substring(Math.min(absRoot.length() + 1, absPath.length()));
-        relative = Util.removeTailingSeparator(relative);
-        return new Path(sid, splitPath(relative, FILE_SEP_PATTERN));
+        return Util.removeTailingSeparator(relative);
     }
 
     /**

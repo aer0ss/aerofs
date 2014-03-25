@@ -113,7 +113,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         fNewRoot.delete();
 
         // Perform actual operations.
-        l.warn(absOldRoot + " -> " + absNewRoot + ". same fs? " + sameFS);
+        l.warn("{} -> {}. same fs? {}", absOldRoot, absNewRoot, sameFS);
 
         Trans t = _tm.begin_();
         try {

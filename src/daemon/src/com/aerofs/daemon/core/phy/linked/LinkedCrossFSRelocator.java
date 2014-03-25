@@ -17,6 +17,8 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -54,6 +56,9 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
     @Override
     protected void beforeRootRelocation(Trans t) throws Exception
     {
+        // special combined move, strictness check not practical
+        if (L.isMultiuser() && _sid.equals(Cfg.rootSID())) return;
+
         if (_prober.isStricterThan(_newAuxRoot.getAbsolutePath(), _lrm.get_(_sid).properties())) {
             throw new ExBadArgs("The target location is on a more restrictive filesystem than the source location.");
         }

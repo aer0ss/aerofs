@@ -261,9 +261,7 @@ public class LinkerRootMap
             for (Entry<SID, LinkerRoot> e : _map.entrySet()) {
                 String rootPath = e.getValue().absRootAnchor();
                 if (Path.isUnder(oldAbsPath, rootPath)) {
-                    int len = oldAbsPath.length();
-                    String rootRelPath = rootPath.substring(len +
-                            (rootPath.charAt(len) == File.separatorChar ? 1 : 0));
+                    String rootRelPath = Path.relativePath(oldAbsPath, rootPath);
                     newRoots.put(e.getKey(), Util.join(newAbsPath, rootRelPath));
                 }
             }
