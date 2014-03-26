@@ -52,7 +52,7 @@ public class AuthenticatedPrincipal implements Serializable, Principal
     AuthenticatedPrincipal(String username, UserID userID, OrganizationID orgID) {
         this(username);
         setOrganizationID(orgID);
-        setUserID(userID);
+        setEffectiveUserID(userID);
     }
 
     // FIXME: make this go away
@@ -81,6 +81,9 @@ public class AuthenticatedPrincipal implements Serializable, Principal
         attributes.put(key, value);
     }
 
+    /**
+     * This is the _issuer_, i.e. the userID who performed the authentication work.
+     */
     @Override
     public String getName() {
         return name;
@@ -91,12 +94,35 @@ public class AuthenticatedPrincipal implements Serializable, Principal
         return getClass().getName() + " [name=" + name + ", roles=" + roles + ", attributes=" + attributes + "]";
     }
 
-    public UserID getUserID()
+    /**
+     * The UserID that authenticated - this cannot be a team server ID.
+     */
+    public UserID getIssuingUserID()
+    {
+        return UserID.fromInternal(name);
+    }
+
+    /**
+     * Get the effective UserID.
+     *
+     * The effective userID is the userID whose authority is vested in a given access token.
+     *
+     *  - A regular user can issue an access token for him or herself; in that case the effective
+     * and owner are the same.
+     *
+     *  - An admin user can issue an administrative access token, which uses the Team Server ID. In
+     * that case the owner is foo@example.com, and the effective user is :2 (for instance).
+     */
+    public UserID getEffectiveUserID()
     {
         return UserID.fromInternal(getAttribute(USERID_ATTRIB));
     }
 
-    public void setUserID(UserID userid)
+    /**
+     * Set the effective user ID.
+     * @see com.aerofs.oauth.AuthenticatedPrincipal#getEffectiveUserID
+     */
+    public void setEffectiveUserID(UserID userid)
     {
         addAttribute(USERID_ATTRIB, userid.getString());
     }

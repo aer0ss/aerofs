@@ -78,6 +78,8 @@ public class AccessToken extends AbstractEntity
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> scopes = Sets.newHashSet();
 
+    // FIXME: This is, in fact, the effective userID; leaving the name alone as it involves a
+    // change to the database schema also. And this is in fact private...
     @Column @NotNull
     private String resourceOwnerId;
 
@@ -91,10 +93,12 @@ public class AccessToken extends AbstractEntity
             Set<String> scopes, String refreshToken)
     {
         super();
+        Preconditions.checkNotNull(principal);
+        Preconditions.checkNotNull(principal.getEffectiveUserID());
+
         this.token = token;
         this.principal = principal;
         this.encodePrincipal();
-        this.resourceOwnerId = principal.getName();
         this.client = client;
         this.expires = expires;
         this.scopes = ImmutableSet.copyOf(scopes);
@@ -102,8 +106,6 @@ public class AccessToken extends AbstractEntity
         this.mdid = MDID.generate().toStringFormal();
         invariant();
     }
-
-    public AccessToken() { }
 
     private void invariant()
     {
@@ -122,6 +124,7 @@ public class AccessToken extends AbstractEntity
         if (principal != null) {
             this.encodedPrincipal = PrincipalUtils.serialize(principal);
             this.owner = principal.getName();
+            this.resourceOwnerId = principal.getEffectiveUserID().getString();
         }
     }
 
@@ -208,14 +211,6 @@ public class AccessToken extends AbstractEntity
     }
 
     /**
-     * @return the encodedPrincipal
-     */
-    public String getEncodedPrincipal()
-    {
-        return encodedPrincipal;
-    }
-
-    /**
      * @return the refreshToken
      */
     public String getRefreshToken()
@@ -232,9 +227,10 @@ public class AccessToken extends AbstractEntity
     }
 
     /**
-     * @return the resourceOwnerId
+     * @return the userID this token acts as. For an admin token this will be a TS user; for normal
+     * tokens, the effectiveUser is the same as the owner.
      */
-    public String getResourceOwnerId()
+    public String getEffectiveUserID()
     {
         return resourceOwnerId;
     }

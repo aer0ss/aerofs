@@ -30,6 +30,7 @@ public class AuthToken
     private final static Logger l = LoggerFactory.getLogger(AuthToken.class);
 
     public final UserID user;
+    public final UserID issuer;
     public final DID did;
     public final OrganizationID org;
 
@@ -38,7 +39,8 @@ public class AuthToken
 
     public AuthToken(VerifyTokenResponse response) throws ExFormatError
     {
-        user = response.principal.getUserID();
+        issuer = response.principal.getIssuingUserID();
+        user = response.principal.getEffectiveUserID();
         did = new MDID(UniqueID.fromStringFormal(response.mdid));
         org = response.principal.getOrganizationID();
         scopes = parseScopes(response.scopes);

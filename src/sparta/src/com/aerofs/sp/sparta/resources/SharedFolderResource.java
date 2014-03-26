@@ -106,7 +106,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     {
         return _audit.event(AuditTopic.SHARING, event)
                 .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
-                .embed("caller", new AuditCaller(caller.id(), token.did));
+                .embed("caller", new AuditCaller(caller.id(), token.issuer, token.did));
     }
 
     @Since("1.1")

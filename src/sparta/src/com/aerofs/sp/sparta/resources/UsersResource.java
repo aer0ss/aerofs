@@ -103,7 +103,7 @@ public class UsersResource extends AbstractSpartaResource
             throws SQLException, ExNotFound
     {
         return _audit.event(topic, event)
-                .embed("caller", new AuditCaller(caller.id(), token.did));
+                .embed("caller", new AuditCaller(caller.id(), token.issuer, token.did));
     }
 
     @Since("1.1")

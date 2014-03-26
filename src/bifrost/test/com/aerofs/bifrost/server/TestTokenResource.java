@@ -6,6 +6,8 @@ package com.aerofs.bifrost.server;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
@@ -238,9 +240,12 @@ public class TestTokenResource extends BifrostTest
     {
         final String tokenVal = "this-token-will-be-deleted";
 
+        AuthenticatedPrincipal principal = new AuthenticatedPrincipal(USERNAME);
+        principal.setEffectiveUserID(UserID.fromExternal(USERNAME));
+        principal.setOrganizationID(OrganizationID.PRIVATE_ORGANIZATION);
         AccessToken token = new AccessToken(
                 tokenVal,
-                new AuthenticatedPrincipal(USERNAME),
+                principal,
                 _clientRepository.findByClientId(CLIENTID),
                 0,
                 Sets.newHashSet("read"),

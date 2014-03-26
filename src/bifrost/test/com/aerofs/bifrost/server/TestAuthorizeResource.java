@@ -39,8 +39,7 @@ public class TestAuthorizeResource extends BifrostTest
                         .build());
 
         when(_spClient.authorizeMobileDevice(eq(BAD_NONCE), anyString())).thenThrow(
-                new ExExternalAuthFailure()
-        );
+                new ExExternalAuthFailure());
     }
 
     @Test
@@ -238,7 +237,7 @@ public class TestAuthorizeResource extends BifrostTest
         AuthorizationRequest authRequest = _authRequestDb.findByAuthCode(code);
         authRequest.decodePrincipal();
         AuthenticatedPrincipal principal = authRequest.getPrincipal();
-        assertTrue(principal.getUserID().isTeamServerID());
+        assertTrue(principal.getEffectiveUserID().isTeamServerID());
     }
 
 

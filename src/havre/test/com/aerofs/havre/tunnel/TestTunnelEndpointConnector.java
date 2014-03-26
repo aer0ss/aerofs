@@ -45,7 +45,7 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
     private static AuthenticatedPrincipal newPrincipal(String userid)
     {
         AuthenticatedPrincipal p = new AuthenticatedPrincipal(userid);
-        p.setUserID(UserID.fromInternal(userid));
+        p.setEffectiveUserID(UserID.fromInternal(userid));
         p.setOrganizationID(OrganizationID.PRIVATE_ORGANIZATION);
         return p;
     }
@@ -63,7 +63,7 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
 
     TunnelHandler connectClient(AuthenticatedPrincipal user, DID did, final Version version) throws Exception
     {
-        final TunnelAddress addr = new TunnelAddress(user.getUserID(), did);
+        final TunnelAddress addr = new TunnelAddress(user.getEffectiveUserID(), did);
         TunnelHandler handler = mock(TunnelHandler.class);
         when(handler.address()).thenReturn(addr);
         when(handler.newVirtualChannel(any(ChannelPipeline.class)))

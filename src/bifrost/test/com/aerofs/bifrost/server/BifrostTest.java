@@ -184,7 +184,7 @@ public abstract class BifrostTest extends AbstractTest
             UserID user, OrganizationID org, long expires, Set<String> scopes)
     {
         AuthenticatedPrincipal principal = new AuthenticatedPrincipal(USERNAME);
-        principal.setUserID(user);
+        principal.setEffectiveUserID(user);
         principal.setOrganizationID(org);
         AccessToken token = new AccessToken(tokenId,
                 principal,

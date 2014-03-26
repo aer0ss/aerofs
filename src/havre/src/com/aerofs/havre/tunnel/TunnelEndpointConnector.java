@@ -209,7 +209,7 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
         TunnelHandler handler = getEndpoint(teamServer(principal), did, strictMatch, minVersion);
         return handler != null
                 ? handler
-                : getEndpoint(principal.getUserID(), did, strictMatch, minVersion);
+                : getEndpoint(principal.getEffectiveUserID(), did, strictMatch, minVersion);
     }
 
     private static UserID teamServer(AuthenticatedPrincipal principal)
