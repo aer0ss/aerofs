@@ -174,6 +174,35 @@ public class TestSenderFilters extends AbstractTest
         assertEquals(filterExpected, sfaiActual._filter);
     }
 
+    @Test
+    public void shouldNotMergeCarelessly() throws Exception
+    {
+        DID did = DID.generate();
+        OID oid = OID.generate();
+
+        // for META tick
+        sf.objectUpdated_(oid, t);
+
+        // gv from peer
+        SenderFilterAndIndex sfi;
+        sfi = sf.get_(did, false);
+        assertNotNull(sfi);
+        assertTrue(sfi._filter.contains_(oid));
+
+        // for CONTENT tick
+        sf.objectUpdated_(oid, t);
+
+        // filter update from peer after gv
+        sf.update_(did, sfi._sfidx, sfi._updateSeq);
+
+        // gv from peer
+        sfi = sf.get_(did, false);
+
+        // ensure that the last filter was not merged
+        assertNotNull(sfi);
+        assertTrue(sfi._filter.contains_(oid));
+    }
+
     /**
      * This method causes the SenderFilters object to create 3 filters, and
      * associates did1 with the middle filter (its index between BASE and latest)

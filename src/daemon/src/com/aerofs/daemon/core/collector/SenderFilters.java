@@ -20,6 +20,7 @@ import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 
 import static com.aerofs.daemon.core.collector.SenderFilterIndex.BASE;
+import static com.google.common.base.Preconditions.checkState;
 
 public class SenderFilters
 {
@@ -33,6 +34,7 @@ public class SenderFilters
     private @Nonnull SenderFilterIndex _sfidxLast;
     private @Nonnull BFOID _filterLast;
     private long _updateSeq;
+    private boolean _barrier;
 
     public static class Factory
     {
@@ -71,9 +73,13 @@ public class SenderFilters
     public void objectUpdated_(OID oid, Trans t) throws SQLException
     {
         if (_filterLast.add_(oid)) {
-            _updateSeq++;
+            ++_updateSeq;
             _sfdb.setSenderFilter_(_sidx, _sfidxLast, _filterLast, t);
+        } else if (_barrier) {
+            // prevent last filter from being cleared
+            ++_updateSeq;
         }
+        _barrier = false;
     }
 
     public static class SenderFilterAndIndex {
@@ -108,24 +114,45 @@ public class SenderFilters
         // The SenderFilterIndex base from which to union filters
         SenderFilterIndex sfidxFilter = fromBase ? BASE : sfidxForDID;
 
-        // a shortcut for common cases
+        BFOID ret;
         if (sfidxFilter.equals(_sfidxLast)) {
-            assert sfidxFilter.equals(sfidxForDID);
-            return _filterLast.isEmpty_() ? null :
-                new SenderFilterAndIndex(_filterLast, sfidxForDID, _updateSeq);
+            // a shortcut for common cases
+            checkState(sfidxFilter.equals(sfidxForDID), "{} {} {} {} {} {}",
+                    _sidx, did, fromBase, sfidxFilter, sfidxForDID, _sfidxLast);
+            ret = _filterLast;
+        } else {
+            ret = new BFOID(_filterLast);
+            // TODO cache the last few filters
+            IDBIterator<BFOID> iter = _sfdb.getSenderFilters_(_sidx, sfidxFilter, _sfidxLast);
+            try {
+                while (iter.next_()) ret.union_(iter.get_());
+            } finally {
+                iter.close_();
+            }
         }
 
-        BFOID ret = new BFOID(_filterLast);
-        // TODO cache the last few filters
-        IDBIterator<BFOID> iter = _sfdb.getSenderFilters_(_sidx, sfidxFilter, _sfidxLast);
-        try {
-            while (iter.next_()) ret.union_(iter.get_());
-        } finally {
-            iter.close_();
-        }
+        if (ret.isEmpty_()) return null;
 
-        return ret.isEmpty_() ? null : new SenderFilterAndIndex(ret, sfidxForDID,
-                _updateSeq);
+        // Draw a line in the sand
+        // Any subsequent version update will cause a bump to updateSeq, even if the bloom
+        // filter is left unchanged. This is necessary to avoid race conditions that leave
+        // fresh ticks uncollectable due to over-eager BF merging, e.g.
+        //
+        // 1. create OA for o1: bump META tick
+        //    -> add o1 to last filter
+        // 2. GetVers from d1
+        // 3. create CA for o1: bump CONTENT tick
+        //    -> o1 already in last filter, seq number unchanged
+        // 4. UpdateSenderFilter from d1
+        //    -> seq number match, merge filters
+        // 5. GetVers from d1
+        //    -> empty filter prevents CONTENT tick from being collected  <=================
+        //
+        // NB: this is a tactical fix, longer term the lifecycle of Sender Filters should be
+        // re-evaluated. They are only needed because we propagate KMLs...
+        _barrier = true;
+
+        return new SenderFilterAndIndex(ret, sfidxForDID, _updateSeq);
     }
 
     /**
@@ -185,15 +212,15 @@ public class SenderFilters
             filterNew = new BFOID();
         }
 
-        if (l.isDebugEnabled()) l.debug("update 4 " + _sidx + " " + did + " " + sfidxOld + " merge " +
-                merge + " create " + create + " sfidxNew " + sfidxNew);
+        l.debug("update 4 {} {} {} merge {} create {} sfidxNew {}",
+                _sidx, did, sfidxOld, merge, create, sfidxNew);
 
         Trans t = _tm.begin_();
         try {
             if (merge) {
                 SenderFilterIndex sfidxPrev = _sfdb
                         .getSenderFilterPreviousIndex_(_sidx, sfidxOld);
-                l.debug("merge 4 " + _sidx + " " + sfidxPrev + "<-" + sfidxOld);
+                l.debug("merge 4 {} {}<-{}", _sidx, sfidxPrev, sfidxOld);
                 BFOID filterPrev = _sfdb.getSenderFilter_(_sidx, sfidxPrev);
                 BFOID filterOld = _sfdb.getSenderFilter_(_sidx, sfidxOld);
                 if (filterPrev.union_(filterOld)) {
