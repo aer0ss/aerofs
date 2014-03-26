@@ -29,7 +29,9 @@ public class OrganizationID extends IntegerID
 
     public static OrganizationID fromHexString(String hexString)
     {
-        return new OrganizationID(Integer.parseInt(hexString, 16));
+        // N.B. parse as long and then cast to int, because large negative
+        // numbers will cause Integer.parseInt to throw a NumberFormatException
+        return new OrganizationID((int)Long.parseLong(hexString, 16));
     }
 
     public OrganizationID(int i)
