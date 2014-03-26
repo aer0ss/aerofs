@@ -25,6 +25,19 @@ fi
 # single-quoted - we want $HOME expanded serverside
 DEPLOY_LOCKFILE='$HOME/deploy.lock'
 
+# The version file should have been produced by the packaging scripts.
+VERSION_FILE="$PACKAGE_DIR/current.ver"
+if [[ ! -r "$VERSION_FILE" ]]; then
+    echo "Expected to find a version file at $VERSION_FILE but I couldn't read the version number"
+    exit $ERRBADVERSION
+fi
+RELEASE_VERSION=$(cat "$VERSION_FILE" | cut -d = -f 2)
+# Check that the version string has the right format.
+if [[ ! $RELEASE_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Expected version string matching <major>.<minor>.<build>, got '$RELEASE_VERSION'"
+    exit $ERRBADVERSION
+fi
+
 function lock_release_server() {
     echo "establishing deploy lock..."
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
@@ -121,7 +134,6 @@ if is_public ; then
     echo
 fi
 
-compute_next_release_version
 echo '+--------------------------'
 echo '| ' $RELEASE_VERSION $MODE
 echo '+--------------------------'
