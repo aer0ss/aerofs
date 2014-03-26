@@ -19,6 +19,7 @@ import com.aerofs.rest.api.CommonMetadata;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.SettableFuture;
 import com.jayway.restassured.http.ContentType;
+import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import com.jayway.restassured.response.Response;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Assert;
@@ -43,6 +44,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -459,6 +461,24 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldCreateFileUnderAnchor() throws Exception
+    {
+        mds.root().anchor("shared");
+
+        SettableFuture<SOID> soid = whenCreate(OA.Type.FILE, "shared", "foo.txt");
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(CommonMetadata.child(object("shared").toStringFormal(), "foo.txt"),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(201)
+                .body("id", equalToFutureObject(soid))
+                .body("name", equalTo("foo.txt"))
+        .when().post("/v0.10/files");
+    }
+
+    @Test
     public void shouldReturn409WhenAlreadyExists() throws Exception
     {
         whenCreate(OA.Type.FILE, "", "foo.txt");
@@ -485,6 +505,36 @@ public class TestFileResource extends AbstractRestTest
         givenAccess()
                 .contentType(ContentType.JSON)
                 .body("")
+        .expect()
+                .statusCode(400)
+        .when().post("/v0.10/files");
+    }
+
+    @Test
+    public void shouldReturn404WhenCreatingUnderNonExistingParent() throws Exception
+    {
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(CommonMetadata.child(
+                                new RestObject(rootSID, OID.generate()).toStringFormal(),
+                                "foo"),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(404)
+        .when().post("/v0.10/files");
+    }
+
+    @Test
+    public void shouldReturn400WhenCreatingUnderFile() throws Exception
+    {
+        mds.root().file("foo");
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(CommonMetadata.child(
+                        object("foo").toStringFormal(),
+                        "bar"),
+                        ObjectMapperType.GSON)
         .expect()
                 .statusCode(400)
         .when().post("/v0.10/files");
@@ -537,6 +587,30 @@ public class TestFileResource extends AbstractRestTest
                 .put("/v0.10/files/" + id(soid));
 
         assertEquals("Object id has changed", soid, newFileId.get());
+    }
+
+    @Test
+    public void shouldMoveFileUnderAnchor() throws Exception
+    {
+        SOID soid = mds.root().dir("foo.txt").soid();
+        SOID newParent = mds.root().anchor("myFolder").soid();
+
+        final String newFileName = "foo1.txt";
+        SettableFuture<SOID> newObjectId = whenMove("foo.txt", "myFolder", newFileName);
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(CommonMetadata.child(id(newParent.oid()), newFileName),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(200)
+                .body("id", equalToFutureObject(newObjectId))
+                .body("name", equalTo(newFileName))
+        .when()
+                .put("/v0.10/files/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+
+        assertNotEquals("store id hasn't changed", soid.sidx(), newObjectId.get().sidx());
+        assertEquals("Object id has changed", soid.oid(), newObjectId.get().oid());
     }
 
     @Test
@@ -624,6 +698,25 @@ public class TestFileResource extends AbstractRestTest
                 .body("type", equalTo("NOT_FOUND"))
         .when()
                 .put("/v0.10/files/" + id(soid));
+    }
+
+    @Test
+    public void shouldReturn400MovingUnderFile() throws Exception
+    {
+        SOID soid = mds.root()
+                .file("bar").parent()
+                .file("foo.txt").soid();
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(
+                        object("bar").toStringFormal(),
+                        "test")))
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+        .when()
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
 
     @Test

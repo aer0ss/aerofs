@@ -24,6 +24,8 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
 {
     private final ImmigrantCreator _imc;
@@ -40,7 +42,10 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
     protected void handleThrows_(EIMoveObject ev) throws Exception
     {
         OA from = _access.resolveWithPermissions_(ev._object, ev.user(), Permissions.EDITOR);
-        OA toParent = _access.resolveWithPermissions_(ev._newParent, ev.user(), Permissions.EDITOR);
+        OA toParent = _access.resolveFollowsAnchorWithPermissions_(ev._newParent, ev.user(),
+                Permissions.EDITOR);
+
+        checkArgument(toParent.isDir(), "parent field must point to a valid folder");
 
         EntityTag etag = _etags.etagForObject(from.soid());
 

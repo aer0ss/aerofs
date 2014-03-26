@@ -22,6 +22,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.net.URI;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
 {
     private final ObjectCreator _oc;
@@ -37,7 +39,10 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
     @Override
     protected void handleThrows_(EICreateObject ev) throws Exception
     {
-        OA oaParent = _access.resolveWithPermissions_(ev._parent, ev.user(), Permissions.EDITOR);
+        OA oaParent = _access.resolveFollowsAnchorWithPermissions_(ev._parent, ev.user(),
+                Permissions.EDITOR);
+
+        checkArgument(oaParent.isDir(), "parent field must point to a valid folder");
 
         Trans t = _tm.begin_();
         SOID soid;

@@ -511,7 +511,7 @@ public class AbstractRestTest extends AbstractTest
     protected SettableFuture<SOID> whenCreate(Type type, String parent, String name)
             throws Exception
     {
-        SOID p = ds.resolveThrows_(Path.fromString(rootSID, parent));
+        SOID p = ds.resolveFollowAnchorThrows_(Path.fromString(rootSID, parent));
         final SettableFuture<SOID> soid = SettableFuture.create();
 
         when(oc.create_(eq(type), eq(p), eq(name), eq(PhysicalOp.APPLY), eq(t)))
@@ -533,7 +533,7 @@ public class AbstractRestTest extends AbstractTest
     protected SettableFuture<SOID> whenMove(String objectName, String parentName, String newName)
             throws Exception
     {
-        final SOID parentSoid = ds.resolveThrows_(Path.fromString(rootSID, parentName));
+        final SOID parentSoid = ds.resolveFollowAnchorThrows_(Path.fromString(rootSID, parentName));
         final SOID objectSoid = ds.resolveThrows_(Path.fromString(rootSID, objectName));
         final SettableFuture<SOID> soid = SettableFuture.create();
         when(ic.move_(eq(objectSoid), eq(parentSoid), eq(newName), eq(PhysicalOp.APPLY), eq(t)))
@@ -545,15 +545,17 @@ public class AbstractRestTest extends AbstractTest
                     {
                         Object[] args = invocation.getArguments();
                         SOID objectSoid = (SOID)args[0];
+                        SOID parentSoid = (SOID)args[1];
                         String pathFrom = ds.resolve_(objectSoid).toStringRelative();
-                        String parenPath = ds.resolve_((SOID)args[1]).toStringRelative();
+                        String parenPath = ds.resolve_(parentSoid).toStringRelative();
                         String pathTo = parenPath.length() == 0 ? (String)args[2] :
                                 Util.join(parenPath, (String)args[2]);
                         if (mds.resolve(new Path(rootSID, pathTo.split("/"))) == null) {
                         // does not exist yet
                             mds.move(pathFrom, pathTo, t);
-                            soid.set(objectSoid);
-                            return objectSoid;
+                            SOID r = new SOID(parentSoid.sidx(), objectSoid.oid());
+                            soid.set(r);
+                            return r;
                         } else { // already exists
                             throw new ExAlreadyExist();
                         }

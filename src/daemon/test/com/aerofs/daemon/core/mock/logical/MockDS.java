@@ -263,7 +263,7 @@ public class MockDS
             when(_oa.soid()).thenReturn(_soid);
             when(_oa.name()).thenReturn(_name);
             when(_oa.isExpelled()).thenReturn(expelled);
-            when(_oa.parent()).thenReturn(root ? _soid.oid() : _parent._soid.oid());
+            when(_oa.parent()).thenReturn(_soid.oid().isRoot() ? _soid.oid() : _parent._soid.oid());
 
             ////////
             // wire services
@@ -933,17 +933,12 @@ public class MockDS
         MockDSObject c = dfrom.child(from.last());
 
         MockDSDir dto = cd(to.removeLast());
-        c.move(dto, to.last(), t, listeners);
-    }
-
-    public void sync(String p, BitVector newStatus, Trans t, IDirectoryServiceListener... listeners)
-            throws Exception
-    {
-        Path path = Path.fromString(_rootSID, p);
-        MockDSDir d = cd(path.removeLast());
-        MockDSObject c = d.child(path.last());
-        BitVector oldStatus = c.ss(newStatus);
-        for (IDirectoryServiceListener listener : listeners)
-            listener.objectSyncStatusChanged_(c.soid(), oldStatus, newStatus, t);
+        if (dto.soid().sidx().equals(c.soid().sidx())) {
+            c.move(dto, to.last(), t, listeners);
+        } else {
+            // TODO: fully accurate copy of branches and expulsion if needed
+            dto.file(new SOID(dto.soid().sidx(), c._soid.oid()), to.last(), c.oa().cas().size());
+            c.delete(t, listeners);
+        }
     }
 }

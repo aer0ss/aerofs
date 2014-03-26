@@ -13,11 +13,13 @@ import com.aerofs.rest.api.*;
 import com.aerofs.rest.api.Error;
 import com.google.common.util.concurrent.SettableFuture;
 import com.jayway.restassured.http.ContentType;
+import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -50,7 +52,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().get(RESOURCE, new RestObject(SID.generate(), OID.generate()).toStringFormal());
+        .when().log().everything()
+                .get(RESOURCE, new RestObject(SID.generate(), OID.generate()).toStringFormal());
     }
 
     @Test
@@ -106,6 +109,25 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldCreateUnderAnchor() throws Exception
+    {
+        mds.root().anchor("shared");
+
+        SettableFuture<SOID> soid = whenCreate(Type.DIR, "shared", "foo");
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(CommonMetadata.child(object("shared").toStringFormal(), "foo"),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(201)
+                .body("id", equalToFutureObject(soid))
+                .body("name", equalTo("foo"))
+        .when().log().everything()
+                .post("/v0.10/folders");
+    }
+
+    @Test
     public void shouldReturn403WhenViewerTriesToCreate() throws Exception
     {
         doThrow(new ExNoPerm()).when(acl).checkThrows_(
@@ -139,8 +161,9 @@ public class TestFolderResource extends AbstractRestTest
     {
         givenAccess()
                 .contentType(ContentType.JSON)
-                .body(json(CommonMetadata.child(
-                        new RestObject(rootSID, OID.generate()).toStringFormal(), "foo")))
+                .body(CommonMetadata.child(
+                                new RestObject(rootSID, OID.generate()).toStringFormal(), "foo"),
+                        ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -149,7 +172,7 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldReturn404WhenTryingToCreateUnderFile() throws Exception
+    public void shouldReturn400WhenTryingToCreateUnderFile() throws Exception
     {
         mds.root().file("f1");
 
@@ -158,10 +181,11 @@ public class TestFolderResource extends AbstractRestTest
 
         givenAccess()
                 .contentType(ContentType.JSON)
-                .body(json(CommonMetadata.child(object("f1").toStringFormal(), "foo")))
+                .body(CommonMetadata.child(object("f1").toStringFormal(), "foo"),
+                        ObjectMapperType.GSON)
         .expect()
-                .statusCode(404)
-                .body("type", equalTo("NOT_FOUND"))
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
         .when()
                 .post("/v0.10/folders");
     }
@@ -210,6 +234,30 @@ public class TestFolderResource extends AbstractRestTest
                 .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
 
         assertEquals("Object id has changed", soid, newObjectId.get());
+    }
+
+    @Test
+    public void shouldMoveFolderUnderAnchor() throws Exception
+    {
+        SOID soid = mds.root().dir("foo").soid();
+        mds.root().anchor("boo");
+
+        final String newFolderName = "moo";
+        SettableFuture<SOID> newObjectId = whenMove("foo", "boo", newFolderName);
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(CommonMetadata.child(object("boo").toStringFormal(), newFolderName),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(200)
+                .body("id", equalToFutureObject(newObjectId))
+                .body("name", equalTo(newFolderName))
+        .when()
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+
+        assertNotEquals("store id hasn't changed", soid.sidx(), newObjectId.get().sidx());
+        assertEquals("Object id has changed", soid.oid(), newObjectId.get().oid());
     }
 
     @Test
@@ -287,7 +335,7 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldReturn404MovingToNonExistingParrent() throws Exception
+    public void shouldReturn404MovingToNonExistingParent() throws Exception
     {
         SOID soid = mds.root().dir("foo").soid();
 
@@ -299,6 +347,25 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
+        .when()
+                .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn400MovingUnderFile() throws Exception
+    {
+        SOID soid = mds.root()
+                .file("bar").parent()
+                .dir("foo").soid();
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(
+                        object("bar").toStringFormal(),
+                        "test")))
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
         .when()
                 .put("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
     }
