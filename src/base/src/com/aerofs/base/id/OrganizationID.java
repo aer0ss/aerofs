@@ -27,6 +27,11 @@ public class OrganizationID extends IntegerID
         assert !BaseUtil.isValidEmailAddressToken(String.valueOf(UserID.TEAM_SERVER_PREFIX));
     }
 
+    public static OrganizationID fromHexString(String hexString)
+    {
+        return new OrganizationID(Integer.parseInt(hexString, 16));
+    }
+
     public OrganizationID(int i)
     {
         super(i);

@@ -29,7 +29,7 @@ public class PrincipalFactory
             throw new ExNoPerm("User does not have admin privilege");
         }
 
-        OrganizationID orgID = new OrganizationID(Integer.valueOf(auth.getOrgId()));
+        OrganizationID orgID = OrganizationID.fromHexString(auth.getOrgId());
         return new AuthenticatedPrincipal(
                 auth.getUserId(),
                 isAdmin ? orgID.toTeamServerUserID() : UserID.fromExternal(auth.getUserId()),

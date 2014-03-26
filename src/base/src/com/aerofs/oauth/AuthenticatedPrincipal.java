@@ -103,7 +103,7 @@ public class AuthenticatedPrincipal implements Serializable, Principal
 
     public OrganizationID getOrganizationID()
     {
-        return new OrganizationID(Integer.parseInt(getAttribute(ORGID_ATTRIB), 16));
+        return OrganizationID.fromHexString(getAttribute(ORGID_ATTRIB));
     }
 
     public void setOrganizationID(OrganizationID orgid)
