@@ -17,7 +17,9 @@ import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -54,12 +56,13 @@ public class GetVersReply
     private final IMapSID2SIndex _sid2sidx;
     private final IPulledDeviceDatabase _pulleddb;
     private final LocalACL _lacl;
+    private final TokenManager _tokenManager;
 
     @Inject
     public GetVersReply(TransManager tm, NativeVersionControl nvc,
             ImmigrantVersionControl ivc, UpdateSenderFilter pusf,
             IncomingStreams iss, MapSIndex2Store sidx2s, IMapSID2SIndex sid2sidx,
-            IPulledDeviceDatabase pddb, LocalACL lacl)
+            IPulledDeviceDatabase pddb, LocalACL lacl, TokenManager tokenManager)
     {
         _tm = tm;
         _nvc = nvc;
@@ -70,9 +73,10 @@ public class GetVersReply
         _sid2sidx = sid2sidx;
         _pulleddb = pddb;
         _lacl = lacl;
+        _tokenManager = tokenManager;
     }
 
-    void processReply_(DigestedMessage msg, Token tk) throws Exception
+    public void processReply_(DigestedMessage msg) throws Exception
     {
         try {
             if (msg.pb().hasExceptionReply()) throw Exceptions.fromPB(msg.pb().getExceptionReply());
@@ -81,7 +85,7 @@ public class GetVersReply
             if (msg.streamKey() == null) {
                 processAtomicReply_(msg.user(), msg.did(), msg.is());
             } else {
-                processStreamReply_(msg.user(), msg.did(), msg.streamKey(), msg.is(), tk);
+                processStreamReply_(msg.user(), msg.did(), msg.streamKey(), msg.is());
             }
         } catch (Exception e) {
             l.info("error processing reply: {}", e);
@@ -242,14 +246,25 @@ public class GetVersReply
 
     private static final int MIN_BLOCKS_PER_TX = 100;
 
-    private void processStreamReply_(UserID user, DID from, StreamKey streamKey, InputStream is,
-            Token tk) throws Exception
+    private void processStreamReply_(UserID user, DID from, StreamKey streamKey, InputStream is)
+            throws Exception
     {
+        Token tk = null;
         ReplyContext cxt = new ReplyContext(user, from);
         Queue<PBGetVersReplyBlock> qblocks = new ArrayDeque<PBGetVersReplyBlock>(MIN_BLOCKS_PER_TX);
 
-        while (!processStreamChunk_(cxt, qblocks, is)) {
-            is = _iss.recvChunk_(streamKey, tk);
+        try {
+            while (!processStreamChunk_(cxt, qblocks, is)) {
+                if (tk == null) {
+                    // push token acquisition as far down as possible to minimize likelihood of
+                    // exhaustion in the common cases where tokens are not actually needed
+                    // TODO: ideally we wouldn't have to pass a token down to the transport...
+                    tk = _tokenManager.acquireThrows_(Cat.HOUSEKEEPING, "gvr " + from);
+                }
+                is = _iss.recvChunk_(streamKey, tk);
+            }
+        } finally {
+            if (tk != null) tk.reclaim_();
         }
     }
 

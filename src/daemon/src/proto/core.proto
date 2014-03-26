@@ -22,10 +22,11 @@ message PBCore {
 
         REPLY = 0;
 
-        NEW_UPDATES = 1;        // followed by: repeated PBNewUpdate
-        GET_VERS_CALL = 2;
-        UPDATE_SENDER_FILTER = 3;
-        GET_COM_CALL = 4;
+        NEW_UPDATES = 1;
+        GET_VERS_REQ = 2;
+        GET_VERS_RESP = 3;
+        UPDATE_SENDER_FILTER = 4;
+        GET_COM_CALL = 5;
         // Tell a peer to compute the hash for the named object+version so it'll be available to
         // future GetComponentCalls
         COMPUTE_HASH_CALL = 6;
@@ -36,16 +37,17 @@ message PBCore {
     optional int32 rpcid = 2 [default = 0];
 
     // rpc calls
-    optional PBGetVersCall get_vers_call = 3;
     optional PBGetComCall get_com_call = 4;
     optional PBComputeHashCall compute_hash_call = 6;
 
     // rpc replies
-    optional PBGetVersReply get_vers_reply = 7;
     optional PBGetComReply get_com_reply = 8;
     optional PBException exception_reply = 11;
 
     // non-rpc stuff
+    optional PBNewUpdates new_updates = 13;
+    optional PBGetVersCall get_vers_call = 3;
+    optional PBGetVersReply get_vers_reply = 7;
     optional PBUpdateSenderFilter update_sender_filter = 12;
 }
 
@@ -55,11 +57,8 @@ message PBUpdateSenderFilter {
     required uint64 sender_filter_update_seq = 3;
 }
 
-message PBNewUpdate {
+message PBNewUpdates {
     required bytes store_id = 1;
-    required bytes object_id = 2;
-    required int32 com_id = 3;
-    required uint64 tick = 4;
 }
 
 message PBGetVersCall {

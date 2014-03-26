@@ -25,8 +25,6 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 {
     private final SIndex _sidx;
 
-    private int _antiEntropySeq;
-
     // only set for partial replicas
     private long _used;
 
@@ -62,28 +60,16 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
         public Store create_(SIndex sidx) throws SQLException
         {
-            // The value of the initial Anti Entropy sequence number is arbitrary; the important
-            // thing is that for every creation of a store, it is different. Otherwise if a Store is
-            // expelled, then readmitted before an EIAntiEntropy is cleaned up, when creating
-            // the new store, the initial sequence number would be the same as for the old
-            // (expelled) store. The old EIAntiEntropy would not get cleaned up because its
-            // sequence number would match the current expected sequence number.
-            // * TODO (MJ) I wish there were a clean way to assert that no duplicate EIAntiEntropies
-            //   exist (and/or test this now-fixed bug).
-            //   FYI core.sharing.acl.should_handle_concurrent_acl_updates produces such a situation
-            //   if the seq is not random, but there is no assertion.
-            final int initAntiEntropySeq = Util.rand().nextInt();
-            return new Store(this, sidx, initAntiEntropySeq);
+            return new Store(this, sidx);
         }
     }
 
     private final Factory _f;
 
-    private Store(Factory f, SIndex sidx, int initAntiEntropySeq) throws SQLException
+    private Store(Factory f, SIndex sidx) throws SQLException
     {
         _f = f;
         _sidx = sidx;
-        _antiEntropySeq = initAntiEntropySeq;
         _collector = _f._factCollector.create_(this);
         _senderFilters = _f._factSF.create_(sidx);
         _opm = _f._dp.getOPMDevices_(sidx);
@@ -163,12 +149,6 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _collector.dumpStatMisc(indent + indentUnit, indentUnit, ps);
     }
 
-    public int getAntiEntropySeq_()
-    {
-        assert !_isDeleted;
-        return _antiEntropySeq;
-    }
-
     /**
      * Start or restart periodical anti-entropy pulling. The first pull is performed immediately.
      *
@@ -180,8 +160,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
      */
     public void startAntiEntropy_()
     {
-        assert !_isDeleted;
-        _f._ae.start(_sidx, ++_antiEntropySeq);
+        _f._ae.start_(_sidx);
     }
 
 

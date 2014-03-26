@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.protocol.ComputeHashCall;
 import com.aerofs.daemon.core.protocol.GetComponentCall;
 import com.aerofs.daemon.core.protocol.GetVersCall;
+import com.aerofs.daemon.core.protocol.GetVersReply;
 import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.protocol.UpdateSenderFilter;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -48,6 +49,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         private final GetComponentCall _pgcc;
         private final NewUpdates _pnu;
         private final GetVersCall _pgvc;
+        private final GetVersReply _pgvr;
         private final UpdateSenderFilter _pusf;
         private final ComputeHashCall _computeHashCall;
         private final IncomingStreams _iss;
@@ -55,8 +57,8 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
 
         @Inject
         public Factory(IncomingStreams iss, ComputeHashCall computeHashCall, UpdateSenderFilter pusf,
-                GetVersCall pgvc, NewUpdates pnu, GetComponentCall pgcc, RPC rpc, DID2User d2u,
-                TransportRoutingLayer trl, CoreDeviceLRU dlru)
+                GetVersCall pgvc, GetVersReply pgvr, NewUpdates pnu, GetComponentCall pgcc, RPC rpc,
+                DID2User d2u, TransportRoutingLayer trl, CoreDeviceLRU dlru)
         {
             _iss = iss;
             _computeHashCall = computeHashCall;
@@ -64,6 +66,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _pgvc = pgvc;
             _pnu = pnu;
             _pgcc = pgcc;
+            _pgvr = pgvr;
             _rpc = rpc;
             _d2u = d2u;
             _trl = trl;
@@ -150,8 +153,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         switch (msg.pb().getType()) {
         case GET_COM_CALL:
             //noinspection fallthrough
-        case GET_VERS_CALL:
-            //noinspection fallthrough
         case COMPUTE_HASH_CALL:
             try {
                 processCall_(msg);
@@ -162,11 +163,10 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             }
             break;
         case REPLY:
-            //noinspection fallthrough
+        case GET_VERS_REQ:
+        case GET_VERS_RESP:
         case NEW_UPDATES:
-            //noinspection fallthrough
         case UPDATE_SENDER_FILTER:
-            //noinspection fallthrough
         case NOP:
             processNonCall_(msg);
             break;
@@ -182,9 +182,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         switch (msg.pb().getType()) {
         case GET_COM_CALL:
             _f._pgcc.processCall_(msg);
-            break;
-        case GET_VERS_CALL:
-            _f._pgvc.processCall_(msg);
             break;
         case COMPUTE_HASH_CALL:
             _f._computeHashCall.processCall_(msg);
@@ -210,6 +207,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         _f._trl.sendUnicast_(msg.did(), error);
     }
 
+    // TODO: this wiring is terrible, inverse dep and allow handlers to auto-register?
     private void processNonCall_(DigestedMessage msg)
             throws Exception
     {
@@ -219,6 +217,12 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             break;
         case NEW_UPDATES:
             _f._pnu.process_(msg);
+            break;
+        case GET_VERS_REQ:
+            _f._pgvc.processCall_(msg);
+            break;
+        case GET_VERS_RESP:
+            _f._pgvr.processReply_(msg);
             break;
         case UPDATE_SENDER_FILTER:
             _f._pusf.process_(msg);

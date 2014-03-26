@@ -48,7 +48,6 @@ import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
-import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
@@ -87,9 +86,7 @@ public class GetVersCall
 
     private final NativeVersionControl _nvc;
     private final ImmigrantVersionControl _ivc;
-    private final RPC _rpc;
     private final TransportRoutingLayer _trl;
-    private final GetVersReply _pgvr;
     private final Metrics _m;
     private final IncomingStreams _iss;
     private final OutgoingStreams _oss;
@@ -110,8 +107,8 @@ public class GetVersCall
     private final CfgLocalUser _cfgLocalUser;
 
     @Inject
-    public GetVersCall(IncomingStreams iss, OutgoingStreams oss, Metrics m, GetVersReply pgvr,
-            TransportRoutingLayer trl, RPC rpc, NativeVersionControl nvc, ImmigrantVersionControl ivc,
+    public GetVersCall(IncomingStreams iss, OutgoingStreams oss, Metrics m,
+            TransportRoutingLayer trl, NativeVersionControl nvc, ImmigrantVersionControl ivc,
             MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb, TokenManager tokenManager,
             DirectoryService ds, TransManager tm, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
             MapSIndex2Contributors sidx2contrib, LocalACL lacl, CfgLocalUser cfgLocalUser)
@@ -119,8 +116,6 @@ public class GetVersCall
         _iss = iss;
         _oss = oss;
         _m = m;
-        _pgvr = pgvr;
-        _rpc = rpc;
         _trl = trl;
         _nvc = nvc;
         _ivc = ivc;
@@ -136,12 +131,12 @@ public class GetVersCall
         _cfgLocalUser = cfgLocalUser;
     }
 
-    public void rpc_(SIndex sidx, DID didTo, Token tk)
+    public void request_(SIndex sidx, DID didTo)
         throws Exception
     {
         // TODO: pass in a Set<SIndex> and stream multiple blocks...
         PBGetVersCall.Builder bd = PBGetVersCall.newBuilder();
-        PBCore call = CoreUtil.newCall(Type.GET_VERS_CALL).setGetVersCall(bd).build();
+        PBCore call = CoreUtil.newCore(Type.GET_VERS_REQ).setGetVersCall(bd).build();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         call.writeDelimitedTo(out);
@@ -150,8 +145,7 @@ public class GetVersCall
         // TODO: once transport refactor is done, switch to streaming calls
         makeBlock_(sidx, didTo).setIsLastBlock(true).build().writeDelimitedTo(out);
 
-        DigestedMessage msg = _rpc.do_(didTo, call, out, tk, "gv for " + sidx);
-        _pgvr.processReply_(msg, tk);
+        _trl.sendUnicast_(didTo, CoreUtil.typeString(call), CoreUtil.NOT_RPC, out);
     }
 
     private PBGetVersCallBlock.Builder makeBlock_(SIndex sidx, DID didTo) throws SQLException
@@ -207,7 +201,7 @@ public class GetVersCall
 
         l.debug("process from " + msg.ep());
 
-        PBCore core = CoreUtil.newReply(msg.pb())
+        PBCore core = CoreUtil.newCore(Type.GET_VERS_RESP)
                 .setGetVersReply(PBGetVersReply.newBuilder().build())
                 .build();
         ByteArrayOutputStream os = write_(null, core);

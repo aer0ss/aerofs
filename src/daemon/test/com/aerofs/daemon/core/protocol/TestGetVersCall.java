@@ -2,9 +2,12 @@ package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.CoreUtil;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBGetVersCallBlock;
 import org.junit.After;
 import org.junit.Before;
@@ -22,7 +25,6 @@ import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.OutgoingStreams;
-import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.PulledDeviceDatabase;
@@ -43,7 +45,7 @@ public class TestGetVersCall extends AbstractTest
 
     @Mock NativeVersionControl nvc;
     @Mock ImmigrantVersionControl ivc;
-    @Mock RPC rpc;
+    @Mock TransportRoutingLayer trl;
     @Mock GetVersReply gvr;
     @Mock Metrics m;
     @Mock OutgoingStreams oss;
@@ -121,10 +123,10 @@ public class TestGetVersCall extends AbstractTest
      */
     private boolean getFlagFromBaseWhenRunningRPC(DID didTo) throws Exception
     {
-        gvc.rpc_(sidx, didTo, tk);
+        gvc.request_(sidx, didTo);
 
-        verify(rpc).do_(eq(didTo), any(PBCore.class),
-                callCaptor.capture(), any(Token.class), any(String.class));
+        verify(trl).sendUnicast_(eq(didTo), eq(Integer.toString(Type.GET_VERS_REQ.getNumber())),
+                eq(CoreUtil.NOT_RPC), callCaptor.capture());
 
         ByteArrayInputStream is = new ByteArrayInputStream(callCaptor.getValue().toByteArray());
         PBCore.parseDelimitedFrom(is);

@@ -123,7 +123,7 @@ public class LibParam extends BaseParam
     }
 
     // This number increments every time the protocol is updated
-    public static final int CORE_PROTOCOL_VERSION       = 0x637265C9;
+    public static final int CORE_PROTOCOL_VERSION       = 0x637265CA;
     public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
 
     public static final String LOG_FILE_EXT             = ".log";
@@ -197,13 +197,6 @@ public class LibParam extends BaseParam
     public static class Verkehr
     {
         public static final long VERKEHR_RETRY_INTERVAL = 5 * C.SEC;
-    }
-
-    public static class SyncStat
-    {
-        public static final String SS_POST_PARAM_PROTOCOL  = SP.SP_POST_PARAM_PROTOCOL;
-        public static final String SS_POST_PARAM_DATA      = SP.SP_POST_PARAM_DATA;
-        public static final int SS_PROTOCOL_VERSION         = 6;
     }
 
     public static class CA
