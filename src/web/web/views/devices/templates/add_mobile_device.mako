@@ -2,6 +2,7 @@
 
 <%!
     from web.util import is_private_deployment
+    from pyramid.security import authenticated_userid
 %>
 
 <%! page_title = "AeroFS for Mobile Devices" %>
@@ -9,7 +10,7 @@
 <h2>AeroFS for Mobile Devices</h2>
 <p>Ready to set up AeroFS on your mobile device?</p>
 
-%if is_private_deployment(request.registry.settings):
+%if is_private_deployment(request.registry.settings) or authenticated_userid(request).endswith('@aerofs.com'):
 
     ########## Private cloud ##########
 
@@ -23,7 +24,7 @@
         <div class="span2" style="text-align: center;">
             <em style="line-height: 40px;">Android: coming soon</em>
             ## TODO: Use this when we release the Android app for Private Cloud
-            ##<a href="https://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
+            ##<a href="https://play.google.com/store/apps/details?id=com.aerofs.android2" target="_blank">
             ##  <img alt="AeroFS on Google Play" src="https://developer.android.com/images/brand/en_generic_rgb_wo_45.png" />
             ##</a>
         </div>
