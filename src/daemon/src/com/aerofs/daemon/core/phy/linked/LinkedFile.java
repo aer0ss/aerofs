@@ -153,6 +153,8 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
             break;
         default:
             assert op == PhysicalOp.NOP;
+            // always reset FID to avoid violating FID consistency invariants
+            _fidm.physicalObjectDeleted_(t);
         }
     }
 
