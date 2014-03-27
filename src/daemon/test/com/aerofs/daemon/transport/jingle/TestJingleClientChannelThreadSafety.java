@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport.jingle;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.jingle.SignalThread.IIncomingTunnelListener;
@@ -24,6 +25,8 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.DefaultChannelPipeline;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,6 +55,7 @@ public final class TestJingleClientChannelThreadSafety
     private static final long WAIT_UNTIL_CLOSE_TIME = 60;
     private static final String ARROWFS_ORG = "arrowfs.org";
     private static final String TRANSPORT_ID = "t";
+    private static Timer timer = new HashedWheelTimer();
 
     //--------------------------------------------------------------------------------------------//
 
@@ -148,7 +152,7 @@ public final class TestJingleClientChannelThreadSafety
         jingleDevice.signalThread.setIncomingTunnelListener(listener);
         jingleDevice.signalThread.setUnicastListener(listener);
 
-        jingleDevice.clientBootstrap = new ClientBootstrap(new JingleClientChannelFactory(jingleDevice.signalThread, jingleDevice.channelWorker));
+        jingleDevice.clientBootstrap = new ClientBootstrap(new JingleClientChannelFactory(DaemonParam.DEFAULT_CONNECT_TIMEOUT, timer, jingleDevice.signalThread, jingleDevice.channelWorker));
         jingleDevice.clientBootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override

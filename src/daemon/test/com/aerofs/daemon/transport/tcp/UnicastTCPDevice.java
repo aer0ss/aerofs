@@ -45,6 +45,7 @@ import static org.mockito.Mockito.when;
 public final class UnicastTCPDevice
 {
     public DID did = DID.generate();
+    public LinkStateService linkStateService = new LinkStateService();
     public BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(100);
     public UserID userID;
     public InetSocketAddress listeningAddress; // <----- UNIQUE TO TCP AND REQUIRED BY TESTS
@@ -61,9 +62,9 @@ public final class UnicastTCPDevice
     // interesting...this is practically all the wiring in TCP
     // TODO (AG): find some way to extract this so that we can start up only the unicast/multicast side and use this inside the real transport
     public UnicastTCPDevice(
+            long channelConnectTimeout,
             Random random,
             SecureRandom secureRandom,
-            LinkStateService linkStateService,
             MockCA mockCA,
             UnicastTransportListener transportListener)
             throws Exception
@@ -96,7 +97,7 @@ public final class UnicastTCPDevice
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
         SSLEngineFactory serverSSLEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
-        tcpBootstrapFactory =  new TCPBootstrapFactory(userID, did, clientSSLEngineFactory, serverSSLEngineFactory, unicastListener, unicast, transportProtocolHandler, tcpProtocolHandler, transportStats);
+        tcpBootstrapFactory =  new TCPBootstrapFactory(userID, did, channelConnectTimeout, clientSSLEngineFactory, serverSSLEngineFactory, unicastListener, unicast, transportProtocolHandler, tcpProtocolHandler, transportStats);
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);
     }
@@ -109,6 +110,7 @@ public final class UnicastTCPDevice
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
         unicast.setUnicastListener(unicastListener);
 
+        linkStateService.markLinksUp();
         unicast.start(listeningAddress);
         transportReader.start();
     }

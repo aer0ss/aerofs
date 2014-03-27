@@ -8,7 +8,6 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
@@ -54,8 +53,6 @@ public final class TestZephyrUnicast
 
     private static final byte[] TEST_DATA = "hello".getBytes(Charsets.US_ASCII);
 
-    private LinkStateService localLinkStateService;
-    private LinkStateService otherLinkStateService;
     private UnicastZephyrDevice localDevice;
     private UnicastZephyrDevice otherDevice;
 
@@ -76,16 +73,12 @@ public final class TestZephyrUnicast
         MockRockLog mockRockLog = new MockRockLog();
         MockCA mockCA = new MockCA("test-ca", new SecureRandom());
 
-        localLinkStateService = new LinkStateService();
-        otherLinkStateService = new LinkStateService();
-        localDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), localLinkStateService, mockCA, mockRockLog, new UnicastTransportListener());
-        otherDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), otherLinkStateService, mockCA, mockRockLog, new UnicastTransportListener());
+        localDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), mockCA, mockRockLog, new UnicastTransportListener());
+        otherDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), mockCA, mockRockLog, new UnicastTransportListener());
 
         localDevice.init();
         otherDevice.init();
 
-        localLinkStateService.start();
-        otherLinkStateService.start();
         localDevice.start();
         otherDevice.start();
     }
@@ -119,7 +112,7 @@ public final class TestZephyrUnicast
         Channel localChannel = sendPacketAndWaitForItToBeReceived(localDevice, otherDevice, TEST_DATA);
 
         // set the link state changed _for the local machine_
-        localLinkStateService.markLinksDown();
+        localDevice.linkStateService.markLinksDown();
 
         // wait for our local channel to be closed
         localChannel.getCloseFuture().awaitUninterruptibly();

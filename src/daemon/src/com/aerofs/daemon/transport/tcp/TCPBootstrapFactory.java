@@ -28,11 +28,12 @@ import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
 import static com.aerofs.base.net.NettyUtil.newSslHandler;
-import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newFrameDecoder;
-import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newLengthFieldPrepender;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionReader;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionWriter;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newFrameDecoder;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newLengthFieldPrepender;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newStatsHandler;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.setConnectTimeout;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
@@ -45,6 +46,7 @@ final class TCPBootstrapFactory
     private final TCPChannelDiagnosticsHandler serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER);
     private final UserID localuser;
     private final DID localdid;
+    private final long channelConnectTimeout;
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
     private final IUnicastListener unicastListener;
@@ -56,6 +58,7 @@ final class TCPBootstrapFactory
     TCPBootstrapFactory(
             UserID localuser,
             DID localdid,
+            long channelConnectTimeout,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IUnicastListener unicastListener,
@@ -66,6 +69,7 @@ final class TCPBootstrapFactory
     {
         this.localuser = localuser;
         this.localdid = localdid;
+        this.channelConnectTimeout = channelConnectTimeout;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.unicastListener = unicastListener;
@@ -104,6 +108,7 @@ final class TCPBootstrapFactory
                         clientChannelTeardownHandler);
             }
         });
+        setConnectTimeout(bootstrap, channelConnectTimeout);
         return bootstrap;
     }
 

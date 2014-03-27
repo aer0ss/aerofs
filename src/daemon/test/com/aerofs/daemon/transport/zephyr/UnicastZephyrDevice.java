@@ -47,6 +47,7 @@ import static org.mockito.Mockito.when;
 public final class UnicastZephyrDevice
 {
     public DID did = DID.generate();
+    public LinkStateService linkStateService = new LinkStateService();
     public BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(100);
     public UserID userID;
     public SemaphoreTriggeringListener unicastListener;
@@ -55,7 +56,7 @@ public final class UnicastZephyrDevice
     public ZephyrConnectionService unicast;
     public XMPPConnectionService xmppConnectionService;
 
-    public UnicastZephyrDevice(Random random, SecureRandom secureRandom, String zephyrHost, int zephyrPort, LinkStateService linkStateService, MockCA mockCA, MockRockLog mockRockLog, UnicastTransportListener transportListener)
+    public UnicastZephyrDevice(Random random, SecureRandom secureRandom, String zephyrHost, int zephyrPort, MockCA mockCA, MockRockLog mockRockLog, UnicastTransportListener transportListener)
             throws Exception
     {
         this.transportListener = transportListener;
@@ -126,6 +127,9 @@ public final class UnicastZephyrDevice
                 // noop
             }
         });
+
+        // mark all the network links as up
+        linkStateService.markLinksUp();
 
         // start the XMPPConnectionService and block until it actually connects
         xmppConnectionService.start();

@@ -8,11 +8,12 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import java.net.InetSocketAddress;
 
 import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
+import static com.google.common.base.Preconditions.checkState;
 
 public class DaemonParam
 {
     static {
-        assert Daemon.HEARTBEAT_TIMEOUT > Jingle.CALL_TIMEOUT;
+        checkState(Daemon.HEARTBEAT_TIMEOUT > Jingle.CALL_TIMEOUT);
     }
 
     public static final int QUEUE_LENGTH_DEFAULT        = 1024;
@@ -21,7 +22,8 @@ public class DaemonParam
     // transport parameters
     //
 
-    public static final long SLOW_CONNECT           = 10 * C.SEC;
+    public static final long DEFAULT_CONNECT_TIMEOUT = 20 * C.SEC;
+    public static final long SLOW_CONNECT            = 30 * C.SEC;
 
     //
     // pulsing parameters

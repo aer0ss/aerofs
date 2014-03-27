@@ -10,6 +10,7 @@ import com.aerofs.base.net.CoreProtocolHandlers.SendCoreProtocolVersionHandler;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.lib.LibParam;
+import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 
@@ -66,5 +67,10 @@ public abstract class BootstrapFactoryUtil
     public static IOStatsHandler newStatsHandler(TransportStats stats)
     {
         return new IOStatsHandler(stats);
+    }
+
+    public static void setConnectTimeout(ClientBootstrap bootstrap, long channelConnectTimeout)
+    {
+        bootstrap.setOption("connectTimeoutMillis", channelConnectTimeout);
     }
 }

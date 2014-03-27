@@ -41,6 +41,7 @@ import com.aerofs.rocklog.RockLog;
 import com.google.protobuf.Message;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.util.Timer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -85,11 +86,13 @@ public class Jingle implements ITransport, IAddressResolver
             int numPingsBeforeDisconnectingXmppServerConnection,
             long xmppServerConnectionInitialReconnectInterval,
             long xmppServerConnectionMaxReconnectInterval,
+            long channelConnectTimeout,
             byte[] scrypted,
             String absRtRoot,
             boolean enableJingleLibraryLogging,
             String id,
             int rank,
+            Timer timer,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
             LinkStateService linkStateService,
             MaxcastFilterReceiver maxcastFilterReceiver,
@@ -137,7 +140,7 @@ public class Jingle implements ITransport, IAddressResolver
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, this.outgoingEventSink, streamManager, pulseManager);
         // FIXME (AG): if I can somehow remove the circular dependency for IServerHandlerListener I can completely remove the setBootstraps call!
-        JingleBootstrapFactory bootstrapFactory = new JingleBootstrapFactory(localUser, localdid, clientSslEngineFactory, serverSslEngineFactory, presenceService, unicast, protocolHandler, transportStats, signalThread, channelWorker);
+        JingleBootstrapFactory bootstrapFactory = new JingleBootstrapFactory(localUser, localdid, channelConnectTimeout, timer, clientSslEngineFactory, serverSslEngineFactory, presenceService, unicast, protocolHandler, transportStats, signalThread, channelWorker);
         ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);

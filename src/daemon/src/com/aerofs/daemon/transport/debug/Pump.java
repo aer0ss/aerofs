@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport.debug;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.TimerUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -43,6 +44,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -148,6 +150,7 @@ public final class Pump implements IProgram
         CfgLocalDID localdid = new CfgLocalDID();
         CfgScrypted scrypted = new CfgScrypted();
         CfgLolol lolol = new CfgLolol();
+        Timer timer = TimerUtil.getGlobalTimer();
         RockLog rockLog = new RockLog();
         MaxcastFilterReceiver maxcastFilterReceiver = new MaxcastFilterReceiver();
         CfgKeyManagersProvider keyProvider = new CfgKeyManagersProvider();
@@ -170,10 +173,14 @@ public final class Pump implements IProgram
                 3,
                 LibParam.EXP_RETRY_MIN_DEFAULT,
                 LibParam.EXP_RETRY_MAX_DEFAULT,
+                DaemonParam.DEFAULT_CONNECT_TIMEOUT,
                 BaseParam.Zephyr.SERVER_ADDRESS,
                 Proxy.NO_PROXY,
+                timer,
                 incomingEventSink,
-                rockLog, linkStateService, maxcastFilterReceiver,
+                rockLog,
+                linkStateService,
+                maxcastFilterReceiver,
                 null,
                 clientChannelFactory,
                 serverChannelFactory,

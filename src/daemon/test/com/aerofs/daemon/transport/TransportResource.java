@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.TimerUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
@@ -34,6 +35,8 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 
@@ -66,6 +69,7 @@ public final class TransportResource extends ExternalResource
     private final Random random = new Random(seed);
     private final LinkStateService linkStateService = new LinkStateService();
     private final SecureRandom secureRandom = new SecureRandom();
+    private final Timer timer = new HashedWheelTimer();
     private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(DaemonParam.QUEUE_LENGTH_DEFAULT);
     private final ClientSocketChannelFactory clientSocketChannelFactory = new NioClientSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2, 2);
     private final ServerSocketChannelFactory serverSocketChannelFactory = new NioServerSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2);
@@ -133,8 +137,10 @@ public final class TransportResource extends ExternalResource
                 2,
                 1 * C.SEC,
                 5 * C.SEC,
+                10 * C.SEC,
                 InetSocketAddress.createUnresolved("zephyr.aerofs.com", 443),
                 Proxy.NO_PROXY,
+                timer,
                 outgoingEventSink,
                 mockRockLog.getRockLog(),
                 linkStateService,

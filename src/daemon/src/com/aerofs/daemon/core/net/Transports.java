@@ -14,12 +14,12 @@ import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.daemon.lib.IStartable;
+import com.aerofs.daemon.lib.ITransferStat;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
-import com.aerofs.daemon.lib.ITransferStat;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgEnabledTransports;
@@ -32,8 +32,10 @@ import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.net.Proxy;
 import java.util.Collection;
 import java.util.Comparator;
@@ -77,10 +79,11 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             CfgScrypted scrypted,
             CfgLolol lolol,
             CfgEnabledTransports enabledTransports,
+            Timer timer,
             CoreQueue coreQueue,
             MaxcastFilterReceiver maxcastFilterReceiver,
             LinkStateService linkStateService,
-            MobileServerZephyrConnector mobileServerZephyrConnector,
+            @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
             RockLog rocklog,
             ClientSSLEngineFactory clientSslEngineFactory,
             ServerSSLEngineFactory serverSslEngineFactory,
@@ -102,8 +105,10 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 3,
                 LibParam.EXP_RETRY_MIN_DEFAULT,
                 LibParam.EXP_RETRY_MAX_DEFAULT,
+                DaemonParam.DEFAULT_CONNECT_TIMEOUT,
                 BaseParam.Zephyr.SERVER_ADDRESS,
                 Proxy.NO_PROXY,
+                timer,
                 coreQueue,
                 rocklog,
                 linkStateService,

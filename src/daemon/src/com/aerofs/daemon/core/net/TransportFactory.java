@@ -19,6 +19,7 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
@@ -75,8 +76,10 @@ public final class TransportFactory
     private final int numPingsBeforeDisconnectingXmppServerConnection;
     private final long xmppServerConnectionInitialReconnectInterval;
     private final long xmppServerConnectionMaxReconnectInterval;
+    private final long channelConnectTimeout;
     private final InetSocketAddress zephyrServerAddress;
     private final Proxy proxy;
+    private final Timer timer;
     private final BlockingPrioQueue<IEvent> transportEventSink;
     private final @Nullable MobileServerZephyrConnector mobileServerZephyrConnector;
     private final RockLog rockLog;
@@ -101,8 +104,10 @@ public final class TransportFactory
             int numPingsBeforeDisconnectingXmppServerConnection,
             long xmppServerConnectionInitialReconnectInterval,
             long xmppServerConnectionMaxReconnectInterval,
+            long channelConnectTimeout,
             InetSocketAddress zephyrServerAddress,
             Proxy proxy,
+            Timer timer,
             BlockingPrioQueue<IEvent> transportEventSink,
             RockLog rockLog,
             LinkStateService linkStateService,
@@ -126,8 +131,10 @@ public final class TransportFactory
         this.numPingsBeforeDisconnectingXmppServerConnection = numPingsBeforeDisconnectingXmppServerConnection;
         this.xmppServerConnectionInitialReconnectInterval = xmppServerConnectionInitialReconnectInterval;
         this.xmppServerConnectionMaxReconnectInterval = xmppServerConnectionMaxReconnectInterval;
+        this.channelConnectTimeout = channelConnectTimeout;
         this.zephyrServerAddress = zephyrServerAddress;
         this.proxy = proxy;
+        this.timer = timer;
         this.transportEventSink = transportEventSink;
         this.rockLog = rockLog;
         this.linkStateService = linkStateService;
@@ -170,6 +177,7 @@ public final class TransportFactory
                 transportEventSink,
                 linkStateService,
                 listenToMulticastOnLoopback,
+                channelConnectTimeout,
                 maxcastFilterReceiver,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
@@ -216,11 +224,13 @@ public final class TransportFactory
                 numPingsBeforeDisconnectingXmppServerConnection,
                 xmppServerConnectionInitialReconnectInterval,
                 xmppServerConnectionMaxReconnectInterval,
+                channelConnectTimeout,
                 scrypted,
                 absRtRoot,
                 enableJingleLibraryLogging,
                 transportId,
                 transportRank,
+                timer,
                 transportEventSink,
                 linkStateService,
                 maxcastFilterReceiver,

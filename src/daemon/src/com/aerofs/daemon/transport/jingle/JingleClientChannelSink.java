@@ -14,7 +14,12 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
+import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.jboss.netty.channel.Channels.future;
 
@@ -28,10 +33,14 @@ class JingleClientChannelSink extends AbstractChannelSink
     private static final Logger l = Loggers.getLogger(JingleClientChannelSink.class);
 
     private final SignalThread signalThread;
+    private final long channelConnectTimeout;
+    private final Timer timer;
 
-    public JingleClientChannelSink(SignalThread signalThread)
+    public JingleClientChannelSink(SignalThread signalThread, long channelConnectTimeout, Timer timer)
     {
         this.signalThread = signalThread;
+        this.channelConnectTimeout = channelConnectTimeout;
+        this.timer = timer;
     }
 
     @Override
@@ -86,6 +95,7 @@ class JingleClientChannelSink extends AbstractChannelSink
     // is connect notified on all error conditions?
     private void connect(final JingleClientChannel channel, final ChannelFuture future, final JingleAddress remoteAddress)
     {
+        // issue a call on the signal thread
         signalThread.call(new ISignalThreadTask()
         {
             @Override
@@ -111,10 +121,26 @@ class JingleClientChannelSink extends AbstractChannelSink
 
             private void handleError(Exception e)
             {
-                l.warn("failed to connect to {}", remoteAddress.getDid(), e);
+                l.warn("failed to connect to {} with message {}", remoteAddress.getDid(), e.getMessage());
                 future.setFailure(e);
                 channel.onClose(e);
             }
         });
+
+        // start the connect timer going
+        // note that this is not perfect - I may end up starting the timer
+        // before the call is processed, but that's not a big deal. morever,
+        // I want to execute the timer scheduling _out_ of the signal
+        // thread because the signal thread task may never execute
+        timer.newTimeout(new TimerTask()
+        {
+            @Override
+            public void run(Timeout timeout)
+                    throws Exception
+            {
+                l.warn("failed to connect to {} within {} ms", remoteAddress.getDid(), channelConnectTimeout);
+                channel.close();
+            }
+        }, channelConnectTimeout, TimeUnit.MILLISECONDS);
     }
 }

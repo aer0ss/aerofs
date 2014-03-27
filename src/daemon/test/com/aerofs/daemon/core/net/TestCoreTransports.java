@@ -25,6 +25,7 @@ import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -54,6 +55,7 @@ public class TestCoreTransports extends AbstractTest
     private @Mock CfgLocalDID _localDID;
     private @Mock CfgScrypted _scrypted;
     private @Mock CfgLolol _cfgLolol;
+    private @Mock Timer _timer;
     private @Mock CoreQueue _coreQueue;
     private @Mock MaxcastFilterReceiver _maxcastFilterReceiver;
     private @Mock LinkStateService _linkStateService;
@@ -96,6 +98,7 @@ public class TestCoreTransports extends AbstractTest
                 _scrypted,
                 _cfgLolol,
                 enabledTransports,
+                _timer,
                 _coreQueue,
                 _maxcastFilterReceiver,
                 _linkStateService,
@@ -134,6 +137,7 @@ public class TestCoreTransports extends AbstractTest
                 _scrypted,
                 _cfgLolol,
                 enabledTransports,
+                _timer,
                 _coreQueue,
                 _maxcastFilterReceiver,
                 _linkStateService,

@@ -20,14 +20,16 @@ import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.util.Timer;
 
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
 import static com.aerofs.base.net.NettyUtil.newSslHandler;
-import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newFrameDecoder;
-import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newLengthFieldPrepender;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionReader;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionWriter;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newFrameDecoder;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newLengthFieldPrepender;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newStatsHandler;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.setConnectTimeout;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
@@ -41,6 +43,8 @@ final class JingleBootstrapFactory
     private final JingleChannelDiagnosticsHandler serverChannelDiagnosticsHandler = new JingleChannelDiagnosticsHandler(HandlerMode.SERVER);
     private final UserID localuser;
     private final DID localdid;
+    private final long channelConnectTimeout;
+    private final Timer timer;
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
     private final IncomingChannelHandler incomingChannelHandler;
@@ -53,6 +57,8 @@ final class JingleBootstrapFactory
     JingleBootstrapFactory(
             UserID localuser,
             DID localdid,
+            long channelConnectTimeout,
+            Timer timer,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IUnicastListener unicastListener,
@@ -64,6 +70,8 @@ final class JingleBootstrapFactory
     {
         this.localuser = localuser;
         this.localdid = localdid;
+        this.channelConnectTimeout = channelConnectTimeout;
+        this.timer = timer;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
@@ -76,7 +84,7 @@ final class JingleBootstrapFactory
 
     ClientBootstrap newClientBootstrap(final ChannelTeardownHandler clientChannelTeardownHandler)
     {
-        ClientBootstrap bootstrap = new ClientBootstrap(new JingleClientChannelFactory(signalThread, channelWorker));
+        ClientBootstrap bootstrap = new ClientBootstrap(new JingleClientChannelFactory(channelConnectTimeout, timer, signalThread, channelWorker));
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
@@ -101,6 +109,7 @@ final class JingleBootstrapFactory
                         clientChannelTeardownHandler);
             }
         });
+        setConnectTimeout(bootstrap, channelConnectTimeout);
         return bootstrap;
     }
 

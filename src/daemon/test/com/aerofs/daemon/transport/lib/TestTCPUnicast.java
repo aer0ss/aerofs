@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.C;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.LoggingRule;
@@ -52,10 +52,9 @@ public final class TestTCPUnicast
 
     private static final Logger l = LoggerFactory.getLogger(TestTCPUnicast.class);
 
+    private static final long CHANNEL_CONNECT_TIMEOUT = 5 * C.SEC; // this can be fairly fast because both devices are on the local machine
     private static final byte[] TEST_DATA = "hello".getBytes(Charsets.US_ASCII);
     private static final byte[][] TEST_PAYLOAD = TransportProtocolUtil.newDatagramPayload(TEST_DATA);
-
-    private final LinkStateService linkStateService = new LinkStateService();
 
     private UnicastTCPDevice localDevice;
     private UnicastTCPDevice otherDevice;
@@ -71,12 +70,10 @@ public final class TestTCPUnicast
         SecureRandom secureRandom = new SecureRandom();
         MockCA mockCA = new MockCA("test-ca", new SecureRandom());
 
-        localDevice = new UnicastTCPDevice(random, secureRandom, linkStateService, mockCA, new UnicastTransportListener());
-        otherDevice = new UnicastTCPDevice(random, secureRandom, linkStateService, mockCA, new UnicastTransportListener());
+        localDevice = new UnicastTCPDevice(CHANNEL_CONNECT_TIMEOUT, random, secureRandom, mockCA, new UnicastTransportListener());
+        otherDevice = new UnicastTCPDevice(CHANNEL_CONNECT_TIMEOUT, random, secureRandom, mockCA, new UnicastTransportListener());
         when(localDevice.addressResolver.resolve(otherDevice.did)).thenReturn(otherDevice.listeningAddress);
         when(otherDevice.addressResolver.resolve(localDevice.did)).thenReturn(localDevice.listeningAddress);
-
-        linkStateService.start();
 
         localDevice.start(new NioServerSocketChannelFactory(), new NioClientSocketChannelFactory());
         otherDevice.start(new NioServerSocketChannelFactory(), new NioClientSocketChannelFactory());
@@ -105,13 +102,112 @@ public final class TestTCPUnicast
     @Ignore
     @Test
     public void shouldNotAcceptIncomingConnectionsIfLinkGoesDown()
+            throws InterruptedException, ExDeviceUnavailable, ExecutionException, ExTransportUnavailable
     {
+        // setup
+        //   |
+        //   |
+        //   V
+
+        Channel localChannel = sendPacketAndWaitForItToBeReceived(localDevice, otherDevice, null, TEST_DATA);
+
+        // mark the links as down
+        localDevice.linkStateService.markLinksDown();
+
+        // wait for our local channel to be closed
+        checkNotNull(localChannel).getCloseFuture().awaitUninterruptibly();
+
+        // we should be notified (on both sides) that a device went offline
+        waitForIUnicastListenerCallbacksToBeTriggered(true, true);
+
+        // now, attempt to send a packet from the remote to the local device
+        //
+        // otherDevice --- packet ---> localDevice
+        //
+        Waiter waiter = new Waiter();
+        otherDevice.unicast.send(localDevice.did, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(TEST_DATA), null);
+
+        // wait...we should get an exception because the packet can't be sent
+        boolean exceptionThrown = false;
+        try {
+            waiter.future.get();
+        } catch (ExecutionException e) {
+            exceptionThrown = true;
+        }
+
+        assertThat(exceptionThrown, equalTo(true));
     }
 
     @Ignore
     @Test
     public void shouldAcceptIncomingConnectionsOnceLinkGoesDownAndComesBackUp()
+            throws InterruptedException, ExTransportUnavailable, ExDeviceUnavailable, ExecutionException
     {
+        // attempt to send a packet from the local to the remote device
+        //
+        // localDevice --- packet ---> otherDevice
+        //
+        Channel localChannel = sendPacketAndWaitForItToBeReceived(localDevice, otherDevice, null, TEST_DATA);
+
+        // mark the links as down on the local device
+        localDevice.linkStateService.markLinksDown();
+
+        // wait for our local channel to be closed
+        checkNotNull(localChannel).getCloseFuture().awaitUninterruptibly();
+
+        // we should be notified (on both sides) that a device went offline
+        waitForIUnicastListenerCallbacksToBeTriggered(true, true);
+
+        // now, attempt to send a packet from the remote to the local device
+        //
+        // otherDevice --- packet ---> localDevice
+        //
+        Waiter waiter = new Waiter();
+        otherDevice.unicast.send(localDevice.did, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(TEST_DATA), null);
+
+        // wait...we should get an exception because the packet can't be sent
+        // i.e. this should fail
+        boolean exceptionThrown = false;
+        try {
+            waiter.future.get();
+        } catch (ExecutionException e) {
+            exceptionThrown = true;
+        }
+
+        assertThat(exceptionThrown, equalTo(true));
+
+        // bring the links back up on the local device
+        localDevice.linkStateService.markLinksUp();
+
+        // attempt to send another packet from the remote to the local device
+        // this should succeed
+        //
+        // otherDevice --- packet ---> localDevice
+        //
+        sendPacketAndWaitForItToBeReceived(localDevice, otherDevice, null, TEST_DATA);
+    }
+
+    @Test
+    public void shouldFailToSendPacketAfterChannelConnectTimeoutIfTheRemoteDeviceCannotBeReached()
+            throws ExDeviceUnavailable, ExecutionException, InterruptedException, ExTransportUnavailable
+    {
+        // create an unreachable device
+        DID unavilableDevice = DID.generate();
+        when(localDevice.addressResolver.resolve(unavilableDevice)).thenReturn(new InetSocketAddress("127.0.1.1", 19028)); // pick an address that's unlikely to be valid
+
+        // attempt to send out the packet to this unavailable device
+        Waiter waiter = new Waiter();
+        localDevice.unicast.send(unavilableDevice, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(TEST_DATA), null);
+
+        // wait...we should get an exception
+        boolean exceptionThrown = false;
+        try {
+            waiter.future.get();
+        } catch (ExecutionException e) {
+            exceptionThrown = true; // FIXME (AG): ideally I'd throw a device unavailable instead of ChannelClosed
+        }
+
+        assertThat(exceptionThrown, equalTo(true));
     }
 
     @Test
@@ -126,7 +222,7 @@ public final class TestTCPUnicast
         Channel localChannel = sendPacketAndWaitForItToBeReceived(localDevice, otherDevice, null, TEST_DATA);
 
         // set the link state changed
-        linkStateService.markLinksDown();
+        localDevice.linkStateService.markLinksDown();
 
         // wait for our local channel to be closed
         checkNotNull(localChannel).getCloseFuture().awaitUninterruptibly();
@@ -152,7 +248,6 @@ public final class TestTCPUnicast
 
         // we should have signalled somehow that unicast is unavailable
         verify(localDevice.unicastListener).onUnicastUnavailable();
-        verify(otherDevice.unicastListener).onUnicastUnavailable();
     }
 
     @Test

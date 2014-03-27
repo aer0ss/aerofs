@@ -6,6 +6,7 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelSink;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
+import org.jboss.netty.util.Timer;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -21,11 +22,11 @@ final class JingleClientChannelFactory implements ChannelFactory
 
     private volatile boolean stopped;
 
-    public JingleClientChannelFactory(SignalThread signalThread, JingleChannelWorker channelWorker)
+    public JingleClientChannelFactory(long channelConnectTimeout, Timer timer, SignalThread signalThread, JingleChannelWorker channelWorker)
     {
         this.signalThread = signalThread;
         this.channelWorker = channelWorker;
-        this.clientChannelSink = new JingleClientChannelSink(signalThread);
+        this.clientChannelSink = new JingleClientChannelSink(signalThread, channelConnectTimeout, timer);
     }
 
     @Override
