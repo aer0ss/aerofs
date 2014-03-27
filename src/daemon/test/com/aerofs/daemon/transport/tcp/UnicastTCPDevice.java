@@ -28,6 +28,7 @@ import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.lib.event.IEvent;
+import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -97,7 +98,7 @@ public final class UnicastTCPDevice
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
         SSLEngineFactory serverSSLEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
-        tcpBootstrapFactory =  new TCPBootstrapFactory(userID, did, channelConnectTimeout, clientSSLEngineFactory, serverSSLEngineFactory, unicastListener, unicast, transportProtocolHandler, tcpProtocolHandler, transportStats);
+        tcpBootstrapFactory =  new TCPBootstrapFactory(userID, did, channelConnectTimeout, clientSSLEngineFactory, serverSSLEngineFactory, unicastListener, unicast, transportProtocolHandler, tcpProtocolHandler, transportStats, mock(RockLog.class));
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);
     }

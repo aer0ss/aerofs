@@ -124,7 +124,7 @@ public class TCP implements ITransport, IAddressResolver
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager);
-        TCPBootstrapFactory bootstrapFactory = new TCPBootstrapFactory(localUser, localdid, channelConnectTimeout, clientSslEngineFactory, serverSslEngineFactory, presenceService, unicast, protocolHandler, tcpProtocolHandler, transportStats);
+        TCPBootstrapFactory bootstrapFactory = new TCPBootstrapFactory(localUser, localdid, channelConnectTimeout, clientSslEngineFactory, serverSslEngineFactory, presenceService, unicast, protocolHandler, tcpProtocolHandler, transportStats, rockLog);
         ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelFactory, serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);

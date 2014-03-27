@@ -18,6 +18,7 @@ import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
+import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -42,8 +43,7 @@ import static java.util.concurrent.Executors.newSingleThreadExecutor;
 final class TCPBootstrapFactory
 {
     private final AddressResolverHandler addressResolver = new AddressResolverHandler(newSingleThreadExecutor());
-    private final TCPChannelDiagnosticsHandler clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT);
-    private final TCPChannelDiagnosticsHandler serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER);
+
     private final UserID localuser;
     private final DID localdid;
     private final long channelConnectTimeout;
@@ -53,6 +53,8 @@ final class TCPBootstrapFactory
     private final TransportProtocolHandler protocolHandler;
     private final TCPProtocolHandler tcpProtocolHandler;
     private final IncomingChannelHandler incomingChannelHandler;
+    private final TCPChannelDiagnosticsHandler clientChannelDiagnosticsHandler;
+    private final TCPChannelDiagnosticsHandler serverChannelDiagnosticsHandler;
     private final TransportStats transportStats;
 
     TCPBootstrapFactory(
@@ -65,7 +67,8 @@ final class TCPBootstrapFactory
             IIncomingChannelListener serverHandlerListener,
             TransportProtocolHandler protocolHandler,
             TCPProtocolHandler tcpProtocolHandler,
-            TransportStats stats)
+            TransportStats stats,
+            RockLog rockLog)
     {
         this.localuser = localuser;
         this.localdid = localdid;
@@ -76,6 +79,8 @@ final class TCPBootstrapFactory
         this.protocolHandler = protocolHandler;
         this.tcpProtocolHandler = tcpProtocolHandler;
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
+        this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER, rockLog);
+        this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT, rockLog);
         this.transportStats = stats;
     }
 
