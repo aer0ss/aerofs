@@ -12,7 +12,6 @@ import java.util.Random;
 import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.ContentHash;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
