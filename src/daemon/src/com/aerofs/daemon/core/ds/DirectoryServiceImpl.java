@@ -46,6 +46,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.Path;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 public class DirectoryServiceImpl extends DirectoryService implements ObjectSurgeon
@@ -343,7 +344,7 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
 
         // This method is only intended for swapping oids of nested directories
         // oid2 is nested under oid1
-        checkState(path2.isUnder(path1), Joiner.on(' ').join(sidx, oid1, oid2));
+        checkState(path2.isStrictlyUnder(path1), Joiner.on(' ').join(sidx, oid1, oid2));
 
         final OA oa1 = getOA_(new SOID(sidx, oid1));
         final OA oa2 = getOA_(new SOID(sidx, oid2));
@@ -386,11 +387,11 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         if (l.isDebugEnabled()) l.debug(oa.soid() + ": move to " + oaParent.soid() + "/" + name);
 
         // assigning the child to a parent in a different store is always wrong.
-        assert oa.soid().sidx().equals(oaParent.soid().sidx()) : oa + " " + oaParent;
+        checkArgument(oa.soid().sidx().equals(oaParent.soid().sidx()), oa + " " + oaParent);
 
         // assigning the child itself as the parent is always wrong (apart from anchors, which don't
         // call this)
-        assert !oa.soid().equals(oaParent.soid()) : oa + " " + oaParent;
+        checkArgument(!oa.soid().equals(oaParent.soid()), oa + " " + oaParent);
 
         if (!oaParent.isDir()) throw new ExNotDir();
 

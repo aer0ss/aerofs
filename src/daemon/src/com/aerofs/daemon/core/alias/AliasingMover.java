@@ -313,7 +313,7 @@ public class AliasingMover
 
         final Path targetPath = _ds.resolve_(target);
         final Path aliasPath = _ds.resolve_(alias);
-        if (targetPath.isUnder(aliasPath)) {
+        if (targetPath.isStrictlyUnder(aliasPath)) {
             // If the target object is under the alias, we cannot move children of the alias
             // into the descendent target, lest horrible cycles result. Instead, swap the positions
             // of the target and alias OIDs in the logical directory tree, then move children of

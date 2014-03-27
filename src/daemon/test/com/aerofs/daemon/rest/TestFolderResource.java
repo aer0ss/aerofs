@@ -352,6 +352,40 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn400MovingUnderSelf() throws Exception
+    {
+        SOID soid = mds.root()
+                .dir("foo").soid();
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(CommonMetadata.child(id(soid), "test"), ObjectMapperType.GSON)
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+        .when().log().everything()
+                .put("/v0.10/folders/" + id(soid));
+    }
+
+    @Test
+    public void shouldReturn400MovingUnderOwnChild() throws Exception
+    {
+        SOID soid = mds.root()
+                .dir("foo").soid();
+        SOID child = mds.root()
+                .dir("foo").dir("bar").soid();
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(CommonMetadata.child(id(child), "test"), ObjectMapperType.GSON)
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+        .when()
+                .put("/v0.10/folders/" + id(soid));
+    }
+
+    @Test
     public void shouldReturn400MovingUnderFile() throws Exception
     {
         SOID soid = mds.root()

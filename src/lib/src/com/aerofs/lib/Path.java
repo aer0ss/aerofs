@@ -238,13 +238,18 @@ public class Path implements Comparable<Path>
     /**
      * Return true if "this" is a child folder the given path. Case sensitive comparison is used.
      */
-    public boolean isUnder(Path path)
+    public boolean isStrictlyUnder(Path path)
+    {
+        return _elems.length != path._elems.length && isUnderOrEqual(path);
+    }
+
+    public boolean isUnderOrEqual(Path path)
     {
         if (!_sid.equals(path._sid)) return false;
 
         String[] mine= elements();
         String[] his = path.elements();
-        if (his.length >= mine.length) return false;
+        if (his.length > mine.length) return false;
 
         for (int i = 0; i < his.length; i++) {
             if (!mine[i].equals(his[i])) return false;

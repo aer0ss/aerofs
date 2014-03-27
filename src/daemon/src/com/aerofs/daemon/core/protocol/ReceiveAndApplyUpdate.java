@@ -546,7 +546,7 @@ public class ReceiveAndApplyUpdate
         Path pathRemoteParent = _ds.resolve_(soidRemoteParent);
         Path pathChild = _ds.resolve_(oaChild);
 
-        if (pathRemoteParent.isUnder(pathChild)) {
+        if (pathRemoteParent.isStrictlyUnder(pathChild)) {
             // A cyclic dependency would result if we tried to apply this update.
             // The current approach to resolve this conflict is to move the to-be parent object
             // under the child's current parent. It's not beautiful but works and will reach

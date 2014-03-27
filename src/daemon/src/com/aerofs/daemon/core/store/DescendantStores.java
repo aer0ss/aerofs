@@ -50,7 +50,7 @@ public class DescendantStores
 
             SID csid = _sidx2sid.get_(csidx);
             Path cpath = _ds.resolve_(new SOID(sidx, SID.storeSID2anchorOID(csid)));
-            if (cpath.isUnder(path)) {
+            if (cpath.isStrictlyUnder(path)) {
                 // recursively add child stores to result set
                 addChildren_(csidx, set);
             }

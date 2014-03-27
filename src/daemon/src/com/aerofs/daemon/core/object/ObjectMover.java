@@ -21,6 +21,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class ObjectMover
 {
     private final DirectoryService _ds;
@@ -48,6 +50,8 @@ public class ObjectMover
         OA oaParent = _ds.getOA_(new SOID(soid.sidx(), oidParent));
 
         final ResolvedPath pOld = _ds.resolve_(oaOld);
+        final ResolvedPath pParent = _ds.resolve_(oaParent);
+        checkArgument(!pParent.isUnderOrEqual(pOld), "cannot move object under itself");
 
         _ds.setOAParentAndName_(oaOld, oaParent, name, t);
 
