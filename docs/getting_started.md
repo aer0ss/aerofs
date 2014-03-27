@@ -77,7 +77,7 @@ It'll prompt you before it does anything, but the defaults are sane.
 
 ## Install some packages with homebrew
 
-Note: Your path may not have `/usr/local/bin` and `/usr/local/sbin` before `/usr/bin` and `/usr/local/sbin`, which causes you to use system binaries instead of those installed by brew if both are available. Running `brew doctor` will tell you if this is the case. If you have this problem you can remedy it by prepending `/usr/local/bin:/usr/local/sbin` to your path.
+Note: Your path may not have homebrew paths before `/usr/bin`, which causes you to use system binaries instead of those installed by brew if both are available. Running `brew doctor` will tell you if this is the case. If you have this problem you can remedy it by prepending `/usr/local/bin:/usr/local/sbin:/usr/local/Cellar/ruby/{version}/bin` to your path, with `{version}` replaced by the version of your ruby install.
 
 ### Required packages:
 
