@@ -34,7 +34,12 @@ function hideAllMessages() {
 // hide all other modals when a modal is about to show
 $(document).ready(function() {
     $('div.modal').on('shown', hideAllMessages);
-    $('div.modal').on('show', hideAllModals);
+    // Using hideAllModals here triggers an edge case for modal dialogs with
+    // tooltips. jQuery's impl. of tooltip means that a show event will be
+    // triggered for the modal dialog, and using hideAllModals will cause the
+    // modal dialog itself to close when any tooltips are to be shown.
+    // This case occurs on the shared folder members dialog.
+    $('div.modal').on('show', hideAllModalsExceptThis);
 })
 
 function fadeOutErrorMessage() {
@@ -121,8 +126,17 @@ function disableEsapingFromModal($modal) {
     });
 }
 
+// hides all modal elements in the page
+// related: hideAllModalsExceptThis()
 function hideAllModals() {
     $('div.modal').modal('hide');
+}
+
+// hides all modal elements in the page except for 'this'
+// Caveat: the 'this' element needs to be set to the desired element to exclude.
+// related: hideAllModals()
+function hideAllModalsExceptThis() {
+    $('div.modal').not(this).modal('hide');
 }
 
 // add convenience method to POST raw JS objects as JSON bodies
