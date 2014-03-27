@@ -31,7 +31,6 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;

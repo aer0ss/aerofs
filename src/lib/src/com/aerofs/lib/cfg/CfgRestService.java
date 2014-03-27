@@ -11,14 +11,9 @@ public class CfgRestService
 {
     public boolean isEnabled()
     {
-        CfgDatabase db = Cfg.db();
-        Key key = Key.REST_SERVICE;
-        boolean defaultValue = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT
-                || Cfg.user().isAeroFSUser();
-
         // N.B. the default value for the whether the REST service is enabled depends on whether
         // we are in the hybrid cloud or the private cloud.
         // FIXME(AT): having Cfg dependent on configuration service is a bad idea.
-        return db.getBoolean(key, defaultValue);
+        return Cfg.db().getBoolean(Key.REST_SERVICE, PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT);
     }
 }

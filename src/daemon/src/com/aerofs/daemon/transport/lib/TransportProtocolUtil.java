@@ -42,7 +42,6 @@ import java.io.InputStream;
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_FOUND;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This class provides a number of thread-safe {@link com.aerofs.daemon.transport.ITransport} and
