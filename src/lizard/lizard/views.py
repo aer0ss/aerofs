@@ -3,6 +3,7 @@ import datetime
 import os
 import json
 import time
+import urllib
 
 from flask import Blueprint, current_app, render_template, flash, redirect, request, url_for, Response
 from flask.ext import scrypt, login
@@ -101,6 +102,13 @@ def signup_request_page():
             db.session.add(record)
             db.session.commit()
         emails.send_verification_email(form.email.data, record.signup_code)
+        flash("https://go.pardot.com/l/32882/2014-03-27/bjxp?first_name={}&last_name={}&email={}&company={}&phone={}"
+                .format(urllib.quote(record.first_name.encode('utf-8')),
+                        urllib.quote(record.last_name.encode('utf-8')),
+                        urllib.quote(record.email.encode('utf-8')),
+                        urllib.quote(record.company_name.encode('utf-8')),
+                        urllib.quote(record.phone_number.encode('utf-8')))
+                ,"pardot")
         return redirect(url_for(".signup_request_done"))
     return render_template("request_signup.html",
             form=form)
@@ -169,15 +177,6 @@ def signup_completion_page():
         db.session.commit()
 
         # Submit analytics tracking thing.
-        context = {
-                'providers': {
-                    'Salesforce': 'true'
-                    },
-                'Salesforce': {
-                    'object': 'Lead',
-                    'lookup': { 'email': markupsafe.escape(admin.email) }
-                    }
-                }
         analytics_client.identify(admin.email,
                 {
                     'email': markupsafe.escape(admin.email),
@@ -187,9 +186,7 @@ def signup_completion_page():
                     'title': markupsafe.escape(admin.job_title),
                     'phone': markupsafe.escape(admin.phone_number),
                     'Enterprise': 'true',
-                },
-                context=context,
-                )
+                })
         analytics_client.track(markupsafe.escape(admin.email), "Signed Up For Private Cloud");
 
         # Log user in.
