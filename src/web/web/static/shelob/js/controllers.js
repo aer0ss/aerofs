@@ -3,6 +3,8 @@ var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', 'API', 'Token', 'API_LOCATION',
         function ($scope, $http, $log, $routeParams, $window, API, Token, API_LOCATION) {
 
+    var FOLDER_LAST_MODIFIED = '--';
+
     var oid = typeof $routeParams.oid === "undefined" ? '' : $routeParams.oid;
 
     // N.B. add a random query param to prevent caching
@@ -11,7 +13,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         $scope.parent = response.data.parent;
         for (var i = 0; i < response.data.folders.length; i++) {
             response.data.folders[i].type = 'folder';
-            response.data.folders[i].last_modified = '--';
+            response.data.folders[i].last_modified = FOLDER_LAST_MODIFIED;
         }
         for (var i = 0; i < response.data.files.length; i++) {
             response.data.files[i].type = 'file';
@@ -121,7 +123,13 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             var folderData = {name: $scope.newFolder.name, parent: $scope.parent};
             API.post('/folders', folderData).then(function(response) {
                 // POST /folders returns the new folder object
-                $scope.folders.push(response.data);
+                $scope.objects.push({
+                    type: 'folder',
+                    id: response.data.id,
+                    name: response.data.name,
+                    last_modified: FOLDER_LAST_MODIFIED,
+                    is_shared: response.data.is_shared
+                });
                 showSuccessMessage("Successfully created a new folder.");
             }, function(response) {
                 // create new folder failed

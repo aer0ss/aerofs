@@ -20,7 +20,8 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $log, $modal, 
                 $timeout(function() {
                     scope.progressModal.close();
                     showSuccessMessage('Successfully uploaded ' + fileJSON.name);
-                    $rootScope.files.push(fileJSON);
+                    fileJSON.type = 'file';
+                    $rootScope.objects.push(fileJSON);
                 }, 500);
             }, function(response) {
                 // file upload failed
