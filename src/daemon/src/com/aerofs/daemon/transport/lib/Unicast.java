@@ -31,15 +31,19 @@ import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 public final class Unicast implements ILinkStateListener, IUnicastInternal, IIncomingChannelListener
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
+    private final Random random = new Random();
     private final SortedSetMultimap<DID, Channel> channels = Multimaps.synchronizedSortedSetMultimap(TreeMultimap.<DID, Channel>create());
     private final IAddressResolver addressResolver;
 
@@ -246,7 +250,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
                     // to this did and simply pick one
                     Set<Channel> active = getActiveChannels(did);
                     if (!active.isEmpty()) {
-                        channel = active.iterator().next();
+                        channel = chooseActiveChannel(active);
                     }
                 }
             }
@@ -289,6 +293,22 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         });
 
         return channel;
+    }
+
+    private Channel chooseActiveChannel(Set<Channel> active)
+    {
+        checkArgument(!active.isEmpty());
+
+        Channel chosenChannel = null;
+
+        Iterator<Channel> iterator = active.iterator();
+        int numIterations = Math.max(1, random.nextInt(active.size()));
+        while (iterator.hasNext() && numIterations > 0) {
+            chosenChannel = iterator.next();
+            numIterations--;
+        }
+
+        return chosenChannel;
     }
 
     private Set<Channel> getActiveChannels(DID did)
