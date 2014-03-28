@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Scanner;
 
@@ -36,6 +37,11 @@ public class BaseUtil
     public static String utf2string(byte[] utf)
     {
         return new String(utf, CHARSET_UTF);
+    }
+
+    public static byte[] toByteArray(long l)
+    {
+        return ByteBuffer.allocate(C.LONG_SIZE).putLong(l).array();
     }
 
     public static String truncateIfLongerThan(String s, int maxLength)

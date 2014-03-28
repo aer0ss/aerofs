@@ -7,6 +7,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.rest.api.*;
@@ -17,6 +18,10 @@ import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotEquals;
@@ -28,7 +33,7 @@ import static org.mockito.Mockito.when;
 
 public class TestFolderResource extends AbstractRestTest
 {
-    private final String RESOURCE = "/v0.9/folders/{folder}";
+    private final String RESOURCE = "/v1.2/folders/{folder}";
 
     public TestFolderResource(boolean useProxy)
     {
@@ -81,6 +86,46 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldGetMetadataForAnchor() throws Exception
+    {
+        mds.root().anchor("a0").file("f1");
+        SID sid = SID.anchorOID2storeSID(ds.resolveNullable_(Path.fromString(rootSID, "a0")).oid());
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(object("a0").toStringFormal()))
+                .body("name", equalTo("a0"))
+                .body("is_shared", equalTo(true))
+                .body("sid", equalTo(sid.toStringFormal()))
+        .when().get(RESOURCE, object("a0").toStringFormal());
+    }
+
+    @Test
+    public void shouldGetMetadataWithOnDemandFields() throws Exception
+    {
+        mds.root().dir("d0").file("f1");
+
+        givenAccess()
+                .queryParam("fields", "path,children")
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(object("d0").toStringFormal()))
+                .body("name", equalTo("d0"))
+                .body("is_shared", equalTo(false))
+                .body("path.folders", iterableWithSize(1))
+                .body("path.folders[0].name", equalTo("AeroFS"))
+                .body("path.folders[0].id", equalTo(id(mds.root().soid())))
+                .body("path.folders[0].is_shared", equalTo(false))
+                .body("children.folders", emptyIterable())
+                .body("children.files", iterableWithSize(1))
+                .body("children.files[0].id", equalTo(object("d0/f1").toStringFormal()))
+                .body("children.files[0].name", equalTo("f1"))
+        .when().log().everything()
+                .get(RESOURCE, object("d0").toStringFormal());
+    }
+
+    @Test
     public void shouldReturn404ForFile() throws Exception
     {
         mds.root().file("f1");
@@ -93,6 +138,135 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturnEmptyPathForRootExplicit() throws Exception
+    {
+        mds.root()
+                .dir("d1")
+                .anchor("a2")
+                .dir("d3");
+
+        givenAccess()
+                .expect()
+                .statusCode(200)
+                .body("folders", emptyIterable())
+                .when().log().everything()
+                .get(RESOURCE + "/path", object("").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturnEmptyPathForRootImplicit() throws Exception
+    {
+        mds.root()
+                .dir("d1")
+                .anchor("a2")
+                .dir("d3");
+
+        givenAccess()
+                .expect()
+                .statusCode(200)
+                .body("folders", emptyIterable())
+        .when().log().everything()
+                .get(RESOURCE + "/path", "root");
+    }
+
+    @Test
+    public void shouldReturnPath() throws Exception
+    {
+        mds.root().dir("d1").anchor("a2").dir("d3");
+        SID sid = SID.anchorOID2storeSID(ds.resolveNullable_(Path.fromString(rootSID, "d1/a2")).oid());
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("folders[0].id", equalTo(id(mds.root().soid())))
+                .body("folders[0].name", equalTo("AeroFS"))
+                .body("folders[0].is_shared", equalTo(false))
+
+                .body("folders[1].id", equalTo(object("d1").toStringFormal()))
+                .body("folders[1].name", equalTo("d1"))
+                .body("folders[1].is_shared", equalTo(false))
+                .body("folders[1].parent", equalTo(id(mds.root().soid())))
+
+                .body("folders[2].id", equalTo(object("d1/a2").toStringFormal()))
+                .body("folders[2].name", equalTo("a2"))
+                .body("folders[2].is_shared", equalTo(true))
+                .body("folders[2].sid", equalTo(sid.toStringFormal()))
+                .body("folders[2].parent", equalTo(object("d1").toStringFormal()))
+        .when().log().everything()
+                .get(RESOURCE + "/path", object("d1/a2/d3").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404ForInvalidPath() throws Exception
+    {
+        givenAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when().log().everything()
+                .get(RESOURCE + "/path", new RestObject(rootSID, OID.generate()).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404ForExpelledPath() throws Exception
+    {
+        mds.root().dir("d1").dir("d2", true);
+
+        givenAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when().log().everything()
+                .get(RESOURCE + "/path", object("d1/d2").toStringFormal());
+    }
+
+    @Test
+    public void shouldListRoot() throws Exception
+    {
+        mds.root()
+                .dir("d").parent()
+                .file("f").parent()
+                .anchor("a");
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("files", hasSize(1)).body("files.name", hasItems("f"))
+                .body("folders", hasSize(2)).body("folders.name", hasItems("d", "a"))
+        .when().log().everything()
+                .get(RESOURCE + "/children", "root");
+    }
+
+    @Test
+    public void shouldListChildren() throws Exception
+    {
+        mds.root().dir("d0")
+                .dir("d").parent()
+                .file("f").parent()
+                .anchor("a");
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("files", hasSize(1)).body("files.name", hasItems("f"))
+                .body("folders", hasSize(2)).body("folders.name", hasItems("d", "a"))
+        .when().log().everything()
+                .get(RESOURCE + "/children", object("d0").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenListNonExistingDir() throws Exception
+    {
+        givenAccess()
+                .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when()
+                .get(RESOURCE + "/children",
+                        new RestObject(rootSID, OID.generate()).toStringFormal());
+    }
+
+    @Test
     public void shouldCreate() throws Exception
     {
         SettableFuture<SOID> soid = whenCreate(Type.DIR, "", "foo");
@@ -100,6 +274,22 @@ public class TestFolderResource extends AbstractRestTest
         givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(object("").toStringFormal(), "foo")))
+        .expect()
+                .statusCode(201)
+                .body("id", equalToFutureObject(soid))
+                .body("name", equalTo("foo"))
+        .when().log().everything()
+                .post("/v0.10/folders");
+    }
+
+    @Test
+    public void shouldCreateUnderRoot() throws Exception
+    {
+        SettableFuture<SOID> soid = whenCreate(Type.DIR, "", "foo");
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child("root", "foo")))
         .expect()
                 .statusCode(201)
                 .body("id", equalToFutureObject(soid))
@@ -130,8 +320,8 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn403WhenViewerTriesToCreate() throws Exception
     {
-        doThrow(new ExNoPerm()).when(acl).checkThrows_(
-                user, mds.root().soid().sidx(), Permissions.EDITOR);
+        doThrow(new ExNoPerm()).when(acl).checkThrows_(user, mds.root().soid().sidx(),
+                Permissions.EDITOR);
 
         givenAccess()
                 .contentType(ContentType.JSON)
@@ -161,8 +351,8 @@ public class TestFolderResource extends AbstractRestTest
     {
         givenAccess()
                 .contentType(ContentType.JSON)
-                .body(CommonMetadata.child(
-                                new RestObject(rootSID, OID.generate()).toStringFormal(), "foo"),
+                .body(CommonMetadata.child(new RestObject(rootSID, OID.generate()).toStringFormal(),
+                        "foo"),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)
@@ -271,10 +461,9 @@ public class TestFolderResource extends AbstractRestTest
 
         givenAccess()
                 .contentType(ContentType.JSON)
-                .header(Names.IF_MATCH, CURRENT_ETAG)
+                .header(Names.IF_MATCH, etagForMeta(soid))
                 .body(json(CommonMetadata.child(
-                        new RestObject(rootSID, newParent.oid()).toStringFormal(),
-                        newFolderName)))
+                        new RestObject(rootSID, newParent.oid()).toStringFormal(), newFolderName)))
         .expect()
                 .statusCode(200)
                 .body("id", equalToFutureObject(newObjectId))
@@ -454,7 +643,7 @@ public class TestFolderResource extends AbstractRestTest
         SOID soid = mds.root().dir("foo").soid();
 
         givenAccess()
-                .header(Names.IF_MATCH, CURRENT_ETAG)
+                .header(Names.IF_MATCH, etagForMeta(soid))
         .expect()
                 .statusCode(204)
         .when()

@@ -1,14 +1,17 @@
 package com.aerofs.daemon.rest.util;
 
+import com.aerofs.base.ParamFactory;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
-import com.google.common.base.Preconditions;
 
 public class RestObject
 {
-    public final SID sid;
-    public final OID oid;
+    public final static RestObject ROOT = new RestObject(null, OID.ROOT);
+    public final static RestObject APPDATA = new RestObject(null, null);
+
+    final SID sid;
+    final OID oid;
 
     public RestObject(SID sid, OID oid)
     {
@@ -17,10 +20,18 @@ public class RestObject
     }
 
     private static final int HEXID_LENGTH = UniqueID.LENGTH * 2;
-    public RestObject(String id)
+    private RestObject(String id)
     {
         this(new SID(decode(id, 0, HEXID_LENGTH)),
                 new OID(decode(id, HEXID_LENGTH, 2 * HEXID_LENGTH)));
+    }
+
+    @ParamFactory
+    public static RestObject fromString(String id)
+    {
+        if (id.equals("root")) return ROOT;
+        if (id.equals("appdata")) return APPDATA;
+        return new RestObject(id);
     }
 
     // TODO: use checkArgument directly in the UniqueID/OID/SID/... classes
@@ -29,18 +40,31 @@ public class RestObject
         try {
             return new UniqueID(s, idx, len);
         } catch (Exception e) {
-            Preconditions.checkArgument(false);
             throw new IllegalArgumentException(e);
         }
     }
 
+    public boolean isRoot()
+    {
+        return this == ROOT;
+    }
+
+    public boolean isAppData()
+    {
+        return this == APPDATA;
+    }
+
     public String toString()
     {
+        if (isRoot()) return "root";
+        if (isAppData()) return "appdata";
         return sid.toString() + oid.toString();
     }
 
     public String toStringFormal()
     {
+        if (isRoot()) return "root";
+        if (isAppData()) return "appdata";
         return sid.toStringFormal() + oid.toStringFormal();
     }
 }

@@ -4,19 +4,15 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.CA;
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.stream.MultipartStream;
 import com.aerofs.daemon.rest.stream.SimpleStream;
-import com.aerofs.daemon.rest.util.EntityTagUtil;
-import com.aerofs.daemon.rest.util.MetadataBuilder;
 import com.aerofs.daemon.rest.util.MimeTypeDetector;
-import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.oauth.Scope;
 import com.aerofs.restless.util.HttpStatus;
 import com.aerofs.restless.util.Ranges;
 import com.google.common.collect.Iterables;
@@ -36,22 +32,9 @@ import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_REQUES
 
 public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
 {
-    private final DirectoryService _ds;
-    private final IPhysicalStorage _ps;
-    private final MimeTypeDetector _detector;
-    private final OutboundEventLogger _oel;
-
-    @Inject
-    public HdFileContent(RestObjectResolver access, EntityTagUtil etags, MetadataBuilder mb,
-            TransManager tm, DirectoryService ds, IPhysicalStorage ps,
-            MimeTypeDetector detector, OutboundEventLogger oel)
-    {
-        super(access, etags, mb, tm);
-        _ds = ds;
-        _ps = ps;
-        _oel = oel;
-        _detector = detector;
-    }
+    @Inject private IPhysicalStorage _ps;
+    @Inject private MimeTypeDetector _detector;
+    @Inject private OutboundEventLogger _oel;
 
     /**
      * Build Http response for file content requests
@@ -62,11 +45,13 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
     @Override
     protected void handleThrows_(EIFileContent ev) throws ExNotFound, SQLException
     {
-        final OA oa = _access.resolve_(ev._object, ev.user());
+        final OA oa = _access.resolve_(ev._object, ev._token);
         if (!oa.isFile()) throw new ExNotFound();
 
+        requireAccessToFile(ev._token, Scope.READ_FILES, oa);
+
         final CA ca = oa.caMasterThrows();
-        final EntityTag etag = _etags.etagForObject(oa.soid());
+        final EntityTag etag = _etags.etagForContent(oa.soid());
 
         // conditional request: 304 Not Modified on ETAG match
         if (ev._ifNoneMatch.isValid() && ev._ifNoneMatch.matches(etag)) {

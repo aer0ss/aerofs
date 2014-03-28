@@ -96,6 +96,7 @@ def app_authorization(request):
     valid_scopes = {
         "files.read": True,
         "files.write": True,
+        "files.appdata": False,
         "user.read": False,
         "user.write": False,
         "user.password": False,

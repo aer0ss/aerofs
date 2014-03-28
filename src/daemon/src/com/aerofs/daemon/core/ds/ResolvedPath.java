@@ -91,4 +91,17 @@ public class ResolvedPath extends Path
         for (SOID soid : soids) if (soid.oid().isTrash()) return true;
         return false;
     }
+
+    public ResolvedPath join(ResolvedPath p)
+    {
+        return new ResolvedPath(sid(),
+                ImmutableList.<SOID>builder()
+                        .addAll(soids)
+                        .addAll(p.soids)
+                        .build(),
+                ImmutableList.<String>builder()
+                        .addAll(Arrays.asList(elements()))
+                        .addAll(Arrays.asList(p.elements()))
+                        .build());
+    }
 }

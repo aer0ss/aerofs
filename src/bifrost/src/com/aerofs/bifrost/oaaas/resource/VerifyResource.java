@@ -102,7 +102,7 @@ public class VerifyResource {
         LOG.debug("access token {} valid for user {}", accessToken, credentials);
         return Response
                 .ok(new VerifyTokenResponse(
-                        token.getClient().getName(),
+                        token.getClient().getClientId(),
                         token.getScopes(),
                         token.getExpires(),
                         token.getPrincipal(),

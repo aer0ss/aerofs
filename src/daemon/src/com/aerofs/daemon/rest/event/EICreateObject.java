@@ -17,7 +17,7 @@ public class EICreateObject extends AbstractRestEBIMC
     {
         super(imce, token);
         _version = version;
-        _parent = new RestObject(parent);
+        _parent = RestObject.fromString(parent);
         _name = name;
         _folder = folder;
     }

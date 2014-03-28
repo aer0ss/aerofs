@@ -10,6 +10,7 @@
             {"name": "user.password", "qualified": false, "description": "Reset and modify your password."},
             {"name": "files.read", "qualified": true, "description": "List folders and download files."},
             {"name": "files.write", "qualified": true, "description": "Create, modify, and delete files and folders."},
+            {"name": "files.appdata", "qualified": false, "description": "Read and write files in a sandboxed location."},
             {"name": "acl.invitations", "qualified": false, "description": "List, accept, and ignore shared folder invitations."},
             {"name": "acl.read", "qualified": true, "description": "List shared folders and their members."},
             {"name": "acl.write", "qualified": true, "description": "Create and manage shared folders."},

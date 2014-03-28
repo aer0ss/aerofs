@@ -21,7 +21,7 @@ public class EIMoveObject extends AbstractRestEBIMC
     {
         super(imce, token);
         _object = object;
-        _newParent = new RestObject(newParent);
+        _newParent = RestObject.fromString(newParent);
         _newName = newName;
         _ifMatch = ifMatch;
     }

@@ -41,21 +41,26 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.havre.Havre;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
@@ -91,6 +96,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
+import javax.ws.rs.core.EntityTag;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -143,6 +149,9 @@ public class AbstractRestTest extends AbstractTest
 
     protected @Mock DirectoryService ds;
     protected @Mock IPhysicalStorage ps;
+    protected @Mock IOSUtil os;
+    protected @Mock CfgStorageType storageType;
+    protected @Mock CfgAbsRoots absRoots;
 
     protected @Mock LocalACL acl;
     protected @Mock SIDMap sm;
@@ -327,6 +336,8 @@ public class AbstractRestTest extends AbstractTest
 
     private RestService service;
 
+    private Injector inj;
+
     private RestTunnelClient tunnel;
     private static Havre havre;
     private static Bifrost bifrost;
@@ -336,7 +347,8 @@ public class AbstractRestTest extends AbstractTest
     protected final static byte[] VERSION_HASH =
             BaseSecUtil.newMessageDigestMD5().digest(new byte[] {0});
 
-    protected final String CURRENT_ETAG = "\"" + BaseUtil.hexEncode(VERSION_HASH) + "\"";
+    protected final String CURRENT_ETAG_VALUE = BaseUtil.hexEncode(VERSION_HASH);
+    protected final String CURRENT_ETAG = "\"" + CURRENT_ETAG_VALUE + "\"";
 
     protected final static byte[] OTHER_HASH =
             BaseSecUtil.newMessageDigestMD5().digest(new byte[] {1});
@@ -371,7 +383,7 @@ public class AbstractRestTest extends AbstractTest
         when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
-        when(nvc.getVersionHash_(any(SOID.class))).thenReturn(VERSION_HASH);
+        when(nvc.getVersionHash_(any(SOID.class), any(CID.class))).thenReturn(VERSION_HASH);
 
         when(ic.move_(any(SOID.class), any(SOID.class), anyString(), any(PhysicalOp.class), eq(t)))
                 .thenAnswer(new Answer<Object>() {
@@ -394,7 +406,7 @@ public class AbstractRestTest extends AbstractTest
                 });
 
         // start REST service
-        Injector inj = coreInjector();
+        inj = coreInjector();
         service = new RestService(inj, kmgr) {
             @Override
             protected ServerSocketChannelFactory getServerSocketFactory()
@@ -420,6 +432,12 @@ public class AbstractRestTest extends AbstractTest
             tunnel.start().awaitUninterruptibly();
         }
     }
+
+    protected EntityTag etagForMeta(SOID soid) throws SQLException
+    {
+        return inj.getInstance(EntityTagUtil.class).etagForMeta(soid);
+    }
+
 
     private Injector coreInjector()
     {
@@ -449,6 +467,9 @@ public class AbstractRestTest extends AbstractTest
                 bind(ImmigrantCreator.class).toInstance(ic);
                 bind(VersionUpdater.class).toInstance(vu);
                 bind(IIMCExecutor.class).toInstance(imce);
+                bind(IOSUtil.class).toInstance(os);
+                bind(CfgStorageType.class).toInstance(storageType);
+                bind(CfgAbsRoots.class).toInstance(absRoots);
             }
         });
 

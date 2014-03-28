@@ -7,13 +7,10 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EICreateObject;
-import com.aerofs.daemon.rest.util.EntityTagUtil;
-import com.aerofs.daemon.rest.util.MetadataBuilder;
-import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.Error;
 import com.aerofs.restless.Service;
 import com.google.inject.Inject;
@@ -26,21 +23,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
 {
-    private final ObjectCreator _oc;
-
-    @Inject
-    public HdCreateObject(RestObjectResolver access, ObjectCreator oc, TransManager tm,
-            MetadataBuilder mb, EntityTagUtil etags)
-    {
-        super(access, etags, mb, tm);
-        _oc = oc;
-    }
+    @Inject private ObjectCreator _oc;
 
     @Override
     protected void handleThrows_(EICreateObject ev) throws Exception
     {
-        OA oaParent = _access.resolveFollowsAnchorWithPermissions_(ev._parent, ev.user(),
+        OA oaParent = _access.resolveFollowsAnchorWithPermissions_(ev._parent, ev._token,
                 Permissions.EDITOR);
+
+        requireAccessToFile(ev._token, Scope.WRITE_FILES, oaParent);
 
         checkArgument(oaParent.isDir(), "parent field must point to a valid folder");
 
@@ -60,7 +51,7 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
             t.end_();
         }
 
-        RestObject object = new RestObject(ev._parent.sid, soid.oid());
+        RestObject object = _mb.object(soid);
 
         String location = Service.DUMMY_LOCATION
                 + 'v' + ev._version
@@ -68,7 +59,7 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
                 + '/' + object.toStringFormal();
 
         ev.setResult_(Response.created(URI.create(location))
-                .entity(_mb.metadata(soid))
-                .tag(_etags.etagForObject(soid)));
+                .entity(_mb.metadata(soid, ev.user()))
+                .tag(_etags.etagForMeta(soid)));
     }
 }

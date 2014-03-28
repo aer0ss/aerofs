@@ -2,11 +2,17 @@ package com.aerofs.daemon.rest.util;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.ds.CA;
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.core.EntityTag;
+import java.security.MessageDigest;
 import java.sql.SQLException;
 
 /**
@@ -14,11 +20,13 @@ import java.sql.SQLException;
  */
 public class EntityTagUtil
 {
+    private final DirectoryService _ds;
     private final NativeVersionControl _nvc;
 
     @Inject
-    public EntityTagUtil(NativeVersionControl nvc)
+    public EntityTagUtil(DirectoryService ds, NativeVersionControl nvc)
     {
+        _ds = ds;
         _nvc = nvc;
     }
 
@@ -27,9 +35,29 @@ public class EntityTagUtil
      *
      * We use version hashes as entity tags for simplicity
      */
-    public EntityTag etagForObject(SOID soid) throws SQLException
+    public EntityTag etagForMeta(SOID soid) throws SQLException
     {
-        return new EntityTag(BaseUtil.hexEncode(_nvc.getVersionHash_(soid)));
+        return etagForMeta(_ds.getOANullable_(soid));
+    }
+
+    public EntityTag etagForMeta(OA oa)
+    {
+        MessageDigest md = SecUtil.newMessageDigestMD5();
+        if (oa != null) {
+            md.update(oa.parent().getBytes());
+            md.update(BaseUtil.string2utf(oa.name()));
+            CA ca = oa.isFile() ? oa.caMasterNullable() : null;
+            if (ca != null) {
+                md.update(BaseUtil.toByteArray(ca.length()));
+                md.update(BaseUtil.toByteArray(ca.mtime()));
+            }
+        }
+        return new EntityTag(BaseUtil.hexEncode(md.digest()), true);
+    }
+
+    public EntityTag etagForContent(SOID soid) throws SQLException
+    {
+        return new EntityTag(BaseUtil.hexEncode(_nvc.getVersionHash_(soid, CID.CONTENT)));
     }
 
     public static @Nullable EntityTag parse(String str)

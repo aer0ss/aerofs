@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.base;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

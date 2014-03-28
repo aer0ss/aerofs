@@ -22,7 +22,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.common.Base62CodeGenerator;
-import com.aerofs.sp.server.ParamFactory;
+import com.aerofs.base.ParamFactory;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;

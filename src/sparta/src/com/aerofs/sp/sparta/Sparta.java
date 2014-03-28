@@ -29,7 +29,7 @@ import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.sparta.providers.AuthProvider;
-import com.aerofs.sp.sparta.providers.FactoryReaderProvider;
+import com.aerofs.rest.providers.FactoryReaderProvider;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
 import com.aerofs.sp.sparta.providers.WirableMapper;
 import com.aerofs.sp.sparta.resources.DevicesResource;

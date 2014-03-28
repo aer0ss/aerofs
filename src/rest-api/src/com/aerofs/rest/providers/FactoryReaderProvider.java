@@ -2,9 +2,9 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.sp.sparta.providers;
+package com.aerofs.rest.providers;
 
-import com.aerofs.sp.server.ParamFactory;
+import com.aerofs.base.ParamFactory;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -117,7 +117,7 @@ public class FactoryReaderProvider implements StringReaderProvider<Object>
     private static Class<?> factoryClass(Class<?> c)
     {
         for (Class<?> cc : c.getDeclaredClasses()) {
-            if (Modifier.isStatic(cc.getModifiers()) && factoryMethod(c ,cc) != null) {
+            if (Modifier.isStatic(cc.getModifiers()) && factoryMethod(c, cc) != null) {
                 return cc;
             }
         }
@@ -140,7 +140,7 @@ public class FactoryReaderProvider implements StringReaderProvider<Object>
                     && c.isAssignableFrom(m.getReturnType())
                     && m.getParameterTypes().length == 1
                     && m.getParameterTypes()[0].isAssignableFrom(String.class)
-                    && (Modifier.isStatic(m.getModifiers()) ==  c.equals(f))) {
+                    && (Modifier.isStatic(m.getModifiers()) == c.equals(f))) {
                 return m;
             }
         }

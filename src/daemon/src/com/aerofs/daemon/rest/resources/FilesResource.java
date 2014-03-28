@@ -12,12 +12,13 @@ import com.aerofs.daemon.rest.event.EIFileUpload;
 import com.aerofs.daemon.rest.event.EIMoveObject;
 import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
+import com.aerofs.daemon.rest.event.EIObjectPath;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
+import com.aerofs.daemon.rest.util.Fields;
 import com.aerofs.rest.api.*;
 import com.aerofs.rest.util.AuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.util.UploadID;
-import com.aerofs.oauth.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
@@ -35,6 +36,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
@@ -52,10 +54,13 @@ public class FilesResource extends AbstractResource
     @GET
     @Path("/{file_id}")
     public Response metadata(@Auth AuthToken token,
-            @PathParam("file_id") RestObject object)
+            @PathParam("file_id") RestObject object,
+            @Context Version version,
+            @QueryParam("fields") Fields fields)
     {
-        requirePermissionOnFolder(Scope.READ_FILES, token, object);
-        return new EIObjectInfo(_imce, token, object, Type.FILE).execute();
+        return new EIObjectInfo(_imce, token, object, Type.FILE,
+                version.compareTo(new Version(1, 2)) < 0 ? null : fields)
+                .execute();
     }
 
     @Since("0.9")
@@ -68,7 +73,6 @@ public class FilesResource extends AbstractResource
             @HeaderParam(Names.RANGE) String range,
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
     {
-        requirePermissionOnFolder(Scope.READ_FILES, token, object);
         EntityTag etIfRange = EntityTagUtil.parse(ifRange);
         return new EIFileContent(_imce, token, object, etIfRange, range, ifNoneMatch).execute();
     }
@@ -83,7 +87,6 @@ public class FilesResource extends AbstractResource
         checkArgument(file != null);
         checkArgument(file.parent != null);
         checkArgument(file.name != null);
-        requirePermissionOnFolder(Scope.WRITE_FILES, token, new RestObject(file.parent));
         return new EICreateObject(_imce, token, version, file.parent, file.name, false).execute();
     }
 
@@ -98,7 +101,6 @@ public class FilesResource extends AbstractResource
             @HeaderParam("Upload-ID") @DefaultValue("") UploadID ulid,
             InputStream body) throws IOException
     {
-        requirePermissionOnFolder(Scope.WRITE_FILES, token, object);
         try {
             return new EIFileUpload(_imce, token, object, ifMatch, ulid, range, body).execute();
         } finally {
@@ -118,8 +120,6 @@ public class FilesResource extends AbstractResource
         checkArgument(file != null);
         checkArgument(file.parent != null);
         checkArgument(file.name != null);
-        requirePermissionOnFolder(Scope.WRITE_FILES, token, object);
-        requirePermissionOnFolder(Scope.WRITE_FILES, token, new RestObject(file.parent));
         return new EIMoveObject(_imce, token, object, file.parent, file.name, ifMatch).execute();
     }
 
@@ -132,8 +132,16 @@ public class FilesResource extends AbstractResource
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
             throws IOException
     {
-        requirePermissionOnFolder(Scope.WRITE_FILES, token, object);
         return new EIDeleteObject(_imce, token, object, ifMatch).execute();
+    }
+
+    @Since("1.2")
+    @GET
+    @Path("/{file_id}/path")
+    public Response path(@Auth AuthToken token,
+            @PathParam("file_id") RestObject object)
+    {
+        return new EIObjectPath(_imce,  token, object).execute();
     }
 }
 

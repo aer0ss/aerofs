@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 import static com.jayway.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -56,7 +57,7 @@ import static org.mockito.Mockito.when;
 
 public class TestFileResource extends AbstractRestTest
 {
-    private final String RESOURCE = "/v0.9/files/{file}";
+    private final String RESOURCE = "/v1.2/files/{file}";
 
     private static long FILE_MTIME = 0xdeadbeef;
     private static byte[] FILE_CONTENT = { 'H', 'e', 'l', 'l', 'o'};
@@ -144,7 +145,33 @@ public class TestFileResource extends AbstractRestTest
                 .body("size", equalTo(FILE_CONTENT.length))
                 .body("last_modified", equalTo(ISO_8601.format(new Date(FILE_MTIME))))
                 .body("mime_type", equalTo("application/octet-stream"))
+                .body("etag", equalTo(CURRENT_ETAG_VALUE))
         .when().get(RESOURCE, object("f1").toStringFormal());
+    }
+
+    @Test
+    public void shouldGetMetadataWithOnDemandFields() throws Exception
+    {
+        mds.root().dir("d0").file("f1");
+
+        givenAccess()
+                .queryParam("fields", "path")
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(object("d0/f1").toStringFormal()))
+                .body("name", equalTo("f1"))
+                .body("size", equalTo(0))
+                .body("mime_type", equalTo("application/octet-stream"))
+                .body("etag", equalTo(CURRENT_ETAG_VALUE))
+                .body("path.folders", iterableWithSize(2))
+                .body("path.folders[0].name", equalTo("AeroFS"))
+                .body("path.folders[0].id", equalTo(id(mds.root().soid())))
+                .body("path.folders[0].is_shared", equalTo(false))
+                .body("path.folders[1].name", equalTo("d0"))
+                .body("path.folders[1].id", equalTo(object("d0").toStringFormal()))
+                .body("path.folders[1].is_shared", equalTo(false))
+        .when().log().everything()
+                .get(RESOURCE, object("d0/f1").toStringFormal());
     }
 
     @Test
@@ -158,7 +185,44 @@ public class TestFileResource extends AbstractRestTest
                 .body("size", equalTo(FILE_CONTENT.length))
                 .body("last_modified", equalTo(ISO_8601.format(new Date(FILE_MTIME))))
                 .body("mime_type", equalTo("text/plain"))
+                .body("etag", equalTo(CURRENT_ETAG_VALUE))
         .when().get(RESOURCE, object("f1.txt").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturnPath() throws Exception
+    {
+        mds.root().dir("d1").anchor("a2").file("f3");
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("folders[0].id", equalTo(id(mds.root().soid())))
+                .body("folders[0].name", equalTo("AeroFS"))
+                .body("folders[0].is_shared", equalTo(false))
+
+                .body("folders[1].id", equalTo(object("d1").toStringFormal()))
+                .body("folders[1].name", equalTo("d1"))
+                .body("folders[1].is_shared", equalTo(false))
+                .body("folders[1].parent", equalTo(id(mds.root().soid())))
+
+                .body("folders[2].id", equalTo(object("d1/a2").toStringFormal()))
+                .body("folders[2].name", equalTo("a2"))
+                .body("folders[2].is_shared", equalTo(true))
+                .body("folders[2].parent", equalTo(object("d1").toStringFormal()))
+        .when().log().everything()
+                .get(RESOURCE + "/path", object("d1/a2/f3").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404ForInvalidPath() throws Exception
+    {
+        givenAccess()
+                .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when().log().everything()
+                .get(RESOURCE + "/path", new RestObject(rootSID, OID.generate()).toStringFormal());
     }
 
     @Test
@@ -437,6 +501,21 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldCreateFileUnderRoot() throws Exception
+    {
+        SettableFuture<SOID> soid = whenCreate(OA.Type.FILE, "", "foo.txt");
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child("root", "foo.txt")))
+        .expect()
+                .statusCode(201)
+                .body("id", equalToFutureObject(soid))
+                .body("name", equalTo("foo.txt"))
+        .when().post("/v1.2/files");
+    }
+
+    @Test
     public void shouldCreateFileUnderAnchor() throws Exception
     {
         mds.root().anchor("shared");
@@ -461,10 +540,10 @@ public class TestFileResource extends AbstractRestTest
 
         givenAccess()
                 .contentType(ContentType.JSON)
-                .body(json(CommonMetadata.child(object("").toStringFormal(), "foo.txt")))
+                .body(json(CommonMetadata.child("root", "foo.txt")))
         .expect()
                 .statusCode(201)
-        .when().post("/v0.10/files");
+        .when().post("/v1.2/files");
 
         givenAccess()
                 .contentType(ContentType.JSON)
@@ -598,7 +677,7 @@ public class TestFileResource extends AbstractRestTest
         final String newFileName = "foo1.txt";
         SettableFuture<SOID> newFileId = whenMove("foo.txt", "myFolder", newFileName);
         givenAccess()
-                .header(Names.IF_MATCH, CURRENT_ETAG)
+                .header(Names.IF_MATCH, etagForMeta(soid))
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(id(newParent), newFileName)))
         .expect()
@@ -747,7 +826,7 @@ public class TestFileResource extends AbstractRestTest
         SOID soid = mds.root().file("foo.txt").soid();
 
         givenAccess()
-                .header(Names.IF_MATCH, CURRENT_ETAG)
+                .header(Names.IF_MATCH, etagForMeta(soid))
         .expect()
                 .statusCode(204)
         .when()
@@ -1161,7 +1240,7 @@ public class TestFileResource extends AbstractRestTest
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
-        pf.newOutputStream_(false).write(new byte [42]);
+        pf.newOutputStream_(false).write(new byte[42]);
 
         givenAccess()
                 .header(Names.CONTENT_RANGE, "bytes 100-199/*")

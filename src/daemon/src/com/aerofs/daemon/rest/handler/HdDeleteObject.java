@@ -9,11 +9,8 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIDeleteObject;
-import com.aerofs.daemon.rest.util.EntityTagUtil;
-import com.aerofs.daemon.rest.util.MetadataBuilder;
-import com.aerofs.daemon.rest.util.RestObjectResolver;
+import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.google.inject.Inject;
@@ -24,22 +21,16 @@ import javax.ws.rs.core.Response.Status;
 
 public class HdDeleteObject extends AbstractRestHdIMC<EIDeleteObject>
 {
-    private final ObjectDeleter _od;
-
-    @Inject
-    public HdDeleteObject(RestObjectResolver access, MetadataBuilder mb, TransManager tm,
-            ObjectDeleter od, EntityTagUtil etags)
-    {
-        super(access, etags, mb, tm);
-        _od = od;
-    }
+    @Inject private ObjectDeleter _od;
 
     @Override
     protected void handleThrows_(EIDeleteObject ev) throws Exception
     {
-        OA from = _access.resolveWithPermissions_(ev._object, ev.user(), Permissions.EDITOR);
+        OA from = _access.resolveWithPermissions_(ev._object, ev._token, Permissions.EDITOR);
 
-        EntityTag etag = _etags.etagForObject(from.soid());
+        requireAccessToFile(ev._token, Scope.WRITE_FILES, from);
+
+        EntityTag etag = _etags.etagForMeta(from.soid());
 
         if (ev._ifMatch.isValid() && !ev._ifMatch.matches(etag)) {
             ev.setResult_(Response.status(Status.PRECONDITION_FAILED)

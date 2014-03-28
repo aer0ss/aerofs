@@ -1,17 +1,23 @@
 package com.aerofs.rest.api;
 
+import com.aerofs.base.NoObfuscation;
+
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
  * Represent a listing of the contents of a folder
  */
+@NoObfuscation
 public class ChildrenList
 {
-    public final String parent;
+    // NB: deprecated in 1.2
+    public final @Nullable String parent;
+
     public final List<Folder> folders;
     public final List<File> files;
 
-    public ChildrenList(String parent, List<Folder> folders, List<File> files)
+    public ChildrenList(@Nullable String parent, List<Folder> folders, List<File> files)
     {
         this.parent = parent;
         this.folders = folders;

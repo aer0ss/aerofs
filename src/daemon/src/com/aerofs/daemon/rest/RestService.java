@@ -5,6 +5,7 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.Version;
+import com.aerofs.rest.providers.FactoryReaderProvider;
 import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
 import com.aerofs.rest.providers.ParamExceptionMapper;
 import com.aerofs.rest.providers.JsonExceptionMapper;
@@ -31,7 +32,7 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class RestService extends Service
 {
-    public static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 1);
+    public static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 2);
 
     // Port for the service. 0 to use any available port (default)
     // configurable for firewall-friendliness
@@ -65,8 +66,9 @@ public class RestService extends Service
     {
         // specify all providers explictly instead of using a package scanner
         // because we flatten packages in the proguard step
-        return ImmutableSet.of(
+        return ImmutableSet.<Class<?>>of(
                 OAuthProvider.class,
+                FactoryReaderProvider.class,
                 JsonExceptionMapper.class,
                 ParamExceptionMapper.class,
                 IllegalArgumentExceptionMapper.class,

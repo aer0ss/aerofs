@@ -60,6 +60,7 @@ public class TestChildrenResource extends AbstractRestTest
         givenAccess()
         .expect()
                 .statusCode(200)
+                .body("parent", equalTo(object("").toStringFormal()))
                 .body("files", hasSize(1)).body("files.name", hasItems("f"))
                 .body("folders", hasSize(2)).body("folders.name", hasItems("d", "a"))
         .when().get(RESOURCE, "");
@@ -74,6 +75,7 @@ public class TestChildrenResource extends AbstractRestTest
         givenAccess()
         .expect()
                 .statusCode(200)
+                .body("parent", equalTo(object("d").toStringFormal()))
                 .body("files", empty())
                 .body("folders", empty())
         .when().get(RESOURCE, object("d").toStringFormal());
@@ -89,6 +91,7 @@ public class TestChildrenResource extends AbstractRestTest
         givenAccess()
         .expect()
                 .statusCode(200)
+                .body("parent", equalTo(object("").toStringFormal()))
                 .body("files", empty())
                 .body("folders", hasSize(1))
                 .body("folders.name", hasItem("a"))

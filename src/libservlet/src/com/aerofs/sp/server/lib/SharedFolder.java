@@ -16,7 +16,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.sp.server.ParamFactory;
+import com.aerofs.base.ParamFactory;
 import com.aerofs.sp.server.lib.SharedFolderDatabase.UserIDRoleAndState;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;

@@ -26,13 +26,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class AuthToken
 {
-
     private final static Logger l = LoggerFactory.getLogger(AuthToken.class);
 
     public final UserID user;
     public final UserID issuer;
     public final DID did;
     public final OrganizationID org;
+    public final String app;
 
     //empty set means unrestricted scope
     public final Map<Scope, Set<SID>> scopes;
@@ -44,6 +44,7 @@ public class AuthToken
         did = new MDID(UniqueID.fromStringFormal(response.mdid));
         org = response.principal.getOrganizationID();
         scopes = parseScopes(response.scopes);
+        app = response.audience;
     }
 
     private static Map<Scope, Set<SID>> parseScopes(Set<String> scopes)
@@ -83,7 +84,6 @@ public class AuthToken
 
     public boolean hasPermission(Scope scope)
     {
-        checkArgument(!Scope.isQualifiable(scope));
         Set<SID> sids = scopes.get(scope);
         return sids != null && sids.isEmpty();
     }

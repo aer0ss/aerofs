@@ -1,13 +1,12 @@
 package com.aerofs.daemon.core;
 
-import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 
-import com.aerofs.base.C;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
@@ -337,77 +336,27 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
                 Version.of(_cfgLocalDID.get(), tr._tick), t);
     }
 
-
-    /**
-     * Helper class to compute version hash
-     * Grouping meta and content ticks for a given DID before digest computation
-     * reduces the amount of data to digest by 33% and does not add significant
-     * precomputation overhead since the entries need to be sorted anyway...
-     */
-    private static class TickPair
-    {
-        public Tick _mt, _ct;
-
-        public long metaTick()
-        {
-            return _mt != null ? _mt.getLong() : 0;
-        }
-
-        public long contentTick()
-        {
-            return _ct != null ? _ct.getLong() : 0;
-        }
-
-        public TickPair(Tick meta)
-        {
-            _mt = meta;
-        }
-    }
-
     /**
      * @return version hash of the given object
      */
-    public byte[] getVersionHash_(SOID soid) throws SQLException
+    public byte[] getVersionHash_(SOID soid, CID cid) throws SQLException
     {
-        // aggregate MASTER versions for both meta and content components
-        // we intentionally do NOT take conflict branches into account as:
-        //   * the sync status could appear as out-of-sync between two users with the exact same
-        //   MASTER branch which would go against user expectations
-        //   * there is no easy way to take conflict branches that does not leave room for
-        //   inconsistent results
-
         // Map needs to be sorted for deterministic version hash computation
-        SortedMap<DID, TickPair> aggregated = Maps.newTreeMap();
+        SortedMap<DID, Long> ticks = Maps.newTreeMap();
 
-        Version vm = getLocalVersion_(new SOCKID(soid, CID.META, KIndex.MASTER));
+        Version vm = getLocalVersion_(new SOCKID(soid, cid, KIndex.MASTER));
         for (Entry<DID, Tick> e : vm.getAll_().entrySet()) {
-            aggregated.put(e.getKey(), new TickPair(e.getValue()));
-        }
-
-        Version vc = getLocalVersion_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER));
-        for (Entry<DID, Tick> e : vc.getAll_().entrySet()) {
-            TickPair tp = aggregated.get(e.getKey());
-            if (tp == null) {
-                tp = new TickPair(null);
-                aggregated.put(e.getKey(), tp);
-            }
-            tp._ct = e.getValue();
+            ticks.put(e.getKey(), e.getValue().getLong());
         }
 
         // make a digest from that aggregate
         // (no security concern here, only compactness matters so MD5 is fine)
         MessageDigest md = SecUtil.newMessageDigestMD5();
-        for (Entry<DID, TickPair> e : aggregated.entrySet()) {
+        for (Entry<DID, Long> e : ticks.entrySet()) {
             md.update(e.getKey().getBytes());
-            md.update(toByteArray(e.getValue().metaTick()));
-            md.update(toByteArray(e.getValue().contentTick()));
+            md.update(BaseUtil.toByteArray(e.getValue()));
         }
 
         return md.digest();
-    }
-
-    private static byte[] toByteArray(long l)
-    {
-        return ByteBuffer.allocate(C.LONG_SIZE).putLong(l).array();
     }
 }

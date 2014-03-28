@@ -6,7 +6,6 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.VersionUpdater;
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.ex.ExAborted;
@@ -17,16 +16,13 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIFileUpload;
-import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.oauth.Scope;
 import com.aerofs.restless.util.ContentRange;
 import com.aerofs.restless.util.HttpStatus;
-import com.aerofs.daemon.rest.util.MetadataBuilder;
-import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -58,28 +54,9 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
 {
-    private final TransManager _tm;
-    private final DirectoryService _ds;
-    private final IPhysicalStorage _ps;
-    private final EntityTagUtil _etags;
-    private final RestObjectResolver _access;
-    private final TokenManager _tokenManager;
-    private final VersionUpdater _vu;
-
-    @Inject
-    public HdFileUpload(RestObjectResolver access, EntityTagUtil etags, MetadataBuilder mb,
-            TokenManager tokenManager, DirectoryService ds, IPhysicalStorage ps, TransManager tm,
-            VersionUpdater vu)
-    {
-        super(access, etags, mb, tm);
-        _tm = tm;
-        _ds = ds;
-        _ps = ps;
-        _vu = vu;
-        _etags = etags;
-        _access = access;
-        _tokenManager = tokenManager;
-    }
+    @Inject  private IPhysicalStorage _ps;
+    @Inject private TokenManager _tokenManager;
+    @Inject private VersionUpdater _vu;
 
     @Override
     protected void handleThrows_(EIFileUpload ev) throws Exception
@@ -128,7 +105,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             applyPrefix_(pf, newOA, new ContentHash(md.digest()));
 
             ev.setResult_(Response.ok()
-                    .tag(_etags.etagForObject(newOA.soid())));
+                    .tag(_etags.etagForContent(newOA.soid())));
         } catch (Exception e) {
             l.warn("upload failed", e);
             // if anything goes wrong, delete the prefix, unless the upload is resumable
@@ -155,11 +132,13 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     private OA checkSanity_(EIFileUpload ev)
             throws ExNotFound, ExNoPerm, SQLException
     {
-        OA oa = _access.resolveWithPermissions_(ev._object, ev.user(), Permissions.EDITOR);
+        OA oa = _access.resolveWithPermissions_(ev._object, ev._token, Permissions.EDITOR);
 
         if (oa.isExpelled() || !oa.isFile()) throw new ExNotFound();
 
-        final EntityTag etag = _etags.etagForObject(oa.soid());
+        requireAccessToFile(ev._token, Scope.WRITE_FILES, oa);
+
+        final EntityTag etag = _etags.etagForContent(oa.soid());
 
         // TODO: select target branch based on etag instead of always trying to upload to MASTER?
         if (ev._ifMatch.isValid() && !ev._ifMatch.matches(etag)) {

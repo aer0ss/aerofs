@@ -10,12 +10,9 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIMoveObject;
-import com.aerofs.daemon.rest.util.EntityTagUtil;
-import com.aerofs.daemon.rest.util.MetadataBuilder;
-import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.google.inject.Inject;
@@ -28,26 +25,21 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
 {
-    private final ImmigrantCreator _imc;
-
-    @Inject
-    public HdMoveObject(RestObjectResolver access, EntityTagUtil etags, ImmigrantCreator imc,
-            MetadataBuilder mb, TransManager tm)
-    {
-        super(access, etags, mb, tm);
-        _imc = imc;
-    }
+    @Inject private ImmigrantCreator _imc;
 
     @Override
     protected void handleThrows_(EIMoveObject ev) throws Exception
     {
-        OA from = _access.resolveWithPermissions_(ev._object, ev.user(), Permissions.EDITOR);
-        OA toParent = _access.resolveFollowsAnchorWithPermissions_(ev._newParent, ev.user(),
+        OA from = _access.resolveWithPermissions_(ev._object, ev._token, Permissions.EDITOR);
+        OA toParent = _access.resolveFollowsAnchorWithPermissions_(ev._newParent, ev._token,
                 Permissions.EDITOR);
+
+        requireAccessToFile(ev._token, Scope.WRITE_FILES, from);
+        requireAccessToFile(ev._token, Scope.WRITE_FILES, toParent);
 
         checkArgument(toParent.isDir(), "parent field must point to a valid folder");
 
-        EntityTag etag = _etags.etagForObject(from.soid());
+        EntityTag etag = _etags.etagForMeta(from.soid());
 
         if (ev._ifMatch.isValid() && !ev._ifMatch.matches(etag)) {
             ev.setResult_(Response.status(Status.PRECONDITION_FAILED)
@@ -72,7 +64,7 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
         }
 
         ev.setResult_(Response.ok()
-                .entity(_mb.metadata(soid))
-                .tag(_etags.etagForObject(soid)));
+                .entity(_mb.metadata(soid, ev.user()))
+                .tag(_etags.etagForMeta(soid)));
     }
 }
