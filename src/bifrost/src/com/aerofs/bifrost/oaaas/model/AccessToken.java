@@ -107,6 +107,8 @@ public class AccessToken extends AbstractEntity
         invariant();
     }
 
+    public AccessToken() { }
+
     private void invariant()
     {
         Preconditions.checkNotNull(token, "Token may not be null");
