@@ -59,7 +59,7 @@ def get_mobile_access_code(request):
 
     # Create access code
     cacert = get_cacert(request)
-    config_url = request.registry.settings.get('config.loader.configuration_service_url')
+    config_url = request.registry.settings.get('config.loader.configuration_service_url', 'https://config.aerofs.com/')
     oauth_token = generate_mobile_access_code(request)
 
     assert cacert
@@ -100,12 +100,39 @@ def generate_mobile_access_code(request):
     reply = sp.get_mobile_access_code()
     return reply.accessCode
 
+# The CA cert for public deployment. Ideally we should read this cert from the file rather than hard coding it here.
+# However, because we plan to use the configuration server (config.aerofs.com) for public deployment soon and thus
+# obsolete this code, I (WW) didn't bother spending time implementing it.
+_PUBLIC_DEPLOYMENT_CACERT = \
+    '-----BEGIN CERTIFICATE-----\\n' \
+    'MIID5TCCAs2gAwIBAgIJAMglwusARYgmMA0GCSqGSIb3DQEBCwUAMIGAMQ8wDQYD\\n' \
+    'VQQDEwZBZXJvRlMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYw\\n' \
+    'FAYDVQQHEw1TYW4gRnJhbmNpc2NvMRMwEQYDVQQKEwphZXJvZnMuY29tMR4wHAYJ\\n' \
+    'KoZIhvcNAQkBFg90ZWFtQGFlcm9mcy5jb20wHhcNMTMwNTAxMjI0NDU1WhcNMjMw\\n' \
+    'NDI5MjI0NDU1WjCBgDEPMA0GA1UEAxMGQWVyb0ZTMQswCQYDVQQGEwJVUzETMBEG\\n' \
+    'A1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzETMBEGA1UE\\n' \
+    'ChMKYWVyb2ZzLmNvbTEeMBwGCSqGSIb3DQEJARYPdGVhbUBhZXJvZnMuY29tMIIB\\n' \
+    'IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzhK5CxtoqaXEcD0Bq0TG9ExT\\n' \
+    'FleIkx4hnblv6OK4Wm6EzA4wo9odeg8/3Jyd0b3cO1QuGAcUydzuknNNi7UMKKvO\\n' \
+    'WPCRpQxdgIqWis7yziJ2XVv8GVdJ+YfTeYgkDYheLj0H8Qbv1pvYC2c0yuELb72W\\n' \
+    'Lr4dcqnqPgwEROSftcEB07G1SuyvkimEO5nRkAcSrTA0nSomKhNGT2IgkbG08vWE\\n' \
+    '0tU5AeoefVGjAOygnMgveJg6aO9nrGxDB4Qg2DcJPZPlOt4JIARls6cwR3GGn07w\\n' \
+    'Uw68sdjCHLQcuQObfwJnar8W2Eu/1xSLoCYgVwNyd0sS3QtSkMzkB1dzo7I7sQID\\n' \
+    'AQABo2AwXjAdBgNVHQ4EFgQUyypjgG7zMXZKq0Z+Y7RUWaeNEtMwHwYDVR0jBBgw\\n' \
+    'FoAUyypjgG7zMXZKq0Z+Y7RUWaeNEtMwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8E\\n' \
+    'BAMCAQYwDQYJKoZIhvcNAQELBQADggEBACpuypRbS1IUqJtEOo3gXZ0YGPiS23ex\\n' \
+    '5giLD95JThkQYB7e4iQIsPnPDQ0migNkRumuSIDypr4gUfrPuqt7oVjTDvWUsFGF\\n' \
+    'DoTOEBNT3CcFkeeDa6nmGT+y5GaPEQ7Zp8yQTv7dg96Tg/5tHc1wGHO7slqZdzVU\\n' \
+    'oUjS7N0idzBBFtug2+TM9ZOV36czK5NS1EIPTr47Pnyt+35hs2vqcJv6/z1510vm\\n' \
+    'ENfCjHBsgZ1Sysw04FX9hkkWEgQkUe4Q3JZ2+CbSego9t2uqs8MGNzQSy7I+yi4+\\n' \
+    'U9nQmzLWYykodsNPn7erKjxjmqM77qFnyckKvbPV2gR5zvvU5UGq/bo=\\n' \
+    '-----END CERTIFICATE-----'
 
 def get_cacert(request):
     """
     Return the CA cert in binary format
     """
-    cacert = request.registry.settings.get('config.loader.base_ca_certificate')
+    cacert = request.registry.settings.get('config.loader.base_ca_certificate', _PUBLIC_DEPLOYMENT_CACERT)
     cacert = cacert.replace('\\n', '').replace('-----BEGIN CERTIFICATE-----','').replace('-----END CERTIFICATE-----','')
     return base64.b64decode(cacert)
 
