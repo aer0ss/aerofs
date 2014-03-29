@@ -13,12 +13,17 @@
 
 <table id='clients-table' class="table table-hover hidden">
     <thead>
-        <tr><th>App name</th><th>Created</th><th>Expires</th><th></th></tr>
+        <tr><th>App name</th><th></th><th>Created</th><th>Expires</th><th></th></tr>
     </thead>
     <tbody>
         %for token in tokens:
             <tr>
                 <td>${token['client_name']}</td>
+                <td>
+                %if token['owner'] != token['effective_user']:
+                    <span class="admin_label label {} tooltip_admin">admin</span>
+                %endif
+                </td>
                 <td>
                     ${datetime.strptime(token['creation_date'], "%Y-%m-%dT%H:%M:%SZ")}
                 </td>
@@ -54,13 +59,22 @@
 
 <%block name="scripts">
     <script>
-        $(document).ready(refreshUI);
+        $(document).ready(function() {
+            registerTokenRowTooltips();
+            refreshUI();
+        })
 
         function refreshUI() {
             var $table = $('#clients-table');
             var clients = $table.find('tbody').find('tr').length;
             setVisible($table, clients > 0);
             setVisible($('#no-clients-label'), clients == 0);
+        }
+
+        function registerTokenRowTooltips() {
+            $('.tooltip_admin').tooltip({placement: 'top',
+                'title' : 'Admin-level apps can act on ' +
+                'users and files within your organization.'});
         }
 
         function confirmDeletion(clientName, token, $deleteButton) {

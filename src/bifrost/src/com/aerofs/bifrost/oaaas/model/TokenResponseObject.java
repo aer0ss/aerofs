@@ -15,15 +15,19 @@ public class TokenResponseObject
     String clientName;
     Date creationDate;
     Long expires;
+    String owner;
+    String effectiveUser;
     String token;
 
     public TokenResponseObject(String clientId, String clientName, Date creationDate, Long expires,
-            String token)
+            String owner, String effectiveUser, String token)
     {
         this.clientId = clientId;
         this.clientName = clientName;
         this.creationDate = creationDate;
         this.expires = expires;
+        this.owner = owner;
+        this.effectiveUser = effectiveUser;
         this.token = token;
     }
 

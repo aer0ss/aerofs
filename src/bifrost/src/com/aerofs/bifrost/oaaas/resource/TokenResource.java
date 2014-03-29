@@ -110,11 +110,14 @@ public class TokenResource
             List<TokenResponseObject> tokenResponseObjects =
                     new ArrayList<TokenResponseObject>(tokens.size());
             for (AccessToken t : tokens) {
+                // SIGH. I wish we could pass AccessToken to TokenResponseObject constructor.
                 tokenResponseObjects.add(new TokenResponseObject(
                         t.getClientId(),
                         t.getClient().getName(),
                         t.getCreationDate(),
                         t.getExpires(),
+                        t.getOwner(),
+                        t.getEffectiveUserID(),
                         t.getToken()));
             }
 
