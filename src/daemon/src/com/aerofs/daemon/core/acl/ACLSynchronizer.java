@@ -7,9 +7,9 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.core.store.AbstractStoreJoiner;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -24,13 +24,17 @@ import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
@@ -49,7 +53,7 @@ public class ACLSynchronizer
     private final TransManager _tm;
     private final IACLDatabase _adb;
     private final LocalACL _lacl;
-    private final IStoreJoiner _storeJoiner;
+    private final AbstractStoreJoiner _storeJoiner;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
     private final CfgLocalUser _cfgLocalUser;
@@ -60,13 +64,16 @@ public class ACLSynchronizer
         public final String _name;
         public final boolean _external;
         public final ImmutableMap<UserID, Permissions> _roles;
+        public final Set<UserID> _externalMembers;
 
         // See docs/design/sharing_and_migration.txt for information about the external flag.
-        StoreInfo(String name, boolean external, ImmutableMap<UserID, Permissions> roles)
+        StoreInfo(String name, boolean external, ImmutableMap<UserID, Permissions> roles,
+                Set<UserID> externalMembers)
         {
             _name = name;
             _external = external;
             _roles = roles;
+            _externalMembers = externalMembers;
         }
     }
 
@@ -84,7 +91,7 @@ public class ACLSynchronizer
 
     @Inject
     public ACLSynchronizer(TokenManager tokenManager, TransManager tm, IACLDatabase adb, LocalACL lacl,
-            IStoreJoiner storeJoiner, IMapSIndex2SID sIndex2SID, IMapSID2SIndex sid2SIndex,
+            AbstractStoreJoiner storeJoiner, IMapSIndex2SID sIndex2SID, IMapSID2SIndex sid2SIndex,
             CfgLocalUser cfgLocalUser, InjectableSPBlockingClientFactory factSP)
     {
         _tokenManager = tokenManager;
@@ -189,6 +196,7 @@ public class ACLSynchronizer
             Trans t) throws Exception
     {
         Set<SIndex> stores = _lacl.getAccessibleStores_();
+        Map<SIndex, Set<UserID>> newMembers = Maps.newHashMap();
 
         l.debug("accessible stores: {}", stores);
 
@@ -215,16 +223,37 @@ public class ACLSynchronizer
             // NB: needs to be done *BEFORE* auto-join
             _lacl.set_(sidx, roles, t);
 
+            // TODO: handle changes of the external bit
             if (!stores.contains(sidx) && (_sidx2sid.getNullable_(sidx) == null)) {
                 // not known and accessible: auto-join
                 assert storeInfo._name != null : sid;
                 _storeJoiner.joinStore_(sidx, sid, storeInfo._name, storeInfo._external, t);
             }
             stores.remove(sidx);
+
+            // list of members that ought to have an anchor on TS
+            if (!sid.isUserRoot()) {
+                newMembers.put(sidx, Sets.filter(
+                        Sets.difference(roles.keySet(), storeInfo._externalMembers),
+                        new Predicate<UserID>() {
+                            @Override
+                            public boolean apply(UserID user)
+                            {
+                                return !user.isTeamServerID();
+                            }
+                        }));
+            }
         }
 
         // leave stores to which we no longer have access
         for (SIndex sidx : stores) _storeJoiner.leaveStore_(sidx, getSID_(sidx), t);
+
+        // for TS, must be done AFTER auto-join/auto-leave
+        for (Entry<SIndex, Set<UserID>> e : newMembers.entrySet()) {
+            SIndex sidx = e.getKey();
+            SID sid = _sidx2sid.get_(sidx);
+            _storeJoiner.adjustAnchors_(sidx, serverACLReturn._acl.get(sid)._name, e.getValue(), t);
+        }
 
         _adb.setEpoch_(serverACLReturn._serverEpoch, t);
     }
@@ -268,13 +297,18 @@ public class ACLSynchronizer
         l.info("server return acl server epoch {} local epoch {}", serverEpoch, localEpoch);
 
         for (PBStoreACL store : aclReply.getStoreAclList()) {
+            Set<UserID> externalMembers = Sets.newHashSet();
             ImmutableMap.Builder<UserID, Permissions> builder = ImmutableMap.builder();
             for (PBSubjectPermissions pbPair : store.getSubjectPermissionsList()) {
                 SubjectPermissions srp = new SubjectPermissions(pbPair);
                 builder.put(srp._subject, srp._permissions);
+                if (pbPair.hasExternal() && pbPair.getExternal()) {
+                    externalMembers.add(srp._subject);
+                }
             }
 
-            StoreInfo si = new StoreInfo(store.getName(), store.getExternal(), builder.build());
+            StoreInfo si = new StoreInfo(store.getName(), store.getExternal(), builder.build(),
+                    externalMembers);
             stores.put(new SID(store.getStoreId()), si);
         }
 

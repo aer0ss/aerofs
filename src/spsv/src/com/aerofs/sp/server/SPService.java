@@ -1764,9 +1764,13 @@ public class SPService implements ISPService
                 aclBuilder.setExternal(sf.isExternal(user));
                 aclBuilder.setName(sf.getName(user));
                 for (Entry<User, Permissions> en : sf.getJoinedUsersAndRoles().entrySet()) {
-                    aclBuilder.addSubjectPermissions(PBSubjectPermissions.newBuilder()
+                    PBSubjectPermissions.Builder spbd = PBSubjectPermissions.newBuilder()
                             .setSubject(en.getKey().id().getString())
-                            .setPermissions(en.getValue().toPB()));
+                            .setPermissions(en.getValue().toPB());
+                    // TS needs to know the external bit for all members to know
+                    // when to auto-create anchors in root stores
+                    if (user.id().isTeamServerID()) spbd.setExternal(sf.isExternal(en.getKey()));
+                    aclBuilder.addSubjectPermissions(spbd);
                 }
                 bd.addStoreAcl(aclBuilder);
             }
