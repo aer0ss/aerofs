@@ -31,23 +31,26 @@ class Makensis < Formula
 end
 
 __END__
-diff --git a/SCons/config.py b/SCons/config.py
-index a344456..37c575b 100755
---- a/SCons/config.py
-+++ b/SCons/config.py
-@@ -1,3 +1,5 @@
-+import os
-+
- Import('defenv')
- 
- ### Configuration options
-@@ -440,6 +442,9 @@ Help(cfg.GenerateHelpText(defenv))
- env = Environment()
- cfg.Update(env)
- 
-+defenv['CC'] = os.environ['CC']
-+defenv['CXX'] = os.environ['CXX']
-+
- def AddValuedDefine(define):
-   defenv.Append(NSIS_CPPDEFINES = [(define, env[define])])
- 
+diff -ru /SCons/Config/gnu /SCons/Config/gnu
+--- nsis-2.46-src-2/SCons/Config/gnu    2009-02-04 16:52:28.000000000 -0800
++++ nsis-2.46-src/SCons/Config/gnu  2014-03-27 12:07:07.000000000 -0700
+@@ -32,6 +32,7 @@
+ defenv['SUBSYS_CON'] = '-Wl,--subsystem,console'
+ defenv['MSVCRT_FLAG'] = ''
+ defenv['STDCALL'] = ' __attribute__((__stdcall__))'
++defenv['DEBUG'] = 'YES'
+
+ ### defines
+
+diff -ru /Source/util.h /Source/util.h
+--- nsis-2.46-src-2/Source/util.h   2009-03-28 02:47:26.000000000 -0700
++++ nsis-2.46-src/Source/util.h 2014-03-27 10:48:41.000000000 -0700
+@@ -17,6 +17,7 @@
+ #ifndef _UTIL_H_
+ #define _UTIL_H_
+
++#include <unistd.h>
+ #include <string> // for std::string
+
+ #include "boost/scoped_ptr.hpp" // for boost::scoped_ptr
+
