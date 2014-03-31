@@ -12,6 +12,9 @@ table#file-list td.name {
     font-size: 1.5em;
     background-color: transparent;
 }
+.breadcrumb li {
+    padding-bottom: 6px;
+}
 div#actions {
     float: right;
     padding-top: 4px;
