@@ -88,7 +88,7 @@ public class GetVersReply
                 processStreamReply_(msg.user(), msg.did(), msg.streamKey(), msg.is());
             }
         } catch (Exception e) {
-            l.info("error processing reply: {}", e);
+            l.info("error processing reply", e);
             throw e;
         } finally {
             // TODO put this statement into a more general method
