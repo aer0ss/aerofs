@@ -22,8 +22,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static com.google.common.base.Preconditions.checkState;
-
 // FIXME (AG): Remove sidx management from this class
 //
 // this class should simply be a mapping from Device to 'available transports'
@@ -64,6 +62,8 @@ import static com.google.common.base.Preconditions.checkState;
  *  when pulses is stoped:  comes online:   goes to true online
  *                          goes offline:   goes to offline
  */
+// FIXME (AG): this class _SHOULD NOT_ care about stores at all
+// its concept of online and offline should only be based on whether it has connections or not
 public class Device implements Comparable<Device>
 {
     private final DID _did;
@@ -274,7 +274,6 @@ public class Device implements Comparable<Device>
     {
         for (Entry<ITransport, TransportState> en : _tpsAvailable.entrySet()) {
             if (!en.getValue()._isBeingPulsed) {
-                assert !en.getValue()._sidcsAvailable.isEmpty();
                 return true;
             }
         }
@@ -313,7 +312,6 @@ public class Device implements Comparable<Device>
     {
         for (Entry<ITransport, TransportState> en : _tpsAvailable.entrySet()) {
             if (!en.getValue()._isBeingPulsed) {
-                checkState(!en.getValue()._sidcsAvailable.isEmpty());
                 return en.getKey();
             }
         }
