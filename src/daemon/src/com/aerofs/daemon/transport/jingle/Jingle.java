@@ -13,7 +13,6 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
-import com.aerofs.daemon.transport.lib.IAddressResolver;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.PulseManager;
@@ -45,7 +44,6 @@ import org.jboss.netty.util.Timer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.Set;
 
@@ -55,7 +53,7 @@ import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
 import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
-public class Jingle implements ITransport, IAddressResolver
+public class Jingle implements ITransport
 {
     private final TransportEventQueue transportEventQueue;
     private final EventDispatcher dispatcher;
@@ -73,7 +71,6 @@ public class Jingle implements ITransport, IAddressResolver
     private final JingleChannelWorker channelWorker;
     private final Multicast multicast;
     private final XMPPConnectionService xmppConnectionService;
-    private final String xmppServerDomain;
     private final Unicast unicast;
 
     public Jingle(
@@ -113,7 +110,6 @@ public class Jingle implements ITransport, IAddressResolver
         this.outgoingEventSink = outgoingEventSink;
         this.transportStats = new TransportStats();
 
-        this.xmppServerDomain = xmppServerDomain;
         this.xmppConnectionService = new XMPPConnectionService(
                 id,
                 localdid,
@@ -133,7 +129,8 @@ public class Jingle implements ITransport, IAddressResolver
         this.presenceService = new PresenceService();
 
         // unicast
-        this.unicast = new Unicast(this);
+        JingleAddressResolver resolver = new JingleAddressResolver(xmppServerDomain);
+        this.unicast = new Unicast(resolver);
         linkStateService.addListener(unicast, sameThreadExecutor()); // can be notified on any thread since Unicast is thread-safe
 
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
@@ -234,12 +231,6 @@ public class Jingle implements ITransport, IAddressResolver
     public long bytesOut()
     {
         return transportStats.getBytesSent();
-    }
-
-    @Override
-    public SocketAddress resolve(DID did)
-    {
-        return new JingleAddress(did, JingleUtils.did2jid(did, xmppServerDomain));
     }
 
     @Override
