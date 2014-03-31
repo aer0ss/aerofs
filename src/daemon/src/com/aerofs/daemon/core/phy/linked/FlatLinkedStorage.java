@@ -14,6 +14,7 @@ import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
@@ -93,7 +94,7 @@ public class FlatLinkedStorage extends LinkedStorage
 
         l.info("create store {} {} {}", sidx, sid.toStringFormal(), name);
 
-        String absPath = ensureStoreRootExists_(sidx, sid, name);
+        String absPath = ensureStoreRootExists_(sidx, sid, name, t);
         _sfti.addTagFileAndIconIn(sid, absPath, t);
         _lrm.link_(sid, absPath, t);
     }
@@ -106,10 +107,20 @@ public class FlatLinkedStorage extends LinkedStorage
         _lrm.unlink_(sid, t);
     }
 
-    private String ensureStoreRootExists_(SIndex sidx, SID sid, String name) throws IOException
+    private String ensureStoreRootExists_(SIndex sidx, SID sid, String name, Trans t)
+            throws IOException
     {
-        InjectableFile d = storeRoot_(sidx, sid, name);
-        d.ensureDirExists();
+        final InjectableFile d = storeRoot_(sidx, sid, name);
+        if (!d.exists()) {
+            d.mkdirs();
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void aborted_()
+                {
+                    d.deleteIgnoreError();
+                }
+            });
+        }
         return d.getAbsolutePath();
     }
 

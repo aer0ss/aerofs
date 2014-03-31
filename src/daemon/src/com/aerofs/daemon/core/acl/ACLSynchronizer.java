@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Common.PBSubjectPermissions;
@@ -232,7 +233,7 @@ public class ACLSynchronizer
             stores.remove(sidx);
 
             // list of members that ought to have an anchor on TS
-            if (!sid.isUserRoot()) {
+            if (!sid.isUserRoot() && L.isMultiuser()) {
                 newMembers.put(sidx, Sets.filter(
                         Sets.difference(roles.keySet(), storeInfo._externalMembers),
                         new Predicate<UserID>() {
@@ -246,22 +247,19 @@ public class ACLSynchronizer
         }
 
         // leave stores to which we no longer have access
-        for (SIndex sidx : stores) _storeJoiner.leaveStore_(sidx, getSID_(sidx), t);
+        for (SIndex sidx : stores) {
+            _storeJoiner.leaveStore_(sidx, _sidx2sid.getLocalOrAbsent_(sidx), t);
+        }
 
         // for TS, must be done AFTER auto-join/auto-leave
         for (Entry<SIndex, Set<UserID>> e : newMembers.entrySet()) {
             SIndex sidx = e.getKey();
-            SID sid = _sidx2sid.get_(sidx);
+            SID sid = _sidx2sid.getNullable_(sidx);
+            if (sid == null) continue;
             _storeJoiner.adjustAnchors_(sidx, serverACLReturn._acl.get(sid)._name, e.getValue(), t);
         }
 
         _adb.setEpoch_(serverACLReturn._serverEpoch, t);
-    }
-
-    private SID getSID_(SIndex sidx) throws SQLException
-    {
-        SID sid = _sidx2sid.getNullable_(sidx);
-        return sid != null ? sid : _sidx2sid.getAbsent_(sidx);
     }
 
     private SIndex getOrCreateSIndex_(SID sid, Trans t) throws Exception
