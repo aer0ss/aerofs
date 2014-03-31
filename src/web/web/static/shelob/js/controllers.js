@@ -61,6 +61,17 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         });
     }
 
+    // This should find an object with a given view and remove it from the current view
+    function _remove_by_id(id) {
+        for (var i = 0; i < $scope.objects.length; i++) {
+            if ($scope.objects[i].id == id) {
+                $scope.objects.splice(i, 1);
+                return;
+            }
+        }
+    }
+
+
     // This is called when a user clicks on a link to a file
     //
     // It should direct the browser to download the file if possible, or show
@@ -216,17 +227,13 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     // confirms that they would like to move it.
     //
     // It should attempt to perform the move action and update the view.
+    //
     $scope.submitMove = function(object, destination) {
 
         var _submitMove = function(object, destination) {
             var data = {parent: destination.id, name: object.name};
             API.put('/' + object.type + 's/' + object.id, data).then(function(response) {
-                for (var i = 0; i < $scope.objects.length; i++) {
-                    if ($scope.objects[i].id == object.id) {
-                        $scope.objects.splice(i, 1);
-                        break;
-                    }
-                }
+                _remove_by_id(object.id);
                 showSuccessMessage("Successfully moved to " + destination.label);
             }, function(response) {
                 // move failed
@@ -313,5 +320,44 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             if (response.status == 503) showErrorMessage(getClientsOfflineErrorText());
             else showErrorMessage(getInternalErrorText());
         });
-    }
+    };
+
+    // This is called when a user confirms that they wish to delete an object
+    //
+    // It should attempt to perform the delete action and update the view.
+    //
+    $scope.submitDelete = function(object) {
+        API.delete('/' + object.type + 's/' + object.id).then(function(response) {
+            _remove_by_id(object.id);
+            showSuccessMessage('Successfully deleted ' + object.name);
+        }, function(response) {
+            // failed to delete
+            $log.error("deleting object failed: ", object.id);
+            if (response.status == 503) showErrorMessage(getClientsOfflineErrorText());
+            else if (response.status == 404) showErrorMessage("The " + object.type + " you requested was not found.");
+            else showErrorMessage(getInternalErrorText());
+        });
+    };
+
+    // This is called when a user clicks the delete icon on a file/folder
+    //
+    // It should open a modal asking the user to confirm the deletion
+    //
+    $scope.startDelete = function(object) {
+        $scope.deleteModal = $modal.open({
+            templateUrl: '/static/shelob/partials/object-delete-modal.html',
+            controller: function($scope) {
+                $scope.name = object.name;
+            }
+        });
+
+        $scope.deleteModal.result.then(function() {
+            // user confirmed the delete
+            $log.debug("delete confirmed", object);
+            $scope.submitDelete(object);
+        }, function() {
+            // user cancelled the delete request
+            $log.debug("delete cancelled");
+        });
+    };
 }]);

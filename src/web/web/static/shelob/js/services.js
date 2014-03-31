@@ -1,18 +1,26 @@
 var shelobServices = angular.module('shelobServices', ['shelobConfig']);
 
 shelobServices.factory('Token', ['$http', '$q', '$log',
-    function($http, $q, $log) { return {
+    function($http, $q, $log) {
+
+    var token = null;
+
+    return {
 
     // get a token from the server, or use a locally cached token
     get: function() {
         var deferred = $q.defer();
-        $http.get('/json_token', {cache: true})
-          .success(function(data, status, headers, config) {
-              deferred.resolve({token:data.token, headers:headers});
-          })
-          .error(function(data, status) {
-              deferred.reject({data:data, status:status});
-          });
+        if (token) deferred.resolve({token: token});
+        else {
+            $http.get('/json_token')
+                .success(function (data, status, headers, config) {
+                    deferred.resolve({token: data.token, headers: headers});
+                    token = data.token;
+                })
+                .error(function (data, status) {
+                    deferred.reject({data: data, status: status});
+                });
+        }
         return deferred.promise;
     },
 
@@ -22,6 +30,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
         $http.get('/json_new_token')
           .success(function(data, status, headers, config) {
               deferred.resolve({token:data.token, headers:headers});
+              token = data.token;
           })
           .error(function(data, status) {
               deferred.reject({data:data, status:status});
@@ -45,8 +54,8 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
             var deferred = $q.defer();
 
             // get an OAuth token and make call
-            Token.get().then(function (r) {
-                config.headers.Authorization = 'Bearer ' + r.token;
+            Token.get().then(function (response) {
+                config.headers.Authorization = 'Bearer ' + response.token;
                 config.url = API_LOCATION + '/api/v1.0' + config.path;
                 // if data is an array buffer, send the bytes directly. Otherwise, allow
                 // angular to apply the default transforms (handling encoding, etc.)
@@ -62,8 +71,8 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
                     .error(function (response, status) {
                         if (status == 401) {
                             // if the call got 401, the token may have expired, so try a new one
-                            Token.getNew().then(function (r) {
-                                config.headers.Authorization = 'Bearer ' + r.token;
+                            Token.getNew().then(function (response) {
+                                config.headers.Authorization = 'Bearer ' + response.token;
                                 $http(config)
                                     .success(function (data, status, headers) {
                                         // if the call succeeds, return the data
@@ -94,6 +103,14 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
         function _get(path, headers, config) {
             config = config || {};
             config.method = 'GET';
+            config.path = path;
+            config.headers = headers || {};
+            return _request(config);
+        }
+
+        function _delete(path, headers, config) {
+            config = config || {};
+            config.method = 'DELETE';
             config.path = path;
             config.headers = headers || {};
             return _request(config);
@@ -143,12 +160,12 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
                 reader.onload = function(e) {
                     var bytes = e.target.result;
                     headers['Content-Range'] = 'bytes ' + start + '-' + end + '/' + file.size;
-                    _put('/files/' + oid + '/content', bytes, headers, config).then(function (r) {
-                        $log.info("put succeeded", r);
+                    _put('/files/' + oid + '/content', bytes, headers, config).then(function (response) {
+                        $log.info("put succeeded", response);
                         deferred.notify({progress: (end + 1) / file.size});
                         if (start + chunkSize < file.size) {
-                            headers['Upload-ID'] = r.headers('Upload-ID');
-                            headers['If-Match'] = r.headers('ETag');
+                            headers['Upload-ID'] = response.headers('Upload-ID');
+                            headers['If-Match'] = response.headers('ETag');
                             readAndUploadChunk(start + chunkSize);
                         } else {
                             deferred.resolve({uploaded: end + 1});
@@ -190,6 +207,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
             //   the object passed to the failure callback has 'data' and 'status' attributes
             //
             get: _get,
+            delete: _delete,
             head: _head,
             put: _put,
             post: _post,
