@@ -41,6 +41,7 @@
             focus-on="!newFolder.hidden"
             on-submit="submitNewFolder()"
             on-cancel="cancelNewFolder()"
+            ng-disabled="outstandingRequests > 0"
           />
         </td>
         <td class="last-modified">--</td>
@@ -65,7 +66,8 @@
                  ng-model="object.newName"
                  focus-on="object.edit"
                  on-submit="submitRename(object)"
-                 on-cancel="cancelRename(object)"/>
+                 on-cancel="cancelRename(object)"
+                 ng-disabled="outstandingRequests > 0"/>
         </td>
         <td class="last-modified">{{object.last_modified | date: 'short'}}</td>
         <td class="actions">
