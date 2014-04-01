@@ -231,6 +231,7 @@ public class TestACLSynchronizer extends AbstractTest
     {
         SIndex sidx = new SIndex(2);
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
+        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
         lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
 
@@ -279,6 +280,7 @@ public class TestACLSynchronizer extends AbstractTest
         SIndex sidx = new SIndex(2);
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
+        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid1);
         when(sid2sidx.getNullable_(sid1)).thenReturn(sidx);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
 
@@ -316,6 +318,7 @@ public class TestACLSynchronizer extends AbstractTest
         SIndex sidx = new SIndex(2);
         when(sidx2sid.getAbsent_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(null);
+        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid1);
         when(sid2sidx.getNullable_(sid1)).thenReturn(null);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
 
