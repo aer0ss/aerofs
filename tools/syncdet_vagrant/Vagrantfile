@@ -32,7 +32,7 @@ Vagrant.configure("2") do |config|
       host = host_base + "#{index}"
       config.vm.define host do |config_a|
           config_a.vm.box = "precise64"
-          config_a.vm.box_url = "http://dl.dropbox.com/u/1537815/precise64.box"
+          config_a.vm.box_url = "http://192.168.128.197/aerofs-precise64-1375733073.box"
           config_a.vm.network :private_network, ip: "192.168.50.#{index+10}"
           (config_a.vm.network :public_network, :bridge => iface) if BRIDGE_IFACE and index < BRIDGE_COUNT
           config_a.vm.provider "virtualbox" do |vbox|
