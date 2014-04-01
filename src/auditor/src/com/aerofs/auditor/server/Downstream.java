@@ -5,6 +5,7 @@
 package com.aerofs.auditor.server;
 
 import com.aerofs.base.BaseParam.Audit;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
@@ -118,7 +119,7 @@ public class Downstream
         @Override
         public ChannelFuture doSend(String message)
         {
-            return Channels.write(_channel, wrappedBuffer(message.getBytes(), DELIM));
+            return Channels.write(_channel, wrappedBuffer(BaseUtil.string2utf(message), DELIM));
         }
 
         @Override
