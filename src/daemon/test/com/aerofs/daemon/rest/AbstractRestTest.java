@@ -46,7 +46,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.havre.Havre;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
@@ -94,6 +93,7 @@ import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -198,6 +198,7 @@ public class AbstractRestTest extends AbstractTest
         @Override
         public InputStream newInputStream_() throws IOException
         {
+            if (getLength_() == 0) throw new FileNotFoundException();
             return new ByteArrayInputStream(data());
         }
 

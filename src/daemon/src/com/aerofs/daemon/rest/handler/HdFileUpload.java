@@ -86,6 +86,8 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         final OA oa = checkSanity_(ev);
         if (oa == null) return;
 
+        l.info("upload {} {}", ev._ulid, ev._range);
+
         // to avoid prefix clashes, generate a unique upload ID if none given
         UploadID uploadId = ev._ulid.isValid() ? ev._ulid : UploadID.generate();
         IPhysicalPrefix pf = _ps.newPrefix_(new SOCKID(oa.soid(), CID.CONTENT, KIndex.MASTER),
@@ -104,6 +106,8 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             // TODO: avoid hashing when we know for sure the chunk cannot end the upload
             MessageDigest md = SecUtil.newMessageDigest();
             long chunkLength = uploadPrefix_(ev._content, pf, md);
+
+            l.info("uploaded {} bytes", chunkLength);
 
             if (ev._range != null) {
                 Object r = postValidateChunk(uploadId, ev._range, chunkLength, pf);
@@ -126,6 +130,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             // if anything goes wrong, delete the prefix, unless the upload is resumable
             if (!ev._ulid.isValid()) {
                 try {
+                    l.info("delete prefix");
                     pf.delete_();
                 } catch (IOException ee) {
                     l.warn("failed to delete prefix {}", pf);
@@ -181,10 +186,9 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                         .status(Status.BAD_REQUEST)
                         .entity(new Error(Type.BAD_ARGS, "Invalid upload identifier"));
             } else {
-                return Response
-                        .status(Status.OK)
-                        .header("Upload-ID", uploadId.toStringFormal())
-                        .header(Names.RANGE, "bytes=0-" + (prefixLength - 1));
+                return withRange(prefixLength,
+                        Response.ok()
+                                .header("Upload-ID", uploadId.toStringFormal()));
             }
         }
 
@@ -192,14 +196,22 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
 
         if (r.lowerEndpoint() > prefixLength
                 || (totalLength != null && r.upperEndpoint() > totalLength)) {
-            return Response.status(HttpStatus.UNSATISFIABLE_RANGE)
-                    .header("Upload-ID", uploadId.toStringFormal())
-                    .header(Names.RANGE, "bytes=0-" + (prefixLength - 1));
+            return withRange(prefixLength,
+                    Response.status(HttpStatus.UNSATISFIABLE_RANGE)
+                            .header("Upload-ID", uploadId.toStringFormal()));
         }
 
         long lo = r.lowerEndpoint();
-        if (lo < prefixLength) pf.truncate_(lo);
+        if (lo < prefixLength) {
+            l.info("truncate {}", lo);
+            pf.truncate_(lo);
+        }
         return null;
+    }
+
+    private static ResponseBuilder withRange(long prefixLength, ResponseBuilder bd)
+    {
+        return prefixLength > 0 ? bd.header(Names.RANGE, "bytes=0-" + (prefixLength - 1)) : bd;
     }
 
     private @Nullable ResponseBuilder postValidateChunk(UploadID uploadId,
@@ -213,8 +225,8 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             long rangeLength = r.upperEndpoint() - r.lowerEndpoint();
             if (chunkLength != rangeLength) {
                 // discard last chunk
+                l.warn("discard inconsistent chunk {}", chunkLength);
                 pf.truncate_(prefixLength - chunkLength);
-
                 return Response.status(Status.BAD_REQUEST)
                         .header("Upload-ID", uploadId.toStringFormal())
                         .entity(new Error(Type.BAD_ARGS,
@@ -225,9 +237,9 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         Long len = range.totalLength();
         if (len == null || prefixLength < len) {
             // ack chunk
-            return Response.ok()
-                    .header("Upload-ID", uploadId.toStringFormal())
-                    .header(Names.RANGE, "bytes=0-" + (prefixLength - 1));
+            return withRange(prefixLength,
+                    Response.ok()
+                            .header("Upload-ID", uploadId.toStringFormal()));
         }
 
         if (prefixLength > len) {
@@ -251,7 +263,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                 // we really should just pipe incoming packets into the prefix as they arrive
                 // and schedule a self-handling event to apply the prefix at the end of the
                 // transfer
-                if (md != null) {
+                if (md != null && pf.getLength_() > 0) {
                     ByteStreams.copy(pf.newInputStream_(),
                             new DigestOutputStream(ByteStreams.nullOutputStream(), md));
                 }

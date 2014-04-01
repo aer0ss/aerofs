@@ -47,4 +47,10 @@ public class UploadID
             return null;
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return toStringFormal();
+    }
 }

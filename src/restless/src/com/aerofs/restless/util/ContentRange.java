@@ -52,4 +52,10 @@ public class ContentRange
         checkArgument(tmp.length == 2);
         return Range.closedOpen(Long.parseLong(tmp[0]), Long.parseLong(tmp[1]) + 1);
     }
+
+    @Override
+    public String toString()
+    {
+        return (_range != null ? _range : "*") + "/" + (_length != null ? _length : "*");
+    }
 }
