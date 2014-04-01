@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
@@ -70,7 +71,11 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
         // update linker root first, to be able to use RepresentabilityHelper in updateFID
         _lrm.move_(_sid, _oldRoot.getAbsolutePath(), _newRoot.getAbsolutePath(), t);
 
-        updateFID(_sid, t);
+        if (L.isMultiuser() && _sid.equals(Cfg.rootSID())) {
+            for (LinkerRoot lr : _lrm.getAllRoots_()) updateFID(lr.sid(), t);
+        } else {
+            updateFID(_sid, t);
+        }
     }
 
     private void updateFID(SID sid, final Trans t) throws Exception
