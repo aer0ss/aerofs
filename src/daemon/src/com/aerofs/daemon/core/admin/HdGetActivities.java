@@ -31,6 +31,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.*;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -175,12 +176,20 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
     private StringBuilder buildUserListString(Set<DID> dids, boolean brief,
             /*out*/ Set<DID> unresolvedDIDs) throws SQLException
     {
+        DID mobile = null;
         Set<DID> myDIDs = Sets.newTreeSet();
         Map<UserID, DID> user2did = Maps.newTreeMap();
         int unknownOwnerDevices = 0;
         for (DID did : dids) {
             if (did.equals(_cfgLocalDID.get())) {
                 myDIDs.add(did);
+                continue;
+            }
+
+            if (did.isMobileDevice()) {
+                // an activity entry can't be on behalf of more than one MDID
+                checkState(mobile == null);
+                mobile = did;
                 continue;
             }
 
@@ -196,11 +205,18 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
             }
         }
 
+        // MDID can only appear for local changes
+        checkState(mobile == null
+                || (myDIDs.equals(Collections.singleton(_cfgLocalDID.get())) && user2did.isEmpty()));
+
         StringBuilder sb = new StringBuilder();
 
         boolean first = true;
         if (!myDIDs.isEmpty()) {
-            if (brief) {
+            if (mobile != null) {
+                // TODO app/device nname
+                sb.append("An authorized application");
+            } else if (brief) {
                 first = and(sb, first);
                 sb.append("You");
             } else {
