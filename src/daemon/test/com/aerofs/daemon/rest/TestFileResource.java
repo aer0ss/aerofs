@@ -1219,4 +1219,24 @@ public class TestFileResource extends AbstractRestTest
 
         verify(pf).truncate_(FILE_CONTENT.length);
     }
+
+    @Test
+    public void shouldRejectInconsistentContentRange() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE,
+                        "bytes 0-10/10")
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+                .body("message", equalTo("Invalid Content-Range: last-byte-pos >= instance-length (RFC2616 14.16)"))
+        .when().log().everything()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
 }

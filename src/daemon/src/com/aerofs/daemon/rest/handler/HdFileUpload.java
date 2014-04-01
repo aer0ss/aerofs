@@ -185,17 +185,22 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                 return Response
                         .status(Status.BAD_REQUEST)
                         .entity(new Error(Type.BAD_ARGS, "Invalid upload identifier"));
-            } else {
-                return withRange(prefixLength,
-                        Response.ok()
-                                .header("Upload-ID", uploadId.toStringFormal()));
             }
+            return withRange(prefixLength,
+                    Response.ok()
+                            .header("Upload-ID", uploadId.toStringFormal()));
         }
 
         checkState(r.upperBoundType() == BoundType.OPEN);
 
-        if (r.lowerEndpoint() > prefixLength
-                || (totalLength != null && r.upperEndpoint() > totalLength)) {
+        if (totalLength != null && r.upperEndpoint() > totalLength) {
+            return Response
+                    .status(Status.BAD_REQUEST)
+                    .entity(new Error(Type.BAD_ARGS,
+                            "Invalid Content-Range: last-byte-pos >= instance-length (RFC2616 14.16)"));
+        }
+
+        if (r.lowerEndpoint() > prefixLength) {
             return withRange(prefixLength,
                     Response.status(HttpStatus.UNSATISFIABLE_RANGE)
                             .header("Upload-ID", uploadId.toStringFormal()));
