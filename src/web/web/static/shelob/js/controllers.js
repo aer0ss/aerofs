@@ -1,11 +1,18 @@
 var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', 'API', 'Token', 'RootId', 'API_LOCATION',
-        function ($scope, $http, $log, $routeParams, $window, $modal, API, Token, RootId, API_LOCATION) {
+shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', 'API', 'Token', 'RootId', 'API_LOCATION', 'OutstandingRequestsCounter',
+        function ($scope, $http, $log, $routeParams, $window, $modal, API, Token, RootId, API_LOCATION, OutstandingRequestsCounter) {
 
     var FOLDER_LAST_MODIFIED = '--';
 
     var oid = typeof $routeParams.oid === "undefined" ? '' : $routeParams.oid;
+
+    // bind $scope.outstandingRequests to the result of OutstandingRequestsCounter.get()
+    // with a $watch so that the scope variable is updated when the result of the service
+    // method changes
+    $scope.$watch(function() { return OutstandingRequestsCounter.get() }, function(val) {
+        $scope.outstandingRequests = val;
+    });
 
     // N.B. add a random query param to prevent caching
     API.get('/children/' + oid + '?t=' + Math.random()).then(function(response) {

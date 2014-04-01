@@ -37,3 +37,6 @@ img.action {
 td.actions {
     white-space: nowrap;
 }
+.waiting, .waiting * {
+    cursor: wait;
+}

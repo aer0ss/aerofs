@@ -1,6 +1,23 @@
 describe('Shelob Controllers', function() {
 
-    beforeEach(module('shelobServices'));
+    var httpProvider;
+
+    beforeEach(module('shelobServices', function($httpProvider) {
+        /*
+         * Each time an API call is made, make sure $scope.outstandingRequests
+         * is non-zero so that the spinner will show.
+         */
+        $httpProvider.interceptors.push(function ($q, $rootScope) {
+            return {
+                'request': function (config) {
+                    if (config.path) {
+                        expect($rootScope.outstandingRequests).toBeGreaterThan(0);
+                    }
+                    return config || $q.when(config);
+                }
+            }
+        });
+    }));
     beforeEach(module('shelobControllers'));
 
     describe('FileListCtrl', function() {
@@ -195,6 +212,14 @@ describe('Shelob Controllers', function() {
             $httpBackend.flush();
             expect(get_object_by_id(file.id)).not.toBeNull();
             expect(window.showErrorMessage).toHaveBeenCalled();
+        });
+
+        it("should reset the outstanding request count after the API call finishes", function() {
+            expect($rootScope.outstandingRequests).toBe(0);
+            $rootScope.submitDelete(file_object);
+            $httpBackend.expectDELETE('/api/v1.0/files/' + file.id).respond(200);
+            $httpBackend.flush();
+            expect($rootScope.outstandingRequests).toBe(0);
         });
     });
 });

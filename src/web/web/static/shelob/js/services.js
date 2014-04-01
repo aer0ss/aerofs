@@ -1,7 +1,21 @@
 var shelobServices = angular.module('shelobServices', ['shelobConfig']);
 
-shelobServices.factory('Token', ['$http', '$q', '$log',
-    function($http, $q, $log) {
+// This service should be used to keep track of the number of outstanding AJAX
+// calls so that a spinner can be shown when there are requests outstanding.
+// Call push() when a request is made, and pop() when the response is received
+shelobServices.factory('OutstandingRequestsCounter', [
+    function() {
+        counter = 0;
+        return {
+            push: function() { counter += 1; return counter; },
+            pop: function() { counter -= 1; return counter; },
+            get: function() { return counter; }
+        }
+    }
+]);
+
+shelobServices.factory('Token', ['$http', '$q', '$log', 'OutstandingRequestsCounter',
+    function($http, $q, $log, OutstandingRequestsCounter) {
 
     var token = null;
 
@@ -12,6 +26,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
         var deferred = $q.defer();
         if (token) deferred.resolve({token: token});
         else {
+            OutstandingRequestsCounter.push();
             $http.get('/json_token')
                 .success(function (data, status, headers, config) {
                     deferred.resolve({token: data.token, headers: headers});
@@ -19,7 +34,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
                 })
                 .error(function (data, status) {
                     deferred.reject({data: data, status: status});
-                });
+                }).finally(OutstandingRequestsCounter.pop);
         }
         return deferred.promise;
     },
@@ -27,6 +42,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
     // get a brand new OAuth token from the server
     getNew: function() {
         var deferred = $q.defer();
+        OutstandingRequestsCounter.push();
         $http.get('/json_new_token')
           .success(function(data, status, headers, config) {
               deferred.resolve({token:data.token, headers:headers});
@@ -34,7 +50,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
           })
           .error(function(data, status) {
               deferred.reject({data:data, status:status});
-          });
+          }).finally(OutstandingRequestsCounter.pop);
         return deferred.promise;
     }
 }}]);
@@ -47,8 +63,8 @@ shelobServices.factory('Token', ['$http', '$q', '$log',
 //              function(r) { // handle success using r.data or r.headers },
 //              function(r) { // handle failure using r.data or r.status });
 //
-shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
-    function($http, $q, $log, Token, API_LOCATION) {
+shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', 'OutstandingRequestsCounter',
+    function($http, $q, $log, Token, API_LOCATION, OutstandingRequestCounter) {
 
         function _request(config) {
             var deferred = $q.defer();
@@ -63,6 +79,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
                     if (window.ArrayBuffer && data instanceof ArrayBuffer) return data;
                     return $http.defaults.transformRequest[0](data);
                 };
+                OutstandingRequestCounter.push();
                 $http(config)
                     .success(function (data, status, headers) {
                         // if the call succeeds, return the data
@@ -73,6 +90,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
                             // if the call got 401, the token may have expired, so try a new one
                             Token.getNew().then(function (response) {
                                 config.headers.Authorization = 'Bearer ' + response.token;
+                                OutstandingRequestCounter.push();
                                 $http(config)
                                     .success(function (data, status, headers) {
                                         // if the call succeeds, return the data
@@ -81,7 +99,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
                                     .error(function (data, status) {
                                         // if the call fails with the new token, stop trying and return the status code
                                         deferred.reject({data: data, status: status});
-                                    });
+                                    }).finally(OutstandingRequestCounter.pop);
                             }, function (status) {
                                 // this is called if getting a new token fails
                                 // consider this an internal server error and return a 500
@@ -91,7 +109,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION',
                             // if the call failed with anything other than 401, return the error code
                             deferred.reject({data: response, status: status});
                         }
-                    });
+                    }).finally(OutstandingRequestCounter.pop);
             }, function (status) {
                 // this is called if Token.get() fails
                 // consider this an internal server error and return 500
@@ -256,4 +274,3 @@ shelobServices.factory('RootId', ['$q', '$log', 'API',
         }
     }
 ]);
-
