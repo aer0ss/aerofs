@@ -1,0 +1,54 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require 'yaml'
+
+BRIDGE_IFACE     = ENV["BRIDGE_IFACE"]
+NUMBER_OF_AGENTS = ENV["CLIENT_COUNT"] ? ENV["CLIENT_COUNT"].to_i : 2
+BRIDGE_COUNT     = ENV["BRIDGE_COUNT"] ? ENV["BRIDGE_COUNT"].to_i : NUMBER_OF_AGENTS
+
+# If BRIDGE_IFACE is specified, map it to the full interface string.
+if BRIDGE_IFACE
+    iface = %x( VBoxManage list bridgedifs ).split("\n")
+                                            .select{|a| a.start_with?("Name:")}
+                                            .map{|a| a.sub(/Name: */, "")}
+                                            .select{|a| a[/#{BRIDGE_IFACE}/]}[0]
+end
+
+name = %x( whoami ).strip()
+host_base = "#{name}-vagrant-"
+
+config_file = YAML::load_file("/etc/syncdet/config.yaml")
+config_file["actors"] = []
+NUMBER_OF_AGENTS.times do |index|
+  host = host_base + "#{index}"
+  config_file["actors"] << {"address" => "#{host}.local", "details" => {"ci_client" => false}}
+end
+File.open("config.yaml", "w") do |f|
+    YAML.dump(config_file, f)
+end
+
+Vagrant.configure("2") do |config|
+  NUMBER_OF_AGENTS.times do |index|
+      host = host_base + "#{index}"
+      config.vm.define host do |config_a|
+          config_a.vm.box = "precise64"
+          config_a.vm.box_url = "http://dl.dropbox.com/u/1537815/precise64.box"
+          config_a.vm.network :private_network, ip: "192.168.50.#{index+10}"
+          (config_a.vm.network :public_network, :bridge => iface) if BRIDGE_IFACE and index < BRIDGE_COUNT
+          config_a.vm.provider "virtualbox" do |vbox|
+              vbox.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+          end
+          config_a.vm.hostname = host
+          config_a.vm.provision :puppet do |puppet|
+             puppet.manifests_path = "manifests"
+             puppet.manifest_file  = "syncdet.pp"
+             puppet.options = "--verbose --debug"
+             puppet.facter = {
+                 "my_ssh_key" => %x(cut -d ' ' -f 2 ~/.ssh/id_rsa.pub).strip(),
+                 # "unified_ip" => %x(resolveip -s unified.syncfs.com).strip(),
+                 "agent_vagrant_ssh_key" => %x(curl -s http://newci.arrowfs.org/agent_vagrant_rsa.pub | cut -d ' ' -f 2).strip(),
+             }
+          end
+      end
+  end
+end

@@ -14,48 +14,41 @@ This will require that you reboot.
 
 ## Create an SSH key, and get it deployed on our machines
 
-```
-ssh-keygen -t rsa -b 2048
-```
+    $ ssh-keygen -t rsa -b 2048
 
 Your private key is `$HOME/.ssh/id_rsa`.  Keep it secret.  Keep it safe.
 
-Your public key is `$HOME/.ssh/id_rsa.pub`.  You'll need to put it in three places:
-  * Provide the contents of this file to Drew or Matt or Yuri for further account provisioning
-  * [Add it to your account on Github](https://github.arrowfs.org/settings/ssh).
+Your public key is `$HOME/.ssh/id_rsa.pub`. Provide this file to [Drew](drew@aerofs.ccom) or [Matt](matt@aerofs.com) for further account provisioning.
 
 ## Register for Gerrit, our code review tool
 
-Register for an account at `gerrit.arrowfs.org`, choosing a username and adding your SSH key. When you've finished registering ask Weihan or Yuri or Drew to add you to the 'Developers' group in Gerrit.
+Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a username and add your SSH key. When you've finished registering ask Weihan or Drew to add you to the 'Developers' group in Gerrit.
 
 ## Install AeroFS and join the Air Computing Team shared folder.
 
-  * Ask Weihan, Linda, or Yuri to invite you to the AeroFS organization and to the `Air Computing Team` shared folder.
+  * Ask Weihan or Yuri to invite you to the AeroFS organization and to the `Air Computing Team` shared folder.
   * Accept the invitation via the email you received
   * Log in to https://www.aerofs.com/, then, [download and install the client](https://www.aerofs.com/download). 
   * Accept the shared folder invitation from [here](https://www.aerofs.com/accept).
 
-## Install XCode from the App Store.
+## Install XCode command line tools
 
-Launch App Store (command-space App Store should find it).  Create an account if you didn't when you set up the computer, and search for XCode.  Install it.  This will take a long time and download a lot.
+    $ gcc
+    
+will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools.
 
-### Install Command Line Tools in XCode.
 
-Launch Xcode. Navigate to Xcode -> Preferences -> Downloads. Click the `Install` button next to Command Line Tools.
+## Install Java IDE
 
-## Install a Java IDE (we suggest IntelliJ IDEA CE)
+We suggest to install [IntelliJ DEA CE](http://www.jetbrains.com/idea/download/).
 
-[IntelliJ IDEA (pick the CE) link](http://www.jetbrains.com/idea/download/)
+## Install optional packages
 
-Alternately, if you prefer Eclipse, you can do that.  Oh yeah.  Sure.  Have fun with that.
+### Mono MDK
 
-## Install the Mono platform
+Download and install the latest [Mono MDK](http://www.go-mono.com/mono-downloads/download.html). (for signcode, to sign our Windows executables. Not required if you don't depoloy production releases.)
 
-Download and install the latest Mono MDK from http://www.go-mono.com/mono-downloads/download.html
-
-(we use Mono for signcode, to sign our Windows executables)
-
-## Install the Android SDK
+### Android SDK
 
 1. [Download the SDK tools](http://developer.android.com/sdk/index.html) (you probably want the "Use an Existing IDE" tools)
 2. Expand the zip into `/usr/local/android`
@@ -87,8 +80,10 @@ Pasteable:
 brew update && brew upgrade && brew install git python fakeroot ant wget gradle groovy swig qt apt-cacher-ng qemu ruby gpgme dpkg && gem install kramdown jekyll && brew install --devel s3cmd && brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb $HOME/repos/aerofs/tools/protobuf.brew/protobuf.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb && ln -s $(brew --prefix apt-cacher-ng)/homebrew.mxcl.apt-cacher-ng.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/homebrew.mxcl.apt-cacher-ng.plist
 ```
 
+This step takes a while. It's probably a good time to look around in our [mailing list](../references/mailing_list.html).
+
   * `git` is used for source control.
-  * `python` is used by some services and [SyncDET](https://github.arrowfs.org/aerofs/syncdet), our distributed test harness.  We suggest installing the version from homebrew since it integrates nicely, is reasonably contained, is up-to-date, and keeps you from having to do privilege escalation all the time.
+  * `python` is used by some services and SyncDET (source: the syncdet repo on gerrit), our distributed test harness.  We suggest installing the version from homebrew since it integrates nicely, is reasonably contained, is up-to-date, and keeps you from having to do privilege escalation all the time.
   * `dpkg`, `fakeroot`, `wget` are used to build Debian packages for our servers.  We need a patched version of dpkg, since homebrew and perl modules don't really play well together.
   * `qemu` (which provides `qemu-img`) is used to convert disk images to different formats.
   * `gradle` is used to build some Java projects.
@@ -173,7 +168,7 @@ pip install protobuf requests PyYAML
 
 Ping Drew or Matt to provision you a VPN config bundle.
 
-See [VPN](https://github.arrowfs.org/aerofs/aerofs/wiki/VPN), and in particular, follow the bit about setting up a new engineer/box.
+See [VPN](../references/vpn.html), and in particular, follow the bit about setting up a new engineer/box.
 
 ## Build and launch private AeroFS Service VM (aka local prod)
 
@@ -188,7 +183,7 @@ source ~/repos/aerofs/tools/bashrc/include.sh
 lp-create
 ```
 
-The last step may take a while (expect 30 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing. Once done, you can run `lp-ssh` to log in your VM. See [Local Production (aka. local prod)](https://github.arrowfs.org/aerofs/aerofs/wiki/Local-Production-%28aka.-local-prod%29) for more information about the private environment.
+The last step may take a while (expect 30 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing. Once done, you can run `lp-ssh` to log in your VM. See [Local Production (aka. local prod)](../references/local_prod.html) for more information about the private environment.
 
 ## Build and launch the client
 
@@ -211,3 +206,7 @@ For easy signup you can use signup tool:
 ```
 
 When asked for vagrant password use: `vagrant`. It will create user signup record with default password `uiuiui`. You can specify -p flag to set custom password as TEST_USER_NAME you can use: YOUR_USER_NAME+ANY_SUFFIX@aerofs.com e.g. bob+test@aerofs.com.
+
+## Next Steps
+
+Want to set up and run SyncDET? Take a look at [this doc](setup_syncdet.html).

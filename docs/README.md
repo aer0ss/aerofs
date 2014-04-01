@@ -8,10 +8,13 @@ Welcome! Follow these steps to get started:
     
 This will compile all the .md files into .html files. Then,
 
-	$ open ~/repos/aerofs/ant.out/docs/how-tos/get_started.html
+	$ open ~/repos/aerofs/ant.out/docs/how-to/get_started.html
 	
-To browse the getting started guide.
+or click [here](how-to/get_started.html) to browse the getting started guide.
 
+	$ ant markdown_watch
+	
+continuously monitors changes and compiles modified files in the doc folder.
 
 Name convention
 ---

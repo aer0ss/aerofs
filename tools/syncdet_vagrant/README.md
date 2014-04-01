@@ -1,0 +1,1 @@
+See aerofs/docs/how-to/setup_syncdet* for information.
