@@ -22,6 +22,8 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import static com.google.common.base.Preconditions.checkState;
+
 // FIXME (AG): Remove sidx management from this class
 //
 // this class should simply be a mapping from Device to 'available transports'
@@ -189,7 +191,7 @@ public class Device implements Comparable<Device>
     {
         TransportState tpState = getOrCreate_(tp);
 
-        assert !tpState._isBeingPulsed;
+        checkState(!tpState._isBeingPulsed);
 
         tpState._isBeingPulsed = true;
         return getSidcsWhoseStateChanged_(tpState);
@@ -202,7 +204,7 @@ public class Device implements Comparable<Device>
     {
         TransportState tpState = _tpsAvailable.get(tp);
 
-        assert tpState != null && tpState._isBeingPulsed;
+        checkState(tpState != null && tpState._isBeingPulsed);
 
         tpState._isBeingPulsed = false;
         if (tpState.isUnused_()) {
