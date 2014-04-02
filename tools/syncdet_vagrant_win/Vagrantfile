@@ -1,0 +1,64 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+BRIDGE_IFACE = ENV["BRIDGE_IFACE"]
+NUMBER_OF_AGENTS = ENV["WCLIENT_COUNT"] ? ENV["WCLIENT_COUNT"].to_i : 1
+BRIDGE_COUNT     = ENV["WBRIDGE_COUNT"] ? ENV["WBRIDGE_COUNT"].to_i : NUMBER_OF_AGENTS
+
+# If BRIDGE_IFACE is specified, map it to the full interface string.
+if BRIDGE_IFACE
+    iface = %x( VBoxManage list bridgedifs ).split("\n")
+                                            .select{|a| a.start_with?("Name:")}
+                                            .map{|a| a.sub(/Name: */, "")}
+                                            .select{|a| a[/#{BRIDGE_IFACE}/]}[0]
+end
+
+name = %x( whoami ).strip()
+host_base = "#{name}-win7-vagrant-"
+
+# vagrant up configuration
+Vagrant.configure("2") do |config|
+  NUMBER_OF_AGENTS.times do |index|
+      host = host_base + "#{index}"
+      config.vm.define host do |config_a|
+          # Max time to wait for the guest to shutdown
+          config_a.windows.halt_timeout = 15
+
+          # Admin user name and password
+          config_a.winrm.username = "vagrant"
+          config_a.winrm.password = "vagrant"
+
+          # Configure base box parameters
+          config_a.vm.box = "win7cyg"
+          config_a.vm.box_url = "http://newci.arrowfs.org/win7cyg.box"
+          config_a.vm.guest = :windows
+          config_a.vm.hostname = host
+
+          # Configure networking
+          config_a.vm.network :private_network, ip: "192.168.50.#{index+110}"
+          (config_a.vm.network :public_network, :bridge => iface) if BRIDGE_IFACE and index < BRIDGE_COUNT
+
+          # Virtualbox-specific config
+          config_a.vm.provider "virtualbox" do |vbox|
+              vbox.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+          end
+
+          # Port forward WinRM and RDP
+          config_a.vm.network :forwarded_port, guest: 3389, host: 3389
+          config_a.vm.network :forwarded_port, guest: 5985, host: 5985
+
+          # Provision hosts with Puppet
+          config_a.vm.provision :puppet do |puppet|
+             puppet.manifests_path = "manifests"
+             puppet.manifest_file  = "syncdet.pp"
+             puppet.options = "--verbose --debug"
+          end
+
+          # Ensure the route through the host machine has a lower metric than
+          # the route assigned by DHCP
+          ( config_a.vm.provision :shell,
+              :inline => 'netsh interface ipv4 set interface "Local Area Connection" metric=1'
+          ) if BRIDGE_IFACE and index < BRIDGE_COUNT
+      end
+  end
+end

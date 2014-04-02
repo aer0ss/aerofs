@@ -1,4 +1,4 @@
-See also [setup_ci_2](setup_ci_2.html), [setup_syncdet_actors](setup_syncdet_actors.html), [setup_syncdet_vagrant](setup_syncdet_vagrant.html), [setup_syncdet](setup_syncdet.html). **TODO: consolidate them.**
+See also [setup_ci_2](setup_ci_2.html) **TODO: consolidate them.**
 
 # Installing a CI box
 

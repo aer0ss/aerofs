@@ -1,18 +1,13 @@
 
-This article describes how to create actor VMs for SyncDET. It assumes you've setup the development environment and the local prod by following [this doc](get_started.html).
+This article describes how to set up SyncDET actor VMs on your development computers. It assumes you've setup the development environment and the local prod by following [this doc](get_started.html).
 
-Create actor VMs
+Set up actor VMs
 ---
 
-Checkout SyncDET:
-
-    $ cd ~/repos
-    $ git clone ssh://gerrit.arrowfs.org:29418/syncdet
-
-Copy the sample yaml file to /etc/syncdet:
+Copy the sample yaml file in the syncdet repo to /etc/syncdet:
 
     $ sudo mkdir /etc/syncdet
-    $ sudo cp syncdet/config.yaml.sample /etc/syncdet
+    $ sudo cp ~/repos/syncdet/config.yaml.sample /etc/syncdet
 
 Go to the syncdet-vagrant foler:
 
