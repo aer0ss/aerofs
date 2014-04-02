@@ -38,6 +38,8 @@ public class SetupModel
         _localOptions = new LocalOptions();
         _s3Config = new S3Config();
         _sp = null;
+        // defaults to true for new devices, some setup path will offer option to change this
+        _apiAccess = true;
     }
 
     /**
@@ -94,6 +96,9 @@ public class SetupModel
                                             { return UserID.fromExternal(_username); }
     public void setUserID(String username)  { _username = username; }
 
+    public boolean isAPIAccessEnabled()     { return _apiAccess; }
+    public void enableAPIAccess(boolean enabled) { _apiAccess = enabled; }
+
     public void assertConnected()           { assert _sp != null: "Not signed in"; }
 
     // FIXME: the LocalOptions/S3Options classes are useless without polymorphism...
@@ -134,6 +139,8 @@ public class SetupModel
 
     private String          _username;
     private String          _password;
+
+    private boolean         _apiAccess;
 
     private String          _devAlias;
     public boolean          _isLocal;

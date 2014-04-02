@@ -84,6 +84,8 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         _model.setInstallActor(new InstallActor.SingleUser());
         _model.setDeviceName(Setup.getDefaultDeviceName());
         _showOpenIdDialog = (Identity.AUTHENTICATOR == Authenticator.OPENID);
+
+        _helper = new APIAccessSetupHelper();
     }
 
     @Override
@@ -130,7 +132,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         }
 
         createCredentialComposite(area)
-                .setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false));
+                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 0;
@@ -160,9 +162,8 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                _inProgress = true;
                 _model.setSignInActor(new OpenIdGUIActor());
-                setControlState(false);
+
                 setInProgressStatus();
 
                 GUI.get().safeWork(getShell(), new SignInWorker());
@@ -207,52 +208,28 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         if (_showOpenIdDialog) {
             Label label = new Label(composite, SWT.NONE);
             label.setText(L.product() + " user without " + Identity.SERVICE_IDENTIFIER + " accounts?");
-            label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
+            label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 3, 1));
         }
 
-        createCredentialInputs(composite)
-                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-
-        _linkForgotPassword = new Link(composite, SWT.NONE);
-        _linkForgotPassword.setText("Forgot your password? <a>Click here to reset it.</a>");
-        _linkForgotPassword.setToolTipText("");
-        _linkForgotPassword.addSelectionListener(
-                GUIUtil.createUrlLaunchListener(WWW.PASSWORD_RESET_REQUEST_URL));
-        _linkForgotPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
-
-        createStatusComposite(composite).setLayoutData(
-                new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
-
-        GridLayout layout = new GridLayout();
-        layout.marginHeight = 0;
-        layout.marginTop = _showOpenIdDialog ? GUIParam.MARGIN : 2 * GUIParam.MARGIN;
-        layout.marginWidth = 0;
-        layout.verticalSpacing = GUIParam.MAJOR_SPACING;
-        composite.setLayout(layout);
-
-        return composite;
-    }
-
-    private Composite createCredentialInputs(Composite parent)
-    {
-        Composite composite = new Composite(parent, SWT.NONE);
-
         Label lblEmail = new Label(composite, SWT.NONE);
-        lblEmail.setText(S.SETUP_USER_ID + ":");
+        lblEmail.setText(S.SETUP_USER_ID + ": ");
+        lblEmail.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 
         _txtUserID = new Text(composite, SWT.BORDER);
         _txtUserID.addVerifyListener(new VerifyListener()
         {
             @Override
-            public void verifyText(VerifyEvent ev)
+            public void verifyText(VerifyEvent verifyEvent)
             {
-                verify(getNewText(_txtUserID.getText(), ev));
+                verify(getNewText(_txtUserID.getText(), verifyEvent));
             }
         });
+        _txtUserID.setLayoutData(createTextBoxLayoutData());
         _controls.add(_txtUserID);
 
         Label lblPassword = new Label(composite, SWT.NONE);
-        lblPassword.setText(S.SETUP_PASSWD + ":");
+        lblPassword.setText(S.SETUP_PASSWD + ": ");
+        lblPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 
         // N.B. because MacOSX can't handle password fields' verify events
         // correctly, we have to use ModifyListeners
@@ -265,18 +242,54 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
                 verify(null);
             }
         });
+        _txtPasswd.setLayoutData(createTextBoxLayoutData());
         _controls.add(_txtPasswd);
 
-        GridLayout layout = new GridLayout(2, false);
-        layout.marginWidth = 0;
+       if (_helper._showAPIAccess) {
+            new Label(composite, SWT.NONE);
+
+           _helper.createCheckbox(composite);
+           _helper._chkAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
+           _controls.add(_helper._chkAPIAccess);
+
+           _helper.createLink(composite);
+           _helper._lnkAPIAccess.setLayoutData(
+                   _helper.createLinkLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false)));
+           _controls.add(_helper._lnkAPIAccess);
+        }
+
+        new Label(composite, SWT.NONE);
+
+        Link lnkForgotPassword = new Link(composite, SWT.NONE);
+        lnkForgotPassword.setText("<a>Forgot your password?</a>");
+        lnkForgotPassword.setToolTipText("");
+        lnkForgotPassword.addSelectionListener(
+                GUIUtil.createUrlLaunchListener(WWW.PASSWORD_RESET_REQUEST_URL));
+        lnkForgotPassword.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
+        _controls.add(lnkForgotPassword);
+
+        new Label(composite, SWT.NONE);
+        createStatusComposite(composite).setLayoutData(
+                new GridData(SWT.LEFT, SWT.BOTTOM, true, false, 2, 1));
+
+        GridLayout layout = new GridLayout(3, false);
         layout.marginHeight = 0;
+        layout.marginTop = _showOpenIdDialog ? GUIParam.MARGIN : 2 * GUIParam.MARGIN;
+        layout.marginWidth = 4 * GUIParam.MARGIN;
+        layout.verticalSpacing = GUIParam.VERTICAL_SPACING;
+        layout.horizontalSpacing = 0;
         composite.setLayout(layout);
-        lblEmail.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-        _txtUserID.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        lblPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-        _txtPasswd.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         return composite;
+    }
+
+    private GridData createTextBoxLayoutData()
+    {
+        GridData layoutData = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
+        if (OSUtil.isOSX()) {
+            layoutData.horizontalIndent = 2;
+        }
+        return layoutData;
     }
 
     private Composite createStatusComposite(Composite parent)
@@ -287,6 +300,8 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         _compSpin = new CompSpin(composite, SWT.NONE);
 
         RowLayout layout = new RowLayout(SWT.HORIZONTAL);
+        layout.marginLeft = 0;
+        layout.marginRight = 0;
         layout.center = true;
         composite.setLayout(layout);
 
@@ -330,7 +345,6 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     private void verify(@Nullable String email)
     {
         getButton(OK_ID).setEnabled(isReady(email));
-        clearInProgressStatus();
     }
 
     /**
@@ -347,12 +361,16 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
 
     private void setInProgressStatus()
     {
+        _inProgress = true;
+        setControlState(false);
         _compSpin.start();
         setStatusImpl(S.SETUP_INSTALL_MESSAGE + "...");
     }
 
     private void clearInProgressStatus()
     {
+        _inProgress = false;
+        setControlState(true);
         _compSpin.stop();
         setStatusImpl("");
     }
@@ -375,13 +393,12 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     protected void buttonPressed(int buttonId)
     {
         if (buttonId == IDialogConstants.OK_ID) {
-            _inProgress = true;
-
             _model.setUserID(_txtUserID.getText().trim());
             _model.setPassword(_txtPasswd.getText());
             _model.setSignInActor(new CredentialActor());
 
-            setControlState(false);
+            _helper.writeToModel(_model);
+
             setInProgressStatus();
 
             GUI.get().safeWork(getShell(), new SignInWorker());
@@ -407,11 +424,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
             l.error("Setup error", e);
             ErrorMessages.show(getShell(), e, formatExceptionMessage(e));
             clearInProgressStatus();
-
-            _inProgress = false;
-
             getButton(OK_ID).setText("Try Again");
-            setControlState(true);
         }
 
         @Override
@@ -438,8 +451,6 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         for (Control c : _controls) { c.setEnabled(enabled); }
 
         getButton(OK_ID).setEnabled(enabled && isReady(_txtUserID.getText()));
-
-        _linkForgotPassword.setVisible(enabled);
     }
 
     @Override
@@ -487,12 +498,13 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
 
     private boolean _showOpenIdDialog;
 
+    private final APIAccessSetupHelper _helper;
+
     private CompSpin _compSpin;
     private Label _lblStatus;
 
     private Text _txtUserID;
     private Text _txtPasswd;
-    private Link _linkForgotPassword;
 
     private boolean _okay;
     private boolean _inProgress;

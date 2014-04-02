@@ -55,14 +55,6 @@ public class PageS3Storage extends AbstractSetupWorkPage
         super(parent, SWT.NONE);
 
         _verifier = new S3DataEncryptionPasswordVerifier();
-
-        ModifyListener onInputChanged = createListenerToValidateInput();
-
-        _txtBucketID.addModifyListener(onInputChanged);
-        _txtAccessKey.addModifyListener(onInputChanged);
-        _txtSecretKey.addModifyListener(onInputChanged);
-        _txtPass1.addModifyListener(onInputChanged);
-        _txtPass2.addModifyListener(onInputChanged);
     }
 
     @Override
@@ -83,6 +75,14 @@ public class PageS3Storage extends AbstractSetupWorkPage
         lblPassDesc.setText(S.SETUP_S3_PASSWD_DESC);
 
         Composite compPassphrase = createPassphraseComposite(content);
+
+        ModifyListener onInputChanged = createListenerToValidateInput();
+
+        _txtBucketID.addModifyListener(onInputChanged);
+        _txtAccessKey.addModifyListener(onInputChanged);
+        _txtSecretKey.addModifyListener(onInputChanged);
+        _txtPass1.addModifyListener(onInputChanged);
+        _txtPass2.addModifyListener(onInputChanged);
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 0;

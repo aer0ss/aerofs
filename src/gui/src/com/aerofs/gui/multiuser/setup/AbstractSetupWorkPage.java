@@ -53,7 +53,8 @@ public abstract class AbstractSetupWorkPage extends AbstractSetupPage
 
     protected abstract @Nonnull Button getDefaultButton();
 
-    // return the set of controls to disable while work is in progress
+    // return the list of controls to disable while work is in progress
+    //   the list may contain null elements.
     protected abstract @Nonnull Control[] getControls();
 
     protected abstract @Nonnull CompSpin getSpinner();
@@ -99,7 +100,10 @@ public abstract class AbstractSetupWorkPage extends AbstractSetupPage
         if (_inProgress) getSpinner().start();
         else getSpinner().stop();
 
-        for (Control control : getControls()) control.setEnabled(!_inProgress);
+        for (Control control : getControls()) {
+            // skip null elements because getControls() tolerates null elements
+            if (control != null) control.setEnabled(!_inProgress);
+        }
     }
 
     protected void onError(Exception e)

@@ -144,7 +144,11 @@ public class PreferencesHelper
         _txtRootAnchor.setLayoutData(getTextFieldGridData());
 
         Button btnMoveRoot = GUIUtil.createButton(_comp, SWT.NONE);
-        btnMoveRoot.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1));
+        // the button is widen to create room so that when the label is switched to show device ID,
+        // there would be enough room.
+        GridData buttonLayoutData = new GridData(SWT.LEFT, SWT.CENTER, false, false);
+        buttonLayoutData.widthHint = 100;
+        btnMoveRoot.setLayoutData(buttonLayoutData);
         btnMoveRoot.setText("Move...");
         btnMoveRoot.addSelectionListener(new SelectionAdapter()
         {
@@ -454,7 +458,7 @@ public class PreferencesHelper
 
         final Button btnAPIAccess = GUIUtil.createButton(parent, SWT.CHECK);
 
-        btnAPIAccess.setText("Enable API Access");
+        btnAPIAccess.setText("Enable API access");
         btnAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
         btnAPIAccess.setSelection(new CfgRestService().isEnabled());
         btnAPIAccess.addSelectionListener(new SelectionAdapter()
@@ -491,8 +495,7 @@ public class PreferencesHelper
         Link lnkWebAccess = new Link(parent, SWT.CHECK);
         lnkWebAccess.setText("<a>What is this?</a>");
         lnkWebAccess.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-        lnkWebAccess.addSelectionListener(
-                GUIUtil.createUrlLaunchListener("https://support.aerofs.com/entries/28215600"));
+        lnkWebAccess.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_API_ACCESS));
 
         new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
     }

@@ -61,7 +61,7 @@ public class CompManageUsers extends Composite
         Link link = new Link(_composite, SWT.NONE);
         link.setText("<a>What are Owner, Editor, and Viewer?</a>");
         link.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-        link.addSelectionListener(createUrlLaunchListener(S.LINK_ROLES_URL));
+        link.addSelectionListener(createUrlLaunchListener(S.URL_ROLES));
 
         _compSpin = new CompSpin(_composite, SWT.NONE);
         _compSpin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));

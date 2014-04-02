@@ -162,7 +162,6 @@ public class S
             FILE_OPEN_FAIL = "The file couldn't be opened.",
             CONFLICT_OPEN_FAIL = FILE_OPEN_FAIL +
                 " Please use the [Save As...] button to save and view it.",
-            WHY_ARENT_MY_FILES_SYNCED = "Why Aren't My Files Synced?",
             REPORT_A_PROBLEM = "Report a Problem",
             DEFAULT_DIALOG_TITLE = L.product(),
             DIALOG_TITLE_SUFFIX = " - " + L.product(),
@@ -195,19 +194,20 @@ public class S
             COULDNT_LIST_ACTIVITIES = "Couldn't list activities",
             MODIFIED = "updated",
 
-            SYNC_STATUS_DOWN = "Sync status is temporarily unavailable.",
-            SYNC_STATUS_LOCAL = "Not synced with other devices.",
-            SS_IN_SYNC_TOOLTIP = "Remote peer has the same version.",
-            SS_IN_PROGRESS_TOOLTIP = "Remote peer has a different version and is currently" +
-                    " online. This may happen if the remote peer is using selective sync.",
-            SS_OFFLINE_TOOLTIP = "Remote peer has a different version and is currently offline.",
             INVITING = "Inviting...",
             LINKED_DESCRIPTION = "Store files on the local disk",
             LOCAL_DESCRIPTION = "Store compressed files on the local disk",
             S3_DESCRIPTION = "Store files on Amazon S3",
             USERS_DIR = "users",
             SHARED_DIR = "shared",
-            LINK_ROLES_URL = "https://support.aerofs.com/entries/22831810",
+            URL_ROLES = "https://support.aerofs.com/entries/22831810",
+
+            URL_API_ACCESS = "https://support.aerofs.com/entries/28215600",
+            API_ACCESS_DESC = "If API access is disabled, you will not be able to access the " +
+                    "files on this computer from mobile devices, on the " + L.brand() + " " +
+                    "website, or through 3rd party " + L.brand() + " applications.",
+            API_ACCESS_WARN = API_ACCESS_DESC + "\n\n" +
+                    "Are you sure you want to disable API access?",
 
             SERVER_OFFLINE_TOOLTIP = L.product() + " is offline.",
 

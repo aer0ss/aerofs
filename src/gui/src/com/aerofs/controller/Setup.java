@@ -89,7 +89,7 @@ public class Setup
     void setupSingleuser(
             SPBlockingClient client, UserID userId, byte[] scrypted,
             String rootAnchorPath, String deviceName,
-            StorageType storageType, S3Config s3cfg)
+            StorageType storageType, S3Config s3cfg, boolean apiAccess)
             throws Exception
     {
         try {
@@ -102,7 +102,8 @@ public class Setup
 
             preSetup(rootAnchorPath, storageType);
 
-            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, scrypted, client);
+            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, scrypted,
+                    client, apiAccess);
 
             UIGlobals.analytics().track(isReinstall ? REINSTALL_CLIENT : INSTALL_CLIENT);
 
@@ -114,12 +115,13 @@ public class Setup
     void setupMultiuser(
             SPBlockingClient client, UserID userId,
             String rootAnchorPath, String deviceName,
-            StorageType storageType, S3Config s3cfg) throws Exception
+            StorageType storageType, S3Config s3cfg, boolean apiAccess) throws Exception
     {
         try {
             preSetup(rootAnchorPath, storageType);
 
-            setupMultiuserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, client);
+            setupMultiuserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, client,
+                    apiAccess);
 
             // Send event for S3 Setup
             if (s3cfg != null) {
@@ -153,7 +155,8 @@ public class Setup
      * @param sp must have been signed in
      */
     private void setupSingluserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            StorageType storageType, S3Config s3config, byte[] scrypted, SPBlockingClient sp)
+            StorageType storageType, S3Config s3config, byte[] scrypted, SPBlockingClient sp,
+            boolean apiAccess)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
@@ -161,7 +164,7 @@ public class Setup
         DID did = CredentialUtil.registerDeviceAndSaveKeys(userID, scrypted, deviceName, sp);
 
         initializeConfiguration(userID, userID.getString(), did, rootAnchorPath, storageType,
-                s3config, scrypted, sp);
+                s3config, scrypted, sp, apiAccess);
 
         setupCommon(rootAnchorPath);
 
@@ -169,7 +172,7 @@ public class Setup
     }
 
     private void setupMultiuserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            StorageType storageType, S3Config s3config, SPBlockingClient sp)
+            StorageType storageType, S3Config s3config, SPBlockingClient sp, boolean apiAccess)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
@@ -182,7 +185,7 @@ public class Setup
                 deviceName, sp);
 
         initializeConfiguration(tsUserId, userID.getString(), tsDID, rootAnchorPath, storageType,
-                s3config, tsScrypted, sp);
+                s3config, tsScrypted, sp, apiAccess);
 
         setupCommon(rootAnchorPath);
     }
@@ -273,7 +276,7 @@ public class Setup
      */
     private void initializeConfiguration(UserID userId, String contactEmail, DID did,
             String rootAnchorPath, StorageType storageType, S3Config s3config, byte[] scrypted,
-            SPBlockingClient userSp)
+            SPBlockingClient userSp, boolean apiAccess)
             throws Exception
     {
         TreeMap<Key, String> map = Maps.newTreeMap();
@@ -287,6 +290,7 @@ public class Setup
         map.put(Key.DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
         map.put(Key.UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
         map.put(Key.SIGNUP_DATE, Long.toString(getUserSignUpDate(userSp)));
+        map.put(Key.REST_SERVICE, Boolean.toString(apiAccess));
         if (s3config != null) {
             map.put(Key.S3_BUCKET_ID, s3config._bucketID);
             map.put(Key.S3_ACCESS_KEY, s3config._accessKey);

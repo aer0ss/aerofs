@@ -7,12 +7,17 @@ package com.aerofs.gui.multiuser.setup;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
+import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.setup.APIAccessSetupHelper;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.S;
 import com.aerofs.ui.error.ErrorMessage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
@@ -25,11 +30,16 @@ import javax.annotation.Nonnull;
 public class PageOpenIdSignIn extends AbstractSetupWorkPage
 {
     private Button      _btnContinue;
+
     private CompSpin    _compSpin;
+
+    private final APIAccessSetupHelper _helper;
 
     public PageOpenIdSignIn(Composite parent)
     {
         super(parent, SWT.NONE);
+
+        _helper = new APIAccessSetupHelper();
     }
 
     @Override
@@ -43,7 +53,25 @@ public class PageOpenIdSignIn extends AbstractSetupWorkPage
         _btnContinue.addSelectionListener(createListenerToDoWork());
         getShell().setDefaultButton(_btnContinue);
 
-        content.setLayout(new RowLayout(SWT.VERTICAL));
+        if (_helper._showAPIAccess) {
+            Composite composite = new Composite(content, SWT.NONE);
+
+            _helper.createCheckbox(composite);
+            _helper._chkAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
+
+            _helper.createLink(composite);
+            _helper._lnkAPIAccess.setLayoutData(
+                    _helper.createLinkLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false)));
+
+            GridLayout sublayout = new GridLayout(2, false);
+            sublayout.horizontalSpacing = 0;
+            composite.setLayout(sublayout);
+        }
+
+        RowLayout layout = new RowLayout(SWT.VERTICAL);
+        layout.center = true;
+        layout.spacing = GUIParam.VERTICAL_SPACING;
+        content.setLayout(layout);
         _btnContinue.setLayoutData(new RowData(360, 70));
 
         return content;
@@ -56,6 +84,18 @@ public class PageOpenIdSignIn extends AbstractSetupWorkPage
 
         Button btnQuit = createButton(parent, S.BTN_QUIT, false);
         btnQuit.addSelectionListener(createListenerToGoBack());
+    }
+
+    @Override
+    protected void readFromModel(SetupModel model)
+    {
+        _helper.readFromModel(model);
+    }
+
+    @Override
+    protected void writeToModel(SetupModel model)
+    {
+        _helper.writeToModel(model);
     }
 
     @Override
@@ -73,7 +113,7 @@ public class PageOpenIdSignIn extends AbstractSetupWorkPage
     @Override
     protected @Nonnull Control[] getControls()
     {
-        return new Control[] { _btnContinue };
+        return new Control[] { _btnContinue, _helper._chkAPIAccess, _helper._lnkAPIAccess };
     }
 
     @Override

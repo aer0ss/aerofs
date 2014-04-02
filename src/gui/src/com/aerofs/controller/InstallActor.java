@@ -21,7 +21,8 @@ public abstract class InstallActor
                     model.getScrypted(),
                     model._localOptions._rootAnchorPath,
                     model.getDeviceName(),
-                    StorageType.LINKED, null);
+                    StorageType.LINKED, null,
+                    model.isAPIAccessEnabled());
         }
     }
 
@@ -31,24 +32,19 @@ public abstract class InstallActor
         public void install(Setup setup, SetupModel model)
                 throws Exception
         {
-            // TODO: a little refactoring will get rid of this if/else block. Note few dissimilarities
-            if (model._isLocal) {
-                setup.setupMultiuser(
-                        model.getClient(),
-                        model.getUserID(),
-                        model._localOptions._rootAnchorPath,
-                        model.getDeviceName(),
-                        model._localOptions._useBlockStorage ? StorageType.LOCAL : StorageType.LINKED,
-                        null);
-            } else {
-                setup.setupMultiuser(
-                        model.getClient(),
-                        model.getUserID(),
-                        Setup.getDefaultAnchorRoot(),
-                        model.getDeviceName(),
-                        StorageType.S3,
-                        model._s3Config);
-            }
-        }
+            setup.setupMultiuser(
+                    model.getClient(),
+                    model.getUserID(),
+                    model._isLocal ? model._localOptions._rootAnchorPath : Setup.getDefaultAnchorRoot(),
+                    model.getDeviceName(),
+                    model._isLocal
+                            ? model._localOptions._useBlockStorage
+                                    ? StorageType.LOCAL
+                                    : StorageType.LINKED
+                            : StorageType.S3,
+                    model._isLocal ? null : model._s3Config,
+                    model.isAPIAccessEnabled()
+            );
+       }
     }
 }

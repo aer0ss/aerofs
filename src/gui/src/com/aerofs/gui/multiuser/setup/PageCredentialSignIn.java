@@ -9,8 +9,10 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
+import com.aerofs.gui.setup.APIAccessSetupHelper;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.error.ErrorMessage;
 import com.google.common.base.Objects;
 import org.eclipse.swt.SWT;
@@ -33,15 +35,19 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
 {
     private Text        _txtUserID;
     private Text        _txtPasswd;
-    private Text        _txtDeviceName;
     private Link        _lnkPasswd;
+    private Text        _txtDeviceName;
 
     private CompSpin    _compSpin;
     private Button      _btnContinue;
 
+    private final APIAccessSetupHelper _helper;
+
     public PageCredentialSignIn(Composite parent)
     {
         super(parent, SWT.NONE);
+
+        _helper = new APIAccessSetupHelper();
     }
 
     @Override
@@ -53,42 +59,53 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         lblMessage.setText(S.SETUP_MESSAGE);
 
         Label lblUserID = new Label(composite, SWT.NONE);
-        lblUserID.setText(S.ADMIN_EMAIL + ':');
+        lblUserID.setText(S.ADMIN_EMAIL + ": ");
 
         _txtUserID = new Text(composite, SWT.BORDER);
         _txtUserID.setFocus();
 
         Label lblPasswd = new Label(composite, SWT.NONE);
-        lblPasswd.setText(S.ADMIN_PASSWD + ':');
+        lblPasswd.setText(S.ADMIN_PASSWD + ": ");
 
         _txtPasswd = new Text(composite, SWT.BORDER | SWT.PASSWORD);
+
+        new Label(composite, SWT.NONE);
 
         _lnkPasswd = new Link(composite, SWT.NONE);
         _lnkPasswd.setText(S.SETUP_LINK_FORGOT_PASSWD);
         _lnkPasswd.addSelectionListener(createUrlLaunchListener(WWW.PASSWORD_RESET_REQUEST_URL));
 
         Label lblDeviceName = new Label(composite, SWT.NONE);
-        lblDeviceName.setText(S.SETUP_DEV_ALIAS + ':');
+        lblDeviceName.setText(S.SETUP_DEV_ALIAS + ": ");
 
         _txtDeviceName = new Text(composite, SWT.BORDER);
 
-        GridLayout layout = new GridLayout(2, false);
+        if (_helper._showAPIAccess) {
+            new Label(composite, SWT.NONE);
+
+            _helper.createCheckbox(composite);
+            _helper._chkAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
+
+            _helper.createLink(composite);
+            _helper._lnkAPIAccess.setLayoutData(
+                    _helper.createLinkLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false)));
+        }
+
+        GridLayout layout = new GridLayout(3, false);
         layout.marginWidth = 0;
         layout.marginHeight = 0;
-        layout.horizontalSpacing = 10;
+        layout.horizontalSpacing = 0;
         layout.verticalSpacing = 10;
         composite.setLayout(layout);
 
-        GridData messageLayoutData = new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1);
-        messageLayoutData.heightHint = 30;
-        lblMessage.setLayoutData(messageLayoutData);
+        lblMessage.setLayoutData(createMessageLayoutData());
         lblUserID.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-        _txtUserID.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        _txtUserID.setLayoutData(createTextBoxLayoutData());
         lblPasswd.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-        _txtPasswd.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        _lnkPasswd.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, true, false, 2, 1));
+        _txtPasswd.setLayoutData(createTextBoxLayoutData());
+        _lnkPasswd.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 2, 1));
         lblDeviceName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-        _txtDeviceName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        _txtDeviceName.setLayoutData(createTextBoxLayoutData());
 
         ModifyListener onInputChanged = createListenerToValidateInput();
 
@@ -97,6 +114,22 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         _txtDeviceName.addModifyListener(onInputChanged);
 
         return composite;
+    }
+
+    private GridData createMessageLayoutData()
+    {
+        GridData layoutData = new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1);
+        layoutData.heightHint = 30;
+        return layoutData;
+    }
+
+    private GridData createTextBoxLayoutData()
+    {
+        GridData layoutData = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
+        if (OSUtil.isOSX()) {
+            layoutData.horizontalIndent = 2;
+        }
+        return layoutData;
     }
 
     @Override
@@ -117,6 +150,9 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         // do not populate password from model
         _txtUserID.setText(Objects.firstNonNull(model.getUsername(), ""));
         _txtDeviceName.setText(Objects.firstNonNull(model.getDeviceName(), ""));
+
+        _helper.readFromModel(model);
+
         validateInput();
     }
 
@@ -126,6 +162,8 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         model.setUserID(_txtUserID.getText().trim());
         model.setPassword(_txtPasswd.getText());
         model.setDeviceName(_txtDeviceName.getText().trim());
+
+        _helper.writeToModel(model);
     }
 
     @Override
@@ -144,7 +182,8 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
     protected @Nonnull Control[] getControls()
     {
         return new Control[] {
-                _btnContinue, _txtUserID, _txtPasswd, _txtDeviceName, _lnkPasswd
+                _btnContinue, _txtUserID, _txtPasswd, _txtDeviceName, _lnkPasswd,
+                _helper._chkAPIAccess, _helper._lnkAPIAccess
         };
     }
 

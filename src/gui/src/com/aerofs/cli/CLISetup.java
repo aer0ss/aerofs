@@ -89,6 +89,7 @@ public class CLISetup
             } else {
                 getRootAnchor(cli);
             }
+            getAPIAccess(cli);
         }
 
         if (_model._storageType == StorageType.S3) {
@@ -106,6 +107,7 @@ public class CLISetup
             getPassword(cli);
             getDeviceName(cli);
             getRootAnchor(cli);
+            getAPIAccess(cli);
         }
 
         if (_model._storageType == null) _model._storageType = StorageType.LINKED;
@@ -184,6 +186,15 @@ public class CLISetup
             options._passphrase = String.valueOf(inputAndConfirmPasswd(cli,
                     S.SETUP_S3_ENCRYPTION_PASSWORD));
         }
+    }
+
+    private void getAPIAccess(CLI cli) throws Exception
+    {
+        cli.show(MessageType.INFO, S.API_ACCESS_DESC);
+        cli.show(MessageType.INFO, "See " + S.URL_API_ACCESS + " for more information.");
+        boolean enable = cli.ask(MessageType.INFO, "Would you like to enable API access?");
+        _model.enableAPIAccess(enable);
+        cli.notify(MessageType.INFO, "API access is " + (enable ? "enabled" : "disabled") + ".");
     }
 
     private char[] inputAndConfirmPasswd(CLI cli, String prompt) throws ExNoConsole

@@ -348,7 +348,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
                     MenuItem miExplain = new MenuItem(menu, SWT.PUSH);
                     miExplain.setText("Learn more about roles");
-                    miExplain.addSelectionListener(createUrlLaunchListener(S.LINK_ROLES_URL));
+                    miExplain.addSelectionListener(createUrlLaunchListener(S.URL_ROLES));
 
                     menu.setVisible(true);
                 }

@@ -39,8 +39,6 @@ public abstract class AbstractSetupPage extends Composite
     protected AbstractSetupPage(Composite parent, int style)
     {
         super(parent, style);
-
-        initPage();
     }
 
     public void setModel(SetupModel model)
@@ -61,7 +59,7 @@ public abstract class AbstractSetupPage extends Composite
 
     }
 
-    protected void initPage()
+    public void initPage()
     {
         Composite header = createHeader(this);
         Composite body = createBody(this);
