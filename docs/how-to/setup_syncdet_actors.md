@@ -75,7 +75,7 @@ For sudo access, use the vagrant account:
 
     $ ssh -i ~/.vagrant.d/insecure_private_key vagrant@{username}-vagrant-{index}.local
 
-Sudo access is not recommended unless you make your changes permanent by updating the puppet  manifest.
+Sudo access is not recommended unless you make your changes permanent by updating the puppet manifest.
 
 Useful tools
 ---
