@@ -10,7 +10,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.injectable.InjectableDriver;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -50,7 +49,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     private final DirectoryService _ds;
     private final LinkerRootMap _lrm;
     private final InjectableDriver _dr;
-    private final RockLog _rocklog;
+    private final IgnoreList _il;
 
     private boolean _deletionScheduled = false;
 
@@ -164,7 +163,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
 
     @Inject
     TimeoutDeletionBuffer(ObjectDeleter od, CoreScheduler sched, TransManager tm,
-            DirectoryService ds, LinkerRootMap lrm, InjectableDriver dr, RockLog rocklog)
+            DirectoryService ds, LinkerRootMap lrm, InjectableDriver dr, IgnoreList il)
     {
         _od = od;
         _sched = sched;
@@ -172,7 +171,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         _ds = ds;
         _dr = dr;
         _lrm = lrm;
-        _rocklog = rocklog;
+        _il = il;
     }
 
     @Override
@@ -351,7 +350,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         if (absRoot != null) {
             String absPath = path.toAbsoluteString(absRoot);
             File f = new File(absPath);
-            if (f.exists()) {
+            if (f.exists() && !_il.isIgnored(f.getName())) {
                 // ok, so the file we're supposed to be deleting exists, but wait, is it actually
                 // the same file? Path are pretty useless on case-insensitive filesystems so we
                 // check type and FID instead.

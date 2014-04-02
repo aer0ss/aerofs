@@ -117,52 +117,10 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
 
         switch (op) {
         case APPLY:
-            _fidm.throwIfFIDInconsistent_();
-
-            deleteIgnoredChildren_();
-
-            // throw if the folder is not empty after ignored children has been deleted, so that we
-            // don't accidentally delete non-ignored objects under the folder.
-            // NB: if the folder was deleted under our feet we don't throw. This is necessary to
-            // avoid a nasty class of crash loops where a shared folder is left on one device and
-            // deleted on another *while the daemon is not running*. Because of the delay between
-            // detecting a deletion on the filesystem and acting upon it (see TimeoutDeletionBuffer)
-            // ACL updates are likely to be processed before the event leaves the buffer and thus to
-            // try, and fail, to delete an already deleted folder.
-            final boolean exists = _f.exists();
-            if (_path.isRepresentable()) {
-                _f.deleteOrThrowIfExist();
-            } else {
-                // non-representable folders cannot contain "non-scanned" objects
-                // 1. we *can* safely recursively delete children
-                // 2. we *must* recursively delete children when the requested op was MAP
-                //    because the caller won't have done it for us (once again we observe
-                //    the akwardness of the whole PhysicalOp concept that not only leaks
-                //    implementation behavior in the logical layer but does so in such a
-                //    broken way that it often generate subtle bugs.
-                // TODO: refactor logical/physical interface as part of upcoming scalability work
-                // TLDR: correctness first, cleanup later
-                _f.deleteOrThrowIfExistRecursively();
-            }
-
-            TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
-                @Override
-                public void run_() throws IOException
-                {
-                    try {
-                        if (exists) _f.mkdir();
-                    } catch (IOException e) {
-                        // InjectableFile.mkdir throws IOException if File.mkdir returns false
-                        // That can happen if the directory already exists, which is very much
-                        // unexpected in this case but not a good enough reason to wreak havoc with
-                        // a transaction rollback
-                        if (!(_f.exists() && _f.isDirectory())) {
-                            throw new IOException("fs rollback failed: " + _f.exists()
-                                    + " " + _f.isDirectory(), e);
-                        }
-                    }
-                }
-            });
+            // If ignored folders get in the system we do not immediately delete the physical
+            // objects when the corresponding logical object is deleted. We will however
+            // delete ignored children recursively when deleting a non-ignored folder.
+            if (_f.exists() && !_s._il.isIgnored(_f.getName())) applyDeletion_(t);
             // fallthrough
         case MAP:
             _s.onDeletion_(this, t);
@@ -173,6 +131,55 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
             // always reset FID to avoid violating FID consistency invariants
             _fidm.physicalObjectDeleted_(t);
         }
+    }
+
+    private void applyDeletion_(Trans t) throws SQLException, IOException
+    {
+        deleteIgnoredChildren_();
+
+        // throw if the folder is not empty after ignored children has been deleted, so that we
+        // don't accidentally delete non-ignored objects under the folder.
+        // NB: if the folder was deleted under our feet we don't throw. This is necessary to
+        // avoid a nasty class of crash loops where a shared folder is left on one device and
+        // deleted on another *while the daemon is not running*. Because of the delay between
+        // detecting a deletion on the filesystem and acting upon it (see TimeoutDeletionBuffer)
+        // ACL updates are likely to be processed before the event leaves the buffer and thus to
+        // try, and fail, to delete an already deleted folder.
+
+        if (_path.isRepresentable()) {
+            _fidm.throwIfFIDInconsistent_();
+            _f.deleteOrThrowIfExist();
+        } else {
+            // non-representable folders cannot contain "non-scanned" objects
+            // 1. we *can* safely recursively delete children
+            // 2. we *must* recursively delete children when the requested op was MAP
+            //    because the caller won't have done it for us (once again we observe
+            //    the akwardness of the whole PhysicalOp concept that not only leaks
+            //    implementation behavior in the logical layer but does so in such a
+            //    broken way that it often generate subtle bugs.
+            // TODO: refactor logical/physical interface as part of upcoming scalability work
+            // TLDR: correctness first, cleanup later
+            _f.deleteOrThrowIfExistRecursively();
+        }
+
+        TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
+            @Override
+            public void run_() throws IOException
+            {
+                try {
+                    _f.mkdir();
+                } catch (IOException e) {
+                    // InjectableFile.mkdir throws IOException if File.mkdir returns false
+                    // That can happen if the directory already exists, which is very much
+                    // unexpected in this case but not a good enough reason to wreak havoc with
+                    // a transaction rollback
+                    if (!(_f.exists() && _f.isDirectory())) {
+                        throw new IOException("fs rollback failed: " + _f.exists()
+                                + " " + _f.isDirectory(), e);
+                    }
+                }
+            }
+        });
     }
 
     @Override
