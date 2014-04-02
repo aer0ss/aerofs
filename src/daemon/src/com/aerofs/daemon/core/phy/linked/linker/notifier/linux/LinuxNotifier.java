@@ -496,6 +496,10 @@ public class LinuxNotifier implements INotifier, INotifyListener
     {
         List<Integer> dirParentTrace = getParentTrace(id);
         LinkerRoot root = _id2root.get(dirParentTrace.get(0));
+
+        // avoid race condition between FS notification and root removal
+        if (root == null) return Collections.emptyList();
+
         File dir = getWatchPath(dirParentTrace);
 
         // Handle this event.

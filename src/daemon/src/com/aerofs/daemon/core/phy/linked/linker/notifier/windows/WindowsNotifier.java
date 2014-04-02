@@ -69,14 +69,14 @@ public class WindowsNotifier implements INotifier, IWin32NotifyListener
         _id2root.remove(id);
     }
 
-    private IEvent mightCreate(int watchId, String root, String name)
+    private IEvent mightCreate(LinkerRoot lr, String root, String name)
     {
-        return new EIMightCreateNotification(_id2root.get(watchId), Util.join(root, name));
+        return new EIMightCreateNotification(lr, Util.join(root, name));
     }
 
-    private IEvent mightDelete(int watchId, String root, String name)
+    private IEvent mightDelete(LinkerRoot lr, String root, String name)
     {
-        return new EIMightDeleteNotification(_id2root.get(watchId), Util.join(root, name));
+        return new EIMightDeleteNotification(lr, Util.join(root, name));
     }
 
     @Override
@@ -118,17 +118,21 @@ public class WindowsNotifier implements INotifier, IWin32NotifyListener
     private IEvent buildMightCreateOrMightDelete(int watchID, int action, String root,
             String name)
     {
+        LinkerRoot lr = _id2root.get(watchID);
+        // avoid race condition between FS notification and root removal
+        if (lr == null) return null;
+
         switch (action) {
         case JNotify_win32.FILE_ACTION_ADDED:
-            return mightCreate(watchID, root, name);
+            return mightCreate(lr, root, name);
         case JNotify_win32.FILE_ACTION_REMOVED:
-            return mightDelete(watchID, root, name);
+            return mightDelete(lr, root, name);
         case JNotify_win32.FILE_ACTION_MODIFIED:
-            return mightCreate(watchID, root, name);
+            return mightCreate(lr, root, name);
         case JNotify_win32.FILE_ACTION_RENAMED_OLD_NAME:
-            return mightDelete(watchID, root, name);
+            return mightDelete(lr, root, name);
         case JNotify_win32.FILE_ACTION_RENAMED_NEW_NAME:
-            return mightCreate(watchID, root, name);
+            return mightCreate(lr, root, name);
         default:
             Preconditions.checkState(false, "unknown notification type from jnotify");
             return null;

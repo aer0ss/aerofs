@@ -6,7 +6,6 @@ import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.injectable.InjectableJNotify;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.contentobjects.jnotify.JNotifyException;
@@ -16,6 +15,9 @@ import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.LinkedHashSet;
 import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public class OSXNotifier implements INotifier, FSEventListener
 {
@@ -71,8 +73,9 @@ public class OSXNotifier implements INotifier, FSEventListener
     public void batchStart(int id)
     {
         Batch b = _id2batch.get(id);
-        Preconditions.checkNotNull(b);
-        Preconditions.checkState(b._batch == null);
+        // avoid race condition between notification and root removal
+        if (b == null) return;
+        checkState(b._batch == null);
 
         // We need to recreate a new linked hash set to avoid race conditions
         // as the thread will try to modify the existing hash set.
@@ -83,8 +86,9 @@ public class OSXNotifier implements INotifier, FSEventListener
     public void notifyChange(int id, String root, String name, boolean recurse)
     {
         Batch b = _id2batch.get(id);
-        Preconditions.checkNotNull(b);
-        Preconditions.checkState(name.length() > root.length());
+        // avoid race condition between notification and root removal
+        if (b == null) return;
+        checkState(name.length() > root.length());
 
         if (Linker.isInternalPath(name)) return;
 
@@ -109,9 +113,10 @@ public class OSXNotifier implements INotifier, FSEventListener
     public void batchEnd(int id)
     {
         Batch b = _id2batch.get(id);
-        Preconditions.checkNotNull(b);
-        Preconditions.checkNotNull(b._batch);
-        Preconditions.checkState(!b._batch.isEmpty());
+        // avoid race condition between notification and root removal
+        if (b == null) return;
+        checkNotNull(b._batch);
+        checkState(!b._batch.isEmpty());
 
         // Due to the concurrent execution of the notifier thread
         // we need these variables to be final, in case _batch and _recurse gets changed.

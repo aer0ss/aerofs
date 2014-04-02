@@ -72,22 +72,23 @@ public class TestOSXNotifier extends AbstractTest
     // "ID matches" refer to the fact that the ID passed into batchStart/notifyChange/batchEnd
     // must be the same as what has been returned from macosx_addWatch.
 
-    @Test(expected = NullPointerException.class)
-    public void shouldVerifyIDMatchesInBatchStart()
+    @Test
+    public void shouldIgnoreBatchStartForUnknownID()
     {
         notifier.batchStart(unknownWatchId);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void shouldVerifyIDMatchesInBatchEnd()
+    @Test
+    public void shouldIgnoreBatchEndForUnknownID()
     {
         notifier.batchStart(id);
         notifyAChange(id, false);
         notifier.batchEnd(unknownWatchId);
+        verify(cq, never()).enqueueBlocking(any(IEvent.class), any(Prio.class));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void shouldVerifyIDMatchesInNotifyChange()
+    @Test
+    public void shouldIgnoreNotifyChangeForUnknownID()
     {
         notifier.batchStart(id);
         notifyAChange(unknownWatchId, false);

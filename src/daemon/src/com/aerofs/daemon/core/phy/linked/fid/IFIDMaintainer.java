@@ -21,6 +21,11 @@ public interface IFIDMaintainer
     public static class InconsistentFIDException extends IOException
     {
         private static final long serialVersionUID = 0L;
+
+        InconsistentFIDException(String message)
+        {
+            super(message);
+        }
     }
 
     /**

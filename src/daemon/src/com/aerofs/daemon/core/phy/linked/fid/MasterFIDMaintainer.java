@@ -14,6 +14,7 @@ import java.sql.SQLException;
 
 import javax.annotation.Nonnull;
 
+import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 
 /**
@@ -57,8 +58,11 @@ public class MasterFIDMaintainer implements IFIDMaintainer
     {
         FID fid = getFIDFromFilesystem_(_f);
         SOID soid = _ds.getSOIDNullable_(fid);
-        l.debug("fid check {} {} : expected {} {}", fid, soid, _soid, _f);
-        if (!_soid.equals(soid)) throw new InconsistentFIDException();
+        if (!_soid.equals(soid)) {
+            String msg = Joiner.on(' ').join(_soid, _f, fid, soid);
+            l.debug("inconsistent fid: {}", msg);
+            throw new InconsistentFIDException(msg);
+        }
     }
 
     @Override
