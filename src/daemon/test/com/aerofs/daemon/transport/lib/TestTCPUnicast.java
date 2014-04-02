@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.mockito.InOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ import java.net.InetSocketAddress;
 import java.security.SecureRandom;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.hamcrest.Matchers.equalTo;
@@ -61,6 +63,9 @@ public final class TestTCPUnicast
 
     @Rule
     public LoggingRule loggingRule = new LoggingRule(l);
+
+    @Rule
+    public Timeout timeoutRule = new Timeout((int) (60 * C.SEC));
 
     @Before
     public void setup()
@@ -476,6 +481,58 @@ public final class TestTCPUnicast
         otherInOrder.verify(otherDevice.unicastListener, atLeastOnce()).onUnicastReady();
         otherInOrder.verify(otherDevice.unicastListener, times(1)).onDeviceConnected(localDevice.did);
         otherInOrder.verify(otherDevice.unicastListener, times(1)).onDeviceDisconnected(localDevice.did);
+    }
+
+    @Test
+    public void shouldNotTriggerRaceConditionWhenManyPacketsAreBeingSentAndSocketClosedFromOtherSide()
+            throws InterruptedException, ExDeviceUnavailable, ExecutionException,
+            ExTransportUnavailable
+    {
+        // send a packet to the remote device (which will force a new channel to be created)
+        // wait for it to be received
+        final Channel localChannel = sendPacketAndWaitForItToBeReceived(localDevice, otherDevice, null, TEST_DATA);
+
+        // system state:
+        //
+        // 1. localDevice (out) --------> (in) otherDevice
+
+        // send a packet _from_ the other device to the local device (we will reuse the same channel)
+        Channel otherChannel = sendPacketAndWaitForItToBeReceived(otherDevice, localDevice, null, TEST_DATA);
+
+        // system state:
+        //
+        // 1. localDevice (in/out) <--------> (in/out) otherDevice
+
+        // create and start a thread that'll send packets as fast as possible
+        final AtomicBoolean keepWriting = new AtomicBoolean(true);
+        Thread senderThread = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                while(keepWriting.get()) {
+                    try {
+                        localChannel.write(TransportProtocolUtil.newDatagramPayload(TEST_DATA));
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+            }
+        });
+        senderThread.start();
+
+        l.info("started sending thread");
+
+        Thread.sleep(30000);
+
+        // close via the remote side
+        // this will force a close event to be fired via the netty I/O thread
+        otherChannel.close();
+
+        // shut down the sender thread
+        keepWriting.set(false);
+        senderThread.join();
     }
 
     private void waitForIUnicastListenerCallbacksToBeTriggered(boolean waitForLocal, boolean waitForOther)
