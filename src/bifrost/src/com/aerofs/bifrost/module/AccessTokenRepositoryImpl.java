@@ -24,6 +24,18 @@ public class AccessTokenRepositoryImpl implements AccessTokenRepository
     @Override
     public void delete(AccessToken accessToken) { _dao.delete(accessToken); }
 
+    @Override
+    public void deleteDelegatedTokensByOwner(String owner)
+    {
+        _dao.deleteDelegatedTokensByOwner(owner);
+    }
+
+    @Override
+    public void deleteAllTokensByOwner(String owner)
+    {
+        _dao.deleteAllTokensByOwner(owner);
+    }
+
     @Inject private AccessTokenDAO _dao;
 
     /*

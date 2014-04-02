@@ -11,6 +11,7 @@ import org.hibernate.SessionFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -50,5 +51,33 @@ public class MockAccessTokenDAO extends AccessTokenDAO
 
     @Override
     public void delete(AccessToken s) { m_map.remove(s.getToken()); }
+
+    @Override
+    public void deleteDelegatedTokensByOwner(String owner)
+    {
+        Iterator<Entry<String,AccessToken>> iterator = m_map.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<String, AccessToken> e = iterator.next();
+            String ow = e.getValue().getOwner();
+            String ef = e.getValue().getEffectiveUserID();
+
+            if (ow.equals(owner) && (!ow.equals(ef))) {
+                iterator.remove();
+            }
+        }
+    }
+
+    @Override
+    public void deleteAllTokensByOwner(String owner)
+    {
+        Iterator<Entry<String,AccessToken>> iterator = m_map.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<String, AccessToken> e = iterator.next();
+            String ow = e.getValue().getOwner();
+            if (ow.equals(owner)) {
+                iterator.remove();
+            }
+        }
+    }
 }
 

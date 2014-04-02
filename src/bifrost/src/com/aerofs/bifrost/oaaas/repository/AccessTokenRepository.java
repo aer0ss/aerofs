@@ -29,6 +29,8 @@ public interface AccessTokenRepository
     AccessToken save(AccessToken token);
 
     void delete(AccessToken accessToken);
+    void deleteAllTokensByOwner(String owner);
+    void deleteDelegatedTokensByOwner(String owner);
 
     List<AccessToken> findByOwner(String owner);
 }

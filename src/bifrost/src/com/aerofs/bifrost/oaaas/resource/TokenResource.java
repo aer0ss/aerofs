@@ -152,6 +152,39 @@ public class TokenResource
         }
     }
 
+    /** Personal tokens issued by this user */
+    @DELETE
+    @Path("/users/{owner}/tokens")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteAllTokens(@PathParam("owner") String owner)
+    {
+        try {
+            l.info("Delete all tokens for owner {}", owner);
+            accessTokenRepository.deleteAllTokensByOwner(owner);
+            return Response.ok().build();
+        } catch (Exception e) {
+            l.error(e.toString());
+            return Response.serverError().build();
+        }
+    }
+
+    /** Delegated tokens issued by this user */
+    @DELETE
+    @Path("/users/{owner}/delegates")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteAdminTokens(@PathParam("owner") String owner)
+    {
+        try {
+            l.info("Delete admin tokens for owner {}", owner);
+            accessTokenRepository.deleteDelegatedTokensByOwner(owner);
+            return Response.ok().build();
+        } catch (Exception e) {
+            l.error(e.toString());
+            return Response.serverError().build();
+        }
+    }
+
+
     @POST
     @Path("/token")
     @Produces(MediaType.APPLICATION_JSON)

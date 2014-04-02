@@ -9,6 +9,7 @@ import com.google.inject.Inject;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.sql.Delete;
 
 import java.util.List;
 
@@ -42,5 +43,19 @@ public class AccessTokenDAO extends AbstractDAO<AccessToken>
         Query q = currentSession().createQuery("from AccessToken A where A.owner = :owner");
         q.setParameter("owner", owner);
         return list(q);
+    }
+
+    public void deleteAllTokensByOwner(String owner)
+    {
+        Query q = currentSession().createQuery("delete from AccessToken where owner = :owner");
+        q.setParameter("owner", owner);
+        q.executeUpdate();
+    }
+
+    public void deleteDelegatedTokensByOwner(String owner)
+    {
+        Query q = currentSession().createQuery("delete from AccessToken where owner = :owner and resourceOwnerId != :owner");
+        q.setParameter("owner", owner);
+        q.executeUpdate();
     }
 }

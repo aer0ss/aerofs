@@ -6,6 +6,7 @@ from pyramid.view import view_config
 from pyramid.renderers import render
 from aerofs_sp.gen.common_pb2 import PBException
 from web import util
+from web.oauth import flash_error_for_bifrost_response, delete_all_tokens, delete_delegated_tokens
 from web.sp_util import exception2error
 from web.util import error_on_invalid_email, get_rpc_stub, is_private_deployment, str2bool, is_restricted_external_sharing_enabled
 from web.views.payment import stripe_util
@@ -174,6 +175,14 @@ def json_set_auth_level(request):
     user = request.params[URL_PARAM_USER]
     level = int(request.params[URL_PARAM_LEVEL])
     sp = get_rpc_stub(request)
+
+    # When demoting a user, remove any admin tokens they may have auth'ed:
+    log.warn('set auth level to %' + str(level))
+    r = delete_delegated_tokens(request, user)
+    if not r.ok:
+        log.error('bifrost returned error:' + str(r))
+        flash_error_for_bifrost_response(request, r)
+
     sp.set_authorization_level(user, level)
     return HTTPOk()
 
@@ -200,6 +209,12 @@ def json_remove_user(request):
 def json_deactivate_user(request):
     user = request.params[URL_PARAM_USER]
     erase_devices = str2bool(request.params[URL_PARAM_ERASE_DEVICES])
+
+    r = delete_all_tokens(request, user)
+    if not r.ok:
+        log.error('bifrost returned error:' + str(r))
+        flash_error_for_bifrost_response(request, r)
+
     sp = get_rpc_stub(request)
     stripe_data = sp.deactivate_user(user, erase_devices).stripe_data
     stripe_util.update_stripe_subscription(stripe_data)

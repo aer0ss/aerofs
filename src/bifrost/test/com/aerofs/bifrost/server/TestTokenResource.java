@@ -6,6 +6,7 @@ package com.aerofs.bifrost.server;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
@@ -238,10 +240,54 @@ public class TestTokenResource extends BifrostTest
     @Test
     public void shouldDeleteTokenOnDeleteTokenRequest() throws Exception
     {
-        final String tokenVal = "this-token-will-be-deleted";
+        final String tokenVal = createTokenForUser(false);
+
+        expect()
+                .statusCode(200)
+        .given()
+                .delete(TOKEN_URL + "/" + tokenVal);
+
+        assertNull(_accessTokenRepository.findByToken(tokenVal));
+    }
+
+    @Test
+    public void deleteAllTokens_shouldSucceedForUser() throws Exception
+    {
+        final String tokenVal = createTokenForUser(false);
+        assertFalse("tokens exist", _accessTokenRepository.findByOwner(USERNAME).isEmpty());
+
+        expect()
+                .statusCode(200)
+        .given()
+                .delete(USERS_URL + "/" + USERNAME + "/tokens");
+
+        assertTrue("deleted them", _accessTokenRepository.findByOwner(USERNAME).isEmpty());
+    }
+
+    @Test
+    public void deleteAllTokens_shouldSucceedForDelegates() throws Exception
+    {
+        _accessTokenRepository.deleteAllTokensByOwner(USERNAME);
+
+        createTokenForUser(true);
+        createTokenForUser(false);
+
+        assertEquals("2 tokens", 2, _accessTokenRepository.findByOwner(USERNAME).size());
+
+        expect()
+                .statusCode(200)
+        .given()
+                .delete(USERS_URL + "/" + USERNAME + "/delegates");
+
+        assertEquals("1 tokens", 1, _accessTokenRepository.findByOwner(USERNAME).size());
+    }
+
+    private String createTokenForUser(boolean isAdmin) throws ExEmptyEmailAddress
+    {
+        String tokenVal = String.valueOf(Math.random());
 
         AuthenticatedPrincipal principal = new AuthenticatedPrincipal(USERNAME);
-        principal.setEffectiveUserID(UserID.fromExternal(USERNAME));
+        principal.setEffectiveUserID(UserID.fromExternal(isAdmin ? ":2" : USERNAME));
         principal.setOrganizationID(OrganizationID.PRIVATE_ORGANIZATION);
         AccessToken token = new AccessToken(
                 tokenVal,
@@ -252,13 +298,25 @@ public class TestTokenResource extends BifrostTest
                 "");
         _accessTokenRepository.save(token);
         _session.flush();
+        return tokenVal;
+    }
 
+    @Test
+    public void deleteAllTokens_shouldRequireOwner() throws Exception
+    {
+        expect()
+                .statusCode(400)
+        .given()
+                .delete(USERS_URL);
+    }
+
+    @Test
+    public void deleteAllTokens_shouldSucceedIfNoWorkPerformed() throws Exception
+    {
         expect()
                 .statusCode(200)
         .given()
-                .delete(TOKEN_URL + "/" + tokenVal);
-
-        assertNull(_accessTokenRepository.findByToken(tokenVal));
+                .delete(USERS_URL + "/" + "joe@example.com" + "/tokens");
     }
 
     private String buildAuthHeader(String user, String password)

@@ -3,6 +3,7 @@
 #
 import logging
 import re
+import requests
 from web import util
 from web.util import flash_error
 
@@ -38,3 +39,10 @@ def _get_error_message_for_bifrost_resonse(response):
     log.error('bifrost error: {} text: {}'.format(response.status_code, response.text))
     return 'An error occurred. Please try again. The error is: {} {}'\
             .format(response.status_code, response.text)
+
+def delete_all_tokens(request, owner):
+    return requests.delete(get_bifrost_url(request) + '/users/' + owner + '/tokens')
+
+def delete_delegated_tokens(request, owner):
+    return requests.delete(get_bifrost_url(request) + '/users/' + owner + '/delegates')
+

@@ -68,6 +68,7 @@ public class Bifrost extends Service
                 ImmutableSet.of( // read-write
                         "/token",
                         "/clients",
+                        "/users",
                         "/authorize"),
                 ImmutableSet.of( // read-only
                         "/tokeninfo",

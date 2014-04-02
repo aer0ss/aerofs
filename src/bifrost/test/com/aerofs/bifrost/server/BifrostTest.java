@@ -59,6 +59,7 @@ public abstract class BifrostTest extends AbstractTest
     public final static String EXPIRED = "expired";
     protected final static String AUTH_URL = "/authorize";
     protected final static String TOKEN_URL = "/token";
+    protected final static String USERS_URL = "/users";
     protected final static String TOKENLIST_URL = "/tokenlist";
     protected final static String CLIENTS_URL = "/clients";
 
