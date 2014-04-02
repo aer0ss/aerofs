@@ -128,6 +128,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                         transportStats,
                         this,
                         unicastListener,
+                        rockLog,
                         proxy,
                         HANDSHAKE_TIMEOUT,
                         HEARTBEAT_INTERVAL,

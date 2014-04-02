@@ -17,6 +17,7 @@ import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ProxiedConnectionHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
 import com.aerofs.zephyr.client.handlers.ZephyrProtocolHandler;
 import org.jboss.netty.channel.Channel;
@@ -49,6 +50,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     private final TransportStats transportStats;
     private final IZephyrSignallingService zephyrSignallingService;
     private final IUnicastListener unicastListener;
+    private final RockLog rockLog;
     private final AddressResolverHandler resolver;
     private final Proxy proxy;
     private final long zephyrHandshakeTimeout;
@@ -67,6 +69,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
             TransportStats transportStats,
             IZephyrSignallingService zephyrSignallingService,
             IUnicastListener unicastListener,
+            RockLog rockLog,
             Proxy proxy,
             long zephyrHandshakeTimeout,
             long heartbeatInterval,
@@ -83,6 +86,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         this.transportStats = transportStats;
         this.zephyrSignallingService = zephyrSignallingService;
         this.unicastListener = unicastListener;
+        this.rockLog = rockLog;
         this.resolver = new AddressResolverHandler(null);
         this.proxy = proxy;
         this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
@@ -188,7 +192,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 
     private MessageHandler newMessageHandler()
     {
-        return new MessageHandler();
+        return new MessageHandler(rockLog);
     }
 
     private ZephyrClientHandler newZephyrClientHandler(IOStatsHandler ioStatsHandler, ZephyrProtocolHandler zephyrProtocolHandler)

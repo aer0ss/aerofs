@@ -18,4 +18,5 @@ public abstract class TransportDefects
     public static final String DEFECT_NAME_CONNECT_FAILED = "net.connection.connect.failed";
     public static final String DEFECT_NAME_NULL_REMOTE_ADDRESS = "net.connection.remote_address.null";
     public static final String DEFECT_NAME_PULSE_SURVIVED_PRESENCE_TRANSITION = "net.pulse.survived_presence_transition";
+    public static final String DEFECT_NAME_THROW_DURING_FAIL_PENDING_WRITES = "net.handlers.messagehandler.throw.fpw";
 }

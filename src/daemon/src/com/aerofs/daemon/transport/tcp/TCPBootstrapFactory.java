@@ -56,6 +56,7 @@ final class TCPBootstrapFactory
     private final TCPChannelDiagnosticsHandler clientChannelDiagnosticsHandler;
     private final TCPChannelDiagnosticsHandler serverChannelDiagnosticsHandler;
     private final TransportStats transportStats;
+    private final RockLog rockLog;
 
     TCPBootstrapFactory(
             UserID localuser,
@@ -82,6 +83,7 @@ final class TCPBootstrapFactory
         this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER, rockLog);
         this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT, rockLog);
         this.transportStats = stats;
+        this.rockLog = rockLog;
     }
 
     ClientBootstrap newClientBootstrap(ClientSocketChannelFactory channelFactory, final ChannelTeardownHandler clientChannelTeardownHandler)
@@ -93,7 +95,7 @@ final class TCPBootstrapFactory
             public ChannelPipeline getPipeline()
                     throws Exception
             {
-                MessageHandler messageHandler = new MessageHandler();
+                MessageHandler messageHandler = new MessageHandler(rockLog);
                 CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
 
                 return Channels.pipeline(
@@ -127,7 +129,7 @@ final class TCPBootstrapFactory
             public ChannelPipeline getPipeline()
                     throws Exception
             {
-                MessageHandler messageHandler = new MessageHandler();
+                MessageHandler messageHandler = new MessageHandler(rockLog);
                 CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.SERVER);
 
                 return Channels.pipeline(
