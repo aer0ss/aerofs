@@ -27,6 +27,9 @@ CYAN = "\033[01;36m"
 NORMAL = "\033[0m"
 DEFAULT_WIDTH = 80
 
+def wait_for_enter():
+    raw_input("Press Enter to continue...")
+
 def get_current_version():
     """
     Return the current AeroFS version as a string.
@@ -111,9 +114,11 @@ class Menu(object):
             choice_index = int(choice, 10)
         except ValueError:
             print "Invalid input '{}' - please choose a number between 1 and {}".format(choice, len(self.choices))
+            wait_for_enter()
             return
         if choice_index < 1 or choice_index > len(self.choices) :
             print "Invalid input '{}' - please choose a number between 1 and {}".format(choice, len(self.choices))
+            wait_for_enter()
             return
         # Okay, trigger the callback for the menu item chosen
         self.choices[choice_index - 1].callback()
@@ -126,7 +131,7 @@ def request(label, default=None, validator=None, ok_message=None, invalid_messag
     while not done:
         sys.stdout.write(prompt)
         sys.stdout.flush()
-        choice = sys.stdin.readline().rstrip() or default
+        choice = sys.stdin.readline().rstrip() or default or ""
         if validator is not None:
             match = re.match(validator, choice)
             if not (match and match.start() == 0 and match.end() == len(choice)):
@@ -274,7 +279,8 @@ def select_dhcp():
     set_resolvconf_state(True)
     ifup()
     print
-    raw_input("DHCP configured. Press Enter to continue...")
+    print "DHCP configured. ",
+    wait_for_enter()
 
 def show_static_menu():
     # read static values from user
@@ -308,7 +314,8 @@ def show_static_menu():
     ifup()
     set_resolvconf_state(False)
     print
-    raw_input("Static networking configured. Press Enter to continue...")
+    print "Static networking configured. ",
+    wait_for_enter()
 
 def request_nameservers():
     old_nameservers, additional_lines = read_resolvconf()
