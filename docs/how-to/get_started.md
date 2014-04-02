@@ -2,9 +2,13 @@ Welcome, new AeroFS teammate!  By now, you have received:
 
   * a laptop
   * an @aerofs.com email account provided by Google
-  * a matching account for github.arrowfs.org
 
 You'll need to do several things to get started with AeroFS:
+
+## Make sure your local user ID is good
+
+Your user ID should follow the format "<first_name><last_name_initial>" e.g. "alext." Otherwise there will be ongoing pain in the future. Creating a new account and deleting the existing one is one of easier ways to change your user ID.
+
 
 ## Set up full-disk encryption with FileVault
 
@@ -28,8 +32,8 @@ Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a us
 
   * Ask Weihan or Yuri to invite you to the AeroFS organization and to the `Air Computing Team` shared folder.
   * Accept the invitation via the email you received
-  * Log in to https://www.aerofs.com/, then, [download and install the client](https://www.aerofs.com/download). 
-  * Accept the shared folder invitation from [here](https://www.aerofs.com/accept).
+  * [Download and install the AeroFS client](https://www.aerofs.com/download). 
+  * [Accept the shared folder invitation](https://www.aerofs.com/accept).
 
 ## Install XCode command line tools
 
@@ -41,20 +45,6 @@ will launch a dialog prompting you to install XCode command line tools. Follow t
 ## Install Java IDE
 
 We suggest to install [IntelliJ DEA CE](http://www.jetbrains.com/idea/download/).
-
-## Install optional packages
-
-### Mono MDK
-
-Download and install the latest [Mono MDK](http://www.go-mono.com/mono-downloads/download.html). (for signcode, to sign our Windows executables. Not required if you don't depoloy production releases.)
-
-### Android SDK
-
-1. [Download the SDK tools](http://developer.android.com/sdk/index.html) (you probably want the "Use an Existing IDE" tools)
-2. Expand the zip into `/usr/local/android`
-3. Run the SDK Manager at `/usr/local/android/tools/android`
-4. Check at least "Tools" and "Android 4.0.3 (API 15)/SDK Platform".  We recommend “Extras/Intel Hardware Accelerated Execution Manager or Extras/Intel x86 Emulator Accelerator (HAXM)” as well.
-5. Click "Install packages..."
 
 ## Install Homebrew
 
@@ -68,17 +58,25 @@ ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go/install)"
 
 It'll prompt you before it does anything, but the defaults are sane.
 
-## Install some packages with homebrew
+Note: Your path may not have homebrew paths before `/usr/bin`, which causes you to use system binaries instead of those installed by brew if both are available. Running `brew doctor` will tell you if this is the case. If you have this problem you can remedy it by prepending
 
-Note: Your path may not have homebrew paths before `/usr/bin`, which causes you to use system binaries instead of those installed by brew if both are available. Running `brew doctor` will tell you if this is the case. If you have this problem you can remedy it by prepending `/usr/local/bin:/usr/local/sbin:/usr/local/Cellar/ruby/{version}/bin` to your path, with `{version}` replaced by the version of your ruby install.
+    /usr/local/bin:/usr/local/sbin:/usr/local/Cellar/ruby/{version}/bin
+    
+to your path, with `{version}` replaced by the version of your ruby install.
 
-### Required packages:
+## Install packages
 
-Pasteable:
+Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
 
-```
-brew update && brew upgrade && brew install git python fakeroot ant wget gradle groovy swig qt apt-cacher-ng qemu ruby gpgme dpkg && gem install kramdown jekyll && brew install --devel s3cmd && brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb $HOME/repos/aerofs/tools/protobuf.brew/protobuf.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb && ln -s $(brew --prefix apt-cacher-ng)/homebrew.mxcl.apt-cacher-ng.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/homebrew.mxcl.apt-cacher-ng.plist
-```
+    brew update && brew upgrade && brew install git python fakeroot ant wget gradle groovy swig qt apt-cacher-ng qemu ruby gpgme dpkg && brew install --devel s3cmd
+
+    brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb $HOME/repos/aerofs/tools/protobuf.brew/protobuf.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
+    
+    gem install kramdown jekyll
+    
+    ln -s $(brew --prefix apt-cacher-ng)/homebrew.mxcl.apt-cacher-ng.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/homebrew.mxcl.apt-cacher-ng.plist
+    
+    pip install protobuf requests pyyaml        
 
 This step takes a while. It's probably a good time to look around in our [mailing list](../references/mailing_list.html).
 
@@ -96,23 +94,37 @@ This step takes a while. It's probably a good time to look around in our [mailin
   * `makensis` is used to build Windows installers
   * `gpgme` is a library wrapping gpg, which we use for license file generation/verification
   * `jekyll` is used to build the API docs, which are part of the web package
+  * `pyyaml` is used for SyncDET to parse yaml files.
 
-### Optional packages:
-
-```
-brew install bash-completion rdesktop coreutils autoconf automake
-```
-
-## Install some applications needed for local prod
+## Install VM tools
 
 * `vagrant` may be found [here](http://www.vagrantup.com)
 * `VirtualBox` may be found [here](http://www.virtualbox.org/wiki/Downloads) (Recommended version: 4.2.16).
 
+
+## Install optional packages
+
+### Packages from brew
+
+    brew install bash-completion rdesktop coreutils autoconf automake
+
+### Mono MDK
+
+Download and install the latest [Mono MDK](http://www.go-mono.com/mono-downloads/download.html). (for signcode, to sign our Windows executables. Not required if you don't deploy production releases.)
+
+### Android SDK
+
+1. [Download the SDK tools](http://developer.android.com/sdk/index.html) (you probably want the "Use an Existing IDE" tools)
+2. Expand the zip into `/usr/local/android`
+3. Run the SDK Manager at `/usr/local/android/tools/android`
+4. Check at least "Tools" and "Android 4.0.3 (API 15)/SDK Platform".  We recommend “Extras/Intel Hardware Accelerated Execution Manager or Extras/Intel x86 Emulator Accelerator (HAXM)” as well.
+5. Click "Install packages..."
+
 ## Obtain the AeroFS source code
 
-Before this step, you'll need your accounts created on gerrit and github, so get to that.
+Before this step, you'll need your accounts created on gerrit, so get to that.
 
-And make sure you put the repo at `$HOME/repos/aerofs`:
+Make sure you put the repo at `$HOME/repos/aerofs`:
 
 ```
 mkdir -p $HOME/repos && cd $HOME/repos
@@ -130,6 +142,7 @@ git remote add gerrit ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
 ```
 
 This installs `git-review`, installs a post-commit hook for gerrit and adds the gerrit remote.
+
 
 ## Set up MySQL and Redis for unit tests
 
@@ -156,14 +169,6 @@ cp repos/aerofs/tools/ejabberd/ejabberd_auth_all /usr/local/bin/
 
 Then, start ejabberd using `/usr/local/sbin/ejabberdctl start`.
 
-## Install some python modules
-
-If you get a permissions error, make sure you've installed Python with homebrew and that you're using the right Python (`which python` should give `/usr/local/bin/python`, not `/usr/bin/python`).  You shouldn't have to `sudo` this to make it work.
-
-```
-pip install protobuf requests PyYAML
-```
-
 ## Install Tunnelblick and get on the AeroFS VPN
 
 Ping Drew or Matt to provision you a VPN config bundle.
@@ -189,24 +194,52 @@ The last step may take a while (expect 30 mins). Grab a coffee from Philz, look 
 
 You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal repository.
 
-```
-cd $HOME/repos/aerofs/ && ant -Dmode=PRIVATE -Dproduct=CLIENT clean setupenv build_client
-mkdir -p $HOME/repos/aerofs/user_data/
-cd approot/ && ./run ../user_data/rtroot gui
-```
+    cd $HOME/repos/aerofs/ && ant -Dmode=PRIVATE -Dproduct=CLIENT clean setupenv build_client
+    mkdir -p $HOME/repos/aerofs/user_data/
+    cd approot/ && ./run ../user_data/rtroot gui
 
 The `-Dmode=PRIVATE` flag points the client to your private environment. Specify `-Dmode=PUBLIC` to build clients for the public production environment (discouraged).
 
-## Signing Up
+## Sign up accounts in local prod
 
 For easy signup you can use signup tool:
 
-```
-~/repos/aerofs/tools/signup.sh -u TEST_USER_NAME@aerofs.com
-```
+    ~/repos/aerofs/tools/signup.sh -u TEST_USER_NAME@aerofs.com
 
 When asked for vagrant password use: `vagrant`. It will create user signup record with default password `uiuiui`. You can specify -p flag to set custom password as TEST_USER_NAME you can use: YOUR_USER_NAME+ANY_SUFFIX@aerofs.com e.g. bob+test@aerofs.com.
 
-## Next Steps
+## Set up and run SyncDET tests
 
-Want to set up and run SyncDET? Take a look at [this doc](setup_syncdet.html).
+Skim through the SyncDET manual at docs/usermanual.pdf in the syncdet repo to get familiar with SyncDET concepts.
+
+Before running SyncDET tests, you need to [setup SyncDET actors VMs](setup_syncdet_actors.html). Then:
+
+Build client packages for all OSes (or use `prepare_syncdet_test_linux` to build Linux packages only):
+
+    $ cd ~/repos/aerofs
+    $ ant prepare_syncdet_test_all -Dproduct=CLIENT -Dmode=PRIVATE
+
+Clean up and insall the client packages to the actors:
+
+    $ ant syncdet -Dcase=lib.cases.clean_install
+
+You only need to run the above two steps once until you need to update client binaries.
+
+Run a single test case:
+
+    $ ant syncdet -Dcase=core.basic.should_move_file
+    
+This test case correponds to the Python file ~/repos/aerofs/syncdet_test/core/basic/should_move_file.py.
+     
+Run a scenario that contains all basic test cases:
+
+    $ ant syncdet -Dscenario=./syncdet_test/core/basic/test_basic.scn
+    
+Now, run all the tests!
+
+    $ ant syncdet -Dscenario=./syncdet_test/all.scn # all tests
+
+For convenience, the `test_system` ant target runs clean_install before other tests:
+
+    $ ant test_system -Dcase=core.basic.should_move_file
+

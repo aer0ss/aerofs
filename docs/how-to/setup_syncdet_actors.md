@@ -1,51 +1,97 @@
-See also [setup_ci_1](setup_ci_1.html), [setup_ci_2](setup_ci_2.html), [setup_syncdet_vagrant](setup_syncdet_vagrant.html), [setup_syncdet](setup_syncdet.html) (in progress). **TODO: consolidate them.**
 
-## How to install software
+This article describes how to create actor VMs for SyncDET. It assumes you've setup the development environment and the local prod by following [this doc](get_started.html).
 
-On Windows, install 32-bit cygwin at `C:\cygwin\`, and save cygwin's setup.exe on the desktop. Install things through the cygwin installation wizard.
+Create actor VMs
+---
 
-On OSX, use homebrew wherever possible. Make sure your paths are set properly to use homebrew binaries! `brew doctor` should tell you if you've forgotten this step. 
+Checkout SyncDET:
 
-## Software to install
+    $ cd ~/repos
+    $ git clone ssh://gerrit.arrowfs.org:29418/syncdet
 
-* Through cygwin/homebrew, install: openssh, vim, git, rsync, python2.7, curl, nc
-* On cygwin, also install cygrunsrv
+Copy the sample yaml file to /etc/syncdet:
 
-Copy and paste the following into your terminal:
+    $ sudo mkdir /etc/syncdet
+    $ sudo cp syncdet/config.yaml.sample /etc/syncdet
 
-    curl https://bitbucket.org/pypa/setuptools/raw/0.7.5/ez_setup.py | python
-    curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
-    pip install virtualenv protobuf pyyaml requests
+Go to the syncdet-vagrant foler:
 
-## Set up sshd
+    $ cd ~/repos/aerofs/tools/syncdet-vagrant
+    
+Create a hostonly setup:
 
-On cygwin (run as administrator):
+    $ CLIENT_COUNT=2 vagrant up
+    
+Or, create a bridge networking setup:
+    
+    $ CLIENT_COUNT=2 BRIDGE_COUNT=1 BRIDGE_IFACE="en1"
 
-    ssh-host-config -y
-    cygrunsrv -S sshd
+- `CLIENT_COUNT` specifies the number of VMs you want to setup. It must be 2 or greater.
 
-On OSX, navigate to System Preferences > Sharing and enable "Remote Login"
+- `BRIDGE_IFACE` specifies which interface to use for bridging (to
+list possibilities run `VBoxManage list bridgedifs`). Leave it empty to use
+hostonly networking.
 
-## Set up ssh access
+- `BRIDGE_COUNT` allows the user to assign bridged adapters to only a subset of
+the actors. If `CLIENT_COUNT=5` and `BRIDGE_COUNT=3`, then the first 3 actors will have
+bridged interfaces and the last 2 won't.
 
-The controller needs passwordless login to all actors. Append the controller's public key (`~/.ssh/id_rsa.pub`) to the actor's authorized keys file (`~/.ssh/authorized_keys`)
+Vagrant will create the VMs in the `~/.vagrant.d` directory. If you want to store them in 
+another place, you may simply symlink `~/.vagrant.d` to any other place you want to use.
 
-After doing this, ssh from the controller to the actor. This accomplishes two things: it (a) ensures that passwordless login is configured properly, and (b) adds the actor's public key to the controller's known_hosts file. 
+Connect the VMs to SyncDET
+---
 
-## Set up DNS
+Create a file `/etc/syncdet/config.yaml` with the following content:
 
-By default, sp.aerofs.com points to our production SP server. This is almost certainly not what you want. It is most likely that you want to run SyncDET tests in one of two environments:
+```
+actor_defaults:
+  aero_userid: {aero_user_id}
+  aero_password: {aero_password}
+  aero_host: unified.syncfs.com
+  login: aerofstest
+  root: ~/syncdet
+  rsh: ssh
+actors:
+- address: {username}-vagrant-0.local
+- address: {username}-vagrant-1.local
+```
 
-### Local Production
+Replace `{aero_user_id}` and `{aero_password}` with an account in your local prod, and `{username}` is the output of `whoami` on your localhost.
 
-Use syndet-vagrant (source: syncdet-tests/syncdet-vagrant) to generate SyncDET actor VMs. These should work out of box (lol).
+SSH access
+---
 
-Add the following to config.yaml (TODO: confirm with JGray that this step is no longer needed)
+The vagrant script automatically copies your ssh public key from `~/.ssh/id_rsa.pub`
+to the VM as syncdet needs passwordless login.
 
-    aero_sp_url: https://unified.syncfs.com:4433/sp
+The vms are given names of the form `{username}-vagrant-{index}.local`, where `{index}` is an integer in [0..CLIENT_COUNT-1].
 
-### CI
+To log in to the VM:
 
-CI actors need access to the VPN. Follow [these instructions](../references/vpn.html) to set up VPN. 
+    $ ssh aerofstest@{username}-vagrant-{index}.local
 
-You will have two ethernet adapters in your network settings. One is for TUN/TAP and will likely have in IP in  the 172.19.10.0/24 block, and the other will have an IP in the 192.168.0.0/16 block. Configure the TUN/TAP adapter to use `192.168.2.186` (i.e. CI puppet-master) as its DNS server. If this works, then `sp.aerofs.com` should resolve to `192.168.2.23`. Details about our network configuration can be found [here](../references/networks.html).
+For sudo access, use the vagrant account:
+
+    $ ssh -i ~/.vagrant.d/insecure_private_key vagrant@{username}-vagrant-{index}.local
+
+Sudo access is not recommended unless you make your changes permanent by updating the puppet  manifest.
+
+Useful tools
+---
+
+- Use this command to launch, shutdown, and demolish the VMs:
+
+        $ cd ~/repos/aerofs/tools/syncdet-vagrant
+        $ CLIENT_COUNT=2 vagrant {up,halt,destroy}
+
+- If using bridged networking, this script retrieves the bridged IPs of all running vms:
+
+        ./list_bridged_ips.sh
+
+Troubleshooting
+---
+
+If puppet complains that `/usr/bin/apt-get update returned 100` on an actor,
+then said actor's networking may be borked. `vagrant ssh {actor name} -c "sudo
+rm -rf /var/lib/dhcp/*"` seems to help.
