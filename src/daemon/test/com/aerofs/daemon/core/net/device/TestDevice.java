@@ -187,7 +187,7 @@ public class TestDevice extends AbstractTest
         assertTrue(_dev.isOnline_());
     }
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = IllegalStateException.class)
     public void shouldNotAllowPulsingToBeStartedOnATransportWithoutItBeingStoppedFirst()
     {
         _dev.online_(_tp1, _tp1sids);
