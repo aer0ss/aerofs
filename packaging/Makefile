@@ -20,6 +20,7 @@ PACKAGES= \
 	devman \
 	enterprise-updater \
 	havre \
+	dryad \
 	identity \
 	jeq-tools \
 	lizard \

@@ -11,6 +11,7 @@
       <module fileurl="file://$PROJECT_DIR$/../../src/command/command.iml" filepath="$PROJECT_DIR$/../../src/command/command.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/daemon/daemon.iml" filepath="$PROJECT_DIR$/../../src/daemon/daemon.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/devman/devman.iml" filepath="$PROJECT_DIR$/../../src/devman/devman.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/dryad/dryad.iml" filepath="$PROJECT_DIR$/../../src/dryad/dryad.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/gui/gui.iml" filepath="$PROJECT_DIR$/../../src/gui/gui.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/havre/havre.iml" filepath="$PROJECT_DIR$/../../src/havre/havre.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/lib/lib.iml" filepath="$PROJECT_DIR$/../../src/lib/lib.iml" />

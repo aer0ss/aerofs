@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) Air Computing Inc., 2013.
+  -->
+
+<configuration>
+    <appender name="LOGFILE" class="ch.qos.logback.core.FileAppender">
+        <File>/var/log/dryad/dryad.log</File>
+        <Append>true</Append>
+        <encoder>
+            <pattern>%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="LOGFILE" />
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="ASYNC"/>
+    </root>
+</configuration>
