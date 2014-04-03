@@ -1,5 +1,6 @@
 
 __all__ = [
     'maintenance',
-    'error'
+    'error',
+    'dryad',
 ]

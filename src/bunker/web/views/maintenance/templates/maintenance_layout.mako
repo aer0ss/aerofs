@@ -35,6 +35,16 @@
             ${navigation.link(link)}
         %endfor
 
+        <%
+            # update the value for development, remove the whole check before release
+            enable_dryad = False
+        %>
+        %if enable_dryad:
+            <li class="nav-header">Help</li>
+            ${navigation.link(('report-problems', _("Report Problems")))}
+            <li><a href="http://support.aerofs.com">Support</a></li>
+        %endif
+
         <li class="nav-header">My AeroFS</li>
         <% import re %>
         ## remove the port number from the host name, if any.
