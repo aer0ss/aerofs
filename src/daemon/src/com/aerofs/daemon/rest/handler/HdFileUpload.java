@@ -46,6 +46,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -103,8 +104,8 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
 
         try {
             // TODO: limit max upload size?
-            // TODO: avoid hashing when we know for sure the chunk cannot end the upload
-            MessageDigest md = SecUtil.newMessageDigest();
+            // avoid hashing when we know for sure the chunk cannot end the upload
+            MessageDigest md = mightCompleteUpload(ev._range) ? SecUtil.newMessageDigest() : null;
             long chunkLength = uploadPrefix_(ev._content, pf, md);
 
             l.info("uploaded {} bytes", chunkLength);
@@ -116,6 +117,9 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                     return;
                 }
             }
+
+            // enforced by mightCompleteUpload
+            checkState(md != null);
 
             // anything can happen when the core lock is released...
             final OA newOA = checkSanity_(ev);
@@ -138,6 +142,14 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             }
             throw e;
         }
+    }
+
+    private static boolean mightCompleteUpload(@Nullable ContentRange cr)
+    {
+        if (cr == null) return true;
+        Range<Long> range = cr.range();
+        Long length = cr.totalLength();
+        return length != null && (range == null || length.equals(range.upperEndpoint()));
     }
 
     private OA checkSanity_(EIFileUpload ev)
@@ -269,14 +281,22 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                 // and schedule a self-handling event to apply the prefix at the end of the
                 // transfer
                 if (md != null && pf.getLength_() > 0) {
-                    ByteStreams.copy(pf.newInputStream_(),
-                            new DigestOutputStream(ByteStreams.nullOutputStream(), md));
+                    InputStream is = pf.newInputStream_();
+                    try {
+                        ByteStreams.copy(is,
+                                new DigestOutputStream(ByteStreams.nullOutputStream(), md));
+                    } finally {
+                        is.close();
+                    }
                 }
                 OutputStream out = pf.newOutputStream_(true);
-                if (md != null) out = new DigestOutputStream(out, md);
                 try {
-                    return ByteStreams.copy(in, out);
+                    return ByteStreams.copy(in, md != null ? new DigestOutputStream(out, md) : out);
                 } finally {
+                    out.flush();
+                    if (out instanceof FileOutputStream) {
+                        ((FileOutputStream)out).getChannel().force(true);
+                    }
                     out.close();
                 }
             } finally {
