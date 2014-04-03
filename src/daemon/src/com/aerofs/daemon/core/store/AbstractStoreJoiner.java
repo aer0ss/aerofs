@@ -144,6 +144,7 @@ public abstract class AbstractStoreJoiner
                         false, updateVersion, t);
                 break;
             } catch (ExAlreadyExist e) {
+                l.warn("duplicate", e);
                 folderName = Util.nextFileName(folderName);
             }
         }

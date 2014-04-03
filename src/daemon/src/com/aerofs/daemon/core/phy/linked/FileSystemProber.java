@@ -56,7 +56,7 @@ public class FileSystemProber
 
             return props;
         } catch (IOException e) {
-            l.error("failed to probe filesystem properties");
+            l.error("failed to probe filesystem properties", e);
             throw e;
         }
     }
