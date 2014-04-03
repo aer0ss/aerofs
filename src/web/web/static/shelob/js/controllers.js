@@ -1,11 +1,9 @@
 var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', 'API', 'Token', 'RootId', 'API_LOCATION', 'OutstandingRequestsCounter',
-        function ($scope, $http, $log, $routeParams, $window, $modal, API, Token, RootId, API_LOCATION, OutstandingRequestsCounter) {
+shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', 'API', 'Token', 'API_LOCATION', 'OutstandingRequestsCounter',
+        function ($scope, $http, $log, $routeParams, $window, $modal, API, Token, API_LOCATION, OutstandingRequestsCounter) {
 
     var FOLDER_LAST_MODIFIED = '--';
-
-    var oid = typeof $routeParams.oid === "undefined" ? '' : $routeParams.oid;
 
     // bind $scope.outstandingRequests to the result of OutstandingRequestsCounter.get()
     // with a $watch so that the scope variable is updated when the result of the service
@@ -14,22 +12,33 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         $scope.outstandingRequests = val;
     });
 
-    // N.B. add a random query param to prevent caching
-    API.get('/children/' + oid + '?t=' + Math.random()).then(function(response) {
-        // success callback
-        $scope.parent = response.data.parent;
-        if (oid == '') RootId.set($scope.parent);
-        for (var i = 0; i < response.data.folders.length; i++) {
-            response.data.folders[i].type = 'folder';
-            response.data.folders[i].last_modified = FOLDER_LAST_MODIFIED;
+    API.get('/folders/' + $routeParams.oid + '?fields=children,path&t=' + Math.random()).then(function(response) {
+        // this is used as the last element of the breadcrumb trail
+        $scope.currentFolder = {
+            id: $routeParams.oid,
+            name: response.data.name,
+        };
+
+        // omit the root AeroFS folder from the breadcrumb trail, since we will always
+        // include a link to the root with the label "My Files"
+        if (response.data.path.folders.length && response.data.path.folders[0].name == 'AeroFS') {
+            $scope.breadcrumbs = response.data.path.folders.slice(1);
+        } else {
+            $scope.breadcrumbs = response.data.path.folders.slice(0);
         }
-        for (var i = 0; i < response.data.files.length; i++) {
-            response.data.files[i].type = 'file';
+
+        // set object.type and object.last_modified for files and folders and concat the lists
+        for (var i = 0; i < response.data.children.folders.length; i++) {
+            response.data.children.folders[i].type = 'folder';
+            response.data.children.folders[i].last_modified = FOLDER_LAST_MODIFIED;
         }
-        $scope.objects = response.data.folders.concat(response.data.files);
+        for (var i = 0; i < response.data.children.files.length; i++) {
+            response.data.children.files[i].type = 'file';
+        }
+        $scope.objects = response.data.children.folders.concat(response.data.children.files);
+
     }, function(response) {
-        // failure callback
-        $log.error('list children call failed with ' + response.status);
+        $log.error('get folder call failed with ' + response.status);
         if (response.status == 503) {
             showErrorMessage(getClientsOfflineErrorText());
         } else if (response.status == 404) {
@@ -38,35 +47,6 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             showErrorMessage(getInternalErrorText());
         }
     });
-
-    if ($scope.breadcrumbs === undefined) $scope.breadcrumbs = [];
-    if (oid == '') {
-        $scope.breadcrumbs = [];
-    } else {
-        API.get('/folders/' + oid).then(function(response) {
-            // success callback
-            var crumb = {id: response.data.id, name: response.data.name};
-            for (var i = 0; i < $scope.breadcrumbs.length; i++) {
-                if ($scope.breadcrumbs[i].id == response.data.id) {
-                    // if the trail reads Home > Folder > Subfolder > SubSubFolder
-                    // and the user clicks the link to Folder, remove everything in the
-                    // breadcrumb trail from Folder onward
-                    $scope.breadcrumbs.splice(i, Number.MAX_VALUE);
-                    break;
-                }
-            }
-            // append the folder to the breadcrumb trail
-            $scope.breadcrumbs.push(response.data);
-        }, function(response) {
-            // failure callback
-            $log.error('get folder info call failed with ' + response.status);
-            if (response.status == 503) {
-                showErrorMessage(getClientsOfflineErrorText());
-            } else {
-                showErrorMessage(getInternalErrorText());
-            }
-        });
-    }
 
     // This should find an object with a given view and remove it from the current view
     function _remove_by_id(id) {
@@ -77,7 +57,6 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             }
         }
     }
-
 
     // This is called when a user clicks on a link to a file
     //
@@ -95,12 +74,12 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         // N.B. add a random query param to prevent caching
         API.head("/files/" + oid + "/content?t=" + Math.random()).then(function(response) {
             $log.info('HEAD /files/' + oid + '/content succeeded');
-            Token.get().then(function(response) {
+            Token.get().then(function(token) {
                 // N.B replace(url) will replace the current history with url, whereas
                 // assign(url) will append url to the history chain. We use replace() so
                 // that a user can navigate from folder Foo to folder Bar, click to download
                 // a file, and then use the back button to return to Foo.
-                $window.location.replace(API_LOCATION + "/api/v1.0/files/" + oid + "/content?token=" + response.token);
+                $window.location.replace(API_LOCATION + "/api/v1.2/files/" + oid + "/content?token=" + token);
             }, function(response) {
                 // somehow failed to get token despite the fact that a request just succeeded
                 showErrorMessage(getInternalErrorText());
@@ -139,7 +118,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     $scope.submitNewFolder = function() {
         $log.debug("new folder: " + $scope.newFolder.name);
         if ($scope.newFolder.name != '') {
-            var folderData = {name: $scope.newFolder.name, parent: $scope.parent};
+            var folderData = {name: $scope.newFolder.name, parent: $scope.currentFolder.id};
             API.post('/folders', folderData).then(function(response) {
                 // POST /folders returns the new folder object
                 $scope.objects.push({
@@ -200,7 +179,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             return;
         }
         var path = '/' + object.type + 's/' + object.id;
-        API.put(path, {parent: $scope.parent, name: object.newName}).then(function(response) {
+        API.put(path, {parent: $scope.currentFolder.id, name: object.newName}).then(function(response) {
             // rename succeeded
             object.name = response.data.name;
             if (response.data.last_modified) object.last_modified = response.data.last_modified;
@@ -237,25 +216,8 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     //
     $scope.submitMove = function(object, destination) {
 
-        var _submitMove = function(object, destination) {
-            var data = {parent: destination.id, name: object.name};
-            API.put('/' + object.type + 's/' + object.id, data).then(function(response) {
-                _remove_by_id(object.id);
-                showSuccessMessage("Successfully moved to " + destination.label);
-            }, function(response) {
-                // move failed
-                if (response.status == 503) {
-                    showErrorMessage(getClientsOfflineErrorText());
-                } else if (response.status == 409) {
-                    showErrorMessage("A file or folder with that name already exists.");
-                } else {
-                    showErrorMessage(getInternalErrorText());
-                }
-            });
-        };
-
         // exit early if move is a no-op
-        if (destination.id == oid) return;
+        if (destination.id == $routeParams.oid) return;
 
         // exit early if you try to move a folder into itself
         if (destination.id == object.id) {
@@ -263,20 +225,20 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             return;
         }
 
-        // moving under the root anchor requires a separate case because the id
-        // of the root anchor may not be known. This branching and the RootId
-        // service will go away with API v1.2 where the alias "root" will work as
-        // the anchor's ID everywhere.
-        if (destination.id == '') {
-            RootId.get().then(function(rootId) {
-                _submitMove(object, {id: rootId, label: "AeroFS"});
-            }, function(response) {
-                if (response.status == 503) showErrorMessage(getClientsOfflineErrorText());
-                else showErrorMessage(getInternalErrorText());
-            });
-        } else {
-            _submitMove(object, destination);
-        }
+        var data = {parent: destination.id, name: object.name};
+        API.put('/' + object.type + 's/' + object.id, data).then(function(response) {
+            _remove_by_id(object.id);
+            showSuccessMessage("Successfully moved to " + destination.label);
+        }, function(response) {
+            // move failed
+            if (response.status == 503) {
+                showErrorMessage(getClientsOfflineErrorText());
+            } else if (response.status == 409) {
+                showErrorMessage("A file or folder with that name already exists.");
+            } else {
+                showErrorMessage(getInternalErrorText());
+            }
+        });
     };
 
     // This is called when a user clicks the move icon on a file/folder
@@ -287,7 +249,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     $scope.startMove = function(object) {
         // treedata is a list of folder objects with label, id, and children attrs,
         // where children is a treedata object
-        $scope.treedata = [{label: "AeroFS", id: '', children: []}];
+        $scope.treedata = [{label: "AeroFS", id: 'root', children: []}];
 
         $scope.moveModal = $modal.open({
             templateUrl: '/static/shelob/partials/object-move-modal.html'
@@ -309,9 +271,9 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     // the treeview
     //
     $scope.onMoveFolderExpanded = function(folder) {
-        //TODO: don't GET /children if we already know there are no children
+        //TODO: don't GET children if we already know there are no children
         if (folder.children.length > 0) return;
-        API.get('/children/' + folder.id + '?t=' + Math.random()).then(function(response) {
+        API.get('/folders/' + folder.id + '/children?t=' + Math.random()).then(function(response) {
             // get children succeeded
             for (var i = 0; i < response.data.folders.length; i++) {
                 $log.debug('adding child');

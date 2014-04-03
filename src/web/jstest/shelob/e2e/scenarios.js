@@ -42,7 +42,7 @@ describe('Shelob App', function() {
         browser().navigateTo('/index.html');
         expect(element('ul.breadcrumb li').count()).toEqual(1);
         element('ul.breadcrumb li').click();
-        expect(browser().location().url()).toBe('/');
+        expect(browser().location().url()).toBe('/root');
     });
 
     it('should add folders to breadcrumb trail as subfolder links are clicked', function() {

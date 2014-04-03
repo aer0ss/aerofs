@@ -2,23 +2,25 @@ describe('Shelob Controllers', function() {
 
     var httpProvider;
 
+    beforeEach(module('shelobControllers'));
     beforeEach(module('shelobServices', function($httpProvider) {
         /*
          * Each time an API call is made, make sure $scope.outstandingRequests
          * is non-zero so that the spinner will show.
          */
-        $httpProvider.interceptors.push(function ($q, $rootScope) {
+        $httpProvider.interceptors.push(function ($q, $rootScope, $timeout) {
             return {
                 'request': function (config) {
-                    if (config.path) {
+                    // do the check in a timeout so force AngularJS to $digest, which
+                    // will sync the $rootScope.outstandingRequests $watch
+                    $timeout(function () {
                         expect($rootScope.outstandingRequests).toBeGreaterThan(0);
-                    }
+                    }, 0);
                     return config || $q.when(config);
                 }
             }
         });
     }));
-    beforeEach(module('shelobControllers'));
 
     describe('FileListCtrl', function() {
 
@@ -41,6 +43,7 @@ describe('Shelob Controllers', function() {
             $controller = $injector.get('$controller');
 
             routeParams = jasmine.createSpy('routeParams');
+            routeParams.oid = 'root';
             modal = jasmine.createSpy('modal');
 
             modalObject = {
@@ -58,8 +61,8 @@ describe('Shelob Controllers', function() {
             folder_1 = {id: 'folder1id', name: "folder 1", is_shared: false};
             folder_2 = {id: 'folder2id', name: "folder 2", is_shared: false};
             file = {id: 'fileid', name: "filename", last_modified: 'today'};
-            $httpBackend.expectGET(/\/api\/v1.0\/children\//).respond(200,
-                    {parent: 'root', folders: [folder_1, folder_2], files: [file]});
+            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/?\?fields=children,path(&.*)?/).respond(200,
+                    {name:'AeroFS', id: 'root', path: {folders: []}, children: {folders: [folder_1, folder_2], files: [file]}});
             $httpBackend.flush();
 
             folder_1_object = get_object_by_id(folder_1.id);
@@ -78,7 +81,7 @@ describe('Shelob Controllers', function() {
             folder_1_object.newName = 'newname';
             $rootScope.submitRename(folder_1_object);
 
-            $httpBackend.expectPUT('/api/v1.0/folders/' + folder_1.id, {parent: 'root', name: 'newname'})
+            $httpBackend.expectPUT('/api/v1.2/folders/' + folder_1.id, {parent: 'root', name: 'newname'})
                     .respond(200, {id: folder_1.id, name: 'newname'});
             $httpBackend.flush();
 
@@ -110,7 +113,7 @@ describe('Shelob Controllers', function() {
             $rootScope.submitRename(folder_1_object);
 
             // respond as if there were a name conflict
-            $httpBackend.expectPUT('/api/v1.0/folders/' + folder_1.id, {parent: 'root', name: 'newname'}).respond(409);
+            $httpBackend.expectPUT('/api/v1.2/folders/' + folder_1.id, {parent: 'root', name: 'newname'}).respond(409);
             $httpBackend.flush();
 
             expect(window.showErrorMessage).toHaveBeenCalled();
@@ -125,7 +128,7 @@ describe('Shelob Controllers', function() {
 
             // move folder_1 into folder_2
             $rootScope.submitMove(folder_1_object, folder_2);
-            $httpBackend.expectPUT('/api/v1.0/folders/' + folder_1.id, {name: folder_1.name, parent: folder_2.id})
+            $httpBackend.expectPUT('/api/v1.2/folders/' + folder_1.id, {name: folder_1.name, parent: folder_2.id})
                     .respond(200, folder_1);
             $httpBackend.flush();
 
@@ -143,7 +146,7 @@ describe('Shelob Controllers', function() {
 
             // move file into folder_1
             $rootScope.submitMove(file_object, folder_1);
-            $httpBackend.expectPUT('/api/v1.0/files/' + file.id, {name: file.name, parent: folder_1.id})
+            $httpBackend.expectPUT('/api/v1.2/files/' + file.id, {name: file.name, parent: folder_1.id})
                 .respond(200, file);
             $httpBackend.flush();
 
@@ -190,7 +193,7 @@ describe('Shelob Controllers', function() {
         it("should delete folder when intent to delete is confirmed", function() {
             window.showSuccessMessage = jasmine.createSpy();
             $rootScope.submitDelete(folder_1_object);
-            $httpBackend.expectDELETE('/api/v1.0/folders/' + folder_1.id).respond(204);
+            $httpBackend.expectDELETE('/api/v1.2/folders/' + folder_1.id).respond(204);
             $httpBackend.flush();
             expect(get_object_by_id(folder_1.id)).toBeNull();
             expect(window.showSuccessMessage).toHaveBeenCalled();
@@ -199,7 +202,7 @@ describe('Shelob Controllers', function() {
         it("should delete file when intent to delete is confirmed", function() {
             window.showSuccessMessage = jasmine.createSpy();
             $rootScope.submitDelete(file_object);
-            $httpBackend.expectDELETE('/api/v1.0/files/' + file.id).respond(204);
+            $httpBackend.expectDELETE('/api/v1.2/files/' + file.id).respond(204);
             $httpBackend.flush();
             expect(get_object_by_id(file.id)).toBeNull();
             expect(window.showSuccessMessage).toHaveBeenCalled();
@@ -208,7 +211,7 @@ describe('Shelob Controllers', function() {
         it("should not remove file from view when deletion fails", function() {
             window.showErrorMessage = jasmine.createSpy();
             $rootScope.submitDelete(file_object);
-            $httpBackend.expectDELETE('/api/v1.0/files/' + file.id).respond(404);
+            $httpBackend.expectDELETE('/api/v1.2/files/' + file.id).respond(404);
             $httpBackend.flush();
             expect(get_object_by_id(file.id)).not.toBeNull();
             expect(window.showErrorMessage).toHaveBeenCalled();
@@ -217,7 +220,7 @@ describe('Shelob Controllers', function() {
         it("should reset the outstanding request count after the API call finishes", function() {
             expect($rootScope.outstandingRequests).toBe(0);
             $rootScope.submitDelete(file_object);
-            $httpBackend.expectDELETE('/api/v1.0/files/' + file.id).respond(200);
+            $httpBackend.expectDELETE('/api/v1.2/files/' + file.id).respond(200);
             $httpBackend.flush();
             expect($rootScope.outstandingRequests).toBe(0);
         });

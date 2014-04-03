@@ -5,7 +5,7 @@ var shelobServices = angular.module('shelobServices', ['shelobConfig']);
 // Call push() when a request is made, and pop() when the response is received
 shelobServices.factory('OutstandingRequestsCounter', [
     function() {
-        counter = 0;
+        var counter = 0;
         return {
             push: function() { counter += 1; return counter; },
             pop: function() { counter -= 1; return counter; },
@@ -18,40 +18,55 @@ shelobServices.factory('Token', ['$http', '$q', '$log', 'OutstandingRequestsCoun
     function($http, $q, $log, OutstandingRequestsCounter) {
 
     var token = null;
+    var outstandingNewTokenRequest = false;
 
     return {
 
-    // get a token from the server, or use a locally cached token
+    // Get a token from the server, or use a locally cached token
+    //
+    // If there is already an outstanding request for a token, wait for and use
+    // the result of that request instead of making a new one. The variable "token"
+    // will be a promise that will be resolved with the token when the response is
+    // received, so we return that promise.
     get: function() {
-        var deferred = $q.defer();
-        if (token) deferred.resolve({token: token});
-        else {
+        if (token === null) {
+            token = $q.defer();
             OutstandingRequestsCounter.push();
             $http.get('/json_token')
-                .success(function (data, status, headers, config) {
-                    deferred.resolve({token: data.token, headers: headers});
-                    token = data.token;
+                .success(function (data) {
+                    token.resolve(data.token);
                 })
                 .error(function (data, status) {
-                    deferred.reject({data: data, status: status});
+                    token.reject({data: data, status: status});
                 }).finally(OutstandingRequestsCounter.pop);
         }
-        return deferred.promise;
+        return $q.when(token.promise);
     },
 
-    // get a brand new OAuth token from the server
+    // Get a brand new OAuth token from the server
+    //
+    // Note that even if there is an outstanding request to /json_token, we
+    // should make a new request, since the web backend could return a stale
+    // token. However, if there is an outstanding request to /json_new_token,
+    // we return a promise that will be resolved with the returned token
     getNew: function() {
-        var deferred = $q.defer();
-        OutstandingRequestsCounter.push();
-        $http.get('/json_new_token')
-          .success(function(data, status, headers, config) {
-              deferred.resolve({token:data.token, headers:headers});
-              token = data.token;
-          })
-          .error(function(data, status) {
-              deferred.reject({data:data, status:status});
-          }).finally(OutstandingRequestsCounter.pop);
-        return deferred.promise;
+        if (!outstandingNewTokenRequest) {
+            token = $q.defer();
+            outstandingNewTokenRequest = true;
+            OutstandingRequestsCounter.push();
+            $http.get('/json_new_token')
+                .success(function (data) {
+                    token.resolve(data.token);
+                })
+                .error(function (data, status) {
+                    token.reject({data: data, status: status});
+                })
+                .finally(function() {
+                    outstandingNewTokenRequest = false;
+                    OutstandingRequestsCounter.pop();
+                });
+        }
+        return $q.when(token.promise);
     }
 }}]);
 
@@ -70,9 +85,9 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
             var deferred = $q.defer();
 
             // get an OAuth token and make call
-            Token.get().then(function (response) {
-                config.headers.Authorization = 'Bearer ' + response.token;
-                config.url = API_LOCATION + '/api/v1.0' + config.path;
+            Token.get().then(function (token) {
+                config.headers.Authorization = 'Bearer ' + token;
+                config.url = API_LOCATION + '/api/v1.2' + config.path;
                 // if data is an array buffer, send the bytes directly. Otherwise, allow
                 // angular to apply the default transforms (handling encoding, etc.)
                 config.transformRequest = function(data) {
@@ -88,8 +103,8 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
                     .error(function (response, status) {
                         if (status == 401) {
                             // if the call got 401, the token may have expired, so try a new one
-                            Token.getNew().then(function (response) {
-                                config.headers.Authorization = 'Bearer ' + response.token;
+                            Token.getNew().then(function (token) {
+                                config.headers.Authorization = 'Bearer ' + token;
                                 OutstandingRequestCounter.push();
                                 $http(config)
                                     .success(function (data, status, headers) {
@@ -178,6 +193,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
                 reader.onload = function(e) {
                     var bytes = e.target.result;
                     headers['Content-Range'] = 'bytes ' + start + '-' + end + '/' + file.size;
+                    headers['Endpoint-Consistency'] = 'strict';
                     _put('/files/' + oid + '/content', bytes, headers, config).then(function (response) {
                         $log.info("put succeeded", response);
                         deferred.notify({progress: (end + 1) / file.size});
@@ -255,22 +271,3 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
     }
 ]);
 
-shelobServices.factory('RootId', ['$q', '$log', 'API',
-    function($q, $log, API) {
-        var rootId = null;
-        return {
-            set: function(val) { rootId = val; },
-            get: function() {
-                var deferred = $q.defer();
-                if (rootId) deferred.resolve(rootId);
-                else API.get('/children', {cache: true}).then(function(response) {
-                    rootId = response.data.parent;
-                    deferred.resolve(rootId);
-                }, function(response) {
-                    deferred.reject(response);
-                });
-                return deferred.promise;
-            }
-        }
-    }
-]);

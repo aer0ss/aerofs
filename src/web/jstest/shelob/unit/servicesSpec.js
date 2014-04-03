@@ -15,18 +15,18 @@ describe('Shelob Services', function() {
 
         it('should request a new token if an API call gets a 401 response', function() {
             Token.get = function() {
-                return {then: function(succeed, fail) { succeed({token: 'stale_token'}); }};
+                return {then: function(succeed, fail) { succeed('stale_token'); }};
             };
-            $httpBackend.expectGET('/api/v1.0/children/', function(headers) {
+            $httpBackend.expectGET('/api/v1.2/folders/root/children', function(headers) {
                 return headers.Authorization == 'Bearer stale_token';
             }).respond(401);
             $httpBackend.expectGET('/json_new_token').respond({token: 'new_token'});
-            $httpBackend.expectGET('/api/v1.0/children/', function(headers) {
+            $httpBackend.expectGET('/api/v1.2/folders/root/children', function(headers) {
                 return headers.Authorization == 'Bearer new_token';
             }).respond(200);
 
             var success = jasmine.createSpy();
-            API.get('/children/').then(success);
+            API.get('/folders/root/children').then(success);
             $httpBackend.flush();
             expect(success).toHaveBeenCalled();
         });
@@ -35,20 +35,20 @@ describe('Shelob Services', function() {
             $httpBackend.whenGET('/json_token').respond('token');
             $httpBackend.whenGET('/json_new_token').respond('newtoken');
             // should only try twice
-            $httpBackend.expectGET('/api/v1.0/children/').respond(401);
-            $httpBackend.expectGET('/api/v1.0/children/').respond(401);
+            $httpBackend.expectGET('/api/v1.2/folders/root/children').respond(401);
+            $httpBackend.expectGET('/api/v1.2/folders/root/children').respond(401);
             // and then it should fail
             var failure = jasmine.createSpy();
-            API.get('/children/').catch(failure);
+            API.get('/folders/root/children').catch(failure);
             $httpBackend.flush();
             expect(failure).toHaveBeenCalledWith({status: 401});
         });
 
         it('should fail without requesting a second token if API call gets a 500 response', function() {
             $httpBackend.whenGET('/json_token').respond('token');
-            $httpBackend.expectGET('/api/v1.0/children/').respond(500);
+            $httpBackend.expectGET('/api/v1.2/folders/root/children').respond(500);
             var failure = jasmine.createSpy();
-            API.get('/children/').catch(failure);
+            API.get('/folders/root/children').catch(failure);
             $httpBackend.flush();
             expect(failure).toHaveBeenCalledWith({status: 500});
         });
@@ -56,7 +56,7 @@ describe('Shelob Services', function() {
         it('should fail API call with 500 status if getting a token fails', function() {
             $httpBackend.expectGET('/json_token').respond(500);
             var failure = jasmine.createSpy();
-            API.get('/children/').catch(failure);
+            API.get('/folders/root/children').catch(failure);
             $httpBackend.flush();
             expect(failure).toHaveBeenCalledWith({status: 500});
         });
@@ -89,7 +89,7 @@ describe('Shelob Services', function() {
 
             it('should upload small file in a single chunk', function() {
                 // lay out expected HTTP calls
-                $httpBackend.expectPUT('/api/v1.0/files/abc123/content', contentBytes).respond(200);
+                $httpBackend.expectPUT('/api/v1.2/files/abc123/content', contentBytes).respond(200);
 
                 var succeed = jasmine.createSpy();
                 API.chunkedUpload('abc123', blob).then(succeed);
@@ -99,12 +99,12 @@ describe('Shelob Services', function() {
 
             it('should upload larger file in multiple chunks', function() {
                 // lay out expected HTTP calls
-                $httpBackend.expectPUT('/api/v1.0/files/abc123/content').respond(200, null, {'Upload-ID': 'idididid'});
-                $httpBackend.expectPUT('/api/v1.0/files/abc123/content', null, function(headers) {
+                $httpBackend.expectPUT('/api/v1.2/files/abc123/content').respond(200, null, {'Upload-ID': 'idididid'});
+                $httpBackend.expectPUT('/api/v1.2/files/abc123/content', null, function(headers) {
                     // make sure the second request uses the Upload-ID from the first response
                     return headers['Upload-ID'] == 'idididid';
                 }).respond(200, null, {'Upload-ID': 'idididid'});
-                $httpBackend.whenPUT('/api/v1.0/files/abc123/content', null, function(headers) {
+                $httpBackend.whenPUT('/api/v1.2/files/abc123/content', null, function(headers) {
                     // make all future requests use the Upload-ID from the first response
                     return headers['Upload-ID'] == 'idididid';
                 }).respond(200, null, {'Upload-ID': 'idididid'});
@@ -118,7 +118,7 @@ describe('Shelob Services', function() {
 
             it('should call the progress callback between chunks', function() {
                 // lay out expected HTTP calls
-                $httpBackend.whenPUT('/api/v1.0/files/abc123/content').respond(200, null, {'Upload-ID': 'idididid'});
+                $httpBackend.whenPUT('/api/v1.2/files/abc123/content').respond(200, null, {'Upload-ID': 'idididid'});
 
                 // make call (note chunkSize is set to 10 bytes, so multiple calls are expected)
                 var succeed = jasmine.createSpy();
@@ -133,8 +133,8 @@ describe('Shelob Services', function() {
 
             it('should call the failure callback when a request fails', function() {
                 // lay out expected HTTP calls
-                $httpBackend.expectPUT('/api/v1.0/files/abc123/content').respond(200, null, {'Upload-ID': 'idididid'});
-                $httpBackend.expectPUT('/api/v1.0/files/abc123/content').respond(503);
+                $httpBackend.expectPUT('/api/v1.2/files/abc123/content').respond(200, null, {'Upload-ID': 'idididid'});
+                $httpBackend.expectPUT('/api/v1.2/files/abc123/content').respond(503);
 
                 // make call (note chunkSize is set to 10 bytes, so multiple calls are expected)
                 var failure = jasmine.createSpy();

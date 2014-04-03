@@ -13,11 +13,7 @@ shelobApp.config(['$routeProvider', function($routeProvider) {
             templateUrl: '/static/shelob/partials/file-list.html',
             controller: 'FileListCtrl',
         }).
-        when('/', {
-            templateUrl: '/static/shelob/partials/file-list.html',
-            controller: 'FileListCtrl',
-        }).
         otherwise({
-            redirectTo: '/'
+            redirectTo: '/root'
         });
 }]);

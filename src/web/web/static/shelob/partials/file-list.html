@@ -7,17 +7,17 @@
   </div>
 
   <ul class="breadcrumb">
-      <li ng-if="!breadcrumbs.length" class="active">My Files</li>
-      <li ng-if="breadcrumbs.length"><a href="#/">My Files</a></li>
+      <li ng-if="currentFolder.id == 'root'" class="active">My Files</li>
+      <li ng-if="currentFolder.id != 'root'"><a href="#/root">My Files</a></li>
 
-      <li ng-repeat="folder in breadcrumbs.slice(0,-1)">
+      <li ng-repeat="folder in breadcrumbs">
         <span class="divider">&rsaquo;</span>
         <a href="#/{{folder.id}}">{{folder.name}}</a>
       </li>
 
-      <li ng-repeat="folder in breadcrumbs.slice(-1)" class="active">
+      <li ng-if="currentFolder.id != 'root'" class="active">
         <span class="divider">&rsaquo;</span>
-        {{folder.name}}
+        {{currentFolder.name}}
       </li>
   </ul>
 </div>

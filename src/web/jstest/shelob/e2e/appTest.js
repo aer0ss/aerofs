@@ -8,6 +8,7 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
     //   textfile.txt
     //   otherfile
     // website.html
+    var root_folder_obj = {id:"root", name:"AeroFS", is_shared:false};
     var empty_folder_obj = {id:"01a01a01a", name:"empty_folder", is_shared:false};
     var other_folder_obj = {id:"9f89f89f8", name:"other_folder", is_shared:false};
     var deeper_folder_obj = {id:"78f78f78f", name:"deeper_folder", is_shared:false};
@@ -17,35 +18,49 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
     var anotherfile_obj = {id:"42b42b42b", name:"anotherfile", last_modified: "2013-12-14T02:19:59Z", mime_type: "not/a/mime/type"};
 
     // mock out the API responses according to the folder structure describe above
-    $httpBackend.whenGET('/api/v1.0/folders/01a01a01a').respond(empty_folder_obj);
-    $httpBackend.whenGET('/api/v1.0/folders/9f89f89f8').respond(other_folder_obj);
-    $httpBackend.whenGET('/api/v1.0/folders/78f78f78f').respond(deeper_folder_obj);
-    $httpBackend.whenGET(/^\/api\/v1.0\/children\/?(\?.*)?$/).respond(
+    $httpBackend.whenGET(/^\/api\/v1.2\/folders\/root\/?\?fields=children,path(&.*)?$/).respond(
         {
-            parent: "",
-            folders: [empty_folder_obj, other_folder_obj],
-            files: [website_html_obj]
+            name: 'AeroFS',
+            id: 'root',
+            path: {folders: []},
+            children: {
+                folders: [empty_folder_obj, other_folder_obj],
+                files: [website_html_obj]
+            }
         }
     );
-    $httpBackend.whenGET(/^\/api\/v1.0\/children\/01a01a01a\/?(\?.*)?$/).respond(
+    $httpBackend.whenGET(/^\/api\/v1.2\/folders\/01a01a01a\/?\?fields=children,path(&.*)?$/).respond(
         {
-            parent: "01a01a01a",
-            folders: [],
-            files: [],
+            name: empty_folder_obj.name,
+            id: empty_folder_obj.id,
+            is_shared: empty_folder_obj.is_shared,
+            path: {folders: [root_folder_obj]},
+            children: {
+                folders: [],
+                files: [],
+            }
         }
     );
-    $httpBackend.whenGET(/^\/api\/v1.0\/children\/9f89f89f8\/?(\?.*)?$/).respond(
+    $httpBackend.whenGET(/^\/api\/v1.2\/folders\/9f89f89f8\/?\?fields=children,path(&.*)?$/).respond(
         {
-            parent: "9f89f89f8",
-            folders: [deeper_folder_obj],
-            files: [textfile_txt_obj, otherfile_obj, anotherfile_obj],
+            name: other_folder_obj.name,
+            id: other_folder_obj.id,
+            path: {folders: [root_folder_obj]},
+            children: {
+                folders: [deeper_folder_obj],
+                files: [textfile_txt_obj, otherfile_obj, anotherfile_obj],
+            }
         }
     );
-    $httpBackend.whenGET(/^\/api\/v1.0\/children\/78f78f78f\/?(\?.*)?$/).respond(
+    $httpBackend.whenGET(/^\/api\/v1.2\/folders\/78f78f78f\/?\?fields=children,path(&.*)?$/).respond(
         {
-            parent: "78f78f78f",
-            folders: [],
-            files: [],
+            name: deeper_folder_obj.name,
+            id: deeper_folder_obj.id,
+            path: {folders: [root_folder_obj, other_folder_obj]},
+            children: {
+                folders: [],
+                files: [],
+            }
         }
     );
 

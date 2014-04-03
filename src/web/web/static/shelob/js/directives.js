@@ -1,6 +1,6 @@
 var shelobDirectives = angular.module('shelobDirectives', []);
 
-shelobDirectives.directive('aeroFileUpload', function($rootScope, $log, $modal, $timeout, API) {  return {
+shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, $log, $modal, $timeout, API) {  return {
 
     restrict: 'EA',
 
@@ -64,13 +64,13 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $log, $modal, 
             });
 
             // create an empty file before upload
-            var fileObj = {parent: $rootScope.parent, name: file.name};
+            var fileObj = {parent: $routeParams.oid, name: file.name};
             $log.debug("creating file:", fileObj);
             var headers = {'Endpoint-Consistency': 'strict'};
             API.post('/files', fileObj, headers).then(function(response) {
                 // file creation succeeded
                 $log.info('file creation succeeded');
-                scope.doChunkedUpload(response.data, file, response.headers('ETag'));
+                scope.doChunkedUpload(response.data, file, response.data.etag);
             }, function(response) {
                 // file creation failed
                 $log.error('file creation failed with status ' + response.status);
