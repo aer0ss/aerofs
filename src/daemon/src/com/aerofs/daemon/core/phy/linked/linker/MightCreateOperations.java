@@ -168,13 +168,13 @@ class MightCreateOperations
             Preconditions.checkNotNull(sourceSOID);
             SOID m = updateLogicalObject_(sourceSOID, pc, fnt._dir, t);
             // change of SOID indicate migration, in which case the tag file MUST NOT be recreated
-            if (m.equals(sourceSOID)) scheduleTagFileFixIfNeeded(sourceSOID.oid(), pc);
+            if (m.equals(sourceSOID)) scheduleTagFileFixIfNeeded(sourceSOID, pc);
             delBuffer.remove_(sourceSOID);
             return false;
         case Replace:
             Preconditions.checkNotNull(targetSOID);
             replaceObject_(pc, fnt, delBuffer, sourceSOID, targetSOID, t);
-            scheduleTagFileFixIfNeeded(targetSOID.oid(), pc);
+            scheduleTagFileFixIfNeeded(targetSOID, pc);
             return true;
         default:
             throw SystemUtil.fatalWithReturn("unhandled op:" + ops);
@@ -182,40 +182,42 @@ class MightCreateOperations
     }
 
 
-    public void scheduleTagFileFixIfNeeded(OID oid, PathCombo pc)
+    public void scheduleTagFileFixIfNeeded(SOID soid, PathCombo pc)
     {
-        if (!oid.isAnchor()) return;
-        SID sid = SID.anchorOID2storeSID(oid);
+        if (!soid.oid().isAnchor()) return;
+        SID sid = SID.anchorOID2storeSID(soid.oid());
         try {
             if (!_sfti.isSharedFolderRoot(pc._absPath, sid)) {
                 // schedule fix instead of performing immediately
                 // this is necessary to prevent interference with in-progress deletion operations
                 // on some OSes (most notably interference was observed with syncdet tests on
                 // Windows)
-                scheduleTagFileFix(sid, pc);
+                scheduleTagFileFix(soid, pc);
             }
         } catch (Exception e) {
-            l.error("failed to fix tag file for {} {}", sid.toStringFormal(), pc, e);
+            l.error("failed to fix tag file for {} {} {}", soid, sid.toStringFormal(), pc, e);
         }
     }
 
-    private void scheduleTagFileFix(final SID sid, final PathCombo pc)
+    private void scheduleTagFileFix(final SOID soid, final PathCombo pc)
     {
         _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
                 try {
-                    fixTagFile(sid, pc);
+                    fixTagFile(soid, pc);
                 } catch (Exception e) {
-                    l.error("failed to fix tag file for {} {}", sid.toStringFormal(), pc, e);
+                    l.error("failed to fix tag file for {} {} {}",
+                            soid.sidx(), soid.oid().toStringFormal(), pc, e);
                 }
             }
         }, TimeoutDeletionBuffer.TIMEOUT);
     }
 
-    private void fixTagFile(SID sid, PathCombo pc) throws Exception
+    private void fixTagFile(SOID soid, PathCombo pc) throws Exception
     {
+        SID sid = SID.anchorOID2storeSID(soid.oid());
         SIndex sidx = _sid2sidx.getNullable_(sid);
         // abort if store disappeared
         if (sidx == null) {
@@ -223,7 +225,8 @@ class MightCreateOperations
             return;
         }
 
-        Path p = _ds.resolveNullable_(new SOID(sidx, OID.ROOT));
+        // Must resolve the anchor instead of the store root to work on flat linked storage
+        Path p = _ds.resolveNullable_(soid);
         // abort if anchor moved
         if (p == null || !p.equals(pc._path)) {
             l.info("anchor moved before tag fix {} {}: {}", sid, pc, p);

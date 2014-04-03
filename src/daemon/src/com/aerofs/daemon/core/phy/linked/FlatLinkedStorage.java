@@ -167,6 +167,7 @@ public class FlatLinkedStorage extends LinkedStorage
     @Override
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException
     {
+        super.promoteToAnchor_(sid, path, t);
         // TODO:
         /**
          * It'd be nice if we could do any of the following:
