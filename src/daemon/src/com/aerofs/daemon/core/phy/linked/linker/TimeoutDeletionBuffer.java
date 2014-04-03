@@ -315,8 +315,10 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
             // it will mark a deletion in the TimeoutDeletionBuffer,
             // but the OA for this path will already be null (because by this point,
             // the OA has been merged to the target's already).
-            l.info("aliased " + soid);
-            assert _ds.hasAliasedOA_(soid);
+            //
+            // there is also a potential race condition between observing a deletion
+            // in the scanner and the store disappearing altogether (lost ACLs)
+            l.info("missing oa {} {}", soid, _ds.hasAliasedOA_(soid));
             return false;
         } else {
             OA oa =  _ds.getOA_(soid);
