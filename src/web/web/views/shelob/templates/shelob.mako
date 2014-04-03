@@ -25,7 +25,7 @@
 </%block>
 
 <%block name="css">
-    <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/shelob.css')}"></script>
-    <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/tree-control.css')}"></script>
-    <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/tree-control-attribute.css')}"></script>
+    <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/shelob.css')}"/>
+    <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/tree-control.css')}"/>
+    <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/tree-control-attribute.css')}"/>
 </%block>
