@@ -4,7 +4,9 @@ This article describes how to set up SyncDET actor VMs on your development compu
 Set up actor VMs
 ---
 
-Copy the sample yaml file in the syncdet repo to /etc/syncdet:
+Copy the sample yaml file in the syncdet repo to /etc/syncdet
+
+*TODO (JG): remove the code in the Vagrantfile that attempts to read /etc/syncdet/config.yaml and stop worrying about this. If we really want to generate yaml files automatically, let's generate one from scratch instead of assuming you already have one and trying to modify it.*
 
     $ sudo mkdir /etc/syncdet
     $ sudo cp ~/repos/syncdet/config.yaml.sample /etc/syncdet
@@ -20,6 +22,8 @@ Create a hostonly setup:
 Or, create a bridge networking setup:
     
     $ CLIENT_COUNT=2 BRIDGE_COUNT=1 BRIDGE_IFACE="en1"
+    
+This command creates two actors, one of whom will have a bridged interface and one of whom won't.
 
 - `CLIENT_COUNT` specifies the number of VMs you want to setup. It must be 2 or greater.
 
@@ -37,7 +41,7 @@ another place, you may simply symlink `~/.vagrant.d` to any other place you want
 Connect the VMs to SyncDET
 ---
 
-Create a file `/etc/syncdet/config.yaml` with the following content:
+Overwrite the file `/etc/syncdet/config.yaml` with the following content:
 
 ```
 actor_defaults:
@@ -69,6 +73,10 @@ To log in to the VM:
 For sudo access, use the vagrant account:
 
     $ ssh -i ~/.vagrant.d/insecure_private_key vagrant@{username}-vagrant-{index}.local
+
+or, from the directory containing the Vagrantfile:
+
+    $ vagrant ssh {username}-vagrant-{index}
 
 Sudo access is not recommended unless you make your changes permanent by updating the puppet manifest.
 

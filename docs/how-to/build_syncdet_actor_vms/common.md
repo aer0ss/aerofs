@@ -1,4 +1,18 @@
+
+Before you start, read [this doc](http://docs.vagrantup.com/v2/boxes/base.html) to understand the basics of building Vagrant base boxes.
+
+(See [windows](windows.html), [osx](osx.html) for OS specific instructions.)
+
+# Create a new VirtualBox VM
+
+- Add a Host-only network adapter (aka NIC) named "vboxnet1", in addition to the default NAT adapter.
+- After the OS is installed, create the first OS user "aerofstest" with password "temp123." This is the convention used across the AeroFS test infrastructure.
+- Use an arbitrary hostname. Vagrantfiles will overwrite it in later stages.
+- You should see two NICs in the OS, one assigned to address 10.0.2.15. This is the NAT adapter and the addres points to the host (according to JGray). Manually assign the other NIC (the vboxnet1 adapter) a 192.168.50.* address (e.g. 192.168.50.222).
+
 # Install software
+
+- Install Virtualbox guest additions: http://www.virtualbox.org/manual/ch04.html
 
 Through cygwin, homebrew, or apt-get, install: openssh, vim, git, rsync, python2.7, curl, nc
 

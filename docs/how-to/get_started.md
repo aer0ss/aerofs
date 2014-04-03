@@ -42,9 +42,11 @@ Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a us
 will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools.
 
 
-## Install Java IDE
+## Install IDEs
 
-We suggest to install [IntelliJ DEA CE](http://www.jetbrains.com/idea/download/).
+We suggest [IntelliJ IDEA CE](http://www.jetbrains.com/idea/download/) for Java and [PyCharm](http://www.jetbrains.com/pycharm/download/) for Python.
+
+We require that you use either an IDE or a language validator to check syntax and formatting for code in markup and scripting languages, such as Python, HTML, CSS, and JavaScript.
 
 ## Install Homebrew
 

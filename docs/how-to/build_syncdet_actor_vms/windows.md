@@ -4,6 +4,13 @@ Use Windows 7 as the base image. Why? it has the [largest market share](http://t
 
 It would be ideal if tests cover both 64-bit and 32-bit Windows.
 
+# Create the VM
+
+- 1024MB RAM
+- 40GB VMDK virtual drive
+- Disable Widows Firewall
+- Disable UAC to avoid needless troubles (type "uac" in the start menu to find the settings)
+
 # Install Cygwin
 
 Install 32-bit cygwin at `C:\cygwin\`, and save cygwin's setup.exe on the desktop. Install things through the cygwin installation wizard.
