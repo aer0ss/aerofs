@@ -18,9 +18,8 @@ PACKAGES= \
 	config \
 	db-backup \
 	devman \
-	enterprise-updater \
-	havre \
 	dryad \
+	havre \
 	identity \
 	jeq-tools \
 	lizard \

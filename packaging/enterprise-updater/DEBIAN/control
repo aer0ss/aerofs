@@ -1,6 +1,0 @@
-Package: aerofs-enterprise-updater
-Section: java
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS enterprise server updater package.
-Architecture: all
