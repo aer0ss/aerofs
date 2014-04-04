@@ -299,7 +299,7 @@ public class LibParam extends BaseParam
          * to end-users in the context of "Sign in with {}", "A user without {} accounts", etc.
          */
         public static final String                      SERVICE_IDENTIFIER =
-                getStringProperty(                      "identity_service_identifier",
+                getStringProperty("identity_service_identifier",
                         // The default value
                         OpenId.enabled() ? "OpenID" : "LDAP");
     }

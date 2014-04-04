@@ -3,6 +3,12 @@
 
 <h2>Service status</h2>
 
+<div class="page-block" id="monitoring-div">
+    <a href="${request.route_path('monitoring')}">
+        Connection details for automated status monitors
+    </a>
+</div>
+
 <div class="page-block" id="server-status-div">
     <table class="table table-hover" style="border: 1px">
         <tbody id="server-status-tbody">
