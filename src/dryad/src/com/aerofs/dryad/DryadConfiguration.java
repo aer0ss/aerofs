@@ -12,7 +12,7 @@ public class DryadConfiguration extends AbstractRestConfiguration
     @Override
     public boolean isSupportedVersion(Version version)
     {
-        // Internal service, don't care about versions.
+        // Internal service, don't care about versions (for now).
         return true;
     }
 }
