@@ -1,7 +1,8 @@
 from web.util import add_routes
 
 routes = [
-    'report-problems',
+    'report-problem',
+    'json-submit-report'
 ]
 
 def includeme(config):

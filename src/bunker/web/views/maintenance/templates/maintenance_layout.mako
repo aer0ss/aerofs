@@ -41,7 +41,7 @@
         %>
         %if enable_dryad:
             <li class="nav-header">Help</li>
-            ${navigation.link(('report-problems', _("Report Problems")))}
+            ${navigation.link(('report-problem', _("Report a Problem")))}
             <li><a href="http://support.aerofs.com">Support</a></li>
         %endif
 
