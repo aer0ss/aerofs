@@ -13,7 +13,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreJoiner;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -39,7 +38,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public abstract class AbstractStoreJoiner
 {
-    protected final static Logger l = Loggers.getLogger(SingleuserStoreJoiner.class);
+    protected final static Logger l = Loggers.getLogger(AbstractStoreJoiner.class);
     protected final ObjectCreator _oc;
     protected final ObjectSurgeon _os;
     protected final DirectoryService _ds;
@@ -136,7 +135,7 @@ public abstract class AbstractStoreJoiner
             }
         }
 
-        l.info("joining share: {} {} {}", sidx, folderName, anchor);
+        l.info("anchoring: {} {} {}", sidx, folderName, anchor);
 
         while (true) {
             try {
@@ -149,7 +148,7 @@ public abstract class AbstractStoreJoiner
             }
         }
 
-        l.info("joined {} as {}", anchor, folderName);
+        l.info("anchored {} as {}", anchor, folderName);
     }
 
     /**
@@ -167,6 +166,7 @@ public abstract class AbstractStoreJoiner
 
         final ResolvedPath path = _ds.resolve_(oa);
         if (path.isInTrash()) return null;
+        l.info("deleting anchor {} {}", sidx, sid);
         _od.delete_(oa.soid(), PhysicalOp.APPLY, t);
 
         return path;

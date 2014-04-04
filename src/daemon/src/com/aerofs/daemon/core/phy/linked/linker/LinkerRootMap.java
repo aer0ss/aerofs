@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedPath;
+import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.PendingRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -52,6 +53,7 @@ public class LinkerRootMap
     private final CfgAbsRoots _cfgAbsRoots;
     private final PendingRootDatabase _prdb;
     private final RitualNotificationServer _rns;
+    private final SharedFolderTagFileAndIcon _sfti;
 
     private LinkerRoot.Factory _factLR;
     private final Map<SID, LinkerRoot> _map = Maps.newHashMap();
@@ -73,11 +75,12 @@ public class LinkerRootMap
 
     @Inject
     public LinkerRootMap(IOSUtil os, InjectableFile.Factory factFile, CfgAbsRoots cfgAbsRoots,
-            PendingRootDatabase prdb, RitualNotificationServer rns)
+            SharedFolderTagFileAndIcon sfti, PendingRootDatabase prdb, RitualNotificationServer rns)
     {
         _os = os;
         _factFile = factFile;
         _prdb = prdb;
+        _sfti = sfti;
         _cfgAbsRoots = cfgAbsRoots;
         _rns = rns;
     }
@@ -153,6 +156,7 @@ public class LinkerRootMap
     {
         IOException e = add_(sid, absRoot);
         if (e != null) throw e;
+        _sfti.addTagFileAndIconIn(sid, absRoot, t);
         _cfgAbsRoots.add(sid, absRoot);
         _prdb.removePendingRoot(sid, t);
 
@@ -188,6 +192,7 @@ public class LinkerRootMap
 
         IOException e = remove_(sid);
         if (e != null) throw e;
+        _sfti.removeTagFileAndIconIn(sid, absPath, t);
         _cfgAbsRoots.remove(sid);
 
         t.addListener_(new AbstractTransListener() {

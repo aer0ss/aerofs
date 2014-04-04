@@ -383,13 +383,17 @@ class ScanSession
             // TODO: schedule a scan of the parent to make sure we don't somehow lose updates?
             // Theoretically this should be unnecessary but the thing about theory is that it
             // rarely ever holds in practice, especially so when dealing with filesystems...
+            l.warn("no parent, no scan {}", pcParent._path);
             return false;
         }
 
         if (l.isInfoEnabled()) l.info("on " + soidParent + ":" + pcParent);
 
         OA oaParent = _f._ds.getOA_(soidParent);
-        if (_f._filter.shouldIgnoreChilren_(pcParent, oaParent)) return false;
+        if (_f._filter.shouldIgnoreChilren_(pcParent, oaParent)) {
+            l.warn("ignore children under {} {}", soidParent, pcParent);
+            return false;
+        }
 
         // NB: it is VERY IMPORTANT to call that AT MOST ONCE per SOID per scan
         // every time you violate that contract TimeoutDeletionBuffer devours the soul
