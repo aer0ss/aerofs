@@ -1,13 +1,4 @@
-#!/usr/bin/python
-#
-# Reverse map a single string:
-#
-# $ python reverse-map.py /71d60cd0/d3d8f7b6/f2e88c90/146f3ea3/20b8ff21
-# /home/d3d8f7b6/AeroFS/ref/20b8ff21
-#
-# Reverse map a log file, given a defect map file
-#
-# $ cat defect-818584/daemon.log | python reverse-map.py -f defect-818584/name3758872731124740232map > defect-818584/daemon.log.re
+#!/usr/bin/env python
 
 import base64
 import binascii
@@ -60,6 +51,8 @@ def add_name_map_files_to_map(d):
 def build_map():
     d = {}
     add_file_to_map(d, "/usr/share/dict/words")
+    add_file_to_map(d, os.path.join(pwd, "additional_words.txt"))
+    #add_file_to_map(d, os.path.join(pwd, "bigwords.txt"))
     return d
 
 # Avoid compiling the regex multiple times
@@ -73,6 +66,7 @@ def apply_reverse_map(mapping, line):
         key = m.group(0)
         if key in mapping:
             output.append(mapping[key])
+            #print "replaced", key, "with", mapping[key]
         else:
             output.append(key)
         start = m.end()
