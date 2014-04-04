@@ -13,6 +13,7 @@ import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
+import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
 import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
@@ -50,6 +51,7 @@ final class JingleBootstrapFactory
     private final SSLEngineFactory serverSslEngineFactory;
     private final RockLog rockLog;
     private final IncomingChannelHandler incomingChannelHandler;
+    private final HeartbeatHandler heartbeatHandler;
     private final TransportProtocolHandler protocolHandler;
     private final IUnicastListener unicastListener;
     private final TransportStats transportStats;
@@ -60,6 +62,8 @@ final class JingleBootstrapFactory
             UserID localuser,
             DID localdid,
             long channelConnectTimeout,
+            long heartbeatInterval,
+            int maxFailedHeartbeats,
             Timer timer,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
@@ -79,6 +83,7 @@ final class JingleBootstrapFactory
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.rockLog = rockLog;
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
+        this.heartbeatHandler = new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer);
         this.protocolHandler = protocolHandler;
         this.unicastListener = unicastListener;
         this.transportStats = transportStats;
@@ -108,6 +113,7 @@ final class JingleBootstrapFactory
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
                         verifiedHandler,
                         messageHandler,
+                        heartbeatHandler,
                         protocolHandler,
                         clientChannelDiagnosticsHandler,
                         clientChannelTeardownHandler);
@@ -140,6 +146,7 @@ final class JingleBootstrapFactory
                         verifiedHandler,
                         messageHandler,
                         incomingChannelHandler,
+                        heartbeatHandler,
                         protocolHandler,
                         serverChannelDiagnosticsHandler,
                         serverChannelTeardownHandler);

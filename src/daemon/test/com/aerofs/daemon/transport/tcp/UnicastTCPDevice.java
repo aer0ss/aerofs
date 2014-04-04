@@ -12,6 +12,7 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.MockCA;
@@ -33,11 +34,14 @@ import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 
 import java.net.InetSocketAddress;
 import java.security.SecureRandom;
 import java.util.Random;
 
+import static com.aerofs.daemon.lib.DaemonParam.HEARTBEAT_INTERVAL;
+import static com.aerofs.daemon.lib.DaemonParam.MAX_FAILED_HEARTBEATS;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -98,7 +102,21 @@ public final class UnicastTCPDevice
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
         SSLEngineFactory serverSSLEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
-        tcpBootstrapFactory =  new TCPBootstrapFactory(userID, did, channelConnectTimeout, clientSSLEngineFactory, serverSSLEngineFactory, unicastListener, unicast, transportProtocolHandler, tcpProtocolHandler, transportStats, mock(RockLog.class));
+        tcpBootstrapFactory =  new TCPBootstrapFactory(
+                userID,
+                did,
+                channelConnectTimeout,
+                HEARTBEAT_INTERVAL,
+                MAX_FAILED_HEARTBEATS,
+                clientSSLEngineFactory,
+                serverSSLEngineFactory,
+                unicastListener,
+                unicast,
+                transportProtocolHandler,
+                tcpProtocolHandler,
+                transportStats,
+                mock(Timer.class),
+                mock(RockLog.class));
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);
     }

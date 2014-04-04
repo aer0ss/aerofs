@@ -37,6 +37,7 @@ import com.aerofs.proto.Diagnostics.ZephyrDevice;
 import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.XMPPConnection;
 import org.slf4j.Logger;
@@ -94,6 +95,7 @@ public final class Zephyr implements ITransport
             SSLEngineFactory serverSSLEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
             final @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
+            Timer timer,
             RockLog rockLog,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
@@ -101,6 +103,9 @@ public final class Zephyr implements ITransport
             int numPingsBeforeDisconnectingXmppServerConnection,
             long xmppServerConnectionInitialReconnectInterval,
             long xmppServerConnectionMaxReconnectInterval,
+            long heartbeatInterval,
+            int maxFailedHeartbeats,
+            long zephyrHandshakeTimeout,
             InetSocketAddress zephyrAddress,
             Proxy proxy)
     {
@@ -146,6 +151,9 @@ public final class Zephyr implements ITransport
         this.zephyrConnectionService = new ZephyrConnectionService(
                 localid,
                 localdid,
+                heartbeatInterval,
+                maxFailedHeartbeats,
+                zephyrHandshakeTimeout,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory,
                 presenceService,
@@ -154,6 +162,7 @@ public final class Zephyr implements ITransport
                 transportProtocolHandler,
                 channelTeardownHandler,
                 transportStats,
+                timer,
                 rockLog,
                 clientSocketChannelFactory,
                 this.zephyrAddress,

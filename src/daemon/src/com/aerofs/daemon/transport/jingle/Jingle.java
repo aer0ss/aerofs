@@ -84,6 +84,8 @@ public class Jingle implements ITransport
             long xmppServerConnectionInitialReconnectInterval,
             long xmppServerConnectionMaxReconnectInterval,
             long channelConnectTimeout,
+            long heartbeatInterval,
+            int maxFailedHeartbeats,
             byte[] scrypted,
             String absRtRoot,
             boolean enableJingleLibraryLogging,
@@ -137,7 +139,22 @@ public class Jingle implements ITransport
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, this.outgoingEventSink, streamManager, pulseManager);
         // FIXME (AG): if I can somehow remove the circular dependency for IServerHandlerListener I can completely remove the setBootstraps call!
-        JingleBootstrapFactory bootstrapFactory = new JingleBootstrapFactory(localUser, localdid, channelConnectTimeout, timer, clientSslEngineFactory, serverSslEngineFactory, presenceService, rockLog, unicast, protocolHandler, transportStats, signalThread, channelWorker);
+        JingleBootstrapFactory bootstrapFactory = new JingleBootstrapFactory(
+                localUser,
+                localdid,
+                channelConnectTimeout,
+                heartbeatInterval,
+                maxFailedHeartbeats,
+                timer,
+                clientSslEngineFactory,
+                serverSslEngineFactory,
+                presenceService,
+                rockLog,
+                unicast,
+                protocolHandler,
+                transportStats,
+                signalThread,
+                channelWorker);
         ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);

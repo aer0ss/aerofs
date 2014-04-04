@@ -50,6 +50,7 @@ import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -95,9 +96,12 @@ public class TCP implements ITransport, IAddressResolver
             LinkStateService linkStateService,
             boolean listenToMulticastOnLoopback,
             long channelConnectTimeout,
+            long heartbeatInterval,
+            int maxFailedHeartbeats,
             MaxcastFilterReceiver maxcastFilterReceiver,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
+            Timer timer,
             RockLog rockLog,
             ClientSocketChannelFactory clientChannelFactory,
             ServerSocketChannelFactory serverChannelFactory)
@@ -124,7 +128,21 @@ public class TCP implements ITransport, IAddressResolver
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager);
-        TCPBootstrapFactory bootstrapFactory = new TCPBootstrapFactory(localUser, localdid, channelConnectTimeout, clientSslEngineFactory, serverSslEngineFactory, presenceService, unicast, protocolHandler, tcpProtocolHandler, transportStats, rockLog);
+        TCPBootstrapFactory bootstrapFactory = new TCPBootstrapFactory(
+                localUser,
+                localdid,
+                channelConnectTimeout,
+                heartbeatInterval,
+                maxFailedHeartbeats,
+                clientSslEngineFactory,
+                serverSslEngineFactory,
+                presenceService,
+                unicast,
+                protocolHandler,
+                tcpProtocolHandler,
+                transportStats,
+                timer,
+                rockLog);
         ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelFactory, serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);

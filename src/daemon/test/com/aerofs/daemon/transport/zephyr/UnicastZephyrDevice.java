@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.zephyr;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.C;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
@@ -32,6 +33,7 @@ import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionSer
 import com.aerofs.daemon.transport.xmpp.signalling.SignallingService;
 import com.aerofs.lib.event.IEvent;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.jivesoftware.smack.XMPPConnection;
 
 import java.net.InetSocketAddress;
@@ -84,8 +86,12 @@ public final class UnicastZephyrDevice
         ChannelTeardownHandler twowayChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.SERVER);
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);
-        unicast = new ZephyrConnectionService(userID,
+        unicast = new ZephyrConnectionService(
+                userID,
                 did,
+                10 * C.SEC,
+                3,
+                10 * C.SEC,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory,
                 unicastListener,
@@ -94,6 +100,7 @@ public final class UnicastZephyrDevice
                 transportProtocolHandler,
                 twowayChannelTeardownHandler,
                 transportStats,
+                new HashedWheelTimer(),
                 mockRockLog.getRockLog(),
                 new NioClientSocketChannelFactory(),
                 new InetSocketAddress(zephyrHost, zephyrPort),

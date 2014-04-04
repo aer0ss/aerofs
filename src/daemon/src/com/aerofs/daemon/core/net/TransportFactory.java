@@ -77,6 +77,9 @@ public final class TransportFactory
     private final long xmppServerConnectionInitialReconnectInterval;
     private final long xmppServerConnectionMaxReconnectInterval;
     private final long channelConnectTimeout;
+    private final long heartbeatInterval;
+    private final int maxFailedHeartbeats;
+    private final long zephyrHandshakeTimeout;
     private final InetSocketAddress zephyrServerAddress;
     private final Proxy proxy;
     private final Timer timer;
@@ -105,6 +108,9 @@ public final class TransportFactory
             long xmppServerConnectionInitialReconnectInterval,
             long xmppServerConnectionMaxReconnectInterval,
             long channelConnectTimeout,
+            long hearbeatInterval,
+            int maxFailedHeartbeats,
+            long zephyrHandshakeTimeout,
             InetSocketAddress zephyrServerAddress,
             Proxy proxy,
             Timer timer,
@@ -132,6 +138,9 @@ public final class TransportFactory
         this.xmppServerConnectionInitialReconnectInterval = xmppServerConnectionInitialReconnectInterval;
         this.xmppServerConnectionMaxReconnectInterval = xmppServerConnectionMaxReconnectInterval;
         this.channelConnectTimeout = channelConnectTimeout;
+        this.heartbeatInterval = hearbeatInterval;
+        this.maxFailedHeartbeats = maxFailedHeartbeats;
+        this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
         this.zephyrServerAddress = zephyrServerAddress;
         this.proxy = proxy;
         this.timer = timer;
@@ -178,9 +187,12 @@ public final class TransportFactory
                 linkStateService,
                 listenToMulticastOnLoopback,
                 channelConnectTimeout,
+                heartbeatInterval,
+                maxFailedHeartbeats,
                 maxcastFilterReceiver,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
+                timer,
                 rockLog,
                 clientSocketChannelFactory,
                 serverSocketChannelFactory);
@@ -201,6 +213,7 @@ public final class TransportFactory
                 serverSslEngineFactory,
                 clientSocketChannelFactory,
                 mobileServerZephyrConnector,
+                timer,
                 rockLog,
                 xmppServerAddress,
                 xmppServerDomain,
@@ -208,6 +221,9 @@ public final class TransportFactory
                 numPingsBeforeDisconnectingXmppServerConnection,
                 xmppServerConnectionInitialReconnectInterval,
                 xmppServerConnectionMaxReconnectInterval,
+                heartbeatInterval,
+                maxFailedHeartbeats,
+                zephyrHandshakeTimeout,
                 zephyrServerAddress,
                 proxy);
     }
@@ -225,6 +241,8 @@ public final class TransportFactory
                 xmppServerConnectionInitialReconnectInterval,
                 xmppServerConnectionMaxReconnectInterval,
                 channelConnectTimeout,
+                heartbeatInterval,
+                maxFailedHeartbeats,
                 scrypted,
                 absRtRoot,
                 enableJingleLibraryLogging,

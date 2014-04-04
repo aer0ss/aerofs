@@ -7,7 +7,6 @@ package com.aerofs.daemon.transport;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.TimerUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
@@ -137,6 +136,9 @@ public final class TransportResource extends ExternalResource
                 2,
                 1 * C.SEC,
                 5 * C.SEC,
+                10 * C.SEC,
+                90 * C.SEC,
+                3,
                 10 * C.SEC,
                 InetSocketAddress.createUnresolved("zephyr.aerofs.com", 443),
                 Proxy.NO_PROXY,

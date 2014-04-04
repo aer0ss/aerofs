@@ -14,6 +14,7 @@ import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
+import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
 import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
@@ -26,6 +27,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
 import static com.aerofs.base.net.NettyUtil.newSslHandler;
@@ -50,9 +52,10 @@ final class TCPBootstrapFactory
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
     private final IUnicastListener unicastListener;
+    private final IncomingChannelHandler incomingChannelHandler;
+    private final HeartbeatHandler heartbeatHandler;
     private final TransportProtocolHandler protocolHandler;
     private final TCPProtocolHandler tcpProtocolHandler;
-    private final IncomingChannelHandler incomingChannelHandler;
     private final TCPChannelDiagnosticsHandler clientChannelDiagnosticsHandler;
     private final TCPChannelDiagnosticsHandler serverChannelDiagnosticsHandler;
     private final TransportStats transportStats;
@@ -62,6 +65,8 @@ final class TCPBootstrapFactory
             UserID localuser,
             DID localdid,
             long channelConnectTimeout,
+            long heartbeatInterval,
+            int maxFailedHeartbeats,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IUnicastListener unicastListener,
@@ -69,6 +74,7 @@ final class TCPBootstrapFactory
             TransportProtocolHandler protocolHandler,
             TCPProtocolHandler tcpProtocolHandler,
             TransportStats stats,
+            Timer timer,
             RockLog rockLog)
     {
         this.localuser = localuser;
@@ -82,6 +88,7 @@ final class TCPBootstrapFactory
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
         this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT, rockLog);
         this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER, rockLog);
+        this.heartbeatHandler = new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer);
         this.transportStats = stats;
         this.rockLog = rockLog;
     }
@@ -109,6 +116,7 @@ final class TCPBootstrapFactory
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
                         verifiedHandler,
                         messageHandler,
+                        heartbeatHandler,
                         tcpProtocolHandler,
                         protocolHandler,
                         clientChannelDiagnosticsHandler,
@@ -144,6 +152,7 @@ final class TCPBootstrapFactory
                         verifiedHandler,
                         messageHandler,
                         incomingChannelHandler,
+                        heartbeatHandler,
                         tcpProtocolHandler,
                         protocolHandler,
                         serverChannelDiagnosticsHandler,

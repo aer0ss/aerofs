@@ -38,6 +38,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -57,9 +58,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
-import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HANDSHAKE_TIMEOUT;
-import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HEARTBEAT_INTERVAL;
-import static com.aerofs.daemon.lib.DaemonParam.Zephyr.MAX_FAILED_HEARTBEATS;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.getZephyrClient;
@@ -102,6 +100,9 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     ZephyrConnectionService(
             UserID localid,
             DID localdid,
+            long hearbeatInterval,
+            int maxFailedHeartbeats,
+            long zephyrHandshakeTimeout,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IUnicastListener unicastListener,
@@ -110,6 +111,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             TransportProtocolHandler transportProtocolHandler,
             ChannelTeardownHandler channelTeardownHandler,
             TransportStats transportStats,
+            Timer timer,
             RockLog rockLog,
             ChannelFactory channelFactory,
             InetSocketAddress zephyrAddress,
@@ -128,11 +130,12 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                         transportStats,
                         this,
                         unicastListener,
+                        timer,
                         rockLog,
                         proxy,
-                        HANDSHAKE_TIMEOUT,
-                        HEARTBEAT_INTERVAL,
-                        MAX_FAILED_HEARTBEATS));
+                        hearbeatInterval,
+                        maxFailedHeartbeats,
+                        zephyrHandshakeTimeout));
 
         this.rockLog = rockLog;
 

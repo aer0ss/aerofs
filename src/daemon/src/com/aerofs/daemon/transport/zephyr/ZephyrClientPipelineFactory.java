@@ -9,9 +9,9 @@ import com.aerofs.daemon.transport.lib.BootstrapFactoryUtil;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
-import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ConnectTunnelHandler;
+import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
@@ -25,7 +25,7 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
-import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 
 import java.net.Proxy;
 import java.util.concurrent.TimeUnit;
@@ -53,11 +53,11 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     private final RockLog rockLog;
     private final AddressResolverHandler resolver;
     private final Proxy proxy;
-    private final long zephyrHandshakeTimeout;
     private final long heartbeatInterval;
     private final int maxFailedHeartbeats;
+    private final long zephyrHandshakeTimeout;
     private final TimeUnit zephyrHandshakeTimeoutTimeunit;
-    private final HashedWheelTimer timer = new HashedWheelTimer(500, MILLISECONDS);
+    private final Timer timer;
 
     public ZephyrClientPipelineFactory(
             UserID localid,
@@ -69,11 +69,12 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
             TransportStats transportStats,
             IZephyrSignallingService zephyrSignallingService,
             IUnicastListener unicastListener,
+            Timer timer,
             RockLog rockLog,
             Proxy proxy,
-            long zephyrHandshakeTimeout,
             long heartbeatInterval,
-            int maxFailedHeartbeats)
+            int maxFailedHeartbeats,
+            long zephyrHandshakeTimeout)
     {
         checkArgument(proxy.type() == DIRECT || proxy.type() == HTTP, "cannot support proxy type:" + proxy.type());
 
@@ -86,12 +87,13 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         this.transportStats = transportStats;
         this.zephyrSignallingService = zephyrSignallingService;
         this.unicastListener = unicastListener;
+        this.timer = timer;
         this.rockLog = rockLog;
         this.resolver = new AddressResolverHandler(null);
         this.proxy = proxy;
-        this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
         this.heartbeatInterval = heartbeatInterval;
         this.maxFailedHeartbeats = maxFailedHeartbeats;
+        this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
         this.zephyrHandshakeTimeoutTimeunit = MILLISECONDS;
     }
 
