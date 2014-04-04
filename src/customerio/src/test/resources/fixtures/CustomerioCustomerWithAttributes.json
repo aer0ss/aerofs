@@ -1,0 +1,9 @@
+{
+  "email": "eric+test@aerofs.com",
+  "string": "hello", 
+  "number": [ 5679, 98765 ], 
+  "map": {
+    "string": "world", 
+    "boolean": true
+  }
+}
