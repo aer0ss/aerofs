@@ -1,0 +1,19 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require 'yaml'
+
+Vagrant.configure("2") do |config|
+  config.vm.define :buildbox do |box|
+    box.vm.box = "precise64"
+    box.vm.box_url = "http://files.vagrantup.com/precise64.box"
+    box.vm.network :private_network, ip: "192.168.66.10"
+    box.vm.hostname = "buildbox"
+    box.vm.provider :virtualbox do |vb|
+      vb.gui = true
+      vb.customize ["modifyvm", :id, "--name", "buildbox"]
+      vb.customize ["modifyvm", :id, "--memory", "512"]
+    end
+    box.vm.provision "shell",
+      inline: "/vagrant/provision.sh"
+  end
+end
