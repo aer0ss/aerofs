@@ -46,13 +46,6 @@ class persistent::services (
     # with 'aerofs_sp'@'localhost'.
     class {'mysql::server::account_security': }
 
-    # Should get pulled via apt dependency, but add it here just for good
-    # measure.
-    package {"aerofs-spdb":
-        ensure  => latest,
-        require => Apt::Source["aerofs"],
-    }
-
     # --------------
     # Redis
     # --------------

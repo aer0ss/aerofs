@@ -1,7 +1,0 @@
-Package: aerofs-spdb
-Section: java
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS spdb server package.
-Architecture: all
-Depends: mysql-server
