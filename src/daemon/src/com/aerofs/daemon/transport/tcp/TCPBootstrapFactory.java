@@ -80,8 +80,8 @@ final class TCPBootstrapFactory
         this.protocolHandler = protocolHandler;
         this.tcpProtocolHandler = tcpProtocolHandler;
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
-        this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER, rockLog);
-        this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT, rockLog);
+        this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT, rockLog);
+        this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER, rockLog);
         this.transportStats = stats;
         this.rockLog = rockLog;
     }
