@@ -54,11 +54,9 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.analytics.AnalyticsEventCounter;
-import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OCID;
@@ -530,8 +528,9 @@ public class ReceiveAndApplyUpdate
             l.warn("name conflict {} in {}", soid, cxt);
             return resolveNameConflict_(soid, oidParent, meta, wasPresent, metaDiff, t,
                     noNewVersion, vRemote, soidMsg, cr, cxt);
-        } catch (ExNotDir e) {
-            SystemUtil.fatal(e);
+        } catch (Exception e) {
+            l.error("failed to apply meta update", e);
+            throw e;
         }
 
         return false;
@@ -539,7 +538,7 @@ public class ReceiveAndApplyUpdate
 
     private void resolveParentConflictIfRemoteParentIsLocallyNestedUnderChild_(SIndex sidx,
             OID child, OID remoteParent, Trans t)
-            throws SQLException, IOException
+            throws Exception
     {
         SOID soidRemoteParent = new SOID(sidx, remoteParent);
         OA oaChild = _ds.getOA_(new SOID(sidx, child));
@@ -555,23 +554,12 @@ public class ReceiveAndApplyUpdate
             l.debug("resolve remote parent is locally nested under child " + child + " "
                     + remoteParent);
 
-            try {
-                // Avoid a local name conflict in the new path of the remote parent object
-                String newRemoteParentName = _ds.generateConflictFreeFileName_(
-                        pathChild.removeLast(), pathRemoteParent.last());
+            // Avoid a local name conflict in the new path of the remote parent object
+            String newRemoteParentName = _ds.generateConflictFreeFileName_(
+                    pathChild.removeLast(), pathRemoteParent.last());
 
-                _om.moveInSameStore_(soidRemoteParent, oaChild.parent(), newRemoteParentName,
-                        PhysicalOp.APPLY, false, true, t);
-
-            } catch (ExNotFound e) {
-                SystemUtil.fatal(e);
-            } catch (ExNotDir e) {
-                SystemUtil.fatal(e);
-            } catch (ExAlreadyExist e) {
-                SystemUtil.fatal(e);
-            } catch (ExStreamInvalid e) {
-                SystemUtil.fatal(e);
-            }
+            _om.moveInSameStore_(soidRemoteParent, oaChild.parent(), newRemoteParentName,
+                    PhysicalOp.APPLY, false, true, t);
         }
     }
 

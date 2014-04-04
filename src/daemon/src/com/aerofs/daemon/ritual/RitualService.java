@@ -231,7 +231,8 @@ public class RitualService implements IRitualService
      * Creates a PBObjectAttributes instance with attributes from {@paramref oa} and branches
      * listed in {@paramref div}, and each branch will contain the contributors in {@paramref div}.
      */
-    private static PBObjectAttributes toPB(OA oa, @Nullable Map<KIndex, List<PBPeer>> div)
+    private static PBObjectAttributes toPB(OA oa,
+            @Nullable Map<KIndex, List<PBPeer>> div)
     {
         PBObjectAttributes.Builder bd = PBObjectAttributes.newBuilder()
                 .setExcluded(oa.isExpelled());

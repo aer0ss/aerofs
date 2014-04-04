@@ -44,6 +44,8 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.Path;
 
+import static com.aerofs.lib.Util.set;
+import static com.aerofs.lib.Util.unset;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -145,7 +147,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     {
         assert oa.isAnchor();
         SIndex sidx = _sid2sidx.getNullable_(SID.anchorOID2storeSID(oa.soid().oid()));
-        assert oa.isExpelled() == (sidx == null);
         return sidx == null ? null : new SOID(sidx, OID.ROOT);
     }
 
@@ -172,7 +173,24 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         new IDataReader<SOID, OA>() {
             @Override @Nullable public OA read_(final SOID soid) throws SQLException
             {
-                return _mdb.getOA_(soid);
+                OA oa = _mdb.getOA_(soid);
+                /**
+                 * Determine expulsion status
+                 *
+                 * For each object, the DB only stores the "self" expulsion flag
+                 * but for simplicity the OA exposes the inherited expulsion flag
+                 * (i.e wheter the object itself or any of its ancestors is expelled)
+                 */
+                if (oa != null) {
+                    // TODO: loop detection?
+                    int flags = oa.flags();
+                    if (!oa.parent().isRoot()) {
+                        OA parent = getOA_(new SOID(soid.sidx(), oa.parent()));
+                        if (parent.isExpelled()) flags |= OA.FLAG_EXPELLED_INH;
+                    }
+                    oa.setFlags(flags | OA.FLAG_DS_VALIDATED);
+                }
+                return oa;
             }
         };
 
@@ -251,7 +269,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     public void createCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
     {
         _mdb.insertCA_(soid, kidx, t);
-        // TODO: update OA in place if present...
         _cacheOA.invalidate_(soid);
 
         Path path = resolve_(soid);
@@ -266,7 +283,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     public void deleteCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
     {
         _mdb.deleteCA_(soid, kidx, t);
-        // TODO: update OA in place if present...
         _cacheOA.invalidate_(soid);
 
         Path path = resolve_(soid);
@@ -294,7 +310,7 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     {
         assert alias.sidx().equals(target.sidx()) : alias + " " + target;
 
-        l.info("replace " + alias + " " + target);
+        l.info("replace {} {}", alias, target);
 
         OA oa = getOA_(alias);
         Path path = resolve_(oa);
@@ -305,7 +321,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
             if (!children.isEmpty()) {
                 _mdb.replaceParentInChildren_(alias.sidx(), alias.oid(), target.oid(), t);
 
-                // TODO: update children OA in place instead of invalidating?
                 for (OID child : children) {
                     _cacheOA.invalidate_(new SOID(alias.sidx(), child));
                 }
@@ -419,12 +434,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         // which would cause multiple duplicate calls to the deletion callback (and a world of hurt)
         // if we simply checked whether the source parent is the trash. Instead we have to check
         // (recursively) whether the source is already under a trash folder.
-        //
-        // TODO: examine whether there is a valid reason to preserve tree structure in the trash
-        // It is simpler for sync status (and activity log and probably any code building upon
-        // deletion listeners) to assume that objects under the trash have a completely flat
-        // hierarchy and it does not seem like it would adversely impact the syncing algorithm. It
-        // might however be a problem for expulsion and re-admission.
         boolean fromTrash = isDeleted_(oa);
         boolean toTrash = oaParent.soid().oid().isTrash() || isDeleted_(oaParent);
 
@@ -449,28 +458,17 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     }
 
     @Override
-    public void setOAFlags_(SOID soid, int flags, Trans t)
+    public void setExpelled_(SOID soid, boolean nowExpelled, Trans t)
         throws SQLException
     {
         OA oa = getOA_(soid);
-        boolean oldExpelled = oa.isExpelled();
-
+        int flags = nowExpelled
+                ? set(oa.flags(), OA.FLAG_EXPELLED_ORG)
+                : unset(oa.flags(), OA.FLAG_EXPELLED_ORG);
         _mdb.setOAFlags_(soid, flags, t);
-        oa.flags(flags);
 
-        boolean newExpelled = oa.isExpelled();
-
-        if (oldExpelled != newExpelled) {
-            if (newExpelled) {
-                for (IDirectoryServiceListener listener : _listeners) {
-                    listener.objectExpelled_(soid, t);
-                }
-            } else {
-                for (IDirectoryServiceListener listener : _listeners) {
-                    listener.objectAdmitted_(soid, t);
-                }
-            }
-        }
+        // must not keep children with stale expelled flags in the cache
+        _cacheOA.invalidateAll_();
     }
 
     @Override
@@ -499,7 +497,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         // Roots do not have a valid FID
         assert !soid.oid().isRoot();
         _mdb.setFID_(soid, fid, t);
-        // TODO: update OA if cached...
         _cacheOA.invalidate_(soid);
 
         _fidConsistencyVerifier.get(t).verifyAtCommitTime(soid);
@@ -566,31 +563,17 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     @Override
     public void deleteOA_(SOID soid, Trans t) throws SQLException
     {
-        l.info("delete " + soid);
+        l.info("delete {}", soid);
         // need to preserve the OA for the listener callback
         OA oa = getOA_(soid);
-        Path path = null;
-        if (!oa.isExpelled()) {
-            // TODO: aliasing should cleanup CAs and children before deleting OAs so all this
-            // listner gymnastic should be avoidable...
-            path = resolve_(oa);
-        }
 
         _mdb.deleteOA_(soid.sidx(), soid.oid(), t);
 
-        if (path != null) {
-            _cacheDS.invalidate_(path);
-        } else {
-            // TODO: is this really needed?
-            _cacheDS.invalidateAll_();
-        }
+        _cacheDS.invalidateAll_();
         _cacheOA.invalidate_(soid);
 
-        // must call after removing the OA so that syncable child count is accurate
-        if (!oa.isExpelled()) {
-            for (IDirectoryServiceListener listener : _listeners) {
-                listener.objectObliterated_(oa, path, t);
-            }
+        for (IDirectoryServiceListener listener : _listeners) {
+            listener.objectObliterated_(oa, t);
         }
     }
 

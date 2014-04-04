@@ -1,7 +1,5 @@
 package com.aerofs.daemon.core.migration;
 
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
@@ -17,17 +15,13 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.sql.SQLException;
 
-import static com.aerofs.daemon.core.ds.OA.FLAG_EXPELLED_ORG_OR_INH;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class operates at a higher level than ObjectMover/Deleter/Creator, which in turn are at
@@ -133,7 +127,7 @@ public class ImmigrantCreator
      */
     public SOID createImmigrantRecursively_(ResolvedPath pathFromParent, final SOID soidFromRoot,
             final SOID soidToRootParent, final String toRootName, final PhysicalOp op, final Trans t)
-            throws ExStreamInvalid, IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir
+            throws Exception
     {
         assert !soidFromRoot.sidx().equals(soidToRootParent.sidx());
 
@@ -144,8 +138,7 @@ public class ImmigrantCreator
         _ds.walk_(soidFromRoot, pathParent, new IObjectWalker<MigratedPath>() {
             @Override
             public MigratedPath prefixWalk_(MigratedPath pathParent, OA oaFrom)
-                    throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir,
-                    ExStreamInvalid
+                    throws Exception
             {
                 // do not walk trash
                 if (oaFrom.soid().oid().isTrash()) return null;
@@ -176,9 +169,8 @@ public class ImmigrantCreator
                 Type typeTo = migratedType(oaFrom.type());
 
                 if (oaToExisting == null) {
-                    int flags = oaFrom.flags() & ~FLAG_EXPELLED_ORG_OR_INH;
                     _oc.createImmigrantMeta_(typeTo, oaFrom.soid(), soidTo, soidToParent.oid(),
-                            name, flags, op, true, t);
+                            name, op, true, t);
                 } else {
                     // Comment (B)
                     //
@@ -186,9 +178,9 @@ public class ImmigrantCreator
                     // objects sharing the same OID in the local system, at
                     // most one of them is admitted, this is guaranteed by the
                     // implementation. See the invariant in AdmittedObjectLocator.
-                    assert typeTo == oaToExisting.type();
-                    assert oaFrom.isExpelled() || oaToExisting.isExpelled() :
-                            oaFrom + " " + oaToExisting;
+                    checkState(typeTo == oaToExisting.type());
+                    checkState(oaFrom.isExpelled() || oaToExisting.isExpelled(),
+                            oaFrom + " " + oaToExisting);
                     _om.moveInSameStore_(soidTo, soidToParent.oid(), name, op, false, true, t);
                 }
 
@@ -208,8 +200,7 @@ public class ImmigrantCreator
 
             @Override
             public void postfixWalk_(MigratedPath pathParent, OA oaFrom)
-                    throws IOException, ExAlreadyExist, SQLException, ExNotDir, ExNotFound,
-                    ExStreamInvalid
+                    throws Exception
             {
                 if (oaFrom.soid().oid().isRoot() || oaFrom.soid().oid().isTrash()) return;
 

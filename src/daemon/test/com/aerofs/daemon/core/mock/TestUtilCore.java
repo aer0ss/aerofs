@@ -52,13 +52,12 @@ public class TestUtilCore
     {
         when(oa.soid()).thenReturn(soid);
         when(oa.type()).thenReturn(type);
-        when(oa.isExpelled()).thenReturn(expelled);
         when(oa.isAnchor()).thenReturn(false);
         when(oa.isDir()).thenReturn(false);
         when(oa.isFile()).thenReturn(false);
 
         if (name != null) when(oa.name()).thenReturn(name);
-        if (oidParent != null) when(oa.parent()).thenReturn(oidParent);
+        when(oa.parent()).thenReturn(oidParent != null ? oidParent : OID.ROOT);
 
         switch (type) {
             case FILE:
@@ -81,6 +80,8 @@ public class TestUtilCore
 
         if (ds != null) {
             // ds can be a spy object hence using doReturn() clause instead of when().
+            when(oa.isExpelled()).thenReturn(expelled);
+            when(oa.isSelfExpelled()).thenReturn(expelled);
             when(ds.getOANullable_(soid)).thenReturn(oa);
             when(ds.getOA_(soid)).thenReturn(oa);
             when(ds.getAliasedOANullable_(soid)).thenReturn(oa);

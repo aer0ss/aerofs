@@ -13,8 +13,18 @@ import com.google.common.collect.ImmutableSortedMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * Object Attribute
+ *
+ * NB: make sure not to use stale OAs (e.g. after performing a move, an expulsion, or
+ * releasing the core lock).
+ *
+ * Do NOT cache OAs. DirectoryService maintains a cache and will invalidate it corectly
+ * when changes are made
  */
 public class OA
 {
@@ -32,24 +42,19 @@ public class OA
         }
     }
 
-    // the expelled bit inherited from the parent
-    public static final int FLAG_EXPELLED_INH = 0x0001;
     // the expelled bit set by the user
-    public static final int FLAG_EXPELLED_ORG = 0x0002;
+    public static final int FLAG_EXPELLED_ORG = 0x0001;
 
-    public static final int FLAG_EXPELLED_ORG_OR_INH = FLAG_EXPELLED_ORG | FLAG_EXPELLED_INH;
+    // OR combination of flags that should be stored in the DB
+    public static final int FLAG_DB_MASK =
+            FLAG_EXPELLED_ORG;
 
-    // these flags are not be synced across devices
-    public static final int FLAGS_LOCAL = FLAG_EXPELLED_ORG_OR_INH;
+    // internal flag, not stored in the DB but set by DS instead
+    static final int FLAG_EXPELLED_INH = 0x40000000;
 
-    /* We currently don't support OS-specific flags
-    // see "attrib /?" for these windows-specific flags
-    public static final int FLAG_OS_WIN_HIDDEN      = 0x0010;
-    public static final int FLAG_OS_WIN_SYSTEM      = 0x0020;
-    public static final int FLAG_OS_WIN_READONLY    = 0x0040;
-    public static final int FLAG_OS_WIN_ARCHIVE     = 0x0080;
-    public static final int FLAG_OS_WIN_NOINDEX     = 0x0100;
-    */
+    // internal flag, if absent, the above flags that
+    // are DS-provided cannot be relied on
+    static final int FLAG_DS_VALIDATED = 0x80000000;
 
     private final SOID _soid;
     private final OID _parent;
@@ -77,7 +82,7 @@ public class OA
     @Nonnull public static OA createNonFile(SOID soid, OID parent, String name, Type type,
             int flags, @Nullable FID fid)
     {
-        assert !type.equals(Type.FILE) : type + " " + soid;
+        checkArgument(!type.equals(Type.FILE), "%s %s", type, soid);
         return new OA(soid, parent, name, type, null, flags, fid);
     }
 
@@ -88,7 +93,7 @@ public class OA
     private OA(SOID soid, OID parent, String name, Type type,
             @Nullable ImmutableSortedMap<KIndex, CA> cas, int flags, @Nullable FID fid)
     {
-        assert soid.oid().isRoot() || !soid.oid().equals(parent) : parent;
+        checkArgument(soid.oid().isRoot() || !soid.oid().equals(parent), parent);
 
         _soid = soid;
         _parent = parent;
@@ -97,9 +102,6 @@ public class OA
         _cas = cas;
         _flags = flags;
         _fid = fid;
-
-        // TODO Can't assert validity of FIDs at construction time for files or folders
-        //fidIsConsistentWithCAsOrExpulsion();
     }
 
     @Override
@@ -114,7 +116,6 @@ public class OA
      */
     @Nullable public CA caMasterNullable()
     {
-        assert isFile();
         return caNullable(KIndex.MASTER);
     }
 
@@ -128,8 +129,7 @@ public class OA
     @Nonnull public CA caMaster()
     {
         CA ca = caMasterNullable();
-        assert ca != null;
-        return ca;
+        return checkNotNull(ca);
     }
 
     /**
@@ -137,9 +137,9 @@ public class OA
      */
     @Nullable public CA caNullable(KIndex kidx)
     {
-        assert isFile();
+        checkArgument(isFile());
         assert _cas != null : this;
-        return _cas.get(kidx);
+        return checkNotNull(_cas, this).get(kidx);
     }
 
     @Nonnull public CA caThrows(KIndex kidx) throws ExNotFound
@@ -152,8 +152,7 @@ public class OA
     @Nonnull public CA ca(KIndex kidx)
     {
         CA ca = caNullable(kidx);
-        assert ca != null : this + " " + kidx;
-        return ca;
+        return checkNotNull(ca, "%s %s", this, kidx);
     }
 
     /**
@@ -161,17 +160,10 @@ public class OA
      *         Useful for iterating over KIndices in sorted order.
      *         Empty if no branch is present.
      */
-    @Nonnull public SortedMap<KIndex, CA> cas(boolean assertConsistency)
-    {
-        assert isFile();
-        assert _cas != null : this;
-        if (assertConsistency) assert !isExpelled() || _cas.isEmpty() : _soid + " " + _cas.size();
-        return _cas;
-    }
-
     @Nonnull public SortedMap<KIndex, CA> cas()
     {
-        return cas(true);
+        checkArgument(isFile());
+        return checkNotNull(_cas, this);
     }
 
     public Type type()
@@ -215,26 +207,43 @@ public class OA
     }
 
     /**
+     * Whether the object or any of its ancestor is expelled
+     *
+     * WARNING: can only be used for objects obtained from DirectoryService
+     * Will throw if the object was obtained directly from IMetaDatabase
+     */
+    public boolean isExpelled()
+    {
+        checkState(Util.test(_flags, FLAG_DS_VALIDATED));
+        return Util.test(_flags, FLAG_EXPELLED_INH | FLAG_EXPELLED_ORG);
+    }
+
+    /**
+     * Whether the object itself is expelled
+     */
+    public boolean isSelfExpelled()
+    {
+        return Util.test(_flags, FLAG_EXPELLED_ORG);
+    }
+
+    /**
      * @return one or more FLAG_* values
+     *
+     * NB: only public for DPUT use
      */
     public int flags()
     {
         return _flags;
     }
 
-    public boolean isExpelled()
-    {
-        return Util.test(_flags, FLAG_EXPELLED_ORG_OR_INH);
-    }
-
-    public void flags(int flags)
+    void setFlags(int flags)
     {
         _flags = flags;
     }
 
     /**
      * @return true iff the nullability of _fid is consistent with the set of content attributes
-     *         or the expulsion state (if this is a folder)
+     * or the expulsion state (if this is a folder)
      */
     public boolean fidIsConsistentWithCAsOrExpulsion()
     {
@@ -250,7 +259,7 @@ public class OA
      */
     @Nullable public FID fid()
     {
-        assert fidIsConsistentWithCAsOrExpulsion() : this;
+        checkState(fidIsConsistentWithCAsOrExpulsion());
         return _fid;
     }
 }

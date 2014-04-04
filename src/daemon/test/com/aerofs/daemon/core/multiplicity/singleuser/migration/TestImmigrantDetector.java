@@ -76,8 +76,8 @@ public class TestImmigrantDetector extends AbstractTest
     SID sidFrom = SID.generate();
     SID sidTo = SID.generate();
     SID sidAnchored = SID.anchorOID2storeSID(oid);
-    ResolvedPath pFrom = ResolvedPathTestUtil.fromString(rootSID, "fooFrom/barFrom/bazFrom");
-    ResolvedPath pTo = ResolvedPathTestUtil.fromString(rootSID, "fooTo/barTo/bazTo");
+    ResolvedPath pFrom = ResolvedPathTestUtil.fromString(rootSID, "from", soidFrom);
+    ResolvedPath pTo = ResolvedPathTestUtil.fromString(rootSID, "to", soidTo);
     Version vKMLFrom = Version.of(DID.generate(), new Tick(100));
     Version vKMLTo = Version.of(DID.generate(), new Tick(100));
     PhysicalOp op = PhysicalOp.APPLY;

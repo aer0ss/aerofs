@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.linked;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
@@ -26,7 +27,6 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -38,6 +38,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Helper class that abstracts out most of the complexity of dealing with Non-Representable Objects
@@ -65,13 +67,14 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
     private final NRODatabase _nrodb;
     private final InjectableFile.Factory _factFile;
     private final RitualNotificationServer _rns;
+    private final DirectoryService _ds;
 
     private final Map<SID, Integer> _nroCount = Maps.newHashMap();
 
     @Inject
     public RepresentabilityHelper(IOSUtil os, InjectableDriver dr, LinkerRootMap lrm,
             IMetaDatabase mdb, NRODatabase nrodb, InjectableFile.Factory factFile,
-            RitualNotificationServer rns)
+            RitualNotificationServer rns, DirectoryService ds)
     {
         _os = os;
         _dr = dr;
@@ -80,6 +83,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
         _nrodb = nrodb;
         _factFile = factFile;
         _rns = rns;
+        _ds = ds;
     }
 
     public boolean isNonRepresentable(OA oa) throws SQLException
@@ -196,8 +200,8 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
             // guard against invalid files messing up the count
             if (soid == null) continue;
             try {
-                OA oa = _mdb.getOA_(soid);
-                if (oa != null && !oa.isExpelled() && isNonRepresentable(oa)) c.apply(soid);
+                OA oa = _ds.getOANullable_(soid);
+                if (oa != null && isNonRepresentable(oa) && !oa.isExpelled()) c.apply(soid);
             } catch (SQLException e) {
                 l.error("could not determine nro status {}", soid, e);
             }
@@ -300,7 +304,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
 
     private void markNonRepresentable_(AbstractLinkedObject dest, Trans t) throws SQLException
     {
-        Preconditions.checkNotNull(dest._path.virtual);
+        checkNotNull(dest._path.virtual);
         addNonRepresentableObject_(dest, t);
         dest.markNonRepresentable();
     }
@@ -355,13 +359,13 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
     private void updateConflictsOnDeletion_(final SOID soid, final LinkedPath path, Trans t)
             throws SQLException
     {
-        Preconditions.checkNotNull(path.virtual);
+        checkNotNull(path.virtual);
         SID sid = path.virtual.sid();
         IDBIterator<SOID> it = _nrodb.getConflicts_(soid);
         try {
             while (it.next_()) {
                 SOID winner = it.get_();
-                OA oa = Preconditions.checkNotNull(_mdb.getOA_(winner));
+                OA oa = _ds.getOA_(winner);
                 InjectableFile source = _factFile.create(
                         _lrm.auxFilePath_(sid, winner, AuxFolder.NON_REPRESENTABLE));
                 InjectableFile dest = _factFile.create(

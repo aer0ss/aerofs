@@ -28,14 +28,11 @@ public interface IDirectoryServiceListener
     void objectContentDeleted_(SOKID obj, Path path, Trans t) throws SQLException;
     void objectContentModified_(SOKID obj, Path path, Trans t) throws SQLException;
 
-    void objectExpelled_(SOID obj, Trans t) throws SQLException;
-    void objectAdmitted_(SOID obj, Trans t) throws SQLException;
-
     /**
      * Called from deleteOA_ *after* the object is removed from the DB
      * This is necessary to properly cleanup temporary objects created by Aliasing
      *
      * IMPORTANT: hold on to the given OA as long as needed, the OID is *gone* from the DB
      */
-    void objectObliterated_(OA oa, Path pathFrom, Trans t) throws SQLException;
+    void objectObliterated_(OA oa, Trans t) throws SQLException;
 }

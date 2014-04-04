@@ -13,11 +13,8 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
@@ -29,6 +26,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map.Entry;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * This class implements cross-store movement of file contents and child stores.
@@ -80,7 +79,7 @@ public abstract class ImmigrantDetector
      * @return true if immigration has been performed
      */
     public abstract boolean detectAndPerformImmigration_(@Nonnull OA oaTo, PhysicalOp op, Trans t)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir, ExStreamInvalid;
+            throws Exception;
 
     /**
      * Perform locally-initiated migration
@@ -94,12 +93,12 @@ public abstract class ImmigrantDetector
     public void immigrateFile_(@Nonnull OA oaFrom, @Nonnull OA oaTo, PhysicalOp op, Trans t)
             throws SQLException, IOException, ExNotFound
     {
-        assert oaFrom.soid().oid().equals(oaTo.soid().oid());
-        assert oaFrom.isFile() && oaTo.isFile();
-        assert !oaFrom.isExpelled() && !oaTo.isExpelled();
+        checkArgument(oaFrom.isFile() && oaTo.isFile());
+        checkArgument(oaFrom.soid().oid().equals(oaTo.soid().oid()));
+        checkArgument(!oaFrom.isExpelled() && !oaTo.isExpelled());
 
-        ResolvedPath pathFrom = _ds.resolve_(oaFrom.soid());
-        ResolvedPath pathTo = _ds.resolve_(oaTo.soid());
+        ResolvedPath pathFrom = _ds.resolve_(oaFrom);
+        ResolvedPath pathTo = _ds.resolve_(oaTo);
 
         SOCID socidFrom = new SOCID(oaFrom.soid(), CID.CONTENT);
         SOCID socidTo = new SOCID(oaTo.soid(), CID.CONTENT);

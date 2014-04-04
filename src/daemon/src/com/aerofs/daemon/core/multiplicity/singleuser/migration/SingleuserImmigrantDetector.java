@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -59,7 +58,7 @@ public class SingleuserImmigrantDetector extends ImmigrantDetector
 
     @Override
     public boolean detectAndPerformImmigration_(@Nonnull OA oaTo, PhysicalOp op, Trans t)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir, ExStreamInvalid
+            throws Exception
     {
         /** assert for assumption 1) in {@link ImmigrantDetector#detectAndPerformImmigration_} */
         assert !oaTo.isExpelled();

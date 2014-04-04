@@ -274,7 +274,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
     public void setOAFlags_(SOID soid, int flags, Trans t) throws SQLException
     {
         try {
-            setOAInt_(soid, C_OA_FLAGS, flags, _pswSOAF, t);
+            setOAInt_(soid, C_OA_FLAGS, flags & OA.FLAG_DB_MASK, _pswSOAF, t);
         } catch (SQLException e) {
             _pswSOAF.close();
             throw detectCorruption(e);

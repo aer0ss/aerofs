@@ -60,6 +60,8 @@ public class TestAdmittedObjectLocator extends AbstractTest
         when(oa.type()).thenReturn(type);
         when(oa.soid()).thenReturn(soid);
         when(oa.isExpelled()).thenReturn(expelled);
+        when(oa.isSelfExpelled()).thenReturn(expelled);
+        when(oa.parent()).thenReturn(OID.ROOT);
         when(ds.getOA_(soid)).thenReturn(oa);
         when(ds.getOANullable_(soid)).thenReturn(oa);
     }

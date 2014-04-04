@@ -25,6 +25,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -75,6 +76,12 @@ public class TestDirectoryService_SwapOIDs extends AbstractTest
                 mock(StoreDeletionOperators.class), pr, mock(CfgStorageType.class));
 
         setupSwapTest();
+    }
+
+    @After
+    public void tearDown() throws Exception
+    {
+        dbcw.fini_();
     }
 
     private void setupSwapTest() throws Exception

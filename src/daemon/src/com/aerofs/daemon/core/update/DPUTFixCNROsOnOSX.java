@@ -132,7 +132,8 @@ public class DPUTFixCNROsOnOSX implements IDaemonPostUpdateTask
     {
         OA oa = _mdb.getOA_(soid);
 
-        if (oa == null || oa.isExpelled()) {
+        // check for old expulsion flags
+        if (oa == null || Util.test(oa.flags(), 3)) {
             l.warn("cnro for non-existing obj {} {}", soid, oa);
             return true;
         }

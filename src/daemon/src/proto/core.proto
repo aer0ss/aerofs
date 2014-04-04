@@ -179,6 +179,7 @@ message PBMeta {
     required bytes parent_object_id = 1;
     required string name = 2;
     required Type type = 3;
+    // ignored, should always be 0
     required int32 flags = 4;
 
     // information about alias message.

@@ -74,7 +74,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         SOID soidParent = _ds.resolveFollowAnchorThrows_(ev._dest.removeLast());
 
         OA oaParent = _ds.getOA_(soidParent);
-        if (oaParent.isExpelled() || !oaParent.isDir()) throw new ExBadArgs("Invalid destination");
+        if (!oaParent.isDir() || oaParent.isExpelled()) throw new ExBadArgs("Invalid destination");
 
         long mtime = System.currentTimeMillis();
 

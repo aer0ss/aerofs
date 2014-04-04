@@ -57,7 +57,6 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
         }
     }
 
-    // TODO: share code with HdGetSyncStatus
     private static class Peer
     {
         private final UserID user;

@@ -8,11 +8,7 @@ import java.util.Set;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -30,6 +26,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class StoreDeleter
 {
@@ -66,7 +64,7 @@ public class StoreDeleter
      */
     public void removeParentStoreReference_(SIndex sidx, SIndex sidxParent, ResolvedPath pathOld,
             PhysicalOp op, Trans t)
-            throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
+            throws Exception
     {
         Set<SIndex> parents = _ss.getParents_(sidx);
         if (parents.size() == 1 && canDeleteUnanchored_(sidx)) {
@@ -97,14 +95,14 @@ public class StoreDeleter
     }
 
     public void deleteRootStore_(SIndex sidx, PhysicalOp op, Trans t)
-            throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
+            throws Exception
     {
         assert _ss.isRoot_(sidx);
         deleteRecursively_(sidx, ResolvedPath.root(_sidx2sid.get_(sidx)), op, t);
     }
 
     private void deleteRecursively_(SIndex sidx, ResolvedPath pathOld, PhysicalOp op, Trans t)
-            throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
+            throws Exception
     {
         // delete child stores. go through the store list before actual
         // operations to avoid concurrent modification exceptions
@@ -148,8 +146,17 @@ public class StoreDeleter
 
     private void deletePhysicalObjectsRecursively_(final SOID soidRoot, ResolvedPath pathOldRoot,
             final PhysicalOp op, final Trans t)
-            throws IOException, ExNotFound, SQLException, ExNotDir, ExStreamInvalid, ExAlreadyExist
+            throws Exception
     {
+        OA oa = _ds.getOA_(soidRoot);
+        checkArgument(oa.parent().isRoot());
+        // must use self-expelled and not inherited expelled flag
+        // when deleting a store as a result of an anchor deletion
+        // (as opposed to deleting a physical root) the anchor will
+        // be expelled before this code is called so the inherited
+        // expulsion flag would always be true...
+        if (oa.isSelfExpelled()) return;
+
         _ds.walk_(soidRoot, pathOldRoot, new IObjectWalker<ResolvedPath>() {
             @Override
             public ResolvedPath prefixWalk_(ResolvedPath pathOldParent, OA oa)
@@ -157,7 +164,7 @@ public class StoreDeleter
                 l.debug("del {} {}", pathOldParent, oa);
                 if (oa.type() != Type.DIR) {
                     return null;
-                } else if (oa.isExpelled()) {
+                } else if (oa.isSelfExpelled()) { // NB: getting there implies parent not expelled...
                     return null;
                 } else if (oa.soid().oid().isRoot()) {
                     // should not cross store boundary here
@@ -180,16 +187,11 @@ public class StoreDeleter
                 switch (oa.type()) {
                 case DIR:
                 case ANCHOR:
-                    if (!oa.isExpelled()) {
+                    if (!oa.isSelfExpelled()) {  // NB: getting there implies parent not expelled
                         _ps.newFolder_(path).delete_(op, t);
                     }
                     break;
                 case FILE:
-                    // The implementation of prefixWalk_() above avoids walking through expelled
-                    // folders by returning null on such folders. And because a file is expelled iff
-                    // it's under an expelled folder, we should never walk on an expelled
-                    // file.
-                    assert !oa.isExpelled();
                     for (KIndex kidx : oa.cas().keySet()) {
                         _ps.newFile_(path, kidx).delete_(op, t);
                     }
@@ -202,7 +204,7 @@ public class StoreDeleter
     }
 
     private void delete_(final SIndex sidx, PhysicalOp op, Trans t)
-            throws SQLException, IOException, ExStreamInvalid
+            throws SQLException, IOException
     {
         l.debug("delete store " + sidx);
 

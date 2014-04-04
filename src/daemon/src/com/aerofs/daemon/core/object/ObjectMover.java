@@ -8,18 +8,12 @@ import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.sql.SQLException;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -43,7 +37,7 @@ public class ObjectMover
       */
     public void moveInSameStore_(final SOID soid, OID oidParent, String name, PhysicalOp op,
             boolean emigrate, boolean updateVersion, Trans t)
-            throws SQLException, ExAlreadyExist, ExNotDir, IOException, ExNotFound, ExStreamInvalid
+            throws Exception
     {
         // The caller must guarantee the local existence of the object and its new parent
         OA oaOld = _ds.getOA_(soid);
@@ -60,6 +54,6 @@ public class ObjectMover
             _vu.update_(k, t);
         }
 
-        _expulsion.objectMoved_(emigrate, op, soid, pOld, t);
+        _expulsion.objectMoved_(pOld, soid, emigrate, op, t);
     }
 }

@@ -22,6 +22,8 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.aerofs.daemon.core.phy.PhysicalOp.NOP;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
@@ -104,7 +106,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     @Override
     protected void handleThrows_(EIShareFolder ev, Prio prio) throws Exception
     {
-        l.info("sharing: " + ev._path);
+        l.info("sharing: {}", ev._path);
 
         OA oa;
         SID sid;
@@ -173,7 +175,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // ensure ACLs are updated (at the very least we need an entry for the local user...)
         _aclsync.syncToLocal_();
 
-        l.info("shared: " + ev._path + " -> " + sid.toStringFormal());
+        l.info("shared: {} -> {}", ev._path, sid.toStringFormal());
     }
 
     /**
@@ -235,7 +237,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private void convertToSharedFolder_(Path path, OA oa, SID sid)
             throws Exception
     {
-        assert oa.isDir();
+        checkArgument(oa.isDir());
 
         SOID soid = oa.soid();
 
@@ -265,7 +267,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         OA oaAnchor = _ds.getOANullable_(anchor);
         if (oaAnchor == null) return;
 
-        l.debug("cleanup auto-join " + sid + " " + oaAnchor.name());
+        l.debug("cleanup auto-join {} {}", sid, oaAnchor.name());
 
         Trans t = _tm.begin_();
         try {
@@ -283,7 +285,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             throws Exception
     {
         // Step 1: rename the folder into a temporary name, without incrementing its version.
-        assert !path.isEmpty(); // the caller guarantees this
+        checkArgument(!path.isEmpty());
         Path pathTemp = path;
 
         ResolvedPath from = _ds.resolve_(soid);
@@ -312,7 +314,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private void createNewStore(SOID soid, OID oidParent, SID sid, Path path, final Trans t)
             throws Exception
     {
-        l.debug("new store: " + sid + " " + path);
+        l.debug("new store: {} {}", sid, path);
         SOID soidAnchor = new SOID(soid.sidx(), SID.storeSID2anchorOID(sid));
 
         _ps.newFolder_(_ds.resolve_(soid)).updateSOID_(soidAnchor, t);
@@ -321,7 +323,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         if (oaAnchor != null) {
             // any conflicting anchor created by auto-join upon ACL update should have been cleaned
             // before starting the conversion process
-            assert oaAnchor.isExpelled() : oaAnchor;
+            checkState(oaAnchor.isExpelled(), "%s", oaAnchor);
             // move anchor to appropriate path (does not affect physical objects)
             _om.moveInSameStore_(oaAnchor.soid(), oidParent, path.last(), MAP, false, true, t);
         } else {

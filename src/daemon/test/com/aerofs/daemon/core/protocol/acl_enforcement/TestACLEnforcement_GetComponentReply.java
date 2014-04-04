@@ -91,7 +91,7 @@ public class TestACLEnforcement_GetComponentReply extends AbstractTest
         SOID soidParent = new SOID(k.sidx(), oa.parent());
         when(caller._a2t.dereferenceAliasedOID_(soidParent)).thenReturn(soidParent);
         when(caller._mdiff.computeMetaDiff_(any(SOID.class), any(PBMeta.class), any(OID.class)))
-                .thenReturn(MetaDiff.FLAGS | MetaDiff.NAME | MetaDiff.PARENT);
+                .thenReturn(MetaDiff.NAME | MetaDiff.PARENT);
 
         // connect replier to the caller
         doAnswer(new Answer<Object>() {

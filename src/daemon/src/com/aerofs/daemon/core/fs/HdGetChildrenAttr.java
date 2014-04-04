@@ -13,7 +13,6 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.Path;
 import com.google.inject.Inject;
 
 public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
@@ -29,15 +28,8 @@ public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
     @Override
     protected void handleThrows_(EIGetChildrenAttr ev, Prio prio) throws Exception
     {
-        ev.setResult_(getChildrenAttr_(ev._path));
-    }
-
-    private List<OA> getChildrenAttr_(Path path)
-        throws Exception
-    {
-        SOID soid = _ds.resolveFollowAnchorThrows_(path);
-
-        return getChildrenAttrImpl_(soid, _ds);
+        SOID soid = _ds.resolveFollowAnchorThrows_(ev._path);
+        ev.setResult_(getChildrenAttrImpl_(soid, _ds));
     }
 
     /**

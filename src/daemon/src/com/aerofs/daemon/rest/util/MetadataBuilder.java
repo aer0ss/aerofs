@@ -103,7 +103,7 @@ public class MetadataBuilder
 
         // TODO: handle external roots
         String name = soid.oid().isRoot() ? "AeroFS" : oa.name();
-        CA ca = oa.isFile() && !oa.isExpelled() ? oa.caMasterNullable() : null;
+        CA ca = oa.isFile() ? oa.caMasterNullable() : null;
         Date mtime = ca != null ? new Date(ca.mtime()) : null;
         Long length = ca != null ? ca.length() : null;
 

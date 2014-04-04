@@ -134,7 +134,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     {
         OA oa = _access.resolveWithPermissions_(ev._object, ev._token, Permissions.EDITOR);
 
-        if (oa.isExpelled() || !oa.isFile()) throw new ExNotFound();
+        if (!oa.isFile() || oa.isExpelled()) throw new ExNotFound();
 
         requireAccessToFile(ev._token, Scope.WRITE_FILES, oa);
 

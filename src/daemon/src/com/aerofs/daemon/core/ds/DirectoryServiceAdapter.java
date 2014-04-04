@@ -26,8 +26,5 @@ public class DirectoryServiceAdapter implements IDirectoryServiceListener
             throws SQLException {}
     @Override public void objectContentModified_(SOKID obj, Path path, Trans t)
             throws SQLException {}
-    @Override public void objectExpelled_(SOID obj, Trans t) throws SQLException {}
-    @Override public void objectAdmitted_(SOID obj, Trans t) throws SQLException {}
-    @Override public void objectObliterated_(OA oa, Path pathFrom, Trans t)
-            throws SQLException {}
+    @Override public void objectObliterated_(OA oa, Trans t) throws SQLException {}
 }

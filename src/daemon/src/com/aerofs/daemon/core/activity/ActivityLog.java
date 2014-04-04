@@ -179,7 +179,7 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
     }
 
     @Override
-    public void objectObliterated_(OA oa, Path path, Trans t) throws SQLException
+    public void objectObliterated_(OA oa, Trans t) throws SQLException
     {
         SOID soid = oa.soid();
         Map<SOID, ActivityEntry> map = _tlMap.get(t);

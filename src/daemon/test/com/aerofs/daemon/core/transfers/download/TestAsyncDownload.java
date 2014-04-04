@@ -44,8 +44,12 @@ public class TestAsyncDownload extends AbstractDownloadTest
     @Before
     public void setUp() throws Exception
     {
-        when(ds.getAliasedOANullable_(soid))
-                .thenReturn(mock(OA.class));
+        OA oa = mock(OA.class);
+        when(oa.soid()).thenReturn(soid);
+        when(oa.parent()).thenReturn(OID.ROOT);
+        when(ds.getOA_(soid)).thenReturn(oa);
+        when(ds.getOANullable_(soid)).thenReturn(oa);
+        when(ds.getAliasedOANullable_(soid)).thenReturn(oa);
     }
 
     @Test

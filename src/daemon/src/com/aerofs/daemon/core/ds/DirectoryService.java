@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.Path;
@@ -29,7 +28,6 @@ import com.aerofs.lib.id.SOKID;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -205,7 +203,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     public abstract void setOAParentAndName_(@Nonnull OA oa, @Nonnull OA oaParent, String name, Trans t)
             throws SQLException, ExAlreadyExist, ExNotDir;
 
-    public abstract void setOAFlags_(SOID soid, int flags, Trans t)
+    public abstract void setExpelled_(SOID soid, boolean expelled, Trans t)
             throws SQLException;
 
     /**
@@ -227,8 +225,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
          * directory or anchor.
          */
         @Nullable T prefixWalk_(T cookieFromParent, OA oa)
-                throws IOException, SQLException, ExStreamInvalid, ExNotFound, ExNotDir,
-                ExAlreadyExist;
+                throws Exception;
 
         /**
          * This method is called on each object that is traversed. If the object is a directory or
@@ -242,8 +239,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
          * attributes.
          */
         void postfixWalk_(T cookieFromParent, OA oa)
-                throws IOException, ExAlreadyExist, SQLException, ExNotDir, ExNotFound,
-                ExStreamInvalid;
+                throws Exception;
 
     }
 
@@ -260,7 +256,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
      * Traverse in DFS the directory tree rooted at {@code soid}.
      */
     public final <T> void walk_(SOID soid, @Nullable T cookieFromParent, IObjectWalker<T> w)
-            throws ExNotFound, SQLException, IOException, ExNotDir, ExStreamInvalid, ExAlreadyExist
+            throws Exception
     {
         OA oa = getOAThrows_(soid);
 

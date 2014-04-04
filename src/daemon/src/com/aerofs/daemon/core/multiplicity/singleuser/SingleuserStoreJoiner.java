@@ -31,7 +31,6 @@ import static com.aerofs.daemon.core.notification.Notifications.newSharedFolderP
 
 public class SingleuserStoreJoiner extends AbstractStoreJoiner
 {
-
     private final SingleuserStores _stores;
     private final StoreDeleter _sd;
     private final CfgRootSID _cfgRootSID;

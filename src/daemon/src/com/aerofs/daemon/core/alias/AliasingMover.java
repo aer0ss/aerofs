@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.SortedMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Helper class for Aliasing.java that helps in moving version vectors, content etc.
@@ -319,7 +318,6 @@ public class AliasingMover
             // of the target and alias OIDs in the logical directory tree, then move children of
             // the alias into the target folder
             _os.swapOIDsInSameStore_(sidx, alias.oid(), target.oid(), t);
-            checkState(_ds.getOA_(target).fid().equals(oaAlias.fid()));
         }
 
         // Files/dirs directly under the target dir will retain their names, whereas files/dirs

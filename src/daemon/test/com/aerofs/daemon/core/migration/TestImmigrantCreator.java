@@ -79,7 +79,7 @@ public class TestImmigrantCreator extends AbstractTest
                 toRootName, op, t);
     }
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = IllegalStateException.class)
     public void shouldAssertSourceAndTargetAreOfSameObjectType() throws Exception
     {
         setupMockDS(0);
@@ -87,7 +87,7 @@ public class TestImmigrantCreator extends AbstractTest
         initiateMigration();
     }
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = IllegalStateException.class)
     public void shouldAssertAtMostOneObjectIsAdmitted() throws Exception
     {
         setupMockDS(0);
@@ -189,7 +189,7 @@ public class TestImmigrantCreator extends AbstractTest
         if (createTarget) {
             OA from = ds.getOA_(soidFromRoot);
             verify(oc).createImmigrantMeta_(from.type(), soidFromRoot, soidToRoot,
-                    soidToRootParent.oid(), toRootName, from.flags(), op, true, t);
+                    soidToRootParent.oid(), toRootName, op, true, t);
         } else {
             verify(om).moveInSameStore_(soidToRoot, soidToRootParent.oid(), toRootName,
                     op, false, true, t);

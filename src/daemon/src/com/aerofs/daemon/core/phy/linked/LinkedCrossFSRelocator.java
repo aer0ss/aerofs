@@ -89,7 +89,7 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
         SOID soid =_ds.resolveThrows_(p);
         _ds.walk_(soid, p, new IObjectWalker<ResolvedPath>() {
             @Override
-            public ResolvedPath prefixWalk_(ResolvedPath oldParent, OA oa)
+            public ResolvedPath prefixWalk_(ResolvedPath oldParent, OA oa) throws SQLException
             {
                 return prefixWalk(oldParent, oa);
             }
@@ -127,7 +127,7 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
 
         _ds.walk_(soid, p, new IObjectWalker<ResolvedPath>() {
             @Override
-            public ResolvedPath prefixWalk_(ResolvedPath oldParent, OA oa)
+            public ResolvedPath prefixWalk_(ResolvedPath oldParent, OA oa) throws SQLException
             {
                 return prefixWalk(oldParent, oa);
             }
@@ -148,7 +148,7 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
     /**
      * oldParent has the File.separator affixed to the end of the path (except root).
      */
-    private @Nullable ResolvedPath prefixWalk(ResolvedPath oldParent, OA oa)
+    private @Nullable ResolvedPath prefixWalk(ResolvedPath oldParent, OA oa) throws SQLException
     {
         if (oa.isExpelled()) {
             assert oa.fid() == null;

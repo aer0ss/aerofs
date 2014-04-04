@@ -44,7 +44,7 @@ public class HdCreateObject extends AbstractHdIMC<EICreateObject>
         SOID soidParent = _ds.resolveFollowAnchorThrows_(pathParent);
 
         OA oaParent = _ds.getOA_(soidParent);
-        if (oaParent.isExpelled() || !oaParent.isDir()) throw new ExBadArgs("Invalid parent");
+        if (!oaParent.isDir() || oaParent.isExpelled()) throw new ExBadArgs("Invalid parent");
 
         Trans t = _tm.begin_();
         try {

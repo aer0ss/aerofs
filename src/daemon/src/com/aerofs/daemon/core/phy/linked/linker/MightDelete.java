@@ -51,7 +51,7 @@ public class MightDelete
     /**
      * @return true if the object should not be added to the deletion buffer in any case
      */
-    public static boolean shouldNotDelete(@Nonnull OA oa)
+    public static boolean shouldNotDelete(@Nonnull OA oa) throws SQLException
     {
         if (oa.isExpelled()) return true;
 

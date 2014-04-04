@@ -6,18 +6,14 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.expel.Expulsion.IExpulsionListener;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.SID;
@@ -59,19 +55,18 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
     }
 
     @Override
-    public void adjust_(final boolean emigrate, final PhysicalOp op, final SOID soidRoot,
-            ResolvedPath pOld, final int flagsRoot, final Trans t)
-            throws IOException, ExNotFound, SQLException, ExNotDir, ExStreamInvalid, ExAlreadyExist
+    public void adjust_(ResolvedPath pOld, final SOID soidRoot,
+            final boolean emigrate, final PhysicalOp op, final Trans t)
+            throws Exception
     {
         l.info("adm->exp {} {} {}", soidRoot, pOld, op);
         _ds.walk_(soidRoot, pOld, new IObjectWalker<ResolvedPath>() {
             @Override
             public @Nullable ResolvedPath prefixWalk_(ResolvedPath pOldParent, OA oa)
-                    throws IOException, SQLException, ExStreamInvalid, ExNotFound, ExNotDir,
-                    ExAlreadyExist
+                    throws Exception
             {
                 boolean isRoot = soidRoot.equals(oa.soid());
-                boolean oldExpelled = oa.isExpelled();
+                boolean oldExpelled = !isRoot && oa.isSelfExpelled();
 
                 ResolvedPath pathOld = isRoot ? pOldParent : pOldParent.join(oa);
 
@@ -85,7 +80,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 
                     SOCID socid = new SOCID(oa.soid(), CID.CONTENT);
                     Version vKMLAdd = Version.empty();
-                    for (KIndex kidx : oa.cas(false).keySet()) {
+                    for (KIndex kidx : oa.cas().keySet()) {
                         SOCKID k = new SOCKID(socid, kidx);
                         if (!emigrate) _ps.newFile_(pathOld, kidx).delete_(op, t);
                         Version vBranch = _nvc.getLocalVersion_(k);
@@ -129,20 +124,20 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                     throws IOException, SQLException
             {
                 boolean isRoot = soidRoot.equals(oa.soid());
+                boolean oldExpelled = !isRoot && oa.isSelfExpelled();
 
-                if (!oa.isExpelled() && oa.isDir()) {
+                if (oldExpelled) return;
+
+                if (oa.isDir()) {
                     ResolvedPath pathOld = isRoot ? pOldParent : pOldParent.join(oa);
                     // have to do it in postfixWalk rather than prefixWalk because otherwise child
                     // objects under the folder would prevent us from deleting the folder.
                     _ps.newFolder_(pathOld).delete_(op, t);
                 }
 
-                // set the flags _after_ physically deleting folders, since physical file
-                // implementations may assume that the corresponding logical object has not been
-                // expelled when deleting the physical object.
-                // see also ExpelledToAdmittedAdjuster
-                int flagsNew = isRoot ? flagsRoot : Util.set(oa.flags(), OA.FLAG_EXPELLED_INH);
-                _ds.setOAFlags_(oa.soid(), flagsNew, t);
+                for (IExpulsionListener l : _expulsion.listeners_()) {
+                    l.objectExpelled_(oa.soid(), t);
+                }
             }
         });
     }

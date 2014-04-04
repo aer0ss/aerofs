@@ -11,8 +11,10 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
 {
@@ -27,22 +29,21 @@ class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
     }
 
     @Override
-    public void adjust_(boolean emigrate, PhysicalOp op, SOID soid, ResolvedPath pOld, int flags, Trans t)
+    public void adjust_(ResolvedPath pathOld, SOID soid,
+            boolean emigrate, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
-        Preconditions.checkState(!emigrate);
-
-        _ds.setOAFlags_(soid, flags, t);
+        checkArgument(!emigrate);
 
         OA oa = _ds.getOA_(soid);
         ResolvedPath pNew = _ds.resolve_(oa);
         if (oa.isFile()) {
             for (KIndex kidx : oa.cas().keySet()) {
-                _ps.newFile_(pOld, kidx).move_(pNew, kidx, op, t);
+                _ps.newFile_(pathOld, kidx).move_(pNew, kidx, op, t);
             }
         } else {
-            Preconditions.checkState(oa.isDirOrAnchor());
-            _ps.newFolder_(pOld).move_(pNew, op, t);
+            checkState(oa.isDirOrAnchor());
+            _ps.newFolder_(pathOld).move_(pNew, op, t);
         }
     }
 }

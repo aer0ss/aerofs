@@ -1,12 +1,11 @@
 package com.aerofs.daemon.core.expel;
 
-import static com.aerofs.daemon.core.ds.OA.*;
-
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.List;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -18,18 +17,14 @@ import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.IExpulsionDatabase;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.Util;
-import static com.aerofs.lib.Util.set;
-import static com.aerofs.lib.Util.unset;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -63,6 +58,14 @@ public class Expulsion
     private ExpelledToAdmittedAdjuster _adjE2A;
     private ExpelledToExpelledAdjuster _adjE2E;
 
+    private final List<IExpulsionListener> _listeners = Lists.newArrayList();
+
+    public static interface IExpulsionListener
+    {
+        public void objectExpelled_(SOID soid, Trans t) throws SQLException;
+        public void objectAdmitted_(SOID soid, Trans t) throws SQLException;
+    }
+
     @Inject
     public void inject_(DirectoryService ds, IExpulsionDatabase exdb,
             ExpelledToExpelledAdjuster adjE2E, ExpelledToAdmittedAdjuster adjE2A,
@@ -80,47 +83,44 @@ public class Expulsion
         _sidx2s = sidx2s;
     }
 
-    /**
-     * The method returns the appropriate IExpulsionAdjuster given the previous and current flags
-     * of the object. The flags determine the object's expulsion state.
-     */
-    private IExpulsionAdjuster getAdjuster(int flagsOld, int flagsNew)
+    public void addListener_(IExpulsionListener listener)
     {
-        boolean effectiveOld = effectivelyExpelled(flagsOld);
-        boolean effectiveNew = effectivelyExpelled(flagsNew);
+        _listeners.add(listener);
+    }
 
-        if (!effectiveOld && !effectiveNew) {
-            return _adjA2A;
-        } else if (!effectiveOld && effectiveNew) {
-            return _adjA2E;
-        } else if (effectiveOld && !effectiveNew) {
-            return _adjE2A;
-        } else {
-            assert effectiveOld && effectiveNew;
-            return _adjE2E;
-        }
+    public ImmutableList<IExpulsionListener> listeners_()
+    {
+        return ImmutableList.copyOf(_listeners);
+    }
+
+    /**
+     * @return whether any of the objects in the given path is expelled
+     *
+     * NB: this differs from {@link OA#isExpelled()} in that the given path
+     * may not reflect the current state of the DB wrt parent/child relationships
+     */
+    public final boolean isExpelled_(List<SOID> soids) throws SQLException
+    {
+        for (SOID soid : soids) if (_ds.getOA_(soid).isSelfExpelled()) return true;
+        return false;
     }
 
     /**
      * Call this method whenever an object's name or parent has been updated. Even though object
      * name changing alone doesn't affect expulsion state, the method should still be called to
-     * rename physical objects. See {@Link IAdjuster} for operational details and parameter list.
+     * rename physical objects. See {@link IExpulsionAdjuster}.
      */
-    public void objectMoved_(boolean emigrate, PhysicalOp op, SOID soid, ResolvedPath pathOld, Trans t)
-            throws SQLException, ExNotFound, IOException, ExNotDir, ExStreamInvalid, ExAlreadyExist
+    public void objectMoved_(ResolvedPath pathOld, SOID soid,
+            boolean emigrate, PhysicalOp op, Trans t)
+            throws Exception
     {
         OA oa = _ds.getOA_(soid);
-        int flagsOld = oa.flags();
 
-        // compute the object's flags based on the parent's
-        SOID soidParent = new SOID(soid.sidx(), oa.parent());
-        OA oaParent = _ds.getOAThrows_(soidParent);
-        boolean parentExpelled = oaParent.isExpelled();
-        int flagsNew = parentExpelled ? set(flagsOld, FLAG_EXPELLED_INH) :
-            unset(flagsOld, FLAG_EXPELLED_INH);
+        boolean wasExpelled = isExpelled_(pathOld.soids);
+        boolean nowExpelled = oa.isExpelled();
 
-        IExpulsionAdjuster adj = getAdjuster(flagsOld, flagsNew);
-        adj.adjust_(emigrate, op, soid, pathOld, flagsNew, t);
+        getAdjuster(wasExpelled, nowExpelled)
+                .adjust_(pathOld, oa.soid(), emigrate, op, t);
     }
 
     /**
@@ -134,27 +134,48 @@ public class Expulsion
      * The method is idempotent if called multiple times with the same parameters.
      */
     public void setExpelled_(boolean expelled, SOID soid, Trans t)
-            throws SQLException, ExNotDir, ExStreamInvalid, IOException, ExNotFound, ExAlreadyExist
+            throws Exception
     {
         OA oa = _ds.getOA_(soid);
+
+        if (oa.soid().oid().isRoot()) throw new ExBadArgs();
 
         // only folder expulsion is supported
         if (!oa.isDirOrAnchor()) throw new ExNotDir();
 
-        int flagsOld = oa.flags();
-        int flagsNew = expelled ? set(flagsOld, FLAG_EXPELLED_ORG) :
-            unset(flagsOld, FLAG_EXPELLED_ORG);
+        SOID parent = new SOID(oa.soid().sidx(), oa.parent());
+        boolean parentExpelled = _ds.getOA_(parent).isExpelled();
+        boolean wasExpelled = parentExpelled || oa.isSelfExpelled();
+        boolean nowExpelled = parentExpelled || expelled;
 
-        if (flagsNew == flagsOld) return;
+        if (wasExpelled == nowExpelled) return;
 
         l.debug("set expulsion of " + soid + " with " + expelled);
 
-        if (expelled) _exdb.insertExpelledObject_(soid, t);
-        else _exdb.deleteExpelledObject_(soid, t);
+        if (expelled) {
+            _exdb.insertExpelledObject_(soid, t);
+        } else {
+            _exdb.deleteExpelledObject_(soid, t);
+        }
 
-        IExpulsionAdjuster adj = getAdjuster(flagsOld, flagsNew);
+        _ds.setExpelled_(oa.soid(), nowExpelled, t);
+
         ResolvedPath path = _ds.resolve_(oa);
-        adj.adjust_(false, PhysicalOp.APPLY, soid, path, flagsNew, t);
+        getAdjuster(wasExpelled, nowExpelled)
+                .adjust_(path, oa.soid(), false, PhysicalOp.APPLY, t);
+    }
+
+    /**
+     * The method returns the appropriate IExpulsionAdjuster given the previous and current
+     * expulsion state of an object
+     */
+    private IExpulsionAdjuster getAdjuster(boolean wasExpelled, boolean nowExpelled)
+    {
+        if (wasExpelled) {
+            return nowExpelled ? _adjE2E : _adjE2A;
+        } else {
+            return nowExpelled ? _adjA2E : _adjA2A;
+        }
     }
 
     /**
@@ -169,7 +190,7 @@ public class Expulsion
         // the UI tries to list expelled objects
         // 2) not expelling the target would cause the expelled files/folders to reappear, to
         // the extreme confusion/dismay of the user
-        if (Util.test(oaAlias.flags(), OA.FLAG_EXPELLED_ORG)) {
+        if (oaAlias.isSelfExpelled()) {
             _exdb.deleteExpelledObject_(oaAlias.soid(), t);
             if (target != null) _exdb.insertExpelledObject_(target, t);
         }
@@ -182,15 +203,6 @@ public class Expulsion
     public IDBIterator<SOID> getExpelledObjects_() throws SQLException
     {
         return _exdb.getExpelledObjects_();
-    }
-
-    /**
-     * @return true iff the flags indicates that the object is effectively expelled, that is,
-     * either the originate expelled bit or inherited expelled bit is set.
-     */
-    static boolean effectivelyExpelled(int flags)
-    {
-        return Util.test(flags, FLAG_EXPELLED_ORG_OR_INH);
     }
 
     /**

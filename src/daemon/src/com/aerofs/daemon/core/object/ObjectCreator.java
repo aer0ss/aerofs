@@ -14,10 +14,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 import com.google.inject.Inject;
@@ -53,7 +50,7 @@ public class ObjectCreator
      * linker-initiated.
      */
     public SOID create_(Type type, SOID soidParent, String name, PhysicalOp op, Trans t)
-            throws IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir, ExStreamInvalid
+            throws Exception
     {
         return create_(type, new OID(UniqueID.generate()), soidParent, name, op, t);
     }
@@ -63,7 +60,7 @@ public class ObjectCreator
      * linker-initiated.
      */
     public SOID create_(Type type, OID oid, SOID soidParent, String name, PhysicalOp op, Trans t)
-            throws IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir, ExStreamInvalid
+            throws Exception
     {
         SOID soid = new SOID(soidParent.sidx(), oid);
         createMeta_(type, soid, soidParent.oid(), name, 0, op, false, true, t);
@@ -91,7 +88,7 @@ public class ObjectCreator
      */
     public void createMeta_(OA.Type type, final SOID soid, OID oidParent, String name, int flags,
             PhysicalOp op, boolean detectImmigration, boolean updateVersion, Trans t)
-            throws ExNotFound, SQLException, ExAlreadyExist, IOException, ExNotDir, ExStreamInvalid
+            throws Exception
     {
         boolean expelled = createOA_(type, soid, oidParent, name, flags, op, updateVersion, t);
 
@@ -105,12 +102,10 @@ public class ObjectCreator
      * Create the metadata for an object being migrated from a different store
      */
     public void createImmigrantMeta_(OA.Type type, SOID soidFrom, SOID soidTo, OID oidToParent,
-            String name, int flags,
-            PhysicalOp op, boolean updateVersion, Trans t)
-            throws ExNotFound, SQLException, ExAlreadyExist, IOException, ExNotDir, ExStreamInvalid
+            String name, PhysicalOp op, boolean updateVersion, Trans t)
+            throws ExNotFound, ExAlreadyExist, SQLException, IOException
     {
-        boolean expelled = createOA_(type, soidTo, oidToParent, name, flags, op,
-                updateVersion, t);
+        boolean expelled = createOA_(type, soidTo, oidToParent, name, 0, op, updateVersion, t);
 
         boolean immigrated = !expelled && type == Type.FILE;
         if (immigrated) _imd.immigrateFile_(_ds.getOA_(soidFrom), _ds.getOA_(soidTo), op, t);
@@ -122,9 +117,6 @@ public class ObjectCreator
             PhysicalOp op,  boolean updateVersion, Trans t)
             throws ExNotFound, ExAlreadyExist, SQLException, IOException
     {
-        // the caller mustn't set these flags
-        assert !Util.test(flags, FLAG_EXPELLED_ORG_OR_INH);
-
         // determine expelled flags
         OA oaParent = _ds.getOAThrows_(new SOID(soid.sidx(), oidParent));
         boolean expelled;
@@ -132,7 +124,6 @@ public class ObjectCreator
             // we can't map an expelled object since an expelled logical object doesn't have a
             // corresponding physical object.
             assert op != PhysicalOp.MAP;
-            flags |= FLAG_EXPELLED_INH;
             expelled = true;
         } else {
             expelled = false;

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -146,7 +147,7 @@ class AsyncDownload extends Download
             // we don't want the catch-all block to swallow runtime exceptions
             SystemUtil.fatal(e);
         } catch (final Exception e) {
-            l.warn(_socid + ": " + Util.e(e, ExNoPerm.class));
+            l.warn("{} :", _socid, BaseLogUtil.suppress(e, ExNoPerm.class));
             notifyListeners_(new IDownloadCompletionListenerVisitor() {
                 @Override
                 public void notify_(IDownloadCompletionListener l)

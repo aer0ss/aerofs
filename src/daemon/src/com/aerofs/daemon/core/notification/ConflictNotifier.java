@@ -155,7 +155,7 @@ class ConflictNotifier extends DirectoryServiceAdapter
     }
 
     @Override
-    public void objectObliterated_(OA oa, Path pathFrom, Trans t) throws SQLException
+    public void objectObliterated_(OA oa, Trans t) throws SQLException
     {
         // do not send notifications for temporary objects created by aliasing
         _tlConflictedObjects.get(t).remove(oa.soid());

@@ -1,28 +1,21 @@
 package com.aerofs.daemon.core.expel;
 
-import static com.aerofs.daemon.core.expel.Expulsion.effectivelyExpelled;
-
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.ObjectWalkerAdapter;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.expel.Expulsion.IExpulsionListener;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
-import java.io.IOException;
-import java.sql.SQLException;
+import static com.google.common.base.Preconditions.checkArgument;
 
 class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
 {
@@ -44,12 +37,11 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     }
 
     @Override
-    public void adjust_(boolean emigrate, final PhysicalOp op, final SOID soidRoot, ResolvedPath pOld,
-            final int flagsRoot, final Trans t)
-            throws IOException, ExNotFound, SQLException, ExStreamInvalid, ExAlreadyExist,
-            ExNotDir
+    public void adjust_(ResolvedPath pathOld, final SOID soidRoot,
+            boolean emigrate, final PhysicalOp op, final Trans t)
+            throws Exception
     {
-        assert !emigrate;
+        checkArgument(!emigrate);
 
         // must recreate the *new* tree
         // otherwise we may try to create physical object under the trash folder
@@ -60,22 +52,18 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         _ds.walk_(soidRoot, p, new ObjectWalkerAdapter<ResolvedPath>() {
             @Override
             public ResolvedPath prefixWalk_(ResolvedPath parentPath, OA oa)
-                    throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir,
-                    ExStreamInvalid {
+                    throws Exception {
                 boolean isRoot = soidRoot.equals(oa.soid());
 
                 ResolvedPath path = isRoot ? parentPath : parentPath.join(oa);
 
-                // set the flags _before_ physically creating folders, since physical file
-                // implementations may assume that the corresponding logical object has been
-                // admitted when creating the physical object.
-                // see also AdmittedToExpelledAdjuster
-                int flagsNew = isRoot ? flagsRoot : Util.unset(oa.flags(), OA.FLAG_EXPELLED_INH);
-                _ds.setOAFlags_(oa.soid(), flagsNew, t);
-
                 // skip the current node and its children if the effective state of the current
                 // object doesn't change
-                if (effectivelyExpelled(flagsNew)) return null;
+                if (oa.isSelfExpelled()) return null;
+
+                for (IExpulsionListener l : _expulsion.listeners_()) {
+                    l.objectAdmitted_(oa.soid(), t);
+                }
 
                 switch (oa.type()) {
                 case FILE:

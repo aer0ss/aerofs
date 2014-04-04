@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.SortedMap;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -173,14 +172,11 @@ public class MockDS
             ////////
             // mock OA
 
-            if (parent != null) {
-                expelled |= parent._oa.isExpelled();
-            }
-
             _oa = mock(OA.class);
             when(_oa.soid()).thenReturn(_soid);
             when(_oa.name()).thenReturn(_name);
             when(_oa.isExpelled()).thenReturn(expelled);
+            when(_oa.isSelfExpelled()).thenReturn(expelled);
             when(_oa.parent()).thenReturn(_soid.oid().isRoot() ? _soid.oid() : _parent._soid.oid());
 
             ////////
@@ -278,13 +274,6 @@ public class MockDS
                 for (IDirectoryServiceListener listener : listeners)
                     listener.objectDeleted_(_soid, oldParent.soid().oid(), oldPath, t);
 
-                // TODO: recursively set expelled flag
-                if (_parent._oa.isExpelled() && !_oa.isExpelled()) {
-                    when(_oa.isExpelled()).thenReturn(true);
-                }
-
-                for (IDirectoryServiceListener listener : listeners)
-                    listener.objectExpelled_(_soid, t);
             } else {
                 for (IDirectoryServiceListener listener : listeners)
                     listener.objectMoved_(_soid, oldParent.soid().oid(), _parent.soid().oid(),
@@ -392,7 +381,6 @@ public class MockDS
                 });
             }
             when(_oa.cas()).thenReturn(cas);
-            when(_oa.cas(anyBoolean())).thenReturn(cas);
         }
 
         public MockDSFile caMaster(long length, long mtime)

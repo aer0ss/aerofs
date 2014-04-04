@@ -8,7 +8,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.base.analytics.AnalyticsEvents.FileSavedEvent;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -18,7 +17,6 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -27,14 +25,12 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
@@ -291,8 +287,7 @@ class MightCreateOperations
      * @return whether a new logical object corresponding to the physical object is created
      */
     private boolean createLogicalObject_(PathCombo pc, boolean dir, OIDGenerator og, Trans t)
-            throws ExNotFound, SQLException, ExExpelled, IOException, ExAlreadyExist, ExNotDir,
-            ExStreamInvalid
+            throws Exception
     {
         SOID soidParent = _ds.resolveThrows_(pc._path.removeLast());
         OA oaParent = _ds.getOA_(soidParent);

@@ -102,7 +102,8 @@ public class DBCheckFID
         // must not call checkRecursive while iterating the result set because that method also uses
         // _psListChildren.
         for (CheckArgs a : args) {
-            checkRecursive_(a._sidx, a._oid, a._fid, a._name, a._type, a._flags, fix, okay);
+            checkRecursive_(a._sidx, a._oid, a._fid, a._name, a._type,
+                    Util.test(a._flags, OA.FLAG_EXPELLED_ORG), fix, okay);
         }
     }
 
@@ -112,7 +113,7 @@ public class DBCheckFID
         DBChecker.error(expected, new SOID(sidx, oid) + " " + name + ": " + fid, okay);
     }
 
-    private void checkChildren_(SIndex sidx, OID oid, boolean hosted,
+    private void checkChildren_(SIndex sidx, OID oid, boolean expelled,
             boolean fix, InOutArg<Boolean> okay)
         throws SQLException
     {
@@ -130,12 +131,13 @@ public class DBCheckFID
         // must not call checkRecursive while iterating the result set because that method also uses
         // _psListChildren.
         for (CheckArgs a : args) {
-            checkRecursive_(a._sidx, a._oid, a._fid, a._name, a._type, a._flags, fix, okay);
+            checkRecursive_(a._sidx, a._oid, a._fid, a._name, a._type,
+                    expelled || Util.test(a._flags, OA.FLAG_EXPELLED_ORG), fix, okay);
         }
     }
 
     private void checkRecursive_(SIndex sidx, OID oid, FID fid, String name, OA.Type type,
-            int flags, boolean fix, InOutArg<Boolean> okay)
+            boolean expelled, boolean fix, InOutArg<Boolean> okay)
             throws SQLException
     {
         if (fid != null) {
@@ -146,7 +148,6 @@ public class DBCheckFID
             assert !rs.next();
         }
 
-        boolean expelled = Util.test(flags, OA.FLAG_EXPELLED_ORG_OR_INH);
         if (expelled && fid != null) {
             error("expelled object must have null FID", sidx, oid, fid, name, okay);
         }

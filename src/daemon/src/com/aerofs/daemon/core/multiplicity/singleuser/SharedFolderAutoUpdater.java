@@ -9,6 +9,8 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
+import com.aerofs.daemon.core.expel.Expulsion;
+import com.aerofs.daemon.core.expel.Expulsion.IExpulsionListener;
 import com.aerofs.daemon.core.multiplicity.singleuser.ISharedFolderOp.SharedFolderOpType;
 import com.aerofs.daemon.core.persistency.IPersistentQueue;
 import com.aerofs.daemon.core.persistency.PersistentQueueDriver;
@@ -37,7 +39,7 @@ import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAu
  * folder (mostly to avoid automatically re-joining it when a new device is installed).
  * When anchor is renamed it triggers shared folder name update in db for this particular user
  */
-class SharedFolderAutoUpdater extends DirectoryServiceAdapter
+class SharedFolderAutoUpdater extends DirectoryServiceAdapter implements IExpulsionListener
 {
     private final Logger l = Loggers.getLogger(SharedFolderAutoUpdater.class);
 
@@ -50,7 +52,6 @@ class SharedFolderAutoUpdater extends DirectoryServiceAdapter
         public void enqueue_(ISharedFolderOp op, Trans t) throws SQLException
         {
             _lqdb.addCommand_(op, t);
-
         }
 
         @Override
@@ -102,13 +103,14 @@ class SharedFolderAutoUpdater extends DirectoryServiceAdapter
 
     @Inject
     public SharedFolderAutoUpdater(PersistentQueueDriver.Factory f, DirectoryService ds,
-            SharedFolderUpdateQueueDatabase lqdb)
+            Expulsion expulsion, SharedFolderUpdateQueueDatabase lqdb)
     {
         _ds = ds;
         _lqdb = lqdb;
         _pqd = f.create(new LeaveQueue());
 
         _ds.addListener_(this);
+        expulsion.addListener_(this);
 
         _pqd.scheduleScan_();
     }
@@ -153,6 +155,10 @@ class SharedFolderAutoUpdater extends DirectoryServiceAdapter
             _tlSID.get(t).add(op);
         }
     }
+
+    @Override
+    public void objectAdmitted_(SOID soid, Trans t)
+    {}
 
     @Override
     public void objectExpelled_(SOID soid, Trans t) throws SQLException

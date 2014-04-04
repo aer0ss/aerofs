@@ -348,7 +348,7 @@ public class GetComponentCall
             .setType(toPB(oa.type()))
             .setParentObjectId(oa.parent().toPB())
             .setName(oa.name())
-            .setFlags(oa.flags() & ~OA.FLAGS_LOCAL);
+            .setFlags(0);
 
         ////////
         // send alias information

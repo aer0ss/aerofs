@@ -177,7 +177,7 @@ public class TestLinkedStorage extends AbstractTest
         when(ds.getSOIDNullable_(any(FID.class))).thenReturn(sokid.soid());
 
         RepresentabilityHelper rh = new RepresentabilityHelper(os, dr, lrm,
-                mock(IMetaDatabase.class), nro, factFile, mock(RitualNotificationServer.class));
+                mock(IMetaDatabase.class), nro, factFile, mock(RitualNotificationServer.class), ds);
 
         storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
                 rh, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, null,

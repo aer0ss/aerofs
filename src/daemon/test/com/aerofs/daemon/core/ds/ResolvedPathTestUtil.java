@@ -24,4 +24,10 @@ public class ResolvedPathTestUtil
             }
         }), elems);
     }
+
+    public static ResolvedPath fromString(SID sid, String path, final SOID... soids)
+    {
+        List<String> elems = Arrays.asList(path.split("/"));
+        return new ResolvedPath(sid, Lists.newArrayList(soids), elems);
+    }
 }
