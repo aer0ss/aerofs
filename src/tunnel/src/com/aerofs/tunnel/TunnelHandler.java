@@ -7,7 +7,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -135,7 +134,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void onPeerVerified(UserID user, DID did)
     {
-        Preconditions.checkState(_addr == null);
+        checkState(_addr == null);
         _addr = new TunnelAddress(user, did);
     }
 
@@ -210,8 +209,10 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
     {
-        Preconditions.checkState(_channel == null);
+        checkState(_addr != null);
+        checkState(_channel == null);
         _channel = ctx.getChannel();
+        checkState(_channel != null);
         l.info("tunnel connect {}", this);
         if (_listener != null) _listener.tunnelOpen(_addr, this);
     }
@@ -232,6 +233,8 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e)
     {
+        if (_channel == null) return;
+        checkState(_addr != null);
         l.info("tunnel disconnect {}", this);
         _provider.foreach(new Function<VirtualChannel, Void>() {
             @Override
@@ -249,7 +252,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
     {
         l.info("tunnel close {}", this);
-        Preconditions.checkState(_provider.isEmpty());
+        checkState(_provider.isEmpty());
     }
 
     @Override
