@@ -1,0 +1,35 @@
+{
+  "id": "evt_1M5dgNQyO6wxFM",
+  "created": 1361784104,
+  "livemode": true,
+  "type": "customer.subscription.trial_will_end",
+  "data": {
+    "object": {
+      "plan": {
+        "interval": "month",
+        "name": "Business 1 User",
+        "amount": 1000,
+        "currency": "usd",
+        "id": "business_1user",
+        "object": "plan",
+        "livemode": true,
+        "interval_count": 1,
+        "trial_period_days": 14
+      },
+      "object": "subscription",
+      "start": 1360833524,
+      "status": "trialing",
+      "customer": "cus_1Hy6rp3iQDXy3v",
+      "cancel_at_period_end": false,
+      "current_period_start": 1360833524,
+      "current_period_end": 1362043124,
+      "ended_at": null,
+      "trial_start": 1360833524,
+      "trial_end": 1362043124,
+      "canceled_at": null,
+      "quantity": 1
+    }
+  },
+  "object": "event",
+  "pending_webhooks": 1
+}

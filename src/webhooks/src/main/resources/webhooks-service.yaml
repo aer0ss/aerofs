@@ -1,0 +1,51 @@
+customerioHttpClient:
+    timeout: 500ms
+    connectionTimeout: 500ms
+    timeToLive: 1 hour
+    cookiesEnabled: false
+    maxConnections: 1024
+    maxConnectionsPerRoute: 1024
+    keepAlive: 0s
+    minThreads: 1
+    maxThreads: 32
+    gzipEnabled: false
+    gzipEnabledForRequests: false
+
+database:
+    driverClass: com.mysql.jdbc.Driver
+    user: aerofs_sp
+    password: password
+    url: jdbc:mysql://localhost:3306/aerofs_sp
+    properties:
+        hibernate.dialect: org.hibernate.dialect.MySQLDialect
+    maxWaitForConnection: 1s
+    validationQuery: "SELECT 1;"
+    minSize: 4
+    maxSize: 16
+    checkConnectionWhileIdle: true
+    checkConnectionHealthWhenIdleFor: 10s
+    closeConnectionIfIdleFor: 1m
+
+http:
+    port: 7001
+    adminPort: 7101
+    connectorType: nonblocking
+    requestLog:
+        file:
+            enabled: true
+            currentLogFilename: ./logs/requests.log
+            archivedLogFilenamePattern: ./logs/requests-%d.log.gz
+
+logging:
+    level: INFO
+    loggers:
+        org.arrowfs: TRACE
+        com.aerofs: TRACE
+    console:
+        enabled: true
+        threshold: ALL
+    file:
+        enabled: true
+        threshold: ALL
+        currentLogFilename: ./logs/app.log
+        archivedLogFilenamePattern: ./logs/app-%d.log.gz

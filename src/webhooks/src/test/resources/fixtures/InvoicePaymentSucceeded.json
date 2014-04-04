@@ -1,0 +1,64 @@
+{
+  "type": "invoice.payment_succeeded",
+  "id": "evt_1LBkvr5uHNqdMB",
+  "object": "event",
+  "type": "invoice.payment_succeeded",
+  "created": 1361576221,
+  "livemode": false,
+  "pending_webhooks": 0,
+  "data": {
+    "object": {
+      "id": "in_1LBkJyWTSF0YHE",
+      "object": "invoice",
+      "date": 1361576221,
+      "livemode": false,
+      "customer": "cus_1LBkY3Jve4yTLJ",
+      "period_start": 1361576221,
+      "period_end": 1361576221,
+      "lines": {
+        "object": "list",
+        "data": [
+          {
+            "object": "line_item",
+            "id": "su_1LBk8DAhJm9Tvr",
+            "object": "line_item",
+            "livemode": false,
+            "amount": 0,
+            "currency": "usd",
+            "period": {
+              "start": 1361576221,
+              "end": 1362785821
+            },
+            "proration": false,
+            "type": "subscription",
+            "plan": {
+              "object": "plan",
+              "id": "business_1user",
+              "object": "plan",
+              "created": 0,
+              "livemode": false,
+              "amount": 1000,
+              "currency": "usd",
+              "interval": "month",
+              "interval_count": 1,
+              "name": "Business 1 User",
+              "trial_period_days": 14
+            },
+            "quantity": 1
+          }
+        ],
+        "url": "/v1/invoices/in_1LBkJyWTSF0YHE/lines",
+        "count": 1
+      },
+      "starting_balance": 0,
+      "subtotal": 0,
+      "total": 0,
+      "amount_due": 0,
+      "currency": "usd",
+      "paid": true,
+      "closed": true,
+      "attempted": true,
+      "attempt_count": 0
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "interval": "month",
+  "name": "Business 1 User",
+  "amount": 1000,
+  "currency": "usd",
+  "id": "business_1user",
+  "object": "plan",
+  "livemode": false,
+  "interval_count": 1,
+  "trial_period_days": 14
+}

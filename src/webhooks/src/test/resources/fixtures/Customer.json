@@ -1,0 +1,31 @@
+{
+  "object": "customer",
+  "created": 1360716694,
+  "id": "cus_1HSh8lyV8JfTio",
+  "livemode": false,
+  "description": "id=679 - teddy33 teddy33 - mikeckennedy+teddy33@gmail.com",
+  "active_card": {
+    "object": "card",
+    "last4": "4242",
+    "type": "Visa",
+    "exp_month": 12,
+    "exp_year": 2015,
+    "fingerprint": "qhjxpr7DiCdFYTlH",
+    "country": "US",
+    "name": "Michael KENNEDY",
+    "address_line1": "5508 Sw Hamilton St",
+    "address_line2": null,
+    "address_city": null,
+    "address_state": "Oregon",
+    "address_zip": "97221",
+    "address_country": "United States",
+    "cvc_check": "pass",
+    "address_line1_check": "pass",
+    "address_zip_check": "pass"
+  },
+  "email": "mikeckennedy+teddy33@gmail.com",
+  "delinquent": false,
+  "subscription": null,
+  "discount": null,
+  "account_balance": 0
+}

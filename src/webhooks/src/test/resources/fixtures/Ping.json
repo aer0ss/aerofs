@@ -1,0 +1,8 @@
+{
+  "id": "evt_PING",
+  "created": 1360740835,
+  "livemode": false,
+  "type": "ping",
+  "object": "event",
+  "pending_webhooks": 0
+}

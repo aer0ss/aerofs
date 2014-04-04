@@ -1,0 +1,67 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'eu.appsatori:gradle-fatjar-plugin:0.2-rc1'
+    }
+}
+
+apply plugin: 'fatjar'
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+group='com.aerofs.webhooks'
+version='1-SNAPSHOT'
+
+setBuildDir 'target'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.yammer.dropwizard:dropwizard-core:latest.release'
+    compile 'com.yammer.dropwizard:dropwizard-client:latest.release'
+    compile 'com.yammer.dropwizard:dropwizard-hibernate:latest.release'
+    compile 'com.hubspot.dropwizard:dropwizard-guice:latest.snapshot'
+    compile 'com.google.inject:guice:3.0'
+    compile 'org.apache.commons:commons-lang3:latest.release'
+    compile 'mysql:mysql-connector-java:latest.release'
+    compile 'com.aerofs.customerio:customerio:latest.snapshot'
+    compile 'org.arrowfs:arrow-type:latest.snapshot'
+    compile 'com.sun.jersey:jersey-bundle:latest.release'
+
+    testCompile 'com.yammer.dropwizard:dropwizard-testing:latest.release'
+    testCompile 'com.sun.jersey:jersey-client:latest.release'
+    testCompile 'junit:junit:latest.release'
+    testCompile 'org.mockito:mockito-all:latest.release'
+    testCompile 'org.easytesting:fest-assert-core:latest.release'
+}
+
+mainClassName = 'com.aerofs.webhooks.WebhooksService'
+
+fatJar {
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+
+    manifest {
+        attributes 'Main-Class': mainClassName,
+                   'Built-Date': new Date(),
+                   'Built-JDK': System.getProperty( 'java.version' ),
+                   'Implementation-Version': version,
+                   'Implementation-Title': 'AeroFS Webhooks'
+    }
+}
+
+run {
+    args 'server', './target/resources/main/webhooks-service.yaml'
+}
