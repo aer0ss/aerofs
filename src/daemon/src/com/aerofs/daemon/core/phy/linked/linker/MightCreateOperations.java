@@ -184,7 +184,7 @@ class MightCreateOperations
         if (!soid.oid().isAnchor()) return;
         SID sid = SID.anchorOID2storeSID(soid.oid());
         try {
-            if (!_sfti.isSharedFolderRoot(pc._absPath, sid)) {
+            if (!_sfti.isSharedFolderRoot(sid, pc._absPath)) {
                 // schedule fix instead of performing immediately
                 // this is necessary to prevent interference with in-progress deletion operations
                 // on some OSes (most notably interference was observed with syncdet tests on
@@ -230,7 +230,7 @@ class MightCreateOperations
             return;
         }
 
-        if (!_sfti.isSharedFolderRoot(pc._absPath, sid)) _sfti.addTagFileAndIconIn(sid, pc._absPath);
+        _sfti.fixTagFileIfNeeded_(sid, pc._absPath);
     }
 
     /**
@@ -306,7 +306,7 @@ class MightCreateOperations
         if (oaParent.isAnchor()) soidParent = _ds.followAnchorThrows_(oaParent);
 
         // create the object
-        OID oid = dir ? _sfti.getOIDForAnchor_(pc, t) : null;
+        OID oid = dir ? _sfti.getOIDForAnchor_(soidParent.sidx(), pc, t) : null;
         Type type = oid != null ? ANCHOR : (dir ? DIR : FILE);
         if (oid == null) oid = og.generate_(dir, pc._path);
         _oc.create_(type, oid, soidParent, pc._path.last(), MAP, t);

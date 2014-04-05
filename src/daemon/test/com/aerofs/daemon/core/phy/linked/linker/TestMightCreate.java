@@ -343,7 +343,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("a2"));
         generateDirFnt(soid);
         FIDAndType fnt = generateDirFnt();
-        when(sfti.isSharedFolderRoot(eq(Util.join(absRootAnchor, "a2")), any(SID.class)))
+        when(sfti.isSharedFolderRoot(any(SID.class), eq(Util.join(absRootAnchor, "a2"))))
                 .thenReturn(true);
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));

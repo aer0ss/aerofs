@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -16,13 +17,17 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.daemon.core.first_launch.FirstLaunch.AccessibleStores;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
+import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.cfg.CfgRootSID;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
@@ -42,20 +47,25 @@ public class SharedFolderTagFileAndIcon
     private static final Logger l = Loggers.getLogger(SharedFolderTagFileAndIcon.class);
 
     private final InjectableDriver _dr;
-    private final IMapSID2SIndex _sid2sidx;
+    private final IMetaDatabase _mdb;
+    private final IMapSIndex2SID _sidx2sid;
     private final InjectableFile.Factory _factFile;
     private final AccessibleStores _accessibleStoresOnFirstLaunch;
     private final IOSUtil _osutil;
+    private final CfgRootSID _rootSID;
 
     @Inject
     public SharedFolderTagFileAndIcon(InjectableDriver dr, InjectableFile.Factory factFile,
-            IMapSID2SIndex sid2sidx, AccessibleStores accessibleStoresOnFirstLaunch, IOSUtil osutil)
+            IMetaDatabase mdb, AccessibleStores accessibleStoresOnFirstLaunch, IOSUtil osutil,
+            CfgRootSID rootSID, IMapSIndex2SID sidx2sid)
     {
         _dr = dr;
-        _sid2sidx = sid2sidx;
+        _mdb = mdb;
         _factFile = factFile;
         _accessibleStoresOnFirstLaunch = accessibleStoresOnFirstLaunch;
         _osutil = osutil;
+        _rootSID = rootSID;
+        _sidx2sid = sidx2sid;
     }
 
     /**
@@ -142,13 +152,14 @@ public class SharedFolderTagFileAndIcon
         _factFile.create(absPathTagFile).deleteOrThrowIfExistRecursively();
     }
 
-    public @Nullable OID getOIDForAnchor_(PathCombo pc, Trans t) throws SQLException, IOException
+    public @Nullable OID getOIDForAnchor_(SIndex sidx, PathCombo pc, Trans t)
+            throws SQLException, IOException
     {
         InjectableFile tag = _factFile.create(pc._absPath, LibParam.SHARED_FOLDER_TAG);
         if (!tag.exists()) return null;
 
         SID sid = tag.isFile() ? sidFromTagFile(tag.getAbsolutePath()) : null;
-        if (sid != null && isAccessibleAndAbsent_(sid)) {
+        if (sid != null && canRestoreAnchor_(sidx, sid)) {
             l.info("first-launch: valid tag found " + sid + " " + pc._path);
             return SID.storeSID2anchorOID(sid);
         } else {
@@ -158,26 +169,52 @@ public class SharedFolderTagFileAndIcon
         }
     }
 
-    public boolean isSharedFolderRoot(String absPath, SID sid) throws IOException
+    public void fixTagFileIfNeeded_(SID sid, String absPath) throws IOException
     {
-        return isSharedFolderRoot(_factFile.create(absPath), sid);
+        if (!sid.equals(_rootSID.get()) && !isSharedFolderRoot(sid, absPath)) {
+            addTagFileAndIconIn(sid, absPath);
+        }
     }
 
-    public boolean isSharedFolderRoot(InjectableFile dir, SID sid) throws IOException
+    // non-static for mocking...
+    public boolean isSharedFolderRoot(SID sid, String absPath)
     {
-        InjectableFile tag = _factFile.create(dir, LibParam.SHARED_FOLDER_TAG);
+        return isStoreRoot(sid, absPath);
+    }
+
+    public boolean isSharedFolderRoot(SID sid, InjectableFile dir)
+    {
+        return isStoreRoot(sid, dir.getAbsolutePath());
+    }
+
+    public static boolean isStoreRoot(SID sid, String absPath)
+    {
+        File tag = new File(absPath, LibParam.SHARED_FOLDER_TAG);
         return tag.exists() && tag.isFile() && sid.equals(sidFromTagFile(tag.getAbsolutePath()));
     }
 
-    private boolean isAccessibleAndAbsent_(SID sid) throws SQLException
+    private boolean canRestoreAnchor_(SIndex sidx, SID sid) throws SQLException
     {
+        if (sid.isUserRoot()) {
+            l.warn("cannot create anchor for user root");
+            return false;
+        }
+
+        if (!_sidx2sid.get_(sidx).isUserRoot()) {
+            l.warn("cannot create nested anchor");
+            return false;
+        }
+
+        // the set of accessible stores will be empty outside of the first launch
+        if (!_accessibleStoresOnFirstLaunch.contains(sid)) {
+            l.warn("cannot restore anchor without acl");
+            return false;
+        }
+
         // if the store is already known we should not try to create an anchor for it to avoid
         // conflicts (NB: even expelled store must be taken into account as their anchors are still
         // around under a trash folder)
-        if (_sid2sidx.getLocalOrAbsentNullable_(sid) != null) return false;
-
-        // the set of accessible stores will be empty outside of the first launch
-        return _accessibleStoresOnFirstLaunch.contains(sid);
+        return _mdb.getOA_(new SOID(sidx, SID.storeSID2anchorOID(sid))) == null;
     }
 
     /**

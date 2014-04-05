@@ -375,6 +375,11 @@ public final class CommandNotificationSubscriber
     private void tryCreateSeedFiles()
     {
         if (Cfg.storageType() == StorageType.LINKED) {
+            try {
+                Cfg.rootDB().createSeed_();
+            } catch (Exception e) {
+                l.info("failed to create roots file", e);
+            }
             Set<SID> roots;
             try {
                 roots = Cfg.getRoots().keySet();
@@ -391,7 +396,7 @@ public final class CommandNotificationSubscriber
                     // give the daemon some room to create the seed file before making the SP call
                     reply.get(SEED_FILE_CREATION_TIMEOUT, TimeUnit.MILLISECONDS);
                 } catch (Exception e) {
-                    l.info("failed to create seed file for {}: {}", sid, Util.e(e));
+                    l.info("failed to create seed file for {}", sid, e);
                 }
             }
         }

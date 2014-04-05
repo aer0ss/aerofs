@@ -68,7 +68,7 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
     @Override
     public void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception
     {
-        // NB: we do not immediately delete non-root stores to intermediate states with broken
+        // NB: do not immediately delete non-root stores to avoid intermediate states with broken
         // store hiearchy ("dangling pointer"-style). By virtue of the implicit refcount in the
         // store hierarchy they will automatically be deleted when all anchors pointing to them
         // disappear

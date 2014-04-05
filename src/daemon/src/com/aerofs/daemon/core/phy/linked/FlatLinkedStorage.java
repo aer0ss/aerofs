@@ -137,7 +137,7 @@ public class FlatLinkedStorage extends LinkedStorage
 
             while (d.exists()) {
                 // dir already exists, only allow if it contains a valid tag file matching the SID
-                if (d.isDirectory() && _sfti.isSharedFolderRoot(d, sid)) return d;
+                if (d.isDirectory() && _sfti.isSharedFolderRoot(sid, d)) return d;
                 l.info("conflicting folder");
                 d = _factFile.create(_sharedDir, Util.nextFileName(d.getName()));
             }

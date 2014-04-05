@@ -25,6 +25,7 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
@@ -195,7 +196,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         op("baz/new", fnt, Create);
 
         verify(oc).create_(eq(DIR), any(OID.class), soidAt("baz"), eq("new"), eq(MAP), eq(t));
-        verify(sfti).getOIDForAnchor_(any(PathCombo.class), eq(t));
+        verify(sfti).getOIDForAnchor_(any(SIndex.class), any(PathCombo.class), eq(t));
         verifyZeroInteractions(vu, om, delBuffer);
     }
 
@@ -403,13 +404,13 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         String absPath = Util.join(absRootAnchor, "shared");
         SID sid = SID.anchorOID2storeSID(soid.oid());
 
-        when(sfti.isSharedFolderRoot(absPath, sid)).thenReturn(false);
+        when(sfti.isSharedFolderRoot(sid, absPath)).thenReturn(false);
 
         op("shared", fnt, Update);
 
         verify(delBuffer).remove_(soid);
         verify(sched).schedule(any(IEvent.class), anyLong());
-        verify(sfti, times(2)).isSharedFolderRoot(absPath, sid);
+        verify(sfti, times(2)).isSharedFolderRoot(sid, absPath);
         verify(sfti).addTagFileAndIconIn(sid, absPath);
         verifyZeroInteractions(oc, om, vu);
     }
@@ -424,14 +425,14 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         String absPath = Util.join(absRootAnchor, "quux");
         SID sid = SID.anchorOID2storeSID(soid.oid());
 
-        when(sfti.isSharedFolderRoot(absPath, sid)).thenReturn(false);
+        when(sfti.isSharedFolderRoot(sid, absPath)).thenReturn(false);
 
         op("quux", fnt, Update);
 
         verify(imc).move_(eq(soid), soidAt(""), eq("quux"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
         verify(sched).schedule(any(IEvent.class), anyLong());
-        verify(sfti, times(2)).isSharedFolderRoot(absPath, sid);
+        verify(sfti, times(2)).isSharedFolderRoot(sid, absPath);
         verify(sfti).addTagFileAndIconIn(sid, absPath);
         verifyZeroInteractions(oc, om, vu);
     }
@@ -446,14 +447,14 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         String absPath = Util.join(absRootAnchor, "shared");
         SID sid = SID.anchorOID2storeSID(soid.oid());
 
-        when(sfti.isSharedFolderRoot(absPath, sid)).thenReturn(false);
+        when(sfti.isSharedFolderRoot(sid, absPath)).thenReturn(false);
 
         op("shared", fnt, Replace);
 
         verify(ds).setFID_(soid, fnt._fid, t);
         verify(delBuffer).remove_(soid);
         verify(sched).schedule(any(IEvent.class), anyLong());
-        verify(sfti, times(2)).isSharedFolderRoot(absPath, sid);
+        verify(sfti, times(2)).isSharedFolderRoot(sid, absPath);
         verify(sfti).addTagFileAndIconIn(sid, absPath);
         verifyZeroInteractions(oc, om, vu);
     }

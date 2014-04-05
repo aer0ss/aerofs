@@ -1,7 +1,9 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.ILinker;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -17,6 +19,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 public class Linker implements ILinker, LinkerRootMap.IListener
@@ -29,7 +32,6 @@ public class Linker implements ILinker, LinkerRootMap.IListener
     private final CoreScheduler _sched;
     private final INotifier _notifier;
     private final LinkerRootMap _lrm;
-    private final IgnoreList _il;
 
     /**
      * @return whether the name indicate an internal file/folder and should therefore be ignored
@@ -49,14 +51,13 @@ public class Linker implements ILinker, LinkerRootMap.IListener
 
     @Inject
     public Linker(CoreScheduler sched, INotifier.Factory factNotifier, LinkerRoot.Factory factLR,
-            LinkerRootMap lrm, IgnoreList il)
+            LinkerRootMap lrm)
     {
         _sched  = sched;
         _notifier = factNotifier.create();
         _lrm = lrm;
         _lrm.setFactory(factLR);
         _lrm.addListener_(this);
-        _il = il;
     }
 
     @Override
@@ -65,6 +66,13 @@ public class Linker implements ILinker, LinkerRootMap.IListener
         // add roots from config db, adding watches and starting scan as needed
         // NB: any root that cannot be added is simply ignored
         _lrm.init_();
+    }
+
+    @Override
+    public void restoreRoot_(SID sid, String absPath, Trans t)
+            throws SQLException, IOException
+    {
+        _lrm.link_(sid, absPath, t);
     }
 
     @Override
@@ -78,21 +86,6 @@ public class Linker implements ILinker, LinkerRootMap.IListener
             // TODO: special exit code for Linker start error?
             SystemUtil.fatal("failed to start linker " + Util.e(e));
         }
-    }
-
-    /**
-     * A first scan (designed to restore shared folders and OIDs from tag files and seed files upon
-     * reinstall) should only be performed if at least one physical root has non-ignored children
-     */
-    @Override
-    public boolean firstScanNeeded()
-    {
-        for (LinkerRoot r : _lrm.getAllRoots_()) {
-            String[] children = new File(r.absRootAnchor()).list();
-            if (children == null) continue;
-            for (String c : children) if (!_il.isIgnored(c)) return true;
-        }
-        return false;
     }
 
     @Override

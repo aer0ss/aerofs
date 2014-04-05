@@ -8,6 +8,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.first_launch.ScanProgressReporter;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
+import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter;
@@ -42,6 +43,7 @@ public abstract class AbstractTestScanSession extends AbstractTest
     @Mock ScanProgressReporter spr;
     @Mock ILinkerFilter filter;
     @Mock RepresentabilityHelper rh;
+    @Mock SharedFolderTagFileAndIcon sfti;
     @InjectMocks ScanSession.Factory factSS;
 
     protected final String pRoot;

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.store;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.OID;
@@ -143,7 +144,7 @@ public abstract class AbstractStoreJoiner
                         false, updateVersion, t);
                 break;
             } catch (ExAlreadyExist e) {
-                l.warn("duplicate", e);
+                l.warn("duplicate", BaseLogUtil.suppress(e, ExAlreadyExist.class));
                 folderName = Util.nextFileName(folderName);
             }
         }

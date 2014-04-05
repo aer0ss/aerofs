@@ -217,7 +217,7 @@ public class MightCreate
         SOID parent = _ds.resolveNullable_(pc._path.removeLast());
         if (parent != null) {
             OA oa = _ds.getOA_(parent);
-            // inside the defualt root resolveNullable_ will find an anchor, in an external root
+            // inside the default root resolveNullable_ will find an anchor, in an external root
             // it will find the root dir
             if (!(oa.isAnchor() || oa.soid().oid().isRoot())) {
                 _sfti.deleteTagFileAndIconIn(new File(pc._absPath).getParent());
@@ -373,13 +373,9 @@ public class MightCreate
         if (target.isExpelled()) return false;
 
         if (target.isAnchor()) {
-            try {
-                // if the tag file matches the anchor we can replace the FID
-                return _sfti.isSharedFolderRoot(pc._absPath,
-                        SID.anchorOID2storeSID(target.soid().oid()));
-            } catch (IOException e) {
-                return false;
-            }
+            // if the tag file matches the anchor we can replace the FID
+            return _sfti.isSharedFolderRoot(SID.anchorOID2storeSID(target.soid().oid()),
+                    pc._absPath);
         }
 
         return (target.isDirOrAnchor() == dir) && (target.isFile() || sourceSOID == null);

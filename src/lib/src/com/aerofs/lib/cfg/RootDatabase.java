@@ -6,8 +6,10 @@ package com.aerofs.lib.cfg;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.aerofs.lib.db.dbcw.SQLiteDBCW;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 
@@ -18,7 +20,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * The conf DB contains a table that holds the mapping of SID->abs path for all external roots
@@ -35,9 +39,50 @@ public class RootDatabase
     private static final String C_ROOT_SID = "s";
     private static final String C_ROOT_PATH = "p";
 
+    // replica used for clean reinstall
+    // the canonical copy of the roots table resides in the conf db
+    private static final String SEED_FILE = ".aerofs.roots";
+
     RootDatabase(IDBCW dbcw)
     {
         _dbcw = dbcw;
+    }
+
+    public void createSeed_() throws SQLException
+    {
+        RootDatabase copy = new RootDatabase(seedDBCW());
+        copy.recreateSchema_();
+        for (Entry<SID, String> e : getRoots().entrySet()) {
+            copy.addRoot(e.getKey(), e.getValue());
+        }
+        copy._dbcw.getConnection().commit();
+        copy._dbcw.fini_();
+    }
+
+    public static Map<SID, String> loadSeed_() throws SQLException
+    {
+        if (!new File(Util.join(Cfg.absRTRoot(), SEED_FILE)).exists()) {
+            return Collections.emptyMap();
+        }
+        RootDatabase rdb = new RootDatabase(seedDBCW());
+        try {
+            return rdb.getRoots();
+        } finally {
+            rdb._dbcw.fini_();
+        }
+    }
+
+    public static void cleaupSeed_()
+    {
+        new File(Util.join(Cfg.absRTRoot(), SEED_FILE)).delete();
+    }
+
+    private static IDBCW seedDBCW() throws SQLException
+    {
+        IDBCW dbcw = new SQLiteDBCW("jdbc:sqlite:" + Util.join(Cfg.absRTRoot(), SEED_FILE),
+                false, true, true);
+        dbcw.init_();
+        return dbcw;
     }
 
     void recreateSchema_() throws SQLException

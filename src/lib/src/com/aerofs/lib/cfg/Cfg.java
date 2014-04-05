@@ -443,6 +443,11 @@ public class Cfg
         return _absDefaultRootAnchor;
     }
 
+    public static RootDatabase rootDB()
+    {
+        return _rdb;
+    }
+
     public static Map<SID, String> getRoots() throws SQLException
     {
         return _rdb.getRoots();

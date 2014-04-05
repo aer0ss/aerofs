@@ -6,6 +6,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.first_launch.ScanProgressReporter;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
+import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate;
@@ -66,6 +67,7 @@ class ScanSession
         private final ProgressIndicators _pi;
         private final ScanProgressReporter _spr;
         private final ILinkerFilter _filter;
+        private final SharedFolderTagFileAndIcon _sfti;
 
         @Inject
         public Factory(DirectoryService ds,
@@ -75,6 +77,7 @@ class ScanSession
                 TimeoutDeletionBuffer delBuffer,
                 InjectableFile.Factory factFile,
                 ScanProgressReporter spr,
+                SharedFolderTagFileAndIcon sfti,
                 ILinkerFilter filter)
         {
             _ds = ds;
@@ -85,6 +88,7 @@ class ScanSession
             _pi = ProgressIndicators.get();  // sigh, this should be injected...
             _delBuffer = delBuffer;
             _factFile = factFile;
+            _sfti = sfti;
             _filter = filter;
         }
 
@@ -294,6 +298,11 @@ class ScanSession
      */
     private int scan_(PathCombo pcParent, Trans t) throws Exception
     {
+        // empty path <=> physical root
+        // make sure the tag file is kept correct for all physical roots
+        if (pcParent._path.isEmpty()) {
+            _f._sfti.fixTagFileIfNeeded_(pcParent._path.sid(), pcParent._absPath);
+        }
         if (!addLogicalChildrenToDeletionBufferIfScanNeeded_(pcParent)) return 0;
 
         // compose the list of physical children
