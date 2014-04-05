@@ -15,8 +15,10 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.first_launch.FirstLaunch.AccessibleStores;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
@@ -48,16 +50,18 @@ public class SharedFolderTagFileAndIcon
 
     private final InjectableDriver _dr;
     private final IMetaDatabase _mdb;
+    private final IMapSID2SIndex _sid2sidx;
     private final IMapSIndex2SID _sidx2sid;
     private final InjectableFile.Factory _factFile;
     private final AccessibleStores _accessibleStoresOnFirstLaunch;
     private final IOSUtil _osutil;
     private final CfgRootSID _rootSID;
+    private final LocalACL _lacl;
 
     @Inject
     public SharedFolderTagFileAndIcon(InjectableDriver dr, InjectableFile.Factory factFile,
             IMetaDatabase mdb, AccessibleStores accessibleStoresOnFirstLaunch, IOSUtil osutil,
-            CfgRootSID rootSID, IMapSIndex2SID sidx2sid)
+            CfgRootSID rootSID, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid, LocalACL lacl)
     {
         _dr = dr;
         _mdb = mdb;
@@ -65,7 +69,9 @@ public class SharedFolderTagFileAndIcon
         _accessibleStoresOnFirstLaunch = accessibleStoresOnFirstLaunch;
         _osutil = osutil;
         _rootSID = rootSID;
+        _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
+        _lacl = lacl;
     }
 
     /**
@@ -193,28 +199,34 @@ public class SharedFolderTagFileAndIcon
         return tag.exists() && tag.isFile() && sid.equals(sidFromTagFile(tag.getAbsolutePath()));
     }
 
-    private boolean canRestoreAnchor_(SIndex sidx, SID sid) throws SQLException
+    private boolean canRestoreAnchor_(SIndex parent, SID sid) throws SQLException
     {
         if (sid.isUserRoot()) {
-            l.warn("cannot create anchor for user root");
+            l.warn("cannot create anchor for user root {} {}", parent, sid);
             return false;
         }
 
-        if (!_sidx2sid.get_(sidx).isUserRoot()) {
-            l.warn("cannot create nested anchor");
+        if (!_sidx2sid.get_(parent).isUserRoot()) {
+            l.warn("cannot create nested anchor {} {}", parent, sid);
             return false;
         }
 
-        // the set of accessible stores will be empty outside of the first launch
-        if (!_accessibleStoresOnFirstLaunch.contains(sid)) {
-            l.warn("cannot restore anchor without acl");
+        if (!isAccessible_(sid)) {
+            l.warn("cannot restore anchor without acl {} {}", parent, sid);
             return false;
         }
 
         // if the store is already known we should not try to create an anchor for it to avoid
         // conflicts (NB: even expelled store must be taken into account as their anchors are still
         // around under a trash folder)
-        return _mdb.getOA_(new SOID(sidx, SID.storeSID2anchorOID(sid))) == null;
+        return _mdb.getOA_(new SOID(parent, SID.storeSID2anchorOID(sid))) == null;
+    }
+
+    private boolean isAccessible_(SID sid) throws SQLException
+    {
+        if (_accessibleStoresOnFirstLaunch.contains(sid)) return true;
+        SIndex sidx = _sid2sidx.getLocalOrAbsentNullable_(sid);
+        return sidx != null && !_lacl.get_(sidx).isEmpty();
     }
 
     /**

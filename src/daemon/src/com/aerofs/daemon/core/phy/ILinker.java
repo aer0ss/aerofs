@@ -23,6 +23,8 @@ public interface ILinker extends IStartable
 
     public void scan(ScanCompletionCallback callback);
 
+    boolean isFirstScanInProgress_(SID sid);
+
     public static class NullLinker implements ILinker
     {
         private final CoreScheduler _sched;
@@ -42,6 +44,9 @@ public interface ILinker extends IStartable
 
         @Override
         public void start_() {}
+
+        @Override
+        public boolean isFirstScanInProgress_(SID sid) { return false; }
 
         @Override
         public void scan(final ScanCompletionCallback callback)

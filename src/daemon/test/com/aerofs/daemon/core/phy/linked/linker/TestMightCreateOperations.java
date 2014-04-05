@@ -410,8 +410,8 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(delBuffer).remove_(soid);
         verify(sched).schedule(any(IEvent.class), anyLong());
-        verify(sfti, times(2)).isSharedFolderRoot(sid, absPath);
-        verify(sfti).addTagFileAndIconIn(sid, absPath);
+        verify(sfti).isSharedFolderRoot(sid, absPath);
+        verify(sfti).fixTagFileIfNeeded_(sid, absPath);
         verifyZeroInteractions(oc, om, vu);
     }
 
@@ -432,8 +432,8 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(imc).move_(eq(soid), soidAt(""), eq("quux"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
         verify(sched).schedule(any(IEvent.class), anyLong());
-        verify(sfti, times(2)).isSharedFolderRoot(sid, absPath);
-        verify(sfti).addTagFileAndIconIn(sid, absPath);
+        verify(sfti).isSharedFolderRoot(sid, absPath);
+        verify(sfti).fixTagFileIfNeeded_(sid, absPath);
         verifyZeroInteractions(oc, om, vu);
     }
 
@@ -454,8 +454,8 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(ds).setFID_(soid, fnt._fid, t);
         verify(delBuffer).remove_(soid);
         verify(sched).schedule(any(IEvent.class), anyLong());
-        verify(sfti, times(2)).isSharedFolderRoot(sid, absPath);
-        verify(sfti).addTagFileAndIconIn(sid, absPath);
+        verify(sfti).isSharedFolderRoot(sid, absPath);
+        verify(sfti).fixTagFileIfNeeded_(sid, absPath);
         verifyZeroInteractions(oc, om, vu);
     }
 }

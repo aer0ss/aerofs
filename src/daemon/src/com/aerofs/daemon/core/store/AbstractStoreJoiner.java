@@ -25,8 +25,6 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;
 
-import java.util.Set;
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -65,9 +63,9 @@ public abstract class AbstractStoreJoiner
     public abstract void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception;
 
     /**
-     * Create/remove anchors as needed on TS when member list changes
+     * Create anchor as needed on TS when member list changes
      */
-    public void adjustAnchors_(SIndex sidx, String folderName, Set<UserID> newMembers, Trans t)
+    public void adjustAnchor_(SIndex sidx, String folderName, UserID user, Trans t)
             throws Exception
     {}
 

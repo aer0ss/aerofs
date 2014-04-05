@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
+import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.AbstractStoreJoiner;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -20,6 +21,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.inject.Inject;
 
 import java.util.Set;
@@ -34,12 +36,14 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
     private final StoreDeleter _sd;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
+    private final ILinker _linker;
 
     @Inject
     public MultiuserStoreJoiner(CfgRootSID cfgRootSID, IStores stores,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
             StoreCreator sc, StoreDeleter sd, DirectoryService ds,
-            ObjectCreator oc, ObjectDeleter od, ObjectSurgeon os)
+            ObjectCreator oc, ObjectDeleter od, ObjectSurgeon os,
+            ILinker linker)
     {
         super(ds, os, oc, od);
         _cfgRootSID = cfgRootSID;
@@ -48,6 +52,7 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
         _sd = sd;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
+        _linker = linker;
     }
 
     @Override
@@ -78,14 +83,21 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
     }
 
     @Override
-    public void adjustAnchors_(SIndex sidx, String folderName, Set<UserID> newMembers, Trans t)
+    public void adjustAnchor_(SIndex sidx, String folderName, UserID user, Trans t)
             throws Exception
     {
         SID sid = _sidx2sid.get_(sidx);
         checkArgument(!sid.isUserRoot());
-        for (UserID user : newMembers) {
-            SIndex root = _sid2sidx.getNullable_(SID.rootSID(user));
-            if (root != null) createAnchorIfNeeded_(sidx, sid, folderName, root, t);
+        SID rootSID = SID.rootSID(user);
+        SIndex root = _sid2sidx.getNullable_(rootSID);
+        if (root == null) return;
+
+        // delay adjustment until first scan of root store is done to avoid creating anchor under
+        // root if it is present deeper w/ a tag file
+        if (_linker.isFirstScanInProgress_(rootSID)) {
+            throw new ExRetryLater("wait for user root scan");
         }
+
+        createAnchorIfNeeded_(sidx, sid, folderName, root, t);
     }
 }

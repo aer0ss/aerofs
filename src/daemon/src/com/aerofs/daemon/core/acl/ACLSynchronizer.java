@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.acl;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
@@ -20,6 +21,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
@@ -38,6 +40,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 
 /**
@@ -184,88 +187,191 @@ public class ACLSynchronizer
             return;
         }
 
-        Trans t = _tm.begin_();
-        try {
-            updateACLAndAutoJoinLeaveStores_(serverACLReturn, t);
-            t.commit_();
-        } finally {
-            t.end_();
-        }
-    }
-
-    private void updateACLAndAutoJoinLeaveStores_(ServerACLReturn serverACLReturn,
-            Trans t) throws Exception
-    {
         Set<SIndex> stores = _lacl.getAccessibleStores_();
         Map<SIndex, Set<UserID>> newMembers = Maps.newHashMap();
 
         l.debug("accessible stores: {}", stores);
 
-        _lacl.clear_(t);
+        // We go to great length to split ACL updates into multiple transactions.
+        // This increases robustness and allows incremental progress to be made
+        // in the face of weird corner cases.
+        //
+        // Say you reinstall a Team Server w/ linked storage without cleanly unlinking.
+        // Upon receiving ACLs, roots will be automatically created. If they are still
+        // at the default location and tag files haven't been messed with they will be
+        // simply relinked (instead of creating duplicates).
+        // All is fine and dandy until we attempt to adjust anchors: there may already
+        // be a physical object at the default location, in which case lower layers will
+        // throw, expecting the linker/scanner to reconcile the inconsistency by the time
+        // the operation is attempted again.
+        // Unfortunately the linker/scanner would not have the opportunity to kick in
+        // since the user root store was joined as part of the same transaction that
+        // attempted to adjust anchors and any exception would rollback the auto-join.
+        // In such a scenario, using a single transaction would prevent the reinstalled
+        // Team Server from ever applying ACL updates whihc would result in a permanent
+        // no-sync.
+        //
+        // To safely allow incremental progress we must make sure that the ACL epoch
+        // is not bumped when the ACL update is not fully applied.
 
-        for (Map.Entry<SID, StoreInfo> entry : serverACLReturn._acl.entrySet()) {
-            SID sid = entry.getKey();
-            StoreInfo storeInfo = entry.getValue();
-            Map<UserID, Permissions> roles = storeInfo._roles;
+        boolean updateEpoch = true;
+        for (Entry<SID, StoreInfo> e : serverACLReturn._acl.entrySet()) {
+            SID sid = e.getKey();
+            StoreInfo info = e.getValue();
+            try {
+                SIndex sidx = updateACLAndJoin_(sid, info, stores);
+                stores.remove(sidx);
 
-            l.debug("processing ACL: {} {} {} {}", sid, storeInfo._external, storeInfo._name, roles);
-
-            // the local user should always be present in the ACL for each store in the reply
-            if (!roles.containsKey(_cfgLocalUser.get())) {
-                String msg = "Invalid ACL update " + roles;
-                l.error(msg);
-                throw new ExProtocolError(msg);
-            }
-
-            // create a new SIndex if needed
-            SIndex sidx = getOrCreateSIndex_(sid, t);
-
-            // invalidates the cache
-            // NB: needs to be done *BEFORE* auto-join
-            _lacl.set_(sidx, roles, t);
-
-            // TODO: handle changes of the external bit
-            if (!stores.contains(sidx) && (_sidx2sid.getNullable_(sidx) == null)) {
-                // not known and accessible: auto-join
-                assert storeInfo._name != null : sid;
-                _storeJoiner.joinStore_(sidx, sid, storeInfo._name, storeInfo._external, t);
-            }
-            stores.remove(sidx);
-
-            // list of members that ought to have an anchor on TS
-            if (!sid.isUserRoot() && L.isMultiuser()) {
-                newMembers.put(sidx, Sets.filter(
-                        Sets.difference(roles.keySet(), storeInfo._externalMembers),
-                        new Predicate<UserID>() {
-                            @Override
-                            public boolean apply(UserID user)
-                            {
-                                return !user.isTeamServerID();
-                            }
-                        }));
+                // list of members that ought to have an anchor on TS
+                if (!sid.isUserRoot() && L.isMultiuser()) {
+                    newMembers.put(sidx, Sets.filter(
+                            Sets.difference(info._roles.keySet(), info._externalMembers),
+                            new Predicate<UserID>() {
+                                @Override
+                                public boolean apply(UserID user)
+                                {
+                                    return !user.isTeamServerID();
+                                }
+                            }));
+                }
+            } catch (Exception ex) {
+                // ignore errors to allow incremental progress but prevent epoch bump
+                updateEpoch = false;
+                l.warn("failed to update acl for {}", e.getKey(), ex);
             }
         }
 
         // leave stores to which we no longer have access
-        for (SIndex sidx : stores) {
-            _storeJoiner.leaveStore_(sidx, _sidx2sid.getLocalOrAbsent_(sidx), t);
+        // NB: the set of stores to leave is not computed correctly if any update/auto-join fails
+        if (updateEpoch) {
+            for (SIndex sidx : stores) {
+                updateEpoch &= leave_(sidx);
+            }
         }
 
+        l.info("adjust {}", newMembers);
         // for TS, must be done AFTER auto-join/auto-leave
         for (Entry<SIndex, Set<UserID>> e : newMembers.entrySet()) {
             SIndex sidx = e.getKey();
             SID sid = _sidx2sid.getNullable_(sidx);
             if (sid == null) continue;
-            _storeJoiner.adjustAnchors_(sidx, serverACLReturn._acl.get(sid)._name, e.getValue(), t);
+            updateEpoch &= adjustAnchors_(sidx, serverACLReturn._acl.get(sid)._name, e.getValue());
         }
 
-        _adb.setEpoch_(serverACLReturn._serverEpoch, t);
+        if (updateEpoch) {
+            updateEpoch_(serverACLReturn._serverEpoch);
+        } else {
+            throw new ExRetryLater("incomplete acl update");
+        }
     }
 
-    private SIndex getOrCreateSIndex_(SID sid, Trans t) throws Exception
+    private SIndex updateACLAndJoin_(SID sid, StoreInfo info, Set<SIndex> stores)
+            throws Exception
     {
-        SIndex sidx = _sid2sidx.getNullable_(sid);
-        return sidx != null ? sidx : _sid2sidx.getAbsent_(sid, t);
+        Map<UserID, Permissions> roles = info._roles;
+        l.debug("processing ACL: {} {} {} {}", sid, info._external, info._name, roles);
+
+        // the local user should always be present in the ACL for each store in the reply
+        if (!roles.containsKey(_cfgLocalUser.get())) {
+            String msg = "Invalid ACL update " + roles;
+            l.error(msg);
+            throw new ExProtocolError(msg);
+        }
+
+        SIndex sidx = _sid2sidx.getLocalOrAbsentNullable_(sid);
+
+        // avoid db work if ACL did not change
+        if (sidx == null || !stores.contains(sidx) || !_lacl.get_(sidx).equals(roles)) {
+            sidx = updateACLAndJoin_(sidx, sid, info, stores);
+        }
+
+        return sidx;
+    }
+
+    private SIndex updateACLAndJoin_(SIndex sidx, SID sid, StoreInfo info, Set<SIndex> stores)
+            throws Exception
+    {
+        Trans t = _tm.begin_();
+        try {
+            if (sidx != null) {
+                _lacl.clear_(sidx, t);
+            } else {
+                sidx = _sid2sidx.getAbsent_(sid, t);
+            }
+
+            _lacl.set_(sidx, info._roles, t);
+
+            // TODO: handle changes of the external bit
+            if (!stores.contains(sidx) && (_sidx2sid.getNullable_(sidx) == null)) {
+                // not known and accessible: auto-join
+                checkArgument(info._name != null, sid);
+                _storeJoiner.joinStore_(sidx, sid, info._name, info._external, t);
+            }
+
+            t.commit_();
+        } finally {
+            t.end_();
+        }
+        return sidx;
+    }
+
+    /**
+     * @return whether the store was successfully left
+     */
+    private boolean leave_(SIndex sidx)
+    {
+        Trans t = _tm.begin_();
+
+        try {
+            try {
+                _lacl.clear_(sidx, t);
+                _storeJoiner.leaveStore_(sidx, _sidx2sid.getLocalOrAbsent_(sidx), t);
+                t.commit_();
+                return true;
+            } finally {
+                t.end_();
+            }
+        } catch (Exception e) {
+            // ignore errors to allow incremental progress but prevent epoch bump
+            l.warn("failed to leave store {}", sidx, e);
+            return false;
+        }
+    }
+
+    /**
+     * @return whether anchors were successfully adjusted
+     */
+    private boolean adjustAnchors_(SIndex sidx, String name, Set<UserID> newMembers)
+    {
+        boolean ok = true;
+        for (UserID user : newMembers) {
+            try {
+                Trans t = _tm.begin_();
+                try {
+                    _storeJoiner.adjustAnchor_(sidx, name, user, t);
+                    t.commit_();
+                } finally {
+                    t.end_();
+                }
+            } catch (Exception e) {
+                // ignore errors to allow incremental progress but prevent epoch bump
+                l.warn("failed to adjust anchor {} {} {}", sidx, name, user,
+                        BaseLogUtil.suppress(e, ExRetryLater.class));
+                ok = false;
+            }
+        }
+        return ok;
+    }
+
+    private void updateEpoch_(long serverEpoch) throws SQLException
+    {
+        Trans t = _tm.begin_();
+        try {
+            _adb.setEpoch_(serverEpoch, t);
+            t.commit_();
+        } finally {
+            t.end_();
+        }
     }
 
     private ServerACLReturn getServerACL_(long localEpoch)

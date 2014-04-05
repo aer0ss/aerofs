@@ -20,6 +20,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
 import com.google.inject.Inject;
@@ -115,19 +116,17 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         }
     }
 
-    private PreparedStatement _psClear;
+    private PreparedStatementWrapper _pswClearStore = new PreparedStatementWrapper();
     @Override
-    public void clear_(Trans t) throws SQLException
+    public void clear_(SIndex sidx, Trans t) throws SQLException
     {
         try {
-            if (_psClear == null) {
-                _psClear = c().prepareStatement("delete from " + T_ACL);
-            }
-            _psClear.executeUpdate();
-
+            PreparedStatement ps = _pswClearStore.get(c(), DBUtil.deleteWhere(T_ACL,
+                    C_ACL_SIDX + "=?"));
+            ps.setInt(1, sidx.getInt());
+            ps.executeUpdate();
         } catch (SQLException e) {
-            DBUtil.close(_psClear);
-            _psClear = null;
+            _pswClearStore.close();
             throw detectCorruption(e);
         }
     }

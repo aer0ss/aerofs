@@ -140,7 +140,7 @@ public class LocalACL
      * Internal use only. Clients should use {@link ACLSynchronizer}.
      */
     void set_(SIndex sidx, Map<UserID, Permissions> subject2role, Trans t)
-            throws SQLException, ExNotFound
+            throws SQLException
     {
         _adb.set_(sidx, subject2role, t);
 
@@ -161,10 +161,10 @@ public class LocalACL
     /**
      * Internal use only. Clients should use {@link ACLSynchronizer}.
      */
-    void clear_(Trans t) throws SQLException, ExNotFound
+    void clear_(SIndex sidx, Trans t) throws SQLException
     {
-        _adb.clear_(t);
-        invalidateAll_();
+        _adb.clear_(sidx, t);
+        invalidate_(sidx);
     }
 
     Set<SIndex> getAccessibleStores_() throws SQLException

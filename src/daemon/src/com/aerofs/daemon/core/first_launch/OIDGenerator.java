@@ -26,20 +26,24 @@ public class OIDGenerator
 {
     private static final Logger l = Loggers.getLogger(OIDGenerator.class);
 
-    boolean _shouldLookup;
+    boolean _firstScanCompleted;
 
     private SeedDatabase _sdb;
 
     public OIDGenerator(SID sid, String absPath)
     {
         _sdb = SeedDatabase.load_(Util.join(absPath, seedFileName(sid)));
-        _shouldLookup = _sdb != null;
-        if (_shouldLookup) l.info("seed file loaded");
+        if (_sdb != null) l.info("seed file loaded");
+    }
+
+    public boolean isFirstScanInProgress()
+    {
+        return !_firstScanCompleted;
     }
 
     public void onScanCompletion_()
     {
-        _shouldLookup = false;
+        _firstScanCompleted = true;
         if (_sdb != null) {
             _sdb.cleanup_();
             _sdb = null;
@@ -48,7 +52,7 @@ public class OIDGenerator
 
     public OID generate_(boolean dir, Path path)
     {
-        if (_shouldLookup) {
+        if (_sdb != null) {
             try {
                 OID oid = _sdb.getOID_(path, dir);
                 l.debug("lookup: {} {}", path.toStringFormal(), oid);

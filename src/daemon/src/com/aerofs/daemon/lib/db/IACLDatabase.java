@@ -53,7 +53,7 @@ public interface IACLDatabase
      * @param t transaction (this method can only be called as part of a transaction)
      * @throws SQLException if there are db errors during the update
      */
-    void clear_(Trans t) throws SQLException;
+    void clear_(SIndex sidx, Trans t) throws SQLException;
 
     /**
      * Store the acl ecpoch for this user

@@ -5,7 +5,9 @@
 package com.aerofs.lib.db;
 
 import javax.annotation.Nullable;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class PreparedStatementWrapper
 {
@@ -13,6 +15,14 @@ public class PreparedStatementWrapper
 
     public PreparedStatement get()
     {
+        return _ps;
+    }
+
+    public PreparedStatement get(Connection c, String stmt) throws SQLException
+    {
+        if (_ps == null) {
+            _ps = c.prepareStatement(stmt);
+        }
         return _ps;
     }
 

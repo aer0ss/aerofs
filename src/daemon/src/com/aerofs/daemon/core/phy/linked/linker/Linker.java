@@ -69,6 +69,13 @@ public class Linker implements ILinker, LinkerRootMap.IListener
     }
 
     @Override
+    public boolean isFirstScanInProgress_(SID sid)
+    {
+        LinkerRoot lr = _lrm.get_(sid);
+        return lr != null && lr._og.isFirstScanInProgress();
+    }
+
+    @Override
     public void restoreRoot_(SID sid, String absPath, Trans t)
             throws SQLException, IOException
     {
@@ -106,8 +113,6 @@ public class Linker implements ILinker, LinkerRootMap.IListener
                     @Override
                     public void done_()
                     {
-                        // cleanup seed file at the end of the first scan
-                        root.OIDGenerator().onScanCompletion_();
                         l.info("end scan {}", root.sid());
                     }
                 });

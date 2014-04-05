@@ -207,6 +207,7 @@ public class LinkerRoot
     void recursiveScanImmediately_(final ScanCompletionCallback callback)
     {
         if (_removed) {
+            _og.onScanCompletion_();
             callback.done_();
         } else {
             _ssq.recursiveScanImmediately_(Collections.singleton(_absRootAnchor),

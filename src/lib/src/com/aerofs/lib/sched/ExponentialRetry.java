@@ -1,9 +1,9 @@
 package com.aerofs.lib.sched;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import org.slf4j.Logger;
 
@@ -12,6 +12,13 @@ import java.util.concurrent.Callable;
 public class ExponentialRetry
 {
     private static final Logger l = Loggers.getLogger(ExponentialRetry.class);
+
+    public static class ExRetryLater extends Exception
+    {
+        private static final long serialVersionUID = 0L;
+
+        public ExRetryLater(String msg) { super(msg); }
+    }
 
     private final IScheduler _sched;
 
@@ -50,13 +57,18 @@ public class ExponentialRetry
                         call.call();
                     } catch (Exception e) {
                         itv.set(Math.min(itv.get() * 2, intervalMax));
-                        l.warn(name + " failed. exp-retry in " + itv + ": " + Util.e(e, excludes));
+                        l.warn("{} failed. exp-retry in {}:", name, itv, suppress(e, excludes));
                         _sched.schedule(this, itv.get());
                     }
                 }
             };
-            l.warn("retry " + name + " in " + itv + ": " + Util.e(e, excludes));
+            l.warn("retry {} in {}: {}", name, itv, suppress(e, excludes));
             _sched.schedule(ev, itv.get());
         }
+    }
+
+    private static Throwable suppress(Throwable e, Class<?>... c)
+    {
+        return e instanceof ExRetryLater ? BaseLogUtil.suppress(e) : BaseLogUtil.suppress(e, c);
     }
 }
