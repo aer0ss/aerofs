@@ -191,11 +191,6 @@ public class LibParam extends BaseParam
         public static final long MIN_BANDWIDTH_UI = 10 * C.KB;
     }
 
-    public static class Verkehr
-    {
-        public static final long VERKEHR_RETRY_INTERVAL = 5 * C.SEC;
-    }
-
     public static class CA
     {
         // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)

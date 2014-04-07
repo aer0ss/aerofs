@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="metrics-graphite-reporter">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/server/lib/metrics-graphite-2.2.0.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

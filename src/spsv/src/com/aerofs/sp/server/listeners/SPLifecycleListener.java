@@ -3,18 +3,17 @@ package com.aerofs.sp.server.listeners;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.BaseParam.Verkehr;
-import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
-import com.aerofs.sp.server.SPVerkehrClientFactory;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSession;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
-import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
-import org.slf4j.Logger;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.google.common.util.concurrent.MoreExecutors;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -22,20 +21,20 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static com.aerofs.sp.server.lib.SPParam.AUDIT_CLIENT_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class SPLifecycleListener extends ConfigurationLifecycleListener
         implements ServletContextListener, HttpSessionListener
 {
-    private static final Logger l = Loggers.getLogger(SPLifecycleListener.class);
-
     // Trackers.
     private final SPActiveUserSessionTracker _userSessionTracker = new SPActiveUserSessionTracker();
     private final SPActiveTomcatSessionTracker _tomcatSessionTracker =
@@ -55,45 +54,42 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
 
         ServletContext ctx = servletContextEvent.getServletContext();
 
-        l.info("verkehr host:" + Verkehr.HOST +
-                " pub port:" + Verkehr.PUBLISH_PORT +
-                " adm port:" + Verkehr.ADMIN_PORT +
-                " cacert:" + ctx.getInitParameter(VERKEHR_CACERT_INIT_PARAMETER)
-        );
+        // verkehr
+        VerkehrClient verkehrClient = createVerkehrClient();
+        ctx.setAttribute(VERKEHR_CLIENT_ATTRIBUTE, verkehrClient);
 
-        SPVerkehrClientFactory factory = new SPVerkehrClientFactory(ctx);
+        // auditor
+        ctx.setAttribute(AUDIT_CLIENT_ATTRIBUTE, new AuditClient().setAuditorClient(AuditorFactory.createUnauthenticated()));
 
-        VerkehrPublisher publisher = factory.createVerkehrPublisher();
-        publisher.start();
-        ctx.setAttribute(VERKEHR_PUBLISHER_ATTRIBUTE, publisher);
-
-        VerkehrAdmin admin = factory.createVerkehrAdmin();
-        admin.start();
-        ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);
-
-        ctx.setAttribute(AUDIT_CLIENT_ATTRIBUTE, new AuditClient()
-                .setAuditorClient(AuditorFactory.createUnauthenticated()));
-
-        // Set up the user session objects.
+        // user-session objects
         ctx.setAttribute(SESSION_USER_TRACKER, _userSessionTracker);
         ctx.setAttribute(SESSION_INVALIDATOR, _sessionInvalidator);
         ctx.setAttribute(SESSION_EXTENDER, _sessionExtender);
+    }
+
+    private static VerkehrClient createVerkehrClient()
+    {
+        Executor nioExecutor = Executors.newCachedThreadPool();
+        NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
+        return VerkehrClient.create(
+                Verkehr.HOST,
+                Verkehr.REST_PORT,
+                MILLISECONDS.convert(30, SECONDS),
+                MILLISECONDS.convert(60, SECONDS),
+                10,
+                new HashedWheelTimer(),
+                MoreExecutors.sameThreadExecutor(),
+                channelFactory);
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent)
     {
         ServletContext ctx = servletContextEvent.getServletContext();
-
-        VerkehrPublisher publisher =
-                (VerkehrPublisher) ctx.getAttribute(VERKEHR_PUBLISHER_ATTRIBUTE);
-        if (publisher != null) {
-            publisher.stop();
-        }
-
-        VerkehrAdmin admin =  (VerkehrAdmin) ctx.getAttribute(VERKEHR_ADMIN_ATTRIBUTE);
-        if (admin != null) {
-            admin.stop();
+        VerkehrClient verkehrClient = (VerkehrClient) ctx.getAttribute(VERKEHR_CLIENT_ATTRIBUTE);
+        if (verkehrClient != null) {
+            verkehrClient.disconnectAll();
+            verkehrClient.shutdown();
         }
 
         super.contextDestroyed(servletContextEvent);

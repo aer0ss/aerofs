@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
@@ -64,7 +64,7 @@ public final class TestMessageHandler
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final InetSocketAddress remoteAddress = InetSocketAddress.createUnresolved("remote.aerofs.com", 8888);

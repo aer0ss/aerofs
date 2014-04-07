@@ -4,18 +4,17 @@
 
 package com.aerofs.command.server.resources;
 
-import java.util.List;
-import com.aerofs.command.server.ResourceConstants;
 import com.aerofs.proto.Cmd.CommandType;
 import com.google.common.collect.Lists;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import java.util.List;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path("/" + ResourceConstants.COMMAND_TYPES_PATH)
+@Path("/command_types")
 public final class CommandTypesResource
 {
     @GET

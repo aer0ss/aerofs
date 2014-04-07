@@ -43,8 +43,8 @@ public class UserManagement
         if (revokedSerials.isEmpty())
         {
             l.info("command verkehr, #serials: " + revokedSerials.size());
-            ACLNotificationPublisher.verkehrFutureGet_(
-                    dispatcher.getVerkehrAdmin().updateCRL(revokedSerials));
+            ACLNotificationPublisher.verkehrFutureGet_(dispatcher.getVerkehrClient().revokeSerials(
+                    revokedSerials));
 
             for (Device peer : peerDevices) {
                 dispatcher.enqueueCommand(peer.id(), createCommandMessage(CommandType.REFRESH_CRL));

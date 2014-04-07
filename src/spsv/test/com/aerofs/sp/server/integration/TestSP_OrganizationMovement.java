@@ -31,11 +31,11 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     private void acceptOrganizationInvitation(Organization org, User user)
             throws Exception
     {
-        clearVerkehrPublish();
+        clearPublishedMessages();
         service.acceptOrganizationInvitation(org.id().getInt());
         // when the user changes the org, the ACL of its root store must be updated to inlucde
         // the team server user id.
-        assertVerkehrPublishContains(user, org.getTeamServerUser());
+        assertPublishedTo(user, org.getTeamServerUser());
     }
 
     /**

@@ -15,7 +15,6 @@
     <orderEntry type="module" module-name="zephyr" />
     <orderEntry type="module" module-name="xray" />
     <orderEntry type="module" module-name="verkehr" />
-    <orderEntry type="module" module-name="syncstat" />
     <orderEntry type="module" module-name="tunnel" />
     <orderEntry type="module" module-name="restless" />
     <orderEntry type="module" module-name="oauth-verify" />
@@ -23,11 +22,10 @@
     <orderEntry type="library" name="jul-to-slf4j" level="project" />
     <orderEntry type="library" name="jersey-1.17.1" level="project" />
     <orderEntry type="library" name="tika-core-1.4" level="project" />
-    <orderEntry type="module" module-name="havre" scope="TEST" />
-    <orderEntry type="module" module-name="bifrost" scope="TEST" />
+    <orderEntry type="library" scope="TEST" name="hibernate" level="project" />
     <orderEntry type="library" scope="TEST" name="mailapi" level="project" />
-    <orderEntry type="library" scope="TEST" name="bouncycastle-test" level="project" />
-    <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
+    <orderEntry type="module" module-name="bifrost" scope="TEST" />
+    <orderEntry type="module" module-name="havre" scope="TEST" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

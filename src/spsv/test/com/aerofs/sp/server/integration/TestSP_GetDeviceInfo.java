@@ -18,8 +18,8 @@ import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -43,8 +43,6 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderTest
     public void setupDevices()
         throws Exception
     {
-        mockAndCaptureVerkehrDeliverPayload();
-
         sqlTrans.begin();
 
         // User 1

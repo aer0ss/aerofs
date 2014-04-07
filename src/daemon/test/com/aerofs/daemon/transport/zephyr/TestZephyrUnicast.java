@@ -11,7 +11,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
@@ -45,7 +45,7 @@ public final class TestZephyrUnicast
     static
     {
         ConfigurationProperties.setProperties(new Properties());
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
         OSUtil.get().loadLibrary("aerofsd");
     }
 

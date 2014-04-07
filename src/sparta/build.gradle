@@ -1,0 +1,33 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-sparta'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+    test {
+        java {
+            srcDir 'test'
+        }
+    }
+}
+
+evaluationDependsOn(':src/libservlet')
+evaluationDependsOn(':src/bifrost')
+
+dependencies {
+    compile 'org.flywaydb:flyway-core:2.2.1'
+    compile 'org.apache.tomcat:tomcat-jdbc:7.0.50'
+    compile project(':src/restless')
+    compile project(':src/rest-api')
+    compile project(':src/libservlet')
+    compile project(':src/oauth-verify')
+    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.1.4'
+    testCompile project(':src/libservlet').sourceSets.test.runtimeClasspath
+    testCompile project(':src/bifrost').sourceSets.test.runtimeClasspath
+}

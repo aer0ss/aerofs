@@ -10,7 +10,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.IEvent;
@@ -46,7 +46,7 @@ public final class TestXMPPPresenceProcessor
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final String TRANSPORT_ID = "z";

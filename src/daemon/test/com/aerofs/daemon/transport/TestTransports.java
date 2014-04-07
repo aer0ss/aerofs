@@ -14,6 +14,7 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.xray.server.XRayServer;
 import com.aerofs.zephyr.server.ZephyrServer;
+import com.aerofs.testlib.LoggerSetup;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -55,7 +56,7 @@ public final class TestTransports
     static
     {
         ConfigurationProperties.setProperties(new Properties());
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final Logger l = LoggerFactory.getLogger(TestTransports.class);

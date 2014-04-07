@@ -1,0 +1,28 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-havre'
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'src', 'gen'
+        }
+    }
+    test {
+        java {
+            srcDirs 'test'
+        }
+    }
+}
+
+evaluationDependsOn(':src/base')
+
+dependencies {
+    compile project(':src/tunnel')
+    compile project(':src/oauth-verify')
+    testCompile name:'rest-assured-1.8.1'
+    testCompile restAssuredDependencies
+    testCompile project(':src/base').sourceSets.test.runtimeClasspath
+}

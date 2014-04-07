@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,7 +24,7 @@ public final class TestPresenceService
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final DID DID_0 = DID.generate();

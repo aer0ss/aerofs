@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.rocklog.Defect;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.Channel;
@@ -37,7 +37,7 @@ public final class TestDiagnosticsHandler
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private RockLog rockLog = mock(RockLog.class);

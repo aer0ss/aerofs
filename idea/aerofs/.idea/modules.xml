@@ -21,7 +21,6 @@
       <module fileurl="file://$PROJECT_DIR$/../../src/sparta/sparta.iml" filepath="$PROJECT_DIR$/../../src/sparta/sparta.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/spsv/spsv.iml" filepath="$PROJECT_DIR$/../../src/spsv/spsv.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" filepath="$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../src/syncstat/syncstat.iml" filepath="$PROJECT_DIR$/../../src/syncstat/syncstat.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/tunnel/tunnel.iml" filepath="$PROJECT_DIR$/../../src/tunnel/tunnel.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/verkehr/verkehr.iml" filepath="$PROJECT_DIR$/../../src/verkehr/verkehr.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/xray/xray.iml" filepath="$PROJECT_DIR$/../../src/xray/xray.iml" />

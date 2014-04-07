@@ -23,13 +23,13 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
-import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.metriks.IMetriks;
 import com.aerofs.ritual_notification.RitualNotificationServer;
+import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
 import com.google.inject.Inject;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -47,7 +47,7 @@ public class Core implements IModule
     private final Transports _tps;
     private final TC _tc;
     private final TokenManager _tokenManager;
-    private final VerkehrNotificationSubscriber _vksub;
+    private final VerkehrPubSubClient _vk;
     private final ACLNotificationSubscriber _aclsub;
     private final UnicastInputOutputStack _stack;
     private final ILinker _linker;
@@ -74,7 +74,7 @@ public class Core implements IModule
             NativeVersionControl nvc,
             ImmigrantVersionControl ivc,
             CoreDBCW dbcw,
-            VerkehrNotificationSubscriber vksub,
+            VerkehrPubSubClient vk,
             ACLNotificationSubscriber aclsub,
             UnicastInputOutputStack stack,
             RitualNotificationServer rns,
@@ -101,7 +101,7 @@ public class Core implements IModule
         _nvc = nvc;
         _ivc = ivc;
         _dbcw = dbcw;
-        _vksub = vksub;
+        _vk = vk;
         _aclsub = aclsub;
         _stack = stack;
         _linker = linker;
@@ -254,7 +254,7 @@ public class Core implements IModule
         // rest of the system
 
         _linker.start_();
-        _vksub.start_();
+        _vk.start();
         _quota.start_();
     }
 }

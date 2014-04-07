@@ -14,6 +14,7 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.testlib.LoggerSetup;
 import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,7 @@ public final class TransportReader
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final Logger l = LoggerFactory.getLogger(TransportReader.class);

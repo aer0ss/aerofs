@@ -2,9 +2,8 @@ approot
 env
 out.md
 out.ant
+out.gradle
 out.idea
-resource/server/lib.dropwizard
-resource/server/lib.apisec
 workspace.xml
 dump.rdb
 syncdet_test/.idea/

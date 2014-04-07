@@ -3,6 +3,7 @@ package com.aerofs.daemon.core;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.BaseParam;
+import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.daemon.core.db.TamperingDetectionSchema;
@@ -60,6 +61,10 @@ import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgCACertificateProvider;
+import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.os.IOSUtil;
@@ -67,6 +72,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.metriks.IMetriks;
 import com.aerofs.metriks.Metriks;
 import com.aerofs.metriks.NoopMetriks;
+import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -175,5 +181,21 @@ public class CoreModule extends AbstractModule
         } else {
             return new NoopMetriks();
         }
+    }
+
+    @Provides
+    @Singleton
+    public VerkehrPubSubClient provideVerkehrClient(CfgKeyManagersProvider keyManagersProvider, CfgCACertificateProvider certificateProvider, ClientSocketChannelFactory channelFactory, Timer timer)
+    {
+        return VerkehrPubSubClient.create(
+                Verkehr.HOST,
+                Verkehr.PROTOBUF_PORT,
+                keyManagersProvider,
+                certificateProvider,
+                channelFactory,
+                Verkehr.MIN_RETRY_INTERVAL,
+                Verkehr.MAX_RETRY_INTERVAL,
+                Cfg.db().getLong(Key.TIMEOUT),
+                timer);
     }
 }

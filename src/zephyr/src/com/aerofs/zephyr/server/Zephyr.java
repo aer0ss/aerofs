@@ -1,5 +1,6 @@
 package com.aerofs.zephyr.server;
 
+import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.server.core.Dispatcher;
 import org.slf4j.Logger;
@@ -24,6 +25,10 @@ public class Zephyr
             System.err.println("usage: <prog_name> [listen_host] [listen_port]");
             System.exit(1);
         }
+
+        // setup the catch-all exception handler
+
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
 
         // setup the accept socket
 

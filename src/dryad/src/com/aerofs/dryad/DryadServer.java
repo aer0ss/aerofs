@@ -1,5 +1,6 @@
 package com.aerofs.dryad;
 
+import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.dryad.persistence.IDryadPersistence;
 import com.aerofs.dryad.persistence.LocalFileBasedPersistence;
@@ -54,6 +55,8 @@ public class DryadServer extends Service
             System.err.print("Usage: java -jar dryad.jar <dryad_properties>");
             System.exit(1);
         }
+
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
 
         Injector injector = Guice.createInjector(new DryadModule(args[0]));
 

@@ -1,0 +1,47 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-daemon'
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'src', 'gen'
+        }
+    }
+    test {
+        java {
+            srcDirs 'test'
+        }
+    }
+}
+
+evaluationDependsOn(':src/bifrost')
+evaluationDependsOn(':src/havre')
+evaluationDependsOn(':src/lib')
+
+dependencies {
+    compile name: 'smack'
+    compile name: 'smackx'
+    compile 'com.amazonaws:aws-java-sdk:1.1.5'
+    compile 'org.apache.tika:tika-core:1.4'
+    compile project(':src/libjingle.binding')
+    compile project(':src/lib')
+    compile project(':src/rest-api')
+    compile project(':src/tunnel')
+    compile project(path: ':src/zephyr', configuration: 'client')
+    compile project(path: ':src/xray', configuration: 'client')
+    compile project(path: ':src/verkehr', configuration: 'wireClient')
+    testCompile project(':src/xray')
+    testCompile project(':src/zephyr')
+    testCompile 'org.hibernate:hibernate-core:4.1.9.Final'
+    testCompile 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'
+    testCompile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
+    testCompile 'javax.mail:mailapi:1.5.0'
+    testCompile project(':src/bifrost').sourceSets.test.runtimeClasspath
+    testCompile project(':src/havre').sourceSets.test.runtimeClasspath
+    testCompile project(':src/lib').sourceSets.test.runtimeClasspath
+}
+
+compileJava.dependsOn(':generateAllProtoClasses')

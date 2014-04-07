@@ -18,7 +18,7 @@ import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.SPServlet;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -33,7 +33,7 @@ import java.util.List;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
 
 public class DryadServlet extends HttpServlet
 {
@@ -48,7 +48,7 @@ public class DryadServlet extends HttpServlet
 
     private AbstractEmailSender _email;
 
-    private VerkehrAdmin _verkehr;
+    private VerkehrClient _verkehrClient;
     private PooledJedisConnectionProvider _jedisConnProvider;
     private JedisThreadLocalTransaction _jedisTrans;
     private JedisEpochCommandQueue _commandQueue;
@@ -78,7 +78,7 @@ public class DryadServlet extends HttpServlet
         // - defaults to use local smtp client
         _email = AsyncEmailSender.create();
 
-        _verkehr = (VerkehrAdmin) config.getServletContext().getAttribute(VERKEHR_ADMIN_ATTRIBUTE);
+        _verkehrClient = (VerkehrClient) config.getServletContext().getAttribute(VERKEHR_CLIENT_ATTRIBUTE);
 
         _jedisConnProvider = new PooledJedisConnectionProvider();
         String redisHost = REDIS.AOF_ADDRESS.getHostName();
@@ -88,7 +88,7 @@ public class DryadServlet extends HttpServlet
         _jedisTrans = new JedisThreadLocalTransaction(_jedisConnProvider);
         _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
         _cmd = new CommandDispatcher(_commandQueue, _jedisTrans);
-        _cmd.setAdminClient(_verkehr);
+        _cmd.setVerkehrClient(_verkehrClient);
 
         _service = new DryadService(_sqlTrans, _odb, _udb, _email, _cmd);
 

@@ -8,10 +8,10 @@
       <sourceFolder url="file://$MODULE_DIR$/resources" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="restless" />
     <orderEntry type="module" module-name="lib" />
     <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
+    <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
 

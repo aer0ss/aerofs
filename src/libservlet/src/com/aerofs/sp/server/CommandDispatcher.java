@@ -9,7 +9,7 @@ import com.aerofs.proto.Cmd.Command;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.base.Preconditions;
 
 import javax.inject.Inject;
@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class CommandDispatcher
 {
-    private VerkehrAdmin _verkehrAdmin;
+    private VerkehrClient _verkehrClient;
     private JedisEpochCommandQueue _commandQueue;
     private JedisThreadLocalTransaction _jedisTrans;
 
@@ -61,18 +61,18 @@ public class CommandDispatcher
     /**
      * We get the Verkehr admin client after the SP service is already running for some reason
      */
-    public CommandDispatcher setAdminClient(VerkehrAdmin adminClient)
+    public CommandDispatcher setVerkehrClient(VerkehrClient verkehrClient)
     {
-        _verkehrAdmin = adminClient;
+        _verkehrClient = verkehrClient;
         return this;
     }
 
-    public VerkehrAdmin getVerkehrAdmin() { return _verkehrAdmin; }
+    public VerkehrClient getVerkehrClient() { return _verkehrClient; }
 
     private void deliver(DID did, String commandMessage, boolean flushFirst)
             throws ExecutionException, InterruptedException
     {
-        Preconditions.checkState(_verkehrAdmin != null);
+        Preconditions.checkState(_verkehrClient != null);
 
         Epoch epoch;
 
@@ -89,6 +89,6 @@ public class CommandDispatcher
         assert epoch != null;
 
         Command command = CommandUtil.createCommandFromMessage(commandMessage, epoch.get());
-        _verkehrAdmin.deliverPayload_(did.toStringFormal(), command.toByteArray()).get();
+        _verkehrClient.publish(did.toStringFormal(), command.toByteArray()).get();
     }
 }

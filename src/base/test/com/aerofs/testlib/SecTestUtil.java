@@ -54,7 +54,7 @@ public abstract class SecTestUtil
             generator.initialize(1024, secureRandom);
             return generator.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("failed to generate keypair", e);
         }
     }
 

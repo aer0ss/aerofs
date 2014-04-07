@@ -27,71 +27,74 @@ public abstract class SystemUtil
      */
     public static enum ExitCode
     {
+        NORMAL_EXIT(0, "exited normally"),
+
         ////////
         // Exit codes that indicate AeroFS program errors.
-        FAIL_TO_LAUNCH("couldn't start process"),
-        FATAL_ERROR("a showstopper problem"),
-        FAIL_TO_INITIALIZE_LOGGING("couldn't initialize logging"),
-        OUT_OF_MEMORY("out of memory"),
-        JINGLE_CALL_TOO_LONG("jingle call too long"),
-        JINGLE_TASK_FATAL_ERROR("jingle task fatal error"),
-        JINGLE_CHANNEL_TASK_UNCAUGHT_EXCEPTION("jingle channel task had uncaught exception"),
-        DPUT_MIGRATE_AUX_ROOT_FAILED("migrating the aux root failed"),
-        CONFIGURATION_INIT("initializing configuration failed"),
-        CORRUPTED_DB("corrupted database"),
-        FAIL_TO_DETECT_ARCH("failed to detect architecture"),
+        FAIL_TO_LAUNCH(66, "couldn't start process"),
+        FATAL_ERROR(67, "a showstopper problem"),
+        FAIL_TO_INITIALIZE_LOGGING(68, "couldn't initialize logging"),
+        OUT_OF_MEMORY(69, "out of memory"),
+        JINGLE_CALL_TOO_LONG(70, "jingle call too long"),
+        JINGLE_TASK_FATAL_ERROR(71, "jingle task fatal error"),
+        JINGLE_CHANNEL_TASK_UNCAUGHT_EXCEPTION(72, "jingle channel task had uncaught exception"),
+        DPUT_MIGRATE_AUX_ROOT_FAILED(73, "migrating the aux root failed"),
+        CONFIGURATION_INIT(74, "initializing configuration failed"),
+        CORRUPTED_DB(75, "corrupted database"),
+        FAIL_TO_DETECT_ARCH(76, "failed to detect architecture"),
         ////////
 
         ////////
         // Exit codes that are expected during normal operations. _All_ of them should be handled
         // manually by DaemonMonitor.
-        SHUTDOWN_REQUESTED(),
-        RELOCATE_ROOT_ANCHOR(),
+        SHUTDOWN_REQUESTED(77, "manual shutdown"),
+        RELOCATE_ROOT_ANCHOR(78, "root anchor relocated"),
         // Incorrect S3 access key, secret key, or bucket name for accessing bucket.
-        S3_BAD_CREDENTIALS(),
+        S3_BAD_CREDENTIALS(79, "bad s3 credentials"),
         // Java may have a limited encryption key length due to export restriction. See the users of
         // this enum for more information.
-        S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED(),
+        S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED(80, "s3 encryption key failure"),
         // Failed to create a jnotify watch on the root anchor (or an external root)
-        JNOTIFY_WATCH_CREATION_FAILED(),
+        JNOTIFY_WATCH_CREATION_FAILED(81, "jnotify watch failed"),
         // Core DB was restored from a backup or otherwise tampered with
-        CORE_DB_TAMPERING();
+        CORE_DB_TAMPERING(82, "db tampering detected"),
         ////////
+
+        NEW_VERSION_AVAILABLE(83, "new version available");
 
         // Exit code when we try to relaunch the daemon while Windows is shutting down
         // Windows will abort the process creation with this code
         public static int WINDOWS_SHUTTING_DOWN = 0xC0000142;
 
-        // The number that all the codes should be based on
-        static int BASE = 66;
-
+        private final int _code;
         private final String _message;
 
-        ExitCode(String message)
+        ExitCode(int code, String message)
         {
+            _code = code;
             _message = message;
-        }
-
-        /**
-         * Use this ctor only for non error conditions.
-         */
-        ExitCode()
-        {
-            _message = "internal exit code";
         }
 
         /**
          * @return the actual number of the exit code
          */
-        public int getNumber()
+        public int getCode()
         {
-            return BASE + ordinal();
+            return _code;
         }
 
         /**
          * Exit the current process with 'this' code
          */
         public void exit()
+        {
+            exit("none");
+        }
+
+        /**
+         * Exit the current process with 'this' code
+         */
+        public void exit(String moreInfo)
         {
             // For some unknown reason, accessing SystemUtil.l here fails with the following error:
             //
@@ -100,22 +103,23 @@ public abstract class SystemUtil
             // An exception was thrown by a user handler while handling an exception event ([id: 0x732775ee, /127.0.0.1:55703 => /127.0.0.1:50197]
             // EXCEPTION: java.lang.NoSuchMethodError: com.aerofs.lib.SystemUtil.access$000()Lorg/slf4j/Logger;)
             Logger logger = Loggers.getLogger(SystemUtil.class);
-            logger.warn("EXIT with code " + getClass().getName() + "." + this.name());
-            System.exit(getNumber());
+            logger.warn("EXIT with code {} more info: {}", this.name(), moreInfo);
+            System.exit(getCode());
         }
 
         /**
-         * @return a user friendly message describing the exit code. The returned string contains the
-         * actual code number if it is not one of custom codes.
+         * @return a user friendly message describing the exit code.
+         * The returned string always contains the given code number.
          */
         public static String getMessage(int exitCode)
         {
-            int index = exitCode - BASE;
-            if (index >= 0 && index < ExitCode.values().length) {
-                return ExitCode.values()[index]._message;
-            } else {
-                return "exit code " + exitCode;
+            for (ExitCode code : ExitCode.values()) {
+                if (code.getCode() == exitCode) {
+                    return String.format("%d: %s", exitCode, code._message);
+                }
             }
+
+            return "unknown exit code " + exitCode;
         }
     }
 

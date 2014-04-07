@@ -4,8 +4,6 @@
 
 package com.aerofs.daemon.core.online_status;
 
-import com.aerofs.daemon.core.serverstatus.IConnectionStatusNotifier.IListener;
-import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.daemon.lib.CoreExecutor;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
@@ -13,6 +11,8 @@ import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.ritual_notification.RitualNotifier;
+import com.aerofs.verkehr.client.wire.ConnectionListener;
+import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
 import com.google.common.collect.ImmutableSet;
 import org.hamcrest.Matcher;
 import org.junit.Before;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  */
 public class TestOnlineStatusNotifier
 {
-    @Mock VerkehrNotificationSubscriber _vns;
+    @Mock VerkehrPubSubClient _vk;
     @Mock LinkStateService _lss;
     @Mock RitualNotificationServer _ritualNotificationServer;
     @Mock CoreExecutor _coreExecutor;
@@ -58,7 +58,7 @@ public class TestOnlineStatusNotifier
     ImmutableSet<NetworkInterface> _nonEmpty = ImmutableSet.of(mock(NetworkInterface.class));
 
     // these references are used to simulate callbacks
-    IListener _verkehrListener;
+    ConnectionListener _verkehrListener;
     ILinkStateListener _linkStateListener;
 
     @Before
@@ -70,8 +70,8 @@ public class TestOnlineStatusNotifier
 
         _notifier.init_();
 
-        ArgumentCaptor<IListener> verkehrCaptor = ArgumentCaptor.forClass(IListener.class);
-        verify(_vns).addListener_(verkehrCaptor.capture(), eq(_coreExecutor));
+        ArgumentCaptor<ConnectionListener> verkehrCaptor = ArgumentCaptor.forClass(ConnectionListener.class);
+        verify(_vk).addConnectionListener(verkehrCaptor.capture(), eq(_coreExecutor));
         _verkehrListener = verkehrCaptor.getValue();
 
         ArgumentCaptor<ILinkStateListener> linkStateCaptor =
@@ -174,8 +174,8 @@ public class TestOnlineStatusNotifier
     // effectively using the same thread executor.
     private void triggerVerkehrCallback(boolean isOnline)
     {
-        if (isOnline) _verkehrListener.onConnected();
-        else _verkehrListener.onDisconnected();
+        if (isOnline) _verkehrListener.onConnected(_vk);
+        else _verkehrListener.onDisconnected(_vk);
     }
 
     // N.B. when we trigger callback like this, we are bypassing the core executor and are

@@ -6,14 +6,13 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
@@ -24,12 +23,6 @@ import static org.junit.Assert.assertTrue;
 
 public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
 {
-    @Before
-    public void setup()
-    {
-        mockAndCaptureVerkehrPublish();
-    }
-
     @Test(expected = ExNoPerm.class)
     public void shouldThrowExNoPermForNonAdmin()
             throws Exception

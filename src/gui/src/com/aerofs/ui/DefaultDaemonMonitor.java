@@ -175,11 +175,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         // TODO (WW) merge the following code into onDaemonDeath, and instead of
         // relying on the caller to show an error message, onDaemonDeath does it?
-        if (exitCode == S3_BAD_CREDENTIALS.getNumber()) {
+        if (exitCode == S3_BAD_CREDENTIALS.getCode()) {
             throw new ExUIMessage(
                     "The S3 credentials were incorrect. Please check that you have" +
                     " the correct bucket name and AWS access and secret key.");
-        } else if (exitCode == S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getNumber()) {
+        } else if (exitCode == S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getCode()) {
             throw new ExUIMessage(
                     L.product() + " couldn't launch due to issues with your " +
                     S.S3_ENCRYPTION_PASSWORD + ". If your Java runtime" +
@@ -203,7 +203,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             l.warn("Ignoring exit code " + WINDOWS_SHUTTING_DOWN
                     + " - Windows is shutting down");
 
-        } else if (exitCode == DPUT_MIGRATE_AUX_ROOT_FAILED.getNumber()) {
+        } else if (exitCode == DPUT_MIGRATE_AUX_ROOT_FAILED.getCode()) {
             /*
                This exit code may happen when we try to run the DPUTMigrateAuxRoot task
                Therefore, it can only happen here, not in onDaemonDeath()
@@ -215,18 +215,18 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     "write to: \"" + Cfg.absDefaultAuxRoot() + "\"\n\nPlease make sure that " +
                     L.product() + " has the appropriate permissions to write to that " +
                     "folder.");
-        } else if (exitCode == JNOTIFY_WATCH_CREATION_FAILED.getNumber()) {
+        } else if (exitCode == JNOTIFY_WATCH_CREATION_FAILED.getCode()) {
             // TODO: multiroot support (diagnose which root is failing)
             throw new ExUIMessage(L.product() + " couldn't launch because it couldn't "
                     + "watch for file changes under \"" + Cfg.absDefaultRootAnchor() + "\"\n\n"
                     + "Please make sure that " + L.product() + " has the appropriate permissions to"
                     + " access that folder.");
-        } else if (exitCode == CORRUPTED_DB.getNumber()) {
+        } else if (exitCode == CORRUPTED_DB.getCode()) {
             // TODO: use custom dialog to streamline reinstall process
             // w/ unlink, seed file gen if possible, ...
             throw new ExUIMessage(L.product() + " couldn't launch because of a corrupted database."
                     + S.MANUAL_REINSTALL);
-        } else if (exitCode == CORE_DB_TAMPERING.getNumber()) {
+        } else if (exitCode == CORE_DB_TAMPERING.getCode()) {
             handlCoreDBTampering();
         } else {
             throw new IOException(getMessage(exitCode));
@@ -365,12 +365,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     {
         // Daemon is intentionally shut down to prevent inconsistencies after moving root anchor.
         // Daemon will restart in new Cfg state
-        if (exitCode == RELOCATE_ROOT_ANCHOR.getNumber()) {
+        if (exitCode == RELOCATE_ROOT_ANCHOR.getCode()) {
             return;
-        } else if (exitCode == SHUTDOWN_REQUESTED.getNumber()) {
+        } else if (exitCode == SHUTDOWN_REQUESTED.getCode()) {
             l.warn("daemon receives shutdown request. shutdown UI now.");
             SHUTDOWN_REQUESTED.exit();
-        } else if (exitCode == CORRUPTED_DB.getNumber()) {
+        } else if (exitCode == CORRUPTED_DB.getCode()) {
             l.error("core db corrupted");
             UI.get().show(MessageType.ERROR, L.product() + " detected a database corruption.\n" +
                     "Please delete \"" + Cfg.absRTRoot() + "\" and reinstall.");

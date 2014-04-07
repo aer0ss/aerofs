@@ -24,7 +24,6 @@ public class TestSP_Preferences extends AbstractSPTest
     public void setup()
             throws Exception
     {
-        mockAndCaptureVerkehrDeliverPayload();
         setSession(USER_1);
     }
 

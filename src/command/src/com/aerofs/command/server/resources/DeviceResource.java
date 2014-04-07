@@ -4,31 +4,30 @@
 
 package com.aerofs.command.server.resources;
 
-import com.aerofs.command.server.ResourceConstants;
 import com.aerofs.base.id.DID;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 
 import javax.ws.rs.Path;
 
-@Path("/" + ResourceConstants.DEVICES_PATH)
+@Path("/devices")
 public final class DeviceResource
 {
     private final DID _did;
 
     private final JedisThreadLocalTransaction _trans;
-    private final VerkehrAdmin _verkehr;
+    private final VerkehrClient _verkehr;
 
-    public DeviceResource(DID did, JedisThreadLocalTransaction trans, VerkehrAdmin verkehr)
+    public DeviceResource(DID did, JedisThreadLocalTransaction trans, VerkehrClient verkehr)
     {
         _did = did;
         _trans = trans;
         _verkehr = verkehr;
     }
 
-    @Path("/{" + ResourceConstants.ENQUEUES_PATH + "}")
-    public EnqueuesResource getDevice()
+    @Path("/{queues}")
+    public QueuesResource getDevice()
     {
-        return new EnqueuesResource(_did, _trans, _verkehr);
+        return new QueuesResource(_did, _trans, _verkehr);
     }
 }

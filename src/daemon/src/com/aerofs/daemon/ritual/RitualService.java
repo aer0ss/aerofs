@@ -573,6 +573,7 @@ public class RitualService implements IRitualService
         return createVoidReply();
     }
 
+    @Override
     public ListenableFuture<GetPathStatusReply> getPathStatus(List<PBPath> pbPaths)
             throws Exception
     {

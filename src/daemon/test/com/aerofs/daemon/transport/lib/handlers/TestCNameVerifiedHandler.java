@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.google.common.collect.Lists;
@@ -43,7 +43,7 @@ public final class TestCNameVerifiedHandler
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final InetSocketAddress REMOTE = InetSocketAddress.createUnresolved("remote", 9999);

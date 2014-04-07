@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ChannelFactories;
 import com.aerofs.daemon.transport.LoggingRule;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -40,7 +40,7 @@ public final class TestTCPDualClientChannelThreadSafety
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final Logger l = LoggerFactory.getLogger(TestTCPDualClientChannelThreadSafety.class);

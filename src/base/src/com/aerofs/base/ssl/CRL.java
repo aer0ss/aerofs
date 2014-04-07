@@ -4,24 +4,27 @@
 
 package com.aerofs.base.ssl;
 
+import com.google.common.collect.Sets;
+
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * Class to hold revoked serials so that the netty SSL hooks can verify client devices.
+ * contains a list of revoked SSL certificate serials.
+ * <p/>
+ * This class is thread-safe.
  */
 public class CRL
 {
-    // Use a hashset so we can look up serial numbers quickly.
-    private final HashSet<Long> _serialsHashSet = new HashSet<Long>();
+    private final CopyOnWriteArraySet<Long> revokedSerials = Sets.newCopyOnWriteArraySet();
 
-    synchronized public void addRevokedSerials(Collection<Long> serials)
+    public void addRevokedSerials(Collection<Long> serials)
     {
-        _serialsHashSet.addAll(serials);
+        revokedSerials.addAll(serials);
     }
 
-    synchronized public boolean contains(long serial)
+    public boolean contains(long serial)
     {
-        return _serialsHashSet.contains(serial);
+        return revokedSerials.contains(serial);
     }
 }

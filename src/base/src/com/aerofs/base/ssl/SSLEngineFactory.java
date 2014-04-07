@@ -71,8 +71,7 @@ public class SSLEngineFactory
      *                     no sense to check if a certificate has been revoked if you're not
      *                     checking that it's a valid cert in the first place.
      */
-    public SSLEngineFactory(Mode mode, Platform platform, @Nullable IPrivateKeyProvider keyProvider,
-            @Nullable ICertificateProvider trustedCA, @Nullable CRL crl)
+    public SSLEngineFactory(Mode mode, Platform platform, @Nullable IPrivateKeyProvider keyProvider, @Nullable ICertificateProvider trustedCA, @Nullable CRL crl)
     {
         checkArgument(trustedCA != null || crl == null, "crl must be null if trustedCA is null");
 

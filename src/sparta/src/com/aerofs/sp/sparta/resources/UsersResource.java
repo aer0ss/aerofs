@@ -39,7 +39,7 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.Factory;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.sparta.Transactional;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -86,21 +86,19 @@ public class UsersResource extends AbstractSpartaResource
     private static Logger l = LoggerFactory.getLogger(UsersResource.class);
     private final User.Factory _factUser;
     private final ACLNotificationPublisher _aclPublisher;
-    private final VerkehrAdmin _verkehrAdmin;
     private final CommandDispatcher _commandDispatcher;
     private final PasswordManagement _passwordManagement;
     private final AuditClient _audit;
 
     @Inject
     public UsersResource(Factory factUser, ACLNotificationPublisher aclPublisher,
-            CommandDispatcher commandDispatcher, VerkehrAdmin verkerhAdmin,
+            CommandDispatcher commandDispatcher, VerkehrClient verkehrClient,
             PasswordManagement passwordManagement, AuditClient audit)
     {
         _factUser = factUser;
         _aclPublisher = aclPublisher;
-        _verkehrAdmin = verkerhAdmin;
         _commandDispatcher = commandDispatcher;
-        _commandDispatcher.setAdminClient(_verkehrAdmin);
+        _commandDispatcher.setVerkehrClient(verkehrClient);
         _passwordManagement = passwordManagement;
         _audit = audit;
     }

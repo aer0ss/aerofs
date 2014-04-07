@@ -51,8 +51,7 @@ import com.aerofs.sp.server.session.SPSession;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
-import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.googlecode.flyway.core.Flyway;
 import org.slf4j.Logger;
 
@@ -68,8 +67,7 @@ import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
 
 public class SPServlet extends AeroServlet
 {
@@ -194,9 +192,9 @@ public class SPServlet extends AeroServlet
         super.init(config);
         init_();
 
-        _authenticator.setACLPublisher_(new ACLNotificationPublisher(_factUser, getVerkehrPublisher()));
+        _authenticator.setACLPublisher_(new ACLNotificationPublisher(_factUser, getVerkehrClient()));
 
-        _service.setNotificationClients(getVerkehrPublisher(), getVerkehrAdmin());
+        _service.setNotificationClients(getVerkehrClient());
         _service.setAuditorClient_(getAuditClient());
 
         _service.setUserTracker(getUserTracker());
@@ -239,14 +237,9 @@ public class SPServlet extends AeroServlet
         flyway.migrate();
     }
 
-    private VerkehrAdmin getVerkehrAdmin()
+    private VerkehrClient getVerkehrClient()
     {
-        return (VerkehrAdmin) getServletContext().getAttribute(VERKEHR_ADMIN_ATTRIBUTE);
-    }
-
-    private VerkehrPublisher getVerkehrPublisher()
-    {
-        return (VerkehrPublisher) getServletContext().getAttribute(VERKEHR_PUBLISHER_ATTRIBUTE);
+        return (VerkehrClient) getServletContext().getAttribute(VERKEHR_CLIENT_ATTRIBUTE);
     }
 
     private AuditClient getAuditClient()

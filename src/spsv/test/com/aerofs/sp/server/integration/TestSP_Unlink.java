@@ -9,7 +9,6 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.sp.server.lib.device.Device;
@@ -38,8 +37,6 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
                 "", "", "", null).get().getCert();
 
         assertTrue(cert.equals(RETURNED_CERT));
-
-        mockAndCaptureVerkehrDeliverPayload();
     }
 
     /**
@@ -49,7 +46,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
     @Before
     public void setupVerkehrToCommandSuccessfully()
     {
-        when(verkehrAdmin.updateCRL(any(ImmutableList.class)))
+        when(verkehrClient.revokeSerials(any(ImmutableList.class)))
                 .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
     }
 

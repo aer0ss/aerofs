@@ -24,11 +24,11 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
         // share a folder and add a second person (as owner)
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE,
                 Permission.MANAGE));
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         // add a third person (as editor)
         shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.allOf(Permission.WRITE));
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         // now have the second guy delete the third
 
@@ -37,7 +37,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
 
         // expect first, second and third guy all to be notified
 
-        assertVerkehrPublishOnlyContains(USER_1, USER_2, USER_3);
+        assertVerkehrPublishedOnlyTo(USER_1, USER_2, USER_3);
 
         // have the first guy get his acl
 
@@ -68,7 +68,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
     {
         // share folder
         shareFolder(USER_1, SID_1, newUser(), Permissions.allOf(Permission.WRITE));
-        clearVerkehrPublish(); // don't care
+        clearPublishedMessages(); // don't care
 
         // now attempt to delete someone for whom the role doesn't exist
 

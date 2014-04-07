@@ -1,11 +1,13 @@
-package com.aerofs.daemon.transport;/*
+/*
  * Copyright (c) Air Computing Inc., 2013.
  */
+
+package com.aerofs.testlib;
 
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 
-public final class TransportLoggerSetup
+public final class LoggerSetup
 {
     static {
         Level level = Level.NONE;

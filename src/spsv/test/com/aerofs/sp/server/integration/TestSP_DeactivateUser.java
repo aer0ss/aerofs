@@ -7,7 +7,6 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
-import com.aerofs.proto.Cmd.Command;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -35,7 +34,6 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
     Device u0d1;
     Device u1d0;
 
-    List<Command> cmds;
     List<ImmutableCollection<Long>> crls;
 
     @Override
@@ -52,11 +50,9 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
         return d;
     }
 
-
     @Before
     public void setUp() throws Exception
     {
-        cmds = mockAndCaptureVerkehrDeliverPayload();
         crls = mockAndCaptureVerkehrUpdateCRL();
 
         sqlTrans.begin();
@@ -103,7 +99,9 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
         try {
             service.deactivateUser(u0.id().getString(), false);
             fail();
-        } catch (ExNoPerm e) {}
+        } catch (ExNoPerm e) {
+            // noop
+        }
     }
 
     @Test
@@ -128,7 +126,9 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
         try {
             service.deactivateUser(u0.id().getString(), false);
             fail();
-        } catch (ExNoAdminOrOwner e) {}
+        } catch (ExNoAdminOrOwner e) {
+            // noop
+        }
     }
 
     @Test

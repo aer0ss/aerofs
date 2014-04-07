@@ -21,7 +21,7 @@
     <orderEntry type="library" exported="" scope="TEST" name="hamcrest" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="powermock" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="junit" level="project" />
-    <orderEntry type="library" scope="TEST" name="bouncycastle-test" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="bouncycastle" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

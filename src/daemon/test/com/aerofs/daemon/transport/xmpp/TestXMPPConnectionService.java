@@ -8,7 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.LoggingRule;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableSet;
@@ -46,7 +46,7 @@ public final class TestXMPPConnectionService
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final long TEST_CONNECT_TIMEOUT = 30000;

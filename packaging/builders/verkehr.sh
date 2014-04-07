@@ -23,7 +23,3 @@ cat << EOF >> $INIT/verkehr.conf
 # Set a high ulimit for no files to allow a huge # of users to connect
 limit nofile 1024000 1024000
 EOF
-
-# verkehr command-line clients (uses same java code as AeroFS client)
-cp $RESOURCES/subscriber $OPT
-cp $RESOURCES/publisher $OPT

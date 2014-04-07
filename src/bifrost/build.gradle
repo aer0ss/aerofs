@@ -2,6 +2,23 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
+archivesBaseName = 'aerofs-bifrost'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+    test {
+        java {
+            srcDir 'test'
+        }
+    }
+}
+
+evaluationDependsOn(':src/lib')
+
 dependencies {
     compile 'commons-codec:commons-codec:1.4'
     compile 'commons-validator:commons-validator:1.4.0'
@@ -9,9 +26,10 @@ dependencies {
     compile 'org.hibernate:hibernate-validator:4.3.0.Final'
     compile 'org.apache.tomcat:tomcat-dbcp:7.0.37'
     compile 'com.lambdaworks:scrypt:1.4.0'
-}
-
-task syncDependencies(type: Sync) {
-    from configurations.compile
-    into "${serverResourcesDir}/lib.apisec"
+    compile 'org.flywaydb:flyway-core:2.2.1'
+    compile project(':src/lib')
+    compile project(':src/restless')
+    testCompile name:'rest-assured-1.8.1'
+    testCompile restAssuredDependencies
+    testCompile project(':src/lib').sourceSets.test.runtimeClasspath
 }

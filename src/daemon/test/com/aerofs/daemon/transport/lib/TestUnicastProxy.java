@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.lib.event.Prio;
 import org.junit.Test;
 
@@ -24,7 +24,7 @@ public final class TestUnicastProxy
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private final IUnicast unicast = mock(IUnicast.class);

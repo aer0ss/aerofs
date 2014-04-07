@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
 import org.jboss.netty.channel.Channel;
@@ -27,7 +27,7 @@ public final class TestIncomingChannelHandler
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private final IIncomingChannelListener incomingChannelListener = mock(IIncomingChannelListener.class);

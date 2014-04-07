@@ -8,7 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.LoggingRule;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.jingle.SignalThread.IIncomingTunnelListener;
 import com.aerofs.daemon.transport.jingle.SignalThread.ISignalThreadListener;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
@@ -47,7 +47,7 @@ public final class TestJingleClientChannelThreadSafety
         System.loadLibrary("aerofsd");
         System.loadLibrary("aerofsj");
 
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final Logger l = LoggerFactory.getLogger(TestJingleClientChannelThreadSafety.class);

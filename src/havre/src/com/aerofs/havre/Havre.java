@@ -1,5 +1,6 @@
 package com.aerofs.havre;
 
+import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.DID;
@@ -23,7 +24,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.FileInputStream;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Properties;
@@ -92,17 +92,7 @@ public class Havre
 
     public static void main(String[] args) throws Exception
     {
-        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler()
-        {
-            @Override
-            public void uncaughtException(Thread t, Throwable e)
-            {
-                System.err.println("uncaught exception thd:" + t.getName()
-                        + " err:" + e + " - kill system");
-                e.printStackTrace(System.err);
-                System.exit(1);
-            }
-        });
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
 
         Properties extra = new Properties();
         if (args.length > 0) extra.load(new FileInputStream(args[0]));

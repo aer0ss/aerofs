@@ -1,0 +1,38 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-libservlet'
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'src', 'gen'
+        }
+    }
+    test {
+        java {
+            srcDirs 'test'
+        }
+    }
+}
+
+evaluationDependsOn(':src/lib')
+
+dependencies {
+    compile 'javax.servlet:servlet-api:2.5'
+    compile 'mysql:mysql-connector-java:5.1.20'
+    compile 'javax.mail:mail:1.4.2'
+    compile 'org.bouncycastle:bcprov-jdk15on:1.50'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.50'
+    compile 'com.googlecode.flyway:flyway-core:2.2.1'
+    compile 'com.lambdaworks:scrypt:1.4.0'
+    compile name: 'dyuproject-openid-1.1'
+    compile name: 'unboundid-ldapsdk-se'
+    compile name: 'jedis-2.2.5'
+    compile jedisDependencies
+    compile project(':src/lib')
+    compile project(path: ':src/verkehr', configuration: 'restClient')
+    testCompile 'org.subethamail:subethasmtp:3.1.7'
+    testCompile project(':src/lib').sourceSets.test.runtimeClasspath
+}

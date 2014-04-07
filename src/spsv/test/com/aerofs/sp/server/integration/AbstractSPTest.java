@@ -6,6 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.IAuditorClient;
+import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.analytics.Analytics;
@@ -16,7 +17,6 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
-import com.aerofs.proto.Cmd.Command;
 import com.aerofs.servlets.MockSession;
 import com.aerofs.servlets.SecUtilHelper;
 import com.aerofs.servlets.lib.AsyncEmailSender;
@@ -60,9 +60,10 @@ import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
-import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
@@ -83,7 +84,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
@@ -97,9 +99,37 @@ import static org.mockito.Mockito.when;
  */
 public class AbstractSPTest extends AbstractTestWithDatabase
 {
+    public final class Published
+    {
+        public String topic;
+        public byte[] bytes;
+
+        public Published(String topic, byte[] bytes)
+        {
+            this.topic = topic;
+            this.bytes = bytes;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Published published = (Published)o;
+
+            return Arrays.equals(bytes, published.bytes) && topic.equals(published.topic);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hashCode(topic, bytes);
+        }
+    }
+
     // Some subclasses will add custom mocking to the verkehr objects.
-    @Mock protected VerkehrPublisher verkehrPublisher;
-    @Mock protected VerkehrAdmin verkehrAdmin;
+    @Mock protected VerkehrClient verkehrClient;
     @Spy protected AuditClient auditClient = new AuditClient()
             .setAuditorClient(new IAuditorClient() {
                 @Override
@@ -187,7 +217,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // N.B. the @Mock is only necessary if the subclass will mock the object in some special way
     @InjectMocks protected SPService service;
 
-    protected Set<String> verkehrPublished;
+    private final List<Published> allPublished = Lists.newArrayList();
 
     // N.B. These users are DEPRECATED. Do not use them in the new code. Use newUser(), saveUser(), etc.
     protected final User USER_1 /* DEPRECATED */ = factUser.create(UserID.fromInternal("user_1"));
@@ -196,7 +226,6 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     protected static final byte[] CRED = "CREDENTIALS".getBytes();
 
     private int nextUserID;
-    private int nextOrgID;
 
     // Use a method name that is unlikely to conflict with setup methods in subclasses
     @Before
@@ -210,7 +239,17 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         mockLicense();
         mockRateLimiter();
 
-        verkehrPublished = mockAndCaptureVerkehrPublish();
+        // mock out verkehr
+        when(verkehrClient.publish(any(String.class), any(byte[].class))).then(new Answer<Object>()
+        {
+            @Override
+            public Object answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                allPublished.add(new Published((String)invocation.getArguments()[0], (byte[])invocation.getArguments()[1]));
+                return UncancellableFuture.createSucceeded(null);
+            }
+        });
 
         ///////////////////////////////////////////////////////////////////////////
         // The method to populate the database below is outdated. See methods in
@@ -287,7 +326,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     protected void wireSPService()
     {
         service.setAuditorClient_(auditClient);
-        service.setNotificationClients(verkehrPublisher, verkehrAdmin);
+        service.setNotificationClients(verkehrClient);
         service.setSessionInvalidator(sessionInvalidator);
         service.setUserTracker(userSessionTracker);
         service.setMaxFreeMembers(Integer.MAX_VALUE);
@@ -378,14 +417,6 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 .thenReturn(BaseSecUtil.getCertificateCName(user.id(), device.id()));
     }
 
-    protected void mockCertificateAuthenticatorSetUnauthorizedState()
-            throws Exception
-    {
-        when(certificateAuthenticator.isAuthenticated()).thenReturn(false);
-        when(certificateAuthenticator.getSerial()).thenThrow(new ExBadCredential());
-        when(certificateAuthenticator.getCName()).thenThrow(new ExBadCredential());
-    }
-
     protected static ByteString newCSR(User user, Device device)
             throws IOException, GeneralSecurityException
     {
@@ -394,53 +425,18 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 user.id(), device.id()).getEncoded());
     }
 
-    protected Set<String> mockAndCaptureVerkehrPublish()
-    {
-        final Set<String> published = Sets.newHashSet();
-
-        when(verkehrPublisher.publish_(any(String.class), any(byte[].class)))
-                .then(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        published.add((String)invocation.getArguments()[0]);
-                        return UncancellableFuture.createSucceeded(null);
-                    }
-                });
-
-        return published;
-    }
-
-    protected List<Command> mockAndCaptureVerkehrDeliverPayload()
-    {
-        final List<Command> payloads = Lists.newLinkedList();
-
-        when(verkehrAdmin.deliverPayload_(any(String.class), any(byte[].class)))
-                .then(new Answer<Object>()
-                {
-                    @Override
-                    public Object answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        byte[] bytes = (byte[])invocation.getArguments()[1];
-                        payloads.add(Command.parseFrom(bytes));
-                        return UncancellableFuture.createSucceeded(null);
-                    }
-                });
-
-        return payloads;
-    }
-
+    // FIXME (AG): this is ridiculous; we should capture all CRLs and simply return the ones we've captured
     @SuppressWarnings("unchecked")
     protected List<ImmutableCollection<Long>> mockAndCaptureVerkehrUpdateCRL()
     {
         final List<ImmutableCollection<Long>> crls = Lists.newArrayList();
 
-        when(verkehrAdmin.updateCRL((ImmutableCollection<Long>)any(ImmutableCollection.class)))
-                .thenAnswer(new Answer<Object>() {
+        when(verkehrClient.revokeSerials((ImmutableCollection<Long>)any(ImmutableCollection.class)))
+                .thenAnswer(new Answer<Object>()
+                {
                     @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable
+                    public Object answer(InvocationOnMock invocation)
+                            throws Throwable
                     {
                         crls.add((ImmutableCollection<Long>)invocation.getArguments()[0]);
                         return UncancellableFuture.createSucceeded(null);
@@ -450,19 +446,37 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         return crls;
     }
 
-    protected void assertVerkehrPublishContains(User ... users)
+    protected List<Published> getPublishedMessages()
     {
+        return ImmutableList.copyOf(allPublished);
+    }
+
+    protected Set<String> getTopicsPublishedTo()
+    {
+        Set<String> topicNames = Sets.newHashSet();
+
+        for (Published published : allPublished) {
+            topicNames.add(published.topic);
+        }
+
+        return topicNames;
+    }
+
+    protected void assertPublishedTo(User... users)
+    {
+        Set<String> topicsPublishedTo = getTopicsPublishedTo();
+
         for (User user : users) {
-            if (!verkehrPublished.contains(ACL_CHANNEL_TOPIC_PREFIX + user.id().getString())) {
-                fail("verkehr publish doesn't contain " + user + ". actual: " + verkehrPublished);
+            if (!topicsPublishedTo.contains(Topics.getACLTopic(user.id().getString(), true))) {
+                fail("verkehr publish doesn't contain " + user + ". actual: " + allPublished);
             }
         }
     }
 
-    protected void assertVerkehrPublishOnlyContains(User ... users)
+    protected void assertVerkehrPublishedOnlyTo(User... users)
             throws Exception
     {
-        assertVerkehrPublishContains(users);
+        assertPublishedTo(users);
 
         // get team server users
         Set<User> tsUsers = Sets.newHashSet();
@@ -471,23 +485,22 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         sqlTrans.commit();
 
         // all the team servers must be included
-        assertVerkehrPublishContains(tsUsers.toArray(new User[tsUsers.size()]));
+        assertPublishedTo(tsUsers.toArray(new User[tsUsers.size()]));
 
-        if (users.length + tsUsers.size() != verkehrPublished.size()) {
-            fail("verkerh publish has more than expected: " + Arrays.toString(users) +
-                    " actual: " + verkehrPublished);
+        if (users.length + tsUsers.size() != allPublished.size()) {
+            fail("verkerh publish has more than expected: " + Arrays.toString(users) + " actual: " + allPublished);
         }
     }
 
-    protected void assertVerkehrPublishIsEmpty()
+    protected void assertNothingPublished()
             throws Exception
     {
-        assertVerkehrPublishOnlyContains();
+        assertThat(allPublished.isEmpty(), equalTo(true));
     }
 
     // TOOD (WW) is this method useful?
-    protected void clearVerkehrPublish()
+    protected void clearPublishedMessages()
     {
-        verkehrPublished.clear();
+        allPublished.clear();
     }
 }

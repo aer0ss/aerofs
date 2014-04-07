@@ -22,12 +22,12 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     {
         shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
-        assertVerkehrPublishOnlyContains(USER_1);
-        clearVerkehrPublish();
+        assertVerkehrPublishedOnlyTo(USER_1);
+        clearPublishedMessages();
 
         joinSharedFolder(USER_2, SID_1);
 
-        assertVerkehrPublishOnlyContains(USER_1, USER_2);
+        assertVerkehrPublishedOnlyTo(USER_1, USER_2);
     }
 
     @Test
@@ -52,9 +52,9 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
                 SharedFolderState.JOINED);
         sqlTrans.commit();
 
-        clearVerkehrPublish();
+        clearPublishedMessages();
         joinSharedFolder(USER_2, SID_1);
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
     }
 
     @Test
@@ -63,7 +63,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
         joinSharedFolder(USER_2, SID_1);
         leaveSharedFolder(USER_2, SID_1);
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         sqlTrans.begin();
         assertEquals(factSharedFolder.create(SID_1).getStateNullable(USER_2),
@@ -72,7 +72,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
 
         joinSharedFolder(USER_2, SID_1);
 
-        assertVerkehrPublishOnlyContains(USER_1, USER_2);
+        assertVerkehrPublishedOnlyTo(USER_1, USER_2);
 
         sqlTrans.begin();
         assertEquals(factSharedFolder.create(SID_1).getStateNullable(USER_2),
@@ -89,14 +89,14 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         } catch (ExNotFound e) {
             sqlTrans.handleException();
         }
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
     }
 
     @Test
     public void shouldThrowWhenTryingToJoinWithoutBeingInvited() throws Exception
     {
         shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         try {
             joinSharedFolder(USER_3, SID_1);
@@ -104,7 +104,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         } catch (ExNotFound e) {
             sqlTrans.handleException();
         }
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
     }
 
     @Test

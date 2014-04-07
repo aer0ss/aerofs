@@ -5,10 +5,10 @@
 package com.aerofs.bifrost.server;
 
 import com.aerofs.base.BaseParam.Cacert;
+import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
-import com.aerofs.bifrost.common.DefaultUncaughtExceptionHandler;
 import com.aerofs.bifrost.module.AccessTokenRepositoryImpl;
 import com.aerofs.bifrost.module.AuthorizationRequestRepositoryImpl;
 import com.aerofs.bifrost.module.ClientRepositoryImpl;

@@ -2,6 +2,25 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-// include all the directories you want searched here for gradle build
+rootProject.name = 'aerofs-gradle'
 
-include 'src/verkehr', 'src/bifrost'
+include 'src/auditor',
+        'src/base',
+        'src/bifrost',
+        'src/bootstrap',
+        'src/command',
+        'src/daemon',
+        'src/dryad',
+        'src/havre',
+        'src/lib',
+        'src/libjingle.binding',
+        'src/libservlet',
+        'src/oauth-verify',
+        'src/rest-api',
+        'src/restless',
+        'src/sparta',
+        'src/swiglibs',
+        'src/tunnel',
+        'src/verkehr',
+        'src/xray',
+        'src/zephyr'

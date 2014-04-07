@@ -11,7 +11,7 @@ import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
 import com.aerofs.daemon.transport.tcp.UnicastTCPDevice;
 import com.aerofs.lib.event.Prio;
@@ -48,7 +48,7 @@ public final class TestTCPUnicast
     static
     {
         System.loadLibrary("aerofsd");
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final Logger l = LoggerFactory.getLogger(TestTCPUnicast.class);

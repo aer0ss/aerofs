@@ -10,7 +10,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
@@ -18,6 +17,7 @@ import com.aerofs.daemon.transport.lib.Waiter;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.xray.server.XRayServer;
 import com.aerofs.xray.server.core.Dispatcher;
 import com.google.common.base.Charsets;
@@ -47,7 +47,7 @@ public final class TestXRayUnicast
     static
     {
         ConfigurationProperties.setProperties(new Properties());
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
         OSUtil.get().loadLibrary("aerofsd");
     }
 

@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -32,17 +33,17 @@ import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UnlinkUtil;
-import com.aerofs.verkehr.client.lib.IConnectionListener;
-import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
-import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
-import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
+import com.aerofs.verkehr.client.wire.ConnectionListener;
+import com.aerofs.verkehr.client.wire.UpdateListener;
+import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -51,9 +52,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
-import static com.aerofs.lib.LibParam.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newOneWayAuthClientFactory;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -88,12 +87,10 @@ public final class CommandNotificationSubscriber
     private static final Logger l = Loggers.getLogger(CommandNotificationSubscriber.class);
 
     private final IScheduler _scheduler;
-    private final ExponentialRetry _er;
-    private final String _topic;
-    private final VerkehrSubscriber _subscriber;
-
-    private final VerkehrListener _listener;
+    private final ExponentialRetry _exponential;
     private final DryadUploadService _uploader;
+    private final VerkehrPubSubClient _verkehrPubSubClient;
+    private final String _topic;
 
     public CommandNotificationSubscriber(
             ClientSocketChannelFactory clientChannelFactory,
@@ -102,64 +99,70 @@ public final class CommandNotificationSubscriber
             DID localDevice)
     {
         _scheduler = scheduler;
-        _er = new ExponentialRetry(_scheduler);
+        _exponential = new ExponentialRetry(scheduler);
         _uploader = uploader;
-
-        _listener = new VerkehrListener();
-
-        l.debug("cmd: " + Verkehr.HOST + ":" + Verkehr.SUBSCRIBE_PORT);
-        ClientFactory factory = new ClientFactory(
+        _verkehrPubSubClient = VerkehrPubSubClient.create(
                 Verkehr.HOST,
-                Short.parseShort(Verkehr.SUBSCRIBE_PORT),
-                clientChannelFactory,
-                new CfgCACertificateProvider(),
+                Verkehr.PROTOBUF_PORT,
                 new CfgKeyManagersProvider(),
-                VERKEHR_RETRY_INTERVAL,
+                new CfgCACertificateProvider(),
+                clientChannelFactory,
+                Verkehr.MIN_RETRY_INTERVAL,
+                Verkehr.MAX_RETRY_INTERVAL,
                 Cfg.db().getLong(Key.TIMEOUT),
-                getGlobalTimer(),
-                _listener, _listener, sameThreadExecutor());
+                getGlobalTimer());
+        _topic = Topics.getCMDTopic(localDevice.toStringFormal(), false);
 
-        this._topic = CMD_CHANNEL_TOPIC_PREFIX + localDevice.toStringFormal();
-        this._subscriber = factory.create();
+        l.debug("cmd: {}:{} ", Verkehr.HOST, Verkehr.PROTOBUF_PORT);
     }
 
     public void start()
     {
-        l.debug("cmd: started notification subscriber");
-        _subscriber.start();
+        VerkehrListener listener = new VerkehrListener();
+
+        _verkehrPubSubClient.addConnectionListener(listener, sameThreadExecutor());
+        _verkehrPubSubClient.start();
 
         // Schedule a sync when the device first comes online.
-        _listener.scheduleSyncWithCommandServer();
+        listener.scheduleSyncWithCommandServer();
+
+        l.debug("cmd: started notification subscriber");
     }
 
-    private final class VerkehrListener implements IConnectionListener, ISubscriptionListener
+    private final class VerkehrListener implements ConnectionListener, UpdateListener
     {
         @Override
-        public void onConnected()
+        public void onConnected(VerkehrPubSubClient client)
         {
-            l.debug("cmd: subscribe topic=" + _topic);
-            _subscriber.subscribe_(_topic);
+            l.debug("cmd: subscribe topic={}", _topic);
+            ListenableFuture<Void> subscribed = _verkehrPubSubClient.subscribe(_topic, this, sameThreadExecutor());
+            Futures.addCallback(subscribed, new FutureCallback<Void>()
+            {
+                @Override
+                public void onSuccess(Void aVoid)
+                {
+                    // Also schedule a sync after we subscribe to the topic to ensure we are up to date
+                    // after potential verkehr outages.
+                    scheduleSyncWithCommandServer();
+                }
 
-            // Also schedule a sync after we subscribe to the topic to ensure we are up to date
-            // after potential verkehr outages.
-            scheduleSyncWithCommandServer();
+                @Override
+                public void onFailure(Throwable throwable)
+                {
+                    _verkehrPubSubClient.disconnect();
+                }
+            });
         }
 
         @Override
-        public void onNotificationReceivedFromVerkehr(String topic, @Nullable final byte[] payload)
+        public void onUpdate(String topic, final byte[] payload)
         {
             l.debug("cmd: notification received");
-
-            if (payload == null) {
-                l.error("cmd: empty payload");
-                return;
-            }
 
             Command command;
             try {
                 command = Command.parseFrom(payload);
-            }
-            catch (InvalidProtocolBufferException e) {
+            } catch (InvalidProtocolBufferException e) {
                 l.error("cmd: invalid protobuf: " + e.toString());
                 return;
             }
@@ -173,7 +176,7 @@ public final class CommandNotificationSubscriber
         }
 
         @Override
-        public void onDisconnected()
+        public void onDisconnected(VerkehrPubSubClient client)
         {
             // noop
         }
@@ -189,17 +192,17 @@ public final class CommandNotificationSubscriber
                 @Override
                 public void handle_()
                 {
-                    _er.retry("cmd-sync", new Callable<Void>()
-                    {
-                        @Override
-                        public Void call()
-                                throws Exception
+                    _exponential.retry("cmd-sync", new Callable<Void>()
                         {
-                            syncWithCommandServer();
-                            return null;
-                        }
-                    },
-                    ExNoPerm.class, ExBadArgs.class, IOException.class);
+                            @Override
+                            public Void call()
+                                    throws Exception
+                            {
+                                syncWithCommandServer();
+                                return null;
+                            }
+                        }, ExNoPerm.class, ExBadArgs.class, IOException.class
+                    );
                 }
             }, 0);
         }
@@ -411,7 +414,6 @@ public final class CommandNotificationSubscriber
             }
         }
     }
-
 
     private void unlinkSelf()
             throws Exception

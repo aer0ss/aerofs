@@ -1,0 +1,42 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-zephyr'
+
+// NOTE: there is no relationship between a configuration and a sourceset
+// http://stackoverflow.com/questions/5144325/gradle-test-dependency
+configurations {
+    client
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+            exclude 'com/aerofs/zephyr/client/**' 
+        }
+    }
+    client {
+        java {
+            srcDirs 'src', 'gen'
+            exclude 'com/aerofs/zephyr/server/**' 
+        }
+    }
+}
+
+dependencies {
+    compile project(':src/lib')
+    clientCompile project(':src/lib')
+}
+
+compileClientJava.dependsOn(':generateAllProtoClasses')
+
+task clientJar(type: Jar) {
+    baseName 'aerofs-zephyr-client'
+    from sourceSets.client.output 
+}
+
+artifacts {
+    client clientJar
+}

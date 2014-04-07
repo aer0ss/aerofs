@@ -9,6 +9,7 @@ import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.BaseParam.Cacert;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
+import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.Version;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
@@ -17,32 +18,30 @@ import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.oauth.TokenVerifier;
+import com.aerofs.rest.providers.FactoryReaderProvider;
 import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
 import com.aerofs.rest.providers.JsonExceptionMapper;
 import com.aerofs.rest.providers.ParamExceptionMapper;
 import com.aerofs.rest.providers.RuntimeExceptionMapper;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
-import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
-import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
+import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.sparta.providers.AuthProvider;
-import com.aerofs.rest.providers.FactoryReaderProvider;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
 import com.aerofs.sp.sparta.providers.WirableMapper;
 import com.aerofs.sp.sparta.resources.DevicesResource;
 import com.aerofs.sp.sparta.resources.OrganizationsResource;
 import com.aerofs.sp.sparta.resources.SharedFolderResource;
 import com.aerofs.sp.sparta.resources.UsersResource;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
-import com.aerofs.verkehr.client.lib.publisher.ClientFactory;
-import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -68,13 +67,12 @@ import java.net.URI;
 import java.sql.Connection;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ACK_TIMEOUT;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_RECONNECT_DELAY;
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
-import static java.util.concurrent.Executors.newCachedThreadPool;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Standalone RESTful SP
@@ -116,6 +114,8 @@ public class Sparta extends Service
         Properties extra = new Properties();
         if (args.length > 0) extra.load(new FileInputStream(args[0]));
 
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
+
         Server.initialize(extra);
 
         ICertificateProvider cacert = new FileBasedCertificateProvider(Cacert.FILE);
@@ -125,7 +125,7 @@ public class Sparta extends Service
 
         Injector inj = Guice.createInjector(Stage.PRODUCTION,
                 databaseModule(new SpartaSQLConnectionProvider()),
-                clientsModule(cacert, timer, clientFactory),
+                clientsModule(cacert),
                 spartaModule(timer, clientFactory));
 
 
@@ -186,30 +186,10 @@ public class Sparta extends Service
         };
     }
 
-    static private Module clientsModule(final ICertificateProvider cacert, final Timer timer,
-            final ClientSocketChannelFactory clientFactory)
+    static private Module clientsModule(final ICertificateProvider cacert)
     {
         return new AbstractModule()
         {
-            private final ClientFactory factClient = new ClientFactory(
-                    Verkehr.HOST,
-                    Short.parseShort(Verkehr.PUBLISH_PORT),
-                    clientFactory,
-                    cacert,
-                    5 * C.SEC,
-                    1 * C.SEC,
-                    timer,
-                    new NoopConnectionListener(),
-                    sameThreadExecutor());
-
-            private final com.aerofs.verkehr.client.lib.admin.ClientFactory factAdmin =
-                    new com.aerofs.verkehr.client.lib.admin.ClientFactory(
-                            Verkehr.HOST, Short.parseShort(Verkehr.ADMIN_PORT),
-                            newCachedThreadPool(), newCachedThreadPool(),
-                            cacert,
-                            VERKEHR_RECONNECT_DELAY, VERKEHR_ACK_TIMEOUT, timer,
-                            new NoopConnectionListener(), sameThreadExecutor());
-
             @Override
             protected void configure()
             {
@@ -225,19 +205,18 @@ public class Sparta extends Service
             }
 
             @Provides @Singleton
-            public VerkehrPublisher providesPublisher()
+            public VerkehrClient providesPublisher()
             {
-                VerkehrPublisher publisher = factClient.create();
-                publisher.start();
-                return publisher;
-            }
-
-            @Provides @Singleton
-            public VerkehrAdmin providesAdmin()
-            {
-                VerkehrAdmin admin = factAdmin.create();
-                admin.start();
-                return admin;
+                NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 1, 2);
+                return VerkehrClient.create(
+                        Verkehr.HOST,
+                        Verkehr.REST_PORT,
+                        MILLISECONDS.convert(30, SECONDS),
+                        MILLISECONDS.convert(60, SECONDS),
+                        10,
+                        new HashedWheelTimer(),
+                        MoreExecutors.sameThreadExecutor(),
+                        channelFactory);
             }
 
             @Provides @Singleton

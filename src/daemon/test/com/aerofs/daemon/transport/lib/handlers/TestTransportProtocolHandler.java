@@ -13,7 +13,7 @@ import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.PulseManager.AddPulseResult;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -63,7 +63,7 @@ public final class TestTransportProtocolHandler
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private static final int CHUNK_SIZE = 1024;

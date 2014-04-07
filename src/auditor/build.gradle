@@ -1,0 +1,28 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-auditor'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+    test {
+        java {
+            srcDir 'test'
+        }
+    }
+}
+
+evaluationDependsOn(':src/lib')
+
+dependencies {
+    compile project(':src/lib')
+    compile project(':src/restless')
+    testCompile name:'rest-assured-1.8.1'
+    testCompile restAssuredDependencies
+    testCompile project(':src/lib').sourceSets.test.runtimeClasspath
+}

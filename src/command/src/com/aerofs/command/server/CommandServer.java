@@ -4,6 +4,7 @@
 
 package com.aerofs.command.server;
 
+import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 
 public class CommandServer
@@ -18,6 +19,9 @@ public class CommandServer
 
         // Init the logger.
         Loggers.init();
+
+        // init catch-all exception handler
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
 
         // Run the command server service.
         CommandServerService service = new CommandServerService();

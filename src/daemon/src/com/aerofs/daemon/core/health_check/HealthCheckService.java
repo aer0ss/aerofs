@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.health_check;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.IStartable;
-import com.aerofs.verkehr.common.DefaultUncaughtExceptionHandler;
+import com.aerofs.verkehr.lib.DefaultUncaughtExceptionHandler;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import org.slf4j.Logger;

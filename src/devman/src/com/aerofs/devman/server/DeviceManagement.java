@@ -4,6 +4,7 @@
 
 package com.aerofs.devman.server;
 
+import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.properties.Configuration;
 
@@ -19,6 +20,9 @@ public class DeviceManagement
 
         // Init the logger.
         Loggers.init();
+
+        // Init the catch-all exception handler
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
 
         // Init the configuration service.
         Configuration.Server.initialize();

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -14,7 +14,7 @@ public final class TestHeartbeatHandler
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     @Test

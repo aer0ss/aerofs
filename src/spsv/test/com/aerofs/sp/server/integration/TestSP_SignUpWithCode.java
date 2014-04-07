@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
@@ -18,7 +19,6 @@ import org.junit.Test;
 
 import java.sql.SQLException;
 
-import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -48,10 +48,10 @@ public class TestSP_SignUpWithCode extends AbstractSPTest
             throws Exception
     {
         String orgId = signUp().get().getOrgId();
-        assertEquals(ImmutableSet.of(ACL_CHANNEL_TOPIC_PREFIX + ":" + orgId), verkehrPublished);
-        clearVerkehrPublish();
+        assertEquals(ImmutableSet.of(Topics.getACLTopic(":" + orgId, true)), getTopicsPublishedTo());
+        clearPublishedMessages();
         signUp();
-        assertVerkehrPublishOnlyContains();
+        assertVerkehrPublishedOnlyTo();
     }
 
     @Test

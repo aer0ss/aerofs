@@ -1,0 +1,38 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-lib'
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'src', 'gen'
+        }
+    }
+    test {
+        java {
+            srcDirs 'test'
+        }
+    }
+}
+
+// FIXME (AG): it's unclear whether I still need this
+// I believe I might because I don't have a configuration artifact
+evaluationDependsOn(':src/base')
+
+dependencies {
+    compile name: 'aerofsjn'
+    compile name: 'guice-aerofs'
+    compile name: 'guice-multibindings-aerofs'
+    compile name: 'sqlite-jdbc'
+    compile name: 'commons-lang-2.6'
+    compile 'ch.qos.logback:logback-core:1.1.0'
+    compile 'ch.qos.logback:logback-classic:1.1.0'
+    compile project(':src/base')
+    testCompile 'org.powermock:powermock-mockito-release-full:1.5.4'
+    // http://gradle.1045684.n5.nabble.com/Subproject-test-source-depends-on-another-subproject-s-test-binaries-td4621181.html
+    testCompile project(':src/base').sourceSets.test.runtimeClasspath
+}
+
+compileJava.dependsOn(':generateAllProtoClasses')

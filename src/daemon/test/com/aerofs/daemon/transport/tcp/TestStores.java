@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EIPresence;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -47,7 +47,7 @@ public final class TestStores extends AbstractTest
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private final DID LOCAL_PEER = new DID(DID.generate());

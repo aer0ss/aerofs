@@ -5,14 +5,13 @@
 package com.aerofs.command.server.resources;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.DID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
-import com.aerofs.command.server.ResourceConstants;
-import com.aerofs.base.id.DID;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 import org.slf4j.Logger;
 
 import javax.ws.rs.POST;
@@ -22,20 +21,19 @@ import javax.ws.rs.Produces;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path("/" + ResourceConstants.ENQUEUES_SUBRESOURCE)
-public final class EnqueueResource
+@Path("/enqueue")
+public final class QueueResource
 {
-    private static final Logger l = Loggers.getLogger(EnqueueResource.class);
+    private static final Logger l = Loggers.getLogger(QueueResource.class);
 
     private final CommandType _type;
     private final DID _did;
 
     private final JedisThreadLocalTransaction _trans;
-    private final VerkehrAdmin _verkehr;
+    private final VerkehrClient _verkehr;
     private final JedisEpochCommandQueue _queue;
 
-    public EnqueueResource(CommandType type, DID did, JedisThreadLocalTransaction trans,
-            VerkehrAdmin verkehr)
+    public QueueResource(CommandType type, DID did, JedisThreadLocalTransaction trans, VerkehrClient verkehr)
     {
         _type = type;
         _did = did;
@@ -58,6 +56,6 @@ public final class EnqueueResource
                 .setEpoch(epoch.get())
                 .setType(_type)
                 .build();
-        _verkehr.deliverPayload_(_did.toStringFormal(), command.toByteArray()).get();
+        _verkehr.publish(_did.toStringFormal(), command.toByteArray()).get();
     }
 }

@@ -1,0 +1,25 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-rest-api'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+    test {
+        java {
+            srcDir 'test'
+        }
+    }
+}
+
+evaluationDependsOn(':src/base')
+
+dependencies {
+    compile project(':src/base')
+    testCompile project(':src/base').sourceSets.test.runtimeClasspath
+}

@@ -4,18 +4,16 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Common;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import javax.inject.Inject;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
-
-import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 
 /**
  * Helper class to handle ACL epoch bump and related verkehr notifications
@@ -23,10 +21,10 @@ import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 public class ACLNotificationPublisher
 {
     private final User.Factory _factUser;
-    private final VerkehrPublisher _vk;
+    private final VerkehrClient _vk;
 
     @Inject
-    ACLNotificationPublisher(User.Factory factUser, VerkehrPublisher vk)
+    ACLNotificationPublisher(User.Factory factUser, VerkehrClient vk)
     {
         _factUser = factUser;
         _vk = vk;
@@ -40,10 +38,8 @@ public class ACLNotificationPublisher
                 .setAclEpoch(epoch)
                 .build();
 
-        // Must match what is done on the client side.
-        String aclTopic = ACL_CHANNEL_TOPIC_PREFIX + user.getString();
-        ListenableFuture<Common.Void> published =
-                _vk.publish_(aclTopic, notification.toByteArray());
+        String aclTopic = Topics.getACLTopic(user.getString(), true);
+        ListenableFuture<Void> published = _vk.publish(aclTopic, notification.toByteArray());
 
         verkehrFutureGet_(published);
     }
@@ -57,7 +53,7 @@ public class ACLNotificationPublisher
      * Utility to minimize duped code in the below verkehr-related methods.
      * @param future either the verkehr publisher or admin.
      */
-    static void verkehrFutureGet_(ListenableFuture<Common.Void> future)
+    static void verkehrFutureGet_(ListenableFuture<Void> future)
             throws Exception
     {
         try {

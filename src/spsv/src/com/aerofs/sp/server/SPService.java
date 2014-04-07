@@ -157,8 +157,7 @@ import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.sharing_rules.ISharingRules;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
-import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -335,13 +334,12 @@ public class SPService implements ISPService
     /**
      * Set the verkehr clients and things that depend on them - the command dispatcher.
      */
-    public void setNotificationClients(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
+    public void setNotificationClients(VerkehrClient verkehrClient)
     {
-        assert verkehrPublisher != null;
-        assert verkehrAdmin != null;
+        assert verkehrClient != null;
 
-        _commandDispatcher.setAdminClient(verkehrAdmin);
-        _aclPublisher = new ACLNotificationPublisher(_factUser, verkehrPublisher);
+        _commandDispatcher.setVerkehrClient(verkehrClient);
+        _aclPublisher = new ACLNotificationPublisher(_factUser, verkehrClient);
     }
 
     public void setAuditorClient_(AuditClient auditClient)

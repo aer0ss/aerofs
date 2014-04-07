@@ -24,9 +24,6 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.util.Collection;
 
-import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
-import static com.aerofs.base.BaseParam.VerkehrTopics.TOPIC_SEPARATOR;
-
 /**
  * Client for the vekrehr REST API.
  *
@@ -136,8 +133,8 @@ public class VerkehrWebClient
 
             // N.B. we must use a channel topic prefix that is unique per device. The command
             // channel prefix will suffice.
-            if (topic.startsWith(CMD_CHANNEL_TOPIC_PREFIX)) {
-                String[] split = topic.split(TOPIC_SEPARATOR);
+            if (topic.startsWith("cmd")) {
+                String[] split = topic.split("/");
 
                 if (split.length != 2) {
                     throw new ExFormatError();

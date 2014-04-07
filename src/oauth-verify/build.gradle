@@ -1,0 +1,25 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-oauth-verify'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+    test {
+        java {
+            srcDir 'test'
+        }
+    }
+}
+
+evaluationDependsOn(':src/bifrost')
+
+dependencies {
+    compile project(':src/base')
+    testCompile project(':src/bifrost').sourceSets.test.runtimeClasspath
+}

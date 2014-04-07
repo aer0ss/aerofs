@@ -639,7 +639,7 @@ public abstract class Updater
         if (!UI.isGUI()) {
             UI.get().show(MessageType.WARN, L.product() +
                                             " may shut down to apply an update. A new process will" +
-                                            " be started at the background after the update.");
+                                            " be started in the background after the update.");
         }
         update(_installationFilename, newVersion, hasPermissions);
     }

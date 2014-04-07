@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="logkit">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/common/lib.test/avalon-logkit-2.2.1.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

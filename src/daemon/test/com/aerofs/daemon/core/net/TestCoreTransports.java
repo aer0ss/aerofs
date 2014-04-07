@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ConfigurationPropertiesResource;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.TransportLoggerSetup;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.jingle.Jingle;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
@@ -47,7 +47,7 @@ public class TestCoreTransports extends AbstractTest
 {
     static
     {
-        TransportLoggerSetup.init();
+        LoggerSetup.init();
     }
 
     private @Mock CfgAbsRTRoot _absRTRoot;

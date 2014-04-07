@@ -6,12 +6,12 @@ package com.aerofs.daemon.core.online_status;
 
 import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
 import com.aerofs.daemon.core.notification.Notifications;
-import com.aerofs.daemon.core.serverstatus.IConnectionStatusNotifier.IListener;
-import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.daemon.lib.CoreExecutor;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.ritual_notification.RitualNotificationServer;
+import com.aerofs.verkehr.client.wire.ConnectionListener;
+import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 
@@ -44,7 +44,7 @@ import java.util.concurrent.Executor;
  */
 public class OnlineStatusNotifier implements ISnapshotableNotificationEmitter
 {
-    private final VerkehrNotificationSubscriber _vns;
+    private final VerkehrPubSubClient _vk;
     private final LinkStateService _lss;
     private final RitualNotificationServer _rns;
     private final Executor _executor;
@@ -54,10 +54,9 @@ public class OnlineStatusNotifier implements ISnapshotableNotificationEmitter
     protected boolean _isLinkStateConnected;
 
     @Inject
-    public OnlineStatusNotifier(VerkehrNotificationSubscriber vns, LinkStateService lss,
-            RitualNotificationServer rns, CoreExecutor executor)
+    public OnlineStatusNotifier(VerkehrPubSubClient vk, LinkStateService lss, RitualNotificationServer rns, CoreExecutor executor)
     {
-        _vns = vns;
+        _vk = vk;
         _lss = lss;
         _rns = rns;
         _executor = executor;
@@ -65,16 +64,16 @@ public class OnlineStatusNotifier implements ISnapshotableNotificationEmitter
 
     public void init_()
     {
-        _vns.addListener_(new IListener()
+        _vk.addConnectionListener(new ConnectionListener()
         {
             @Override
-            public void onConnected()
+            public void onConnected(VerkehrPubSubClient client)
             {
                 checkStates_(true, _isLinkStateConnected);
             }
 
             @Override
-            public void onDisconnected()
+            public void onDisconnected(VerkehrPubSubClient client)
             {
                 checkStates_(false, _isLinkStateConnected);
             }
@@ -100,6 +99,7 @@ public class OnlineStatusNotifier implements ISnapshotableNotificationEmitter
         _isLinkStateConnected = linkStateConnected;
 
         boolean isOnline = _isVerkehrConnected && _isLinkStateConnected;
+
         if (_isOnline != isOnline) {
             _isOnline = isOnline;
             sendOnlineStatusNotification_();
@@ -108,8 +108,7 @@ public class OnlineStatusNotifier implements ISnapshotableNotificationEmitter
 
     public void sendOnlineStatusNotification_()
     {
-        _rns.getRitualNotifier()
-                .sendNotification(Notifications.newOnlineStatusChangedNotification(_isOnline));
+        _rns.getRitualNotifier().sendNotification(Notifications.newOnlineStatusChangedNotification(_isOnline));
     }
 
     @Override

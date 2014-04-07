@@ -6,10 +6,10 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="library" name="jul-to-slf4j" level="project" />
+    <orderEntry type="module" module-name="base" exported="" />
+    <orderEntry type="library" exported="" name="jul-to-slf4j" level="project" />
     <orderEntry type="library" exported="" name="jersey-1.17.1" level="project" />
     <orderEntry type="library" exported="" name="guice" level="project" />
-    <orderEntry type="module" module-name="base" exported="" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

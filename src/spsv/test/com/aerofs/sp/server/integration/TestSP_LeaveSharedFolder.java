@@ -19,10 +19,10 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
     public void shouldAllowMemberToLeaveShareFolder() throws Exception
     {
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         leaveSharedFolder(USER_2, SID_1);
-        assertVerkehrPublishOnlyContains(USER_2, USER_1);
+        assertVerkehrPublishedOnlyTo(USER_2, USER_1);
     }
 
     @Test
@@ -37,10 +37,10 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
     public void shouldAllowPendingMemberToLeaveShareFolder() throws Exception
     {
         shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         leaveSharedFolder(USER_2, SID_1);
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
     }
 
     @Test
@@ -52,14 +52,14 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
         } catch (ExBadArgs e) {
             sqlTrans.handleException();
         }
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
     }
 
     @Test
     public void shouldThrowExNotFoundWhenNonMemberTriesToLeaveShareFolder() throws Exception
     {
         shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         try {
             leaveSharedFolder(USER_3, SID_1);
@@ -67,7 +67,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
         } catch (ExNotFound e) {
             sqlTrans.handleException();
         }
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
     }
 
     @Test
@@ -79,6 +79,6 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
         } catch (ExNotFound e) {
             sqlTrans.handleException();
         }
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
     }
 }

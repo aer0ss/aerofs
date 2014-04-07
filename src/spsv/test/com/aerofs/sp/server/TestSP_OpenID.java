@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
@@ -13,7 +14,6 @@ import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -77,7 +77,7 @@ public class TestSP_OpenID extends AbstractSPTest
                 .getOrganization().id().toTeamServerUserID().getString();
         sqlTrans.commit();
 
-        assertEquals(ImmutableSet.of(ACL_CHANNEL_TOPIC_PREFIX + ts), verkehrPublished);
+        assertEquals(ImmutableSet.of(Topics.getACLTopic(ts, true)), getTopicsPublishedTo());
     }
 
     @Test

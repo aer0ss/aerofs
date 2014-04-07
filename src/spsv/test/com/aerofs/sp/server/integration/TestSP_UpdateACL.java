@@ -24,7 +24,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         // add user 3 as editor for store # 1
         shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.EDITOR);
 
-        clearVerkehrPublish(); // clear out notifications from sharing
+        clearPublishedMessages(); // clear out notifications from sharing
 
         // update ACL for user 3 as user 1
         setSession(USER_1);
@@ -32,7 +32,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
                 Permissions.OWNER.toPB(), false);
 
         // check that notifications were published on update
-        assertVerkehrPublishOnlyContains(USER_1, USER_3);
+        assertVerkehrPublishedOnlyTo(USER_1, USER_3);
 
         // verify user 3 has updated ACL in place
         setSession(USER_3);
@@ -51,7 +51,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
     {
         // add user 3 as PENDING editor for store # 1
         shareFolder(USER_1, SID_1, USER_3, Permissions.EDITOR);
-        clearVerkehrPublish(); // clear out notifications from sharing
+        clearPublishedMessages(); // clear out notifications from sharing
 
         // update ACL for user 3 as user 1
         setSession(USER_1);
@@ -64,7 +64,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         sqlTrans.commit();
 
         // check that no notifications were published on update
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
     }
 
     @Test
@@ -74,7 +74,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         // add user 3 as LEFT editor for store # 1
         shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.EDITOR);
         leaveSharedFolder(USER_3, SID_1);
-        clearVerkehrPublish(); // clear out notifications from sharing
+        clearPublishedMessages(); // clear out notifications from sharing
 
         // update ACL for user 3 as user 1
         setSession(USER_1);
@@ -87,7 +87,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         sqlTrans.commit();
 
         // check that no notifications were published on update
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
     }
 
     @Test
@@ -96,7 +96,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
     {
         // add the owner for store # 1
         shareFolder(USER_1, SID_1, newUser(), Permissions.OWNER);
-        clearVerkehrPublish(); // throw away this notification
+        clearPublishedMessages(); // throw away this notification
 
         // update ACL for user 3 as user 1
         setSession(USER_1);
@@ -111,7 +111,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
             sqlTrans.handleException();
         }
 
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
 
         // check that user 3 still has no ACLs set in the db
         setSession(USER_3);
@@ -126,7 +126,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
     {
         // add user 3 as editor for store # 1
         shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.EDITOR);
-        clearVerkehrPublish(); // throw away these notifications
+        clearPublishedMessages(); // throw away these notifications
 
         // try to edit user 1's ACL entry for store 1 as user 3
         setSession(USER_3);
@@ -139,7 +139,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
             sqlTrans.handleException();
         }
 
-        assertVerkehrPublishIsEmpty();
+        assertNothingPublished();
 
         // check that user 3 only has editor permissions
         setSession(USER_3);
@@ -157,7 +157,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
     {
         // add USER_3 as owner of the store
         shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.OWNER);
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         User admin = addAdmin(USER_3);
 
@@ -182,7 +182,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
     {
         // add USER_3 as owner of the store
         shareFolder(USER_1, SID_1, USER_3, Permissions.OWNER);
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         User admin = addAdmin(USER_3);
 
@@ -205,7 +205,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         // add USER_3 as owner of the store
         shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.OWNER);
         leaveSharedFolder(USER_3, SID_1);
-        clearVerkehrPublish();
+        clearPublishedMessages();
 
         User admin = addAdmin(USER_3);
 

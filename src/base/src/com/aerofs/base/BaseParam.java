@@ -5,10 +5,13 @@
 package com.aerofs.base;
 
 import com.aerofs.base.ex.ExBadArgs;
+import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.security.cert.X509Certificate;
 
 import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
@@ -144,19 +147,46 @@ public class BaseParam
         public static final String HOST =
                 getStringProperty("base.verkehr.host", "verkehr.aerofs.com");
 
-        public static final String PUBLISH_PORT =
-                getStringProperty("base.verkehr.port.publish", "9293");
-        public static final String ADMIN_PORT =
-                getStringProperty("base.verkehr.port.admin", "25234");
-        public static final String SUBSCRIBE_PORT =
-                getStringProperty("base.verkehr.port.subscribe", "443");
+        public static final short PROTOBUF_PORT =
+                (short) getIntegerProperty("base.verkehr.port.pb", 443).intValue();
+
+        public static final short REST_PORT =
+                (short) getIntegerProperty("base.verkehr.port.rest", 25234).intValue();
+
+        public static final long MIN_RETRY_INTERVAL = 5 * C.SEC;
+        public static final long MAX_RETRY_INTERVAL = 30 * C.SEC;
     }
 
-    public static class VerkehrTopics
+    public static class Topics
     {
-        public static final String TOPIC_SEPARATOR = "/";
-        public static final String CMD_CHANNEL_TOPIC_PREFIX = "cmd" + TOPIC_SEPARATOR;
-        public static final String ACL_CHANNEL_TOPIC_PREFIX = "acl" + TOPIC_SEPARATOR;
+        public static String getACLTopic(String userId, boolean urlEncoded)
+        {
+            String topicName = "acl/" + userId;
+            if (urlEncoded) {
+                try {
+                    return URLEncoder.encode(topicName, Charsets.UTF_8.toString());
+                } catch (UnsupportedEncodingException e) {
+                    throw new IllegalArgumentException("fail create acl topic for " + userId, e);
+                }
+            } else {
+                return topicName;
+            }
+        }
+
+        public static String getCMDTopic(String formalDID, boolean urlEncoded)
+        {
+            String topicName = "cmd/" + formalDID;
+
+            if (urlEncoded) {
+                try {
+                    return URLEncoder.encode(topicName, Charsets.UTF_8.toString());
+                } catch (UnsupportedEncodingException e) {
+                    throw new IllegalArgumentException("fail create cmd topic for " + formalDID, e);
+                }
+            } else {
+                return topicName;
+            }
+        }
     }
 
     public static class Mixpanel

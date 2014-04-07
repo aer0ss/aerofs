@@ -7,6 +7,7 @@ package com.aerofs.auditor.server;
 import com.aerofs.auditor.resource.EventResource;
 import com.aerofs.auditor.resource.HttpRequestAuthenticator;
 import com.aerofs.base.BaseParam.Audit;
+import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.lib.properties.Configuration.Server;
@@ -23,7 +24,6 @@ import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 
 import java.io.FileInputStream;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetSocketAddress;
 import java.util.Properties;
 
@@ -68,7 +68,7 @@ public class Auditor extends Service
 
     public static void main(String[] args) throws Exception
     {
-        setDefaultExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
 
         Properties extra = new Properties();
         if (args.length > 0) extra.load(new FileInputStream(args[0]));
@@ -91,18 +91,4 @@ public class Auditor extends Service
             }
         });
     }
-
-    static private void setDefaultExceptionHandler()
-    {
-        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread thread, Throwable throwable)
-            {
-                l.error("uncaught exception thd:{} err:{}", thread.getName(), throwable, throwable);
-                System.exit(UNCAUGHT_EXCEPTION_EXIT_CODE);
-            }
-        });
-    }
-
-    private static final int UNCAUGHT_EXCEPTION_EXIT_CODE = 99;
 }

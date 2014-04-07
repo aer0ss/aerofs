@@ -17,8 +17,7 @@ public class SPParam
     public static final String SP_DATABASE_REFERENCE_PARAMETER = "sp_database_resource_reference";
 
     // Context attributes.
-    public static final String VERKEHR_PUBLISHER_ATTRIBUTE = "verkehr_publisher";
-    public static final String VERKEHR_ADMIN_ATTRIBUTE = "verkehr_admin";
+    public static final String VERKEHR_CLIENT_ATTRIBUTE = "verkehr_client";
     public static final String AUDIT_CLIENT_ATTRIBUTE = "audit_client";
 
     public static final String SESSION_USER_TRACKER = "session_user_tracker";

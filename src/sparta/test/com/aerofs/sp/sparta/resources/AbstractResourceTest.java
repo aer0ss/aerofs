@@ -34,8 +34,7 @@ import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.sparta.Sparta;
 import com.aerofs.testlib.AbstractBaseTest;
-import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
-import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -101,8 +100,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static final String ADMIN = "admin";
     private static final String OTHER = "other";
 
-    @Mock VerkehrPublisher vkPub;
-    @Mock VerkehrAdmin vkAdmin;
+    @Mock VerkehrClient verkehrClient;
     @Mock CommandDispatcher commandDispatcher;
     @Mock PasswordManagement passwordManagement;
 
@@ -203,8 +201,7 @@ public class AbstractResourceTest extends AbstractBaseTest
             @Override
             protected void configure()
             {
-                bind(VerkehrPublisher.class).toInstance(vkPub);
-                bind(VerkehrAdmin.class).toInstance(vkAdmin);
+                bind(VerkehrClient.class).toInstance(verkehrClient);
                 bind(CommandDispatcher.class).toInstance(commandDispatcher);
                 bind(PasswordManagement.class).toInstance(passwordManagement);
                 bind(AuditClient.class).toInstance(
@@ -225,8 +222,9 @@ public class AbstractResourceTest extends AbstractBaseTest
     {
         LocalTestDatabaseConfigurator.initializeLocalDatabase(dbParams);
 
-        when(vkPub.publish_(anyString(), any(byte[].class)))
-                .thenAnswer(new Answer<ListenableFuture<Void>>() {
+        when(verkehrClient.publish(anyString(), any(byte[].class)))
+                .thenAnswer(new Answer<ListenableFuture<Void>>()
+                {
                     @Override
                     public ListenableFuture<Void> answer(InvocationOnMock invocation)
                             throws Throwable
@@ -237,7 +235,7 @@ public class AbstractResourceTest extends AbstractBaseTest
                     }
                 });
 
-        when(vkAdmin.updateCRL(Matchers.<ImmutableCollection<Long>>anyObject())).thenAnswer(
+        when(verkehrClient.revokeSerials(Matchers.<ImmutableCollection<Long>>anyObject())).thenAnswer(
                 new Answer<ListenableFuture<Void>>()
                 {
                     @Override
@@ -247,8 +245,9 @@ public class AbstractResourceTest extends AbstractBaseTest
                         f.set(null);
                         return f;
                     }
-                });
-        when(commandDispatcher.getVerkehrAdmin()).thenReturn(vkAdmin);
+                }
+        );
+        when(commandDispatcher.getVerkehrClient()).thenReturn(verkehrClient);
 
         inj = spartaInjector();
         sqlTrans = inj.getInstance(SQLThreadLocalTransaction.class);

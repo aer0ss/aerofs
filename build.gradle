@@ -2,18 +2,52 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// common library declarations
-//-----------------------------------------------------------------------------
-
 ext {
-    libs = [aerofs_dropwizard: ['com.yammer.dropwizard:dropwizard-core:0.6+',
-                                'com.yammer.metrics:metrics-graphite:2.2+']
-    ]
-
     clientResourcesDir = "${rootDir}/resource/client"
     commonResourcesDir = "${rootDir}/resource/common"
     serverResourcesDir = "${rootDir}/resource/server"
+
+    // declare, but do not define the directories in which 
+    // OS-specific jars and native libraries are stored
+    clientOSDependentResourcesDirs = []
+
+    // environment variable used by the dynamic library loader
+    // to locate shared libraries
+    sharedLibrarySearchPathVariable = ''
+
+    // manual dependency specifcation for our custom version of rest-assured-1.8.1
+    restAssuredDependencies = [
+            'commons-codec:commons-codec:1.6',
+            'org.apache.commons:commons-lang3:3.1',
+            'commons-logging:commons-logging:1.1.1',
+            'org.codehaus.groovy:groovy-all:2.1.2',
+            'org.apache.httpcomponents:httpclient:4.2.1',
+            'org.apache.httpcomponents:httpcore:4.2.1',
+            'org.apache.httpcomponents:httpmime:4.2.1',
+            'org.ccil.cowan.tagsoup:tagsoup:1.2.1'
+    ]
+
+    // manual dependency specifcation for our custom version of jedis
+    jedisDependencies = [
+            'org.apache.commons:commons-pool2:2.0'
+    ]
+}
+
+//-----------------------------------------------------------------------------
+// os-dependent configuration
+//-----------------------------------------------------------------------------
+
+String os = System.getProperty("os.name").toLowerCase();
+if (os.contains('windows')) {
+    sharedLibrarySearchPathVariable = 'PATH'
+    clientOSDependentResourcesDirs = ["${clientResourcesDir}/win", "${clientResourcesDir}/win/lib"]
+} else if (os.contains('mac')) {
+    sharedLibrarySearchPathVariable = 'DYLD_LIBRARY_PATH'
+    clientOSDependentResourcesDirs = ["${clientResourcesDir}/osx", "${clientResourcesDir}/osx/lib"]
+} else {
+    sharedLibrarySearchPathVariable = 'LD_LIBRARY_PATH'
+    println('unsupported')
+    exit(1)
 }
 
 //-----------------------------------------------------------------------------
@@ -23,26 +57,43 @@ ext {
 subprojects {
     apply plugin: 'java'
 
-    configurations.all {
-        // exclude downloading libraries we ship ourselves
-        exclude module: 'findbugs'
-        exclude module: 'guava'
-        exclude module: 'commons-logging'
-        exclude module: 'slf4j-api'
-        exclude module: 'log4j-over-slf4j'
-        exclude group:  'ch.qos.logback'
+    //-------------------------------------------------------------------------
+    // dependency configuration
+    //-------------------------------------------------------------------------
 
-        // force common versions of certain libraries
+    configurations.all {
         resolutionStrategy {
+
+            // force specific versions of libraries
             force 'com.yammer.dropwizard:dropwizard-core:0.6.2',
-                  'com.yammer.metrics:metrics-graphite:2.2.0',
-                  'com.fasterxml.jackson.core:jackson-annotations:2.2.1'
+                  'com.fasterxml.jackson.core:jackson-annotations:2.2.1',
+                  'org.bouncycastle:bcprov-jdk15on:1.50',
+                  'org.bouncycastle:bcpkix-jdk15on:1.50'
+
+            // force a specific version of the following groups of libraries
+            eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group.contains('com.fasterxml.jackson')) {
+                    details.useVersion '2.1.2'
+                }
+
+                if (details.requested.group == 'org.slf4j') {
+                    details.useVersion '1.7.5'
+                }
+
+                if (details.requested.group == 'ch.qos.logback') {
+                    details.useVersion '1.1.2'
+                }
+            }
         }
     }
 
-    // repositories dependencies are sourced from
     repositories {
+        flatDir {
+            dirs "${clientResourcesDir}/all/lib", "${commonResourcesDir}/lib", "${commonResourcesDir}/lib.test", "${serverResourcesDir}/lib", clientOSDependentResourcesDirs
+        }
+
         mavenLocal()
+
         maven { url 'http://repos.arrowfs.org/nexus/content/repositories/central/' }
         maven { url 'http://repos.arrowfs.org/nexus/content/repositories/apache-snapshots/' }
         maven { url 'http://repos.arrowfs.org/nexus/content/repositories/codehaus-snapshots/' }
@@ -53,16 +104,51 @@ subprojects {
         maven { url 'http://repos.arrowfs.org/nexus/content/repositories/snapshots/' }
     }
 
+    //-------------------------------------------------------------------------
+    // paths
+    //-------------------------------------------------------------------------
 
-    // disable all the java plugin tasks
-    compileJava.enabled false
-    processResources.enabled false
-    classes.enabled false
-    compileTestJava.enabled false
-    processTestResources.enabled  false
-    testClasses.enabled false
-    jar.enabled false
-    javadoc.enabled false
-    test.enabled false
-    uploadArchives.enabled false
+    buildDir = "${rootDir}/out.gradle/${name.replace('src/', '')}"
+
+    //-------------------------------------------------------------------------
+    // environment
+    //-------------------------------------------------------------------------
+
+    test {
+        ignoreFailures = true
+        environment sharedLibrarySearchPathVariable, clientOSDependentResourcesDirs[0]
+        jvmArgs "-Djava.library.path=${clientOSDependentResourcesDirs[0]}"
+        maxHeapSize '512m'
+        exclude '**/Abstract*Test*'
+        testLogging.showStandardStreams = true
+        outputs.upToDateWhen { false }
+    }
+
+    //-------------------------------------------------------------------------
+    // tasks
+    //-------------------------------------------------------------------------
+
+    clean.dependsOn(':cleanAllProtoClasses')
+
+    task dist(type: Copy, description: "Assemble all runtime dependencies for ${name}") {
+        from configurations.runtime
+        from jar
+        into "${buildDir}/dist"
+    }
+}
+
+//-----------------------------------------------------------------------------
+// tasks
+//-----------------------------------------------------------------------------
+
+task generateAllProtoClasses(type: Exec, description: "run ant to build the protobuf plugins and generate all Java and Python protobuf classes") {
+    workingDir "${rootDir}"
+    executable 'ant'
+    args 'proto'
+}
+
+task cleanAllProtoClasses(type: Exec, description: "run ant to delete generated Java and Python protobuf classes") {
+    workingDir "${rootDir}"
+    executable 'ant'
+    args 'clean'
 }

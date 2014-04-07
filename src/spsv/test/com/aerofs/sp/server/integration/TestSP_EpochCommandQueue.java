@@ -14,18 +14,13 @@ import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.User;
-
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
-
 public class TestSP_EpochCommandQueue extends AbstractSPTest
 {
-    // Command verkehr channel to command object mapping.
-    private List<Command> _payloads;
-
     // Device that we will use for testing.
     private Device _device;
 
@@ -70,7 +65,6 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         sqlTrans.commit();
 
         setSession(user);
-        _payloads = mockAndCaptureVerkehrDeliverPayload();
     }
 
     @Test
@@ -79,8 +73,8 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
     {
         updateUserName();
 
-        Assert.assertEquals(1, _payloads.size());
-        Assert.assertEquals(CommandType.INVALIDATE_USER_NAME_CACHE, _payloads.get(0).getType());
+        Assert.assertEquals(1, getPublishedMessages().size());
+        Assert.assertEquals(CommandType.INVALIDATE_USER_NAME_CACHE, getCommandFromPublishedBytes().getType());
     }
 
     @Test
@@ -89,8 +83,16 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
     {
         updateDeviceName();
 
-        Assert.assertEquals(1, _payloads.size());
-        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAME_CACHE, _payloads.get(0).getType());
+        Assert.assertEquals(1, getPublishedMessages().size());
+        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAME_CACHE,
+                getCommandFromPublishedBytes().getType());
+    }
+
+    private Command getCommandFromPublishedBytes()
+            throws InvalidProtocolBufferException
+    {
+        Published published = getPublishedMessages().get(0);
+        return Command.parseFrom(published.bytes);
     }
 
     @Test
@@ -98,7 +100,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
             throws Exception
     {
         updateUserAndDeviceName();
-        Assert.assertEquals(2, _payloads.size());
+        Assert.assertEquals(2, getPublishedMessages().size());
     }
 
     //

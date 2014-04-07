@@ -1,23 +1,23 @@
 /*
- * Copyright (c) Air Computing Inc., 2013.
+ * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.bifrost.common;
+package com.aerofs.base;
 
-import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 
+// copy of the original from verkehr
 public final class DefaultUncaughtExceptionHandler implements UncaughtExceptionHandler
 {
+    private static final Logger l = LoggerFactory.getLogger(DefaultUncaughtExceptionHandler.class);
+
     @Override
     public void uncaughtException(Thread thread, Throwable throwable)
     {
         l.error("uncaught exception thd:{} err:{} - kill system", thread.getName(), throwable, throwable);
-        System.exit(UNCAUGHT_EXCEPTION_EXIT_CODE);
+        System.exit(0x4655434b);
     }
-
-    private static final Logger l = Loggers.getLogger(DefaultUncaughtExceptionHandler.class);
-    private static final int UNCAUGHT_EXCEPTION_EXIT_CODE = 99;
 }
