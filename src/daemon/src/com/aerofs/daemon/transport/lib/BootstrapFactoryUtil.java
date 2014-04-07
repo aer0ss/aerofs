@@ -8,11 +8,13 @@ import com.aerofs.base.C;
 import com.aerofs.base.net.CoreProtocolHandlers.RecvCoreProtocolVersionHandler;
 import com.aerofs.base.net.CoreProtocolHandlers.SendCoreProtocolVersionHandler;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.lib.LibParam;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
+import org.jboss.netty.util.Timer;
 
 import java.nio.ByteBuffer;
 
@@ -67,6 +69,11 @@ public abstract class BootstrapFactoryUtil
     public static IOStatsHandler newStatsHandler(TransportStats stats)
     {
         return new IOStatsHandler(stats);
+    }
+
+    public static HeartbeatHandler newHeartbeatHandler(long heartbeatInterval, int maxFailedHeartbeats, Timer timer)
+    {
+        return new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer);
     }
 
     public static void setConnectTimeout(ClientBootstrap bootstrap, long channelConnectTimeout)

@@ -14,7 +14,6 @@ import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
-import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
 import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
@@ -34,6 +33,7 @@ import static com.aerofs.base.net.NettyUtil.newSslHandler;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionReader;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionWriter;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newFrameDecoder;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newHeartbeatHandler;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newLengthFieldPrepender;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newStatsHandler;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.setConnectTimeout;
@@ -49,16 +49,18 @@ final class TCPBootstrapFactory
     private final UserID localuser;
     private final DID localdid;
     private final long channelConnectTimeout;
+    private final long heartbeatInterval;
+    private final int maxFailedHeartbeats;
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
     private final IUnicastListener unicastListener;
     private final IncomingChannelHandler incomingChannelHandler;
-    private final HeartbeatHandler heartbeatHandler;
     private final TransportProtocolHandler protocolHandler;
     private final TCPProtocolHandler tcpProtocolHandler;
     private final TCPChannelDiagnosticsHandler clientChannelDiagnosticsHandler;
     private final TCPChannelDiagnosticsHandler serverChannelDiagnosticsHandler;
     private final TransportStats transportStats;
+    private final Timer timer;
     private final RockLog rockLog;
 
     TCPBootstrapFactory(
@@ -80,6 +82,8 @@ final class TCPBootstrapFactory
         this.localuser = localuser;
         this.localdid = localdid;
         this.channelConnectTimeout = channelConnectTimeout;
+        this.heartbeatInterval = heartbeatInterval;
+        this.maxFailedHeartbeats = maxFailedHeartbeats;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.unicastListener = unicastListener;
@@ -88,8 +92,8 @@ final class TCPBootstrapFactory
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
         this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT, rockLog);
         this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER, rockLog);
-        this.heartbeatHandler = new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer);
         this.transportStats = stats;
+        this.timer = timer;
         this.rockLog = rockLog;
     }
 
@@ -116,7 +120,7 @@ final class TCPBootstrapFactory
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
                         verifiedHandler,
                         messageHandler,
-                        heartbeatHandler,
+                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer),
                         tcpProtocolHandler,
                         protocolHandler,
                         clientChannelDiagnosticsHandler,
@@ -152,7 +156,7 @@ final class TCPBootstrapFactory
                         verifiedHandler,
                         messageHandler,
                         incomingChannelHandler,
-                        heartbeatHandler,
+                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer),
                         tcpProtocolHandler,
                         protocolHandler,
                         serverChannelDiagnosticsHandler,
