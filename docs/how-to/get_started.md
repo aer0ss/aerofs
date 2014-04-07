@@ -183,24 +183,35 @@ This VM is required to run your private AeroFS clients that are isolated from th
 
 You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal repository.
 
-```
-echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.profile
-sudo sh -c 'echo 192.168.51.150 unified.syncfs.com >> /etc/hosts'
-source ~/repos/aerofs/tools/bashrc/include.sh
-lp-create
-```
+     echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.profile
+     sudo sh -c 'echo 192.168.51.150 unified.syncfs.com >> /etc/hosts'
+     source ~/repos/aerofs/tools/bashrc/include.sh
+     lp-create
 
 The last step may take a while (expect 30 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing. Once done, you can run `lp-ssh` to log in your VM. See [Local Production (aka. local prod)](../references/local_prod.html) for more information about the private environment.
 
 ## Build and launch the client
 
-You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal repository.
+This step requires a running local prod. In addition, you need to be on the VPN to complete this step, since it'll pull some packages from an internal repository. In addition, 
 
-    cd $HOME/repos/aerofs/ && ant -Dmode=PRIVATE -Dproduct=CLIENT clean setupenv build_client
-    mkdir -p $HOME/repos/aerofs/user_data/
-    cd approot/ && ./run ../user_data/rtroot gui
+    cd $HOME/repos/aerofs/
+    ant -Dmode=PRIVATE -Dproduct=CLIENT clean setupenv build_client
+    approot/run ~/rtroot/user1 gui
 
 The `-Dmode=PRIVATE` flag points the client to your private environment. Specify `-Dmode=PUBLIC` to build clients for the public production environment (discouraged).
+
+Replace `gui` with `cli` to launch AeroFS in the command line. Use `daemon` to run the barebone daemon process with no UI support.
+
+Run `sh` to enter interactive AeroFS shell. This command requires a running daemon.
+
+### To avoid relaunching the daemon every time
+
+If you work on UI code, it can be anonying that the daemon restarts every time you launch GUI or CLI: restarting the daemon is slow and also causes your production daemon process to restart. To work around it:
+
+     touch ~/rtroot/user1/nodm
+     approot/run ~/rtroot/user1 daemon &
+     
+`nodm` means "no daemon monitor." It asks the UI not to take ownership of the daemon process. The next time the UI launches it will not restart the daemon.
 
 ## Sign up accounts in local prod
 
