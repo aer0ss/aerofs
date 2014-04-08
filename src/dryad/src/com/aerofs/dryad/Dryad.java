@@ -10,6 +10,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.Stage;
 import org.slf4j.Logger;
 
 import java.io.FileInputStream;
@@ -52,7 +53,7 @@ public class Dryad extends Service
 
         ConfigurationProperties.setProperties(extra);
 
-        Injector injector = Guice.createInjector(dryadModule());
+        Injector injector = Guice.createInjector(Stage.PRODUCTION, dryadModule());
         final Dryad dryad = new Dryad(injector);
         dryad.start();
 

@@ -45,6 +45,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.Stage;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.Scoping;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -112,7 +113,8 @@ public class Sparta extends Service
         Timer timer = new HashedWheelTimer();
         ClientSocketChannelFactory clientFactory = new NioClientSocketChannelFactory();
 
-        Injector inj = Guice.createInjector(databaseModule(new SpartaSQLConnectionProvider()),
+        Injector inj = Guice.createInjector(Stage.PRODUCTION,
+                databaseModule(new SpartaSQLConnectionProvider()),
                 clientsModule(cacert, timer, clientFactory),
                 spartaModule(timer, clientFactory));
 

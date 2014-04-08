@@ -17,6 +17,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.Stage;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
@@ -65,7 +66,7 @@ public class Auditor extends Service
         Server.initialize(extra);
 
         // Note, we expect nginx or similar to provide ssl termination...
-        new Auditor(Guice.createInjector(auditorModule()), null)
+        new Auditor(Guice.createInjector(Stage.PRODUCTION, auditorModule()), null)
                 .start();
     }
 

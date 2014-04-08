@@ -37,6 +37,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.Stage;
 import com.google.inject.internal.Scoping;
 import org.hibernate.SessionFactory;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -99,8 +100,11 @@ public class Bifrost extends Service
 
         Class.forName(getStringProperty("bifrost.db.driverClass", "com.mysql.jdbc.Driver"));
 
+        Injector inj = Guice.createInjector(Stage.PRODUCTION,
+                databaseModule(), bifrostModule(), spModule());
+
         // Note, we expect nginx or similar to provide ssl termination...
-        new Bifrost(Guice.createInjector(databaseModule(), bifrostModule(), spModule()), null)
+        new Bifrost(inj, null)
                 .start();
     }
 
