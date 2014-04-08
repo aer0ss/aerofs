@@ -21,7 +21,6 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
-import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
