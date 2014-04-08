@@ -6,7 +6,6 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
@@ -46,28 +45,21 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     }
 
     @Test
-    public void shouldThrowWhenInviteeListEmpty()
+    public void shouldNotThrowWhenInviteeListEmptyForInternalFolders()
             throws Exception
     {
-        try {
-            setSessionUser(USER_1);
-            service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                    Collections.<PBSubjectPermissions>emptyList(), "", false, false).get();
-            fail();
-        } catch (ExInviteeListEmpty e) {}
+        setSessionUser(USER_1);
+        service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
+                Collections.<PBSubjectPermissions>emptyList(), "", false, false).get();
     }
 
     @Test
-    public void shouldNotThrowWhenInviteeListEmptyAndExternalFlagIsSet()
+    public void shouldNotThrowWhenInviteeListEmptyForExternalFolders()
             throws Exception
     {
-        try {
-            setSessionUser(USER_1);
-            service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                    Collections.<PBSubjectPermissions>emptyList(), "", true, false).get();
-        } catch (ExInviteeListEmpty e) {
-            fail();
-        }
+        setSessionUser(USER_1);
+        service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
+                Collections.<PBSubjectPermissions>emptyList(), "", true, false).get();
     }
 
     @Test
@@ -254,7 +246,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
             shareAndJoinFolder(USER_2, SID_1, newUser(), Permissions.allOf(Permission.WRITE));
             // must not reach here
             org.junit.Assert.fail();
-        } catch (ExNoPerm e) {}
+        } catch (ExNoPerm ignored) {}
     }
 
     @Test

@@ -17,7 +17,6 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.Exceptions;
@@ -1106,8 +1105,6 @@ public class SPService implements ISPService
         List<SubjectPermissions> srps = SubjectPermissionsList.listFromPB(subjectPermissionsList);
 
         l.info("{} shares {} [{}] with {}", sharer, sf, external, srps);
-        // only allow empty invitee list when doing out-of-defaultRoot sharing
-        if (srps.isEmpty() && !external) throw new ExInviteeListEmpty();
 
         _sqlTrans.begin();
         ISharingRules rules = _sharingRules.create(sharer);

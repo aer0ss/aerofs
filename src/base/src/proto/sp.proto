@@ -171,7 +171,9 @@ service SPService {
     //
     // If the user doesn't exist yet, this method invites the user to sign up AeroFS first.
     //
-    // See docs/design/sharing_and_migration.txt for high-level design.
+    // The invitation list can be empty.
+    //
+    // See docs/design/sharing_and_migration.md for high-level design.
     //
     // Required Auth Level: user
     //
@@ -179,7 +181,6 @@ service SPService {
     //   ExNoPerm if the sharer isn't authorized to modify ACLs for the given SID
     //   ExAlreadyExists if the user is already a member of the folder
     //   ExCannotInviteSelf if the sharer appears in the list of sharees
-    //   ExInviteeListEmpty if the list of invitees is empty AND the external flag is false
     //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a Stripe
     //                  customer ID.
     //   ExEmailNotVerified if the user's email hasn't been verified
@@ -770,9 +771,7 @@ message ShareFolderCall {
 
     required bytes share_id = 2;
 
-    // The client (desktop/admin panel/...) is responsible for choosing the default permissisons of
-    // invited users. This has better transactional properties than inviting then changing the
-    // permisisons of invited users in a subsequent call.
+    // The list can be empty
     repeated PBSubjectPermissions subject_permissions = 1;
 
     // Message to the person

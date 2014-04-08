@@ -92,7 +92,6 @@ message PBException {
         // The user needs to log in
         NOT_AUTHENTICATED = 404;
         INVALID_EMAIL_ADDRESS = 405;
-        INVITEE_LIST_EMPTY = 406;
         EXTERNAL_SERVICE_UNAVAILABLE = 407;
 
         // ####################################################################
