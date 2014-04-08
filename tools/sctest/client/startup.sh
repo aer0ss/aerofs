@@ -23,7 +23,7 @@ if [ -d "$DIRECTORY" ]; then
     nohup aerofs/aerofs-cli 0<&- &>> aerofs.log &
 else
     # read user data
-    user_data=`GET http://169.254.169.254/latest/user-data/`
+    user_data=`curl http://169.254.169.254/latest/user-data/`
     if [[ -z "$user_data" ]] ; then
         echo "User-data is empty!"
         displayUsageAndExit

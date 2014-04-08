@@ -1,13 +1,13 @@
 #!/bin/bash
 
-instancePrefix="sergey-test-client" # unique prefix for client instancess
+instancePrefix="abhisheks-test-client" # unique prefix for client instancess
 applianceHost="ec2-54-236-219-57.compute-1.amazonaws.com" # AeroFS appliance ec2 public dns name
 fileSizeKb=1024 # file size for each randomly generated file
 
 subnet=subnet-3927244d # subnet id for all your clients
-image=ami-b33f3ada # client image id
+image=ami-95736efc # client image id
 instanceType=t1.micro # ec2 instance type
-userEmailName="sergey+sctest" # common prefix for all generated users
+userEmailName="as+sctest" # common prefix for all generated users
 userEmailDomain="aerofs.com" # common domain for all generated users
 
 die () {
@@ -38,8 +38,8 @@ do
     echo "*** $i] UserData=$userData ***"
     for (( j=1; j<=$instancesPerUser; j++ ))
     do
-        echo "$j) ec2-run-instances $image -n 1 -k sergeys -t $instanceType --subnet $subnet --associate-public-ip-address true -d \"$userData\""$'\n'
-        start=`ec2-run-instances $image -n 1 -k sergeys -t $instanceType --subnet $subnet --associate-public-ip-address true -d \""$userData\""`
+        echo "$j) ec2-run-instances $image -n 1 -k abhisheks -t $instanceType --subnet $subnet --associate-public-ip-address true -d \"$userData\""$'\n'
+        start=`ec2-run-instances $image -n 1 -k abhisheks -t $instanceType --subnet $subnet --associate-public-ip-address true -d \""$userData\""`
         echo $start
         INSTANCE=$(echo "$start" | awk '/^INSTANCE/ {print $2}')
         if [ $? != 0 ]; then

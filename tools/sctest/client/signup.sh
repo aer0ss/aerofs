@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script is very identical to the tools/signup.sh script
+# If you need to change this script(except the variables below) then please
+# make sure to check if the tools/signup.sh script also needs to be changed.
+# Note: This script is used when running TS scalability tests to signup all remote clients.
 FirstDefault=Firsty
 First=$FirstDefault
 LastDefault=Lasto
@@ -110,12 +114,17 @@ CreateAccount()
     [ $Verbose -eq 0 ] || set -x
     Code=$1
     User=$2
-    curl -k -s ${CurlOutput} \
-        -d "email=${User}" -d "c=${Code}" \
+    # Storing cookies and CsrfTokens to use later when creating an account.
+    CookieJar=$(mktemp -t cookieXXXXXX)
+    CsrfToken=$(curl https://${WebHost}/setup -k -c ${CookieJar} | grep csrf-token | awk -F 'content="' '{print $2}' | awk -F '"' '{print $1}')
+    curl -k \
+        -s ${CurlOutput} \
+        -d "email=${User}" -d "c=${Code}" -d "company=tempCompany" -d "phone=1231231234" -d "title=tempTitle" -d "company_size=1" \
         -d "first_name=Jon" -d "last_name=Testo" -d "password=${Passwd}" \
+        -d "csrf_token=${CsrfToken}" -b ${CookieJar} \
         https://${WebHost}/json.signup \
              || Die "Curl reported an error creating the account"
-
+    rm $CookieJar
 }
 
 DoInvite()
