@@ -84,6 +84,9 @@ public class ULTRtrootMigration
     /**
      * Determines old rtroot, new rtroot, and whether the migration should be performed.
      *
+     * Side effects: sets _oldRtRoot & _newRtRoot if migration should be performed. Otherwise the
+     * values of these 2 fields are indeterministic. It could be altered/unaltered, set/unset.
+     *
      * @return true iff we need to migrate rtroot.
      */
     protected boolean needToMigrate()
@@ -104,12 +107,20 @@ public class ULTRtrootMigration
         // we don't need to migrate if old rtroot doesn't exist
         if (!_oldRtRoot.isDirectory()) return false;
 
+        // it's important to check whether the old and new rtroots are different because both the
+        // old default rtroot and new default rtroot fall back to using C:\AeroFS when all else
+        // fails. This is a realistic scenario and there are reported cases of this happening.
+        if (isSameFile(_oldRtRoot, _newRtRoot)) {
+            l.debug("the old rtroot is the same as the new rtroot; do not migrate.");
+            return false;
+        }
+
         l.debug("checking new rtroot to see if we need to migrate.");
 
         // If the new root doesn't exist or is a file, delete the object (ignore errors) and request
         // to migrate.
         if (!_newRtRoot.isDirectory()) {
-            l.debug("new rtroot isn't a directory.");
+            l.warn("new rtroot isn't a directory.");
             // delete it in case it's a file. ignore errors.
             _newRtRoot.delete();
             return true;
@@ -131,6 +142,18 @@ public class ULTRtrootMigration
         } else {
             l.debug("finished marker doesn't exist, let's migrate rtroot.");
             return true;
+        }
+    }
+
+    /**
+     * Only works on Windows, hence it's a private method local to this class
+     */
+    private boolean isSameFile(@Nonnull File f1, @Nonnull File f2)
+    {
+        try {
+            return f1.getCanonicalPath().equalsIgnoreCase(f2.getCanonicalPath());
+        } catch (IOException e) {
+            return f1.getAbsolutePath().equalsIgnoreCase(f2.getAbsolutePath());
         }
     }
 
