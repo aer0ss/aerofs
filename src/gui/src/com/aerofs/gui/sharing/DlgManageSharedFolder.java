@@ -6,8 +6,8 @@ import org.eclipse.swt.widgets.Shell;
 
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.sharing.manage.CompManageUsers;
-import com.aerofs.gui.sharing.manage.CompUserList.ILoadListener;
+import com.aerofs.gui.sharing.users.CompManageUsers;
+import com.aerofs.gui.sharing.users.CompUserList.ILoadListener;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 

@@ -1,4 +1,4 @@
-package com.aerofs.gui.sharing.manage;
+package com.aerofs.gui.sharing.users;
 
 class SubjectLabelProvider extends SharingLabelProvider
 {

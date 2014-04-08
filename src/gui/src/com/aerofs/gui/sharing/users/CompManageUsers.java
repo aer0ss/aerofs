@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.gui.sharing.manage;
+package com.aerofs.gui.sharing.users;
 
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIUtil;
@@ -12,7 +12,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.jface.dialogs.IDialogConstants;
 
 import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.sharing.manage.CompUserList.ILoadListener;
+import com.aerofs.gui.sharing.users.CompUserList.ILoadListener;
 import com.aerofs.lib.Path;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
