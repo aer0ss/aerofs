@@ -50,7 +50,7 @@ class SharedFolderList extends Composite
     private static final Logger l = Loggers.getLogger(SharedFolderList.class);
 
     private final Table _d;
-    private final Button _btnRemove;
+    private final Button _btnLeave;
     private final Button _btnOpen;
     private MemberList _memberList;
 
@@ -137,19 +137,8 @@ class SharedFolderList extends Composite
             }
         });
 
-        _btnRemove = GUIUtil.createButton(bar, SWT.PUSH);
-        _btnRemove.setText("Leave");
-        _btnRemove.setToolTipText("Leave the selected shared folder");
-        _btnRemove.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent selectionEvent)
-            {
-                Path path = selectedPath();
-                if (path != null) leave(path, selectedName());
-            }
-        });
-
+        // Place the Open button before Leave so when the storage type is not linked, the Leave
+        // button is placed to the right of the button bar rather than in the middle.
         _btnOpen = GUIUtil.createButton(bar, SWT.PUSH);
         _btnOpen.setText("Open");
         _btnOpen.setToolTipText("Open the selected folder");
@@ -164,11 +153,24 @@ class SharedFolderList extends Composite
             }
         });
 
+        _btnLeave = GUIUtil.createButton(bar, SWT.PUSH);
+        _btnLeave.setText("Leave");
+        _btnLeave.setToolTipText("Leave the selected shared folder");
+        _btnLeave.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent selectionEvent)
+            {
+                Path path = selectedPath();
+                if (path != null) leave(path, selectedName());
+            }
+        });
+
         if (L.isMultiuser()) {
             // Team Server cannot leave folders. Keep the button in the dialog but hidden so
             // the dialog layout is consistent across different configurations.
             // TODO: use expulsion under the hood to filter out some shared folders?
-            _btnRemove.setVisible(false);
+            _btnLeave.setVisible(false);
         }
 
         if (Cfg.storageType() != StorageType.LINKED) {
@@ -274,7 +276,7 @@ class SharedFolderList extends Composite
         boolean notEmpty = !sharedFolders.isEmpty();
 
         if (notEmpty) _d.select(0);
-        if (_btnRemove != null) _btnRemove.setEnabled(notEmpty);
+        if (_btnLeave != null) _btnLeave.setEnabled(notEmpty);
         if (_btnOpen != null) _btnOpen.setEnabled(notEmpty);
 
         _memberList.setPath(selectedPath(), false);

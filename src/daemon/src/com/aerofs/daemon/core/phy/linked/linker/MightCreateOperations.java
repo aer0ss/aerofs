@@ -44,7 +44,6 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -85,7 +84,6 @@ class MightCreateOperations
     private final IMapSID2SIndex _sid2sidx;
     private final ImmigrantCreator _imc;
     private final HashQueue _hq;
-    private final RockLog _rl;
 
     static enum Operation
     {
@@ -115,7 +113,7 @@ class MightCreateOperations
     public MightCreateOperations(DirectoryService ds, ObjectMover om, ObjectCreator oc,
             VersionUpdater vu, InjectableFile.Factory factFile,
             SharedFolderTagFileAndIcon sfti, Analytics analytics, CoreScheduler sched,
-            IMapSID2SIndex sid2sidx, ImmigrantCreator imc, HashQueue hq, RockLog rl)
+            IMapSID2SIndex sid2sidx, ImmigrantCreator imc, HashQueue hq)
     {
         _ds = ds;
         _oc = oc;
@@ -126,7 +124,6 @@ class MightCreateOperations
         _sfti = sfti;
         _sched = sched;
         _sid2sidx = sid2sidx;
-        _rl = rl;
         _hq = hq;
         _saveCounter = new AnalyticsEventCounter("analytics-save-file", analytics)
         {

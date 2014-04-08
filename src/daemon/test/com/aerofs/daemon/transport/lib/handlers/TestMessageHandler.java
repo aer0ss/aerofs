@@ -6,7 +6,6 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.transport.MockRockLog;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
@@ -54,7 +53,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
