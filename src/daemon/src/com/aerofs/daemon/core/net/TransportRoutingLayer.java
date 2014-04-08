@@ -80,18 +80,23 @@ public class TransportRoutingLayer
         }
 
         Endpoint using = new Endpoint(dev.getPreferredTransport_(), did);
+        return sendUnicast_(using, type, rpcid, os) ? using : null;
+    }
 
+    public boolean sendUnicast_(Endpoint ep, String type, int rpcid, ByteArrayOutputStream os)
+            throws Exception
+    {
         byte[] bs = os.toByteArray();
         if (bs.length > DaemonParam.MAX_UNICAST_MESSAGE_SIZE) {
             l.warn("packet > max uc size - dropping");
             _rockLog.newDefect("net.unicast.overflow").addData("message_size", bs.length).send();
-            return null;
+            return false;
         }
 
-        l.debug(type + ',' + rpcid + " -> " + using);
-        _stack.output().sendUnicastDatagram_(bs, using);
+        l.debug("{},{} -> {}", type, rpcid, ep);
+        _stack.output().sendUnicastDatagram_(bs, ep);
 
-        return using;
+        return true;
     }
 
     /**

@@ -423,7 +423,7 @@ public class GetVersCall
         void done_() throws Exception
         {
             if (_stream == null) {
-                _trl.sendUnicast_(_ep.did(), _msgType, _rpcid, _os);
+                _trl.sendUnicast_(_ep, _msgType, _rpcid, _os);
             } else {
                 _stream.sendChunk_(_os.toByteArray());
                 _streamOkay = true;
