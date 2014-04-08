@@ -189,7 +189,6 @@ public class AnalyticsEvents
             TRAY_ICON("Tray Icon"),
             TRAY_ICON_DEFAULT_ACTION("Tray Icon Default Action"),
             OPEN_AEROFS_FOLDER("Open AeroFS Folder"),
-            SHARE_FOLDER("Share Folder"),
             MANAGE_SHARED_FOLDER("Manage Shared Folder"),
             PREFERENCES("Preferences"),
             EXIT("Exit"),

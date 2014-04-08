@@ -6,12 +6,9 @@ import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.conflicts.DlgConflicts;
-import com.aerofs.gui.sharing.DlgManageSharedFolder;
-import com.aerofs.gui.sharing.folders.DlgFolders;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
 import com.aerofs.gui.tray.AbstractTrayMenu;
 import com.aerofs.gui.tray.ITrayMenu;
@@ -25,8 +22,6 @@ import com.aerofs.gui.unsyncablefiles.DlgUnsyncableFiles;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
-import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
@@ -37,16 +32,9 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.update.Updater.Status;
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.MenuAdapter;
-import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
 
-import java.util.Map.Entry;
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotificationListener, ITrayMenu
@@ -59,8 +47,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             = new ClickEvent(Action.PAUSE_SYNCING, Source.TASKBAR);
     private static final ClickEvent RESUME_SYNCING
             = new ClickEvent(Action.RESUME_SYNCING, Source.TASKBAR);
-    private static final ClickEvent SHARE_FOLDER
-            = new ClickEvent(Action.SHARE_FOLDER, Source.TASKBAR);
 
     private volatile int _conflictCount = 0;
     private volatile int _unsyncableFilesCount = 0;
@@ -140,7 +126,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             trayMenuPopulator.addMenuSeparator();
         } else {
             // Shared folders, activities, version history
-            createSharedFoldersMenu(menu);
+            createSharedFoldersMenu(trayMenuPopulator);
             createRecentActivitesMenu(menu);
             addVersionHistoryMenuItem(trayMenuPopulator);
             trayMenuPopulator.addMenuSeparator();
@@ -238,98 +224,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                         new DlgUnsyncableFiles(GUI.get().sh()).openDialog();
                     }
                 });
-    }
-
-    static interface ISharedFolderMenuExecutor
-    {
-        void run(Path path);
-    }
-
-    // keep old dialog on regular client for now...
-    protected void createSharedFoldersMenu(Menu menu)
-    {
-        MenuItem mi = new MenuItem(menu, SWT.CASCADE);
-        mi.setText("Manage Shared Folders");
-        final Menu menuManage = new Menu(menu.getShell(), SWT.DROP_DOWN);
-        mi.setMenu(menuManage);
-        final TrayMenuPopulator populater = new TrayMenuPopulator(menuManage);
-        menuManage.addMenuListener(new MenuAdapter()
-        {
-            @Override
-            public void menuShown(MenuEvent event)
-            {
-                populater.clearAllMenuItems();
-                populater.addMenuItem("Share New Folder...", new AbstractListener(SHARE_FOLDER)
-                {
-                    @Override
-                    protected void handleEventImpl(Event event)
-                    {
-                        new DlgFolders(GUI.get().sh()).openDialog();
-                    }
-                });
-
-                populater.addMenuSeparator();
-
-                addSharedFoldersSubmenu(menuManage, new ISharedFolderMenuExecutor()
-                {
-                    @Override
-                    public void run(Path path)
-                    {
-                        new DlgManageSharedFolder(GUI.get().sh(), path).openDialog();
-                    }
-                });
-            }
-        });
-    }
-
-    private void addSharedFoldersSubmenu(Menu submenu, final ISharedFolderMenuExecutor lme)
-    {
-        final TrayMenuPopulator sharedTrayMenuPopulator = new TrayMenuPopulator(submenu);
-        final MenuItem loading = sharedTrayMenuPopulator.addMenuItem(S.GUI_LOADING, null);
-        loading.setEnabled(false);
-
-        Futures.addCallback(UIGlobals.ritualNonBlocking().listSharedFolders(),
-                new FutureCallback<ListSharedFoldersReply>()
-                {
-                    @Override
-                    public void onFailure(Throwable e)
-                    {
-                        loading.dispose();
-                        sharedTrayMenuPopulator.addErrorMenuItem("Couldn't list shared folders");
-                        l.warn(Util.e(e));
-                    }
-
-                    @Override
-                    public void onSuccess(ListSharedFoldersReply reply)
-                    {
-                        loading.dispose();
-                        for (Entry<String, Path> entry :
-                                UIUtil.getPathsSortedByName(reply.getSharedFolderList())) {
-                            addSharedFolderEntry(entry.getValue(), entry.getKey());
-                        }
-                        if (reply.getSharedFolderCount() == 0) {
-                            sharedTrayMenuPopulator.addMenuItem("No shared folder", null)
-                                    .setEnabled(false);
-                        }
-                    }
-
-                    private void addSharedFolderEntry(final Path path, String name)
-                    {
-                        sharedTrayMenuPopulator.addMenuItem(name,
-                                new GUIUtil.AbstractListener(MANAGE_SHARED_FOLDER)
-                                {
-                                    @Override
-                                    protected void handleEventImpl(Event event)
-                                    {
-                                        try {
-                                            lme.run(path);
-                                        } catch (Exception e) {
-                                            l.warn("menu handler: " + Util.e(e));
-                                        }
-                                    }
-                                });
-                    }
-                }, new GUIExecutor(submenu));
     }
 
     private void addPauseOrResumeSyncingMenuItem(TrayMenuPopulator trayMenuPopulator)

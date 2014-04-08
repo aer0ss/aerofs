@@ -16,6 +16,7 @@ import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.activitylog.DlgActivityLog;
 import com.aerofs.gui.history.DlgHistory;
+import com.aerofs.gui.sharing.DlgManageSharedFolders;
 import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
@@ -238,6 +239,18 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
                 GUIUtil.launch(Cfg.absDefaultRootAnchor());
             }
         });
+    }
+
+    protected void createSharedFoldersMenu(TrayMenuPopulator trayMenuPopulator)
+    {
+        trayMenuPopulator.addMenuItem("Manage Shared Folders...",
+                new AbstractListener(MANAGE_SHARED_FOLDER) {
+                    @Override
+                    protected void handleEventImpl(Event event)
+                    {
+                        new DlgManageSharedFolders(GUI.get().sh()).openDialog();
+                    }
+                });
     }
 
     protected void createRecentActivitesMenu(Menu menu)

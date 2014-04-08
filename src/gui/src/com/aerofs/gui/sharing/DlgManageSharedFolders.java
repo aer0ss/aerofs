@@ -14,6 +14,7 @@ import com.aerofs.gui.TaskDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.sharing.ShareNewFolderDialogs.IShareNewFolderCallback;
 import com.aerofs.gui.sharing.manage.CompUserList;
 import com.aerofs.gui.sharing.manage.CompUserList.ILoadListener;
 import com.aerofs.labeling.L;
@@ -22,11 +23,8 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExChildAlreadyShared;
-import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.PBSharedFolder;
-import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
@@ -45,7 +43,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
@@ -55,6 +52,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.List;
@@ -92,7 +90,6 @@ public class DlgManageSharedFolders extends AeroFSDialog
         if (_path == null) {
             SashForm sashForm = new SashForm(shell, SWT.HORIZONTAL | SWT.SMOOTH);
             GridData sashData = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-            sashData.widthHint = 450;
             sashData.heightHint = 300;
             sashForm.setLayoutData(sashData);
             sashForm.setSashWidth(7);
@@ -100,9 +97,9 @@ public class DlgManageSharedFolders extends AeroFSDialog
             _folderList = new FolderList(sashForm, SWT.NONE);
             _memberList = new MemberList(sashForm, SWT.NONE);
 
-            // set default proportion between version tree and version table
+            // set default proportion as the golden split between version tree and version table
             // NOTE: must be done AFTER children have been added to the SashForm
-            sashForm.setWeights(new int[] {2, 3});
+            sashForm.setWeights(new int[] {382, 618});
 
             refreshFolderList();
         } else {
@@ -125,7 +122,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
         Futures.addCallback(UIGlobals.ritualNonBlocking().listSharedFolders(),
                 new FutureCallback<ListSharedFoldersReply>() {
             @Override
-            public void onSuccess(final ListSharedFoldersReply reply)
+            public void onSuccess(@Nonnull final ListSharedFoldersReply reply)
             {
                 GUI.get().safeAsyncExec(_folderList, new Runnable() {
                     @Override
@@ -138,10 +135,10 @@ public class DlgManageSharedFolders extends AeroFSDialog
             }
 
             @Override
-            public void onFailure(Throwable t)
+            public void onFailure(@Nonnull Throwable e)
             {
                 _folderList.setLoading(false);
-                ErrorMessages.show(getShell(), t, "Failed to retrieve shared folders.");
+                ErrorMessages.show(getShell(), e, "Failed to retrieve shared folders.");
             }
         });
     }
@@ -151,51 +148,12 @@ public class DlgManageSharedFolders extends AeroFSDialog
         _memberList.setPath(path, invite);
     }
 
-    public void shareFolder()
-    {
-        DirectoryDialog dlg = new DirectoryDialog(getShell(), SWT.SHEET);
-        if (!L.isMultiuser()) dlg.setFilterPath(Cfg.absDefaultRootAnchor());
-        dlg.setMessage("Select folder to share");
-        final String path = dlg.open();
-
-        if (path != null) {
-            new TaskDialog(getShell(), "Sharing folder", null, "Sharing " + path) {
-                @Override
-                public void run() throws Exception
-                {
-                    try {
-                        UIGlobals.ritual().linkRoot(path);
-                    } catch (Exception e) {
-                        ErrorMessages.show(getShell(), e, "Could not share folder.",
-                                new ErrorMessage(ExChildAlreadyShared.class, S.CHILD_ALREADY_SHARED),
-                                new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED));
-                    }
-                }
-
-                @Override
-                public void okay()
-                {
-                    super.okay();
-                    refreshFolderList();
-                }
-
-                @Override
-                public void error(Exception e)
-                {
-                    super.error(e);
-                    refreshFolderList();
-                }
-            }.openDialog();
-        }
-    }
-
     private void leave(final Path path, String defaultName)
     {
         String name = UIUtil.sharedFolderName(path, defaultName);
         new TaskDialog(getShell(), "Leave Shared Folder",
                 "Leaving a shared folder will delete its content on all your devices "
-                    + "but will not affect other members.\nIf you change you mind you "
-                    + "can rejoin the shared folder on the web interface.\n\n"
+                    + "but will not affect other members.\n\n"
                     + "Are you sure you want to leave \"" + name + "\" ?\n ",
                 "Leaving " + name) {
             @Override
@@ -293,50 +251,62 @@ public class DlgManageSharedFolders extends AeroFSDialog
                 _btnPlus.setToolTipText("Share a folder");
                 _btnPlus.addSelectionListener(new SelectionAdapter() {
                     @Override
-                    public void widgetSelected(SelectionEvent selectionEvent)
+                    public void widgetSelected(SelectionEvent event)
                     {
-                        shareFolder();
+
+                        IShareNewFolderCallback callback = new IShareNewFolderCallback() {
+                            @Override
+                            public void onSuccess()
+                            {
+                                refreshFolderList();
+                            }
+                        };
+
+                        boolean shift = Util.test(event.stateMask, SWT.SHIFT);
+                        new ShareNewFolderDialogs(getShell(), callback).open(shift);
                     }
                 });
             } else {
                 _btnPlus = null;
             }
 
+            _btnMinus = GUIUtil.createButton(bar, SWT.PUSH);
+            _btnMinus.setText("Leave");
+            _btnMinus.setToolTipText("Leave the selected shared folder");
+            _btnMinus.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent selectionEvent)
+                {
+                    Path path = _folderList.selectedPath();
+                    if (path != null) leave(path, _folderList.selectedName());
+                }
+            });
+
             if (L.isMultiuser()) {
-                // Team Server cannot leave folders
+                // Team Server cannot leave folders. Keep the button in the dialog but hidden so
+                // the dialog layout is consistent across different configurations.
                 // TODO: use expulsion under the hood to filter out some shared folders?
-                _btnMinus = null;
-            } else {
-                _btnMinus = GUIUtil.createButton(bar, SWT.PUSH);
-                _btnMinus.setText("Leave");
-                _btnMinus.setToolTipText("Leave a shared folder");
-                _btnMinus.addSelectionListener(new SelectionAdapter() {
-                    @Override
-                    public void widgetSelected(SelectionEvent selectionEvent)
-                    {
-                        Path path = _folderList.selectedPath();
-                        if (path != null) leave(path, _folderList.selectedName());
-                    }
-                });
+                _btnMinus.setVisible(false);
             }
 
-            // open only makes sense for linked storage
-            if (Cfg.storageType() == StorageType.LINKED) {
-                _btnOpen = GUIUtil.createButton(bar, SWT.PUSH);
-                _btnOpen.setText("Open");
-                _btnOpen.setToolTipText("Open folder in file manager");
-                _btnOpen.addSelectionListener(new SelectionAdapter() {
-                    @Override
-                    public void widgetSelected(SelectionEvent selectionEvent)
-                    {
-                        Path path = _folderList.selectedPath();
-                        if (path == null) return;
-                        String absPath = UIUtil.absPathNullable(path);
-                        if (absPath != null) GUIUtil.launch(absPath);
-                    }
-                });
-            } else {
-                _btnOpen = null;
+            _btnOpen = GUIUtil.createButton(bar, SWT.PUSH);
+            _btnOpen.setText("Open");
+            _btnOpen.setToolTipText("Open the selected folder");
+            _btnOpen.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent selectionEvent)
+                {
+                    Path path = _folderList.selectedPath();
+                    if (path == null) return;
+                    String absPath = UIUtil.absPathNullable(path);
+                    if (absPath != null) GUIUtil.launch(absPath);
+                }
+            });
+
+            if (Cfg.storageType() != StorageType.LINKED) {
+                // Open only makes sense for linked storage. Keep the button in the dialog but
+                // hidden so the dialog layout is consistent across different configurations.
+                _btnOpen.setVisible(false);
             }
 
             // add an invisible button if the button bar is empty to preserve control alignment

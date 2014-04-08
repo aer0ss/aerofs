@@ -304,12 +304,11 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             @Override
             public void run() throws Exception
             {
-                PBPath pbpath = _path.toPB();
                 List<PBSubjectPermissions> srps = Lists.newArrayList();
                 for (UserID subject : subjects) {
                     srps.add(new SubjectPermissions(subject, permissions).toPB());
                 }
-                UIGlobals.ritual().shareFolder(pbpath, srps, note,
+                UIGlobals.ritual().shareFolder(_path.toPB(), srps, note,
                         suppressSharedFolderRulesWarnings);
 
                 UIGlobals.analytics().track(new FolderInviteSentEvent(subjects.size()));
