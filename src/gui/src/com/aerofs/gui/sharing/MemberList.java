@@ -15,6 +15,7 @@ import com.aerofs.gui.sharing.users.CompUserList.ILoadListener;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -25,7 +26,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
@@ -67,6 +67,7 @@ class MemberList extends Composite
     private final Composite _btnBar;
     private final Button _btnInvite;
     private @Nullable Path _path;
+    private boolean _iAmAdmin;      // whether the local user is an admin of the shared folder.
 
     MemberList(Composite composite, int style)
     {
@@ -105,12 +106,7 @@ class MemberList extends Composite
             @Override
             public void widgetSelected(SelectionEvent selectionEvent)
             {
-                if (_path == null) {
-                    l.error("invite to a null folder?");
-                } else {
-                    new DlgInvite(getShell(), _path, null).openDialog();
-                    refresh(false);
-                }
+                showInvitationDialog();
             }
         });
     }
@@ -121,16 +117,16 @@ class MemberList extends Composite
         ((GridData) c.getLayoutData()).exclude = !visible;
     }
 
-    void setPath(@Nullable Path path, boolean invite)
+    void setFolder(@Nullable Path path)
     {
         _path = path;
-        refresh(invite);
+        refreshAsync();
     }
 
     /**
-     * @param invite whether to show the invitation dialog after refreshing the list.
+     * Refresh the member list asynchronously.
      */
-    private void refresh(final boolean invite)
+    private void refreshAsync()
     {
         boolean valid = _path != null;
         setVisible(_userList, valid);
@@ -144,18 +140,30 @@ class MemberList extends Composite
                     // gray out invite button when not admin, except on Team Server where
                     // the ACL check is slightly more complicated...
                     // FIXME: TS needs effective ACL
-                    boolean admin = L.isMultiuser() ||
+                    _iAmAdmin = L.isMultiuser() ||
                             (localUserPermissions != null
                                      && localUserPermissions.covers(Permission.MANAGE));
-                    _btnInvite.setEnabled(admin);
-                    if (invite && admin) {
-                        _btnInvite.notifyListeners(SWT.Selection, new Event());
-                    }
+                    _btnInvite.setEnabled(_iAmAdmin);
                 }
             });
             _userList.load(_path);
         }
 
         layout(true, true);
+    }
+
+    void showInvitationDialog()
+    {
+        if (_path == null) {
+            l.error("invite to a null folder?");
+
+        } else if (_iAmAdmin) {
+            new DlgInvite(getShell(), _path, null).openDialog();
+            refreshAsync();
+
+        } else {
+            l.warn(ObfuscatingFormatters.formatPathMessage("non admin user attempts to invite {}",
+                    _path)._obfuscated);
+        }
     }
 }

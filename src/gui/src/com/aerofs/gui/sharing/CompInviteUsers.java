@@ -232,8 +232,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         Collection<UserID> userIDs = _compAddresses.getValidUserIDs();
         int invalid = _compAddresses.getInvalidUserIDCount();
 
-        // do not change the size of the dialog otherwise it would grow as
-        // the user types addresses
+        // do not change the size of the dialog otherwise it would grow as the user types addresses
         //getShell().pack();
 
         _btnOk.setEnabled(userIDs.size() > 0 && invalid == 0);

@@ -49,7 +49,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
         // NOTE: must be done AFTER children have been added to the SashForm
         sashForm.setWeights(new int[] {382, 618});
 
-        folderList.refresh();
+        folderList.refreshAsync();
     }
 
     static Composite newTableWrapper(Composite parent)

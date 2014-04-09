@@ -96,7 +96,7 @@ class SharedFolderList extends Composite
             {
                 TableItem ti = (TableItem)e.item;
                 Path path = ti != null ? (Path)ti.getData(PATH_DATA) : null;
-                _memberList.setPath(path, false);
+                _memberList.setFolder(path);
             }
 
             @Override
@@ -125,19 +125,9 @@ class SharedFolderList extends Composite
             @Override
             public void widgetSelected(SelectionEvent event)
             {
-
-                IShareNewFolderCallback callback = new IShareNewFolderCallback()
-                {
-                    @Override
-                    public void onSuccess(@Nonnull Path path)
-                    {
-                        checkNotNull(path);
-                        refresh(path);
-                    }
-                };
-
                 boolean shift = Util.test(event.stateMask, SWT.SHIFT);
-                new ShareNewFolderDialogs(getShell(), callback).open(shift);
+
+                addSharedFolder(shift);
             }
         });
 
@@ -185,6 +175,29 @@ class SharedFolderList extends Composite
         }
     }
 
+    /**
+     * @param shift whether the SHIFT key is hold
+     */
+    private void addSharedFolder(boolean shift)
+    {
+        IShareNewFolderCallback callback = new IShareNewFolderCallback() {
+        @Override
+        public void onSuccess(@Nonnull final Path path)
+        {
+            checkNotNull(path);
+            refreshAsync(new Runnable() {
+                @Override
+                public void run() {
+                    select(path);
+                    _memberList.showInvitationDialog();
+                }
+            });
+        }
+    };
+
+        new ShareNewFolderDialogs(getShell(), callback).open(shift);
+    }
+
     void setMemberList(MemberList memberList)
     {
         _memberList = memberList;
@@ -217,17 +230,19 @@ class SharedFolderList extends Composite
         }
     }
 
-    void refresh()
+    void refreshAsync()
     {
-        refresh(null);
+        refreshAsync(null);
     }
 
     /**
-     * @param selectPath the path of the item to selected after the refresh completes.
+     * Refresh the folder list asynchronously.
+     *
+     * @param callback the callback to be invoked when the refresh completes.
      */
-    private void refresh(@Nullable final Path selectPath)
+    private void refreshAsync(@Nullable final Runnable callback)
     {
-        _memberList.setPath(null, false);
+        _memberList.setFolder(null);
         setLoading(true);
 
         Futures.addCallback(UIGlobals.ritualNonBlocking().listSharedFolders(),
@@ -243,7 +258,7 @@ class SharedFolderList extends Composite
                             {
                                 setLoading(false);
                                 fill(reply.getSharedFolderList());
-                                if (selectPath != null) select(selectPath);
+                                if (callback != null) callback.run();
                             }
                         });
                     }
@@ -260,6 +275,8 @@ class SharedFolderList extends Composite
 
     /**
      * Select the item that matches the path and scroll to that item. Nop if no matching items.
+     *
+     * It also set the current folder for the member list.
      */
     private void select(@Nonnull Path path)
     {
@@ -269,6 +286,7 @@ class SharedFolderList extends Composite
                 _table.deselectAll();
                 _table.setSelection(ti);
                 _table.showSelection();
+                _memberList.setFolder(path);
                 break;
             }
         }
@@ -311,7 +329,7 @@ class SharedFolderList extends Composite
         if (_btnLeave != null) _btnLeave.setEnabled(notEmpty);
         if (_btnOpen != null) _btnOpen.setEnabled(notEmpty);
 
-        _memberList.setPath(selectedPath(), false);
+        _memberList.setFolder(selectedPath());
     }
 
     private void leave(final Path path, String defaultName)
@@ -332,14 +350,14 @@ class SharedFolderList extends Composite
             public void okay()
             {
                 super.okay();
-                refresh();
+                refreshAsync();
             }
 
             @Override
             public void error(Exception e)
             {
                 super.error(e);
-                refresh();
+                refreshAsync();
             }
         }.openDialog();
     }
