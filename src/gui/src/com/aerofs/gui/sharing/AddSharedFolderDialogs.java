@@ -130,30 +130,24 @@ class AddSharedFolderDialogs
             @Override
             public void run() throws Exception
             {
-                try {
-                    _path = snf.share();
-                    // Using SharingRulesExceptionHandlers to handle exceptions is unnecessary as
-                    // currently no rules can prevent users from create shared folders.
-                } catch (Exception e) {
-                    ErrorMessages.show(getShell(), e, L.product() + " could not share this folder.",
-                            new ErrorMessage(ExChildAlreadyShared.class, S.CHILD_ALREADY_SHARED),
-                            new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED));
-                }
+                _path = snf.share();
             }
 
             @Override
             public void okay()
             {
                 super.okay();
-                // If run() fails, no exception is thrown. So okay() will be executed.
-                // TODO (WW) fix the way TaskDialog.error() works
-                if (_path != null) _callback.onSuccess(_path);
+                _callback.onSuccess(_path);
             }
 
             @Override
             public void error(Exception e)
             {
-                super.error(e);
+                ErrorMessages.show(getShell(), e, L.product() + " could not share this folder.",
+                        new ErrorMessage(ExChildAlreadyShared.class, S.CHILD_ALREADY_SHARED),
+                        new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED));
+
+                errorWithNoErrorMessage();
             }
         }.openDialog();
     }

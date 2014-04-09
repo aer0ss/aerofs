@@ -6,7 +6,7 @@ package com.aerofs.gui.sharing;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.AbstractSpinAnimator;
-import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.TaskDialog;
 import com.aerofs.gui.sharing.AddSharedFolderDialogs.IShareNewFolderCallback;
@@ -235,7 +235,7 @@ class SharedFolderList extends Composite
     /**
      * Refresh the folder list asynchronously.
      *
-     * @param callback the callback to be invoked when the refresh completes.
+     * @param callback the callback to be invoked on the UI thread when the refresh completes.
      */
     private void refreshAsync(@Nullable final Runnable callback)
     {
@@ -248,16 +248,9 @@ class SharedFolderList extends Composite
                     @Override
                     public void onSuccess(@Nonnull final ListSharedFoldersReply reply)
                     {
-                        GUI.get().safeAsyncExec(SharedFolderList.this, new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                setLoading(false);
-                                fill(reply.getSharedFolderList());
-                                if (callback != null) callback.run();
-                            }
-                        });
+                        setLoading(false);
+                        fill(reply.getSharedFolderList());
+                        if (callback != null) callback.run();
                     }
 
                     @Override
@@ -266,7 +259,7 @@ class SharedFolderList extends Composite
                         setLoading(false);
                         ErrorMessages.show(getShell(), e, "Failed to retrieve shared folders.");
                     }
-                }
+                }, new GUIExecutor(SharedFolderList.this)
         );
     }
 

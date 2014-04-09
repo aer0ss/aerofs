@@ -4,6 +4,8 @@ import java.util.concurrent.Executor;
 
 import org.eclipse.swt.widgets.Widget;
 
+import javax.annotation.Nonnull;
+
 /**
  * An executor that runs everything in the GUI thread.
  */
@@ -21,7 +23,7 @@ public class GUIExecutor implements Executor
     }
 
     @Override
-    public void execute(Runnable runnable)
+    public void execute(@Nonnull Runnable runnable)
     {
         GUI.get().safeAsyncExec(_w, runnable);
     }

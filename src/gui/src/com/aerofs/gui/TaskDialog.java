@@ -133,14 +133,24 @@ public abstract class TaskDialog extends AeroFSDialog implements ISWTWorker
         closeDialog(true);
     }
 
+    /**
+     * By default, error() shows an error message and then closes the dialog. Override error() and
+     * call errorWithNoErrorMessage() to avoid the message.
+     */
     @Override
     public void error(Exception e)
     {
-        _compSpin.stop();
-
-        // TODO: display error message inline
         GUI.get().show(getShell(), MessageType.ERROR, e.getLocalizedMessage());
 
+        errorWithNoErrorMessage();
+    }
+
+    /**
+     * See error().
+     */
+    protected void errorWithNoErrorMessage()
+    {
+        _compSpin.stop();
         closeDialog(false);
     }
 }

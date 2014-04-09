@@ -125,16 +125,4 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
             }
         });
     }
-
-    protected void createSharedFoldersMenu(TrayMenuPopulator trayMenuPopulator)
-    {
-        trayMenuPopulator.addMenuItem("Manage Shared Folders...",
-                new AbstractListener(MANAGE_SHARED_FOLDER) {
-                    @Override
-                    protected void handleEventImpl(Event event)
-                    {
-                        new DlgManageSharedFolders(GUI.get().sh()).openDialog();
-                    }
-                });
-    }
 }

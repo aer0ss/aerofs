@@ -658,12 +658,10 @@ public abstract class Updater
     protected static final Logger l = Loggers.getLogger(Updater.class);
 
     private static final String PROD_SERVER_VERSION_URL = "https://nocache.client.aerofs.com/current.ver";
-    // staging value: https://nocache.client.stg.aerofs.com/current.ver
     private static final String VERSION_URL = getStringProperty("updater.version.url",
             PROD_SERVER_VERSION_URL);
 
     private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
-    // staging value: https://cache.client.stg.aerofs.com
     private static final String INSTALLER_URL = getStringProperty("updater.installer.url",
             PROD_INSTALLER_URL);
 }
