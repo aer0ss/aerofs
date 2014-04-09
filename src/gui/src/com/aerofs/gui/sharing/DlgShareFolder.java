@@ -11,17 +11,17 @@ import com.aerofs.lib.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 
-public class DlgCreateSharedFolder extends AeroFSDialog
+/**
+ * This dialog is used when the user selects shell extension's "Share This Folder..." menu on either
+ * a shared or non-shared folder.
+ */
+public class DlgShareFolder extends AeroFSDialog
 {
     private final Path _path;
 
-    /**
-     * @param path the path to the folder to be shared, relative to the root anchor path.
-     */
-    public DlgCreateSharedFolder(Shell parent, Path path)
+    public DlgShareFolder(Shell parent, Path path)
     {
-        super(parent, "Share Folder " + Util.quote(UIUtil.sharedFolderName(path, null)), false,
-                false);
+        super(parent, "Share Folder " + Util.quote(UIUtil.sharedFolderName(path, "")), false, false);
         _path = path;
     }
 
@@ -34,6 +34,6 @@ public class DlgCreateSharedFolder extends AeroFSDialog
 
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        CompInviteUsers.createForNewSharedFolder(shell, _path, true);
+        new CompInviteUsers(shell, _path, true);
     }
 }

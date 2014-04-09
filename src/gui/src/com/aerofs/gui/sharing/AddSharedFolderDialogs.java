@@ -28,7 +28,10 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
-class ShareNewFolderDialogs
+/**
+ * These dialogs are used by DlgManageSharedFolders when the user creates new shared folders.
+ */
+class AddSharedFolderDialogs
 {
     private final IShareNewFolderCallback _callback;
     private Shell _parentShell;
@@ -52,15 +55,15 @@ class ShareNewFolderDialogs
         @Nonnull Path share() throws Exception;
     }
 
-    ShareNewFolderDialogs(Shell parent, IShareNewFolderCallback callback)
+    AddSharedFolderDialogs(Shell parent, IShareNewFolderCallback callback)
     {
         _parentShell = parent;
         _callback = callback;
     }
 
-    public void open(boolean allowArbitraryFlolder)
+    public void open(boolean allowExternalFolder)
     {
-        @Nullable IShareNewFolder snf = allowArbitraryFlolder ?
+        @Nullable IShareNewFolder snf = allowExternalFolder ?
                     selectArbitraryFolderToShare() : selectInternalFolderToShare();
         if (snf != null) shareFolder(snf);
     }
@@ -142,7 +145,9 @@ class ShareNewFolderDialogs
             public void okay()
             {
                 super.okay();
-                _callback.onSuccess(_path);
+                // If run() fails, no exception is thrown. So okay() will be executed.
+                // TODO (WW) fix the way TaskDialog.error() works
+                if (_path != null) _callback.onSuccess(_path);
             }
 
             @Override

@@ -169,7 +169,7 @@ public class ShellextService
             return;
         }
 
-        GUIUtil.createOrManageSharedFolder(mkpath(absRootAnchor, absPath));
+        GUIUtil.shareFolder(mkpath(absRootAnchor, absPath));
     }
 
     private void versionHistory(final String absPath)

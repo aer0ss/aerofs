@@ -63,7 +63,7 @@ class MemberList extends Composite
 
             shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-            CompInviteUsers.createForExistingSharedFolder(shell, _path, false);
+            new CompInviteUsers(shell, _path, false);
         }
     }
 

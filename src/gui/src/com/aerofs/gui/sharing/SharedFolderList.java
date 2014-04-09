@@ -9,7 +9,7 @@ import com.aerofs.gui.AbstractSpinAnimator;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.TaskDialog;
-import com.aerofs.gui.sharing.ShareNewFolderDialogs.IShareNewFolderCallback;
+import com.aerofs.gui.sharing.AddSharedFolderDialogs.IShareNewFolderCallback;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
@@ -127,7 +127,7 @@ class SharedFolderList extends Composite
             {
                 boolean shift = Util.test(event.stateMask, SWT.SHIFT);
 
-                addSharedFolder(shift);
+                addSharedFolder(L.isMultiuser() || shift);
             }
         });
 
@@ -175,10 +175,7 @@ class SharedFolderList extends Composite
         }
     }
 
-    /**
-     * @param shift whether the SHIFT key is hold
-     */
-    private void addSharedFolder(boolean shift)
+    private void addSharedFolder(boolean allowExternalFolder)
     {
         IShareNewFolderCallback callback = new IShareNewFolderCallback() {
         @Override
@@ -195,7 +192,7 @@ class SharedFolderList extends Composite
         }
     };
 
-        new ShareNewFolderDialogs(getShell(), callback).open(shift);
+        new AddSharedFolderDialogs(getShell(), callback).open(allowExternalFolder);
     }
 
     void setMemberList(MemberList memberList)

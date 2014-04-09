@@ -4,14 +4,13 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.history.DlgHistory;
-import com.aerofs.gui.sharing.DlgCreateSharedFolder;
-import com.aerofs.gui.sharing.DlgManageSharedFolder;
+import com.aerofs.gui.sharing.DlgShareFolder;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -305,23 +304,11 @@ public class GUIUtil
     /**
      * This method can be run in a non-UI thread
      */
-    public static void createOrManageSharedFolder(final Path path)
+    public static void shareFolder(final Path path)
     {
-        final boolean create;
-
-        try {
-            PBObjectAttributes.Type type = UIGlobals.ritual().getObjectAttributes(path.toPB())
-                    .getObjectAttributes()
-                    .getType();
-            create = type != PBObjectAttributes.Type.SHARED_FOLDER;
-        } catch (Exception e) {
-            l.warn(Util.e(e));
-            return;
-        }
-
-        if (path.isEmpty()) {
-            // Sharing the root folder? C'mon, the UI should have prevented it.
-            SVClient.logSendDefectAsync(true, "share root AeroFS folder?");
+        if (new Path(Cfg.rootSID()).equals(path)) {
+            // Sharing the default root folder?
+            SVClient.logSendDefectAsync(true, "share default root?");
             UI.get().show(MessageType.WARN, "The root " + L.product() + " folder can't be shared.");
             return;
         }
@@ -330,11 +317,7 @@ public class GUIUtil
             @Override
             public void run()
             {
-                if (create) {
-                    new DlgCreateSharedFolder(GUI.get().sh(), path).openDialog();
-                } else {
-                    new DlgManageSharedFolder(GUI.get().sh(), path).openDialog();
-                }
+                new DlgShareFolder(GUI.get().sh(), path).openDialog();
             }
         });
     }

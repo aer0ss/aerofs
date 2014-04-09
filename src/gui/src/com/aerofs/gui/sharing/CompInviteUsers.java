@@ -62,32 +62,16 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     private final Text _txtNote;
 
     private final Path _path;
-    private static final String CONVERT_TO_SHARED_FOLDER = "Converting to a shared folder...";
     private String _fromPerson;
 
     private final Label _lblStatus;
     private final CompSpin _compSpin;
     private final CompEmailAddressTextBox _compAddresses;
-    private final boolean _newSharedFolder;
 
-    static public CompInviteUsers createForExistingSharedFolder(Composite parent, Path path,
-            boolean notifyOnSuccess)
-    {
-        return new CompInviteUsers(parent, path, false, notifyOnSuccess);
-    }
-
-    static public CompInviteUsers createForNewSharedFolder(Composite parent, Path path,
-            boolean notifyOnSuccess)
-    {
-        return new CompInviteUsers(parent, path, true, notifyOnSuccess);
-    }
-
-    private CompInviteUsers(Composite parent, Path path, boolean newSharedFolder,
-            boolean notifyOnSuccess)
+    public CompInviteUsers(Composite parent, Path path, boolean notifyOnSuccess)
     {
         super(parent, SWT.NONE);
         _path = path;
-        _newSharedFolder = newSharedFolder;
         _notifyOnSuccess = notifyOnSuccess;
 
         GridLayout glShell = new GridLayout(1, false);
@@ -135,7 +119,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
         _lblStatus = new Label(composite1, SWT.NONE);
         GridData gridData = new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1);
-        gridData.widthHint = GUIUtil.getExtent(_lblStatus, CONVERT_TO_SHARED_FOLDER).x;
+        gridData.widthHint = GUIUtil.getExtent(_lblStatus, S.INVITING).x;
         _lblStatus.setLayoutData(gridData);
 
         Composite composite = new Composite(composite1, SWT.NONE);
@@ -268,15 +252,24 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     {
         _compSpin.start();
 
-        if (_newSharedFolder) {
-            setStatusText(CONVERT_TO_SHARED_FOLDER);
-        } else {
-            setStatusText(S.INVITING);
-        }
+        setStatusText(S.INVITING);
 
         enableAll(false);
 
         GUI.get().safeWork(getShell(), new ISWTWorker() {
+            @Override
+            public void run() throws Exception
+            {
+                List<PBSubjectPermissions> srps = Lists.newArrayList();
+                for (UserID subject : subjects) {
+                    srps.add(new SubjectPermissions(subject, permissions).toPB());
+                }
+                UIGlobals.ritual().shareFolder(_path.toPB(), srps, note,
+                        suppressSharedFolderRulesWarnings);
+
+                UIGlobals.analytics().track(new FolderInviteSentEvent(subjects.size()));
+            }
+
             @Override
             public void error(Exception e)
             {
@@ -302,19 +295,6 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             {
                 getShell().close();
                 if (_notifyOnSuccess) UI.get().notify(MessageType.INFO, S.INVITATION_WAS_SENT);
-            }
-
-            @Override
-            public void run() throws Exception
-            {
-                List<PBSubjectPermissions> srps = Lists.newArrayList();
-                for (UserID subject : subjects) {
-                    srps.add(new SubjectPermissions(subject, permissions).toPB());
-                }
-                UIGlobals.ritual().shareFolder(_path.toPB(), srps, note,
-                        suppressSharedFolderRulesWarnings);
-
-                UIGlobals.analytics().track(new FolderInviteSentEvent(subjects.size()));
             }
         });
     }
