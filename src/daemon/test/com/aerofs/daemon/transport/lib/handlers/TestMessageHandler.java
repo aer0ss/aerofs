@@ -381,6 +381,7 @@ public final class TestMessageHandler
         assertThat(transportMessage.getPayload().available(), is(payloadSize));
 
         byte[] deserializedPayload = new byte[payloadSize];
+        //noinspection ResultOfMethodCallIgnored
         transportMessage.getPayload().read(deserializedPayload);
         assertThat(Arrays.equals(deserializedPayload, randomBytes), is(true));
     }

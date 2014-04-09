@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.gui.TaskDialog;
 import com.aerofs.gui.sharing.folders.DlgFolders;
 import com.aerofs.labeling.L;
@@ -32,17 +33,23 @@ class ShareNewFolderDialogs
     private final IShareNewFolderCallback _callback;
     private Shell _parentShell;
 
+    /**
+     * This callback is used to indicate that the user has successfully shared a folder. The path
+     * parameter is the Path to the new shared folder.
+     *
+     * For internal folders, the path is '{root_store_id}:/path/to/subfolder'
+     * For external folders, the path is '{store_id}:'
+     */
     static interface IShareNewFolderCallback
     {
-        // TODO (WW) add SID as a parameter so the caller can highlight the new folder.
-        void onSuccess();
+        void onSuccess(@Nonnull Path path);
     }
 
     private static interface IShareNewFolder {
         // Get the name of the new shared folder
         @Nonnull String getName();
-        // Share the specified folder
-        void share() throws Exception;
+        // Share the specified folder. Return the Path of the shared folder.
+        @Nonnull Path share() throws Exception;
     }
 
     ShareNewFolderDialogs(Shell parent, IShareNewFolderCallback callback)
@@ -58,15 +65,19 @@ class ShareNewFolderDialogs
         if (snf != null) shareFolder(snf);
     }
 
-    // This method allows users to pick a folder out of the default root anchor
+    /**
+     * This method allows users to pick a folder out of the default root anchor.
+     *
+     * @return null if the user cancels the selection
+     */
     private @Nullable IShareNewFolder selectArbitraryFolderToShare()
     {
         DirectoryDialog dlg = new DirectoryDialog(_parentShell, SWT.SHEET);
         if (!L.isMultiuser()) dlg.setFilterPath(Cfg.absDefaultRootAnchor());
         dlg.setMessage("Select a folder to share:");
         final String path = dlg.open();
-
-        return path == null ? null : new IShareNewFolder() {
+        if (path == null) return null;
+        return new IShareNewFolder() {
             @Override
             public @Nonnull String getName()
             {
@@ -74,19 +85,25 @@ class ShareNewFolderDialogs
             }
 
             @Override
-            public void share()
+            public @Nonnull Path share()
                     throws Exception
             {
-                UIGlobals.ritual().linkRoot(path);
+                SID sid = new SID(UIGlobals.ritual().linkRoot(path).getSid());
+                return new Path(sid);
             }
         };
     }
 
-    // This method limits folder selection within the default root anchor
+    /**
+     * This method limits folder selection within the default root anchor.
+     *
+     * @return null if the user cancels the selection
+     */
     private @Nullable IShareNewFolder selectInternalFolderToShare()
     {
         final Path path = (Path) new DlgFolders(_parentShell, true).openDialog();
-        return path == null ? null : new IShareNewFolder() {
+        if (path == null) return null;
+        return new IShareNewFolder() {
             @Override
             public @Nonnull String getName()
             {
@@ -94,10 +111,11 @@ class ShareNewFolderDialogs
             }
 
             @Override
-            public void share() throws Exception
+            public @Nonnull Path share() throws Exception
             {
                 List<PBSubjectPermissions> sps = Collections.emptyList();
                 UIGlobals.ritual().shareFolder(path.toPB(), sps, "", false);
+                return path;
             }
         };
     }
@@ -105,11 +123,12 @@ class ShareNewFolderDialogs
     public void shareFolder(@Nonnull final IShareNewFolder snf)
     {
         new TaskDialog(_parentShell, "Sharing Folder", null, "Sharing " + Util.quote(snf.getName())) {
+            Path _path;
             @Override
             public void run() throws Exception
             {
                 try {
-                    snf.share();
+                    _path = snf.share();
                     // Using SharingRulesExceptionHandlers to handle exceptions is unnecessary as
                     // currently no rules can prevent users from create shared folders.
                 } catch (Exception e) {
@@ -123,7 +142,7 @@ class ShareNewFolderDialogs
             public void okay()
             {
                 super.okay();
-                _callback.onSuccess();
+                _callback.onSuccess(_path);
             }
 
             @Override

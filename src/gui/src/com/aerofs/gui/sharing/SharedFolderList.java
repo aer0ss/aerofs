@@ -42,6 +42,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * The shared folder list in the Manage Shared Folder dialog
  */
@@ -49,7 +51,7 @@ class SharedFolderList extends Composite
 {
     private static final Logger l = Loggers.getLogger(SharedFolderList.class);
 
-    private final Table _d;
+    private final Table _table;
     private final Button _btnLeave;
     private final Button _btnOpen;
     private MemberList _memberList;
@@ -58,7 +60,7 @@ class SharedFolderList extends Composite
         @Override
         protected void setImage(Image img)
         {
-            _d.getItem(0).setImage(img);
+            _table.getItem(0).setImage(img);
         }
     };
 
@@ -85,30 +87,31 @@ class SharedFolderList extends Composite
         Composite c = DlgManageSharedFolders.newTableWrapper(this);
         c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
-        _d = new Table(c, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.H_SCROLL);
-        _d.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        _d.addSelectionListener(new SelectionAdapter() {
+        _table = new Table(c, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.H_SCROLL);
+        _table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        _table.addSelectionListener(new SelectionAdapter()
+        {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
                 TableItem ti = (TableItem)e.item;
-                Path path = ti != null ? (Path) ti.getData(PATH_DATA) : null;
+                Path path = ti != null ? (Path)ti.getData(PATH_DATA) : null;
                 _memberList.setPath(path, false);
             }
 
             @Override
             public void widgetDefaultSelected(SelectionEvent e)
             {
-                TableItem ti = (TableItem) e.item;
+                TableItem ti = (TableItem)e.item;
                 if (ti == null) return;
 
-                GUIUtil.launch((String) ti.getData(ABS_PATH_DATA));
+                GUIUtil.launch((String)ti.getData(ABS_PATH_DATA));
             }
         });
 
         // tooltip is the absPath, which only make sense for Linked storage
         if (Cfg.storageType() == StorageType.LINKED) {
-            new TableToolTip(_d, ABS_PATH_DATA);
+            new TableToolTip(_table, ABS_PATH_DATA);
         }
 
         Composite bar = GUIUtil.newPackedButtonContainer(c);
@@ -126,9 +129,10 @@ class SharedFolderList extends Composite
                 IShareNewFolderCallback callback = new IShareNewFolderCallback()
                 {
                     @Override
-                    public void onSuccess()
+                    public void onSuccess(@Nonnull Path path)
                     {
-                        refresh();
+                        checkNotNull(path);
+                        refresh(path);
                     }
                 };
 
@@ -188,24 +192,24 @@ class SharedFolderList extends Composite
 
     private @Nullable Path selectedPath()
     {
-        TableItem[] items = _d.getSelection();
+        TableItem[] items = _table.getSelection();
         return items.length != 1 ? null : (Path)items[0].getData(PATH_DATA);
     }
 
     private @Nullable String selectedName()
     {
-        TableItem[] items = _d.getSelection();
+        TableItem[] items = _table.getSelection();
         return items.length != 1 ? null : items[0].getText();
     }
 
     private void setLoading(boolean loading)
     {
-        _d.removeAll();
+        _table.removeAll();
 
         if (loading) {
-            _d.setItemCount(1);
+            _table.setItemCount(1);
 
-            TableItem item = _d.getItem(0);
+            TableItem item = _table.getItem(0);
             item.setText(0, S.GUI_LOADING);
             _animator.start();
         } else {
@@ -214,6 +218,14 @@ class SharedFolderList extends Composite
     }
 
     void refresh()
+    {
+        refresh(null);
+    }
+
+    /**
+     * @param selectPath the path of the item to selected after the refresh completes.
+     */
+    private void refresh(@Nullable final Path selectPath)
     {
         _memberList.setPath(null, false);
         setLoading(true);
@@ -231,6 +243,7 @@ class SharedFolderList extends Composite
                             {
                                 setLoading(false);
                                 fill(reply.getSharedFolderList());
+                                if (selectPath != null) select(selectPath);
                             }
                         });
                     }
@@ -245,17 +258,36 @@ class SharedFolderList extends Composite
         );
     }
 
+    /**
+     * Select the item that matches the path and scroll to that item. Nop if no matching items.
+     */
+    private void select(@Nonnull Path path)
+    {
+        // A linear search to find the matching item
+        for (TableItem ti : _table.getItems()) {
+            if (path.equals(ti.getData(PATH_DATA))) {
+                _table.deselectAll();
+                _table.setSelection(ti);
+                _table.showSelection();
+                break;
+            }
+        }
+    }
+
+    /**
+     * Populate the view with the given shared folder list.
+     */
     private void fill(List<PBSharedFolder> sharedFolders)
     {
-        _d.setItemCount(sharedFolders.size());
+        _table.setItemCount(sharedFolders.size());
         int i = 0;
         for (Entry<String, Path> entry : UIUtil.getPathsSortedByName(sharedFolders)) {
             String name = entry.getKey();
             Path path = entry.getValue();
 
-            TableItem item = _d.getItem(i++);
-            item.setText(0, name);
-            item.setData(PATH_DATA, path);
+            TableItem ti = _table.getItem(i++);
+            ti.setText(0, name);
+            ti.setData(PATH_DATA, path);
 
             // absPath only available for Linked storage
             if (Cfg.storageType() == StorageType.LINKED) {
@@ -269,13 +301,13 @@ class SharedFolderList extends Composite
                     l.warn("unknown root " + path.sid());
                     continue;
                 }
-                item.setData(ABS_PATH_DATA, path.toAbsoluteString(root));
+                ti.setData(ABS_PATH_DATA, path.toAbsoluteString(root));
             }
         }
 
         boolean notEmpty = !sharedFolders.isEmpty();
 
-        if (notEmpty) _d.select(0);
+        if (notEmpty) _table.select(0);
         if (_btnLeave != null) _btnLeave.setEnabled(notEmpty);
         if (_btnOpen != null) _btnOpen.setEnabled(notEmpty);
 
