@@ -70,7 +70,7 @@ to your path, with `{version}` replaced by the version of your ruby install.
 
 Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
 
-    brew update && brew upgrade && brew install git python fakeroot ant wget gradle groovy swig qt apt-cacher-ng qemu ruby gpgme dpkg && brew install --devel s3cmd
+    brew update && brew upgrade && brew install git python fakeroot ant wget gradle groovy swig qt apt-cacher-ng qemu ruby gpgme dpkg npm && brew install --devel s3cmd
 
     brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb $HOME/repos/aerofs/tools/protobuf.brew/protobuf.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
     
@@ -97,6 +97,7 @@ This step takes a while. It's probably a good time to look around in our [mailin
   * `gpgme` is a library wrapping gpg, which we use for license file generation/verification
   * `jekyll` is used to build the API docs, which are part of the web package
   * `pyyaml` is used for SyncDET to parse yaml files.
+  * `npm` is used to run JavaScript unit tests.
 
 ## Install VM tools
 
@@ -196,6 +197,7 @@ This step requires a running local prod. In addition, you need to be on the VPN 
 
     cd $HOME/repos/aerofs/
     ant -Dmode=PRIVATE -Dproduct=CLIENT clean setupenv build_client
+    mkdir ~/rtroot
     approot/run ~/rtroot/user1 gui
 
 The `-Dmode=PRIVATE` flag points the client to your private environment. Specify `-Dmode=PUBLIC` to build clients for the public production environment (discouraged).
