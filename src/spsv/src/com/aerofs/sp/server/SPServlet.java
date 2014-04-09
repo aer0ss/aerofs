@@ -280,25 +280,48 @@ public class SPServlet extends AeroServlet
      * sanity checker service in private deployment).
      */
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
-            throws IOException
+    protected void doGet(HttpServletRequest req, HttpServletResponse rsp) throws IOException
     {
-        final int mysqlDatabaseCheckTimeoutSeconds = 1;
-
         try {
-            // Check the mysql connection.
-            _sqlTrans.begin();
-            _sqlTrans.getConnection().isValid(mysqlDatabaseCheckTimeoutSeconds);
-            _sqlTrans.commit();
-
-            // Check the Redis connection. Do this by getting any random key.
-            _jedisTrans.begin();
-            _jedisTrans.get().get("");
-            _jedisTrans.commit();
+            if (req.getServletPath().equals("/license")) {
+                licenseCheck(req, rsp);
+            } else {
+                // Ok, wonky but for backwards compatibility: we do the database sanity check for
+                // any servlet request to /sp/*.
+                // TODO: reconsider this; only do if path.equals("/")
+                databaseSanityCheck(req);
+            }
         } catch (Exception e) {
             l.warn("Database check error: " + Util.e(e));
             throw new IOException(e);
         }
+    }
+
+    private void licenseCheck(HttpServletRequest req, HttpServletResponse rsp) throws Exception
+    {
+        // Haha, this is amazing. Such love.
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"users\":");
+        sb.append(_service.getSeatCountForPrivateOrg());
+        sb.append(",");
+        sb.append("\"seats\":");
+        sb.append(_license.seats());
+        sb.append("}");
+        rsp.getWriter().print(sb.toString());
+    }
+
+    private void databaseSanityCheck(HttpServletRequest req) throws Exception
+    {
+        final int mysqlDatabaseCheckTimeoutSeconds = 1;
+        // Check the mysql connection.
+        _sqlTrans.begin();
+        _sqlTrans.getConnection().isValid(mysqlDatabaseCheckTimeoutSeconds);
+        _sqlTrans.commit();
+
+        // Check the Redis connection. Do this by getting any random key.
+        _jedisTrans.begin();
+        _jedisTrans.get().get("");
+        _jedisTrans.commit();
     }
 
 }

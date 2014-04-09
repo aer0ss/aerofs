@@ -2628,6 +2628,23 @@ public class SPService implements ISPService
     }
 
     /**
+     * If this is in private deployment, we know the Private Organization is enough context to
+     * get a seat count. If not in private deployment, return zero.
+     */
+    int getSeatCountForPrivateOrg() throws SQLException
+    {
+        int retval = 0;
+
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
+            _sqlTrans.begin();
+            Organization privateOrg = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+            retval = privateOrg.countUsers();
+            _sqlTrans.commit();
+        }
+        return retval;
+    }
+
+    /**
      * Convenience method to set the reply an exception into the reply
      */
     private static ListenableFuture<Void> createVoidReply()
