@@ -3,14 +3,11 @@ package com.aerofs.daemon.lib.db;
 import java.sql.SQLException;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.BitVector;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.id.FID;
@@ -92,27 +89,4 @@ public interface IMetaDatabase
     ContentHash getCAHash_(SOID soid, KIndex kidx) throws SQLException;
 
     IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException;
-
-    /**
-     * Retrieve the sync status for an object
-     */
-    @Nonnull BitVector getSyncStatus_(SOID soid) throws SQLException;
-
-    /**
-     * Set the sync status for an object
-     */
-    void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException;
-
-    /**
-     * Retrieve the aggregate sync status for an object
-     */
-    @Nonnull CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException;
-
-    /**
-     * Set the aggregate sync status for an object
-     */
-    void setAggregateSyncStatus_(SOID soid, CounterVector aggregateStatus, Trans t)
-            throws SQLException;
-
-    int getSyncableChildCount_(SOID soid) throws SQLException;
 }

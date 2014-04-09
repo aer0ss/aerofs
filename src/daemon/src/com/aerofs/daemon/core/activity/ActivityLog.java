@@ -12,7 +12,6 @@ import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
@@ -180,7 +179,7 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
     }
 
     @Override
-    public void objectObliterated_(OA oa, BitVector bv, Path path, Trans t) throws SQLException
+    public void objectObliterated_(OA oa, Path path, Trans t) throws SQLException
     {
         SOID soid = oa.soid();
         Map<SOID, ActivityEntry> map = _tlMap.get(t);

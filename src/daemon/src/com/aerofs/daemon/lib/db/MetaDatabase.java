@@ -19,9 +19,7 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.BitVector;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
@@ -601,33 +599,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private PreparedStatement _psGSCC;
-    @Override
-    public int getSyncableChildCount_(SOID soid) throws SQLException
-    {
-        try {
-            if (_psGSCC == null) {
-                _psGSCC = c().prepareStatement(DBUtil.selectWhere(T_OA,
-                        C_OA_SIDX + "=? and " + C_OA_PARENT + "=? and " + C_OA_FLAGS + "=0",
-                        "count(*)"));
-            }
-            _psGSCC.setInt(1, soid.sidx().getInt());
-            _psGSCC.setBytes(2, soid.oid().getBytes());
-            ResultSet rs = _psGSCC.executeQuery();
-            // store ROOTs are always their own parent so we have to adjust the result of query
-            int off = soid.oid().isRoot() ? -1 : 0;
-            try {
-                return DBUtil.count(rs) + off;
-            } finally {
-                rs.close();
-            }
-        } catch (SQLException e) {
-            DBUtil.close(_psGSCC);
-            _psGSCC = null;
-            throw detectCorruption(e);
-        }
-    }
-
     private PreparedStatement _psDeleteOA;
     @Override
     public void deleteOA_(SIndex sidx, OID alias, Trans t)
@@ -648,37 +619,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             _psDeleteOA = null;
             throw detectCorruption(e);
         }
-    }
-
-    private final PreparedStatementWrapper _pswGetSync = new PreparedStatementWrapper();
-    @Override
-    public @Nonnull BitVector getSyncStatus_(SOID soid) throws SQLException
-    {
-        byte[] d = getOABlob_(_pswGetSync, soid, C_OA_SYNC);
-        return d != null ? new BitVector(8 * d.length, d) : new BitVector();
-    }
-
-    private final PreparedStatementWrapper _pswSetSync = new PreparedStatementWrapper();
-    @Override
-    public void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException
-    {
-        setOABlob_(_pswSetSync, soid, C_OA_SYNC, status.data(), t);
-    }
-
-    private final PreparedStatementWrapper _pswGetAgSync = new PreparedStatementWrapper();
-    @Override
-    public @Nonnull CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException
-    {
-        byte[] d = getOABlob_(_pswGetAgSync, soid, C_OA_AG_SYNC);
-        return d != null ? CounterVector.fromByteArrayCompressed(d) : new CounterVector();
-    }
-
-    private final PreparedStatementWrapper _pswSetAgSync = new PreparedStatementWrapper();
-    @Override
-    public void setAggregateSyncStatus_(SOID soid, CounterVector agstat, Trans t)
-            throws SQLException
-    {
-        setOABlob_(_pswSetAgSync, soid, C_OA_AG_SYNC, agstat.toByteArrayCompressed(), t);
     }
 
     private PreparedStatement prepareOASelect(PreparedStatementWrapper psw, String column,

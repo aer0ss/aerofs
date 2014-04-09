@@ -28,7 +28,6 @@ public class TestStores extends AbstractTest
     @Mock SIDMap sm;
     @Mock MapSIndex2Store sidx2s;
     @Mock DevicePresence dp;
-    @Mock MapSIndex2DeviceBitMap sidx2dbm;
     @Mock Trans t;
     @Mock StoreDeletionOperators sdo;
     @Mock Store store;
@@ -48,7 +47,7 @@ public class TestStores extends AbstractTest
         sdb = new StoreDatabase(dbcw.getCoreDBCW());
 
         ss = new Stores();
-        ss.inject_(sdb, sm, sidx2s, sidx2dbm, dp, sdo);
+        ss.inject_(sdb, sm, sidx2s, dp, sdo);
 
         when(sidx2s.get_(sidx)).thenReturn(store);
     }

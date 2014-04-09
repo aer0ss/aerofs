@@ -22,9 +22,7 @@ import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.BitVector;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgStorageType;
@@ -197,12 +195,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         OA oa = getOANullable_(soid);
         assert oa != null : soid + " " + _alias2target.getNullable_(soid);
         return oa;
-    }
-
-    @Override
-    public int getSyncableChildCount_(SOID soid) throws SQLException
-    {
-        return _mdb.getSyncableChildCount_(soid);
     }
 
     /**
@@ -580,12 +572,10 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         // need to preserve the OA for the listener callback
         OA oa = getOA_(soid);
         Path path = null;
-        BitVector bv = null;
         if (!oa.isExpelled()) {
             // TODO: aliasing should cleanup CAs and children before deleting OAs so all this
             // listner gymnastic should be avoidable...
             path = resolve_(oa);
-            bv = getSyncStatus_(soid);
         }
 
         _mdb.deleteOA_(soid.sidx(), soid.oid(), t);
@@ -601,7 +591,7 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         // must call after removing the OA so that syncable child count is accurate
         if (!oa.isExpelled()) {
             for (IDirectoryServiceListener listener : _listeners) {
-                listener.objectObliterated_(oa, bv, path, t);
+                listener.objectObliterated_(oa, path, t);
             }
         }
     }
@@ -610,81 +600,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     public IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException
     {
         return _mdb.getAllNonMasterBranches_();
-    }
-
-    /**
-     * Retrieve the raw sync status for an object
-     * @return bitvector representing the sync status for all peers known to have {@code soid}
-     *
-     * NB: the returned sync status does not take into account the presence of content for recently
-     * admitted files. Use this method with the utmost care...
-     */
-    @Override
-    public BitVector getRawSyncStatus_(SOID soid) throws SQLException
-    {
-        return _mdb.getSyncStatus_(soid);
-    }
-
-    /**
-     * Retrieve the sync status for an object
-     * @return bitvector representing the sync status for all peers known to have {@code soid}
-     *
-     * NB: the returned sync status is garanteed to be out-of-sync for recently admitted files whose
-     * content has not been synced yet
-     */
-    @Override
-    public BitVector getSyncStatus_(SOID soid) throws SQLException
-    {
-        return adjustedSyncStatus_(soid, _mdb.getSyncStatus_(soid));
-    }
-
-    private BitVector adjustedSyncStatus_(SOID soid, BitVector status) throws SQLException
-    {
-        // Files without a master branch are considered out of sync regardless of the content
-        // of the sync status column in the DB
-        OA oa = getOA_(soid);
-        boolean fileWithoutMasterBranch = (oa.isFile() && oa.caMasterNullable() == null);
-        return fileWithoutMasterBranch ? new BitVector() : status;
-    }
-
-    /**
-     * Set the sync status for an object
-     * NOTE: only SyncStatusSynchronizer should use that method
-     * @param status bitvector representation of the sync status
-     * @param t transaction (this method can only be called as part of a transaction)
-     */
-    @Override
-    public void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException
-    {
-        BitVector oldStatus = getSyncStatus_(soid);
-        _mdb.setSyncStatus_(soid, status, t);
-        status = adjustedSyncStatus_(soid, status);
-        if (!oldStatus.equals(status)) {
-            for (IDirectoryServiceListener listener : _listeners) {
-                listener.objectSyncStatusChanged_(soid, oldStatus, status, t);
-            }
-        }
-    }
-
-    /**
-     * Do not access aggregate sync status directly, always go through:
-     * {@link com.aerofs.daemon.core.syncstatus.AggregateSyncStatus}
-     */
-    @Override
-    public CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException
-    {
-        return _mdb.getAggregateSyncStatus_(soid);
-    }
-
-    /**
-     * Do not modify aggregate sync status directly, it is automatically maintained by:
-     * see {@link com.aerofs.daemon.core.syncstatus.AggregateSyncStatus}
-     */
-    @Override
-    public void setAggregateSyncStatus_(SOID soid, CounterVector agstat, Trans t)
-            throws SQLException
-    {
-        _mdb.setAggregateSyncStatus_(soid, agstat, t);
     }
 
     @Override

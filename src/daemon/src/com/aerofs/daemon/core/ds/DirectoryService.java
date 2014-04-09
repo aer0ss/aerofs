@@ -13,9 +13,7 @@ import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.BitVector;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ProgressIndicators;
@@ -165,8 +163,6 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
      * there is no safety check to warn devs of this fact.
      */
     @Nonnull public abstract OA getOA_(SOID soid) throws SQLException;
-
-    public abstract int getSyncableChildCount_(SOID soid) throws SQLException;
 
     /**
      * @return object attribute including aliased ones.
@@ -366,43 +362,4 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     }
 
     public abstract IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException;
-
-    /**
-     * Retrieve the raw sync status for an object
-     * @return bitvector representing the sync status for all peers known to have {@code soid}
-     *
-     * NB: the returned sync status does not take into account the presence of content for recently
-     * admitted files. Use this method with the utmost care...
-     */
-    public abstract BitVector getRawSyncStatus_(SOID soid) throws SQLException;
-
-    /**
-     * Retrieve the sync status for an object
-     * @return bitvector representing the sync status for all peers known to have {@code soid}
-     *
-     * NB: the returned sync status is garanteed to be out-of-sync for recently admitted files whose
-     * content has not been synced yet
-     */
-    public abstract BitVector getSyncStatus_(SOID soid) throws SQLException;
-
-    /**
-     * Set the sync status for an object
-     * NOTE: only SyncStatusSynchronizer should use that method
-     * @param status bitvector representation of the sync status
-     * @param t transaction (this method can only be called as part of a transaction)
-     */
-    public abstract void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException;
-
-    /**
-     * Do not access aggregate sync status directly, always go through:
-     * {@link com.aerofs.daemon.core.syncstatus.AggregateSyncStatus}
-     */
-    public abstract CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException;
-
-    /**
-     * Do not modify aggregate sync status directly, it is automatically maintained by:
-     * see {@link com.aerofs.daemon.core.syncstatus.AggregateSyncStatus}
-     */
-    public abstract void setAggregateSyncStatus_(SOID soid, CounterVector agstat, Trans t)
-            throws SQLException;
 }

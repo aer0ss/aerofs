@@ -47,13 +47,4 @@ public interface IStoreDatabase
      * but not all situations.
      */
     void assertExists_(SIndex sidx) throws SQLException;
-
-    /**
-     * Do not use the following methods directly!
-     * Use {@link com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap} instead
-     */
-
-    byte[] getDeviceMapping_(SIndex sidx) throws SQLException;
-
-    void setDeviceMapping_(SIndex sidx, byte mapping[], Trans t) throws SQLException;
 }

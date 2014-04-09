@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.ds;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
@@ -29,8 +28,6 @@ public class DirectoryServiceAdapter implements IDirectoryServiceListener
             throws SQLException {}
     @Override public void objectExpelled_(SOID obj, Trans t) throws SQLException {}
     @Override public void objectAdmitted_(SOID obj, Trans t) throws SQLException {}
-    @Override public void objectSyncStatusChanged_(SOID obj, BitVector oldStatus,
-            BitVector newStatus, Trans t) throws SQLException {}
-    @Override public void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t)
+    @Override public void objectObliterated_(OA oa, Path pathFrom, Trans t)
             throws SQLException {}
 }

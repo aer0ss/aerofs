@@ -5,20 +5,15 @@
 package com.aerofs.daemon.core.mock.logical;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.BitVector;
-import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExNotFound;
@@ -32,13 +27,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 import org.junit.Assert;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import javax.annotation.Nullable;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +41,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -78,7 +70,6 @@ public class MockDS
     private final DirectoryService _ds;
     private final @Nullable IMapSID2SIndex _sid2sidx;
     private final @Nullable IMapSIndex2SID _sidx2sid;
-    private final @Nullable MapSIndex2DeviceBitMap _sidx2dbm;
 
     private int _nextSidx;
     private final SID _rootSID;
@@ -87,24 +78,15 @@ public class MockDS
 
     public MockDS(SID rootSID, DirectoryService ds) throws  Exception
     {
-        this(rootSID, ds, null, null, null);
+        this(rootSID, ds, null, null);
     }
 
     public MockDS(SID rootSID, DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
             @Nullable IMapSIndex2SID sidx2sid) throws  Exception
     {
-        this(rootSID, ds, sid2sidx, sidx2sid, null);
-    }
-
-    @Inject
-    public MockDS(SID rootSID, DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
-            @Nullable IMapSIndex2SID sidx2sid, @Nullable MapSIndex2DeviceBitMap sidx2dbm)
-            throws  Exception
-    {
         _ds = ds;
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
-        _sidx2dbm = sidx2dbm;
 
         _nextSidx = 1;
         _rootSID = rootSID;
@@ -114,72 +96,6 @@ public class MockDS
             public SOID answer(InvocationOnMock invocation) throws Throwable
             {
                 return resolve((Path)invocation.getArguments()[0]);
-            }
-        });
-
-        /*
-         * update mocks reactively
-         *
-         * WARNING: the mock must return new objects on every call because the caller expects to
-         * be able to modify the returned object and pass it to other functions which will break
-         * in delightfully weird and hard-to-debug ways.
-         */
-
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                Object[] args = invocation.getArguments();
-                mockSyncStatus_((SOID)args[0], (BitVector)args[1]);
-                return null;
-            }
-        }).when(_ds).setSyncStatus_(
-                any(SOID.class), any(BitVector.class), any(Trans.class));
-
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                Object[] args = invocation.getArguments();
-                mockAggregateSyncStatus_((SOID)args[0], (CounterVector)args[1]);
-                return null;
-            }
-        }).when(_ds).setAggregateSyncStatus_(any(SOID.class), any(CounterVector.class),
-                any(Trans.class));
-
-    }
-
-    private void mockSyncStatus_(SOID soid, final BitVector bv) throws SQLException
-    {
-        when(_ds.getSyncStatus_(eq(soid))).thenAnswer(new Answer<BitVector>() {
-            @Override
-            public BitVector answer(InvocationOnMock invocation) throws Throwable
-            {
-                return new BitVector(bv);
-            }
-        });
-        when(_ds.getRawSyncStatus_(eq(soid))).thenAnswer(new Answer<BitVector>() {
-            @Override
-            public BitVector answer(InvocationOnMock invocation) throws Throwable
-            {
-                return new BitVector(bv);
-            }
-        });
-    }
-
-    private void mockAggregateSyncStatus_(SOID soid, final CounterVector cv) throws SQLException
-    {
-        when(_ds.getAggregateSyncStatus_(eq(soid))).thenAnswer(new Answer<CounterVector>()
-        {
-            @Override
-            public CounterVector answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                return new CounterVector(cv);
             }
         });
     }
@@ -271,9 +187,6 @@ public class MockDS
             when(_ds.getOA_(eq(_soid))).thenReturn(_oa);
             when(_ds.getOANullable_(eq(_soid))).thenReturn(_oa);
             when(_ds.getAliasedOANullable_(eq(_soid))).thenReturn(_oa);
-
-            when(_ds.getSyncStatus_(eq(_soid))).thenReturn(new BitVector());
-            when(_ds.getRawSyncStatus_(eq(_soid))).thenReturn(new BitVector());
 
             // The path of a root object should be resolved into the anchor's SOID. So we skip
             // mocking the path resolution for roots.
@@ -390,13 +303,6 @@ public class MockDS
 
             move(trash, _soid.oid().toStringFormal(), t,  listeners);
         }
-
-        public BitVector ss(BitVector newStatus) throws Exception
-        {
-            BitVector oldStatus = _ds.getSyncStatus_(_soid);
-            mockSyncStatus_(_soid, new BitVector(newStatus));
-            return oldStatus;
-        }
     }
 
     public class MockDSFile extends MockDSObject
@@ -487,12 +393,6 @@ public class MockDS
             when(_oa.cas(anyBoolean())).thenReturn(cas);
         }
 
-        public MockDSFile ss(boolean... sstat) throws Exception
-        {
-            mockSyncStatus_(_soid, new BitVector(sstat));
-            return this;
-        }
-
         public MockDSFile caMaster(long length, long mtime)
         {
             return ca(KIndex.MASTER, length, mtime);
@@ -543,20 +443,6 @@ public class MockDS
             when(_oa.isDirOrAnchor()).thenReturn(true);
             when(_oa.isAnchor()).thenReturn(false);
 
-            when(_ds.getSyncableChildCount_(eq(_soid))).thenAnswer(new Answer<Integer>() {
-                @Override
-                public Integer answer(InvocationOnMock invocation) throws Throwable
-                {
-                    int n = 0;
-                    for (MockDSObject o : _children.values()) {
-                        if (!o._oa.isExpelled()) ++n;
-                    }
-                    return n;
-                }
-            });
-
-            when(_ds.getAggregateSyncStatus_(eq(_soid))).thenReturn(new CounterVector());
-
             final MockDSDir _this = this;
             when(_ds.getChild_(eq(_soid.sidx()), eq(_soid.oid()), anyString()))
                     .then(new Answer<OID>()
@@ -586,18 +472,6 @@ public class MockDS
                     .thenReturn(null);
 
             super.delete(t, listeners);
-        }
-
-        public MockDSDir ss(boolean... sstat) throws Exception
-        {
-            mockSyncStatus_(_soid, new BitVector(sstat));
-            return this;
-        }
-
-        public MockDSDir agss(int... agsstat) throws Exception
-        {
-            mockAggregateSyncStatus_(_soid, new CounterVector(agsstat));
-            return this;
         }
 
         private <T extends MockDSObject> T child(String name, Class<T> c, Object... param)
@@ -744,10 +618,6 @@ public class MockDS
             } else {
                 when(_ds.followAnchorNullable_(_oa)).thenReturn(null);
             }
-
-            if (_sidx2dbm != null) {
-                when(_sidx2dbm.getDeviceMapping_(eq(sidx))).thenReturn(new DeviceBitMap());
-            }
         }
 
         @Override
@@ -755,27 +625,11 @@ public class MockDS
         {
             // recursively delete children
             _root.delete(t, listeners);
-            if (_sidx2dbm != null) {
-                when(_sidx2dbm.getDeviceMapping_(eq(_root.soid().sidx()))).thenReturn(new DeviceBitMap());
-            }
 
             when(_ds.followAnchorNullable_(_oa)).thenReturn(null);
 
             // undo DS mocking
             super.delete(t,  listeners);
-        }
-
-        @Override
-        public MockDSDir ss(boolean... sstat) throws Exception
-        {
-            return super.ss(sstat);
-        }
-
-        @Override
-        public MockDSDir agss(int... agsstat) throws Exception
-        {
-            _root.agss(agsstat);
-            return this;
         }
 
         @Override
@@ -814,18 +668,6 @@ public class MockDS
             return _root.anchor(name, expelled);
         }
 
-        public MockDSAnchor dids(DID... dids) throws Exception
-        {
-            return dbm(new DeviceBitMap(dids));
-        }
-
-        public MockDSAnchor dbm(DeviceBitMap dbm) throws Exception
-        {
-            assert _sidx2dbm != null;
-            when(_sidx2dbm.getDeviceMapping_(eq(_root.soid().sidx()))).thenReturn(dbm);
-            return this;
-        }
-
         public MockDSDir root()
         {
             return _root;
@@ -855,18 +697,6 @@ public class MockDS
         {
             return Path.root(_sid);
         }
-    }
-
-    public MockDS dids(DID... dids) throws Exception
-    {
-        return dbm(new DeviceBitMap(dids));
-    }
-
-    public MockDS dbm(DeviceBitMap dbm) throws Exception
-    {
-        assert _sidx2dbm != null;
-        when(_sidx2dbm.getDeviceMapping_(eq(root().soid().sidx()))).thenReturn(dbm);
-        return this;
     }
 
     public MockDSDir root() throws Exception

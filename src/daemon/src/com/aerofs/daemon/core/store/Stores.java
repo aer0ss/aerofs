@@ -30,7 +30,6 @@ public class Stores implements IStores, IStoreDeletionOperator
     protected IStoreDatabase _sdb;
     private SIDMap _sm;
     private MapSIndex2Store _sidx2s;
-    private MapSIndex2DeviceBitMap _sidx2dbm;
     private DevicePresence _dp;
 
     // cached hierarchy information
@@ -41,12 +40,11 @@ public class Stores implements IStores, IStoreDeletionOperator
 
     @Inject
     public void inject_(IStoreDatabase sdb, SIDMap sm, MapSIndex2Store sidx2s,
-            MapSIndex2DeviceBitMap sidx2dbm, DevicePresence dp, StoreDeletionOperators sdo)
+            DevicePresence dp, StoreDeletionOperators sdo)
     {
         _sdb = sdb;
         _sm = sm;
         _sidx2s = sidx2s;
-        _sidx2dbm = sidx2dbm;
         _dp = dp;
 
         sdo.add_(this);
@@ -211,12 +209,6 @@ public class Stores implements IStores, IStoreDeletionOperator
 
         s.deletePersistentData_(t);
 
-        // TODO (MJ) this is an odd place to invalidate the cache for sidx2dbm, especially since
-        // it's the only reference to that class in this class. The only reason for this coupling
-        // is that the DeviceBitMap is in the StoreDatabase. A cleaner/less coupled design would
-        // use a separate table for the DeviceBitMaps, from the StoreDatabase, and then
-        // MapSIndex2DeviceBitMap would "own" that database.
-        _sidx2dbm.invalidateCache(sidx);
         // The following deletes the parent and DeviceBitMap for a store.
         _sdb.delete_(sidx, t);
 

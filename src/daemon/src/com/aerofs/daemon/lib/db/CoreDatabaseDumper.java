@@ -17,8 +17,6 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.collector.CollectorSeq;
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
-import com.aerofs.lib.BitVector;
-import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
@@ -160,13 +158,12 @@ public class CoreDatabaseDumper
         ResultSet rs = s.executeQuery(
                 "select " + C_OA_SIDX + "," + C_OA_OID + "," + C_OA_NAME
                         + "," + C_OA_PARENT + "," + C_OA_TYPE + "," +
-                        C_OA_FLAGS + "," + C_OA_FID + "," + C_OA_SYNC + "," + C_OA_AG_SYNC +
+                        C_OA_FLAGS + "," + C_OA_FID +
                         " from " + T_OA +
                         " order by " + C_OA_SIDX + ", " + C_OA_OID);
         ps.println("================== " + T_OA + " =====================");
         ps.println(C_OA_SIDX + "\t" + C_OA_OID + "\t" + C_OA_PARENT
-                + "\t" + C_OA_TYPE + "\t" + C_OA_FLAGS + "\t" + C_OA_FID + "\t\tcrc " + C_OA_NAME
-                + "\t" + C_OA_SYNC + "\t" + C_OA_AG_SYNC);
+                + "\t" + C_OA_TYPE + "\t" + C_OA_FLAGS + "\t" + C_OA_FID + "\t\tcrc " + C_OA_NAME);
         ps.println("------------------------------------------");
 
         while (rs.next()) {
@@ -188,21 +185,14 @@ public class CoreDatabaseDumper
             FID fid = rs.wasNull() ? null : new FID(bs);
             String strFID = fid == null ? sbNullFID.toString() : fid.toString();
 
-            byte[] sync = rs.getBytes(8);
-            BitVector bv = sync != null ? new BitVector(sync.length * 8, sync) : new BitVector();
-
-            byte[] agsync = rs.getBytes(9);
-            CounterVector cv = agsync != null ? CounterVector.fromByteArrayCompressed(agsync)
-                    : new CounterVector();
-
             if (formal) {
                 ps.println(sidx.toString() + '\t' + oid.toStringFormal() + '\t' +
                         parent.toStringFormal() + '\t' + + type + '\t' + flags + '\t' + strFID +
-                        '\t' + Util.crc32(name) + " " + name + '\t' + bv + '\t' + cv);
+                        '\t' + Util.crc32(name) + " " + name);
             } else {
                 ps.println(sidx.toString() + '\t' + oid + '\t' + parent + '\t'
                         + type + '\t' + flags + '\t' + strFID + '\t' + '\t'
-                        + Util.crc32(name) + " " + name + '\t' + bv + '\t' + cv);
+                        + Util.crc32(name) + " " + name);
             }
         }
     }

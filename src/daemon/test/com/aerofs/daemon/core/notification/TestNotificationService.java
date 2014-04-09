@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.notification;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
@@ -37,7 +36,6 @@ public class TestNotificationService
     @Mock UploadState uls;
     @Mock BadCredentialNotifier badCredentialNotifier;
     @Mock PathStatusNotifier pathStatusNotifier;
-    @Mock ServerConnectionStatus scs;
     @Mock ConflictNotifier conflictNotifier;
     @Mock DownloadNotifier downloadNotifier;
     @Mock UploadNotifier uploadNotifier;
@@ -65,7 +63,7 @@ public class TestNotificationService
         rns = spy(new RitualNotificationServer(getServerChannelFactory(), _config));
 
         _service = new NotificationService(sched, rns, dls, downloadNotifier, uls, uploadNotifier,
-                badCredentialNotifier, scs, conflictNotifier, pathStatusNotifier,
+                badCredentialNotifier, conflictNotifier, pathStatusNotifier,
                 onlineStatusNotifier,
                 Collections.<ISnapshotableNotificationEmitter>emptySet());
     }

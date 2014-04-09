@@ -258,54 +258,6 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         }
     }
 
-    private PreparedStatement _psGetDeviceList;
-    @Override
-    public byte[] getDeviceMapping_(SIndex sidx) throws SQLException
-    {
-        try {
-            if (_psGetDeviceList == null) {
-                _psGetDeviceList = c().prepareStatement(
-                        selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_DIDS));
-            }
-            _psGetDeviceList.setInt(1, sidx.getInt());
-            ResultSet rs = _psGetDeviceList.executeQuery();
-
-            try {
-                Util.verify(rs.next());
-                byte[] dids = rs.getBytes(1);
-                Util.verify(!rs.next());
-                return dids;
-            } finally {
-                rs.close();
-            }
-        } catch (SQLException e) {
-            DBUtil.close(_psGetDeviceList);
-            _psGetDeviceList = null;
-            throw detectCorruption(e);
-        }
-    }
-    private PreparedStatement _psSetDeviceList;
-
-    @Override
-    public void setDeviceMapping_(SIndex sidx, byte raw[], Trans t) throws SQLException
-    {
-        try {
-            if (_psSetDeviceList == null) {
-                _psSetDeviceList = c().prepareStatement(
-                        updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_DIDS));
-            }
-            _psSetDeviceList.setBytes(1, raw);
-            _psSetDeviceList.setInt(2, sidx.getInt());
-
-            int affectedRows = _psSetDeviceList.executeUpdate();
-            assert affectedRows == 1 : ("Duplicate SIndex");
-        } catch (SQLException e) {
-            DBUtil.close(_psSetDeviceList);
-            _psSetDeviceList = null;
-            throw detectCorruption(e);
-        }
-    }
-
     /**
      * During store deletion, many databases must delete all rows in one or more tables for a given
      * store index. This static method helps avoid code duplication. An alternative is that each

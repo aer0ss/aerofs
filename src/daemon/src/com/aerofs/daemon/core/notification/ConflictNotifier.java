@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
@@ -156,7 +155,7 @@ class ConflictNotifier extends DirectoryServiceAdapter
     }
 
     @Override
-    public void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t) throws SQLException
+    public void objectObliterated_(OA oa, Path pathFrom, Trans t) throws SQLException
     {
         // do not send notifications for temporary objects created by aliasing
         _tlConflictedObjects.get(t).remove(oa.soid());

@@ -6,9 +6,6 @@ package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
-import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.IServiceStatusListener;
-import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
@@ -17,15 +14,11 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.ritual_notification.IRitualNotificationClientConnectedListener;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
 import java.util.Set;
-
-import static com.aerofs.daemon.core.notification.Notifications.newPathStatusOutOfDateNotification;
-import static com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server.VERKEHR;
 
 /**
  * Break ugly dependency cycles by moving all business logic wirings outside the server class
@@ -40,7 +33,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     private final UploadState _uls;
     private final BadCredentialNotifier _bcl;
     private final PathStatusNotifier _psn;
-    private final ServerConnectionStatus _scs;
     private final ConflictNotifier _cl;
     private final DownloadNotifier _dn;
     private final UploadNotifier _un;
@@ -50,7 +42,7 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     @Inject
     public NotificationService(CoreScheduler sched, RitualNotificationServer rns,
             DownloadState dls, DownloadNotifier dn, UploadState uls, UploadNotifier un,
-            BadCredentialNotifier bcl, ServerConnectionStatus scs, ConflictNotifier cl,
+            BadCredentialNotifier bcl, ConflictNotifier cl,
             PathStatusNotifier psn, OnlineStatusNotifier osn,
             Set<ISnapshotableNotificationEmitter> snapshotables)
     {
@@ -60,7 +52,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
         _uls = uls;
         _bcl = bcl;
         _psn = psn;
-        _scs = scs;
         _cl = cl;
         _dn = dn;
         _un = un;
@@ -96,11 +87,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
         _uls.addListener_(_un);
     }
 
-    private void pathStatusOutOfDate_()
-    {
-        _rns.getRitualNotifier().sendNotification(newPathStatusOutOfDateNotification());
-    }
-
     private void setupPathStatusNotifiers_()
     {
         // merged status notifier listens on all input sources
@@ -119,27 +105,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
                 }
             }
         }, 0);
-
-        // detect when we may have gone offline/online
-        _scs.addListener(new IServiceStatusListener()
-        {
-            @Override
-            public boolean isAvailable(ImmutableMap<Server, Boolean> status)
-            {
-                return status.get(VERKEHR);
-            }
-
-            @Override
-            public void available() {
-                pathStatusOutOfDate_();
-            }
-
-            @Override
-            public void unavailable()
-            {
-                pathStatusOutOfDate_();
-            }
-        }, VERKEHR);
     }
 
     private void setupOnlineStatusNotifier()
