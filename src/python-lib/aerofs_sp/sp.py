@@ -30,7 +30,6 @@ class _SPServiceWrapper(object):
         password = actor.aero_password.encode("utf-8")
         self._service.credential_sign_in(user_id, password)
 
-
     def list_shared_folders(self):
         reply = self._service.get_acl(0)
         sids = [s.store_id for s in reply.store_acl]
@@ -56,3 +55,6 @@ class _SPServiceWrapper(object):
 
     def add_user_to_whitelist(self, userid):
         return self._service.add_user_to_whitelist()
+
+    def unlink(self, did, erase=False):
+        self._service.unlink_device(did, erase)
