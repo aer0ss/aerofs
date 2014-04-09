@@ -34,6 +34,6 @@ public class DlgCreateSharedFolder extends AeroFSDialog
 
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        CompInviteUsers.createForNewSharedFolder(shell, _path);
+        CompInviteUsers.createForNewSharedFolder(shell, _path, true);
     }
 }

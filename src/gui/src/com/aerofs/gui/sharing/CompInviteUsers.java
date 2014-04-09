@@ -57,6 +57,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 {
     private static final Logger l = Loggers.getLogger(CompInviteUsers.class);
     private final Button _btnOk;
+    private final boolean _notifyOnSuccess;
     private ComboRoles _cmbRole;
     private final Text _txtNote;
 
@@ -69,21 +70,25 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     private final CompEmailAddressTextBox _compAddresses;
     private final boolean _newSharedFolder;
 
-    static public CompInviteUsers createForExistingSharedFolder(Composite parent, Path path)
+    static public CompInviteUsers createForExistingSharedFolder(Composite parent, Path path,
+            boolean notifyOnSuccess)
     {
-        return new CompInviteUsers(parent, path, false);
+        return new CompInviteUsers(parent, path, false, notifyOnSuccess);
     }
 
-    static public CompInviteUsers createForNewSharedFolder(Composite parent, Path path)
+    static public CompInviteUsers createForNewSharedFolder(Composite parent, Path path,
+            boolean notifyOnSuccess)
     {
-        return new CompInviteUsers(parent, path, true);
+        return new CompInviteUsers(parent, path, true, notifyOnSuccess);
     }
 
-    private CompInviteUsers(Composite parent, Path path, boolean newSharedFolder)
+    private CompInviteUsers(Composite parent, Path path, boolean newSharedFolder,
+            boolean notifyOnSuccess)
     {
         super(parent, SWT.NONE);
         _path = path;
         _newSharedFolder = newSharedFolder;
+        _notifyOnSuccess = notifyOnSuccess;
 
         GridLayout glShell = new GridLayout(1, false);
         glShell.marginHeight = GUIParam.MARGIN;
@@ -296,7 +301,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             public void okay()
             {
                 getShell().close();
-                UI.get().notify(MessageType.INFO, S.INVITATION_WAS_SENT);
+                if (_notifyOnSuccess) UI.get().notify(MessageType.INFO, S.INVITATION_WAS_SENT);
             }
 
             @Override

@@ -14,6 +14,7 @@ import com.aerofs.gui.sharing.users.CompUserList;
 import com.aerofs.gui.sharing.users.CompUserList.ILoadListener;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.ui.UIUtil;
@@ -27,10 +28,13 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+
+import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 
 /**
  * The member user list in the Manage Shared Folder dialog
@@ -59,7 +63,7 @@ class MemberList extends Composite
 
             shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-            CompInviteUsers.createForExistingSharedFolder(shell, _path);
+            CompInviteUsers.createForExistingSharedFolder(shell, _path, false);
         }
     }
 
@@ -86,11 +90,16 @@ class MemberList extends Composite
         lbl.setText("Members:");
         lbl.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
-        Composite c = DlgManageSharedFolders.newTableWrapper(this);
+        Composite c = DlgManageSharedFolders.newTableWrapper(this, 2);
         c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
         _userList = new CompUserList(c);
-        _userList.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        _userList.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+
+        Link link = new Link(c, SWT.NONE);
+        link.setText("<a>Learn more about roles</a>");
+        link.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+        link.addSelectionListener(createUrlLaunchListener(S.URL_ROLES));
 
         _btnBar = GUIUtil.newPackedButtonContainer(c);
         _btnBar.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));

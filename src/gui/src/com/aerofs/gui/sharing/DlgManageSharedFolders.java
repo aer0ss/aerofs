@@ -52,10 +52,10 @@ public class DlgManageSharedFolders extends AeroFSDialog
         folderList.refreshAsync();
     }
 
-    static Composite newTableWrapper(Composite parent)
+    static Composite newTableWrapper(Composite parent, int horizontalGrids)
     {
         Composite c = new Composite(parent, SWT.NONE);
-        GridLayout lc = new GridLayout(1, false);
+        GridLayout lc = new GridLayout(horizontalGrids, false);
         lc.marginBottom = 0;
         lc.marginTop = 0;
         lc.marginRight = 0;

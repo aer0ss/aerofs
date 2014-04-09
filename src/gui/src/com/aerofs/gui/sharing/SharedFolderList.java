@@ -84,7 +84,7 @@ class SharedFolderList extends Composite
         lbl.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         lbl.setText("Shared Folders:");
 
-        Composite c = DlgManageSharedFolders.newTableWrapper(this);
+        Composite c = DlgManageSharedFolders.newTableWrapper(this, 1);
         c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
         _table = new Table(c, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.H_SCROLL);
