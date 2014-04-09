@@ -51,7 +51,13 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     {
         assert !emigrate;
 
-        _ds.walk_(soidRoot, pOld, new ObjectWalkerAdapter<ResolvedPath>() {
+        // must recreate the *new* tree
+        // otherwise we may try to create physical object under the trash folder
+        // which would fail and result in the apparition of nro which would be
+        // mightily confusing
+        ResolvedPath p = _ds.resolve_(soidRoot);
+
+        _ds.walk_(soidRoot, p, new ObjectWalkerAdapter<ResolvedPath>() {
             @Override
             public ResolvedPath prefixWalk_(ResolvedPath parentPath, OA oa)
                     throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir,
