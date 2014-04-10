@@ -249,6 +249,9 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
                 case REPLY:
                     if (!_f._rpc.processReply_(msg)) _f._iss.end_(key);
                     break;
+                case GET_VERS_RESP:
+                    _f._pgvr.processReply_(msg);
+                    break;
                 default:
                     l.warn("unkown msg 4 strm: " + msg.pb().getType());
                     throw new ExProtocolError(Type.class);
