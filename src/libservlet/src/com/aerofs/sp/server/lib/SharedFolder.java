@@ -160,7 +160,7 @@ public class SharedFolder
         try {
             return addJoinedUser(owner, Permissions.OWNER);
         } catch (ExAlreadyExist e) {
-            throw SystemUtil.fatalWithReturn(e);
+            throw SystemUtil.fatal(e);
         }
     }
 

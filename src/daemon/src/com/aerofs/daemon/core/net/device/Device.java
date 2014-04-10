@@ -304,7 +304,7 @@ public class Device implements Comparable<Device>
             // this method shouldn't get called if the device is offline on all
             // transports. this may not be a valid assumption because the daemon
             // might contact an offline peer, but so far so good
-            throw SystemUtil.fatalWithReturn("got on offline device");
+            throw SystemUtil.fatal("got on offline device");
         }
 
         return preferredTransport;

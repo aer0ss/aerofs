@@ -222,7 +222,7 @@ public class GetComponentReply
             cr = _ru.computeCausalityForContent_(socid.soid(), vRemote, msg, cxt.token());
             break;
         default:
-            throw SystemUtil.fatalWithReturn("not implemented");
+            throw SystemUtil.fatal("not implemented");
         }
 
         if (cr == null) return;

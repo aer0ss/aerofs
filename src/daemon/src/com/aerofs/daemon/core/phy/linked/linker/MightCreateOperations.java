@@ -174,7 +174,7 @@ class MightCreateOperations
             scheduleTagFileFixIfNeeded(targetSOID, pc);
             return true;
         default:
-            throw SystemUtil.fatalWithReturn("unhandled op:" + ops);
+            throw SystemUtil.fatal("unhandled op:" + ops);
         }
     }
 

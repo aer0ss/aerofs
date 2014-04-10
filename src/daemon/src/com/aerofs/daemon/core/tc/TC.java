@@ -126,7 +126,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
                 try {
                     ret = _cv.await(timeout, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
-                    throw SystemUtil.fatalWithReturn(e);
+                    throw SystemUtil.fatal(e);
                 }
             }
 
@@ -246,7 +246,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
                             _tm.assertNoOngoingTransaction_();
                         } catch (Throwable e) {
                             // fail fast
-                            throw SystemUtil.fatalWithReturn(e);
+                            throw SystemUtil.fatal(e);
                         }
                     }
 

@@ -151,7 +151,7 @@ class SignalThread extends Thread
         try {
             return ljlogpath.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw SystemUtil.fatalWithReturn("cannot convert path:" + ljlogpath + " to UTF-8");
+            throw SystemUtil.fatal("cannot convert path:" + ljlogpath + " to UTF-8");
         }
     }
 

@@ -320,7 +320,7 @@ public class SPService implements ISPService
         try {
             user = _sessionUser.exists() ? _sessionUser.getUser().id().getString() : "user unknown";
         } catch (ExNotAuthenticated e2) {
-            throw SystemUtil.fatalWithReturn(e2);
+            throw SystemUtil.fatal(e2);
         }
 
         l.warn(user + ": " + Util.e(e,

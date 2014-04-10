@@ -6,6 +6,7 @@ package com.aerofs.lib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.ex.ExDBCorrupted;
+import com.aerofs.lib.ex.ExFatal;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.sv.client.SVClient;
 import org.slf4j.Logger;
@@ -122,49 +123,50 @@ public abstract class SystemUtil
         // private to enforce uninstantiability
     }
 
+    //
+    // Fatal methods
+    //
+
     /**
      * Send a defect report and crash the daemon. The caller can throw the returned value so that
      * the compiler wouldn't complain in certain cases.
      */
-    public static Error fatalWithReturn(final Throwable e)
+    static Error fatalWithReturn(final ExFatal e)
     {
-        l.error("FATAL:" + Util.e(e));
-        if (e instanceof ExDBCorrupted) {
+        Throwable cause = e.getCause();
+
+        l.error("FATAL: message:{} fatal-caller:{}", cause.getMessage(), Util.e(e));
+
+        if (cause instanceof ExDBCorrupted) {
+            ExDBCorrupted corrupted = (ExDBCorrupted) cause;
             new RockLog().newDefect("sqlite.corrupt")
-                    .setMessage(((ExDBCorrupted)e)._integrityCheckResult)
+                    .setMessage(corrupted._integrityCheckResult)
                     .send();
-            l.error(((ExDBCorrupted)e)._integrityCheckResult);
+            l.error(corrupted._integrityCheckResult);
             ExitCode.CORRUPTED_DB.exit();
         } else {
             SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, "FATAL:", e);
             ExitCode.FATAL_ERROR.exit();
         }
-        throw new Error(e);
+
+        throw e;
     }
 
     /**
      * Send a defect report and crash the daemon. The throws signature is to suppress compiler
      * warnings in certain cases.
      */
-    public static void fatal(final Throwable e) throws Error
+    public static Error fatal(Throwable e) throws Error
     {
-        fatalWithReturn(e);
+        return fatalWithReturn(new ExFatal(e));
     }
 
     /**
      * See {@link com.aerofs.lib.SystemUtil#fatalWithReturn}
      */
-    public static Error fatalWithReturn(String str)
+    public static Error fatal(String message)
     {
-        return fatalWithReturn(new Exception(str));
-    }
-
-    /**
-     * See {@link com.aerofs.lib.SystemUtil#fatal(Throwable)}
-     */
-    public static void fatal(String str) throws Error
-    {
-        fatal(new Exception(str));
+        return fatalWithReturn(new ExFatal(message));
     }
 
     /**
@@ -179,6 +181,10 @@ public abstract class SystemUtil
     {
         if (e instanceof RuntimeException || e instanceof Error) fatal(e);
     }
+
+    //
+    // Process execution
+    //
 
     public static int execForeground(String ...cmds) throws IOException
     {

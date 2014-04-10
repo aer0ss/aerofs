@@ -45,9 +45,9 @@ public class TransUtil
                 try {
                     rh.run_();
                 } catch (IOException e) {
-                    SystemUtil.fatal(
-                            "db/fs inconsistent on " + (f.isDirectory() ? "dir " : "file ") +
-                                    f.getAbsolutePath() + ": " + Util.e(e));
+                    String str = "db/fs inconsistent on " + (f.isDirectory() ? "dir " : "file ") +
+                            f.getAbsolutePath() + ": " + Util.e(e);
+                    SystemUtil.fatal(str);
                 }
             }
         });
