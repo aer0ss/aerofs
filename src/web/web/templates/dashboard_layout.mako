@@ -30,7 +30,6 @@
 <%block name="top_navigation_bar_mobile">
     <%navigation:marketing_links/>
     <li class="divider"></li>
-    <li><a href="${request.route_path('my_devices')}">My Devices</a></li>
     %if is_private_deployment(request.registry.settings):
         <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
     %endif
@@ -46,7 +45,6 @@
         </a>
         <ul class="dropdown-menu">
             ## Remember to update top_navigation_bar_mobile() when adding items
-            <li><a href="${request.route_path('my_devices')}">My Devices</a></li>
             %if is_private_deployment(request.registry.settings):
                 <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
             %endif
@@ -135,6 +133,7 @@
             links.append(('files', _("My Files")))
         links.append(('my_shared_folders', _("My Shared Folders")))
         links.append(('accept', _("My Invitations")))
+        links.append(('my_devices', _("My Devices")))
     %>
     % for link in links:
         ${navigation.link(link)}

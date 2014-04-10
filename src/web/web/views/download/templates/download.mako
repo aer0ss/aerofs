@@ -106,11 +106,7 @@
         ${avail1 | n} and ${avail2 | n}.
     %else:
         ${avail1 | n}, ${avail2 | n}, and
-        %if show_add_mobile_device:
-            <a href="${request.route_path('add_mobile_device')}">mobile devices</a>.
-        %else:
-            <a href="https://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">Android</a>.
-        %endif
+        <a href="${request.route_path('add_mobile_device')}">mobile devices</a>.
     %endif
 </p>
 

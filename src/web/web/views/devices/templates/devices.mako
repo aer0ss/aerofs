@@ -3,12 +3,6 @@
 
 <h2>${page_heading}</h2>
 
-%if show_add_mobile_device:
-    <p class="text-right">
-        <a href="${request.route_path('add_mobile_device')}" class="btn btn-primary btn-lg" role="button">Add mobile device</a>
-    </p>
-%endif
-
 <table class="table table-hover">
     <thead><tr><th>Name</th><th>Most recent activity</th><th>IP address</th><th></th></tr></thead>
     <tbody>
@@ -99,11 +93,14 @@
     </tbody>
 </table>
 
-%if are_team_servers:
-    <a href="${request.route_path('download_team_server')}">Download Team Server installers</a>
-%else:
-    <a href="${request.route_path('download')}">Download desktop client installers</a>
-%endif
+<div class="muted">
+    %if are_team_servers:
+        <a href="${request.route_path('download_team_server')}">Install the Team Server app</a>
+    %else:
+        Add new devices by installing <a href="${request.route_path('download')}">desktop</a> or
+        <a href="${request.route_path('add_mobile_device')}">mobile</a> apps.
+    %endif
+</div>
 
 <%def name="device_icon(os_family, os_name)">
     <%

@@ -8,7 +8,6 @@ import requests
 
 from web.util import get_rpc_stub
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
-from add_mobile_device_view import is_mobile_supported
 
 
 log = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ def my_devices(request):
     if len(devices) == 0:
         raise HTTPFound(request.route_path('download', _query={'msg_type': 'no_device'}))
 
-    return _devices(request, devices, user, _("My devices"), False, True)
+    return _devices(request, devices, user, _("My devices"), False)
 
 
 @view_config(
@@ -51,8 +50,7 @@ def user_devices(request):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    return _devices(request, devices, user, _("${name}'s devices", {'name': full_name}), False,
-                    False)
+    return _devices(request, devices, user, _("${name}'s devices", {'name': full_name}), False)
 
 
 @view_config(
@@ -71,10 +69,10 @@ def team_server_devices(request):
         raise HTTPFound(request.route_path('download_team_server',
                                            _query={'msg_type': 'no_device'}))
 
-    return _devices(request, devices, ts_user, _("Team Servers"), True, False)
+    return _devices(request, devices, ts_user, _("Team Servers"), True)
 
 
-def _devices(request, devices, user, page_heading, are_team_servers, show_add_mobile_device):
+def _devices(request, devices, user, page_heading, are_team_servers):
     try:
         last_seen_nullable = _get_last_seen(_get_devman_url(request.registry.settings), devices)
     except Exception as e:
@@ -93,8 +91,6 @@ def _devices(request, devices, user, page_heading, are_team_servers, show_add_mo
         # The value is None if the devman service throws
         'last_seen_nullable': last_seen_nullable,
         'are_team_servers': are_team_servers,
-        'show_add_mobile_device': show_add_mobile_device and is_mobile_supported(
-            request.registry.settings),
     }
 
 
