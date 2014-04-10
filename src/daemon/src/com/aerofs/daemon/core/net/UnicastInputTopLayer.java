@@ -238,8 +238,8 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
     @Override
     public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc)
     {
+        StreamKey key = new StreamKey(pc.ep().did(), streamId);
         try {
-            StreamKey key = new StreamKey(pc.ep().did(), streamId);
             _f._iss.begun_(key, pc);
 
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
@@ -258,6 +258,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             }
         } catch (Exception e) {
             l.warn("process strm head: " + Util.e(e));
+            _f._iss.end_(key);
         }
     }
 
