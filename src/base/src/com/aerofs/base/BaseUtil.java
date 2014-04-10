@@ -175,7 +175,7 @@ public class BaseUtil
      * Convert an input stream into a string using the specified charset.
      * Does not close the stream
      */
-    private static String streamToString(InputStream is, String charset)
+    public static String streamToString(InputStream is, String charset)
     {
         // See http://stackoverflow.com/a/5445161/365596
         // Basically, \A matches only the beginning of the input, thus making the Scanner return the
