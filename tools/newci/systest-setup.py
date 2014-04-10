@@ -10,7 +10,6 @@ actors:
       vm: [fF]alse, [tT]rue, [yY]es, [nN]o
       isolated: [fF]alse, [tT]rue, [yY]es, [nN]o
       teamserver: [sS]3, [lL]inked, [lL]ocal
-      android: [fF]alse, [tT]rue, [yY]es, [nN]o
     - ...
     - ...
 
@@ -69,8 +68,6 @@ S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
               's3_access_key': 'AKIAJMTPOZHMGO7DVEDA',
               's3_secret_key': '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',
               's3_encryption_password': 'password'}
-
-ANDROID_PARAMS = {'rsh_remote_args': ['-R5037:localhost:5037']}
 
 ADMIN_USERID = 'admin@syncfs.com'
 ADMIN_PASS = 'temp123'
@@ -201,9 +198,6 @@ def generate_yaml(args, username, actor_data):
         if details != {}:
             d['details'] = details
         d['address'] = str(addresses.pop())
-        android = actor.get('android')
-        if android in [True, 'true', 'True', 'yes', 'Yes']:
-            d.update(ANDROID_PARAMS)
         if args.multiuser:
             assert isinstance(username, list)
             d['aero_userid'] = username.pop()

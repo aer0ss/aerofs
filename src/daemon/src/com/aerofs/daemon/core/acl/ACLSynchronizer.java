@@ -268,9 +268,6 @@ public class ACLSynchronizer
         return sidx != null ? sidx : _sid2sidx.getAbsent_(sid, t);
     }
 
-    /**
-     * Note: this code is very similar to com.aerofs.android.service.ACLManager#refreshACL()
-     */
     private ServerACLReturn getServerACL_(long localEpoch)
             throws Exception
     {

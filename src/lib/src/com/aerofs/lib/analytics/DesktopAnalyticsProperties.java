@@ -20,7 +20,6 @@ import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAu
 
 /**
  * This is the desktop client implementation of our analytics properties
- * See also com.aerofs.android.service.AndroidAnalyticsProperties
  */
 public class DesktopAnalyticsProperties implements IAnalyticsPlatformProperties
 {

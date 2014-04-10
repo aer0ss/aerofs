@@ -115,14 +115,6 @@ This step takes a while. It's probably a good time to look around in our [mailin
 
 Download and install the latest [Mono MDK](http://www.go-mono.com/mono-downloads/download.html). (for signcode, to sign our Windows executables. Not required if you don't deploy production releases.)
 
-### Android SDK
-
-1. [Download the SDK tools](http://developer.android.com/sdk/index.html) (you probably want the "Use an Existing IDE" tools)
-2. Expand the zip into `/usr/local/android`
-3. Run the SDK Manager at `/usr/local/android/tools/android`
-4. Check at least "Tools" and "Android 4.0.3 (API 15)/SDK Platform".  We recommend “Extras/Intel Hardware Accelerated Execution Manager or Extras/Intel x86 Emulator Accelerator (HAXM)” as well.
-5. Click "Install packages..."
-
 ## Obtain the AeroFS source code
 
 Before this step, you'll need your accounts created on gerrit, so get to that.

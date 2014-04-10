@@ -27,13 +27,12 @@ public interface IAnalyticsPlatformProperties
 
     /**
      * A string that identifies one specific release of one specific app.
-     * E.g: "0.4.150" for the desktop app, "android 0.3.20-beta" for the Android app, etc...
      * Use null if this information isn't available.
      */
     @Nullable String getVersion();
 
     /**
-     * OS family, without any version information. E.g: Windows, Mac OS X, Linux, Android, etc...
+     * OS family, without any version information. E.g: Windows, Mac OS X, Linux, etc...
      * Use null if this information isn't available.
      */
     @Nullable String getOSFamily();
