@@ -13,6 +13,7 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IChannelData;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.log.LogUtil;
@@ -110,9 +111,15 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
             throws Exception
     {
+        Throwable cause = NettyUtil.truncateMessageIfNecessary(e.getCause());
+
+        if (cause instanceof Error) {
+            SystemUtil.fatal(cause);
+            return;
+        }
+
         DID did = getDID(e.getChannel());
 
-        Throwable cause = NettyUtil.truncateMessageIfNecessary(e.getCause());
         Channel channel = e.getChannel();
 
         l.warn("{} closing channel because of uncaught err on {}",
