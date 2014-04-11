@@ -7,6 +7,7 @@ package com.aerofs.rest;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.aerofs.restless.Configuration;
+import com.google.common.base.Joiner;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -14,12 +15,11 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Set;
 
 public abstract class AbstractRestConfiguration implements Configuration
 {
     @Override
-    public void addGlobalHeaders(HttpResponse response, HttpRequest request)
+    public void addGlobalHeaders(HttpRequest request, HttpResponse response)
     {
         if (!response.containsHeader(Names.CACHE_CONTROL)) {
             // If the response is successful, cache for 3 minutes, otherwise do not cache
@@ -33,30 +33,9 @@ public abstract class AbstractRestConfiguration implements Configuration
          * as "allowed", and instruct the browser to expose all response headers.
          */
         response.setHeader(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        response.setHeader(Names.ACCESS_CONTROL_ALLOW_METHODS,
-                "GET,PUT,POST,PATCH,DELETE,HEAD,OPTIONS");
-
-        Set<String> requestHeaders = request.getHeaderNames();
-        if (requestHeaders.size() > 0) {
-            StringBuilder builder = new StringBuilder();
-            for (String header : request.getHeaderNames()) {
-                builder.append(header);
-                builder.append(",");
-            }
-            builder.deleteCharAt(builder.length() - 1);  // remove trailing comma
-            response.setHeader(Names.ACCESS_CONTROL_ALLOW_HEADERS, builder.toString());
-        }
-
-        Set<String> responseHeaders = response.getHeaderNames();
-        if (responseHeaders.size() > 0) {
-            StringBuilder builder = new StringBuilder();
-            for (String header : response.getHeaderNames()) {
-                builder.append(header);
-                builder.append(",");
-            }
-            builder.deleteCharAt(builder.length() - 1);  // remove trailing comma
-            response.setHeader(Names.ACCESS_CONTROL_EXPOSE_HEADERS, builder.toString());
-        }
+        response.setHeader(Names.ACCESS_CONTROL_ALLOW_METHODS, "GET,PUT,POST,PATCH,DELETE,HEAD,OPTIONS");
+        response.setHeader(Names.ACCESS_CONTROL_ALLOW_HEADERS, Joiner.on(',').join(request.getHeaderNames()));
+        response.setHeader(Names.ACCESS_CONTROL_EXPOSE_HEADERS, Joiner.on(',').join(response.getHeaderNames()));
     }
 
     /**

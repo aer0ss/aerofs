@@ -15,7 +15,7 @@ import javax.ws.rs.core.Response.Status;
 public class BifrostConfiguration implements Configuration
 {
     @Override
-    public void addGlobalHeaders(HttpResponse response, HttpRequest request)
+    public void addGlobalHeaders(HttpRequest request, HttpResponse response)
     {
     }
 

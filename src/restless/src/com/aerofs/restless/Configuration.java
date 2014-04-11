@@ -13,7 +13,7 @@ import javax.ws.rs.core.Response;
 public interface Configuration
 {
     // global response headers (cache control, Cross-Origin Resource Sharing, ...)
-    void addGlobalHeaders(HttpResponse response, HttpRequest request);
+    void addGlobalHeaders(HttpRequest request, HttpResponse response);
 
     Response resourceNotFound(String path);
 

@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 class JerseyResponseWriter implements ContainerResponseWriter
 {
@@ -87,7 +86,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
             values.clear();
         }
 
-        _config.addGlobalHeaders(r, _request);
+        _config.addGlobalHeaders(_request, r);
 
         Object entity = response.getEntity();
         // entity-less responses should have a truly empty body which means
