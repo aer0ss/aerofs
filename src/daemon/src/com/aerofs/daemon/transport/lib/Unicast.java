@@ -9,7 +9,6 @@ import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -268,25 +267,16 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         writeFuture.addListener(new ChannelFutureListener()
         {
             @Override
-            public void operationComplete(ChannelFuture channelFuture)
+            public void operationComplete(ChannelFuture future)
                     throws Exception
             {
-                if (channelFuture.isSuccess()) {
+                if (future.isSuccess()) {
                     if (wtr != null) {
                         wtr.okay();
                     }
                 } else {
                     if (wtr != null) {
-                        Throwable throwable = channelFuture.getCause();
-                        if (throwable == null) {
-                            throwable = new ExDeviceUnavailable("write failed");
-                        }
-
-                        if (throwable instanceof Exception) {
-                            wtr.error((Exception) throwable);
-                        } else {
-                            SystemUtil.fatal(throwable);
-                        }
+                        wtr.error(TransportUtil.newExTransportOrFatalOnError("fail send packet to " + did, future.getCause()));
                     }
                 }
             }

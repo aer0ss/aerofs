@@ -4,6 +4,9 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.daemon.transport.ExIOFailed;
+import com.aerofs.daemon.transport.ExTransport;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.proto.Diagnostics.ChannelState;
 import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
 import com.aerofs.proto.Diagnostics.ServerStatus;
@@ -159,6 +162,20 @@ public abstract class TransportUtil
             return "unknown host";
         } else {
             return e.getMessage();
+        }
+    }
+
+    public static ExTransport newExTransportOrFatalOnError(String message, @Nullable Throwable cause)
+    {
+        if (cause == null) {
+            return new ExIOFailed(message);
+        } else if (cause instanceof ExTransport) {
+            return (ExTransport) cause;
+        } else if (cause instanceof Exception) {
+            return new ExIOFailed(message, cause);
+        } else {
+            SystemUtil.fatal(cause); // this is an error of some kind - kill ourselves
+            return null;
         }
     }
 }

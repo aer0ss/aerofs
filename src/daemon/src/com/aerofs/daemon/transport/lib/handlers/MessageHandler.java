@@ -352,7 +352,7 @@ public final class MessageHandler extends SimpleChannelHandler
         }
     }
 
-    private void failPendingWrites(Throwable reason)
+    private void failPendingWrites(Throwable cause)
     {
         Queue<PendingWrite> writesToFail;
         try {
@@ -374,7 +374,7 @@ public final class MessageHandler extends SimpleChannelHandler
             // iterate over the queue of pending packets and fail all pending writes
             PendingWrite pending;
             while ((pending = writesToFail.poll()) != null) {
-                pending.future.setFailure(reason);
+                pending.future.setFailure(cause);
             }
 
             // notify any waiting writers that they're now free to write

@@ -9,11 +9,11 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
-import com.aerofs.daemon.transport.ExIOFailed;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.IUnicastInternal;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
+import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.signalling.ISignallingService;
@@ -378,7 +378,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                 if (future.isSuccess()) {
                     if (wtr != null) wtr.okay();
                 } else {
-                    if (wtr != null) wtr.error(new ExIOFailed("fail send packet to " + did, future.getCause()));
+                    if (wtr != null) wtr.error(TransportUtil.newExTransportOrFatalOnError("fail send packet to " + did, future.getCause()));
                 }
             }
         });
