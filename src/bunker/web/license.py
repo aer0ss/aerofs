@@ -1,7 +1,6 @@
 """
 Utility functions to support licensing. See License.java for its counterpart in Java
 """
-import base64
 import datetime
 import hashlib
 import logging

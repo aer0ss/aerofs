@@ -1,6 +1,5 @@
 import unittest
 from unittests.test_base import TestBase
-from web.util import is_private_deployment
 from web.login_util import URL_PARAM_NEXT, resolve_next_url
 
 

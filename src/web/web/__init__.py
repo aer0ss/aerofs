@@ -66,7 +66,7 @@ def main(global_config, **settings):
 
     config.scan()
 
-    # Config commiting. Pyramid does some great config conflict detection. This conflict detection
+    # Config committing. Pyramid does some great config conflict detection. This conflict detection
     # is limited to configuration changes between commits. Since some of the default configuration
     # is overridden in modules, we have to commit the default configuration before including the
     # modules. Otherwise we get a ConfigurationConflictError.

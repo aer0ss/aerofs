@@ -1,7 +1,7 @@
 import logging
 
 from pyramid.view import view_config
-from web.version import get_current_version
+from web.version import get_private_version
 from web.views.maintenance.logs_view import get_file_download_response, get_download_file_name
 
 log = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ def backup(request):
 )
 def upgrade(request):
     return {
-        'current_version': get_current_version()
+        'current_version': get_private_version()
     }
 
 @view_config(

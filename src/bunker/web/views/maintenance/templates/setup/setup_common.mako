@@ -45,7 +45,7 @@
 <%def name="trackInitialTrialSetup(event)">
     %if enable_data_collection:
         <%
-            from web.version import get_current_version
+            from web.version import get_private_version
             customer_id = current_config['customer_id']
             if not customer_id: customer_id = 'unknown customer'
         %>
@@ -56,7 +56,7 @@
             ## Hence we attach the id as a property.
             customer_id: "${customer_id}",
             ## The appliance's version
-            version: "${get_current_version()}"
+            version: "${get_private_version()}"
         });
     %endif
 </%def>

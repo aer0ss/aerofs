@@ -15,6 +15,10 @@ sudo echo >> /dev/null
 sudo mkdir -p /opt/bunker/state && sudo chmod 777 /opt/bunker/state
 sudo mkdir -p /var/aerofs && sudo touch /var/aerofs/configuration-initialized-flag
 
+# Create the version file
+sudo mkdir -p /opt/repackaging/installers/original
+echo 'Version=1.2.3' | sudo tee /opt/repackaging/installers/original/current.ver
+
 # Create virtualenv
 virtualenv "$ENV"
 

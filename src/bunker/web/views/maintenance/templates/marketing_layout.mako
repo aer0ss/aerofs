@@ -6,7 +6,7 @@
 
 <%no_ie:scripts/>
 
-<%! from web.version import get_current_version %>
+<%! from web.version import get_private_version %>
 
 <%def name="home_url()">
     ${request.route_path('maintenance_home')}
@@ -15,14 +15,14 @@
 <%block name="top_navigation_bar_mobile">
     <li>
         <a href="https://support.aerofs.com/entries/23864878" target="_blank">
-            Version ${get_current_version()}</a>
+            Version ${get_private_version()}</a>
     </li>
 </%block>
 
 <%block name="top_navigation_bar_desktop">
     <li class="pull-right" style="font-weight: normal">
         <a href="https://support.aerofs.com/entries/23864878" target="_blank">
-            v${get_current_version()}</a>
+            v${get_private_version()}</a>
     </li>
 </%block>
 
