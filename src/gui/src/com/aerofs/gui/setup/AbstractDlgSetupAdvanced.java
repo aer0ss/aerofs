@@ -56,7 +56,6 @@ public abstract class AbstractDlgSetupAdvanced extends AeroFSJFaceDialog {
 
     /**
      * Create contents of the button bar
-     * @param parent
      */
     @Override
     protected void createButtonsForButtonBar(Composite parent)

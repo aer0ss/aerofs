@@ -54,6 +54,7 @@ import java.security.GeneralSecurityException;
 import java.util.Properties;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Note: methods in this class might be called before Cfg is initialized (i.e. before setup is
@@ -82,6 +83,15 @@ public abstract class Updater
             progress = p;
         }
     }
+
+    protected static final Logger l = Loggers.getLogger(Updater.class);
+
+    // This file determines whether the system runs in the Canary mode
+    public static File CANARY_FLAG_FILE = new File(Util.join(Cfg.absRTRoot(), "canary"));
+
+    private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
+    private static final String INSTALLER_URL = getStringProperty("updater.installer.url",
+            PROD_INSTALLER_URL);
 
     private String _installationFilename = "";
 
@@ -263,6 +273,7 @@ public abstract class Updater
 
                 ThreadUtil.sleepUninterruptable(UIParam.UPDATE_CHECKER_INITIAL_DELAY);
 
+                //noinspection InfiniteLoopStatement
                 while (true) {
                     checkForUpdate(false);
                     ThreadUtil.sleepUninterruptable(UIParam.UPDATE_CHECKER_INTERVAL);
@@ -274,11 +285,19 @@ public abstract class Updater
     public static String getServerVersion()
             throws IOException
     {
-        final String serverVersionUrl = VERSION_URL;
-        try {
-            l.debug("Reading Server Version from " + serverVersionUrl);
+        // Are we in the Canary mode?
+        boolean canary = CANARY_FLAG_FILE.exists();
 
-            final URL url = new URL(serverVersionUrl);
+        // The version URL for public deployment
+        String publicURL = "https://nocache.client.aerofs.com/" +
+                (canary ? "canary.ver" : "current.ver");
+
+        String versionURL = getStringProperty("updater.version.url", publicURL);
+
+        try {
+            l.debug("Reading version from {}", versionURL);
+
+            final URL url = new URL(versionURL);
             final URLConnection conn = newUpdaterConnection(url);
             final BufferedInputStream in = new BufferedInputStream(conn.getInputStream());
 
@@ -290,7 +309,7 @@ public abstract class Updater
 
             return version;
         } catch (final IOException e) {
-            l.error("Error reading server version from {}", serverVersionUrl, e);
+            l.error("Error reading version from {}", versionURL, e);
             UIGlobals.rockLog().newDefect("updater.readServerVersion").setException(e).send();
             throw e;
         }
@@ -434,9 +453,9 @@ public abstract class Updater
                 public boolean verify(String hostname, SSLSession session) {
 
                     try {
-                        X509Certificate[] x509 = session.getPeerCertificateChain();
-                        for (int i = 0; i < x509.length; i++) {
-                            String str = x509[i].getSubjectDN().toString();
+                        X509Certificate[] x509s = session.getPeerCertificateChain();
+                        for (X509Certificate x509 : x509s) {
+                            String str = x509.getSubjectDN().toString();
                             // this is for URLs pointing to S3
                             if (str.startsWith("CN=*.s3.amazonaws.com")) return true;
                             // this is for URLs pointing to CloudFront
@@ -548,22 +567,20 @@ public abstract class Updater
      */
     private void applyUpdate(@Nonnull String downloadedVersion, boolean force)
     {
-        assert downloadedVersion != null;
+        checkNotNull(downloadedVersion);
 
         setUpdateStatus(Status.APPLY, -1);
 
-        boolean hasPermissions = hasPermissions();
-
-        if (!hasPermissions) {
+        if (!hasPermissions()) {
             // updater doesn't have root permission
-            confirmUpdate(downloadedVersion, force, hasPermissions);
+            confirmUpdate(downloadedVersion, force, false);
         } else {
             // updater has root permission and can actually execute
             if (!UI.isGUI() || !GUI.get().isOpen()) {
                 // not GUI, or GUI window is't open --> can always apply update
-                execUpdate(downloadedVersion, hasPermissions);
+                execUpdate(downloadedVersion, true);
             } else {
-                confirmUpdate(downloadedVersion, force, hasPermissions);
+                confirmUpdate(downloadedVersion, force, true);
             }
         }
 
@@ -654,14 +671,4 @@ public abstract class Updater
     {
         return String.format(filenameFormat, version);
     }
-
-    protected static final Logger l = Loggers.getLogger(Updater.class);
-
-    private static final String PROD_SERVER_VERSION_URL = "https://nocache.client.aerofs.com/current.ver";
-    private static final String VERSION_URL = getStringProperty("updater.version.url",
-            PROD_SERVER_VERSION_URL);
-
-    private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
-    private static final String INSTALLER_URL = getStringProperty("updater.installer.url",
-            PROD_INSTALLER_URL);
 }

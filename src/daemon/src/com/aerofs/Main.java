@@ -165,7 +165,7 @@ public class Main
                             "permission to write to " + appRoot;
                 } else {
                     msg = "Unable to launch: configuration error. Please verify that your " +
-                          L.product() + " Appliance is reachable on the required ports (see " +
+                          L.brand() + " Appliance is reachable on the required ports (see " +
                           "http://ae.ro/1bent79 for details). Contact your systems administrator " +
                           "if the problem persists.";
                 }

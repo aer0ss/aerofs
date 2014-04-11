@@ -112,16 +112,17 @@ public class SingleuserCompPreferences extends Composite
 
             helper.createSyncHistory(shell);
             helper.createAPIAccess(shell);
+            helper.createCanaryMode(shell);
             helper.createSeparator(shell, false);
             helper.createButtonContainer(shell, "Selective Sync...", new DlgExclusion(shell))
-                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
             helper.createButtonContainer(shell, "Limit Bandwidth...",
                     new DlgThrottling(shell, true))
-                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
             helper.createSeparator(shell, true);
             helper.createButtonContainer(shell, S.UNLINK_THIS_COMPUTER,
                     new DlgUnlinkDevice(shell, true))
-                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
         }
     }
 }

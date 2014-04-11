@@ -28,8 +28,9 @@ Your public key is `$HOME/.ssh/id_rsa.pub`. Provide this file to [Drew](drew@aer
 
 Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a username and add your SSH key. When you've finished registering ask Weihan or Drew to add you to the 'Developers' group in Gerrit.
 
-## Install AeroFS and join the Air Computing Team shared folder.
+## Install AeroFS Canary and join the team folder
 
+  * Once your AeroFS is installed, go to tray menu > Preferences... > Advanced..., and enable the Canary mode.
   * Ask Weihan or Yuri to invite you to the AeroFS organization and to the `Air Computing Team` shared folder.
   * Accept the invitation via the email you received
   * [Download and install the AeroFS client](https://www.aerofs.com/download). 

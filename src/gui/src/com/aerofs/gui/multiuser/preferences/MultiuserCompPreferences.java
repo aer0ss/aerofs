@@ -43,6 +43,7 @@ public class MultiuserCompPreferences extends Composite
 
             helper.createSyncHistory(shell);
             helper.createAPIAccess(shell);
+            helper.createCanaryMode(shell);
         }
     }
 }

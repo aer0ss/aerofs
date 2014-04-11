@@ -11,6 +11,8 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
@@ -27,7 +29,9 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.update.Updater;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
@@ -50,6 +54,8 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 
 import javax.annotation.Nullable;
+
+import java.io.IOException;
 
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
@@ -408,7 +414,7 @@ public class PreferencesHelper
 
     public void setLayoutForAdvanced(Composite composite)
     {
-        GridLayout layout = new GridLayout(4, false);
+        GridLayout layout = new GridLayout(5, false);
         layout.marginWidth = 0;
         layout.marginHeight = GUIParam.MARGIN;
         layout.verticalSpacing = GUIParam.VERTICAL_SPACING;
@@ -421,7 +427,7 @@ public class PreferencesHelper
 
         final Button btnHistory = GUIUtil.createButton(parent, SWT.CHECK);
         btnHistory.setText(S.ENABLE_SYNC_HISTORY);
-        btnHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
+        btnHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
         btnHistory.setSelection(Cfg.db().getBoolean(Key.SYNC_HISTORY));
         // This button is a little complicated - we present a warning only if the
         // selection state goes from on to off. If the user clicks No, the selection state
@@ -459,7 +465,7 @@ public class PreferencesHelper
         final Button btnAPIAccess = GUIUtil.createButton(parent, SWT.CHECK);
 
         btnAPIAccess.setText("Enable API access");
-        btnAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+        btnAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
         btnAPIAccess.setSelection(new CfgRestService().isEnabled());
         btnAPIAccess.addSelectionListener(new SelectionAdapter()
         {
@@ -492,7 +498,7 @@ public class PreferencesHelper
             }
         });
 
-        Link lnkWebAccess = new Link(parent, SWT.CHECK);
+        Link lnkWebAccess = new Link(parent, SWT.NONE);
         lnkWebAccess.setText("<a>What is this?</a>");
         lnkWebAccess.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
         lnkWebAccess.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_API_ACCESS));
@@ -500,12 +506,89 @@ public class PreferencesHelper
         new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
     }
 
+    private static final int STABLE_INDEX = 0;
+    private static final int CANARY_INDEX = 1;
+
+    private static boolean isCanary()
+    {
+        return Updater.CANARY_FLAG_FILE.exists();
+    }
+
+    public void createCanaryMode(Composite parent)
+    {
+        // Don't show the Canary option for private deployment
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) return;
+
+        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+
+        new Label(parent, SWT.NONE).setText("Release channel:");
+
+        final Combo comboCanary = new Combo(parent, SWT.READ_ONLY);
+        comboCanary.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+
+        comboCanary.add("Stable");
+        comboCanary.add("Canary");
+
+        comboCanary.select(isCanary() ? CANARY_INDEX : STABLE_INDEX);
+        comboCanary.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent ev)
+            {
+                onCanarySelection(comboCanary);
+            }
+        });
+
+        Link lnkCanary = new Link(parent, SWT.NONE);
+        lnkCanary.setText("<a>What is this?</a>");
+        lnkCanary.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+        lnkCanary.setVisible(false);
+        //lnkCanary.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_API_ACCESS));
+
+        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+    }
+
+    private void onCanarySelection(Combo comboCanary)
+    {
+        boolean toCanary = comboCanary.getSelectionIndex() == CANARY_INDEX;
+        // No change in selection.
+        if (toCanary == isCanary()) return;
+
+        try {
+            if (toCanary) {
+                String message = "Your " + L.product() + " may restart shortly to update to the" +
+                        " Canary release.";
+                if (GUI.get().ask(_shell, MessageType.INFO, message, "Continue", "Cancel")) {
+                    FileUtil.createNewFile(Updater.CANARY_FLAG_FILE);
+                    UIGlobals.updater().checkForUpdate(true);
+                } else {
+                    comboCanary.select(STABLE_INDEX);
+                }
+
+            } else {
+                String message = L.product() + " will update to the Stable release when the" +
+                        " Stable release reaches version " + Cfg.ver() + ".\n\n" +
+                        "Warning: do not attempt to downgrade " + L.product() + " to a previous" +
+                        " version. Doing so will cause unexpected behavior and potential data" +
+                        " loss.";
+                GUI.get().show(_shell, MessageType.INFO, message);
+                FileUtil.deleteOrThrowIfExist(Updater.CANARY_FLAG_FILE);
+            }
+        } catch (IOException e) {
+            // Canary users are assumed to be tech savvy. So show them technical details.
+            ErrorMessages.show(_shell, e, "",
+                    new ErrorMessage(IOException.class, "Failed to toggle the release channel: " +
+                            e.getLocalizedMessage()));
+            comboCanary.select(toCanary ? STABLE_INDEX : CANARY_INDEX);
+        }
+    }
+
     // use invisible separator to increase spacing between widgets
     public void createSeparator(Composite parent, boolean visible)
     {
         Label separator = new Label(parent, SWT.HORIZONTAL | SWT.SEPARATOR);
         // spans 4 columns because it's the most number of columns for the layouts we use
-        separator.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1));
+        separator.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 5, 1));
         separator.setVisible(visible);
     }
 }
