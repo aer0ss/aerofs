@@ -141,7 +141,7 @@ def json_set_license(request):
     request_method='POST'
 )
 def setup_submit_data_collection_form(request):
-    enable = request.params['data-collection']
+    enable = request.params.get('data-collection', False)
     _set_data_collection(request, enable)
     return HTTPFound(location=_get_hostname_page_route_path(request))
 
