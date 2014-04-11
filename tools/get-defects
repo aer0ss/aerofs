@@ -61,7 +61,7 @@ main()
                     mv "$TARGET_FOLDER/$i.log" "$TARGET_FOLDER/unmapped.$i.log"
 
                     cat "$TARGET_FOLDER/unmapped.$i.log" | \
-                        reverse-map -f $(ls "$TARGET_FOLDER/name"*"map") > \
+                        reverse-map/reverse-map.py -f $(ls "$TARGET_FOLDER/name"*"map") > \
                         "$TARGET_FOLDER/$i.log"
                 fi
             done
