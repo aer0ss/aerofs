@@ -204,6 +204,19 @@ public class DownloadDeadlockResolver
     /**
      * Break the dependency by renaming the source SOCID of the name-conflict
      * @param cycle only required for debugging AssertionErrors
+     *
+     * TODO: investigate tickless rename to gracefully handle name conflict between
+     * an auto-joined anchor and one of its parent, e.g.
+     *
+     * User device:
+     * AeroFS/
+     *   foo/
+     *     foo <- anchor
+     *
+     * TS:
+     * user@acme.corp/
+     *   foo  <- auto-created anchor
+     *
      */
     private void breakDependencyByRenaming_(@Nonnull NameConflictDependencyEdge dependency,
             List<DependencyEdge> cycle, IDownloadContext cxt)
