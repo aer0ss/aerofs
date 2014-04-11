@@ -100,7 +100,11 @@ public class FactoryReaderProvider implements StringReaderProvider<Object>
             try {
                 return _m.invoke(_o, s);
             } catch (InvocationTargetException e) {
-                throw new MappableContainerException(e.getCause());
+                Throwable t = e.getCause();
+                // rethrow unchecked exceptions without Mappable wrapping to ensure we get a
+                // ParamException wrapping
+                if (t instanceof RuntimeException) throw (RuntimeException)t;
+                throw new MappableContainerException(t);
             } catch (IllegalAccessException e) {
                 throw new ContainerException(e.getCause());
             }

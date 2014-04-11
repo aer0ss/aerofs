@@ -40,7 +40,7 @@ public class RestObject
         try {
             return new UniqueID(s, idx, len);
         } catch (Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException();
         }
     }
 
