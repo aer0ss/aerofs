@@ -26,7 +26,7 @@
                    checked="checked"
                %endif
             >
-            Use AeroFS Service Appliance's local mail relay
+            Use the AeroFS Appliance's local mail relay
         </label>
 
         <label class="radio">
