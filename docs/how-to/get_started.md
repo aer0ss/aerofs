@@ -138,6 +138,13 @@ git remote add gerrit ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
 
 This installs `git-review`, installs a post-commit hook for gerrit and adds the gerrit remote.
 
+### Enable vim syntax highlighting
+
+    $ cat > ~/.vimrc <<END
+    syntax on
+    set hlsearch
+    END
+
 
 ## Set up MySQL and Redis for unit tests
 
