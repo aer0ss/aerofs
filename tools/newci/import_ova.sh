@@ -51,11 +51,20 @@ echo Provisioning VM with your public key...
 SSH_OPTS="-o Loglevel=FATAL -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes"
 
 set +e
-ret=1
-while [ $ret != 0 ]; do
+# We will attempt to push the insecure private key every 10 seconds for a maximum of 5 minutes.
+let attempts=0
+while [ 1 ]; do
     sleep 10
     ssh -p $fwport -i ~/.vagrant.d/insecure_private_key $SSH_OPTS ubuntu@localhost "echo $(cat ~/.ssh/id_rsa.pub) >> ~/.ssh/authorized_keys"
     ret=$?
+    if [ $ret -eq 0 ]; then
+        break
+    fi
+    attempts=$((attempts+1))
+    if [ $attempts -gt 30 ]; then
+        echo "FAILED: could not provision insecure private key after $attempts attempts."
+        exit 1
+    fi
 done
 set -e
 
@@ -66,6 +75,7 @@ echo Provisioning everything else...
 scp -P $fwport $SSH_OPTS "$properties_file" ubuntu@localhost:external.properties
 ssh -p $fwport $SSH_OPTS ubuntu@localhost <<EOSSH
 
+set -ex
 sudo cp external.properties /opt/config/properties/
 
 curl --insecure --request POST --data "$license_data" http://localhost:5434/set_license_file
