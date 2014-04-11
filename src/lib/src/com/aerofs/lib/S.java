@@ -1,8 +1,12 @@
 package com.aerofs.lib;
 
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.cfg.Cfg;
 
+/*
+    N.B. depends on private deployment flag. Do not use before configuration system is initialized.
+ */
 public class S
 {
     public static final String
@@ -202,7 +206,9 @@ public class S
             SHARED_DIR = "shared",
             URL_ROLES = "https://support.aerofs.com/entries/22831810",
 
-            URL_API_ACCESS = "https://support.aerofs.com/entries/28215600",
+            URL_API_ACCESS = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ?
+                    "https://support.aerofs.com/entries/29044194" :
+                    "https://support.aerofs.com/entries/28215600",
             API_ACCESS_DESC = "If API access is disabled, you will not be able to access the " +
                     "files on this computer from mobile devices, on the " + L.brand() + " " +
                     "website, or through 3rd party " + L.brand() + " applications.",

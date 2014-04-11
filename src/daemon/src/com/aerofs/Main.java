@@ -96,11 +96,18 @@ public class Main
     }
 
     // arguments: <rtroot> <app> [appargs ...]
+    /*
+        N.B. the sequence in the main method is fragile, please update the class dependency
+        throughout. The following classes are initialized before the configuration system is
+        initialized, so they should not depend on the configuration system:
+            LoggerFactory, ExitCode, SystemUtil, LibParam, C, LogUtil, Cfg
+     */
     public static void main(String[] args)
     {
         final int REQUIRED_ARGS = 2;
         if (args.length < REQUIRED_ARGS) {
             System.err.println("insufficient arguments");
+            // accesses LoggerFactory, ExitCode, SystemUtil
             ExitCode.FAIL_TO_LAUNCH.exit();
         }
 
@@ -111,12 +118,14 @@ public class Main
         String[] appArgs = new String[args.length - REQUIRED_ARGS];
         System.arraycopy(args, REQUIRED_ARGS, appArgs, 0, appArgs.length);
 
+        // access LibParam, C
         if (rtRoot.equals(LibParam.DEFAULT_RTROOT)) {
             rtRoot = OSUtil.get().getDefaultRTRoot();
         }
 
         // Create rtroot folder with the right permissions
         createRtRootIfNotExists(rtRoot);
+        // access LogUtil, Cfg -> reads the flag files
         initializeLogging(rtRoot, prog);
 
         String appRoot = AppRoot.abs();
@@ -137,6 +146,7 @@ public class Main
 
         // First things first, initialize the configuration subsystem.
         try {
+            // initializes configuration
             initializeConfigurationSystem(appRoot);
             writeCACertToFile(appRoot);
         } catch (Exception e) {

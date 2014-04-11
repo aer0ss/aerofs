@@ -46,6 +46,9 @@ import java.util.Scanner;
 /**
  * This class is unfriendly to dependency injection and should be eventually removed.
  * User Dynamic*Properties from ArrowConfiguration instead.
+ *
+ * This class is initialized before the configuration system is initialized. Therefore, this class
+ * may not have static final configuration properties.
  */
 public class Cfg
 {
