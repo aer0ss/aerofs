@@ -25,7 +25,9 @@ public class TunnelAddress extends SocketAddress
     @Override
     public String toString()
     {
-        return String.format("(%s, %s)", user.getString(), did.toString());
+        return String.format("(%s, %s)",
+                user != null? user.getString() : null,
+                did != null ? did.toString() : null);
     }
 
     @Override

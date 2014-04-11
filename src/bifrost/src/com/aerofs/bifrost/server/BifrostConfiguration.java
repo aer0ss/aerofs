@@ -6,6 +6,7 @@ package com.aerofs.bifrost.server;
 
 import com.aerofs.base.Version;
 import com.aerofs.restless.Configuration;
+import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import javax.ws.rs.core.Response;
@@ -14,7 +15,7 @@ import javax.ws.rs.core.Response.Status;
 public class BifrostConfiguration implements Configuration
 {
     @Override
-    public void addGlobalHeaders(HttpResponse response)
+    public void addGlobalHeaders(HttpResponse response, HttpRequest request)
     {
     }
 

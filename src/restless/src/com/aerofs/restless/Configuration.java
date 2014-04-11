@@ -5,14 +5,15 @@
 package com.aerofs.restless;
 
 import com.aerofs.base.Version;
+import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import javax.ws.rs.core.Response;
 
 public interface Configuration
 {
-    // global headers (cache control, Cross-Origin Resource Sharing, ...)
-    void addGlobalHeaders(HttpResponse response);
+    // global response headers (cache control, Cross-Origin Resource Sharing, ...)
+    void addGlobalHeaders(HttpResponse response, HttpRequest request);
 
     Response resourceNotFound(String path);
 

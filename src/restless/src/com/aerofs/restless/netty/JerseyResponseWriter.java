@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 class JerseyResponseWriter implements ContainerResponseWriter
 {
@@ -39,6 +40,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
     private final Channel _channel;
     private final String _location;
     private final boolean _keepAlive;
+    private final HttpRequest _request;
 
     private ChannelBuffer _buffer;
     private final ChannelFutureListener _trailer;
@@ -48,9 +50,10 @@ class JerseyResponseWriter implements ContainerResponseWriter
     public JerseyResponseWriter(final Channel channel, HttpRequest request,
             Configuration config)
     {
+        _channel = channel;
+        _request = request;
         _config = config;
 
-        _channel = channel;
         _location = "https://" + request.getHeader(Names.HOST) + "/";
         _keepAlive = HttpHeaders.isKeepAlive(request);
 
@@ -84,7 +87,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
             values.clear();
         }
 
-        _config.addGlobalHeaders(r);
+        _config.addGlobalHeaders(r, _request);
 
         Object entity = response.getEntity();
         // entity-less responses should have a truly empty body which means
