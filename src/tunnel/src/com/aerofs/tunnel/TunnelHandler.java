@@ -160,7 +160,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
 
         // heartbeat reception
         if (type == MSG_BEAT) {
-            l.info("tunnel beat recv {}", this);
+            l.debug("tunnel beat recv {}", this);
             return;
         }
 
@@ -262,7 +262,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             l.warn("tunnel beat missed {}", this);
             e.getChannel().close();
         } else if (e.getState() == IdleState.WRITER_IDLE) {
-            l.info("tunnel beat send {}", this);
+            l.debug("tunnel beat send {}", this);
             e.getChannel().write(BEAT);
         }
     }
