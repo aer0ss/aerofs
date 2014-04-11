@@ -162,6 +162,9 @@ class _RitualServiceWrapper(object):
 
     def leave_shared_folder(self, path):
         pbpath = convert.absolute_to_pbpath(path)
+        self.leave_shared_folder_pb(pbpath)
+
+    def leave_shared_folder_pb(self, pbpath):
         self._service.leave_shared_folder(pbpath)
 
     def exclude_folder(self, path):
@@ -192,6 +195,9 @@ class _RitualServiceWrapper(object):
         PBObjectAttributes
         """
         pbpath = self.wait_path(path)
+        self.get_child_attributes_pb(pbpath)
+
+    def get_children_attributes_pb(self, pbpath):
         reply = self._service.get_children_attributes(pbpath)
         ret = {}
         for i in range(0, len(reply.children_name)):

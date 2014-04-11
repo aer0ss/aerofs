@@ -179,6 +179,14 @@ public class LinkedStorage implements IPhysicalStorage
         String absAuxRoot = auxRootForStore_(sidx);
         deleteFiles_(absAuxRoot, LibParam.AuxFolder.CONFLICT, prefix);
         deleteFiles_(absAuxRoot, LibParam.AuxFolder.PREFIX, prefix);
+
+        // Unlink external store/root.
+        LinkerRoot lr = _lrm.get_(sid);
+        if (lr != null) {
+            _lrm.unlink_(sid, t);
+            l.info("Unlinked {} {}", sid, lr.absRootAnchor());
+        }
+
     }
 
     String auxFilePath(SOKID sokid, AuxFolder folder) throws SQLException
