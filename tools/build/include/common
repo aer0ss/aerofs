@@ -430,10 +430,10 @@ function render_template() {
 # The release directory must contain the AeroFS installers for all platforms
 # and a version file specifying the version of the release.
 #
-# NOTE: to rollback a production release for any reason:
+# NOTE: to rollback a production release to version 1.2.3 for any reason:
 #       - log into release-prod@b.arrowfs.org
-#       - s3cmd sync -P --cf-invalidate --delete-removed /data/public-downloads/[version]/* s3://nocache.client.aerofs.com
-#       TODO (WW) update the rollback instructions once we no longer generate unversioned installers.
+#       - echo Version=1.2.3 > current.ver
+#       - s3cmd sync --acl-public --cf-invalidate current.ver s3://nocache.client.aerofs.com
 #
 # @param $1 The version to publish
 # @param $2 The S3 bucket to which the release version will be pushed

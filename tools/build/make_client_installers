@@ -101,10 +101,6 @@ function make_linux_installer_deb() {
                  $AEROFS_PRODUCT_UNIX \
                  "$LOCAL_RELEASE_DIR" \
                  "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.deb"
-    # make unversioned symlinks
-    pushd ${PACKAGE_DIR}
-    ln -s ${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.deb   ${AEROFS_PRODUCT_UNIX}-installer.deb
-    popd
 }
 
 function make_linux_installer_tgz() {
@@ -122,11 +118,6 @@ function make_linux_installer_tgz() {
     popd
     mkdir -p ${PACKAGE_DIR}
     tar -C "$TGZ_EXPANDED_DIR" -zcf "${PACKAGE_DIR}/${local_LINUX_INSTALLER_TGZ_FILENAME}" aerofs
-
-    # make unversioned symlinks
-    pushd ${PACKAGE_DIR}
-    ln -s ${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.tgz   ${AEROFS_PRODUCT_UNIX}-installer.tgz
-    popd
 }
 
 function make_linux_update_tgz() {
@@ -161,14 +152,6 @@ function make_linux_update_tgz() {
     cp -a "${LOCAL_RELEASE_DIR}/aerofs.linux/${local_ARCH}"/* "${ARCH_TGZ_TEMP_DIR}/aerofs"
     mkdir -p ${PACKAGE_DIR}
     tar -C "${ARCH_TGZ_TEMP_DIR}" -zcf "${PACKAGE_DIR}/${VERSIONED_ARCH_TGZ_FILENAME}" aerofs
-
-    # make unversioned symlinks
-    pushd ${PACKAGE_DIR}
-    case ${local_ARCH} in
-        i386)  ln -s ${AEROFS_PRODUCT_UNIX}-${RELEASE_VERSION}-x86.tgz         ${AEROFS_PRODUCT_UNIX}-x86.tgz ;;
-        amd64) ln -s ${AEROFS_PRODUCT_UNIX}-${RELEASE_VERSION}-x86_64.tgz      ${AEROFS_PRODUCT_UNIX}-x86_64.tgz ;;
-    esac
-    popd
 }
 
 function make_windows_installers() {
@@ -260,11 +243,6 @@ function make_windows_installers() {
     if $SIGNED ; then
         sign_exe "$OUT_FILE"
     fi
-
-    # make unversioned symlinks
-    pushd ${PACKAGE_DIR}
-    ln -s ${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe ${AEROFS_PRODUCT_SPACEFREE}Install.exe
-    popd
 }
 
 function make_osx_packages() {
@@ -352,12 +330,6 @@ function make_osx_packages() {
             exit 1
             ;;
     esac
-
-    # make unversioned symlinks
-    pushd ${PACKAGE_DIR}
-    ln -s ${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.dmg ${AEROFS_PRODUCT_SPACEFREE}Install.dmg
-    ln -s ${AEROFS_PRODUCT_UNIX}-osx-${RELEASE_VERSION}.zip         ${AEROFS_PRODUCT_UNIX}-osx.zip
-    popd
 }
 
 function create_release_version_file() {
