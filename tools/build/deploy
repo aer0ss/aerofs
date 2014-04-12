@@ -70,7 +70,7 @@ function upload_map() {
 
 # Create final version tag (current.ver) on release server
 function create_version_file_on_release_server() {
-    local local_VERSION_FILE="${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${RELEASE_SERVER_VERSION_FILE}"
+    local local_VERSION_FILE="${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${CURRENT_VER}"
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         echo Version=$RELEASE_VERSION > "$local_VERSION_FILE"
         chmod a+r "$local_VERSION_FILE"

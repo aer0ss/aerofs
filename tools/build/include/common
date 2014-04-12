@@ -192,7 +192,8 @@ readonly RELEASE_SERVER_SHELL="bash -s -e -u"
 readonly RELEASE_FILES_DIR="/home/${RELEASE_SERVER_USERNAME}"
 readonly RELEASE_UNPACK_DIR="${RELEASE_FILES_DIR}/unpack"
 readonly INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads"
-readonly RELEASE_SERVER_VERSION_FILE="current.ver"
+readonly CURRENT_VER="current.ver"
+readonly CANARY_VER="canary.ver"
 readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
 
 ###############################################################################
@@ -210,7 +211,6 @@ case "$MODE" in
     "PRIVATE") readonly RELEASE_DOMAIN=$RELEASE_DOMAIN_PRIVATE ;;
 esac
 readonly INSTALLER_DOWNLOAD_BUCKET="s3://${RELEASE_DOMAIN}"
-readonly RELEASE_VERSION_URL="https://${RELEASE_DOMAIN}/${RELEASE_SERVER_VERSION_FILE}"
 readonly UNSECURED_PASSPHRASE=temp123
 
 ###############################################################################
@@ -284,6 +284,23 @@ function is_ci() {
     fi
     return 1
 }
+###############################################################################
+#
+# Echo the PUBLIC version string in the format of "Version=1.2.3"
+#
+###############################################################################
+function public_version_file_content() {
+    wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PUBLIC}/${CANARY_VER}
+}
+
+###############################################################################
+#
+# Echo the PRIVATE version string in the format of "Version=1.2.3"
+#
+###############################################################################
+function private_version_file_content() {
+    wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PRIVATE}/${CURRENT_VER}
+}
 
 ###############################################################################
 #
@@ -293,10 +310,10 @@ function is_ci() {
 #
 ###############################################################################
 function current_release_version() {
-    local local_PUBLIC_RELEASE_VERSION_STRING="$( wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PUBLIC}/${RELEASE_SERVER_VERSION_FILE} )"
-    local local_PRIVATE_RELEASE_VERSION_STRING="$( wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PRIVATE}/${RELEASE_SERVER_VERSION_FILE} )"
-    local local_PUBLIC_VERSION="$( echo $local_PUBLIC_RELEASE_VERSION_STRING | sed -e 's/.*=//' )"
-    local local_PRIVATE_VERSION="$( echo $local_PRIVATE_RELEASE_VERSION_STRING | sed -e 's/.*=//' )"
+    local local_PUBLIC_VERSION_FILE_CONTENT="$( public_version_file_content )"
+    local local_PRIVATE_VERSION_FILE_CONTENT="$( private_version_file_content )"
+    local local_PUBLIC_VERSION="$( echo $local_PUBLIC_VERSION_FILE_CONTENT | sed -e 's/.*=//' )"
+    local local_PRIVATE_VERSION="$( echo $local_PRIVATE_VERSION_FILE_CONTENT | sed -e 's/.*=//' )"
     if [[ ! $local_PUBLIC_VERSION =~ [0-9]+\.[0-9]+\.[0-9]+ ||
           ! $local_PRIVATE_VERSION =~ [0-9]+\.[0-9]+\.[0-9]+ ]];
     then
@@ -313,7 +330,7 @@ function current_release_version() {
 #
 ###############################################################################
 function compute_next_release_version() {
-    local local_CURRENT_RELEASE_VERSION="$( current_release_version $RELEASE_VERSION_URL )"
+    local local_CURRENT_RELEASE_VERSION="$( current_release_version )"
     [[ $local_CURRENT_RELEASE_VERSION != "" ]] || exit $ERRBADVERSION
     local local_CURRENT_RELEASE_VERSION_MAJOR_MINOR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/\.[0-9]*$//' )"
     local local_CURRENT_RELEASE_VERSION_BUILD_NUMBR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/.*\.//' )"
@@ -416,6 +433,7 @@ function render_template() {
 # NOTE: to rollback a production release for any reason:
 #       - log into release-prod@b.arrowfs.org
 #       - s3cmd sync -P --cf-invalidate --delete-removed /data/public-downloads/[version]/* s3://nocache.client.aerofs.com
+#       TODO (WW) update the rollback instructions once we no longer generate unversioned installers.
 #
 # @param $1 The version to publish
 # @param $2 The S3 bucket to which the release version will be pushed
@@ -424,19 +442,25 @@ function render_template() {
 function publish_to_s3() {
     echo ">> publishing to s3 bucket ${2}"
 
+    local local_DIR="${INSTALLERS_DOWNLOAD_DIR}/${1}"
+    local local_PUBLIC_VERSION_FILE_CONTENT="$( public_version_file_content )"
+
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         # Check to see that a version file exists in the specified version directory and is
         # non-empty.
-        if [ ! -s "${INSTALLERS_DOWNLOAD_DIR}/${1}/${RELEASE_SERVER_VERSION_FILE}" ]; then
+        if [ ! -s "${INSTALLERS_DOWNLOAD_DIR}/${1}/${CURRENT_VER}" ]; then
             exit $ERRS3
         fi
 
         if [ "$MODE" = "PUBLIC" ] ; then
-            OPTS="--follow-symlinks --acl-public --delete-removed --cf-invalidate"
-        else
-            OPTS="--follow-symlinks --acl-public --delete-removed"
+            # For public deployment, move current.ver to canary.ver, and use the old current.ver as the new one.
+            mv "${local_DIR}/${CURRENT_VER}" "${local_DIR}/${CANARY_VER}"
+            echo "${local_PUBLIC_VERSION_FILE_CONTENT}" > "${local_DIR}/${CURRENT_VER}"
+
+            EXTRA_OPTS="--cf-invalidate"
         fi
-        s3cmd \$OPTS sync "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+
+        s3cmd --follow-symlinks --acl-public --delete-removed \$EXTRA_OPTS sync "${local_DIR}"/* $2 > /dev/null
 ENDCMDS
 }
 

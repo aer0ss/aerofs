@@ -361,7 +361,7 @@ function make_osx_packages() {
 }
 
 function create_release_version_file() {
-    declare VERSION_FILE="${PACKAGE_DIR}/${RELEASE_SERVER_VERSION_FILE}"
+    declare VERSION_FILE="${PACKAGE_DIR}/${CURRENT_VER}"
     echo Version=$RELEASE_VERSION > "$VERSION_FILE"
     chmod a+r "$VERSION_FILE"
 }
