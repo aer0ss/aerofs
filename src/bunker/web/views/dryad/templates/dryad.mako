@@ -30,7 +30,7 @@
             <div id="users-table">
                 <script id="users-row-template" type="text/template">
                     <label id="users-row-template" for="user-{{ index }}">
-                        <input id="user-{{ index }}" name="user" value="{{ user }}" type="checkbox">{{ user }}
+                        <input id="user-{{ index }}" name="user" value="{{ user }}" type="checkbox">{{ label }}
                     </label>
                 </script>
             </div>
@@ -92,7 +92,9 @@
                         $.each(data['users'], function(index, user) {
                             var map = {
                                 'index':    index,
-                                'user':     user
+                                'user':     user,
+                                ## team server id starts with ':'
+                                'label':    user[0] == ':' ? 'Team Server' : user
                             };
 
                             $table.append(render(template, map));

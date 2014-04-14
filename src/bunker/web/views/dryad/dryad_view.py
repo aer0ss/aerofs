@@ -1,5 +1,9 @@
 import logging
+
+import oursql
 from pyramid.view import view_config
+
+from web.views.maintenance.maintenance_util import get_conf
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +30,7 @@ def report_problems(request):
 def json_submit_problem(request):
     logging.info(request.body)
 
-    ## echo for the time being to verify encoding and parsing
+    # echo for the time being to verify encoding and parsing
     return {
         'email':    request.params[_URL_PARAM_EMAIL],
         'desc':     request.params[_URL_PARAM_DESC],
@@ -41,16 +45,18 @@ def json_submit_problem(request):
     request_method='GET',
 )
 def json_get_users(request):
-    logging.info('json_get_users')
+    with get_spdb_conn(request) as cursor:
+        cursor.execute('SELECT u_id FROM sp_user')
 
-    ## TODO: replace with real data
+        # TODO (AT): this doesn't scale when result set is large
+        users = map(lambda r: r[0], cursor.fetchall())
+
     return {
-        'users': [
-            'alex@aerofs.com',
-            'alex+0@aerofs.com',
-            'alex+1@aerofs.com',
-            'alex+2@aerofs.com',
-            'alex+3@aerofs.com',
-            'alex+4@aerofs.com',
-        ]
+        'users': users
     }
+
+
+def get_spdb_conn(request):
+    return oursql.connect(host=get_conf(request)['base.host.unified'],
+                          user='aerofs_sp',
+                          db='aerofs_sp')
