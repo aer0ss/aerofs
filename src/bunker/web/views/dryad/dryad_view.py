@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 import oursql
 from pyramid.view import view_config
@@ -30,8 +31,12 @@ def report_problems(request):
 def json_submit_problem(request):
     logging.info(request.body)
 
+    # UUID Type 4 (random numbers)
+    dryadID = uuid.uuid4()
+
     # echo for the time being to verify encoding and parsing
     return {
+        'dryadID':  dryadID.hex,
         'email':    request.params[_URL_PARAM_EMAIL],
         'desc':     request.params[_URL_PARAM_DESC],
         'users':    request.params.getall(_URL_PARAM_USERS),
