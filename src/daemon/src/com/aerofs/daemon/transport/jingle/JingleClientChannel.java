@@ -282,7 +282,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
             public void run()
             {
                 l.info("{}: closing jingle stream", this);
-                teardownJingleStream(new ChannelException("channel closed"), true);
+                teardownJingleStream(new ExDeviceUnavailable("channel closed"), true);
             }
 
             @Override
