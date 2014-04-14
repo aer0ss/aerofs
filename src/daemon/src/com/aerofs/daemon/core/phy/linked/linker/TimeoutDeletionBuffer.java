@@ -6,6 +6,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.FID;
@@ -50,6 +51,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     private final LinkerRootMap _lrm;
     private final InjectableDriver _dr;
     private final IgnoreList _il;
+    private final RepresentabilityHelper _rh;
 
     private boolean _deletionScheduled = false;
 
@@ -163,7 +165,8 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
 
     @Inject
     TimeoutDeletionBuffer(ObjectDeleter od, CoreScheduler sched, TransManager tm,
-            DirectoryService ds, LinkerRootMap lrm, InjectableDriver dr, IgnoreList il)
+            DirectoryService ds, LinkerRootMap lrm, InjectableDriver dr, IgnoreList il,
+            RepresentabilityHelper rh)
     {
         _od = od;
         _sched = sched;
@@ -172,6 +175,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         _dr = dr;
         _lrm = lrm;
         _il = il;
+        _rh = rh;
     }
 
     @Override
@@ -347,6 +351,14 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
      */
     private boolean physicalObjectDisappeared(OA oa) throws Exception
     {
+        // files with no master branch should not appear in the deletion buffer
+        // but we need to be extra defensive here to avoid mistakenly propagating
+        // a deletion operation to remote nodes
+        if (oa.isFile() && oa.caMasterNullable() == null) return false;
+        // likewise, NROs should not appear in the deletion buffer but again we
+        // need to be extra defensive about deletions so we double check here
+        if (_rh.isNonRepresentable(oa)) return false;
+
         Path path = _ds.resolve_(oa);
         String absRoot = _lrm.absRootAnchor_(path.sid());
         if (absRoot != null) {

@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
@@ -12,12 +13,14 @@ public class MightDelete
 {
     private final IgnoreList _il;
     private final DirectoryService _ds;
+    private final RepresentabilityHelper _rh;
 
     @Inject
-    public MightDelete(IgnoreList il, DirectoryService ds)
+    public MightDelete(IgnoreList il, DirectoryService ds, RepresentabilityHelper rh)
     {
         _il = il;
         _ds = ds;
+        _rh = rh;
     }
 
     /**
@@ -35,7 +38,11 @@ public class MightDelete
         SOID soid = _ds.resolveNullable_(pcPhysical._path);
         if (soid == null) return;
 
-        if (!shouldNotDelete(_ds.getOA_(soid))) delBuffer.add_(soid);
+        OA oa = _ds.getOA_(soid);
+        // must not add object to the deletion buffer if it is not expected to be present
+        if (shouldNotDelete(oa) || _rh.isNonRepresentable(oa)) return;
+
+        delBuffer.add_(soid);
 
         // Do not do anything that may throw after delBuffer.add_() above. Or you have to undo the
         // operation by calling remove_() on exceptions. See comments in add_().

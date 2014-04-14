@@ -4,9 +4,11 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -40,6 +42,7 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
     @Mock OA oa;
     @Mock LinkerRootMap lrm;
     @Mock RockLog rocklog;
+    @Mock RepresentabilityHelper rh;
     @InjectMocks TimeoutDeletionBuffer delBuffer;
     Holder h;
 
@@ -57,6 +60,31 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         when(oa.name()).thenReturn("name");
         when(ds.resolve_(oa)).thenReturn(new ResolvedPath(rootSID, ImmutableList.of(soid), ImmutableList.of("name")));
         when(lrm.absRootAnchor_(rootSID)).thenReturn("/AeroFS");
+    }
+
+    private static enum ObjectFlag
+    {
+        NRO,
+        NO_CONTENT
+    }
+
+    SOID mockObject(ObjectFlag flag) throws SQLException
+    {
+        SOID soid = new SOID(new SIndex(1), OID.generate());
+        OA oa = mock(OA.class);
+        when(ds.getOA_(eq(soid))).thenReturn(oa);
+        when(ds.getOANullable_(eq(soid))).thenReturn(oa);
+        when(ds.getAliasedOANullable_(eq(soid))).thenReturn(oa);
+        when(oa.name()).thenReturn("name");
+        if (flag == ObjectFlag.NO_CONTENT) {
+            when(oa.isFile()).thenReturn(true);
+            when(oa.caMasterNullable()).thenReturn(null);
+        } else {
+            CA ca = mock(CA.class);
+            when(oa.caMasterNullable()).thenReturn(ca);
+            when(rh.isNonRepresentable(oa)).thenReturn(flag == ObjectFlag.NRO);
+        }
+        return soid;
     }
 
     @Test
@@ -105,23 +133,28 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
     public void shouldDeleteOnlyUnheldObjectsWhoseTimeoutHasPassed() throws Exception
     {
         Set<SOID> expectedDeletableSOIDs = ImmutableSet.of(
-                new SOID(new SIndex(2), new OID(UniqueID.generate())),
-                new SOID(new SIndex(3), new OID(UniqueID.generate()))
+                new SOID(new SIndex(2), OID.generate()),
+                new SOID(new SIndex(3), OID.generate())
         );
 
         Set<SOID> expectedHeldSOIDs = ImmutableSet.of(
-                new SOID(new SIndex(4), new OID(UniqueID.generate())),
-                new SOID(new SIndex(5), new OID(UniqueID.generate()))
+                new SOID(new SIndex(4), OID.generate()),
+                new SOID(new SIndex(5), OID.generate())
         );
 
         Set<SOID> expectedTooRecentSOIDs = ImmutableSet.of(
-                new SOID(new SIndex(6), new OID(UniqueID.generate())),
-                new SOID(new SIndex(7), new OID(UniqueID.generate()))
+                new SOID(new SIndex(6), OID.generate()),
+                new SOID(new SIndex(7), OID.generate())
         );
 
+        Set<SOID> expectedShouldNotDelete = ImmutableSet.of(
+                mockObject(ObjectFlag.NO_CONTENT),
+                mockObject(ObjectFlag.NRO)
+        );
 
         for (SOID s : expectedDeletableSOIDs) delBuffer.add_(s);
         for (SOID s : expectedHeldSOIDs) h.hold_(s);
+        for (SOID s : expectedShouldNotDelete) delBuffer.add_(s);
 
         // Sleep for some short timeout so that some SOIDs are not deleted as their timeout has
         // not passed
@@ -144,11 +177,15 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         }
 
         // The other SOIDs should *not* be deleted due to being held or not enough time passed
-        for (SOID s : Sets.union(expectedHeldSOIDs, expectedTooRecentSOIDs)) {
-            verify(od, never()).deleteAndEmigrate_(eq(s), any(PhysicalOp.class), any(SID.class),
-                    any(Trans.class));
-            verify(od, never()).delete_(eq(s), any(PhysicalOp.class), any(Trans.class));
-        }
+        for (SOID s : expectedHeldSOIDs) verifyNotDeleted(s);
+        for (SOID s : expectedTooRecentSOIDs) verifyNotDeleted(s);
+        for (SOID s : expectedShouldNotDelete) verifyNotDeleted(s);
     }
 
+    private void verifyNotDeleted(SOID s) throws Exception
+    {
+        verify(od, never()).deleteAndEmigrate_(eq(s), any(PhysicalOp.class), any(SID.class),
+                any(Trans.class));
+        verify(od, never()).delete_(eq(s), any(PhysicalOp.class), any(Trans.class));
+    }
 }

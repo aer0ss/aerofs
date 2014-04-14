@@ -808,24 +808,32 @@ public class ReceiveAndApplyUpdate
                 "Prefix length mismatch {} {}", prefixLength, prefix.getLength_());
 
         MessageDigest md = SecUtil.newMessageDigest();
-        if (prefixLength > 0) {
-            // do not release core lock if the prefix is small
-            TCB tcb = prefixLength > 4 * C.KB ? tk.pseudoPause_("rehash") : null;
-            try {
-                // re-hash prefix. this is not great because it stalls the download
-                // an alternative would be to hash the prefix in a different thread
-                // but the increased complexity make this option unattractive.
-                // If we trusted the filesystem and had a way to (de)serialize the
-                // internal state of the SHA256 computation we could avoid the
-                // redundant computation altogether. For now this will have to do.
-                ByteStreams.copy(prefix.newInputStream_(),
-                        new DigestOutputStream(ByteStreams.nullOutputStream(), md));
-            } finally {
-                if (tcb != null) tcb.pseudoResumed_();
-            }
-        }
+        if (prefixLength > 0) hashPrefix_(prefix, prefixLength, md, tk);
 
         return new PrefixDownloadStream(prefix.newOutputStream_(true), md);
+    }
+
+    private void hashPrefix_(IPhysicalPrefix prefix, long prefixLength, MessageDigest md, Token tk)
+            throws IOException, ExAborted
+    {
+        // do not release core lock if the prefix is small
+        TCB tcb = prefixLength > 4 * C.KB ? tk.pseudoPause_("rehash") : null;
+        try {
+            // re-hash prefix. this is not great because it stalls the download
+            // an alternative would be to hash the prefix in a different thread
+            // but the increased complexity make this option unattractive.
+            // If we trusted the filesystem and had a way to (de)serialize the
+            // internal state of the SHA256 computation we could avoid the
+            // redundant computation altogether. For now this will have to do.
+            InputStream is = prefix.newInputStream_();
+            try {
+                ByteStreams.copy(is, new DigestOutputStream(ByteStreams.nullOutputStream(), md));
+            } finally {
+                is.close();
+            }
+        } finally {
+            if (tcb != null) tcb.pseudoResumed_();
+        }
     }
 
     /**
