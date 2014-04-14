@@ -13,7 +13,6 @@
 <form class="form-inline page-block" id="update-name-form"
         action="${request.route_path('org_settings')}" method="post">
     ${self.csrf.token_input()}
-    <input type="hidden" name="form.submitted">
     <label class="control-label" for="organization_name">Organization name:</label>
         <input type="text" id="organization_name" name="organization_name"
                 value="${organization_name}">

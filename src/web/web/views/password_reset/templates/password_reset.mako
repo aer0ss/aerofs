@@ -24,7 +24,7 @@
                     <div class="input_container" style="margin-top: 20px">
                         <label for="password">New Password:</label>
                         <input type="password" id="password" name="password" value=""/>
-                        <input class="btn" type="submit" name="form.submitted" value="Update"/>
+                        <input class="btn" type="submit" value="Update"/>
                     </div>
                 </form>
             %else:

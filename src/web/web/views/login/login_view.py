@@ -15,7 +15,6 @@ from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page
 
 DEFAULT_DASHBOARD_NEXT = 'dashboard_home'
 
-URL_PARAM_FORM_SUBMITTED = 'form_submitted'
 URL_PARAM_EMAIL = 'email'
 URL_PARAM_PASSWORD = 'password'
 URL_PARAM_REMEMBER_ME = 'remember_me'
@@ -70,7 +69,7 @@ def login_view(request):
     settings = request.registry.settings
     next_url = get_next_url(request, DEFAULT_DASHBOARD_NEXT)
 
-    if URL_PARAM_FORM_SUBMITTED in request.params:
+    if request.method == "POST":
         ret = _do_login(request)
         if ret: return ret
 
@@ -85,17 +84,14 @@ def login_view(request):
     if not login: login = ''
 
     return {
-        'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
         'url_param_email': URL_PARAM_EMAIL,
         'url_param_password': URL_PARAM_PASSWORD,
         'url_param_remember_me': URL_PARAM_REMEMBER_ME,
-        'url_param_next': URL_PARAM_NEXT,
         'openid_enabled': openid_enabled,
         'openid_url': openid_url,
         'openid_service_identifier': identifier,
         'openid_service_external_hint': external_hint,
         'login': login,
-        'next': next_url,
         'is_private_deployment': is_private_deployment(request.registry.settings)
     }
 

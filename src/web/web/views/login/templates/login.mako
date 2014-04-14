@@ -37,10 +37,8 @@
         ## N.B. signup.mock manually creates this form. Make sure the fields there
         ## are consistent with the fields here.
 
-        <form id="signin_form" action="${request.route_path('login')}" method="post">
+        <form id="signin_form" action="" method="post">
             ${self.csrf.token_input()}
-            <input type="hidden" name="${url_param_next}" value="${next}">
-            <input type="hidden" name="${url_param_form_submitted}" value="1">
             <label for="input_email">Email</label>
             <input class="input-medium" id="input_email" type="text" name="${url_param_email}"
                 %if login:

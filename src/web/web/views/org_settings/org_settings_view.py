@@ -45,7 +45,7 @@ def team_settings(request):
 
     # Only POST requests can modify state. See README.security.txt
     # TOOD (WW) separate POST and GET handling to different view callables
-    if request.method == 'POST' and 'form.submitted' in request.params:
+    if request.method == 'POST':
         form = {
             'organization_name': request.params['organization_name'].strip()
         }

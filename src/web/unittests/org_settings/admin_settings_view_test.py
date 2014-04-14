@@ -24,7 +24,6 @@ class AdminSettingsViewTest(TestBase):
 
         org_name = u'test'
         request = self.create_dummy_request({
-            "form.submitted": True,
             "organization_name": org_name
         })
         request.method = 'POST'

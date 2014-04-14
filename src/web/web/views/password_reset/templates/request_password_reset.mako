@@ -20,7 +20,7 @@
                     method="post">
                 ${self.csrf.token_input()}
                 <input type="text" id="email-input" name="login" value=""/>
-                <input class="btn" type="submit" name="form.submitted" value="Send Email"/>
+                <input class="btn" type="submit" value="Send Email"/>
             </form>
         %endif
     </div>

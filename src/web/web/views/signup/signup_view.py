@@ -14,8 +14,8 @@ from web.sp_util import exception2error
 
 from web.error import error
 from web.util import get_error, get_rpc_stub, is_private_deployment, is_valid_password
-from web.views.login.login_view import URL_PARAM_FORM_SUBMITTED, URL_PARAM_EMAIL, \
-    URL_PARAM_PASSWORD, URL_PARAM_REMEMBER_ME
+from web.views.login.login_view import URL_PARAM_EMAIL, URL_PARAM_PASSWORD, \
+        URL_PARAM_REMEMBER_ME
 from web.login_util import URL_PARAM_NEXT
 
 import analytics
@@ -56,7 +56,6 @@ def signup(request):
 
     return {
         'url_param_signup_code': URL_PARAM_SIGNUP_CODE,
-        'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
         'url_param_email': URL_PARAM_EMAIL,
         'url_param_first_name': URL_PARAM_FIRST_NAME,
         'url_param_last_name': URL_PARAM_LAST_NAME,

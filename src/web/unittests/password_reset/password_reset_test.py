@@ -27,7 +27,6 @@ class PasswordResetTest(TestBase):
             "token": "himom",
             "user_id": "a@b.c",
             "password": "This is a password",
-            "form.submitted": "true"
         })
 
         request.host_url = "hahahhoho"
@@ -48,7 +47,6 @@ class PasswordResetTest(TestBase):
             "token": "himom",
             "user_id": "a@b.c",
             "password": "This is a password",
-            "form.submitted": "true"
         })
 
         request.host_url = "hahahhoho"
@@ -66,10 +64,10 @@ class PasswordResetTest(TestBase):
         request = self.create_dummy_request({
             "token": "himom",
             "user_id": "a@b.c",
-            "form.submitted": "true"
         })
 
         request.host_url = "hahahhoho"
+        request.method = 'POST'
 
         result = password_reset(request)
         self.assertFalse(result.get("success"))

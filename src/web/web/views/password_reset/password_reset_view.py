@@ -27,7 +27,7 @@ def request_password_reset(request):
 
     # Only POST requests can modify state. See README.security.txt
     # TOOD (WW) separate POST and GET handling to different view callables
-    if request.method == 'POST' and 'form.submitted' in request.params:
+    if request.method == 'POST':
         login = request.params['login']
         if not is_valid_email(login):
             error = _("Error: Invalid email address")
@@ -73,7 +73,7 @@ def password_reset(request):
 
     # Only POST requests can modify state. See README.security.txt
     # TOOD (WW) separate POST and GET handling to different view callables
-    if request.method == 'POST' and 'form.submitted' in request.params:
+    if request.method == 'POST':
         (valid_password, error) = is_valid_password(request, password)
         if valid_password:
             sp = get_rpc_stub(request)
