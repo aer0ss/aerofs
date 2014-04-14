@@ -138,8 +138,10 @@ class JingleClientChannelSink extends AbstractChannelSink
             public void run(Timeout timeout)
                     throws Exception
             {
-                l.warn("failed to connect to {} within {} ms", remoteAddress.getDid(), channelConnectTimeout);
-                channel.close();
+                if (!channel.isConnected()) {
+                    l.warn("failed to connect to {} within {} ms", remoteAddress.getDid(), channelConnectTimeout);
+                    channel.close();
+                }
             }
         }, channelConnectTimeout, TimeUnit.MILLISECONDS);
     }
