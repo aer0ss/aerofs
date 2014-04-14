@@ -204,7 +204,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         }
 
         assert error != null;
-        _f._trl.sendUnicast_(msg.did(), error);
+        _f._trl.sendUnicast_(msg.ep(), error);
     }
 
     // TODO: this wiring is terrible, inverse dep and allow handlers to auto-register?

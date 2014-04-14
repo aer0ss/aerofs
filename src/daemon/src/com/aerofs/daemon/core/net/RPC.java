@@ -25,7 +25,6 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayOutputStream;
 import java.net.NetworkInterface;
 import java.util.Map;
 
@@ -101,19 +100,6 @@ public class RPC
         Endpoint ep = null;
         try {
             ep = _trl.sendUnicast_(did, call);
-            return recvReply_(call.getRpcid(), tk, reason);
-        } catch (ExTimeout e) {
-            handleTimeout_(call, ep);
-            throw e;
-        }
-    }
-
-    public DigestedMessage do_(DID did, PBCore call, ByteArrayOutputStream out, Token tk, String reason)
-            throws Exception
-    {
-        Endpoint ep = null;
-        try {
-            ep = _trl.sendUnicast_(did, CoreUtil.typeString(call), call.getRpcid(), out);
             return recvReply_(call.getRpcid(), tk, reason);
         } catch (ExTimeout e) {
             handleTimeout_(call, ep);

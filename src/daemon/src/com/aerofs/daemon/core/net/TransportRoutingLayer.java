@@ -53,8 +53,12 @@ public class TransportRoutingLayer
         _rockLog = rockLog;
     }
 
+    // FIXME(AG): do _not_ use because this layer does not have the concept of available transports that we've heard from but don't know if they work or not
     /**
      * Send a core PB to the DID over any available transport.
+     * <strong>DO NOT USE FOR REPLIES!</strong> Use
+     * {@link com.aerofs.daemon.core.net.TransportRoutingLayer#sendUnicast_(Endpoint, PBCore)}
+     * instead.
      *
      * @return endpoint (DID, transport) over which the message was sent, or null if it was dropped
      */
@@ -62,6 +66,17 @@ public class TransportRoutingLayer
             throws Exception
     {
         return sendUnicast_(did, CoreUtil.typeString(pb), pb.getRpcid(), Util.writeDelimited(pb));
+    }
+
+    /**
+     * Send a core PB to the DID over a specific transport.
+     *
+     * @return endpoint (DID, transport) over which the message was sent, or null if it was dropped
+     */
+    public @Nullable Endpoint sendUnicast_(Endpoint ep, PBCore pb)
+            throws Exception
+    {
+        return sendUnicast_(ep, CoreUtil.typeString(pb), pb.getRpcid(), Util.writeDelimited(pb)) ? ep : null;
     }
 
     /**

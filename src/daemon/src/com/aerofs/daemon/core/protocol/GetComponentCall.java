@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
@@ -258,7 +259,7 @@ public class GetComponentCall
         ContentHash h = pbgcc.hasHashContent() ? new ContentHash(pbgcc.getHashContent()) : null;
 
         if (k.cid().isMeta()) {
-            sendMeta_(msg.did(), k, bdCore, bdReply);
+            sendMeta_(msg.ep(), k, bdCore, bdReply);
         } else if (k.cid().equals(CID.CONTENT)) {
             ContentHash th = _sendContent.send_(msg.ep(), k, bdCore, bdReply, vLocal,
                     pbgcc.getPrefixLength(), Version.fromPB(pbgcc.getPrefixVersion()),
@@ -316,7 +317,7 @@ public class GetComponentCall
      *  - skip local permission checking on these devices
      *  - build ancestors for leaf nodes on these devices
      */
-    private void sendMeta_(DID did, SOCKID k, PBCore.Builder bdCore, PBGetComReply.Builder bdReply)
+    private void sendMeta_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, PBGetComReply.Builder bdReply)
         throws Exception
     {
         // guaranteed by the caller
@@ -353,7 +354,7 @@ public class GetComponentCall
 
         bdReply.setMeta(bdMeta);
 
-        _trl.sendUnicast_(did, bdCore.setGetComReply(bdReply).build());
+        _trl.sendUnicast_(ep, bdCore.setGetComReply(bdReply).build());
     }
 
     private static PBMeta.Type toPB(OA.Type type)

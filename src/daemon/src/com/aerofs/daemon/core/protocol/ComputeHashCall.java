@@ -85,7 +85,7 @@ public class ComputeHashCall
         }
         // Reply that the hash has been computed with an empty message
         PBCore core = CoreUtil.newReply(msg.pb()).build();
-        _trl.sendUnicast_(msg.did(), core);
+        _trl.sendUnicast_(msg.ep(), core);
     }
 
     public void processCall_(DigestedMessage msg) throws Exception

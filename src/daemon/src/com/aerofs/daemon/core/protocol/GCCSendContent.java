@@ -192,9 +192,9 @@ public class GCCSendContent
         PBCore core = bdCore.setGetComReply(bdReply).build();
         ByteArrayOutputStream os = Util.writeDelimited(core);
         if (os.size() <= _m.getMaxUnicastSize_() && contentIsSame) {
-            sendContentSame_(ep.did(), os, core);
+            sendContentSame_(ep, os, core);
         } else if (os.size() + hashLength + fileLength <= _m.getMaxUnicastSize_()) {
-            return sendSmall_(ep.did(), k, os, core, mtime, fileLength, h, pf);
+            return sendSmall_(ep, k, os, core, mtime, fileLength, h, pf);
         } else {
             long newPrefixLen = vLocal.equals(vPrefix) ? prefixLen : 0;
 
@@ -224,13 +224,13 @@ public class GCCSendContent
         return null;
     }
 
-    private void sendContentSame_(DID did, ByteArrayOutputStream os, PBCore reply)
+    private void sendContentSame_(Endpoint ep, ByteArrayOutputStream os, PBCore reply)
             throws Exception
     {
-        _trl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
+        _trl.sendUnicast_(ep, CoreUtil.typeString(reply), reply.getRpcid(), os);
     }
 
-    private ContentHash sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply,
+    private ContentHash sendSmall_(Endpoint ep, SOCKID k, ByteArrayOutputStream os, PBCore reply,
             long mtime, long len, @Nullable ContentHash hash, IPhysicalFile pf)
             throws Exception
     {
@@ -252,7 +252,7 @@ public class GCCSendContent
                         + pf.getLastModificationOrCurrentTime_() + "," + pf.getLength_() + ")");
             }
 
-            _trl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
+            _trl.sendUnicast_(ep, CoreUtil.typeString(reply), reply.getRpcid(), os);
         } finally {
             if (is != null) {
                 is.close();
