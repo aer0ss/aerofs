@@ -7,18 +7,22 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterSender;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
@@ -39,14 +43,18 @@ public class TransportRoutingLayer
 
     private final MaxcastFilterSender _mcfs = new MaxcastFilterSender();
 
+    private DID _localdid;
+    private CoreQueue _q;
     private DevicePresence _dp;
     private Transports _tps;
     private UnicastInputOutputStack _stack;
     private RockLog _rockLog;
 
     @Inject
-    public void inject_(DevicePresence dp, Transports tps, UnicastInputOutputStack stack, RockLog rockLog)
+    public void inject_(CfgLocalDID localDID, CoreQueue q, DevicePresence dp, Transports tps, UnicastInputOutputStack stack, RockLog rockLog)
     {
+        _localdid = localDID.get();
+        _q = q;
         _dp = dp;
         _tps = tps;
         _stack = stack;
@@ -87,7 +95,7 @@ public class TransportRoutingLayer
     public @Nullable Endpoint sendUnicast_(DID did, String type, int rpcid, ByteArrayOutputStream os)
             throws Exception
     {
-        checkArgument(!did.equals(Cfg.did()), "cannot send unicast to self");
+        checkArgument(!did.equals(_localdid), "cannot send unicast to self");
 
         Device dev = _dp.getOPMDevice_(did);
         if (dev == null) { // there's no online device, so we drop the packet
@@ -109,7 +117,7 @@ public class TransportRoutingLayer
         }
 
         l.debug("{},{} -> {}", type, rpcid, ep);
-        _stack.output().sendUnicastDatagram_(bs, ep);
+        sendPacketWithFailureCallback_(ep, bs);
 
         return true;
     }
@@ -127,5 +135,42 @@ public class TransportRoutingLayer
             if (!tp.supportsMulticast()) continue;
             tp.q().enqueueThrows(ev, TC.currentThreadPrio());
         }
+    }
+
+    // [sigh] ugh
+    //
+    // this code is brittle - there are timing issues here
+    // it's possible for the waiter to get triggered and for
+    // the (device, transport) to be placed into the "pulsing" state
+    // meanwhile, the connection could actually be set up
+    // properly in the transport layer. this could result in a brief
+    // period in which the core believes that the transport is
+    // being pulsed while the actual transport connection is fine.
+    //
+    // plus, this code is horrendous. I hate myself.
+    private void sendPacketWithFailureCallback_(final Endpoint ep, byte[] bs)
+            throws Exception
+    {
+        _stack.output().sendUnicastDatagram_(bs, new IResultWaiter()
+        {
+            @Override
+            public void okay()
+            {
+                // noop
+            }
+
+            @Override
+            public void error(Exception e)
+            {
+                _q.enqueueBlocking(new AbstractEBSelfHandling()
+                {
+                    @Override
+                    public void handle_()
+                    {
+                        _dp.startPulse_(ep.tp(), ep.did());
+                    }
+                }, Prio.LO);
+            }
+        }, ep);
     }
 }

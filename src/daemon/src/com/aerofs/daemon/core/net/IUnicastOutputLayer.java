@@ -1,15 +1,18 @@
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+
+import javax.annotation.Nullable;
 
 public interface IUnicastOutputLayer
 {
-    void sendUnicastDatagram_(byte[] bs, Endpoint ep)
+    void sendUnicastDatagram_(byte[] bs, @Nullable IResultWaiter sendCallback, Endpoint ep)
         throws Exception;
 
     void beginOutgoingStream_(StreamID streamId, byte[] bs, Endpoint ep, Token tk)

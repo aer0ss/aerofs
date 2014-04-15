@@ -3,12 +3,14 @@ package com.aerofs.daemon.core.net.throttling;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Limit;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -17,7 +19,6 @@ import java.io.IOException;
  */
 class Outgoing
 {
-    // BUG BUG 3~ does not behave like I expect
     public static enum Type
     {
         UNICAST, STREAM_BEGIN, STREAM_CHUNK
@@ -49,6 +50,12 @@ class Outgoing
     private boolean tokensNeeded_;
 
     //
+    // unicast only
+    //
+
+    private IResultWaiter sendCallback_;
+
+    //
     // stream only
     //
 
@@ -78,8 +85,7 @@ class Outgoing
      */
     private TC.TCB tcb_;
 
-    private Outgoing(Type type, byte[] payload, Endpoint ep, StreamID sid,
-            int seq, Token tok)
+    private Outgoing(Type type, byte[] payload, Endpoint ep, @Nullable IResultWaiter sendCallback, @Nullable StreamID sid, int seq, @Nullable Token tok)
     {
         assert payload != null && ep != null;
         if (type == Type.STREAM_BEGIN || type == Type.STREAM_CHUNK) {
@@ -93,6 +99,8 @@ class Outgoing
 
         tokensNeeded_ = false;
 
+        sendCallback_ = sendCallback;
+
         sid_ = sid;
         seq_ = seq;
         tok_ = tok;
@@ -101,16 +109,14 @@ class Outgoing
         done_ = false;
     }
 
-    Outgoing(TC tc, byte[] payload, Endpoint ep)
+    Outgoing(byte[] payload, Endpoint ep, @Nullable IResultWaiter sendCallback)
     {
-        this(Type.UNICAST, payload, ep, null, 0, null);
+        this(Type.UNICAST, payload, ep, sendCallback, null, 0, null);
     }
 
-
-    Outgoing(TC tc, byte[] payload, Endpoint ep, StreamID sid, int seq,
-            Token tok)
+    Outgoing(byte[] payload, Endpoint ep, StreamID sid, int seq, Token tok)
     {
-        this(seq == 0 ? Type.STREAM_BEGIN : Type.STREAM_CHUNK, payload, ep, sid, seq, tok);
+        this(seq == 0 ? Type.STREAM_BEGIN : Type.STREAM_CHUNK, payload, ep, null, sid, seq, tok);
     }
 
     public Type getType()
@@ -131,6 +137,12 @@ class Outgoing
     public Endpoint getEndpoint()
     {
         return ep_;
+    }
+
+    public IResultWaiter getSendCallback()
+    {
+        assert type_ == Type.UNICAST;
+        return sendCallback_;
     }
 
     public StreamID getSid()

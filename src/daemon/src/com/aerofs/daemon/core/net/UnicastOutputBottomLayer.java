@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
@@ -11,6 +10,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
 import com.aerofs.daemon.event.net.tx.EOBeginStream;
@@ -18,10 +18,13 @@ import com.aerofs.daemon.event.net.tx.EOChunk;
 import com.aerofs.daemon.event.net.tx.EOTxAbortStream;
 import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
 
 public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 {
@@ -66,17 +69,20 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     }
 
     @Override
-    public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
-        throws ExNoResource, ExNotFound
+    public void sendUnicastDatagram_(byte[] bs, @Nullable IResultWaiter sendCallback, Endpoint ep)
+        throws ExNoResource
     {
         _f._dlru.addDevice_(ep.did());
 
-        ep.tp().q().enqueueThrows(new EOUnicastMessage(ep.did(), bs), TC.currentThreadPrio());
+        EOUnicastMessage ev = new EOUnicastMessage(ep.did(), bs);
+        if (sendCallback != null) ev.setWaiter(sendCallback);
+
+        ep.tp().q().enqueueThrows(ev, TC.currentThreadPrio());
     }
 
     @Override
     public void beginOutgoingStream_(StreamID streamId, byte[] bs, Endpoint ep, Token tk)
-        throws Exception
+            throws ExStreamInvalid, ExAborted, ExNoResource
     {
         _f._dlru.addDevice_(ep.did());
 
@@ -88,8 +94,11 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         EOBeginStream ev = new EOBeginStream(streamId, stream, ep.did(), bs, ep.tp(), imce, _f._tsm);
         try {
             CoreIMC.enqueueBlocking_(ev, tk);
-        } catch (Exception e) {
-            l.warn("begin stream failed strmid " + streamId + " " + ep + ": " + e);
+        } catch (ExNoResource e) {
+            l.warn("begin stream failed (noresrc) strmid {} ep {}", streamId, ep);
+            throw e;
+        } catch (ExAborted e) {
+            l.warn("begin stream failed (aborted) strmid {} ep {}", streamId, ep);
             throw e;
         }
     }
@@ -113,7 +122,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 
     @Override
     public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, Endpoint ep)
-        throws ExNoResource, ExAborted
+            throws ExAborted, ExNoResource
     {
         // the transport layer shall guarantee delivery of the abortion
         // to the receiver. Like sending chunks, here we don't wait for
@@ -129,7 +138,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 
     @Override
     public void endOutgoingStream_(StreamID streamId, Endpoint ep)
-        throws ExNoResource, ExAborted
+            throws ExAborted, ExNoResource
     {
         // send end-message event even if no actual message was sent due to
         // errors after _id was set, since we're not sure if transport state
@@ -143,7 +152,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 
     @Override
     public void endIncomingStream_(StreamID streamId, Endpoint ep)
-            throws ExNoResource, ExAborted
+            throws ExAborted, ExNoResource
     {
         IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
 

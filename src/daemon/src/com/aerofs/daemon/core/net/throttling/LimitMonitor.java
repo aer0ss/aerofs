@@ -212,7 +212,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         checkNotNull(ep);
         l.trace("tx lim:tc -> {}", ep.did());
 
-        _lowerUnicastOutput.sendUnicastDatagram_(msg, ep);
+        _lowerUnicastOutput.sendUnicastDatagram_(msg, null, ep);
     }
 
     private void sendalloc(long bw, Endpoint ep)
