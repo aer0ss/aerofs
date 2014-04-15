@@ -8,6 +8,10 @@ table#file-list td.icon {
 table#file-list td.name {
     width: 60%;
 }
+table#file-list td.actions {
+    white-space: nowrap;
+    min-width: 100px;  /* must fit all action icons */
+}
 .breadcrumb {
     font-size: 1.5em;
     background-color: transparent;
@@ -29,13 +33,18 @@ a {
      */
     cursor: pointer;
 }
-img.action {
+span.action {
     cursor: pointer;
-    display: inline-block;
-    padding-left: 2px;
+    height: 24px;
+    padding-left: 28px;
+    float: right;
 }
-td.actions {
-    white-space: nowrap;
+span.action.action-move {
+    margin-top: 2px;
+}
+span.action.action-delete {
+    margin-top: 4px;
+    margin-left: -4px;
 }
 .waiting, .waiting * {
     cursor: wait;

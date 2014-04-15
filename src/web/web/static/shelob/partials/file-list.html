@@ -70,18 +70,18 @@
         <td class="last-modified">{{object.last_modified | date: 'short'}}</td>
         <td class="actions">
           <div ng-show="mousedOver.object.id == object.id">
-            <img src="/static/shelob/img/glyphicons/glyphicons_434_redo.png"
-                 tooltip="Move"
-                 ng-click="startMove(object)"
-                 class="action action-move"/>
-            <img src="/static/shelob/img/glyphicons/glyphicons_150_edit.png"
-                 tooltip="Rename"
-                 ng-click="startRename(object)"
-                 class="action action-rename"/>
-            <img src="/static/shelob/img/glyphicons/glyphicons_207_remove_2.png"
-                 tooltip="Delete"
-                 ng-click="startDelete(object)"
-                 class="action action-delete"/>
+            <span
+               tooltip="Delete"
+               ng-click="startDelete(object)"
+               class="glyphicons remove_2 action action-delete"/>
+            <span
+               tooltip="Rename"
+               ng-click="startRename(object)"
+               class="glyphicons edit action action-rename"/>
+            <span
+               tooltip="Move"
+               ng-click="startMove(object)"
+               class="glyphicons redo action action-move"/>
           </div>
         </td>
       </tr>
