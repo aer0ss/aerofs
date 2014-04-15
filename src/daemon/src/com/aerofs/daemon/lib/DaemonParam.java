@@ -104,8 +104,6 @@ public class DaemonParam
     public static final int TC_RECLAIM_LO_WATERMARK     = 1;
     public static final long TC_RECLAIM_DELAY           = 30 * C.SEC;
 
-    public static final long HOSTNAME_MONITOR_MIN_DELAY = 15 * C.SEC;
-
     // wait at least 250ms between two successive progress notifications
     // i.e. send at most 4 progress notifications per transfer per second
     public static final int NOTIFY_THRESHOLD = 250;

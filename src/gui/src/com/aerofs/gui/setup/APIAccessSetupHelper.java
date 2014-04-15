@@ -2,20 +2,15 @@
 package com.aerofs.gui.setup;
 
 import com.aerofs.controller.SetupModel;
-import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.S;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Shell;
 
 // a helper class for setup dialogs relating to API access.
 public class APIAccessSetupHelper
@@ -32,29 +27,14 @@ public class APIAccessSetupHelper
 
     public void createCheckbox(Composite parent)
     {
-        final Shell shell = parent.getShell();
-
         _chkAPIAccess = GUIUtil.createButton(parent, SWT.CHECK);
         _chkAPIAccess.setText("Enable");
-        _chkAPIAccess.setSelection(true);
-        _chkAPIAccess.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                if (!_chkAPIAccess.getSelection()) {
-                    if (!GUI.get().ask(shell, MessageType.INFO, S.API_ACCESS_WARN)) {
-                        _chkAPIAccess.setSelection(true);
-                    }
-                }
-            }
-        });
     }
 
     public void createLink(Composite parent)
     {
         _lnkAPIAccess = new Link(parent, SWT.NONE);
-        _lnkAPIAccess.setText("<a>API access</a>");
+        _lnkAPIAccess.setText("<a>" + S.MOBILE_AND_WEB_ACCESS + "</a>");
         _lnkAPIAccess.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_API_ACCESS));
     }
 

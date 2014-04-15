@@ -190,9 +190,8 @@ public class CLISetup
 
     private void getAPIAccess(CLI cli) throws Exception
     {
-        cli.show(MessageType.INFO, S.API_ACCESS_DESC);
-        cli.show(MessageType.INFO, "See " + S.URL_API_ACCESS + " for more information.");
-        boolean enable = cli.ask(MessageType.INFO, "Would you like to enable API access?");
+        boolean enable = cli.ask(MessageType.INFO, "Enable " + S.MOBILE_AND_WEB_ACCESS + "? See "
+                + S.URL_API_ACCESS + " for more information.");
         _model.enableAPIAccess(enable);
         cli.notify(MessageType.INFO, "API access is " + (enable ? "enabled" : "disabled") + ".");
     }

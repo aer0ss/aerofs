@@ -28,7 +28,7 @@ public class S
 
             // used in setup login screen
             SETUP_TITLE              = "Setup AeroFS Team Server",
-            SETUP_MESSAGE            = "Please enter an organization administrator's credential to proceed:",
+            SETUP_MESSAGE            = "Please enter an organization administrator's credential:",
             SETUP_USER_ID            = "Email",
             SETUP_PASSWD             = "Password",
             SETUP_LINK_FORGOT_PASSWD = "<a>Forgot password?</a>",
@@ -206,14 +206,10 @@ public class S
             SHARED_DIR = "shared",
             URL_ROLES = "https://support.aerofs.com/entries/22831810",
 
+            MOBILE_AND_WEB_ACCESS = "mobile and Web access",
             URL_API_ACCESS = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ?
                     "https://support.aerofs.com/entries/29044194" :
                     "https://support.aerofs.com/entries/28215600",
-            API_ACCESS_DESC = "If API access is disabled, you will not be able to access the " +
-                    "files on this computer from mobile devices, on the " + L.brand() + " " +
-                    "website, or through 3rd party " + L.brand() + " applications.",
-            API_ACCESS_WARN = API_ACCESS_DESC + "\n\n" +
-                    "Are you sure you want to disable API access?",
 
             SERVER_OFFLINE_TOOLTIP = L.product() + " is offline.",
 
