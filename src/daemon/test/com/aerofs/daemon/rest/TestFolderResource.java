@@ -102,6 +102,22 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldGetMetadataForSID() throws Exception
+    {
+        mds.root().anchor("a0").file("f1");
+        SID sid = SID.anchorOID2storeSID(ds.resolveNullable_(Path.fromString(rootSID, "a0")).oid());
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(object("a0").toStringFormal()))
+                .body("name", equalTo("a0"))
+                .body("is_shared", equalTo(true))
+                .body("sid", equalTo(sid.toStringFormal()))
+        .when().get(RESOURCE, sid.toStringFormal());
+    }
+
+    @Test
     public void shouldGetMetadataWithOnDemandFields() throws Exception
     {
         mds.root().dir("d0").file("f1");
@@ -123,6 +139,32 @@ public class TestFolderResource extends AbstractRestTest
                 .body("children.files[0].name", equalTo("f1"))
         .when().log().everything()
                 .get(RESOURCE, object("d0").toStringFormal());
+    }
+
+    @Test
+    public void shouldGetMetadataWithOnDemandFieldsForSID() throws Exception
+    {
+        mds.root().anchor("a0").file("f1");
+        SID sid = SID.anchorOID2storeSID(mds.root().anchor("a0").soid().oid());
+
+        givenAccess()
+                .queryParam("fields", "path,children")
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(object("a0").toStringFormal()))
+                .body("name", equalTo("a0"))
+                .body("is_shared", equalTo(true))
+                .body("sid", equalTo(sid.toStringFormal()))
+                .body("path.folders", iterableWithSize(1))
+                .body("path.folders[0].name", equalTo("AeroFS"))
+                .body("path.folders[0].id", equalTo(id(mds.root().soid())))
+                .body("path.folders[0].is_shared", equalTo(false))
+                .body("children.folders", emptyIterable())
+                .body("children.files", iterableWithSize(1))
+                .body("children.files[0].id", equalTo(object("a0/f1").toStringFormal()))
+                .body("children.files[0].name", equalTo("f1"))
+        .when().log().everything()
+                .get(RESOURCE, sid.toStringFormal());
     }
 
     @Test
@@ -252,6 +294,24 @@ public class TestFolderResource extends AbstractRestTest
                 .body("folders", hasSize(2)).body("folders.name", hasItems("d", "a"))
         .when().log().everything()
                 .get(RESOURCE + "/children", object("d0").toStringFormal());
+    }
+
+    @Test
+    public void shouldListChildrenForSID() throws Exception
+    {
+        mds.root().dir("d0")
+                .anchor("a")
+                        .dir("d").parent()
+                        .file("f").parent();
+        SID sid = SID.anchorOID2storeSID(mds.root().dir("d0").anchor("a").soid().oid());
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("files", hasSize(1)).body("files.name", hasItems("f"))
+                .body("folders", hasSize(1)).body("folders.name", hasItems("d"))
+        .when().log().everything()
+                .get(RESOURCE + "/children", sid.toStringFormal());
     }
 
     @Test

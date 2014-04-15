@@ -82,7 +82,7 @@ public class Sparta extends Service
         Loggers.init();
     }
 
-    static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 1);
+    static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 2);
 
     public Sparta(Injector injector, IPrivateKeyProvider kmgr)
     {

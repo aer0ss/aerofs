@@ -131,7 +131,7 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         return Response.ok()
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(caller), listMembers(sf), pending))
+                        sf.getName(caller), listMembers(sf), pending, sf.isExternal(caller)))
                 .tag(etag)
                 .build();
     }
@@ -154,7 +154,9 @@ public class SharedFolderResource extends AbstractSpartaResource
             sf = _factSF.create(SID.generate());
         } while (sf.exists() && --attempts > 0);
 
-        _aclNotifier.publish_(sf.save(share.name, caller));
+        ImmutableCollection<UserID> affected = sf.save(share.name, caller);
+        if (share.isExternal != null) sf.setExternal(caller, share.isExternal);
+        _aclNotifier.publish_(affected);
 
         MessageDigest md = BaseSecUtil.newMessageDigestMD5();
         List<PendingMember> pending = listPendingMembers(sf, md);
@@ -170,7 +172,7 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(caller), listMembers(sf), pending))
+                        sf.getName(caller), listMembers(sf), pending, sf.isExternal(caller)))
                 .tag(etag)
                 .build();
     }

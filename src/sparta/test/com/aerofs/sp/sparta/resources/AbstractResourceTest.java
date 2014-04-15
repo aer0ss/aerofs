@@ -40,10 +40,16 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
+import com.jayway.restassured.config.ObjectMapperConfig;
+import com.jayway.restassured.config.RestAssuredConfig;
+import com.jayway.restassured.mapper.factory.GsonObjectMapperFactory;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -133,6 +139,19 @@ public class AbstractResourceTest extends AbstractBaseTest
         prop.setProperty("sparta.oauth.secret", BifrostTest.RESOURCESECRET);
         prop.setProperty("sparta.oauth.url", bifrostUrl);
         ConfigurationProperties.setProperties(prop);
+
+        RestAssured.config = RestAssuredConfig.config()
+                .objectMapperConfig(ObjectMapperConfig.objectMapperConfig()
+                        .gsonObjectMapperFactory(new GOMF()));
+    }
+
+    private static class GOMF implements GsonObjectMapperFactory {
+        @Override
+        public Gson create(Class cls, String charset)
+        {
+            return new GsonBuilder()
+                    .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+        }
     }
 
     @AfterClass

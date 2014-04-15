@@ -256,10 +256,50 @@ public class TestUsersResources extends AbstractResourceTest
                         + "/v1.1/shares/" + sid.toStringFormal())
                 .body("id", equalTo(sid.toStringFormal()))
                 .body("name", equalTo("Test"))
+                .body("is_external", equalTo(false))
                 .body("members.email", hasItems(user.getString(), other.getString()))
                 .body("members.permissions", hasItems(hasItems("WRITE", "MANAGE"),
                         hasItems("WRITE")))
                 .body("pending", emptyIterable())
+        .when().log().everything()
+                .post(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldAcceptInvitationAsExternal() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        invite(user, sid, other, Permissions.EDITOR);
+
+        givenOtherAccess()
+                .queryParam("external", "1")
+        .expect()
+                .statusCode(201)
+                .header(Names.LOCATION, "https://localhost:" + sparta.getListeningPort()
+                        + "/v1.1/shares/" + sid.toStringFormal())
+                .body("id", equalTo(sid.toStringFormal()))
+                .body("name", equalTo("Test"))
+                .body("is_external", equalTo(true))
+                .body("members.email", hasItems(user.getString(), other.getString()))
+                .body("members.permissions", hasItems(hasItems("WRITE", "MANAGE"),
+                        hasItems("WRITE")))
+                .body("pending", emptyIterable())
+        .when().log().everything()
+                .post(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn400WhenAcceptingInvitationWithInvalidExternalParam() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        invite(user, sid, other, Permissions.EDITOR);
+
+        givenOtherAccess()
+                .queryParam("external", "hellatru")
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+                .body("message", equalTo("Invalid parameter: Invalid boolean value. Expected \"0\" or \"1\""))
         .when().log().everything()
                 .post(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
     }
@@ -451,7 +491,7 @@ public class TestUsersResources extends AbstractResourceTest
         .when()
                 .put(RESOURCE, u.id().getString());
     }
-    
+
     @Test
     public void update_shouldFailNonAdmin()
     {

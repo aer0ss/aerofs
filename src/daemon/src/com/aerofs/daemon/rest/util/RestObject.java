@@ -20,18 +20,18 @@ public class RestObject
     }
 
     private static final int HEXID_LENGTH = UniqueID.LENGTH * 2;
-    private RestObject(String id)
-    {
-        this(new SID(decode(id, 0, HEXID_LENGTH)),
-                new OID(decode(id, HEXID_LENGTH, 2 * HEXID_LENGTH)));
-    }
 
     @ParamFactory
     public static RestObject fromString(String id)
     {
         if (id.equals("root")) return ROOT;
         if (id.equals("appdata")) return APPDATA;
-        return new RestObject(id);
+        // allow the use of the SID alone as a shorthand for the root dir of a store
+        if (id.length() == HEXID_LENGTH) {
+            return new RestObject(new SID(decode(id, 0, HEXID_LENGTH)), OID.ROOT);
+        }
+        return new RestObject(new SID(decode(id, 0, HEXID_LENGTH)),
+                new OID(decode(id, HEXID_LENGTH, 2 * HEXID_LENGTH)));
     }
 
     // TODO: use checkArgument directly in the UniqueID/OID/SID/... classes
@@ -40,7 +40,7 @@ public class RestObject
         try {
             return new UniqueID(s, idx, len);
         } catch (Exception e) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("invalid id");
         }
     }
 

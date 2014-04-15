@@ -34,8 +34,8 @@ public class TestSharedFolderResource extends AbstractResourceTest
         LogUtil.enableConsoleLogging();
     }
 
-    private final String BASE_RESOURCE = "/v1.1/shares";
-    private final String RESOURCE = BASE_RESOURCE + "/{sid}";
+    private final String BASE_RESOURCE = "/v1.1/shares/";
+    private final String RESOURCE = BASE_RESOURCE + "{sid}";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -533,7 +533,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         .expect()
                 .statusCode(201)
                 .header(Names.LOCATION,
-                        "https://localhost:" + sparta.getListeningPort() + "/v1.1/shares/" +
+                        "https://localhost:" + sparta.getListeningPort() + BASE_RESOURCE +
                                 sid.toStringFormal() + "/pending/" + other.getString())
                 .body("email", equalTo(other.getString()))
                 .body("first_name", equalTo("Other"))
@@ -557,7 +557,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         .expect()
                 .statusCode(201)
                 .header(Names.LOCATION,
-                        "https://localhost:" + sparta.getListeningPort() + "/v1.1/shares/" +
+                        "https://localhost:" + sparta.getListeningPort() + BASE_RESOURCE +
                                 sid.toStringFormal() + "/pending/" + other.getString())
                 .body("email", equalTo(other.getString()))
                 .body("invited_by", equalTo(user.getString()))
@@ -669,7 +669,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         .expect()
                 .statusCode(201)
                 .header(Names.LOCATION,
-                        "https://localhost:" + sparta.getListeningPort() + "/v1.1/shares/" +
+                        "https://localhost:" + sparta.getListeningPort() + BASE_RESOURCE +
                                 sid.toStringFormal() + "/members/" + other.getString())
                 .body("email", equalTo(other.getString()))
                 .body("first_name", equalTo("Other"))
@@ -692,7 +692,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         .expect()
                 .statusCode(201)
                 .header(Names.LOCATION,
-                        "https://localhost:" + sparta.getListeningPort() + "/v1.1/shares/" +
+                        "https://localhost:" + sparta.getListeningPort() + BASE_RESOURCE +
                                 sid.toStringFormal() + "/members/" + other.getString())
                 .body("email", equalTo(other.getString()))
                 .body("first_name", equalTo("Other"))
@@ -794,13 +794,33 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new SharedFolder(null, "Shareme", null, null),
+                .body(new SharedFolder(null, "Shareme", null, null, false),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
                 .header(Names.LOCATION,
-                        startsWith("https://localhost:" + sparta.getListeningPort() + "/v1.1/shares/"))
+                        startsWith("https://localhost:" + sparta.getListeningPort() + BASE_RESOURCE))
                 .body("name", equalTo("Shareme"))
+                .body("is_external", equalTo(false))
+                .body("members.email", hasItem(user.getString()))
+                .body("pending", emptyIterable())
+        .when().log().everything()
+                .post(BASE_RESOURCE);
+    }
+
+    @Test
+    public void shouldCreateExternalSharedFolder() throws Exception
+    {
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .body(new SharedFolder(null, "External", null, null, true),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(201)
+                .header(Names.LOCATION,
+                        startsWith("https://localhost:" + sparta.getListeningPort() + BASE_RESOURCE))
+                .body("name", equalTo("External"))
+                .body("is_external", equalTo(true))
                 .body("members.email", hasItem(user.getString()))
                 .body("pending", emptyIterable())
         .when().log().everything()

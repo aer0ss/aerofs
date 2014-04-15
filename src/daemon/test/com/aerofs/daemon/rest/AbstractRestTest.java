@@ -56,6 +56,7 @@ import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.log.LogUtil;
@@ -64,6 +65,7 @@ import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -72,6 +74,9 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
+import com.jayway.restassured.config.ObjectMapperConfig;
+import com.jayway.restassured.config.RestAssuredConfig;
+import com.jayway.restassured.mapper.factory.GsonObjectMapperFactory;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -96,6 +101,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
+import javax.annotation.concurrent.Immutable;
 import javax.ws.rs.core.EntityTag;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -118,10 +124,12 @@ import java.util.regex.Pattern;
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -317,6 +325,20 @@ public class AbstractRestTest extends AbstractTest
         // start local gateway
         havre = new Havre(user, did, kmgr, kmgr, cacert);
         havre.start();
+
+        RestAssured.config = RestAssuredConfig.config()
+                .objectMapperConfig(ObjectMapperConfig.objectMapperConfig()
+                        .gsonObjectMapperFactory(new GOMF()));
+    }
+
+    private static class GOMF implements GsonObjectMapperFactory
+    {
+        @Override
+        public Gson create(Class cls, String charset)
+        {
+            return new GsonBuilder()
+                    .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+        }
     }
 
     @AfterClass
@@ -374,6 +396,9 @@ public class AbstractRestTest extends AbstractTest
         om = spy(new ObjectMover(vu, ds, expulsion));
 
         when(ps.newPrefix_(any(SOCKID.class), anyString())).thenReturn(pf);
+
+        SIndex rootSidx = sm.get_(rootSID);
+        when(ss.getParents_(argThat(not(equalTo(rootSidx))))).thenReturn(ImmutableSet.of(rootSidx));
 
         when(localUser.get()).thenReturn(user);
         when(localDID.get()).thenReturn(did);

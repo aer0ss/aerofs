@@ -12,6 +12,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Version;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Cmd.CommandType;
@@ -40,11 +41,13 @@ import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.Immutable;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -55,6 +58,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
@@ -185,12 +189,20 @@ public class UsersResource extends AbstractSpartaResource
                 .build();
     }
 
+    private static boolean toBool(String s)
+    {
+        checkArgument(ImmutableSet.of("0", "1").contains(s),
+                "Invalid boolean value. Expected \"0\" or \"1\"");
+        return s.equals("1");
+    }
+
     @Since("1.1")
     @POST
     @Path("/{email}/invitations/{sid}")
     public Response acceptInvitation(@Auth AuthToken token,
             @PathParam("email") User user,
             @PathParam("sid") SharedFolder sf,
+            @QueryParam("external") @DefaultValue("0") String external,
             @Context Version version)
             throws Exception
     {
@@ -202,7 +214,10 @@ public class UsersResource extends AbstractSpartaResource
             throw new ExNotFound("No such invitation");
         }
 
-        _aclPublisher.publish_(sf.setState(user, SharedFolderState.JOINED));
+        ImmutableCollection<UserID> affected = sf.setState(user, SharedFolderState.JOINED);
+        sf.setExternal(user, toBool(external));
+
+        _aclPublisher.publish_(affected);
 
         audit(caller, token, AuditTopic.SHARING, "folder.join")
                 .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
@@ -216,7 +231,8 @@ public class UsersResource extends AbstractSpartaResource
 
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(user), listMembers(sf), listPendingMembers(sf, null)))
+                        sf.getName(user), listMembers(sf), listPendingMembers(sf, null),
+                        sf.isExternal(user)))
                 .build();
     }
 
@@ -268,7 +284,8 @@ public class UsersResource extends AbstractSpartaResource
             com.aerofs.rest.api.SharedFolder s = new com.aerofs.rest.api.SharedFolder(
                     sf.id().toStringFormal(), sf.getName(user),
                     SharedFolderResource.listMembers(sf),
-                    SharedFolderResource.listPendingMembers(sf, md));
+                    SharedFolderResource.listPendingMembers(sf, md),
+                    sf.isExternal(user));
             if (token.hasFolderPermission(Scope.READ_ACL, sf.id())) bd.add(s);
         }
         return bd.build();

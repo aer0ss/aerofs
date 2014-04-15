@@ -101,21 +101,28 @@ public class MetadataBuilder
         }
 
         // TODO: handle external roots
-        String name = oa.soid().oid().isRoot() ? "AeroFS" : oa.name();
+        String name = soid.oid().isRoot() ? "AeroFS" : oa.name();
         CA ca = oa.isFile() && !oa.isExpelled() ? oa.caMasterNullable() : null;
         Date mtime = ca != null ? new Date(ca.mtime()) : null;
         Long length = ca != null ? ca.length() : null;
 
         ParentPath path = fields != null && fields.isRequested("path")
                 ? path(_ds.resolve_(oa), user) : null;
-        ChildrenList children =  oa.isDirOrAnchor() && fields != null && fields.isRequested("children")
-                ? children(object.toStringFormal(), oa, false) : null;
+        ChildrenList children = null;
+        if (oa.isDirOrAnchor() && fields != null && fields.isRequested("children")) {
+            OA oaDir = oa;
+            if (oa.isAnchor()) {
+                SOID soidDir = _ds.followAnchorNullable_(oa);
+                oaDir = soidDir != null ? _ds.getOANullable_(soidDir) : null;
+            }
+            if (oaDir != null) children = children(object.toStringFormal(), oaDir, false);
+        }
 
         return oa.isDirOrAnchor()
                 ? new Folder(object.toStringFormal(), name, parent.toStringFormal(), path,
                 oa.isAnchor() ? SID.anchorOID2storeSID(soid.oid()).toStringFormal() : null, children)
                 : new File(object.toStringFormal(), name, parent.toStringFormal(), path, mtime, length,
-                _detector.detect(name), _etags.etagForContent(oa.soid()).getValue());
+                _detector.detect(name), _etags.etagForContent(soid).getValue());
     }
 
 
