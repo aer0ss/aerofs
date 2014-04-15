@@ -59,7 +59,7 @@ public class MasterFIDMaintainer implements IFIDMaintainer
         FID fid = getFIDFromFilesystem_(_f);
         SOID soid = _ds.getSOIDNullable_(fid);
         if (!_soid.equals(soid)) {
-            String msg = Joiner.on(' ').join(_soid, _f, fid, soid);
+            String msg = Joiner.on(' ').useForNull("null").join(_soid, _f, fid, soid);
             l.debug("inconsistent fid: {}", msg);
             throw new InconsistentFIDException(msg);
         }
