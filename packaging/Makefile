@@ -19,6 +19,7 @@ PACKAGES= \
 	db-backup \
 	devman \
 	dryad \
+	dryad-servlet \
 	havre \
 	identity \
 	jeq-tools \

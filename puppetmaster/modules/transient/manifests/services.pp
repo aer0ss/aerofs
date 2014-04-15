@@ -33,6 +33,7 @@ class transient::services {
 
     include servlet::sp
     include servlet::verification
+    include servlet::dryad_servlet
     include servlet::identity
 
     # --------------
