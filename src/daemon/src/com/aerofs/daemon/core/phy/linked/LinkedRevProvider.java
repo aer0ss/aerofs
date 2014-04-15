@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -17,6 +18,7 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -457,40 +459,40 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
         private void loop()
         {
-            while (true) {
-                // FIXME: ConcurrentModificationException lurks here
-                // as physical roots can be added/removed from a core thread while the
-                // cleaner is running. This is especially a concern in Team Server as
-                // regular clients do not currently expose multiroot
-                // NB: low probabvility of occurence, low impact, no serious consequence
-                // (daemon will be restarted) so not a high priority fix but should be
-                // dealt with next time someone touches this code
-                for (LinkerRoot root : _lrm.getAllRoots_()) {
-                    sweep(root.sid());
-                }
+            while (nextSweep()) {
+                for (LinkerRoot root : Lists.newArrayList(_lrm.getAllRoots_())) sweep(root.sid());
             }
+        }
+
+        private boolean nextSweep()
+        {
+            try {
+                synchronized (this) {
+                    if (Thread.interrupted()) return false;
+                    if (_thread == null) return false;
+                    if (!_trigger) {
+                        long sleepMillis = getSleepMillis();
+                        TimeUnit.MILLISECONDS.timedWait(this, sleepMillis);
+                    }
+                    if (Thread.interrupted()) return false;
+                    if (_thread == null) return false;
+                    _trigger = false;
+                }
+            } catch (InterruptedException e) {
+                l.warn("cleaner interrupted");
+                return false;
+            }
+            return true;
         }
 
         private void sweep(SID sid)
         {
             try {
-                synchronized (this) {
-                    if (Thread.interrupted()) return;
-                    if (_thread == null) return;
-                    if (!_trigger) {
-                        long sleepMillis = getSleepMillis();
-                        TimeUnit.MILLISECONDS.timedWait(this, sleepMillis);
-                    }
-                    if (Thread.interrupted()) return;
-                    if (_thread == null) return;
-                    _trigger = false;
-                }
                 _cleaner.run(sid, Util.join(_lrm.auxRoot_(sid), AuxFolder.HISTORY._name));
             } catch (InterruptedException e) {
-                l.warn("cleaner interrupted: " + Util.e(e));
-                return;
+                l.warn("cleaner interrupted");
             } catch (Exception e) {
-                l.error("cleaner error: " + Util.e(e));
+                l.error("cleaner error: ", e);
             }
         }
 
@@ -536,13 +538,13 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         }
 
         boolean tryDeleteOldRev(InjectableFile file) {
-            l.debug("deleting " + file);
+            l.debug("deleting {}", file);
             try {
                 // TODO: move to trash?
                 file.delete();
                 return true;
             } catch (IOException e) {
-                l.error("failed to delete " + file + ": " + Util.e(e));
+                l.error("failed to delete {}: ", file, e);
                 return false;
             }
         }
@@ -598,8 +600,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 // add in overhead
                 long space = _totalSize + (2 * C.KB * _fileCount);
                 long spaceLimit = getSpaceLimit(_absRevRoot);
-                l.debug("space: " + Util.formatSize(space));
-                l.debug("limit: " + Util.formatSize(spaceLimit));
+                l.debug("space: {}", Util.formatSize(space));
+                l.debug("limit: {}", Util.formatSize(spaceLimit));
                 if (space < spaceLimit) return;
 
                 ExternalSorter.Input<RevInfo> it = _sorter.sort();
