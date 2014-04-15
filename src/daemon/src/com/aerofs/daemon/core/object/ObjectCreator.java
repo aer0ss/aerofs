@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
+import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -72,7 +73,11 @@ public class ObjectCreator
 
             _ds.createCA_(soid, kidx, t);
 
-            _ps.newFile_(_ds.resolve_(soid), kidx).create_(op, t);
+            IPhysicalFile pf = _ps.newFile_(_ds.resolve_(soid), kidx);
+            pf.create_(op, t);
+
+            _ds.setCA_(new SOKID(soid, kidx), pf.getLength_(),
+                    pf.getLastModificationOrCurrentTime_(), null, t);
 
             _vu.update_(new SOCKID(soid, CID.CONTENT, kidx), t);
         }
