@@ -48,7 +48,7 @@ def json_submit_problem(request):
     request_method='GET',
 )
 def json_get_users(request):
-    url = request.registry.settings['deployment.dryad_servlet_uri']
+    url = request.registry.settings['deployment.dryad_servlet_uri'] + '/'
     r = requests.get(url)
     users = r.json()
 

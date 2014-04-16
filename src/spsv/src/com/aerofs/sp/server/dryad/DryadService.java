@@ -5,10 +5,9 @@
 package com.aerofs.sp.server.dryad;
 
 import com.aerofs.base.id.OrganizationID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
-import com.aerofs.sp.server.lib.organization.Organization;
-import com.aerofs.sp.server.lib.organization.Organization.Factory;
-import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.google.common.collect.Lists;
 
 import java.util.List;
@@ -17,35 +16,29 @@ public class DryadService
 {
     private final SQLThreadLocalTransaction     _sqlTrans;
 
-    private final Organization.Factory          _factOrg;
+    private final OrganizationDatabase          _dbOrg;
 
-    public DryadService(SQLThreadLocalTransaction sqlTrans,
-            Factory factOrg)
+    public DryadService(SQLThreadLocalTransaction sqlTrans, OrganizationDatabase dbOrg)
     {
         _sqlTrans = sqlTrans;
-        _factOrg = factOrg;
+        _dbOrg = dbOrg;
     }
 
     public List<String> listUserIDs(int offset, int maxResult)
             throws Exception
     {
         _sqlTrans.begin();
-        Organization org = createPrivateOrganization();
-        List<User> users = Lists.newArrayList(org.getTeamServerUser());
-        users.addAll(org.listUsers(maxResult, offset));
+        List<UserID> userIDs = _dbOrg.listUsers(OrganizationID.PRIVATE_ORGANIZATION,
+                offset, maxResult);
         _sqlTrans.commit();
 
-        List<String> userIDs = Lists.newArrayListWithCapacity(users.size());
+        List<String> results = Lists.newArrayListWithCapacity(userIDs.size() + 1);
+        results.add(OrganizationID.PRIVATE_ORGANIZATION.toTeamServerUserID().getString());
 
-        for (User user : users) {
-            userIDs.add(user.id().getString());
+        for (UserID userID : userIDs) {
+            results.add(userID.getString());
         }
 
-        return userIDs;
-    }
-
-    private Organization createPrivateOrganization()
-    {
-        return _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+        return results;
     }
 }
