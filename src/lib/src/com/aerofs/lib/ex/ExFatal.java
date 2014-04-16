@@ -21,11 +21,15 @@ public class ExFatal extends Error
         super(message);
     }
 
+    // private to prevent subclasses from overriding
+    @SuppressWarnings("unused")
     private ExFatal(String s, Throwable throwable)
     {
         super(s, throwable);
     }
 
+    // private to prevent subclasses from overriding
+    @SuppressWarnings("unused")
     private ExFatal()
     {
     }
