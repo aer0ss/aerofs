@@ -3,10 +3,9 @@
 
 <h2>Service status</h2>
 
-<div class="page-block" id="monitoring-div">
-    <a href="${request.route_path('monitoring')}">
-        Connection details for automated status monitors
-    </a>
+<div class="page-block footnote" id="get-credentials-div">
+    Setting up automated service monitoring?
+    <a href="${request.route_path('monitoring')}">Integrate this status with your existing sytems.</a>
 </div>
 
 <div class="page-block" id="server-status-div">

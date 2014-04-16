@@ -58,6 +58,9 @@ web.enable_appliance_setup_data_collection={{ enable_appliance_setup_data_collec
 web.disable_download_mobile_client={{ web_disable_download_mobile_client }}
 restored_from_backup={{ restored_from_backup }}
 
+monitoring.username={{ monitoring_username }}
+monitoring.password={{ monitoring_password }}
+
 {# This section will be filled with all key-value pairs stored in the
  # license-info file inside the license file.  On first boot, it will be empty;
  # otherwise, it will contain a set of key-value pairs, including at least
