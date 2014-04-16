@@ -40,7 +40,7 @@ def get_public_version(settings):
     if time.time() - _public_last_refresh > 60:
         r = requests.get(settings['installer.prefix'] + '/current.ver')
         if r.ok:
-            _, _public_version = r.text.split("=", 1)
+            _, _public_version = r.text.strip().split("=", 1)
             _public_last_refresh = time.time()
         elif _public_version:
             ## Use the old value if there is any
