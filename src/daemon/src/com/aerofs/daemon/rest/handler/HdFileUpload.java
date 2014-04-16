@@ -287,8 +287,13 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     }
 
     private void applyPrefix_(IPhysicalPrefix pf, OA oa, ContentHash h)
-            throws SQLException, IOException
+            throws SQLException, IOException, ExNoResource
     {
+        // sigh....................................................................................
+        // ideally we should not neeed that (if BlockPrefix performed incremental chunking)
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "prepare");
+        pf.prepare_(tk);
+
         SOID soid = oa.soid();
         Trans t = _tm.begin_();
         try {
