@@ -42,6 +42,7 @@ public class Images {
 
     public static final String ICON_FILE = "file.gif";
     public static final String ICON_FOLDER = "folder.png";
+    public static final String ICON_SHARED_FOLDER = "sharedFolder.png";
     public static final String ICON_TICK = "tick.png";
     public static final String ICON_WARNING = "warning.png";
     public static final String ICON_ERROR = "exclamation.png";

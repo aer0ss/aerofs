@@ -12,9 +12,30 @@ import org.eclipse.jface.viewers.Viewer;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 public class ContentProvider implements ITreeContentProvider
 {
+    /* We store the set of SharedFolders under the root here so that it can be accessed by the Label
+       provider to decide which icon to display. This is done so that a deamon call doesn't have to
+       be made from the Label provider to determine if a folder is shared or not. That would add
+       more overhead.
+    */
+    private Set<Path> sharedFolderPathsSet;
+
+    // We want the constructor to be exposed only within the package. Hence, no scope specifier.
+    ContentProvider()
+    {
+        sharedFolderPathsSet = new HashSet<Path>();
+    }
+
+    // This function again must only be exposed to files within the package.
+    boolean isPathForSharedFolder(Path path)
+    {
+        return sharedFolderPathsSet.contains(path);
+    }
+
     @Override
     public Object[] getElements(Object arg0)
     {
@@ -29,7 +50,9 @@ public class ContentProvider implements ITreeContentProvider
     @Override
     public Object[] getChildren(Object item)
     {
-        if (!(item instanceof Path)) return null;
+        if (!(item instanceof Path)) {
+            return null;
+        }
 
         try {
             return getSubfolders((Path) item).toArray();
@@ -45,11 +68,18 @@ public class ContentProvider implements ITreeContentProvider
         List<Path> ret = _cache.get(parent);
         if (ret == null) {
             ret = Lists.newArrayList();
-            GetChildrenAttributesReply reply = UIGlobals.ritual().getChildrenAttributes(parent.toPB());
+            GetChildrenAttributesReply reply =
+                    UIGlobals.ritual().getChildrenAttributes(parent.toPB());
             for (int i = 0; i < reply.getChildrenNameCount(); i++) {
                 PBObjectAttributes oa = reply.getChildrenAttributes(i);
+
                 if (oa.getType() != Type.FILE && !oa.getExcluded()) {
-                    ret.add(parent.append(reply.getChildrenName(i)));
+                    Path path = parent.append(reply.getChildrenName(i));
+                    ret.add(path);
+
+                    if(oa.getType() == Type.SHARED_FOLDER) {
+                        sharedFolderPathsSet.add(path);
+                    }
                 }
             }
             _cache.put(parent, ret);

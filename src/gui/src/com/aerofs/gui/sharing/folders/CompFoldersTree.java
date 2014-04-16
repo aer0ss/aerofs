@@ -14,6 +14,8 @@ import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 
+import static com.aerofs.lib.Path.root;
+
 public class CompFoldersTree extends Composite
 {
     final TreeViewer _v;
@@ -35,11 +37,12 @@ public class CompFoldersTree extends Composite
         _l = l;
 
         _v = new TreeViewer(this, SWT.BORDER);
-        _v.setLabelProvider(new LabelProvider());
+        _v.setLabelProvider(new LabelProvider(_cp));
         _v.setContentProvider(_cp);
         _v.setSorter(new ViewerSorter());
+
         // TODO: multiroot support?
-        _v.setInput(_cp.getChildren(Path.root(Cfg.rootSID())));
+        _v.setInput(_cp.getChildren(root(Cfg.rootSID())));
 
         _v.getTree().addSelectionListener(new SelectionListener() {
 

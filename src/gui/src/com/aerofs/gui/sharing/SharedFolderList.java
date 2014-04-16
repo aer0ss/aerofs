@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.gui.AbstractSpinAnimator;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.Images;
 import com.aerofs.gui.TaskDialog;
 import com.aerofs.gui.sharing.AddSharedFolderDialogs.IShareNewFolderCallback;
 import com.aerofs.labeling.L;
@@ -294,6 +295,8 @@ class SharedFolderList extends Composite
             Path path = entry.getValue();
 
             TableItem ti = _table.getItem(i++);
+
+            ti.setImage(Images.get(Images.ICON_SHARED_FOLDER));
             ti.setText(0, name);
             ti.setData(PATH_DATA, path);
 
