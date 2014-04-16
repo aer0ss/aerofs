@@ -160,18 +160,19 @@ public class LinuxNotifier implements INotifier, INotifyListener
         }
 
         // avoid watching internal folders
-        if (Linker.isInternalFile(dir.getName())) return -1;
+        if (Linker.isInternalFile(dir.getName())) {
+            l.info("no watch on internal folder {}", dir);
+            return -1;
+        }
 
         // inotify never gives 0 as a watch number.  -1 is used for errors.
         int watch_id = -1;
         synchronized (this) {
             try {
-                l.debug("addWatchRecursively(" + dir + ")");
+                l.debug("addWatchRecursively({})", dir);
                 watch_id = _jn.linux_addWatch(dir.getAbsolutePath(), MASK);
                 assert(watch_id != WATCH_ID_ROOT);
-                if (l.isDebugEnabled()) {
-                    l.debug("watch id " + watch_id + ": " + dir.getAbsolutePath());
-                }
+                l.debug("watch id {}: {}", watch_id, dir.getAbsolutePath());
                 if (pathList != null) pathList.add(dir.getAbsolutePath());
                 LinuxINotifyWatch newWatch = new LinuxINotifyWatch(watch_id, name, parent);
                 // We may already have a watch set up on this folder.  If the path of the
@@ -182,11 +183,9 @@ public class LinuxNotifier implements INotifier, INotifyListener
                 // but is unusual enough to merit its own log line.
                 // We make the first case here a logging no-op.
                 if (_watches.containsKey(watch_id)) {
-                    if (l.isDebugEnabled()) {
-                        l.debug("duplicate watch id " + watch_id + " for " +
-                                dir.getAbsolutePath() + " and " +
-                                getWatchPath(watch_id).getAbsolutePath());
-                    }
+                    l.debug("duplicate watch id {} for {} and {}", watch_id,
+                            dir.getAbsolutePath(),
+                            getWatchPath(watch_id).getAbsolutePath());
                     // We cannot safely make the following assertion due to the following flow:
                     // 1) + folder
                     // 2) + folder/inner

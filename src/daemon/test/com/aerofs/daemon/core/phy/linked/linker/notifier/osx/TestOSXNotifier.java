@@ -11,6 +11,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.injectable.InjectableJNotify;
 import com.aerofs.testlib.AbstractTest;
 import net.contentobjects.jnotify.JNotifyException;
+import net.contentobjects.jnotify.macosx.JNotify_macosx;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -143,6 +144,6 @@ public class TestOSXNotifier extends AbstractTest
     {
         String name = curName;
         curName += "z";
-        notifier.notifyChange(id, root, name, recurse);
+        notifier.notifyChange(id, name, recurse ? JNotify_macosx.MUST_SCAN_SUBDIRS : 0);
     }
 }

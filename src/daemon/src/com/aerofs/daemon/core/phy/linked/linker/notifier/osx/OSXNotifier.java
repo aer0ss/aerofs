@@ -10,6 +10,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.contentobjects.jnotify.JNotifyException;
 import net.contentobjects.jnotify.macosx.FSEventListener;
+import net.contentobjects.jnotify.macosx.JNotify_macosx;
 
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
@@ -83,12 +84,18 @@ public class OSXNotifier implements INotifier, FSEventListener
     }
 
     @Override
-    public void notifyChange(int id, String root, String name, boolean recurse)
+    public void notifyChange(int id, String name, int flags)
     {
         Batch b = _id2batch.get(id);
         // avoid race condition between notification and root removal
         if (b == null) return;
-        checkState(name.length() > root.length());
+
+        // FSEvents docs suggest we might in some cases get "/"
+        // it's not clear whether that's just a badly written doc or an
+        // actual (retarded) behavior but let's be safe...
+        if (name.length() < b._root.absRootAnchor().length()) {
+            name = b._root.absRootAnchor();
+        }
 
         if (Linker.isInternalPath(name)) return;
 
@@ -106,7 +113,7 @@ public class OSXNotifier implements INotifier, FSEventListener
         // prior to this change.
         name = Normalizer.normalize(name, Form.NFC);
         b._batch.add(name);
-        if (recurse) b._recurse = true;
+        b._recurse |= (flags & JNotify_macosx.MUST_SCAN_SUBDIRS) != 0;
     }
 
     @Override
