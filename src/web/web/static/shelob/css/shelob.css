@@ -10,7 +10,7 @@ table#file-list td.name {
 }
 table#file-list td.actions {
     white-space: nowrap;
-    min-width: 100px;  /* must fit all action icons */
+    min-width: 130px;  /* must fit all action icons */
 }
 .breadcrumb {
     font-size: 1.5em;
@@ -33,16 +33,19 @@ a {
      */
     cursor: pointer;
 }
-span.action {
+a.action {
     cursor: pointer;
     height: 24px;
     padding-left: 28px;
     float: right;
 }
-span.action.action-move {
+a.action.action-manage {
     margin-top: 2px;
 }
-span.action.action-delete {
+a.action.action-move {
+    margin-top: 2px;
+}
+a.action.action-delete {
     margin-top: 4px;
     margin-left: -4px;
 }

@@ -70,18 +70,21 @@
         <td class="last-modified">{{object.last_modified | date: 'short'}}</td>
         <td class="actions">
           <div ng-show="mousedOver.object.id == object.id">
-            <span
+            <a
                tooltip="Delete"
                ng-click="startDelete(object)"
                class="glyphicons remove_2 action action-delete"/>
-            <span
+            <a
                tooltip="Rename"
                ng-click="startRename(object)"
                class="glyphicons edit action action-rename"/>
-            <span
+            <a
                tooltip="Move"
                ng-click="startMove(object)"
                class="glyphicons redo action action-move"/>
+            <a ng-href="/shared_folders" ng-show="object.is_shared"
+               tooltip="Manage Shared Folder"
+               class="glyphicons share_alt action action-manage"/>
           </div>
         </td>
       </tr>
