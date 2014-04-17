@@ -23,8 +23,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 
 public class BaseUtil
 {
-
-    private static final Charset CHARSET_UTF = Charset.forName("UTF-8");
+    public static final Charset CHARSET_UTF = Charset.forName("UTF-8");
     public static final char[] VALID_EMAIL_CHARS =
         new char[] { '.', '!', '#', '$', '%', '&', '\'', '*', '+', '-', '/',
                      '=', '?', '^', '_', '`', '{', '|', '}', '~' };

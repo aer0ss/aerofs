@@ -9,6 +9,7 @@ import ch.qos.logback.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
 import com.aerofs.base.BaseLogUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import org.slf4j.LoggerFactory;
 
@@ -107,6 +108,7 @@ public abstract class LogUtil extends BaseLogUtil
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
         encoder.setPattern("%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n");
         encoder.setContext(context);
+        encoder.setCharset(BaseUtil.CHARSET_UTF);
         encoder.start();
         return encoder;
     }
