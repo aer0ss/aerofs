@@ -44,14 +44,11 @@ _LINK_DATA_NAME = 'n'
 _LINK_DATA_PRIVILEGED = 'p'
 _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST = 'r'
 
+
 class DatatablesPaginate:
     YES, NO = range(2)
 
-@view_config(
-    route_name = 'dashboard_home',
-    renderer = 'shared_folders.mako',
-    permission = 'user'
-)
+
 @view_config(
     route_name = 'my_shared_folders',
     renderer = 'shared_folders.mako',

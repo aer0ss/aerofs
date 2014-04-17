@@ -177,3 +177,19 @@ def logout(request):
     request.session.delete()
 
     return forget(request)
+
+
+@view_config(
+    route_name='dashboard_home',
+    ## The target routes of the redirect below manage permissions
+    permission=NO_PERMISSION_REQUIRED,
+)
+def dashboard_home(request):
+    if is_private_deployment(request.registry.settings):
+        redirect = 'files'
+    else:
+        # Don't redirect to the files page for public deployment as most users would have API
+        # access disabled
+        redirect = 'my_shared_folders'
+    return HTTPFound(location=request.route_path(redirect))
+
