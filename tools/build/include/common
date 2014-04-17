@@ -440,46 +440,5 @@ function render_template() {
 }
 
 
-###############################################################################
-#
-# Synchronizes a release directory on the release server with an S3 bucket and
-# invalidates the CloudFront cache.
-#
-# The release directory must contain the AeroFS installers for all platforms
-# and a version file specifying the version of the release.
-#
-# NOTE: to rollback a production release to version 1.2.3 for any reason:
-#       - log into release-prod@b.arrowfs.org
-#       - echo Version=1.2.3 > current.ver
-#       - s3cmd sync --acl-public --cf-invalidate current.ver s3://nocache.client.aerofs.com
-#
-# @param $1 The version to publish
-# @param $2 The S3 bucket to which the release version will be pushed
-#
-###############################################################################
-function publish_to_s3() {
-    echo ">> publishing to s3 bucket ${2}"
-
-    local local_DIR="${INSTALLERS_DOWNLOAD_DIR}/${1}"
-    local local_PUBLIC_VERSION_FILE_CONTENT="$( public_version_file_content )"
-
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        # Check to see that a version file exists in the specified version directory and is
-        # non-empty.
-        if [ ! -s "${INSTALLERS_DOWNLOAD_DIR}/${1}/${CURRENT_VER}" ]; then
-            exit $ERRS3
-        fi
-
-        if [ "$MODE" = "PUBLIC" ] ; then
-            # For public deployment, move current.ver to canary.ver, and use the old current.ver as the new one.
-            mv "${local_DIR}/${CURRENT_VER}" "${local_DIR}/${CANARY_VER}"
-            echo "${local_PUBLIC_VERSION_FILE_CONTENT}" > "${local_DIR}/${CURRENT_VER}"
-
-            EXTRA_OPTS="--cf-invalidate"
-        fi
-
-        s3cmd --follow-symlinks --acl-public --delete-removed \$EXTRA_OPTS sync "${local_DIR}"/* $2 > /dev/null
-ENDCMDS
-}
 
 fi # endif

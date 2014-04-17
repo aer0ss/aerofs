@@ -26,7 +26,7 @@ fi
 DEPLOY_LOCKFILE='$HOME/deploy.lock'
 
 # The version file should have been produced by the packaging scripts.
-VERSION_FILE="$PACKAGE_DIR/current.ver"
+VERSION_FILE="$PACKAGE_DIR/$CURRENT_VER"
 if [[ ! -r "$VERSION_FILE" ]]; then
     echo "Expected to find a version file at $VERSION_FILE but I couldn't read the version number"
     exit $ERRBADVERSION
@@ -41,14 +41,14 @@ fi
 function lock_release_server() {
     echo "establishing deploy lock..."
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-    if [ -f $DEPLOY_LOCKFILE ] ; then
-        echo "A deploy appears to be in progress already:"
-        cat $DEPLOY_LOCKFILE
-        echo "If you're sure that deploy has indeed been terminated:"
-        echo "    ssh $RELEASE_SERVER_LOGIN rm $DEPLOY_LOCKFILE"
-        exit 1
-    fi
-    lockfile-create --retry 1 --lock-name $DEPLOY_LOCKFILE && echo "Deploy started by $USER at:" >> $DEPLOY_LOCKFILE && date >> $DEPLOY_LOCKFILE && echo "for version $RELEASE_VERSION" >> $DEPLOY_LOCKFILE
+        if [ -f $DEPLOY_LOCKFILE ] ; then
+            echo "A deploy appears to be in progress already:"
+            cat $DEPLOY_LOCKFILE
+            echo "If you're sure that deploy has indeed been terminated:"
+            echo "    ssh $RELEASE_SERVER_LOGIN rm $DEPLOY_LOCKFILE"
+            exit 1
+        fi
+        lockfile-create --retry 1 --lock-name $DEPLOY_LOCKFILE && echo "Deploy started by $USER at:" >> $DEPLOY_LOCKFILE && date >> $DEPLOY_LOCKFILE && echo "for version $RELEASE_VERSION" >> $DEPLOY_LOCKFILE
 ENDCMDS
     echo "locked $RELEASE_SERVER for deploy"
 }
@@ -68,23 +68,13 @@ function upload_map() {
     scp "${LOCAL_RELEASE_DIR}/aerofs.map" $ROCKLOG_SERVER:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
 }
 
-# Create final version tag (current.ver) on release server
-function create_version_file_on_release_server() {
-    local local_VERSION_FILE="${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${CURRENT_VER}"
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        echo Version=$RELEASE_VERSION > "$local_VERSION_FILE"
-        chmod a+r "$local_VERSION_FILE"
-ENDCMDS
-}
-
-function upload_version_to_release_server() {
-    echo ">>> rsyncing version to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/"
-    rsync --archive --verbose "$PACKAGE_DIR"/current.ver $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/
-}
-
 function upload_packages_to_release_server() {
+    # Upload the immutable artifacts (versioned installers) first, so
+    # incrementing the version moves atomically between consistent states
     echo ">>> rsyncing packages to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/"
     rsync --archive --verbose "$PACKAGE_DIR"/* $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/
+    echo ">>> rsyncing version to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/release-versions/$CANARY_VER"
+    rsync --archive --verbose "$PACKAGE_DIR"/$CURRENT_VER $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/release-versions/$CANARY_VER
 }
 
 function upload_packages_to_antivirus_firms() {
@@ -93,7 +83,61 @@ function upload_packages_to_antivirus_firms() {
     # Spawn script in background - script will delete self on completion.
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         chmod a+x \$HOME/send_package_to_antivirus_firms.sh
-        screen -d -m \$HOME/send_package_to_antivirus_firms.sh $INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/AeroFSInstall.exe
+        screen -d -m \$HOME/send_package_to_antivirus_firms.sh $INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/AeroFSInstall-$RELEASE_VERSION.exe
+ENDCMDS
+}
+
+# Using the version files in $PREFIX/release-versions/,
+# copy exactly the set of things that should exist on S3 into deploy-stage
+# and then use s3cmd to sync them to the bucket
+function publish_public_to_s3() {
+    declare DEPLOY_STAGE=$INSTALLERS_DOWNLOAD_DIR/deploy-stage/
+    ssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        rm -rf $DEPLOY_STAGE
+        mkdir -p $DEPLOY_STAGE
+        for version_file in $INSTALLERS_DOWNLOAD_DIR/release-versions/* ; do
+            foldername=\$(cat \$version_file | cut -d = -f 2)
+            cp -av $INSTALLERS_DOWNLOAD_DIR/\$foldername/* $DEPLOY_STAGE/
+        done
+        # Copy versions in last, since the versioned client folders may have
+        # current.ver and canary.ver files inside
+        for version_file in $INSTALLERS_DOWNLOAD_DIR/release-versions/* ; do
+            cp \$version_file $DEPLOY_STAGE/
+        done
+        s3cmd --follow-symlinks --acl-public --delete-removed --cf-invalidate sync "$DEPLOY_STAGE"/* $1
+ENDCMDS
+}
+
+###############################################################################
+#
+# Synchronizes a release directory on the release server with an S3 bucket and
+# invalidates the CloudFront cache.
+#
+# The release directory must contain the AeroFS installers for all platforms
+# and a version file specifying the version of the release.
+#
+# NOTE: to rollback a production release to version 1.2.3 for any reason:
+#       - log into release-prod@b.arrowfs.org
+#       - echo Version=1.2.3 > current.ver
+#       - s3cmd sync --acl-public --cf-invalidate current.ver s3://nocache.client.aerofs.com
+#
+# @param $1 The version to publish
+# @param $2 The S3 bucket to which the release version will be pushed
+#
+###############################################################################
+function publish_private_version_file_to_s3() {
+    echo ">> publishing to s3 bucket ${2}"
+
+    local local_DIR="${INSTALLERS_DOWNLOAD_DIR}/${1}"
+
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        # Check to see that a version file exists in the specified version directory and is
+        # non-empty.
+        if [ ! -s "${INSTALLERS_DOWNLOAD_DIR}/${1}/${CURRENT_VER}" ]; then
+            exit $ERRS3
+        fi
+
+        s3cmd --follow-symlinks --acl-public --delete-removed \$EXTRA_OPTS sync "${local_DIR}"/* $2
 ENDCMDS
 }
 
@@ -141,12 +185,14 @@ echo '+--------------------------'
 upload_map
 call exec_prepublish_checks $MODE $RELEASE_VERSION
 lock_release_server
-upload_version_to_release_server
 if is_public ; then
     upload_packages_to_release_server
     upload_packages_to_antivirus_firms
+    publish_public_to_s3 $INSTALLER_DOWNLOAD_BUCKET
+else
+    # PRIVATE only deploys just a single current.ver
+    publish_private_version_file_to_s3 $RELEASE_VERSION $INSTALLER_DOWNLOAD_BUCKET
 fi
-publish_to_s3 $RELEASE_VERSION $INSTALLER_DOWNLOAD_BUCKET
 unlock_release_server
 tag_release
 notify_successful_deployment
