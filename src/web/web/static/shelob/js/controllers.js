@@ -10,6 +10,8 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     // method changes
     $scope.$watch(function() { return OutstandingRequestsCounter.get() }, function(val) {
         $scope.outstandingRequests = val;
+        if (val > 0) angular.element(document.querySelector('html')).addClass('waiting');
+        else angular.element(document.querySelector('html')).removeClass('waiting');
     });
 
     API.get('/folders/' + $routeParams.oid + '?fields=children,path&t=' + Math.random()).then(function(response) {
