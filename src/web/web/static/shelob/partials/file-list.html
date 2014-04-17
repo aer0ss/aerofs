@@ -52,7 +52,8 @@
           ng-mouseleave="mousedOver.object = null"
           class="object">
         <td class="icon">
-          <img ng-if="object.type == 'folder'" src="/static/shelob/img/icons/40x40/filetype_folder.png">
+          <img ng-if="object.type == 'folder' && !object.is_shared" src="/static/shelob/img/icons/40x40/filetype_folder.png">
+          <img ng-if="object.type == 'folder' && object.is_shared" src="/static/shelob/img/icons/40x40/filetype_shared_folder.png">
           <div ng-if="object.type == 'file'" aero-icon data-mime-type={{object.mime_type}}></div>
         </td>
         <td class="name">
