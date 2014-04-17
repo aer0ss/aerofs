@@ -3,9 +3,8 @@
 
 <div class="row">
     <div class="span6 offset3">
-        <h1 class="page-block">Create First User</h1>
-        <p class="page-block">Create the first admin account by entering
-            the admin's email address. Once finished, you can add more users
+        <h1 class="page-block">Create Admin Account</h1>
+        <p class="page-block">Create the first admin account. Once finished, you can add more users
             using this account.</p>
         <p class="page-block">
             <form class="form-inline" onsubmit="submitForm(); return false;">

@@ -9,6 +9,7 @@ from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
+import requests
 from web.util import flash_error, get_rpc_stub, is_private_deployment
 
 from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page
@@ -21,12 +22,17 @@ URL_PARAM_REMEMBER_ME = 'remember_me'
 
 log = logging.getLogger(__name__)
 
+# A boolean indicating whether the system has created one or more users.
+_has_users_cache = False
+
+
 def _is_openid_enabled(request):
     """
     True if the local deployment allows OpenID authentication
     """
     return is_private_deployment(request.registry.settings) \
         and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'openid'
+
 
 def _do_login(request):
     """
@@ -59,6 +65,7 @@ def _do_login(request):
                 " Please try again later. Contact " + support_email + " if the" +
                 " problem persists."))
 
+
 @view_config(
     route_name='login',
     permission=NO_PERMISSION_REQUIRED,
@@ -67,14 +74,19 @@ def _do_login(request):
 def login_view(request):
     _ = request.translate
     settings = request.registry.settings
-    next_url = get_next_url(request, DEFAULT_DASHBOARD_NEXT)
 
     if request.method == "POST":
         ret = _do_login(request)
         if ret: return ret
 
     openid_enabled = _is_openid_enabled(request)
+
+    if not openid_enabled and not _has_users(settings):
+        log.info('no users yet. ask to create the first user')
+        return HTTPFound(location=request.route_path('create_first_user'))
+
     # if openid_enabled is false we don't need to do any of the following. :(
+    next_url = get_next_url(request, DEFAULT_DASHBOARD_NEXT)
     openid_url = "{0}?{1}".format(request.route_url('login_openid_begin'),
                                   url.urlencode({URL_PARAM_NEXT: next_url}))
     identifier = settings.get('identity_service_identifier', 'OpenID')
@@ -94,6 +106,24 @@ def login_view(request):
         'login': login,
         'is_private_deployment': is_private_deployment(request.registry.settings)
     }
+
+
+def _has_users(settings):
+    if not is_private_deployment(settings):
+        # Public deployment always has users populated
+        return True
+
+    # Once there are any users created, we use the cached value (which is always True) to avoid
+    # SP lookups. N.B. we assume that the last user in the system cannot delete himself.
+    global _has_users_cache
+    if not _has_users_cache:
+        log.info('has_users not cached. ask SP for user count')
+        ## This URL returns the number of existing users in JSON. See SPServlet.java:licenseCheck()
+        r = requests.get(settings['deployment.sp_server_uri'] + '/license')
+        r.raise_for_status()
+        _has_users_cache = r.json()['users'] > 0
+
+    return _has_users_cache
 
 
 @view_config(
@@ -154,6 +184,7 @@ def _log_in_user(request, login, creds, stay_signed_in):
 
     return remember(request, login)
 
+
 @view_config(
     route_name='logout',
     permission='user'
@@ -163,6 +194,7 @@ def logout_view(request):
         location=request.route_path('login'),
         headers=logout(request)
     )
+
 
 def logout(request):
     sp = get_rpc_stub(request)
