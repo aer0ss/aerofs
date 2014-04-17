@@ -101,7 +101,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
-import javax.annotation.concurrent.Immutable;
 import javax.ws.rs.core.EntityTag;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

@@ -24,8 +24,6 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.inject.Inject;
 
-import java.util.Set;
-
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class MultiuserStoreJoiner extends AbstractStoreJoiner

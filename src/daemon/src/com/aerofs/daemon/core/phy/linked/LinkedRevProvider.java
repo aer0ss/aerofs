@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;

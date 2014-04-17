@@ -249,5 +249,6 @@ public class DlgDefect extends AeroFSJFaceDialog
     protected void createButtonsForButtonBar(Composite parent)
     {
         createButton(parent, IDialogConstants.OK_ID, "Report", true);
+        createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
     }
 }
