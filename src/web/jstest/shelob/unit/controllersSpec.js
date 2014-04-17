@@ -125,6 +125,7 @@ describe('Shelob Controllers', function() {
 
             $rootScope.startMove(folder_1);
             expect(modal.open).toHaveBeenCalled();
+            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
 
             // move folder_1 into folder_2
             $rootScope.submitMove(folder_1_object, folder_2);
@@ -143,6 +144,7 @@ describe('Shelob Controllers', function() {
 
             $rootScope.startMove(file_object);
             expect(modal.open).toHaveBeenCalled();
+            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
 
             // move file into folder_1
             $rootScope.submitMove(file_object, folder_1);
@@ -161,6 +163,8 @@ describe('Shelob Controllers', function() {
 
             $rootScope.startMove(file);
             expect(modal.open).toHaveBeenCalled();
+            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
+
             // move folder_1 into folder_1
             $rootScope.submitMove(folder_1_object, folder_1);
 
@@ -175,6 +179,7 @@ describe('Shelob Controllers', function() {
         it("should not move a folder to the same location", function() {
             $rootScope.startMove(file);
             expect(modal.open).toHaveBeenCalled();
+            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
 
             // move folder_1 into root
             $rootScope.submitMove(folder_1_object, {id: ''});
