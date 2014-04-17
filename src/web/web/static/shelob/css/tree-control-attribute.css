@@ -43,18 +43,18 @@
 
 
 [treecontrol].tree-classic li.tree-expanded i {
-    padding: 1px 10px;
-    background: url("../lib/angular-tree-control/folder.png") no-repeat;
+    padding: 1px 20px;
+    background: url("../img/icons/move-modal/folder_minus.png") no-repeat;
 }
 
 [treecontrol].tree-classic li.tree-collapsed i {
-    padding: 1px 10px;
-    background: url("../lib/angular-tree-control/folder-closed.png") no-repeat;
+    padding: 1px 20px;
+    background: url("../img/icons/move-modal/folder_plus.png") no-repeat;
 }
 
 [treecontrol].tree-classic li.tree-leaf i {
-    padding: 1px 10px;
-    background: url("../lib/angular-tree-control/folder-closed.png") no-repeat;
+    padding: 1px 20px;
+    background: url("../img/icons/move-modal/folder_plus.png") no-repeat;
 }
 
 [treecontrol].tree-classic li .tree-selected {
@@ -64,13 +64,13 @@
 
 
 [treecontrol].tree-light li.tree-expanded i {
-    padding: 1px 10px;
-    background: url("../lib/angular-tree-control/node-opened-2.png") no-repeat;
+    padding: 1px 20px;
+    background: url("../img/icons/move-modal/folder_minus.png") no-repeat;
 }
 
 [treecontrol].tree-light li.tree-collapsed i {
-    padding: 1px 10px;
-    background: url("../lib/angular-tree-control/node-closed-2.png") no-repeat;
+    padding: 1px 20px;
+    background: url("../img/icons/move-modal/folder_plus.png") no-repeat;
 }
 
 [treecontrol].tree-light li.tree-leaf i {
@@ -85,13 +85,13 @@
 
 
 [treecontrol].tree-dark li.tree-expanded i {
-    padding: 1px 10px;
-    background: url("../lib/angular-tree-control/node-opened-light.png") no-repeat;
+    padding: 1px 20px;
+    background: url("../img/icons/move-modal/folder_minus.png") no-repeat;
 }
 
 [treecontrol].tree-dark li.tree-collapsed i {
-    padding: 1px 10px;
-    background: url("../lib/angular-tree-control/node-closed-light.png") no-repeat;
+    padding: 1px 20px;
+    background: url("../img/icons/move-modal/folder_plus.png") no-repeat;
 }
 
 [treecontrol].tree-dark li.tree-leaf i {
