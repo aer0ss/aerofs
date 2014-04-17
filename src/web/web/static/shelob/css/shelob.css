@@ -39,6 +39,9 @@ a.action {
     padding-left: 28px;
     float: right;
 }
+a.action.glyphicons:before {
+    color: #888;
+}
 a.action.action-manage {
     margin-top: 2px;
 }
