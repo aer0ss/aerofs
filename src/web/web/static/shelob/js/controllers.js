@@ -251,10 +251,12 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     $scope.startMove = function(object) {
         // treedata is a list of folder objects with label, id, and children attrs,
         // where children is a treedata object
-        $scope.treedata = [{label: "AeroFS", id: 'root', children: []}];
+        var rootFolder = {label: "AeroFS", id: 'root', children: []};
+        $scope.treedata = [rootFolder];
+        $scope.onMoveFolderExpanded(rootFolder);
 
         $scope.moveModal = $modal.open({
-            templateUrl: '/static/shelob/partials/object-move-modal.html'
+            templateUrl: '/static/shelob/partials/object-move-modal.html',
         });
 
         $scope.moveModal.result.then(function(folder) {

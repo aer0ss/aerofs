@@ -60,6 +60,9 @@
                     });
 
                     $scope.expandedNodes = {};
+                    if ($scope.treeModel.length > 0) {
+                        $scope.expandedNodes[$scope.treeModel[0].id] = $scope.treeModel[0];
+                    }
                     $scope.parentScopeOfTree = $scope.$parent;
 
                     $scope.headClass = function(node) {
