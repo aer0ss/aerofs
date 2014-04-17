@@ -8,7 +8,6 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.os.OSUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -44,23 +43,15 @@ public class Images {
     public static final String ICON_FILE = "file.gif";
     public static final String ICON_FOLDER = "folder.png";
     public static final String ICON_TICK = "tick.png";
-    public static final String ICON_USER = "user.png";
     public static final String ICON_WARNING = "warning.png";
     public static final String ICON_ERROR = "exclamation.png";
-    public static final String ICON_DOUBLE_QUESTION = "doubleQuestion.png";
     public static final String ICON_METADATA = "bulletBlue.png";
     public static final String ICON_ARROW_UP = "arrowUp.png";
     public static final String ICON_ARROW_UP2 = "arrowUp2.png";
     public static final String ICON_ARROW_DOWN = "arrowDown.png";
     public static final String ICON_ARROW_DOWN2 = "arrowDown2.png";
-    public static final String ICON_HOME = "home.png";
     public static final String ICON_NIL = "nil.png";
     public static final String ICON_SPIN = "spin.gif";
-    public static final String ICON_BRICK = "brick.png";
-    public static final String ICON_LINK = "link.png";
-    public static final String SS_IN_SYNC = "ss_in_sync.png";
-    public static final String SS_IN_PROGRESS = "ss_in_progress.png";
-    public static final String SS_OFFLINE_NOSYNC = "ss_offline_nosync.png";
     // N.B. visually, signal1, 2, 3, has 2, 3, 4 bars respectively.
     public static final String ICON_SIGNAL1 = "signal1.png";
     public static final String ICON_SIGNAL2 = "signal2.png";
@@ -73,8 +64,6 @@ public class Images {
     // delay (ms) between each spinner frame
     private static final int SPINNER_DELAY = 100;
     private static Image[] s_spinner_frames;
-
-    private static Cursor s_cursors[];
 
     public static Image get(String key)
     {
@@ -89,15 +78,6 @@ public class Images {
             }
         }
         return img;
-    }
-
-    public static Cursor getCursor(int key)
-    {
-        if (s_cursors == null) {
-            s_cursors = new Cursor[1];
-            s_cursors[0] = new Cursor(Display.getCurrent(), SWT.CURSOR_WAIT);
-        }
-        return s_cursors[key];
     }
 
     public static int getSpinnerFrameDelay()
@@ -150,8 +130,8 @@ public class Images {
             ImageData imageData = null;
             try {
                 imageData = program.getImageData();
-            } catch (NullPointerException e) {}     // Work around a SWT bug where a NPE may be
-                                                    // thrown for some unknown reason
+            } catch (NullPointerException ignored) {}     // Work around a SWT bug where a NPE may
+                                                          // be thrown for some unknown reason
             if (imageData == null) {
                 image = get(ICON_FILE);
 
