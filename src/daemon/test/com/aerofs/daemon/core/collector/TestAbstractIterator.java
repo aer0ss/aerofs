@@ -67,11 +67,11 @@ public class TestAbstractIterator extends AbstractTest
     {
         it = new AbstractIterator(csdb, csr, sidx) {
             @Override
-            protected IDBIterator<OCIDAndCS> fetch_(final @Nullable CollectorSeq cs, final int limit)
-                    throws SQLException
+            protected IDBIterator<OCIDAndCS> fetch_(final @Nullable CollectorSeq csStart,
+                    final int limit) throws SQLException
             {
                 return new IDBIterator<OCIDAndCS>() {
-                    private CollectorSeq _cs = cs;
+                    private CollectorSeq _cs = csStart;
                     private OCID _ocid;
                     private int _n = limit;
                     private boolean _closed;
@@ -112,7 +112,7 @@ public class TestAbstractIterator extends AbstractTest
             }
         };
 
-        Assert.assertFalse(it.started());
+        Assert.assertFalse(it.started_());
     }
 
     private void iterate() throws SQLException

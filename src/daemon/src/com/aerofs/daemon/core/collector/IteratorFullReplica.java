@@ -23,9 +23,9 @@ public class IteratorFullReplica extends AbstractIterator
     }
 
     @Override
-    protected IDBIterator<OCIDAndCS> fetch_(@Nullable CollectorSeq cs, int limit)
+    protected IDBIterator<OCIDAndCS> fetch_(@Nullable CollectorSeq csStart, int limit)
             throws SQLException
     {
-        return _csdb.getCS_(_sidx, cs, limit);
+        return _csdb.getCS_(_sidx, csStart, limit);
     }
 }

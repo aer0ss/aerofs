@@ -113,8 +113,8 @@ public class Collector implements IDumpStatMisc
                 {
                     l.debug("adding filter to {} triggers collector 4 {}", did, _sidx);
                     resetBackoffInterval_();
-                    if (_it.started()) {
-                        _cfs.addCSFilter_(did, _it.cs_(), filter);
+                    if (_it.started_()) {
+                        _cfs.addCSFilter_(did, _it.csNullable_(), filter);
                     } else {
                         start_();
                     }
@@ -134,8 +134,8 @@ public class Collector implements IDumpStatMisc
                 if (_cfs.loadDBFilter_(did)) {
                     l.debug("{} online triggers collector 4 {}", did, _sidx);
                     resetBackoffInterval_();
-                    if (_it.started()) {
-                        _cfs.setCSFilterFromDB_(did, _it.cs_());
+                    if (_it.started_()) {
+                        _cfs.setCSFilterFromDB_(did, _it.csNullable_());
                     } else {
                         start_();
                     }
@@ -159,7 +159,7 @@ public class Collector implements IDumpStatMisc
      */
     private void start_()
     {
-        checkState(!_it.started());
+        checkState(!_it.started_());
         final int startSeq = ++_startSeq;
 
         _f._er.retry("start", new Callable<Void>() {
@@ -180,9 +180,9 @@ public class Collector implements IDumpStatMisc
         // NB: we can safely fully reset the CS filter queue because the DB always contains the
         // canonical copy of the latest BF for each device and it is the union of all BF received
         // since the last cleanup (i.e. the last time collection was finalized)
-        if (_it.started()) {
+        if (_it.started_()) {
             _cfs.deleteAllCSFilters_();
-            _cfs.setAllCSFiltersFromDB_(_it.cs_());
+            _cfs.setAllCSFiltersFromDB_(_it.csNullable_());
         } else {
             start_();
         }
@@ -238,7 +238,7 @@ public class Collector implements IDumpStatMisc
      */
     private void collectLoop_(Trans t) throws SQLException
     {
-        if (_it.started()) {
+        if (_it.started_()) {
             // in case of continuation we need to check again whether the component should be
             // skipped since its state might have changed since the last iteration
             OCID ocid = _it.current_()._ocid;
@@ -267,10 +267,10 @@ public class Collector implements IDumpStatMisc
      */
     private boolean rotate_(Trans t) throws SQLException
     {
-        OCIDAndCS prevOccs = _it.current_();
+        OCIDAndCS prevOccs = _it.currentNullable_();
 
         if (_it.next_(t)) {
-            OCIDAndCS occs = _it.current_();
+            OCIDAndCS occs = _it.currentNullable_();
             assert occs != null;
             if (prevOccs == null) {
                 // at this point the collection just started. it's noteworthy that there may be
@@ -291,7 +291,7 @@ public class Collector implements IDumpStatMisc
             l.debug("reached end at {}", prevOccs);
             _it.reset_();
             if (_it.next_(t)) {
-                OCIDAndCS occs = _it.current_();
+                OCIDAndCS occs = _it.currentNullable_();
                 l.debug("start over from {}", occs);
                 assert occs != null;
                 // the two can be equal if there's only one component in the list
@@ -325,7 +325,7 @@ public class Collector implements IDumpStatMisc
     {
         assert _downloads >= 0 : _downloads;
 
-        if (!_it.started() && _downloads == 0) {
+        if (!_it.started_() && _downloads == 0) {
             l.debug("stop clct on {}", _sidx);
             try {
                 _cfs.cleanUpDBFilters_(t);
@@ -343,7 +343,7 @@ public class Collector implements IDumpStatMisc
      */
     private boolean collectOne_(OCID ocid)
     {
-        assert _it.started();
+        assert _it.started_();
 
         SOCID socid = new SOCID(_sidx, ocid);
         final Set<DID> dids = _cfs.getDevicesHavingComponent_(ocid);
@@ -377,7 +377,7 @@ public class Collector implements IDumpStatMisc
                 @Override
                 public Void call() throws Exception
                 {
-                    checkState(_it.started());
+                    checkState(_it.started_());
                     collect_();
                     cascade.run();
                     return null;
@@ -395,7 +395,7 @@ public class Collector implements IDumpStatMisc
             _dids = dids;
         }
 
-        private void postDownloadCompletionTask()
+        private void postDownloadCompletionTask_()
         {
             Util.verify(--_downloads >= 0);
             l.debug("dlend: {}", _downloads);
@@ -405,7 +405,7 @@ public class Collector implements IDumpStatMisc
         @Override
         public void onDownloadSuccess_(SOCID socid, DID from)
         {
-            postDownloadCompletionTask();
+            postDownloadCompletionTask_();
         }
 
         @Override
@@ -422,7 +422,7 @@ public class Collector implements IDumpStatMisc
             for (DID did : _dids) _cfs.setDirtyBit_(did);
             assert !_dids.isEmpty() : socid + " " + Util.e(e);
             scheduleBackoff_();
-            postDownloadCompletionTask();
+            postDownloadCompletionTask_();
         }
 
         @Override
@@ -477,7 +477,7 @@ public class Collector implements IDumpStatMisc
             l.debug("cdl {} didsWPerm {} didsWOPerm {}", socid,
                     didsWithPermanentErrors, didsWithoutPermanentErrors);
 
-            postDownloadCompletionTask();
+            postDownloadCompletionTask_();
         }
 
         @Override

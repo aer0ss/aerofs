@@ -14,9 +14,12 @@ import com.aerofs.lib.id.SOCID;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Iterator over the collector queue for a single store
@@ -43,9 +46,16 @@ public abstract class AbstractIterator
     protected final SIndex _sidx;
 
     private @Nullable OCIDAndCS _current;
-    private int _next;
-    private int _discardable;
+
+    // The collector queue cache. See the class-level comment.
     private final ArrayList<OCIDAndCS> _seq = Lists.newArrayList();
+
+    // An index in {@link #_seq} pointing to the item to be iterated over next
+    private int _next;
+
+    private int _discardable;
+
+    // Whether to clear {@link #_seq} on the next {@link #reset_()} call
     private boolean _clearOnReset;
 
     // batch size used by the incremental fetch
@@ -66,7 +76,7 @@ public abstract class AbstractIterator
     /**
      * @return whether the iteration has been started
      */
-    public boolean started()
+    public boolean started_()
     {
         return _current != null;
     }
@@ -74,7 +84,7 @@ public abstract class AbstractIterator
     /**
      * Reset the iterator
      *
-     * {@link #started} will return false after calling this method until {@link #next_} is called
+     * {@link #started_} will return false after calling this method until {@link #next_} is called
      */
     public void reset_()
     {
@@ -88,17 +98,25 @@ public abstract class AbstractIterator
     /**
      * @return the current item, null if the iterator was not started
      */
-    public @Nullable OCIDAndCS current_()
+    public @Nullable OCIDAndCS currentNullable_()
     {
         return _current;
     }
 
     /**
-     * helper for get_()._cs that handles get_() == null
+     * @return the current item, null if the iterator was not started
      */
-    public final @Nullable CollectorSeq cs_()
+    public @Nonnull OCIDAndCS current_()
     {
-        OCIDAndCS occs = current_();
+        return checkNotNull(currentNullable_());
+    }
+
+    /**
+     * a shortcut of currentNullable_()._cs that handles currentNullable_() == null
+     */
+    public final @Nullable CollectorSeq csNullable_()
+    {
+        OCIDAndCS occs = currentNullable_();
         return occs != null ? occs._cs : null;
     }
 
@@ -115,7 +133,7 @@ public abstract class AbstractIterator
             _current = _seq.get(_next);
             if (!_csr.shouldSkip_(new SOCID(_sidx, _current._ocid))) break;
             // TODO: batch CS deletion whenever possible
-            _csdb.deleteCS_(_current._cs, t);
+            _csdb.deleteCS_(current_()._cs, t);
             ++_discardable;
             ++_next;
         }
@@ -136,20 +154,13 @@ public abstract class AbstractIterator
         return _current != null;
     }
 
+    /**
+     * Return whether there are items on the queue after the {@link #_next} pointer. Fetch more
+     * items into the cache as necessary.
+     */
     protected boolean hasNext_() throws SQLException
     {
         return _next < _seq.size() || fetchMore_();
-    }
-
-    /**
-     * pseudo-reset used by partial replica iterators to switch from meta to content iteration
-     *
-     * we need to clear the cached sequence but keep the current value around otherwise we might
-     * mislead the calling code into thinking we did not start the iteration yet
-     */
-    protected void switch_()
-    {
-        clearCache_();
     }
 
     private void clearCache_()
@@ -161,7 +172,12 @@ public abstract class AbstractIterator
         _clearOnReset = true;
     }
 
-    protected abstract IDBIterator<OCIDAndCS> fetch_(@Nullable CollectorSeq cs, int limit)
+    /**
+     * @return if {@paramref csStart} != null, return an iterator for components with cs
+     * strictly greater than csStart. Otherwise return an iterator that starts from the beginning of
+     * the collector queue.
+     */
+    protected abstract IDBIterator<OCIDAndCS> fetch_(@Nullable CollectorSeq csStart, int limit)
             throws SQLException;
 
     /**
@@ -175,7 +191,7 @@ public abstract class AbstractIterator
         // shrink _seq if it becomes too large
         if (_seq.size() > SHRINK_THRESHOLD) clearCache_();
 
-        IDBIterator<OCIDAndCS> it = fetch_(cs_(), FETCH_SIZE);
+        IDBIterator<OCIDAndCS> it = fetch_(csNullable_(), FETCH_SIZE);
         _seq.ensureCapacity(_seq.size() + FETCH_SIZE);
         try {
             while (it.next_()) {
@@ -184,7 +200,7 @@ public abstract class AbstractIterator
         } finally {
             it.close_();
         }
-        l.debug("fetch {} {} : {}", cs_(), FETCH_SIZE, _seq.size() - _next);
+        l.debug("fetch {} {} : {}", csNullable_(), FETCH_SIZE, _seq.size() - _next);
         return _next < _seq.size();
     }
 
