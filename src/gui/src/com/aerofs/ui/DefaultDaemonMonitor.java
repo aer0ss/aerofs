@@ -122,6 +122,10 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 case NO_REPLY:
                     if (--retries == 0) {
                         l.error("daemon launch timed out");
+                        // if the daemon is hanging kill it before throwing
+                        // otherwise the monitor thread will enter a restart
+                        // loop where every attempt fails
+                        proc.destroy();
                         throw new ExTimeout();
                     }
                 }
