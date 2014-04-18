@@ -195,7 +195,7 @@ class _RitualServiceWrapper(object):
         PBObjectAttributes
         """
         pbpath = self.wait_path(path)
-        self.get_child_attributes_pb(pbpath)
+        self.get_children_attributes_pb(pbpath)
 
     def get_children_attributes_pb(self, pbpath):
         reply = self._service.get_children_attributes(pbpath)
