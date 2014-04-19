@@ -45,6 +45,9 @@ import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
+import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
+import com.aerofs.proto.Sp.CheckQuotaReply;
+import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldSync;
 import com.aerofs.proto.Sp.DeactivateUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
@@ -138,6 +141,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang.StringUtils;
@@ -209,6 +213,8 @@ public class SPService implements ISPService
 
     private final InvitationHelper _invitationHelper;
 
+    private final CheckQuotaHelper _checkQuotaHelper;
+
     // Remember to udpate text in team_members.mako, team_settings.mako, and pricing.mako when
     // changing this number.
     private int _maxFreeMembersPerOrg = 3;
@@ -268,6 +274,8 @@ public class SPService implements ISPService
         _commandQueue = commandQueue;
         _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans);
         _analytics = checkNotNull(analytics);
+
+        _checkQuotaHelper = new CheckQuotaHelper(_factSharedFolder);
     }
 
     /**
@@ -1323,6 +1331,35 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<CheckQuotaReply> checkQuota(List<PBStoreUsage> stores)
+            throws Exception
+    {
+        CheckQuotaReply.Builder responseBuilder = CheckQuotaReply.newBuilder();
+
+        _sqlTrans.begin();
+        User requester = _sessionUser.getUser();
+        requester.throwIfNotTeamServer();
+        _sqlTrans.commit();
+
+        Map<SID, Long> storeUsageMap = CheckQuotaHelper.mapFromPBStoreUsageList(stores);
+
+        _sqlTrans.begin();
+        final Long quotaPerUser = requester.getOrganization().getQuotaPerUser();
+        Set<SharedFolder> storesThatShouldCollectContent =
+                _checkQuotaHelper.getStoresThatShouldCollectContent(storeUsageMap, quotaPerUser);
+        _sqlTrans.commit();
+
+        for (PBStoreUsage storeUsage : stores) {
+            SharedFolder store = _factSharedFolder.create(storeUsage.getSid());
+            responseBuilder.addStores(PBStoreShouldSync.newBuilder()
+                    .setSid(store.id())
+                    .setCollectContent(storesThatShouldCollectContent.contains(store))
+                    .build());
+        }
+        return createReply(responseBuilder.build());
     }
 
     @Override

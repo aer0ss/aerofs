@@ -402,8 +402,8 @@ public class SharedFolder
     {
         ImmutableList.Builder<UserPermissionsAndState> builder = ImmutableList.builder();
         for (UserIDRoleAndState entry : _f._db.getAllUsersRolesAndStates(_sid)) {
-            builder.add(new UserPermissionsAndState(_f._factUser.create(entry._userID), entry._permissions,
-                    entry._state));
+            builder.add(new UserPermissionsAndState(_f._factUser.create(entry._userID),
+                    entry._permissions, entry._state));
         }
         return builder.build();
     }
@@ -430,6 +430,18 @@ public class SharedFolder
         Builder<User> builder = ImmutableList.builder();
         for (UserID userID : _f._db.getAllUsers(_sid)) {
             builder.add(_f._factUser.create(userID));
+        }
+        return builder.build();
+    }
+
+    /**
+     * @return all the users except Team Servers
+     */
+    public ImmutableCollection<User> getAllUsersExceptTeamServers() throws SQLException
+    {
+        Builder<User> builder = ImmutableList.builder();
+        for (UserID userID : _f._db.getAllUsers(_sid)) {
+            if (!userID.isTeamServerID()) builder.add(_f._factUser.create(userID));
         }
         return builder.build();
     }

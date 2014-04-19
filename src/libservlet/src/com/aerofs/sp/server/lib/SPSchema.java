@@ -26,6 +26,7 @@ public final class SPSchema
             C_O_NAME                        = "o_name",
             C_O_CONTACT_PHONE               = "o_contact_phone",
             C_O_STRIPE_CUSTOMER_ID          = "o_stripe_customer_id",
+            C_O_QUOTA_PER_USER              = "o_quota_per_user",
 
             T_OI                            = "sp_organization_invite",
             C_OI_INVITER                    = "m_from",

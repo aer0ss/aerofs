@@ -657,6 +657,13 @@ service SPService {
     //   ExBadArgs if the name is an empty string
     // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE - Move this method after LeaveSharedFolder
     rpc SetSharedFolderName(SetSharedFolderNameCall) returns (Void);
+
+    // Given a set of stores and the bytes contained in each, return whether
+    // each store should continue to collect
+    //
+    // Required Auth Level: admin
+    //
+    rpc CheckQuota(CheckQuotaCall) returns (CheckQuotaReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1211,4 +1218,20 @@ message RemoveUserFromWhitelistCall {
 
 message ListWhitelistedUsersReply {
     repeated PBUser user = 1;
+}
+
+message CheckQuotaCall {
+    message PBStoreUsage {
+        required bytes sid = 1;
+        required uint64 bytes_used = 2;
+    }
+    repeated PBStoreUsage stores = 1;
+}
+
+message CheckQuotaReply {
+    message PBStoreShouldSync {
+        required bytes sid = 1;
+        required bool collect_content = 2;
+    }
+    repeated PBStoreShouldSync stores = 1;
 }

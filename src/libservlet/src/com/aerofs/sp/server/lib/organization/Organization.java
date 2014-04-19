@@ -137,6 +137,22 @@ public class Organization
         _f._odb.setStripeCustomerID(_id, stripeCustomerID);
     }
 
+    /**
+     * @param quota New quota value in bytes, or null to remove quota
+     */
+    public void setQuotaPerUser(@Nullable Long quota) throws SQLException
+    {
+        _f._odb.setQuotaPerUser(_id, quota);
+    }
+
+    /**
+     * @return Quota value in bytes, or null if no quota is set
+     */
+    public @Nullable Long getQuotaPerUser() throws SQLException, ExNotFound
+    {
+        return _f._odb.getQuotaPerUser(_id);
+    }
+
     public void deleteStripeCustomerID()
             throws SQLException
     {

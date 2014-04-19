@@ -718,6 +718,28 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertEquals(expected, folder.getAllUsersRolesAndStates());
     }
 
+    @Test
+    public void getAllUsersExceptTeamServers_shouldGetAllUsersExceptTeamServers() throws Exception
+    {
+        User owner = saveUser();
+        User joinedMember = saveUser();
+
+        Organization org = owner.getOrganization();
+        joinedMember.setOrganization(org, AuthorizationLevel.USER);
+
+        SharedFolder folder = saveSharedFolder(owner);
+        folder.addPendingUser(joinedMember, Permissions.allOf(Permission.WRITE), owner);
+
+        folder.setState(joinedMember, SharedFolderState.JOINED);
+
+        ImmutableList<User> expected = new ImmutableList.Builder<User>()
+                .add(owner)
+                .add(joinedMember)
+                .build();
+
+        assertEquals(expected, folder.getAllUsersExceptTeamServers());
+    }
+
     private User getTeamServerUser(User user)
             throws ExNotFound, SQLException
     {

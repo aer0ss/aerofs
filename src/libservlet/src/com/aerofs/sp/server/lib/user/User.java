@@ -139,6 +139,14 @@ public class User
         }
     }
 
+    public void throwIfNotTeamServer()
+            throws ExNoPerm, SQLException, ExNotFound
+    {
+        if (!id().isTeamServerID()) {
+            throw new ExNoPerm("user " + id().getString() + " is not a TeamServer user");
+        }
+    }
+
     @Override
     public int hashCode()
     {

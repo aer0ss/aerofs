@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
+import static com.aerofs.sp.server.lib.SPSchema.C_O_QUOTA_PER_USER;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_WHITELISTED;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -158,8 +159,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public void setContactPhone(final OrganizationID orgID, final String contactPhone)
             throws SQLException
     {
-        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?",
-                C_O_CONTACT_PHONE));
+        final PreparedStatement ps = prepareStatement(
+                updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_CONTACT_PHONE));
 
         ps.setString(1, contactPhone);
         ps.setInt(2, orgID.getInt());
@@ -171,11 +172,43 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             @Nullable final String stripeCustomerID)
             throws SQLException
     {
-        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?",
-                C_O_STRIPE_CUSTOMER_ID));
+        final PreparedStatement ps = prepareStatement(
+                updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_STRIPE_CUSTOMER_ID));
 
         if (stripeCustomerID != null) ps.setString(1, stripeCustomerID);
         else ps.setNull(1, Types.VARCHAR);
+
+        ps.setInt(2, orgID.getInt());
+
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
+    /**
+     * @return the quota in bytes, or null if no quota is enforced by that org
+     */
+    public @Nullable Long getQuotaPerUser(final OrganizationID orgID) throws SQLException, ExNotFound
+    {
+        final ResultSet rs = queryOrg(orgID, C_O_QUOTA_PER_USER);
+
+        try {
+            Long quota = rs.getLong(1);
+            return rs.wasNull() ? null : quota;
+        } finally {
+            rs.close();
+        }
+    }
+
+    /**
+     * @param quota The new quota in bytes, or null to remove the quota
+     */
+    public void setQuotaPerUser(final OrganizationID orgID, @Nullable Long quota)
+            throws SQLException
+    {
+        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?",
+                C_O_QUOTA_PER_USER));
+
+        if (quota != null) ps.setLong(1, quota);
+        else ps.setNull(1, Types.BIGINT);
 
         ps.setInt(2, orgID.getInt());
 
