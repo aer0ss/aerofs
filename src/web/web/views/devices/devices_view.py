@@ -7,6 +7,7 @@ from pyramid.httpexceptions import HTTPNoContent, HTTPFound, HTTPInternalServerE
 import requests
 
 from web.util import get_rpc_stub
+from web.oauth import get_bifrost_url, is_aerofs_mobile_client_id
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 
 
@@ -30,10 +31,15 @@ def my_devices(request):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    if len(devices) == 0:
+    r = requests.get(get_bifrost_url(request) + '/tokenlist',
+            params={'owner': authenticated_userid(request)})
+    r.raise_for_status()
+    mobile_devices = [t for t in r.json()["tokens"] if is_aerofs_mobile_client_id(t["client_id"])]
+
+    if len(devices) + len(mobile_devices) == 0:
         raise HTTPFound(request.route_path('download', _query={'msg_type': 'no_device'}))
 
-    return _devices(request, devices, user, _("My devices"), False)
+    return _devices(request, devices, mobile_devices, user, _("My devices"), False)
 
 
 @view_config(
@@ -50,7 +56,11 @@ def user_devices(request):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    return _devices(request, devices, user, _("${name}'s devices", {'name': full_name}), False)
+    r = requests.get(get_bifrost_url(request) + '/tokenlist', params={'owner': user})
+    r.raise_for_status()
+    mobile_devices = [t for t in r.json()["tokens"] if is_aerofs_mobile_client_id(t["client_id"])]
+
+    return _devices(request, devices, mobile_devices, user, _("${name}'s devices", {'name': full_name}), False)
 
 
 @view_config(
@@ -69,10 +79,12 @@ def team_server_devices(request):
         raise HTTPFound(request.route_path('download_team_server',
                                            _query={'msg_type': 'no_device'}))
 
-    return _devices(request, devices, ts_user, _("Team Servers"), True)
+    mobile_devices = []
+
+    return _devices(request, devices, mobile_devices, ts_user, _("Team Servers"), True)
 
 
-def _devices(request, devices, user, page_heading, are_team_servers):
+def _devices(request, devices, mobile_devices, user, page_heading, are_team_servers):
     try:
         last_seen_nullable = _get_last_seen(_get_devman_url(request.registry.settings), devices)
     except Exception as e:
@@ -88,6 +100,7 @@ def _devices(request, devices, user, page_heading, are_team_servers):
         'page_heading': page_heading,
         'user': user,
         'devices': devices,
+        'mobile_devices': mobile_devices,
         # The value is None if the devman service throws
         'last_seen_nullable': last_seen_nullable,
         'are_team_servers': are_team_servers,

@@ -27,6 +27,9 @@ def is_valid_access_token(token):
 def is_valid_non_builtin_client_id(client_id):
     return re.match("^[\-0-9a-f]{36}$", client_id)
 
+def is_aerofs_mobile_client_id(client_id):
+    return client_id in ('aerofs-android', 'aerofs-ios')
+
 def flash_error_for_bifrost_response(request, response):
     flash_error(request, _get_error_message_for_bifrost_resonse(response))
 

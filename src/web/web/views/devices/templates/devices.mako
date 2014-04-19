@@ -4,7 +4,14 @@
 <h2>${page_heading}</h2>
 
 <table class="table table-hover">
-    <thead><tr><th>Name</th><th>Most recent activity</th><th>IP address</th><th></th></tr></thead>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Most recent activity</th>
+        <th>IP address</th>
+        <th></th>
+      </tr>
+    </thead>
     <tbody>
 
     %for d in devices:
@@ -17,7 +24,7 @@
                     ## The OS icon
                     <label>${device_icon(d.os_family, d.os_name)}</label>
 
-                    ## The devie name
+                    ## The device name
                     <label id="name_label_${device_id}">
                         <a id="name_link_${device_id}" href="#" onclick="startEditingName('${device_id}'); return false;">
                             %if d.device_name:
@@ -90,6 +97,22 @@
         </tr>
     %endfor
 
+    %for d in mobile_devices:
+        <%
+            token = d['token']
+            os_name = 'Android' if d['client_id'] == 'aerofs-android' else 'iOS'
+        %>
+        <tr id="${token}">
+          <td>
+            <label style="display: inline-block;">${device_icon(os_name, os_name)}</label>
+            <label style="display: inline-block;">AeroFS ${os_name} Device</label>
+          </td>
+          <td class="muted">N/A</td>
+          <td></td>
+          <td><a href="#" onclick='confirmUnlinkMobile("${token}", "${os_name}"); return false;'>Unlink</a></td>
+        </tr>
+    %endfor
+
     </tbody>
 </table>
 
@@ -105,6 +128,7 @@
 <%def name="device_icon(os_family, os_name)">
     <%
         tooltip = os_name
+
         # See OSUtil.OSFamily for these string definitions
         if os_family == 'Windows':
             icon = "aerofs-icon-windows"
@@ -114,6 +138,8 @@
             icon = "aerofs-icon-linux"
         elif os_family == 'Android':
             icon = "aerofs-icon-android"
+        elif os_family == 'iOS':
+            icon = "aerofs-icon-osx"
         else:
             icon = "icon-question-sign"
             tooltip = "Unknown operating system"
@@ -199,6 +225,29 @@
                 ## Restore the old name
                 $nameLink.text(oldName);
                 $('#name_input_' + device_id).val(oldName);
+            });
+        }
+
+        function confirmUnlinkMobile(token, os) {
+            $('#unlink-mobile-modal').modal('show');
+            $('.modal-mobile-os-name').text(os);
+            var $confirm = $('#unlink-mobile-modal-confirm');
+            $confirm.off('click');
+            $confirm.click(function() {
+                $('#unlink-mobile-modal').modal('hide');
+                revokeToken(token);
+                return false;
+            });
+        }
+
+        function revokeToken(token) {
+            $.post('${request.route_path('json_delete_access_token')}', {access_token: token})
+            .done(function() {
+                showSuccessMessage('The mobile device has been unlinked.');
+                $('tr#' + token).remove();
+            })
+            .fail(function() {
+                showErrorMessage("Couldn't unlink the device. Please try again.");
             });
         }
 
