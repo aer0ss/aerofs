@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <cstring>
 #include <string>
 #include <jni.h>
 #include "liblauncher.h"

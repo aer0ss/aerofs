@@ -2,12 +2,10 @@
 #include <jni.h>
 #include "liblauncher.h"
 
-#include <stdlib.h>
 #include <assert.h>
-#include <stdio.h>
+#include <cstdio>
 #include <vector>
 #include <iostream>
-#include <string>
 
 #include "util.h"
 

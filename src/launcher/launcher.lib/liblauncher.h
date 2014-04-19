@@ -1,7 +1,7 @@
 #ifndef LAUNCHER_H
 #define LAUNCHER_H
 
-#include <stdlib.h> /* For getenv(), malloc(), reallocf(), size_t, etc. */
+#include <cstdlib> /* For getenv(), malloc(), reallocf(), size_t, etc. */
 
 #ifdef _WIN32
 #include <tchar.h>

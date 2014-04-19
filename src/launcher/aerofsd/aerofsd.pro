@@ -14,15 +14,15 @@ macx {
     QMAKE_LFLAGS += "-Wl,-rpath,@executable_path/jre/lib/server"
 }
 linux {
-    LIBS += -ljava -lverify
+    LIBS += -ljvm -ljava -lverify
 }
 linux-g++ {
     # 32-bit linux is the default
-    LIBS += -L "$$(JAVA_HOME)/jre/lib/i386"
+    LIBS += -L"$$(JAVA_HOME)/jre/lib/i386" -L"$$(JAVA_HOME)/jre/lib/i386/server"
 }
 linux-g++-64 {
     # qmake should automatically use this scope on 64-bit machines
-    LIBS += -L "$$(JAVA_HOME)/jre/lib/amd64"
+    LIBS += -L"$$(JAVA_HOME)/jre/lib/amd64" -L"$$(JAVA_HOME)/jre/lib/amd64/server"
 }
 win32 {
     DEFINES += _UNICODE UNICODE

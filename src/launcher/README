@@ -1,6 +1,14 @@
 Building out-of-sourcedir on Linux
 ----------------------------------
-mkdir ../launcher.linux.build
-cd ../launcher.linux.build
-qmake ../launcher/launcher.pro
-make
+
+set JAVA_HOME, e.g. :
+
+export JAVA_HOME="$(readlink -e $(which java) | sed s/\\/jre\\/bin\\/java//)"
+
+32bit:
+
+mkdir build ; cd build ; qmake ../launcher.pro ; make ; cd ..
+
+64 bit (qmake seems to need some proding):
+
+mkdir build ; cd build ; qmake -spec linux-g++-64 ../launcher.pro ; make ; cd ..
