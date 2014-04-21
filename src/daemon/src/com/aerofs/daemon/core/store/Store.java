@@ -70,7 +70,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     {
         _f = f;
         _sidx = sidx;
-        _collector = _f._factCollector.create_(this);
+        _collector = _f._factCollector.create_(sidx);
         _senderFilters = _f._factSF.create_(sidx);
         _opm = _f._dp.getOPMDevices_(sidx);
         _isDeleted = false;

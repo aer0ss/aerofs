@@ -13,11 +13,11 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 
 /**
- * Simple collector queue iterator for regular clients
+ * The collector queue iterator for regular clients
  */
-public class IteratorFullReplica extends AbstractIterator
+class IteratorFullReplica extends AbstractIterator
 {
-    public IteratorFullReplica(ICollectorSequenceDatabase csdb, CollectorSkipRule csr, SIndex sidx)
+    IteratorFullReplica(ICollectorSequenceDatabase csdb, CollectorSkipRule csr, SIndex sidx)
     {
         super(csdb, csr, sidx);
     }

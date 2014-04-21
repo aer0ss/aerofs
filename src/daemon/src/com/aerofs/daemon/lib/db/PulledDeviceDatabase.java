@@ -80,15 +80,19 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
     }
 
     /**
-     * If a store is re-admitted, we need to "forget" which DIDs have been
-     * pulled for filters, so that files can be downloaded again in the
-     * Collector algorithm. The following deletion could go in store
-     * creation, but we optimize for DB space and delete the contents here
-     * as all files in the store are necessarily expelled.
+     * If a store or a file in a store is re-admitted, we need to "forget" which DIDs have been
+     * pulled for filters, so that files can be downloaded again in the Collector algorithm.
      */
     @Override
-    public void deleteStore_(SIndex sidx, Trans t) throws SQLException
+    public void discardAllDevices_(SIndex sidx, Trans t) throws SQLException
     {
         StoreDatabase.deleteRowsInTableForStore_(T_PD, C_PD_SIDX, sidx, c(), t);
+    }
+
+    @Override
+    public void deleteStore_(SIndex sidx, Trans t)
+            throws SQLException
+    {
+        discardAllDevices_(sidx, t);
     }
 }

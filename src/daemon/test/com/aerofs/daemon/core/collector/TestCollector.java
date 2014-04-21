@@ -149,7 +149,7 @@ public class TestCollector extends AbstractTest
 
         ICollectorFilterDatabase cfdb = new CollectorFilterDatabase(idbcw.getCoreDBCW());
 
-        collector = new Factory(sched, csdb, csr, dls, tm, er, cfdb).create_(store);
+        collector = new Factory(sched, csdb, csr, dls, tm, er, cfdb).create_(sidx);
 
         // test device online by default
         collector.online_(d0);

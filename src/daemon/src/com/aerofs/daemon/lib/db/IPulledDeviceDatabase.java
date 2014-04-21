@@ -28,5 +28,5 @@ public interface IPulledDeviceDatabase
     /**
      * delete the pulled devices associated with store indexed by sidx
      */
-    void deleteStore_(SIndex sidx, Trans t) throws SQLException;
+    void discardAllDevices_(SIndex sidx, Trans t) throws SQLException;
 }

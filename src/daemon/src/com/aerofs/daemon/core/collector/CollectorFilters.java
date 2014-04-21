@@ -26,6 +26,8 @@ import com.aerofs.lib.id.SIndex;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class CollectorFilters
 {
     private static final Logger l = Loggers.getLogger(CollectorFilters.class);
@@ -281,9 +283,8 @@ public class CollectorFilters
     }
 
     /**
-     * this method applies the db filter to cs for all the loaded devices. the
-     * caller must guarantee that setCSFilterFromDB() hasn't been called on
-     * any loaded device
+     * apply the db filter to cs for all the loaded devices. the caller must guarantee that
+     * setCSFilterFromDB() hasn't been called on any loaded device.
      */
     void setAllCSFiltersFromDB_(CollectorSeq cs)
     {
@@ -311,7 +312,7 @@ public class CollectorFilters
         } else if (csEnd == null) {
             sub = _cs2did2bf.tailMap(csStart);
         } else {
-            assert csStart.compareTo(csEnd) <= 0;
+            checkArgument(csStart.compareTo(csEnd) <= 0, "%s > %s", csStart, csEnd);
             sub = _cs2did2bf.subMap(csStart, csEnd.plusOne());
         }
 

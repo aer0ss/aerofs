@@ -241,7 +241,7 @@ public class Expulsion
             for (SIndex sidx : _sidxs) {
                 // Want to download the content of this file again, so the local peer must "forget"
                 // that it ever pulled sender filters from any DID for the file's store.
-                _pddb.deleteStore_(sidx, t);
+                _pddb.discardAllDevices_(sidx, t);
 
                 // perform an immediate anti-entropy pulling to receive new collector filters and
                 // thus trigger collecting of the admitted files.

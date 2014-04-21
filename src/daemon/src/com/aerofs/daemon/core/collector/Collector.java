@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
-import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
@@ -81,9 +80,9 @@ public class Collector implements IDumpStatMisc
             _dls = dls;
         }
 
-        public Collector create_(Store s)
+        public Collector create_(SIndex sidx)
         {
-            return new Collector(this, s.sidx(), new IteratorFullReplica(_csdb, _csr, s.sidx()));
+            return new Collector(this, sidx, new IteratorFullReplica(_csdb, _csr, sidx));
         }
     }
 
@@ -114,7 +113,7 @@ public class Collector implements IDumpStatMisc
                     l.debug("adding filter to {} triggers collector 4 {}", did, _sidx);
                     resetBackoffInterval_();
                     if (_it.started_()) {
-                        _cfs.addCSFilter_(did, _it.csNullable_(), filter);
+                        _cfs.addCSFilter_(did, _it.cs_(), filter);
                     } else {
                         start_();
                     }
@@ -135,7 +134,7 @@ public class Collector implements IDumpStatMisc
                     l.debug("{} online triggers collector 4 {}", did, _sidx);
                     resetBackoffInterval_();
                     if (_it.started_()) {
-                        _cfs.setCSFilterFromDB_(did, _it.csNullable_());
+                        _cfs.setCSFilterFromDB_(did, _it.cs_());
                     } else {
                         start_();
                     }
@@ -182,7 +181,7 @@ public class Collector implements IDumpStatMisc
         // since the last cleanup (i.e. the last time collection was finalized)
         if (_it.started_()) {
             _cfs.deleteAllCSFilters_();
-            _cfs.setAllCSFiltersFromDB_(_it.csNullable_());
+            _cfs.setAllCSFiltersFromDB_(_it.cs_());
         } else {
             start_();
         }
@@ -270,32 +269,31 @@ public class Collector implements IDumpStatMisc
         OCIDAndCS prevOccs = _it.currentNullable_();
 
         if (_it.next_(t)) {
-            OCIDAndCS occs = _it.currentNullable_();
-            assert occs != null;
+            OCIDAndCS occs = _it.current_();
             if (prevOccs == null) {
                 // at this point the collection just started. it's noteworthy that there may be
                 // ongoing downloads initiated by the last iteration.
                 l.debug("start from {}", occs);
                 _cfs.setAllCSFiltersFromDB_(occs._cs);
             } else {
-                assert prevOccs._cs.compareTo(occs._cs) < 0;
+                checkState(prevOccs._cs.compareTo(occs._cs) < 0);
                 if (!_cfs.deleteCSFilters_(prevOccs._cs.plusOne(), occs._cs)) {
                     l.debug("no filter left. stop");
                     return false;
                 }
             }
             return true;
+
         } else if (prevOccs != null) {
             // end of queue reached: need to start over to cleanup all successfully collected item
             // and retry those that failed
             l.debug("reached end at {}", prevOccs);
             _it.reset_();
             if (_it.next_(t)) {
-                OCIDAndCS occs = _it.currentNullable_();
+                OCIDAndCS occs = _it.current_();
                 l.debug("start over from {}", occs);
-                assert occs != null;
                 // the two can be equal if there's only one component in the list
-                assert prevOccs._cs.compareTo(occs._cs) >= 0;
+                checkState(prevOccs._cs.compareTo(occs._cs) >= 0);
                 // If the collector queue only contains one item we should make sure we do not
                 // remove any freshly added filter before we collect that item
                 // CollectorSeq.min(occs._cs, prevOccs._cs.minusOne())
@@ -323,7 +321,7 @@ public class Collector implements IDumpStatMisc
      */
     private void attemptToStopAndFinalizeCollection_(@Nullable Trans t)
     {
-        assert _downloads >= 0 : _downloads;
+        checkState(_downloads >= 0, _downloads);
 
         if (!_it.started_() && _downloads == 0) {
             l.debug("stop clct on {}", _sidx);
@@ -343,7 +341,7 @@ public class Collector implements IDumpStatMisc
      */
     private boolean collectOne_(OCID ocid)
     {
-        assert _it.started_();
+        checkState(_it.started_());
 
         SOCID socid = new SOCID(_sidx, ocid);
         final Set<DID> dids = _cfs.getDevicesHavingComponent_(ocid);
@@ -414,13 +412,14 @@ public class Collector implements IDumpStatMisc
         @Override
         public void onGeneralError_(SOCID socid, Exception e)
         {
-            l.debug("cdl {}: {}", socid, Util.e(e));
+            String eMsg = Util.e(e);
+            l.debug("cdl {}: {}", socid, eMsg);
 
             // For general errors, we want to re-run this collector.
             // Indicate the BFs are dirty for all devices of interest so
             // that they are re-introduced into the next collector iteration.
             for (DID did : _dids) _cfs.setDirtyBit_(did);
-            assert !_dids.isEmpty() : socid + " " + Util.e(e);
+            checkState(!_dids.isEmpty(), "%s %s", socid, eMsg);
             scheduleBackoff_();
             postDownloadCompletionTask_();
         }

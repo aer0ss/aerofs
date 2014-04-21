@@ -82,8 +82,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
     {
         // To avoid requiring a temporary b-tree for the "order by CS_CS,"
         // the CS table index was changed to have (sidx, cs, oid, cid)
-        return getFromCSImpl_(sidx, csStart, limit, _pswGCS,
-                getCSQuery(null));
+        return getFromCSImpl_(sidx, csStart, limit, _pswGCS, getCSQuery(null));
     }
 
     private final PreparedStatementWrapper _pswGMCS = new PreparedStatementWrapper();
@@ -93,15 +92,6 @@ public class CollectorSequenceDatabase extends AbstractDatabase
     {
         return getFromCSImpl_(sidx, csStart, limit, _pswGMCS,
                 getCSQuery(C_CS_CID + "=" + CID.META.getInt()));
-    }
-
-    private final PreparedStatementWrapper _pswGNMCS = new PreparedStatementWrapper();
-    @Override
-    public IDBIterator<OCIDAndCS> getNonMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart,
-            int limit) throws SQLException
-    {
-        return getFromCSImpl_(sidx, csStart, limit, _pswGNMCS,
-                getCSQuery(C_CS_CID + "!=" + CID.META.getInt()));
     }
 
     private PreparedStatement _psDCS;

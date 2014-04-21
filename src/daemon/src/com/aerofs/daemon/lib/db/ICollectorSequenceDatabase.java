@@ -48,8 +48,5 @@ public interface ICollectorSequenceDatabase
     IDBIterator<OCIDAndCS> getMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart, int limit)
             throws SQLException;
 
-    IDBIterator<OCIDAndCS> getNonMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart, int limit)
-            throws SQLException;
-
     void deleteCSsForStore_(SIndex sidx, Trans t) throws SQLException;
 }
