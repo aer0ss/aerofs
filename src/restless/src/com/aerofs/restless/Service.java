@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Base class for Restless service
@@ -102,6 +103,16 @@ public class Service extends AbstractNettyServer
             _application.initiate(_resources, new GuiceComponentProviderFactory(_resources, _injector));
         }
         super.start();
+    }
+
+    @Override
+    public void stop()
+    {
+        super.stop();
+
+        if (_executor != null && _executor instanceof ExecutorService) {
+            ((ExecutorService)_executor).shutdown();
+        }
     }
 
     protected void addRequestFilter(Class<? extends ContainerRequestFilter> clazz)

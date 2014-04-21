@@ -34,12 +34,27 @@ public class Auditor extends Service
         Loggers.init();
     }
 
+    private final ExecutionHandler _handler;
+
     @Inject
     public Auditor(Injector injector, IPrivateKeyProvider kmgr)
     {
         super("auditor", new InetSocketAddress(Audit.SERVICE_PORT), kmgr, injector);
 
+        // the magic numbers following are just guesses and have not been well-tuned.
+        // 8: core thread pool size
+        // 1048576: max memory commitments for work queued to get into the pool
+        _handler = new ExecutionHandler(
+                new OrderedMemoryAwareThreadPoolExecutor(8, 1048576, 1048576), false, true);
+
         addResource(EventResource.class);
+    }
+
+    @Override
+    public void stop()
+    {
+        super.stop();
+        _handler.releaseExternalResources();
     }
 
     @Override
@@ -47,12 +62,7 @@ public class Auditor extends Service
     {
         ChannelPipeline p = super.getSpecializedPipeline();
         p.addBefore(JERSEY_HANLDER, "auth", new HttpRequestAuthenticator());
-
-        // the magic numbers following are just guesses and have not been well-tuned.
-        // 8: core thread pool size
-        // 1048576: max memory commitments for work queued to get into the pool
-        p.addBefore(JERSEY_HANLDER, "execution", new ExecutionHandler(
-                new OrderedMemoryAwareThreadPoolExecutor(8, 1048576, 1048576), false, true));
+        p.addBefore(JERSEY_HANLDER, "execution", _handler);
         return p;
     }
 

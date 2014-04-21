@@ -84,9 +84,14 @@ public class Sparta extends Service
 
     static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 2);
 
+    private final ExecutionHandler _executionHandler;
+
     public Sparta(Injector injector, IPrivateKeyProvider kmgr)
     {
         super("sparta", listenAddress(), kmgr, injector, null);
+
+        _executionHandler = new ExecutionHandler(
+                new OrderedMemoryAwareThreadPoolExecutor(10, 1 * C.MB, 5 * C.MB));
 
         enableVersioning();
 
@@ -125,13 +130,19 @@ public class Sparta extends Service
     }
 
     @Override
+    public void stop()
+    {
+        super.stop();
+        _executionHandler.releaseExternalResources();
+    }
+
+    @Override
     public ChannelPipeline getSpecializedPipeline()
     {
         ChannelPipeline p = super.getSpecializedPipeline();
 
         // free i/o threads while handling app logic and preserve HTTP pipelining
-        p.addBefore(JERSEY_HANLDER, "exec", new ExecutionHandler(
-                new OrderedMemoryAwareThreadPoolExecutor(10, 1 * C.MB, 5 * C.MB)));
+        p.addBefore(JERSEY_HANLDER, "exec", _executionHandler);
         return p;
     }
 
