@@ -1,0 +1,50 @@
+<root>
+    <item name='com.google.common.base.Preconditions T checkNotNull(T)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;null -&gt; fail&quot;" />
+        </annotation>
+    </item>
+    <item name='com.google.common.base.Preconditions T checkNotNull(T, java.lang.Object)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;null, _ -&gt; fail&quot;" />
+        </annotation>
+    </item>
+    <item
+        name='com.google.common.base.Preconditions T checkNotNull(T, java.lang.String, java.lang.Object...)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;null, _, _ -&gt; fail&quot;" />
+        </annotation>
+    </item>
+    <item name='com.google.common.base.Preconditions void checkArgument(boolean)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;false -&gt; fail&quot;" />
+        </annotation>
+    </item>
+    <item name='com.google.common.base.Preconditions void checkArgument(boolean, java.lang.Object)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;false, _ -&gt; fail&quot;" />
+        </annotation>
+    </item>
+    <item
+        name='com.google.common.base.Preconditions void checkArgument(boolean, java.lang.String, java.lang.Object...)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;false, _, _ -&gt; fail&quot;" />
+        </annotation>
+    </item>
+    <item name='com.google.common.base.Preconditions void checkState(boolean)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;false -&gt; fail&quot;" />
+        </annotation>
+    </item>
+    <item name='com.google.common.base.Preconditions void checkState(boolean, java.lang.Object)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;false, _ -&gt; fail&quot;" />
+        </annotation>
+    </item>
+    <item
+        name='com.google.common.base.Preconditions void checkState(boolean, java.lang.String, java.lang.Object...)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;false, _, _ -&gt; fail&quot;" />
+        </annotation>
+    </item>
+</root>
