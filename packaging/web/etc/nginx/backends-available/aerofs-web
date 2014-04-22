@@ -5,6 +5,11 @@
         alias /opt/web/docs/;
     }
     location / {
+        # This is where the marketing
+        alias /opt/staticweb/_site/;
+        try_files $uri $uri/ @uwsgi;
+    }
+    location @uwsgi {
         # redirect /developer to /developers
         rewrite /developer(/.*)?$ /developers$1 permanent;
 
