@@ -1,2 +1,4 @@
-#!/bin/bash -e
-/opt/sanity/probes/tools/port.sh localhost 8700 "OAuth port"
+#!/bin/bash
+set -e
+
+curl http://localhost:8700/healthcheck

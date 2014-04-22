@@ -25,6 +25,7 @@ import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
 import com.aerofs.bifrost.oaaas.resource.AuthorizeResource;
 import com.aerofs.bifrost.oaaas.resource.ClientsResource;
+import com.aerofs.bifrost.oaaas.resource.HealthCheckResource;
 import com.aerofs.bifrost.oaaas.resource.TokenResource;
 import com.aerofs.bifrost.oaaas.resource.VerifyResource;
 import com.aerofs.lib.properties.Configuration.Server;
@@ -73,12 +74,14 @@ public class Bifrost extends Service
                         "/authorize"),
                 ImmutableSet.of( // read-only
                         "/tokeninfo",
-                        "/tokenlist"));
+                        "/tokenlist",
+                        "/healthcheck"));
 
         addResource(AuthorizeResource.class);
         addResource(VerifyResource.class);
         addResource(TokenResource.class);
         addResource(ClientsResource.class);
+        addResource(HealthCheckResource.class);
     }
 
     @Override
