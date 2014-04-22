@@ -1,7 +1,6 @@
 package com.aerofs.daemon;
 
 import com.aerofs.daemon.core.Core;
-import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 
 public class Daemon implements IModule
@@ -10,7 +9,7 @@ public class Daemon implements IModule
 
     // TODO add more submodules e.g. transports
     @Inject
-    public Daemon(Core core, RockLog rockLog)
+    public Daemon(Core core)
     {
         _core = core;
     }

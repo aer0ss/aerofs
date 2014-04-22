@@ -16,7 +16,6 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.IExpulsionDatabase;
-import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
@@ -55,7 +54,6 @@ public class Expulsion
 {
     private static final Logger l = Loggers.getLogger(Expulsion.class);
     private DirectoryService _ds;
-    private IPulledDeviceDatabase _pddb;
     private IExpulsionDatabase _exdb;
     private ICollectorSequenceDatabase _csdb;
     private NativeVersionControl _nvc;
@@ -66,7 +64,7 @@ public class Expulsion
     private ExpelledToExpelledAdjuster _adjE2E;
 
     @Inject
-    public void inject_(DirectoryService ds, IPulledDeviceDatabase pddb, IExpulsionDatabase exdb,
+    public void inject_(DirectoryService ds, IExpulsionDatabase exdb,
             ExpelledToExpelledAdjuster adjE2E, ExpelledToAdmittedAdjuster adjE2A,
             AdmittedToExpelledAdjuster adjA2E, AdmittedToAdmittedAdjuster adjA2A,
             NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s)
@@ -76,7 +74,6 @@ public class Expulsion
         _adjA2E = adjA2E;
         _adjA2A = adjA2A;
         _ds = ds;
-        _pddb = pddb;
         _exdb = exdb;
         _nvc = nvc;
         _csdb = csdb;
@@ -239,13 +236,7 @@ public class Expulsion
         public void committing_(Trans t) throws SQLException
         {
             for (SIndex sidx : _sidxs) {
-                // Want to download the content of this file again, so the local peer must "forget"
-                // that it ever pulled sender filters from any DID for the file's store.
-                _pddb.discardAllDevices_(sidx, t);
-
-                // perform an immediate anti-entropy pulling to receive new collector filters and
-                // thus trigger collecting of the admitted files.
-                _sidx2s.get_(sidx).startAntiEntropy_();
+                _sidx2s.get_(sidx).resetCollectorFiltersForAllDevices_(t);
             }
         }
     }

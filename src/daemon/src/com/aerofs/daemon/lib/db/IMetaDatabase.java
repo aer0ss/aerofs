@@ -3,6 +3,7 @@ package com.aerofs.daemon.lib.db;
 import java.sql.SQLException;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.daemon.core.ds.OA;
@@ -83,10 +84,15 @@ public interface IMetaDatabase
 
     void deleteOAsAndCAsForStore_(SIndex sidx, Trans t) throws SQLException;
 
-    void setCAHash_(SOID soid, KIndex kidx, @Nullable ContentHash h, Trans t) throws SQLException;
+    void setCAHash_(SOID soid, KIndex kidx, @Nonnull ContentHash h, Trans t) throws SQLException;
 
     @Nullable
     ContentHash getCAHash_(SOID soid, KIndex kidx) throws SQLException;
 
     IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException;
+
+    /**
+     * Return the total size of all the content branches in the given store.
+     */
+    long getBytesUsed_(@Nullable SIndex sidx) throws SQLException;
 }

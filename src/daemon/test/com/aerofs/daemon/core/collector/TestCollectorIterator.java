@@ -21,31 +21,80 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(value = Parameterized.class)
-public class TestAbstractIterator extends AbstractTest
+public class TestCollectorIterator extends AbstractTest
 {
+    private class MockDBIterator implements IDBIterator<OCIDAndCS> {
+        private CollectorSeq _cs;
+        private OCID _ocid;
+        private int _n;
+        private boolean _closed;
+
+        MockDBIterator(CollectorSeq csStart, int limit)
+        {
+            _cs = csStart;
+            _n = limit;
+        }
+
+        @Override
+        public OCIDAndCS get_() throws SQLException
+        {
+            return _closed || _n < 0 || _cs.getLong() > lastCS ?
+                    null : new OCIDAndCS(_ocid, _cs);
+        }
+
+        @Override
+        public boolean next_() throws SQLException
+        {
+            if (_closed || _n <= 0 ||
+                    (_cs != null ? _cs.getLong() : firstCS - 1) >= lastCS) {
+                return false;
+            }
+
+            _cs = _cs != null ? _cs.plusOne() : new CollectorSeq(firstCS);
+            _ocid = new OCID(OID.generate(), CID.META);
+            --_n;
+            return true;
+        }
+
+        @Override
+        public void close_() throws SQLException
+        {
+            _closed = true;
+        }
+
+        @Override
+        public boolean closed_()
+        {
+            return _closed;
+        }
+    }
+
     @Mock Trans t;
     @Mock ICollectorSequenceDatabase csdb;
     @Mock CollectorSkipRule csr;
 
     SIndex sidx = new SIndex(1);
-    AbstractIterator it;
+    CollectorIterator it;
 
     private final long firstCS;
     private final long lastCS;
 
-    public TestAbstractIterator(long firstCS, long lastCS)
+    public TestCollectorIterator(long firstCS, long lastCS)
     {
         this.firstCS = firstCS;
         this.lastCS = lastCS;
@@ -56,62 +105,30 @@ public class TestAbstractIterator extends AbstractTest
         return Arrays.asList(new Object[][] {
                 {10, 9},                                    // empty queue
                 {10, 19},                                   // 10 objects
-                {0, AbstractIterator.FETCH_SIZE},           // exercise batch fetch
-                {0, AbstractIterator.SHRINK_THRESHOLD},     // exercise cache clear
+                {0, CollectorIterator.FETCH_SIZE},           // exercise batch fetch
+                {0, CollectorIterator.SHRINK_THRESHOLD},     // exercise cache clear
         });
     }
-
 
     @Before
     public void setUp() throws Exception
     {
-        it = new AbstractIterator(csdb, csr, sidx) {
-            @Override
-            protected IDBIterator<OCIDAndCS> fetch_(final @Nullable CollectorSeq csStart,
-                    final int limit) throws SQLException
-            {
-                return new IDBIterator<OCIDAndCS>() {
-                    private CollectorSeq _cs = csStart;
-                    private OCID _ocid;
-                    private int _n = limit;
-                    private boolean _closed;
+         when(csdb.getCS_(any(SIndex.class), any(CollectorSeq.class), anyInt())).then(
+                 new Answer<IDBIterator<OCIDAndCS>>()
+                 {
+                     @Override
+                     public IDBIterator<OCIDAndCS> answer(InvocationOnMock invocation)
+                             throws Throwable
+                     {
+                         CollectorSeq csStart = (CollectorSeq)invocation.getArguments()[1];
+                         int limit = (Integer)invocation.getArguments()[2];
 
-                    @Override
-                    public OCIDAndCS get_() throws SQLException
-                    {
-                        return _closed || _n < 0 || _cs.getLong() > lastCS ?
-                                null : new OCIDAndCS(_ocid, _cs);
-                    }
+                         return new MockDBIterator(csStart, limit);
+                     }
+                 }
+         );
 
-                    @Override
-                    public boolean next_() throws SQLException
-                    {
-                        if (_closed || _n <= 0 ||
-                                (_cs != null ? _cs.getLong() : firstCS - 1) >= lastCS) {
-                            return false;
-                        }
-
-                        _cs = _cs != null ? _cs.plusOne() : new CollectorSeq(firstCS);
-                        _ocid = new OCID(OID.generate(), CID.META);
-                        --_n;
-                        return true;
-                    }
-
-                    @Override
-                    public void close_() throws SQLException
-                    {
-                        _closed = true;
-                    }
-
-                    @Override
-                    public boolean closed_()
-                    {
-                        return _closed;
-                    }
-                };
-            }
-        };
-
+        it = new CollectorIterator(csdb, csr, sidx);
         Assert.assertFalse(it.started_());
     }
 
@@ -130,7 +147,7 @@ public class TestAbstractIterator extends AbstractTest
     public void shouldIterateAll() throws Exception
     {
         iterate();
-        verifyZeroInteractions(csdb);
+        verify(csdb, never()).deleteCS_(any(CollectorSeq.class), any(Trans.class));
     }
 
     @Test
@@ -154,6 +171,6 @@ public class TestAbstractIterator extends AbstractTest
 
         iterate();
 
-        verifyZeroInteractions(csdb);
+        verify(csdb, never()).deleteCS_(any(CollectorSeq.class), any(Trans.class));
     }
 }

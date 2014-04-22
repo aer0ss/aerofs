@@ -220,6 +220,8 @@ public abstract class Util
     }
 
     /**
+     * This method is OBSOLETE. use Preconditions.checkState() instead.
+     *
      * This is equivalent to assert, except the expression will always be evaluated
      * (If one was to replace "verify(foo)" with "assert foo" then the foo expression might not be
      * evaluated if assertions are disabled.

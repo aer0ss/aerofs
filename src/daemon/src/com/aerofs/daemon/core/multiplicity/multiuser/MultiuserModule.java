@@ -10,6 +10,8 @@ import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.MultiuserImmigrantDetector;
+import com.aerofs.daemon.core.quota.IQuotaEnforcement;
+import com.aerofs.daemon.core.quota.QuotaEnforcement;
 import com.aerofs.daemon.core.store.AbstractStoreJoiner;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.Stores;
@@ -40,5 +42,7 @@ public class MultiuserModule extends AbstractModule
         bind(ImmigrantDetector.class).to(MultiuserImmigrantDetector.class);
 
         bind(AbstractStoreJoiner.class).to(MultiuserStoreJoiner.class);
+
+        bind(IQuotaEnforcement.class).to(QuotaEnforcement.class);
     }
 }

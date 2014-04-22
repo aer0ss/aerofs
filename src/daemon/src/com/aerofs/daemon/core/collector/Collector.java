@@ -50,8 +50,8 @@ public class Collector implements IDumpStatMisc
 
     private final SIndex _sidx;
     private final CollectorFilters _cfs;
+    private final CollectorIterator _it;
     private int _startSeq;
-    private AbstractIterator _it;
     private int _downloads;     // # current downloads initiated by the collector
     private long _backoffInterval;
     private boolean _backoffScheduled;
@@ -67,9 +67,9 @@ public class Collector implements IDumpStatMisc
         private final Downloads _dls;
 
         @Inject
-        public Factory(CoreScheduler sched, ICollectorSequenceDatabase csdb,
-                CollectorSkipRule csr, Downloads dls, TransManager tm,
-                CoreExponentialRetry cer, ICollectorFilterDatabase cfdb)
+        public Factory(CoreScheduler sched, ICollectorSequenceDatabase csdb, CollectorSkipRule csr,
+                Downloads dls, TransManager tm, CoreExponentialRetry cer,
+                ICollectorFilterDatabase cfdb)
         {
             _sched = sched;
             _csdb = csdb;
@@ -82,18 +82,18 @@ public class Collector implements IDumpStatMisc
 
         public Collector create_(SIndex sidx)
         {
-            return new Collector(this, sidx, new IteratorFullReplica(_csdb, _csr, sidx));
+            return new Collector(this, sidx);
         }
     }
 
     private final Factory _f;
 
-    private Collector(Factory f, SIndex sidx, AbstractIterator it)
+    private Collector(Factory f, SIndex sidx)
     {
         _f = f;
         _sidx = sidx;
-        _cfs = new CollectorFilters(f._cfdb, f._tm, _sidx);
-        _it = it;
+        _cfs = new CollectorFilters(f._cfdb, f._tm, sidx);
+        _it = new CollectorIterator(f._csdb, f._csr, sidx);
         resetBackoffInterval_();
     }
 
@@ -150,6 +150,22 @@ public class Collector implements IDumpStatMisc
         // if no more device is left online, and the collection is on going, the next iteration of
         // the collector will find no filters are available, and therefore stop collecting.
         _cfs.unloadAllFilters_(did);
+    }
+
+    /**
+     * A facade method to hide implementation detail from the caller
+     */
+    public boolean includeContent_()
+    {
+        return _it.includeContent_();
+    }
+
+    /**
+     * A facade method to hide implementation detail from the caller
+     */
+    public boolean excludeContent_()
+    {
+        return _it.excludeContent_();
     }
 
     /**

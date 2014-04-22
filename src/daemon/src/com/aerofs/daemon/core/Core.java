@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.notification.NotificationService;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
+import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
@@ -59,6 +60,7 @@ public class Core implements IModule
     private final HealthCheckService _hcs;
     private final ClientAuditEventReporter _caer;
     private final DaemonLaunchTasks _dlts;
+    private final IQuotaEnforcement _quota;
 
     @Inject
     public Core(
@@ -85,6 +87,7 @@ public class Core implements IModule
             IMetriks metriks,
             HealthCheckService hcs,
             ClientAuditEventReporter caer,
+            IQuotaEnforcement quota,
             DaemonLaunchTasks dlts)
     {
         _imce2core = imce.imce();
@@ -111,6 +114,7 @@ public class Core implements IModule
         _hcs = hcs;
         _caer = caer;
         _dlts = dlts;
+        _quota = quota;
     }
 
     @Override
@@ -141,6 +145,7 @@ public class Core implements IModule
         // this service should not be enabled
         // unless auditing is allowed for this
         // installation
+        // TDOO (WW) use DI and polymorphysm
         if (Audit.AUDIT_ENABLED) {
             _caer.init_();
         }
@@ -233,6 +238,7 @@ public class Core implements IModule
         // this service should not be started
         // unless auditing is allowed for this
         // installation
+        // TDOO (WW) use DI and polymorphysm
         if (Audit.AUDIT_ENABLED) {
             _caer.start_();
         }
@@ -249,5 +255,6 @@ public class Core implements IModule
 
         _linker.start_();
         _vksub.start_();
+        _quota.start_();
     }
 }

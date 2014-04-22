@@ -118,7 +118,6 @@ public class DaemonProgram implements IProgram
 
         Daemon d = injDaemon.getInstance(Daemon.class);
 
-        // TODO (HB): control Rest service through GUI
         // NB: the RestService MUST be started AFTER creation of the Daemon instance or Guice
         // throws a fit
         if (new CfgRestService().isEnabled()) {

@@ -5,10 +5,12 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.net.device.OPMDevices;
+import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.IDumpStatMisc;
 import com.google.inject.Inject;
@@ -17,16 +19,12 @@ import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.net.device.Device;
-import com.aerofs.lib.Util;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
 
 public class Store implements Comparable<Store>, IDumpStatMisc
 {
     private final SIndex _sidx;
-
-    // only set for partial replicas
-    private long _used;
 
     private @Nullable OPMDevices _opm;
 
@@ -46,16 +44,18 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         private AntiEntropy _ae;
         private Collector.Factory _factCollector;
         private SenderFilters.Factory _factSF;
+        private IPulledDeviceDatabase _pddb;
 
         @Inject
         public void inject_(SenderFilters.Factory factSF, Collector.Factory factCollector,
-                AntiEntropy ae, DevicePresence dp)
+                AntiEntropy ae, DevicePresence dp, IPulledDeviceDatabase pddb)
         {
 
             _factSF = factSF;
             _factCollector = factCollector;
             _ae = ae;
             _dp = dp;
+            _pddb = pddb;
         }
 
         public Store create_(SIndex sidx) throws SQLException
@@ -95,7 +95,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     }
 
     @Override
-    public int compareTo(Store o)
+    public int compareTo(@Nonnull Store o)
     {
         assert !_isDeleted;
         return _sidx.compareTo(o._sidx);
@@ -145,7 +145,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     @Override
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
-        ps.println(indent + _sidx + " used " + Util.format(_used) + "+");
+        ps.println(indent + _sidx);
         _collector.dumpStatMisc(indent + indentUnit, indentUnit, ps);
     }
 
@@ -163,6 +163,26 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _f._ae.start_(_sidx);
     }
 
+    /**
+     * Call this method to recollect of all the components in the collector queue. It is useful if
+     * some components are in the queue but their filters have been deleted. It may happen if the
+     * components were skipped during previous collection, or were manually added to the queue out
+     * of normal P2P communication. See the method's callers for example use cases.
+     *
+     * N.B. This method resets the collector to use base filters and thus may it may worsen the
+     * impact of ghost KMLs. Use with extreme caution. TODO (WW) fix this problem.
+     */
+    public void resetCollectorFiltersForAllDevices_(Trans t)
+            throws SQLException
+    {
+        // The local peer must "forget" that it ever pulled sender filters from any DID, so that
+        // it will start from base filters in future communications.
+        _f._pddb.discardAllDevices_(_sidx, t);
+
+        // perform an immediate anti-entropy pulling to receive new collector filters and thus
+        // trigger collection.
+        startAntiEntropy_();
+    }
 
     public void deletePersistentData_(Trans t)
             throws SQLException

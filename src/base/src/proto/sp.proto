@@ -1237,15 +1237,15 @@ message CheckQuotaCall {
         required bytes sid = 1;
         required uint64 bytes_used = 2;
     }
-    repeated PBStoreUsage stores = 1;
+    repeated PBStoreUsage store = 1;
 }
 
 message CheckQuotaReply {
-    message PBStoreShouldSync {
+    message PBStoreShouldCollect {
         required bytes sid = 1;
         required bool collect_content = 2;
     }
-    repeated PBStoreShouldSync stores = 1;
+    repeated PBStoreShouldCollect store = 1;
 }
 
 message SetQuotaCall {

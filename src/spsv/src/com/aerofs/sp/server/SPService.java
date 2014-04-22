@@ -48,7 +48,7 @@ import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
 import com.aerofs.proto.Sp.CheckQuotaReply;
-import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldSync;
+import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
 import com.aerofs.proto.Sp.DeactivateUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
@@ -142,7 +142,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang.StringUtils;
@@ -1355,7 +1354,7 @@ public class SPService implements ISPService
 
         for (PBStoreUsage storeUsage : stores) {
             SharedFolder store = _factSharedFolder.create(storeUsage.getSid());
-            responseBuilder.addStores(PBStoreShouldSync.newBuilder()
+            responseBuilder.addStore(PBStoreShouldCollect.newBuilder()
                     .setSid(store.id())
                     .setCollectContent(storesThatShouldCollectContent.contains(store))
                     .build());

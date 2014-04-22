@@ -1,6 +1,7 @@
 package com.aerofs.daemon.lib.db;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -621,20 +622,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private PreparedStatement prepareOASelect(PreparedStatementWrapper psw, String column,
-            SOID soid) throws SQLException
-    {
-        if (psw.get() == null) {
-            psw.set(c().prepareStatement(DBUtil.selectWhere(T_OA,
-                    C_OA_SIDX + "=? and " + C_OA_OID + "=?",
-                    column)));
-        }
-        PreparedStatement ps = psw.get();
-        ps.setInt(1, soid.sidx().getInt());
-        ps.setBytes(2, soid.oid().getBytes());
-        return ps;
-    }
-
     private PreparedStatement prepareOAUpdate(PreparedStatementWrapper psw, String column,
             SOID soid) throws SQLException
     {
@@ -647,41 +634,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         ps.setInt(2, soid.sidx().getInt());
         ps.setBytes(3, soid.oid().getBytes());
         return ps;
-    }
-
-    /**
-     * Read a blob from a given column of the object attribute table
-     *
-     * @param psw PreparedStatement wrapper to be used for the DB lookup
-     * @param soid Object for which to lookup the blob
-     * @param column name of the column of interest
-     * @return a byte array containing the blob of interest, null if not found
-     *
-     * Note: the return value will be null if the given {@code soid} is not present in the DB,
-     * if the value stored in the DB is an explicit NULL or if it is an empty byte array.
-     *
-     * The prepared statement will be automatically initialized by this method. The use of a wrapper
-     * is necessary as Java does not support passing arguments by reference.
-     */
-    private @Nullable byte[] getOABlob_(PreparedStatementWrapper psw, SOID soid, String column) throws SQLException
-    {
-        try {
-            PreparedStatement ps = prepareOASelect(psw, column, soid);
-            ResultSet rs = ps.executeQuery();
-            byte[] blob = null;
-            try {
-                if (rs.next()) {
-                    blob = rs.getBytes(1);
-                    Util.verify(!rs.next()); // and only one entry...
-                }
-            } finally {
-                rs.close();
-            }
-            return blob;
-        } catch (SQLException e) {
-            psw.close();
-            throw detectCorruption(e);
-        }
     }
 
     /**
@@ -721,5 +673,32 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
     {
         StoreDatabase.deleteRowsInTablesForStore_(
                 ImmutableMap.of(T_OA, C_OA_SIDX, T_CA, C_CA_SIDX), sidx, c(), t);
+    }
+
+    private PreparedStatement _psGetBytesUsed;
+    @Override
+    public long getBytesUsed_(SIndex sidx) throws SQLException
+    {
+        try {
+            if (_psGetBytesUsed == null) _psGetBytesUsed = c()
+                    .prepareStatement("select sum(" + C_CA_LENGTH + ") from "
+                            + T_CA + " where " + C_CA_SIDX + "=?");
+
+            _psGetBytesUsed.setInt(1, sidx.getInt());
+
+            ResultSet rs = _psGetBytesUsed.executeQuery();
+            try {
+                checkState(rs.next());
+                long ret = rs.getLong(1);
+                checkState(!rs.next());
+                return ret;
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            DBUtil.close(_psGetBytesUsed);
+            _psGetBytesUsed = null;
+            throw e;
+        }
     }
 }

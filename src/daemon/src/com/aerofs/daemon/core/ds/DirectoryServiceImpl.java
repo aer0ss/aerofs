@@ -603,6 +603,12 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     }
 
     @Override
+    public long getBytesUsed_(SIndex sidx) throws SQLException
+    {
+        return _mdb.getBytesUsed_(sidx);
+    }
+
+    @Override
     public void deleteStore_(SIndex sidx, Trans t)
             throws SQLException
     {

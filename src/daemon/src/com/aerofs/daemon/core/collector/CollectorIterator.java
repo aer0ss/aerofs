@@ -36,27 +36,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * The actual fetch operation is delegated to the concrete subclasses
  */
-abstract class AbstractIterator
+class CollectorIterator
 {
-    private static final Logger l = Loggers.getLogger(AbstractIterator.class);
-
-    private final CollectorSkipRule _csr;
-    protected final ICollectorSequenceDatabase _csdb;
-
-    protected final SIndex _sidx;
-
-    private @Nullable OCIDAndCS _current;
-
-    // The collector queue cache. See the class-level comment.
-    private final ArrayList<OCIDAndCS> _seq = Lists.newArrayList();
-
-    // An index in {@link #_seq} pointing to the item to be iterated over next
-    private int _next;
-
-    private int _discardable;
-
-    // Whether to clear {@link #_seq} on the next {@link #reset_()} call
-    private boolean _clearOnReset;
+    private static final Logger l = Loggers.getLogger(CollectorIterator.class);
 
     // batch size used by the incremental fetch
     static final int FETCH_SIZE = 100;
@@ -66,15 +48,26 @@ abstract class AbstractIterator
     // retarded boxing... I miss good old C/C++
     static final int SHRINK_THRESHOLD = 2000;
 
-    /**
-     * @return if {@paramref csStart} != null, return an iterator for components with cs
-     * strictly greater than csStart. Otherwise return an iterator that starts from the beginning of
-     * the collector queue.
-     */
-    abstract protected IDBIterator<OCIDAndCS> fetch_(@Nullable CollectorSeq csStart, int limit)
-            throws SQLException;
+    private final CollectorSkipRule _csr;
+    private final ICollectorSequenceDatabase _csdb;
+    private final SIndex _sidx;
 
-    protected AbstractIterator(ICollectorSequenceDatabase csdb, CollectorSkipRule csr, SIndex sidx)
+    // The collector queue cache. See the class-level comment.
+    private final ArrayList<OCIDAndCS> _seq = Lists.newArrayList();
+
+    private boolean _isContentIncluded = true;
+
+    private @Nullable OCIDAndCS _current;
+
+    // An index in {@link #_seq} pointing to the item to be iterated over next
+    private int _next;
+
+    private int _discardable;
+
+    // Whether to clear {@link #_seq} on the next {@link #reset_()} call
+    private boolean _clearOnReset;
+
+    CollectorIterator(ICollectorSequenceDatabase csdb, CollectorSkipRule csr, SIndex sidx)
     {
         _csr = csr;
         _csdb = csdb;
@@ -120,7 +113,7 @@ abstract class AbstractIterator
     }
 
     /**
-     * a shortcut of current_()._cs
+     * a shortcut for current_()._cs
      */
     @Nonnull CollectorSeq cs_()
     {
@@ -180,6 +173,36 @@ abstract class AbstractIterator
     }
 
     /**
+     * Include content components for future iterations. Callers to this method should call
+     * {@link com.aerofs.daemon.core.store.Store#resetCollectorFiltersForAllDevices_}
+     * to reset collector filters. See that method's comments for more info.
+     *
+     * @return whether the content was excluded before this call
+     */
+    boolean includeContent_()
+    {
+        if (_isContentIncluded) return false;
+        l.info("include content for store {}", _sidx);
+        clearCache_();
+        _isContentIncluded = true;
+        return true;
+    }
+
+    /**
+     * Exclude content components for future iterations.
+     *
+     * @return whether the content was included before this call
+     */
+    boolean excludeContent_()
+    {
+        if (!_isContentIncluded) return false;
+        l.info("exclude content for store {}", _sidx);
+        clearCache_();
+        _isContentIncluded = false;
+        return true;
+    }
+
+    /**
      * Fetch a batch of item from the collector queue
      * @return true if items where fetched, false if the end of the queue was reached
      */
@@ -191,7 +214,9 @@ abstract class AbstractIterator
         if (_seq.size() > SHRINK_THRESHOLD) clearCache_();
 
         CollectorSeq cs = _current != null ? _current._cs : null;
-        IDBIterator<OCIDAndCS> it = fetch_(cs, FETCH_SIZE);
+        IDBIterator<OCIDAndCS> it = _isContentIncluded ?
+                _csdb.getCS_(_sidx, cs, FETCH_SIZE) :
+                _csdb.getMetaCS_(_sidx, cs, FETCH_SIZE);
         _seq.ensureCapacity(_seq.size() + FETCH_SIZE);
         try {
             while (it.next_()) {

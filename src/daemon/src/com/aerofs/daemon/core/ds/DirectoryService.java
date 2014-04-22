@@ -362,4 +362,6 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     }
 
     public abstract IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException;
+
+    public abstract long getBytesUsed_(SIndex sidx) throws SQLException;
 }

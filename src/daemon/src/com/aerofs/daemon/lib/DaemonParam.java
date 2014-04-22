@@ -105,4 +105,6 @@ public class DaemonParam
     // wait at least 250ms between two successive progress notifications
     // i.e. send at most 4 progress notifications per transfer per second
     public static final int NOTIFY_THRESHOLD = 250;
+
+    public static final long CHECK_QUOTA_INTERVAL = 1 * C.MIN;
 }

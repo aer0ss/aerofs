@@ -9,7 +9,7 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
 import com.aerofs.proto.Sp.CheckQuotaReply;
-import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldSync;
+import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -105,10 +105,10 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
     private Map<SID, Boolean> getResponse(List<PBStoreUsage> request) throws Exception
     {
         CheckQuotaReply response = service.checkQuota(request).get();
-        assertEquals(request.size(), response.getStoresCount());
+        assertEquals(request.size(), response.getStoreCount());
 
         Map<SID, Boolean> shouldSync = new HashMap<SID, Boolean>(6);
-        for (PBStoreShouldSync store: response.getStoresList()) {
+        for (PBStoreShouldCollect store: response.getStoreList()) {
             shouldSync.put(new SID(store.getSid()), store.getCollectContent());
         }
         return shouldSync;
