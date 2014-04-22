@@ -1,6 +1,5 @@
 import logging
 import requests
-import uuid
 
 from pyramid.view import view_config
 
@@ -29,12 +28,18 @@ def report_problems(request):
 def json_submit_problem(request):
     logging.info(request.body)
 
-    # UUID Type 4 (random numbers)
-    dryadID = uuid.uuid4()
+    url = get_dryad_servlet_uri(request)
+    payload = {
+        'email':    request.params[_URL_PARAM_EMAIL],
+        'desc':     request.params[_URL_PARAM_DESC],
+        'users':    request.params.getall(_URL_PARAM_USERS),
+    }
+
+    r = requests.post(url, data=payload)
 
     # echo for the time being to verify encoding and parsing
     return {
-        'dryadID':  dryadID.hex,
+        'status':   r.status_code,
         'email':    request.params[_URL_PARAM_EMAIL],
         'desc':     request.params[_URL_PARAM_DESC],
         'users':    request.params.getall(_URL_PARAM_USERS),
@@ -48,10 +53,14 @@ def json_submit_problem(request):
     request_method='GET',
 )
 def json_get_users(request):
-    url = request.registry.settings['deployment.dryad_servlet_uri'] + '/'
+    url = get_dryad_servlet_uri(request)
     r = requests.get(url)
     users = r.json()
 
     return {
         'users':    users,
     }
+
+
+def get_dryad_servlet_uri(request):
+    return request.registry.settings['deployment.dryad_servlet_uri']
