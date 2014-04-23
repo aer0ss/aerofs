@@ -28,24 +28,31 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(value = Parameterized.class)
 public class TestCollectorIterator extends AbstractTest
 {
     private class MockDBIterator implements IDBIterator<OCIDAndCS> {
+        private final CID _cid;
         private CollectorSeq _cs;
         private OCID _ocid;
         private int _n;
         private boolean _closed;
 
-        MockDBIterator(CollectorSeq csStart, int limit)
+        /**
+         * @param cid the component ID get_() will return
+         */
+        MockDBIterator(CollectorSeq csStart, int limit, CID cid)
         {
+            _cid = cid;
             _cs = csStart;
             _n = limit;
         }
@@ -66,7 +73,7 @@ public class TestCollectorIterator extends AbstractTest
             }
 
             _cs = _cs != null ? _cs.plusOne() : new CollectorSeq(firstCS);
-            _ocid = new OCID(OID.generate(), CID.META);
+            _ocid = new OCID(OID.generate(), _cid);
             --_n;
             return true;
         }
@@ -84,11 +91,34 @@ public class TestCollectorIterator extends AbstractTest
         }
     }
 
+    private class CSDBAnswer implements Answer<IDBIterator<OCIDAndCS>> {
+        private final CID _cid;
+
+        CSDBAnswer(CID cid)
+        {
+            _cid = cid;
+        }
+
+        @Override
+        public IDBIterator<OCIDAndCS> answer(InvocationOnMock invocation)
+                throws Throwable
+        {
+            CollectorSeq csStart = (CollectorSeq)invocation.getArguments()[1];
+            int limit = (Integer)invocation.getArguments()[2];
+
+            return new MockDBIterator(csStart, limit, _cid);
+        }
+    }
+
     @Mock Trans t;
     @Mock ICollectorSequenceDatabase csdb;
     @Mock CollectorSkipRule csr;
 
-    SIndex sidx = new SIndex(1);
+    final SIndex sidx = new SIndex(1);
+    // The CID the mocked csdb.getCS() returns
+    final CID cidOfGetCS = new CID(123);
+    // The CID the mocked csdb.getMetaCS() returns
+    final CID cidOfGetMetaCS = new CID(321);
     CollectorIterator it;
 
     private final long firstCS;
@@ -113,20 +143,10 @@ public class TestCollectorIterator extends AbstractTest
     @Before
     public void setUp() throws Exception
     {
-         when(csdb.getCS_(any(SIndex.class), any(CollectorSeq.class), anyInt())).then(
-                 new Answer<IDBIterator<OCIDAndCS>>()
-                 {
-                     @Override
-                     public IDBIterator<OCIDAndCS> answer(InvocationOnMock invocation)
-                             throws Throwable
-                     {
-                         CollectorSeq csStart = (CollectorSeq)invocation.getArguments()[1];
-                         int limit = (Integer)invocation.getArguments()[2];
-
-                         return new MockDBIterator(csStart, limit);
-                     }
-                 }
-         );
+        when(csdb.getCS_(any(SIndex.class), any(CollectorSeq.class), anyInt()))
+                .then(new CSDBAnswer(cidOfGetCS));
+        when(csdb.getMetaCS_(any(SIndex.class), any(CollectorSeq.class), anyInt()))
+                .then(new CSDBAnswer(cidOfGetMetaCS));
 
         it = new CollectorIterator(csdb, csr, sidx);
         Assert.assertFalse(it.started_());
@@ -137,7 +157,7 @@ public class TestCollectorIterator extends AbstractTest
         for (long i = firstCS; i <= lastCS; ++i) {
             Assert.assertTrue(it.next_(t));
             OCIDAndCS occs = it.current_();
-            Assert.assertEquals(i, occs._cs.getLong());
+            assertEquals(i, occs._cs.getLong());
         }
 
         Assert.assertFalse(it.next_(t));
@@ -172,5 +192,100 @@ public class TestCollectorIterator extends AbstractTest
         iterate();
 
         verify(csdb, never()).deleteCS_(any(CollectorSeq.class), any(Trans.class));
+    }
+
+    @Test
+    public void shouldSwitchToContentExclusionAndClearCacheAsExpected()
+            throws SQLException
+    {
+        // by default the content is included
+        it.next_(t);
+        verify(csdb).getCS_(any(SIndex.class), any(CollectorSeq.class), anyInt());
+        assertCurrentCID(cidOfGetCS);
+
+        // verify no calls to getMetaCS_()
+        verifyNoMoreInteractions(csdb);
+
+        it.excludeContent_();
+        it.next_(t);
+        // verify that a call to csdb is made.
+        verify(csdb).getMetaCS_(any(SIndex.class), any(CollectorSeq.class), anyInt());
+        // verify that all cached entries from the getCS call has been cleared.
+        assertCurrentCID(cidOfGetMetaCS);
+
+        // verify no calls to getCS_()
+        verifyNoMoreInteractions(csdb);
+    }
+
+    @Test
+    public void shouldSwitchToContentInclusionAndClearCacheAsExpected()
+            throws SQLException
+    {
+        it.excludeContent_();
+        it.next_(t);
+        verify(csdb).getMetaCS_(any(SIndex.class), any(CollectorSeq.class), anyInt());
+        assertCurrentCID(cidOfGetMetaCS);
+
+        // verify no calls to getCS_()
+        verifyNoMoreInteractions(csdb);
+
+        it.includeContent_();
+        it.next_(t);
+        // verify that a call to csdb is made.
+        verify(csdb).getCS_(any(SIndex.class), any(CollectorSeq.class), anyInt());
+        // verify that all cached entries from the getmetaCS call has been cleared.
+        assertCurrentCID(cidOfGetCS);
+
+        // verify no calls to getMetaCS_()
+        verifyNoMoreInteractions(csdb);
+    }
+
+    /**
+     * Assert that either the current pointer of the iterator is null or the CID of the current
+     * pointer is the specified value
+     */
+    private void assertCurrentCID(CID cid)
+    {
+        OCIDAndCS ret = it.currentNullable_();
+        if (ret != null) assertEquals(cid, ret._ocid.cid());
+    }
+
+    @Test
+    public void shouldNotClearCacheOnMultipleIncludeContentCalls()
+            throws SQLException
+    {
+        // Skip the test if the cache has to be invalidated (due to reaching the end of the
+        // collector queue) within two it.next() calls.
+        assumeTrue(lastCS - firstCS > 0);
+
+        // Content is included by default
+        it.next_(t);
+        verify(csdb).getCS_(any(SIndex.class), any(CollectorSeq.class), anyInt());
+        verify(csdb, never()).getMetaCS_(any(SIndex.class), any(CollectorSeq.class), anyInt());
+
+        it.includeContent_();
+        it.next_(t);
+        // The iterator should use the cached values rather than querying the csdb.
+        verifyNoMoreInteractions(csdb);
+    }
+
+
+    @Test
+    public void shouldNotClearCacheOnMultipleExcludeContentCalls()
+            throws SQLException
+    {
+        // Skip the test if the cache has to be invalidated (due to reaching the end of the
+        // collector queue) within two it.next() calls.
+        assumeTrue(lastCS - firstCS > 0);
+
+        it.excludeContent_();
+        it.next_(t);
+        verify(csdb).getMetaCS_(any(SIndex.class), any(CollectorSeq.class), anyInt());
+        verify(csdb, never()).getCS_(any(SIndex.class), any(CollectorSeq.class), anyInt());
+
+        it.excludeContent_();
+        it.next_(t);
+        // The iterator should use the cached values rather than querying the csdb.
+        verifyNoMoreInteractions(csdb);
     }
 }
