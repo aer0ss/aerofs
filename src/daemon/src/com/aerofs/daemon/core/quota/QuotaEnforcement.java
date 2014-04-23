@@ -9,7 +9,6 @@ import com.aerofs.base.id.SID;
 import static com.aerofs.daemon.lib.DaemonParam.CHECK_QUOTA_INTERVAL;
 
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
@@ -47,24 +46,24 @@ public class QuotaEnforcement implements IQuotaEnforcement
     private final MapSIndex2Store _sidx2s;
     private final CoreScheduler _sched;
     private final IStores _stores;
-    private final DirectoryService _ds;
     private final TokenManager _tokenManager;
     private final TransManager _tm;
     private final SPBlockingClient.Factory _factSP;
+    private final StoreUsageCache _usage;
 
     public QuotaEnforcement(IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid, MapSIndex2Store sidx2s,
-            CoreScheduler sched, IStores stores, DirectoryService ds, TokenManager tokenManager,
-            TransManager tm, Factory factSP)
+            CoreScheduler sched, IStores stores, TokenManager tokenManager, TransManager tm,
+            Factory factSP, StoreUsageCache usage)
     {
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
         _sidx2s = sidx2s;
         _sched = sched;
         _stores = stores;
-        _ds = ds;
         _tokenManager = tokenManager;
         _tm = tm;
         _factSP = factSP;
+        _usage = usage;
     }
 
     @Override
@@ -106,7 +105,7 @@ public class QuotaEnforcement implements IQuotaEnforcement
     {
         Map<SID, Long> sid2usage = Maps.newHashMap();
         for (SIndex sidx : _stores.getAll_()) {
-            sid2usage.put(_sidx2sid.get_(sidx), _ds.getBytesUsed_(sidx));
+            sid2usage.put(_sidx2sid.get_(sidx), _usage.getBytesUsed_(sidx));
         }
         return sid2usage;
     }

@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.quota;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.collector.Collector;
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
@@ -50,8 +49,8 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class TestQuotaEnforcement extends AbstractTest
@@ -61,7 +60,7 @@ public class TestQuotaEnforcement extends AbstractTest
     @Mock MapSIndex2Store sidx2s;
     @Mock CoreScheduler sched;
     @Mock IStores stores;
-    @Mock DirectoryService ds;
+    @Mock StoreUsageCache usage;
     @Mock TokenManager tokenManager;
     @Mock TransManager tm;
     @Mock SPBlockingClient.Factory factSP;
@@ -88,7 +87,10 @@ public class TestQuotaEnforcement extends AbstractTest
             sidxs[i] = new SIndex(i);
             sids[i] = SID.generate();
             ss[i] = mock(Store.class);
-            when(ss[i].collector()).thenReturn(mock(Collector.class));
+            Collector c = mock(Collector.class);
+            when(c.includeContent_()).thenReturn(true);
+            when(c.excludeContent_()).thenReturn(true);
+            when(ss[i].collector()).thenReturn(c);
         }
 
         // Mock store management
@@ -144,7 +146,7 @@ public class TestQuotaEnforcement extends AbstractTest
             throws Exception
     {
         for (SIndex sidx : sidxs) {
-            when(ds.getBytesUsed_(sidx)).thenReturn(mockBytesUsed(sidx));
+            when(usage.getBytesUsed_(sidx)).thenReturn(mockBytesUsed(sidx));
         }
         quota.start_();
 
@@ -173,19 +175,20 @@ public class TestQuotaEnforcement extends AbstractTest
     public void shouldToggleContentCollection()
             throws Exception
     {
-        // mock reply
         buildSPReply(
                 PBStoreShouldCollect.newBuilder().setSid(sids[0].toPB()).setCollectContent(true)
-                        .build(),
-                PBStoreShouldCollect.newBuilder().setSid(sids[1].toPB()).setCollectContent(false)
                         .build());
-
         quota.start_();
 
-        // verify
         verify(ss[0].collector()).includeContent_();
         verify(ss[0]).resetCollectorFiltersForAllDevices_(any(Trans.class));
-        verify(ss[1].collector()).excludeContent_();
+
+        buildSPReply(
+                PBStoreShouldCollect.newBuilder().setSid(sids[0].toPB()).setCollectContent(false)
+                        .build());
+        quota.start_();
+
+        verify(ss[0].collector()).excludeContent_();
     }
 
     @Test
@@ -213,6 +216,7 @@ public class TestQuotaEnforcement extends AbstractTest
         quota.start_();
 
         // Verify that stores not mentioned in the reply weren't looked after.
-        verifyZeroInteractions(ss[0]);
+        verify(ss[0].collector(), never()).excludeContent_();
+        verify(ss[0].collector(), never()).includeContent_();
     }
 }
