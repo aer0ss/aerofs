@@ -22,21 +22,29 @@ import java.util.List;
  *
  * The schema is as follows:
  *
- * {@value JedisEpochCommandQueue#PREFIX_QUEUE}(ueue)/DID => SortedSet<CommandType, Epoch>
- *     Desc: Set of command types sorted by epoch number. This data structure serves as the per
+ * CommandMessage := CommandType, if the command has no arguments
+ *                | CommandType:Args, if the command has arguments where Args can be arbitrary
+ *                                    format determined by the command type.
+ *
+ * A command message is the serialized version of a command. The intention here is that the queue is
+ * only aware of strings, and the caller is responsible for serializing and deserializing the string
+ * to and from commands. Currently, this is done in {@link com.aerofs.sp.server.CommandUtil}.
+ *
+ * {@value JedisEpochCommandQueue#PREFIX_QUEUE}(ueue)/DID => SortedSet<CommandMessage, Epoch>
+ *     Desc: Set of command messages sorted by epoch number. This data structure serves as the per
  *     device queue.
  *
  * {@value JedisEpochCommandQueue#PREFIX_EPOCH}(poch)/DID => Epoch
  *     Desc: the maximum epoch number for a given device.
  *
- * {@value JedisEpochCommandQueue#PREFIX_ATTEMPTS}(ttempts)/DID => Hash<CommandType, RetryAttempts>
- *     Desc: Hash of command type to an integer number of retry attempts. The hash is cleared when
- *     the command has been dequeued.
+ * {@value JedisEpochCommandQueue#PREFIX_ATTEMPTS}(ttempts)/DID => Hash<CommandMessage, RetryAttempts>
+ *     Desc: Hash of command message to an integer number of retry attempts. The hash is cleared
+ *     when the command message has been dequeued.
  *
- * {@value JedisEpochCommandQueue#PREFIX_CREATE}(reate)/DID => Hash<CommandType, CreationTime>
- *     Desc: Hash of command type to the creation time of the command in milliseconds. The hash is
- *     cleared when the command has been dequeued. For now this field is not used, but has been
- *     added so that we can clean the database in the future if we need to.
+ * {@value JedisEpochCommandQueue#PREFIX_CREATE}(reate)/DID => Hash<CommandMessage, CreationTime>
+ *     Desc: Hash of command message to the creation time of the command in milliseconds. The hash
+ *     is cleared when the command message has been dequeued. For now this field is not used, but
+ *     has been added so that we can clean the database in the future if we need to.
  *
  * Notes:
  *
@@ -103,9 +111,8 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
      * the back of the queue) and the number of attempts and creation time will remain the same.
      * This essentially means duplicate enqueues are no-ops, because delivery order does not matter.
      */
-    public Epoch enqueue(DID did, CommandType commandType)
+    public Epoch enqueue(DID did, String commandMessage)
     {
-        String commandTypeString = String.valueOf(commandType.getNumber());
         String currentTime = String.valueOf(System.currentTimeMillis());
 
         // Set the number of attempts to 0 if it hasn't already been set.
@@ -114,7 +121,7 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
                 "  redis.call('hset', KEYS[1], KEYS[2], 0)\n" +
                 "end\n",
                 2,                                       // KEYS count
-                getAttemptsKey(did), commandTypeString); // KEYS
+                getAttemptsKey(did), commandMessage);    // KEYS
 
         // Set the creation time if it doesn't already exist.
         getTransaction().eval(
@@ -123,7 +130,7 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
                 "end\n",
                 1,                               // KEYS count
                 getCreateKey(did),               // KEYS
-                commandTypeString, currentTime); // ARGV
+                commandMessage, currentTime);    // ARGV
 
         // Increment the epoch and add the payload to the sorted set (i.e. the device queue).
         Response<Object> response = getTransaction().eval(
@@ -132,7 +139,7 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
                 "return epoch\n",
                 2,                                  // KEYS count
                 getEpochKey(did), getQueueKey(did), // KEYS
-                commandTypeString);                 // ARGV
+                commandMessage);                    // ARGV
 
         return new Epoch(response);
     }
@@ -255,8 +262,14 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
                 "    local attempts = tonumber(redis.call('hget', attempt_key, command))\n" +
                 "    local creation_time =" +
                 "        tonumber(redis.call('hget', prefix_create .. did, command))\n" +
+                "    local delete_command_pattern = delete_command .. ':'\n" +
                 "    if attempts > max_attempts and" +
-                "        tonumber(command) == delete_command and" +
+                // to support both command_type and command_type:args format
+                // unfortunately, the DB needs to be aware of the serialization format because of
+                // the contract of this method #sigh.
+                "        (string.sub(command,1,string.len(delete_command_pattern)) ==" +
+                "            delete_command_pattern or" +
+                "            tonumber(command) == delete_command) and" +
                 "        creation_time < earliest_date then\n" +
                 "      redis.call('hdel', prefix_create .. did, command)\n" +
                 "      redis.call('hdel', attempt_key, command)\n" +
@@ -279,11 +292,8 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
     {
         List<DeletedElementCount> result = Lists.newLinkedList();
 
-        int counter = 0;
-        CommandType type;
-
         // Loop through all types of commands.
-        while ((type = CommandType.valueOf(counter++)) != null) {
+        for (CommandType type : CommandType.values()) {
             result.add(delete(maxAttempts, earliestDate, type));
         }
 
@@ -371,7 +381,7 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
 
         private boolean _exists = false;
         private long _epoch = 0;
-        private CommandType _type = null;
+        private String _commandMessage = "";
 
         public QueueElement(Response<Set<Tuple>> response)
         {
@@ -391,7 +401,7 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
                 // Guaranteed size 1 by our choice of params to zrange in the head function, above.
                 final Tuple t = Iterables.getOnlyElement(tupleSet);
                 _epoch = (long) t.getScore();
-                _type = CommandType.valueOf(Integer.valueOf(t.getElement()));
+                _commandMessage = t.getElement();
 
                 // The Iterables call will fail so we know this is true at this point.
                 _exists = true;
@@ -412,10 +422,10 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
             return _epoch;
         }
 
-        public CommandType getType()
+        public String getCommandMessage()
         {
             init();
-            return _type;
+            return _commandMessage;
         }
     }
 

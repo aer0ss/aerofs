@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import java.sql.SQLException;
 import java.util.Collection;
 
+import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
+
 /**
  * TODO: This is poor cohesion, a procedural class that exists only to avoid duplication btwn sp
  * and sparta. Euuuuugh.
@@ -45,7 +47,7 @@ public class UserManagement
                     dispatcher.getVerkehrAdmin().updateCRL(revokedSerials));
 
             for (Device peer : peerDevices) {
-                dispatcher.enqueueCommand(peer.id(), CommandType.REFRESH_CRL);
+                dispatcher.enqueueCommand(peer.id(), createCommandMessage(CommandType.REFRESH_CRL));
             }
         }
     }
@@ -120,8 +122,8 @@ public class UserManagement
         // if the user _had_ any certified devices, unlink them:
         for (Device device : ownDevices) {
             dispatcher.replaceQueue(
-                    device.id(),
-                    eraseDevices ? CommandType.UNLINK_AND_WIPE_SELF : CommandType.UNLINK_SELF);
+                    device.id(), createCommandMessage(
+                            eraseDevices ? CommandType.UNLINK_AND_WIPE_SELF : CommandType.UNLINK_SELF));
         }
 
         propagateDeviceUnlink(dispatcher, peerDevices, revokedSerials);

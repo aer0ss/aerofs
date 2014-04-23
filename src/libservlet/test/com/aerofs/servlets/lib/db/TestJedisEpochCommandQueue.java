@@ -8,21 +8,22 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.DeletedElementCount;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.DeletedElementCountList;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueSize;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueSize;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.Assert;
 import org.junit.runner.RunWith;
-
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 
 // We will be mocking statics, so use power mock.
 @RunWith(PowerMockRunner.class)
@@ -35,8 +36,9 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
 
     private final DID _d1 = new DID(UniqueID.generate());
 
-    private final CommandType _c1 = CommandType.INVALIDATE_DEVICE_NAME_CACHE;
-    private final CommandType _c2 = CommandType.INVALIDATE_USER_NAME_CACHE;
+    private final CommandType _ct1 = CommandType.INVALIDATE_DEVICE_NAME_CACHE;
+    private final String _c1 = createCommandMessage(_ct1);
+    private final String _c2 = createCommandMessage(CommandType.INVALIDATE_USER_NAME_CACHE);
 
     @Before
     public void setupTestJedisEpochCommandQueue()
@@ -51,12 +53,12 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
     //
 
     /**
-     * Enqueue command c1 for device d1.
+     * Enqueue command message for device d1.
      */
-    private void enqueueD1(CommandType commandType)
+    private void enqueueD1(String commandMessage)
     {
         getTransaction().begin();
-        _queue.enqueue(_d1, commandType);
+        _queue.enqueue(_d1, commandMessage);
         getTransaction().commit();
     }
 
@@ -79,17 +81,22 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
     }
 
     /**
-     * Expect the queue for d1 to be of size 1 and to contain the enqueued command c1.
+     * Expect the queue for d1 to be of size 1 and to contain the enqueued command message c1.
      */
     private void expectD1C1()
+    {
+        expectD1SizeAndHead(1, _c1);
+    }
+
+    private void expectD1SizeAndHead(int expectedSize, String expectedMessage)
     {
         getTransaction().begin();
         QueueElement element = _queue.head(_d1);
         QueueSize size = _queue.size(_d1);
         getTransaction().commit();
 
-        Assert.assertEquals(1, size.getSize());
-        Assert.assertEquals(_c1, element.getType());
+        Assert.assertEquals(expectedSize, size.getSize());
+        Assert.assertEquals(expectedMessage, element.getCommandMessage());
     }
 
     /**
@@ -113,6 +120,16 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
         getTransaction().commit();
 
         return head;
+    }
+
+    private DeletedElementCount deleteType(CommandType type)
+    {
+        getTransaction().begin();
+        // max_attempt := -1 => delete commands regardless of # of attempts
+        DeletedElementCount deleted = _queue.delete(-1, 1L, type);
+        getTransaction().commit();
+
+        return deleted;
     }
 
     //
@@ -158,13 +175,7 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
         enqueueD1(_c2);
         enqueueD1(_c1);
 
-        getTransaction().begin();
-        QueueElement head = _queue.head(_d1);
-        QueueSize size = _queue.size(_d1);
-        getTransaction().commit();
-
-        Assert.assertEquals(2, size.getSize());
-        Assert.assertEquals(_c2, head.getType());
+        expectD1SizeAndHead(2, _c2);
     }
 
     @Test
@@ -187,12 +198,12 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
         retryLater(_d1);
 
         getTransaction().begin();
-        DeletedElementCount count = _queue.delete(1, 1L, _c1);
+        DeletedElementCount count = _queue.delete(1, 1L, _ct1);
         getTransaction().commit();
 
         expectD1Empty();
         Assert.assertEquals(1L, count.getCount());
-        Assert.assertEquals(_c1, count.getType());
+        Assert.assertEquals(_ct1, count.getType());
     }
 
     @Test
@@ -240,5 +251,28 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
             head = getHead(_d1);
             Assert.assertEquals(i, head.getEpoch());
         }
+    }
+
+    @Test
+    public void shouldDeleteCommandsWithArgsOfSameType()
+    {
+        String c1WithArgs = _c1 + ":some_args";
+        enqueueD1(_c1);
+        enqueueD1(_c2);
+        enqueueD1(c1WithArgs);
+
+        Assert.assertEquals(2, deleteType(_ct1).getCount());
+        expectD1SizeAndHead(1, _c2);
+    }
+
+    @Test
+    public void shouldNotDeleteCommandsWithArgsOfDifferentType()
+    {
+        String c2WithArgs = _c2 + ":some_args";
+        enqueueD1(_c1);
+        enqueueD1(c2WithArgs);
+
+        Assert.assertEquals(1, deleteType(_ct1).getCount());
+        expectD1SizeAndHead(1, c2WithArgs);
     }
 }

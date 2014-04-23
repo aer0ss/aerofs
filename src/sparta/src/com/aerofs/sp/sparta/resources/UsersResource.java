@@ -15,10 +15,10 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
+import com.aerofs.oauth.Scope;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.rest.api.Invitation;
 import com.aerofs.rest.util.AuthToken;
-import com.aerofs.oauth.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
@@ -68,6 +68,7 @@ import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.Collection;
 
+import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.aclEtag;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.listMembers;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.listPendingMembers;
@@ -382,7 +383,8 @@ public class UsersResource extends AbstractSpartaResource
 
         for (Device peer : peerDevices) {
             l.info("API update: inval user cache for " + peer.id().toStringFormal());
-            _commandDispatcher.enqueueCommand(peer.id(), CommandType.INVALIDATE_USER_NAME_CACHE);
+            _commandDispatcher.enqueueCommand(peer.id(), createCommandMessage(
+                    CommandType.INVALIDATE_USER_NAME_CACHE));
         }
 
         audit(caller, auth, AuditTopic.USER, "user.update")

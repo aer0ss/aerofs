@@ -6,7 +6,6 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Cmd.Command;
-import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
@@ -33,30 +32,30 @@ public class CommandDispatcher
     }
 
     /**
-     * Flush the command queue and then append the given command type.
+     * Flush the command queue and then append the given command message.
      * After, send a verkehr message.
-     * @param did   Targeted device
-     * @param cmd   Command type
+     * @param did               Targeted device
+     * @param commandMessage    Command message
      * @throws java.util.concurrent.ExecutionException
      * @throws InterruptedException
      */
-    public void replaceQueue(DID did, CommandType cmd)
+    public void replaceQueue(DID did, String commandMessage)
             throws ExecutionException, InterruptedException
     {
-        deliver(did, cmd, true);
+        deliver(did, commandMessage, true);
     }
 
     /**
-     * Add the given command to the device command queue, and send a verkehr message.
-     * @param did   Targeted device
-     * @param cmd   Command type
+     * Add the given command message to the device command queue, and send a verkehr message.
+     * @param did               Targeted device
+     * @param commandMessage    Command message
      * @throws java.util.concurrent.ExecutionException
      * @throws InterruptedException
      */
-    public void enqueueCommand(DID did, CommandType cmd)
+    public void enqueueCommand(DID did, String commandMessage)
             throws ExecutionException, InterruptedException
     {
-        deliver(did, cmd, false);
+        deliver(did, commandMessage, false);
     }
 
     /**
@@ -70,21 +69,18 @@ public class CommandDispatcher
 
     public VerkehrAdmin getVerkehrAdmin() { return _verkehrAdmin; }
 
-    private void deliver(DID did, CommandType cmd, boolean flushFirst)
+    private void deliver(DID did, String commandMessage, boolean flushFirst)
             throws ExecutionException, InterruptedException
     {
         Preconditions.checkState(_verkehrAdmin != null);
 
         _jedisTrans.begin();
         if (flushFirst) _commandQueue.delete(did);
-        Epoch epoch = _commandQueue.enqueue(did, cmd);
+        Epoch epoch = _commandQueue.enqueue(did, commandMessage);
         _jedisTrans.commit();
         assert epoch != null;
 
-        Command command = Command.newBuilder()
-                .setEpoch(epoch.get())
-                .setType(cmd)
-                .build();
+        Command command = CommandUtil.createCommandFromMessage(commandMessage, epoch.get());
         _verkehrAdmin.deliverPayload_(did.toStringFormal(), command.toByteArray()).get();
     }
 }

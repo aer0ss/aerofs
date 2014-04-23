@@ -156,6 +156,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -430,13 +431,13 @@ public class SPService implements ISPService
             for (Device peerDevice : peerDevices) {
                 if (userNameUpdated) {
                     l.info("cmd: inval user cache for " + peerDevice.id().toStringFormal());
-                    _commandDispatcher.enqueueCommand(peerDevice.id(),
-                            CommandType.INVALIDATE_USER_NAME_CACHE);
+                    _commandDispatcher.enqueueCommand(peerDevice.id(), createCommandMessage(
+                            CommandType.INVALIDATE_USER_NAME_CACHE));
                 }
                 if (deviceNameUpdated) {
                     l.info("cmd: inval device cache for " + peerDevice.id().toStringFormal());
-                    _commandDispatcher.enqueueCommand(peerDevice.id(),
-                            CommandType.INVALIDATE_DEVICE_NAME_CACHE);
+                    _commandDispatcher.enqueueCommand(peerDevice.id(), createCommandMessage(
+                            CommandType.INVALIDATE_DEVICE_NAME_CACHE));
                 }
             }
         }
@@ -1214,7 +1215,8 @@ public class SPService implements ISPService
         // map may have changed).
         for (Device peer : peerDevices) {
             l.info("{} crl refresh", peer.id());
-            _commandDispatcher.enqueueCommand(peer.id(), CommandType.REFRESH_CRL);
+            _commandDispatcher.enqueueCommand(peer.id(), createCommandMessage(
+                    CommandType.REFRESH_CRL));
         }
 
         User sharer = sf.getSharerNullable(user);
@@ -2380,8 +2382,8 @@ public class SPService implements ISPService
 
         UserManagement.propagateDeviceUnlink(_commandDispatcher, owner.getPeerDevices(), serials);
 
-        _commandDispatcher.replaceQueue(did,
-                erase ? CommandType.UNLINK_AND_WIPE_SELF : CommandType.UNLINK_SELF);
+        _commandDispatcher.replaceQueue(did, createCommandMessage(
+                erase ? CommandType.UNLINK_AND_WIPE_SELF : CommandType.UNLINK_SELF));
     }
 
     @Override
@@ -2409,10 +2411,8 @@ public class SPService implements ISPService
             return createReply(reply);
         }
 
-        Command command = Command.newBuilder()
-                .setEpoch(head.getEpoch())
-                .setType(head.getType())
-                .build();
+        Command command = CommandUtil.createCommandFromMessage(head.getCommandMessage(),
+                head.getEpoch());
         GetCommandQueueHeadReply reply = GetCommandQueueHeadReply.newBuilder()
                 .setCommand(command)
                 .setQueueSize(size.getSize())
@@ -2457,7 +2457,7 @@ public class SPService implements ISPService
             l.warn("cmd ack failure: " + device.id().toStringFormal() + " epoch=" + epoch);
         }
 
-       if (!head.exists()) {
+        if (!head.exists()) {
            AckCommandQueueHeadReply reply = AckCommandQueueHeadReply.newBuilder()
                    .setQueueSize(0L)
                    .build();
@@ -2466,10 +2466,8 @@ public class SPService implements ISPService
         }
 
         // Now return the new head.
-        Command command = Command.newBuilder()
-                .setEpoch(head.getEpoch())
-                .setType(head.getType())
-                .build();
+        Command command = CommandUtil.createCommandFromMessage(head.getCommandMessage(),
+                head.getEpoch());
         AckCommandQueueHeadReply reply = AckCommandQueueHeadReply.newBuilder()
                 .setCommand(command)
                 .setQueueSize(size.getSize())

@@ -19,6 +19,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
+import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path("/" + ResourceConstants.ENQUEUES_SUBRESOURCE)
@@ -50,7 +51,7 @@ public final class EnqueueResource
         l.info("ENQUEUE did=" + _did.toStringFormal() + " type=" + _type);
 
         _trans.begin();
-        Epoch epoch = _queue.enqueue(_did, _type);
+        Epoch epoch = _queue.enqueue(_did, createCommandMessage(_type));
         _trans.commit();
 
         Command command = Command.newBuilder()
