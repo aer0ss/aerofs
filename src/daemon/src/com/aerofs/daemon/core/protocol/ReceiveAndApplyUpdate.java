@@ -393,7 +393,7 @@ public class ReceiveAndApplyUpdate
 
             if (l.isDebugEnabled()) l.debug(kBranch + " l " + vBranch);
 
-            if (vRemote.sub_(vBranch).isZero_()) {
+            if (vRemote.isDominatedBy_(vBranch)) {
                 // The local version is newer or the same as the remote version
 
                 // This SOCKID (kBranch) is a local conflict branch of the remotely-received SOID.
@@ -412,7 +412,7 @@ public class ReceiveAndApplyUpdate
             // Computing/requesting hash is expensive so we compute it only
             // when necessary and ensure hash of remote branch is computed
             // only once.
-            final boolean isRemoteDominating = vBranch.sub_(vRemote).isZero_();
+            final boolean isRemoteDominating = vBranch.isDominatedBy_(vRemote);
             if (!isRemoteDominating && hRemote == null) {
                 l.debug("Fetching hash on demand");
                 // Abort the ongoing transfer.  If we don't, the peer will continue sending
@@ -1126,7 +1126,7 @@ public class ReceiveAndApplyUpdate
             Version vDel = _nvc.getLocalVersion_(kDel);
 
             // guaranteed by computeCausalityForContent()'s logic
-            assert !vRemote.sub_(vDel).isZero_();
+            assert !vRemote.isDominatedBy_(vDel);
 
             _bd.deleteBranch_(kDel, vDel, true, t);
         }
@@ -1141,7 +1141,7 @@ public class ReceiveAndApplyUpdate
         }
 
         // check if the local version has changed during our pauses
-        if (!_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_()) {
+        if (!_nvc.getLocalVersion_(k).isDominatedBy_(res._vLocal)) {
             throw new ExAborted(k + " version changed locally.");
         }
 

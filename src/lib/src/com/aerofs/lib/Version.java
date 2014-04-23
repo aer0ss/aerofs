@@ -59,6 +59,11 @@ public class Version
         return empty().set_(did, tk);
     }
 
+    public static Version of(DID did, long tk)
+    {
+        return empty().set_(did, tk);
+    }
+
     private Version set_(DID did, Tick tk)
     {
         assert !tk.equals(Tick.ZERO);
@@ -169,6 +174,17 @@ public class Version
             }
         }
         return ret;
+    }
+
+    // equivalent to this.sub_(v).isZero_()
+    public boolean isDominatedBy_(@Nonnull Version v)
+    {
+        for (Entry<DID, Tick> en : _map.entrySet()) {
+            Tick mine = en.getValue();
+            Tick his = v._map.get(en.getKey());
+            if (his == null || mine.getLong() > his.getLong()) return false;
+        }
+        return true;
     }
 
     /**

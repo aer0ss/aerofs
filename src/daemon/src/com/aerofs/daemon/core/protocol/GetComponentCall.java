@@ -25,6 +25,7 @@ import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.rocklog.RockLog;
@@ -112,19 +113,16 @@ public class GetComponentCall
     {
         abortIfComponentIsAliasedContent(socid);
 
-        // Several of the version control and physical storage classes require a branch, not socid.
-        // We know that downloads will only ever act on the master branch.
-        SOCKID sockid = new SOCKID(socid, KIndex.MASTER);
         l.debug("req gcc for {}", socid);
 
-        Version vLocal = _nvc.getLocalVersion_(sockid);
+        // NB: we send all local versions to allow the receiver to pick a branch that
+        // has ticks we do not have locally (i.e. a branch whose version is not dominated
+        // by our local versions)
         PBGetComCall.Builder bd = PBGetComCall.newBuilder()
                 .setStoreId(_sidx2sid.getThrows_(socid.sidx()).toPB())
                 .setObjectId(socid.oid().toPB())
                 .setComId(socid.cid().getInt())
-                .setLocalVersion(vLocal.toPB_());
-        // TODO (DF): Look into how the receiver uses the localVersion. Should we send all
-        // versions?  Does the receiver care for which branch we're sending versions?
+                .setLocalVersion(_nvc.getAllLocalVersions_(socid).toPB_());
 
         if (socid.cid().equals(CID.CONTENT)) {
             setIncrementalDownloadInfo_(socid, bd);
@@ -196,6 +194,27 @@ public class GetComponentCall
         bd.setPrefixVersion(vPre.toPB_());
     }
 
+    /**
+     * When requesting content, attempt to find a local branch that is not dominated
+     * by the version advertised by the caller.
+     *
+     * Returns MASTER for META requests or when no such branch is found.
+     *
+     * This allows all devices to propagate all content branches, instead of constraining
+     * each device to propagate only its MASTER branch.
+     */
+    private KIndex findBranchNotDominatedBy_(SOCID socid, Version vRemote) throws SQLException
+    {
+        if (socid.cid().isMeta()) return KIndex.MASTER;
+        OA oa = _ds.getOANullable_(socid.soid());
+        if (oa == null) return KIndex.MASTER;
+        for (KIndex kidx : oa.cas().keySet()) {
+            Version v = _nvc.getLocalVersion_(new SOCKID(socid, kidx));
+            if (!v.isDominatedBy_(vRemote)) return kidx;
+        }
+        return KIndex.MASTER;
+    }
+
     public void processCall_(DigestedMessage msg)
         throws Exception
     {
@@ -203,8 +222,24 @@ public class GetComponentCall
         PBGetComCall pb = msg.pb().getGetComCall();
 
         SID sid = new SID(pb.getStoreId());
-        SOCKID k = new SOCKID(_sid2sidx.getThrows_(sid), new OID(pb.getObjectId()), new CID(pb.getComId()));
-        l.info("gcc for {} from {}", k, msg.ep());
+        SIndex sidx = _sid2sidx.getThrows_(sid);
+
+        // see Rule 3 in acl.md
+        if (!_lacl.check_(_cfgLocalUser.get(), sidx, Permissions.EDITOR)) {
+            l.info("we have no editor perm for {}", sidx);
+            throw new ExSenderHasNoPerm();
+        }
+
+        // see Rule 1 in acl.md
+        if (!_lacl.check_(msg.user(), sidx, Permissions.VIEWER)) {
+            l.warn("{} on {} has no viewer perm for {}", msg.user(), msg.ep(), sidx);
+            throw new ExNoPerm();
+        }
+
+        SOCID socid = new SOCID(sidx, new OID(pb.getObjectId()), new CID(pb.getComId()));
+        Version vRemote = Version.fromPB(pb.getLocalVersion());
+        SOCKID k = new SOCKID(socid, findBranchNotDominatedBy_(socid, vRemote));
+        l.info("gcc for {} {} from {}", k, vRemote, msg.ep());
 
         // Give up if the requested SOCKID is not present locally (either meta or content)
         // N.B. An aliased object is reported not present, but we should not throw if the
@@ -212,32 +247,17 @@ public class GetComponentCall
         // TODO (MJ) does this mean we should change the definition of isPresent to handle
         // aliased objects?
         if (!_ds.isPresent_(k) &&
-            !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
+                !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
             l.debug("{} not present. Throwing", k);
             throw new ExNoComponentWithSpecifiedVersion();
         }
 
-        // see Rule 3 in acl.md
-        if (!_lacl.check_(_cfgLocalUser.get(), k.sidx(), Permissions.EDITOR)) {
-            l.info("we have no editor perm for {}", k.sidx());
-            throw new ExSenderHasNoPerm();
-        }
-
-        // see Rule 1 in acl.md
-        if (!_lacl.check_(msg.user(), k.sidx(), Permissions.VIEWER)) {
-            l.warn("{} on {} has no viewer perm for {}", msg.user(), msg.ep(), k.sidx());
-            throw new ExNoPerm();
-        }
-
-        Version vRemote = Version.fromPB(pb.getLocalVersion());
         Version vLocal = _nvc.getLocalVersion_(k);
-
-        if (!vLocal.sub_(vRemote).isZero_()) {
-            sendReply_(msg, k, vLocal);
-        } else {
+        if (vLocal.isDominatedBy_(vRemote)) {
             l.debug("r {} >= l {}. Throw ncwsv", vRemote, vLocal);
             throw new ExNoComponentWithSpecifiedVersion();
         }
+        sendReply_(msg, k, vLocal);
     }
 
     // Mark it as public only to facilitate testing

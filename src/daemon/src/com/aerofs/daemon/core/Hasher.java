@@ -201,7 +201,7 @@ public class Hasher
                 // Look for file content modification using version vectors.
                 // This check is necessary for Local files.
                 // TODO do the following check in checkAbortion() above?
-                if (!_nvc.getLocalVersion_(sockid).sub_(vBeforeHash).isZero_())
+                if (!_nvc.getLocalVersion_(sockid).isDominatedBy_(vBeforeHash))
                     throw new ExAborted(FILE_MODIFIED_MSG);
 
                 // the object may have disappeared as a result of aliasing while we were busy

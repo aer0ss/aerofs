@@ -49,6 +49,7 @@ public class TestACLEnforcement_GetComponentCall extends AbstractTest
             throws SQLException
     {
         // Minimum wiring to get things working
+        when(caller._nvc.getAllLocalVersions_(any(SOCID.class))).thenReturn(Version.empty());
         when(caller._nvc.getLocalVersion_(any(SOCKID.class))).thenReturn(Version.empty());
         when(replier._ds.isPresent_(new SOCKID(_socid))).thenReturn(true);
     }
