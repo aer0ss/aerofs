@@ -16,6 +16,7 @@ import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 import org.jivesoftware.smack.PacketListener;
@@ -165,7 +166,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
             }
         }
 
-        outgoingEventSink.enqueueBlocking(new EIPresence(transport, presence.isAvailable(), did, sid), LO);
+        outgoingEventSink.enqueueBlocking(new EIPresence(transport, presence.isAvailable(), did, ImmutableList.of(sid)), LO);
         return true;
     }
 

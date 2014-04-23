@@ -62,6 +62,7 @@ public class TransportRoutingLayer
     }
 
     // FIXME(AG): do _not_ use because this layer does not have the concept of available transports that we've heard from but don't know if they work or not
+    // FIXME JP: do not use the class or this method?
     /**
      * Send a core PB to the DID over any available transport.
      * <strong>DO NOT USE FOR REPLIES!</strong> Use
@@ -90,6 +91,7 @@ public class TransportRoutingLayer
     /**
      * Send an RPC message to the DID over any available transport.
      *
+     * @param type : used by debug trace only
      * @return endpoint (DID, transport) over which the message was sent, or null if it was dropped
      */
     public @Nullable Endpoint sendUnicast_(DID did, String type, int rpcid, ByteArrayOutputStream os)
@@ -106,6 +108,10 @@ public class TransportRoutingLayer
         return sendUnicast_(using, type, rpcid, os) ? using : null;
     }
 
+    /**
+     * @param type : used by debug trace only
+     * @throws Exception
+     */
     public boolean sendUnicast_(Endpoint ep, String type, int rpcid, ByteArrayOutputStream os)
             throws Exception
     {

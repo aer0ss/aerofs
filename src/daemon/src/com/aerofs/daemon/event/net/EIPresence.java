@@ -6,10 +6,8 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.base.id.SID;
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-
-import javax.annotation.Nonnull;
 
 /**
  * The presence is *edge* triggered
@@ -24,26 +22,14 @@ public class EIPresence implements IEvent
     public final boolean _online;
 
     /**
-     * @param did2sids : online == false and did2sids.isEmpty()
-     * indicates that all the devices are offline.
-     * did2sids mustn't be empty if online == true.
+     * It is an error to submit an empty did-to-sid map if you are online.
      */
-    public EIPresence(ITransport tp, boolean online,
-            @Nonnull ImmutableMap<DID, Collection<SID>> did2sids)
+    public EIPresence(ITransport tp, boolean online, DID did, Collection<SID> sids)
     {
-        _did2sids = did2sids;
+        Preconditions.checkArgument( (!online) || did != null,
+                "Online presence event must include one device");
+        _did2sids = ImmutableMap.of(did, sids);
         _tp = tp;
         _online = online;
-    }
-
-    public EIPresence(ITransport tp, boolean online, DID did,
-            Collection<SID> sids)
-    {
-        this(tp, online, ImmutableMap.of(did, sids));
-    }
-
-    public EIPresence(ITransport tp, boolean online, DID did, SID sid)
-    {
-        this(tp, online, did, ImmutableList.of(sid));
     }
 }
