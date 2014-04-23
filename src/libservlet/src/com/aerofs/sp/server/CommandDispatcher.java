@@ -74,10 +74,18 @@ public class CommandDispatcher
     {
         Preconditions.checkState(_verkehrAdmin != null);
 
+        Epoch epoch;
+
         _jedisTrans.begin();
-        if (flushFirst) _commandQueue.delete(did);
-        Epoch epoch = _commandQueue.enqueue(did, commandMessage);
-        _jedisTrans.commit();
+        try {
+            if (flushFirst) _commandQueue.delete(did);
+            epoch = _commandQueue.enqueue(did, commandMessage);
+            _jedisTrans.commit();
+        } finally {
+            // always clean up because cleanup is idempotent and results in the same state as commit
+            _jedisTrans.cleanUp();
+        }
+
         assert epoch != null;
 
         Command command = CommandUtil.createCommandFromMessage(commandMessage, epoch.get());

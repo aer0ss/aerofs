@@ -5,11 +5,18 @@
 package com.aerofs.sp.server.dryad;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.SyncEmailSender;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
+import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.SPServlet;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
+import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -26,6 +33,7 @@ import java.util.UUID;
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
 
 public class DryadServlet extends HttpServlet
 {
@@ -36,7 +44,15 @@ public class DryadServlet extends HttpServlet
     private PooledSQLConnectionProvider _sqlConnProvider;
     private SQLThreadLocalTransaction _sqlTrans;
     private OrganizationDatabase _odb;
+    private UserDatabase _udb;
+
     private SyncEmailSender _email;
+
+    private VerkehrAdmin _verkehr;
+    private PooledJedisConnectionProvider _jedisConnProvider;
+    private JedisThreadLocalTransaction _jedisTrans;
+    private JedisEpochCommandQueue _commandQueue;
+    private CommandDispatcher _cmd;
 
     private DryadService _service;
     private Gson _gson;
@@ -53,10 +69,23 @@ public class DryadServlet extends HttpServlet
 
         _sqlTrans = new SQLThreadLocalTransaction(_sqlConnProvider);
         _odb = new OrganizationDatabase(_sqlTrans);
+        _udb = new UserDatabase(_sqlTrans);
 
         _email = createEmailSender();
 
-        _service = new DryadService(_sqlTrans, _odb, _email);
+        _verkehr = (VerkehrAdmin) config.getServletContext().getAttribute(VERKEHR_ADMIN_ATTRIBUTE);
+
+        _jedisConnProvider = new PooledJedisConnectionProvider();
+        String redisHost = REDIS.AOF_ADDRESS.getHostName();
+        short redisPort = (short)REDIS.AOF_ADDRESS.getPort();
+        _jedisConnProvider.init_(redisHost, redisPort);
+
+        _jedisTrans = new JedisThreadLocalTransaction(_jedisConnProvider);
+        _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
+        _cmd = new CommandDispatcher(_commandQueue, _jedisTrans);
+        _cmd.setAdminClient(_verkehr);
+
+        _service = new DryadService(_sqlTrans, _odb, _udb, _email, _cmd);
 
         _gson = new GsonBuilder()
                 .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -67,20 +96,21 @@ public class DryadServlet extends HttpServlet
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
     {
         try {
-            try {
-                String dryadID = UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
-                String customerID = getStringProperty("customer_id", "0");
-                String customerName = getStringProperty("license_company", "Unknown");
-                String email = req.getParameter("email");
-                String desc = req.getParameter("desc");
+            String dryadID = UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
+            String customerID = getStringProperty("customer_id", "0");
+            String customerName = getStringProperty("license_company", "Unknown");
+            String email = req.getParameter("email");
+            String desc = req.getParameter("desc");
+            String[] users = req.getParameterValues("users");
 
-                _service.postToZenDesk(dryadID, customerID, customerName, email, desc);
-            } finally {
+            // sanitize the external input, this will throw a NumberFormatException if customerID
+            // isn't a long
+            Long.parseLong(customerID);
 
-            }
+            _service.postToZenDesk(dryadID, customerID, customerName, email, desc);
+            _service.enqueueCommandsForUsers(dryadID, customerID, users);
         } catch (Exception e) {
             l.warn("Failed POST", e);
-
             resp.setStatus(500);
         }
     }
@@ -89,25 +119,22 @@ public class DryadServlet extends HttpServlet
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
     {
         try {
-            try {
-                List<String> userIDs = _service.listUserIDs(0, 50);
-                String content = _gson.toJson(userIDs);
+            List<String> userIDs = _service.listUserIDs(0, 50);
+            String content = _gson.toJson(userIDs);
 
-                resp.setContentType("application/json");
-                resp.setContentLength(content.length());
-                resp.getOutputStream().print(content);
-            } finally {
-                _sqlTrans.cleanUp();
-            }
+            resp.setContentType("application/json");
+            resp.setContentLength(content.length());
+            resp.getOutputStream().print(content);
         } catch (Exception e) {
             l.warn("Failed GET", e);
+            resp.setStatus(500);
         }
-
-        resp.setStatus(200);
     }
 
     private SyncEmailSender createEmailSender()
     {
+        // duplicate in AsyncEmailSender
+
         // falls back to use the local mail relay
         String host         = getStringProperty("email.sender.public_host", "localhost");
         String port         = getStringProperty("email.sender.public_port", "25");

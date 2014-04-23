@@ -5,7 +5,9 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.proto.Cmd.Command;
+import com.aerofs.proto.Cmd.Command.Builder;
 import com.aerofs.proto.Cmd.CommandType;
+import com.aerofs.proto.Cmd.UploadLogsArgs;
 
 /**
  * This class currently hosts the command serialization / deserialization logic. This may not be
@@ -23,9 +25,15 @@ public class CommandUtil
         return String.valueOf(type.getNumber());
     }
 
+    // pre: both dryadID and customerID are sanitized
+    public static String createUploadLogsCommandMessage(String dryadID, String customerID)
+    {
+        return createCommandMessage(CommandType.UPLOAD_LOGS) + ":" + dryadID + ":" + customerID;
+    }
+
     public static Command createCommandFromMessage(String commandMessage, long epoch)
     {
-        String[] fields = commandMessage.split(":", 1);
+        String[] fields = commandMessage.split(":", 2);
 
         CommandType type = CommandType.valueOf(Integer.valueOf(fields[0]));
         // prep for future commits
@@ -37,9 +45,19 @@ public class CommandUtil
 
         switch (type) {
         // parse args for individual types here if any args are expected
-        default:
+        case UPLOAD_LOGS:   return parseUploadLogsArgs(builder, args);
+        default:            return builder.build();
         }
+    }
 
-        return builder.build();
+    // pre: args is the output of createUploadLogsCommandMessage()
+    private static Command parseUploadLogsArgs(Builder builder, String args)
+    {
+        String[] fields = args.split(":");
+
+        return builder.setUploadLogsArgs(UploadLogsArgs.newBuilder()
+                .setDryadId(fields[0])
+                .setCustomerId(fields[1]))
+                .build();
     }
 }

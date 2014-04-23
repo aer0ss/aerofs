@@ -257,11 +257,13 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
     public void shouldDeleteCommandsWithArgsOfSameType()
     {
         String c1WithArgs = _c1 + ":some_args";
+        String c1WithOtherArgs = _c1 + ":some_other_args";
         enqueueD1(_c1);
         enqueueD1(_c2);
         enqueueD1(c1WithArgs);
+        enqueueD1(c1WithOtherArgs);
 
-        Assert.assertEquals(2, deleteType(_ct1).getCount());
+        Assert.assertEquals(3, deleteType(_ct1).getCount());
         expectD1SizeAndHead(1, _c2);
     }
 

@@ -12,6 +12,10 @@ public class ConfigurationLifecycleListener
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
+        // This Stackoverflow answer describes why it is most appropriate to do global/application
+        // wide initialization within contextInitialized http://stackoverflow.com/a/2364451/3957
+        //
+        // Initialize Configuration Properties.
         try {
             Configuration.Server.initialize();
         } catch (Exception e) {

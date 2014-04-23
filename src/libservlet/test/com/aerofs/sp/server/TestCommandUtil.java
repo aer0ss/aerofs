@@ -6,11 +6,13 @@ package com.aerofs.sp.server;
 
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
-import org.junit.Assert;
 import org.junit.Test;
 
 import static com.aerofs.sp.server.CommandUtil.createCommandFromMessage;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
+import static com.aerofs.sp.server.CommandUtil.createUploadLogsCommandMessage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Covers serialization / deserialization logic and ensures backward compatibility since we do not migrate the db.
@@ -38,7 +40,7 @@ public class TestCommandUtil
             CommandType expected = (CommandType) testCase[1];
             Command command = createCommandFromMessage(message, 0);
 
-            Assert.assertEquals(expected, command.getType());
+            assertEquals(expected, command.getType());
         }
     }
 
@@ -61,7 +63,24 @@ public class TestCommandUtil
             String message = createCommandMessage(type);
             Command command = createCommandFromMessage(message, 0);
 
-            Assert.assertEquals(type, command.getType());
+            assertEquals(type, command.getType());
         }
+    }
+
+    @Test
+    public void shouldDeserializeUploadLogsCommandMessage()
+    {
+        String dryadID = "9001DEADBEEF";
+        String customerID = "31415926585";
+        String expectedMessage = "10:" + dryadID + ":" + customerID;
+
+        String message = createUploadLogsCommandMessage(dryadID, customerID);
+        assertEquals(expectedMessage, message);
+
+        Command command = createCommandFromMessage(message, 0);
+        assertEquals(CommandType.UPLOAD_LOGS, command.getType());
+        assertTrue(command.hasUploadLogsArgs());
+        assertEquals(dryadID, command.getUploadLogsArgs().getDryadId());
+        assertEquals(customerID, command.getUploadLogsArgs().getCustomerId());
     }
 }
