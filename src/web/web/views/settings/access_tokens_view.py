@@ -8,7 +8,7 @@ import binascii
 from pyramid.view import view_config
 from web import util
 from web.oauth import flash_error_for_bifrost_response, get_bifrost_url, \
-    raise_error_for_bifrost_response, is_valid_access_token
+    raise_error_for_bifrost_response, is_valid_access_token, is_builtin_client_id
 
 log = logging.getLogger(__name__)
 
@@ -152,8 +152,8 @@ def access_tokens(request):
         'owner': authenticated_userid(request)
     })
     if r.ok:
-        # clients is an array of registered clients
-        tokens = r.json()['tokens']
+        # Skip builtin clients (e.g. android, ios, web acess tokens)
+        tokens = [t for t in r.json()['tokens'] if not is_builtin_client_id(t['client_id'])]
     else:
         tokens = []
         flash_error_for_bifrost_response(request, r)
