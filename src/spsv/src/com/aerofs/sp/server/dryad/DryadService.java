@@ -9,7 +9,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
-import com.aerofs.servlets.lib.SyncEmailSender;
+import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.CommandUtil;
@@ -32,11 +32,11 @@ public class DryadService
     private final SQLThreadLocalTransaction     _sqlTrans;
     private final OrganizationDatabase          _odb;
     private final UserDatabase                  _udb;
-    private final SyncEmailSender               _email;
+    private final AbstractEmailSender           _email;
     private final CommandDispatcher             _cmd;
 
     public DryadService(SQLThreadLocalTransaction sqlTrans, OrganizationDatabase odb,
-            UserDatabase udb, SyncEmailSender email, CommandDispatcher cmd)
+            UserDatabase udb, AbstractEmailSender email, CommandDispatcher cmd)
     {
         _sqlTrans = sqlTrans;
         _odb = odb;

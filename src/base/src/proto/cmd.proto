@@ -1,7 +1,7 @@
 option java_package = "com.aerofs.proto";
 option optimize_for = LITE_RUNTIME; // remove reflection
 
-// Persistent commands use the persistent reqis queue on SP and are guaranteed to be delivered to
+// Persistent commands use the persistent redis queue on SP and are guaranteed to be delivered to
 // clients.
 //
 // Steps to add a new command:

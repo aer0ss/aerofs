@@ -6,7 +6,8 @@ package com.aerofs.sp.server.dryad;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam.REDIS;
-import com.aerofs.servlets.lib.SyncEmailSender;
+import com.aerofs.servlets.lib.AbstractEmailSender;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
@@ -30,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.UUID;
 
-import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
@@ -46,7 +46,7 @@ public class DryadServlet extends HttpServlet
     private OrganizationDatabase _odb;
     private UserDatabase _udb;
 
-    private SyncEmailSender _email;
+    private AbstractEmailSender _email;
 
     private VerkehrAdmin _verkehr;
     private PooledJedisConnectionProvider _jedisConnProvider;
@@ -71,7 +71,12 @@ public class DryadServlet extends HttpServlet
         _odb = new OrganizationDatabase(_sqlTrans);
         _udb = new UserDatabase(_sqlTrans);
 
-        _email = createEmailSender();
+        // N.B. this choice relies on the current method of provisionig AsyncEmailSender.
+        // Specifically, we relies on AsyncEmailSender to pull configuration in the following order:
+        // - pull from config server
+        // - read from a local properties file (file not available for private deployments)
+        // - defaults to use local smtp client
+        _email = AsyncEmailSender.create();
 
         _verkehr = (VerkehrAdmin) config.getServletContext().getAttribute(VERKEHR_ADMIN_ATTRIBUTE);
 
@@ -108,7 +113,11 @@ public class DryadServlet extends HttpServlet
             Long.parseLong(customerID);
 
             _service.postToZenDesk(dryadID, customerID, customerName, email, desc);
-            _service.enqueueCommandsForUsers(dryadID, customerID, users);
+
+            // N.B. users == null when no users are selected.
+            if (users != null) {
+                _service.enqueueCommandsForUsers(dryadID, customerID, users);
+            }
         } catch (Exception e) {
             l.warn("Failed POST", e);
             resp.setStatus(500);
@@ -129,20 +138,5 @@ public class DryadServlet extends HttpServlet
             l.warn("Failed GET", e);
             resp.setStatus(500);
         }
-    }
-
-    private SyncEmailSender createEmailSender()
-    {
-        // duplicate in AsyncEmailSender
-
-        // falls back to use the local mail relay
-        String host         = getStringProperty("email.sender.public_host", "localhost");
-        String port         = getStringProperty("email.sender.public_port", "25");
-        String username     = getStringProperty("email.sender.public_username", "");
-        String password     = getStringProperty("email.sender.public_password", "");
-        boolean enableTLS   = getBooleanProperty("email.sender.public_enable_tls", false);
-        String cert         = getStringProperty("email.sender.public_cert", "");
-
-        return new SyncEmailSender(host, port, username, password, enableTLS, cert);
     }
 }

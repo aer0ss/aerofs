@@ -63,4 +63,9 @@ def json_get_users(request):
 
 
 def get_dryad_servlet_uri(request):
-    return request.registry.settings['deployment.dryad_servlet_uri']
+    # The trailing '/' is necessary because the base URI results in 302. Adding
+    # the trailing '/' avoids a 302 response from Tomcat.
+    # The 302 response is problematic because Python requests library will
+    # follow-up with a GET to the new location even when the original request
+    # is a POST.
+    return request.registry.settings['deployment.dryad_servlet_uri'] + '/'
