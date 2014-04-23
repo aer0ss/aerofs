@@ -661,9 +661,21 @@ service SPService {
     // Given a set of stores and the bytes contained in each, return whether
     // each store should continue to collect
     //
-    // Required Auth Level: admin
+    // Required Auth Level: teamserver
     //
     rpc CheckQuota(CheckQuotaCall) returns (CheckQuotaReply);
+
+    // Set the organization-wide per-user quota
+    //
+    // Reauired Auth Level: admin
+    //
+    rpc SetQuota(SetQuotaCall) returns (Void);
+
+    // Remove the organization-wide per-user quota
+    //
+    // Reauired Auth Level: admin
+    //
+    rpc RemoveQuota(Void) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1234,4 +1246,8 @@ message CheckQuotaReply {
         required bool collect_content = 2;
     }
     repeated PBStoreShouldSync stores = 1;
+}
+
+message SetQuotaCall {
+    required uint64 quota = 1;
 }
