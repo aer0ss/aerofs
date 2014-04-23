@@ -10,6 +10,7 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
@@ -365,6 +366,12 @@ public class PreferencesHelper
     {
         createButtonContainer(parent, "Advanced...", dialog)
                 .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+    }
+
+    public void createLimitBandwidthButton(Shell shell)
+    {
+        createButtonContainer(shell, "Limit Bandwidth...", new DlgThrottling(shell, true))
+                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
     }
 
     public void setCfg(CfgDatabase.Key key, Boolean value)
