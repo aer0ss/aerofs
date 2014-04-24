@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
@@ -25,6 +26,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+/*
+ * There should be one instance of this class.
+ * Access to this class is protected by the core lock.
+ */
 public class Stores implements IStores, IStoreDeletionOperator
 {
     protected IStoreDatabase _sdb;
@@ -224,16 +229,30 @@ public class Stores implements IStores, IStoreDeletionOperator
         });
     }
 
+    /**
+     * Create a Store instance and notify the DevicePresence accordingly. Record the Store
+     * in the sidx2s map.
+     */
     private void notifyAddition_(SIndex sidx) throws SQLException
     {
         _sm.add_(sidx);
-        _sidx2s.add_(sidx);
+        // this is the only place Store instances are created...
+        Store s = _sidx2s.add_(sidx);
+
         _dp.afterAddingStore_(sidx);
+        s.postCreate();
     }
 
+    /**
+     * Notify the DevicePresence and Store instances that this store is going to be deleted;
+     * then remove it from the maps.
+     */
     private void notifyDeletion_(SIndex sidx)
     {
         _dp.beforeDeletingStore_(sidx);
+
+        _sidx2s.get_(sidx).preDelete();
+
         _sidx2s.delete_(sidx);
         _sm.delete_(sidx);
     }

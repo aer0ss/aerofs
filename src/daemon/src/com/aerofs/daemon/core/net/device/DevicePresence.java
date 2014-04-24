@@ -214,16 +214,11 @@ public class DevicePresence implements IDiagnosable
             if (opm == null) {
                 opm = new OPMDevices();
                 _sidx2opm.put(sidx, opm);
-                if (s != null) {
-                    s.startAntiEntropy_();
-                }
             }
             opm.add_(did, dev);
 
-            if (s != null) {
-                // we map online devices in the collector as OPM devices of a member store
-                s.collector().online_(did);
-            }
+            // "s non-null" means, "the store is/should be present locally"
+            if (s != null) { s.notifyDeviceOnline(did); }
         }
     }
 
@@ -239,10 +234,7 @@ public class DevicePresence implements IDiagnosable
                 _sidx2opm.remove(sidx);
             }
 
-            if (s != null) {
-                // we map online devices in the collector as OPM devices of a member store
-                s.collector().offline_(did);
-            }
+            if (s != null) { s.notifyDeviceOffline(did); }
         }
     }
 
@@ -254,34 +246,16 @@ public class DevicePresence implements IDiagnosable
         return ret;
     }
 
+    // FIXME: rename after I figure out what this means
     public void afterAddingStore_(SIndex sidx)
     {
         updateStoresForTransports_(sindex2sid_(Collections.singleton(sidx)), new SID[0]);
-
-        Store s = _sidx2s.get_(sidx);
-
-        // FIXME: we own the OPM table, why are we delegating this to the Store? :(
-        if (!s.getOnlinePotentialMemberDevices_().isEmpty()) {
-            s.startAntiEntropy_();
-            for (DID did : s.getOnlinePotentialMemberDevices_().keySet()) {
-                // we map online devices in the collector as OPM devices of
-                // a member store
-                s.collector().online_(did);
-            }
-        }
     }
 
+    // FIXME: rename after I figure out what this means
     public void beforeDeletingStore_(SIndex sidx)
     {
         updateStoresForTransports_(new SID[0], sindex2sid_(Collections.singleton(sidx)));
-
-        Store s = _sidx2s.get_(sidx);
-        // FIXME: we own the OPM table, why are we delegating this to the Store?
-        for (DID did : s.getOnlinePotentialMemberDevices_().keySet()) {
-            // we map online devices in the collector as OPM devices of
-            // a member store
-            s.collector().offline_(did);
-        }
     }
 
     // FIXME (AG): this is not an OPM
@@ -298,6 +272,12 @@ public class DevicePresence implements IDiagnosable
     public @Nullable OPMDevices getOPMDevices_(SIndex sidx)
     {
         return _sidx2opm.get(sidx);
+    }
+
+    public Map<DID, Device> getOnlinePotentialMemberDevices_(SIndex sidx)
+    {
+        OPMDevices opm = getOPMDevices_(sidx);
+        return (opm == null) ? Collections.<DID, Device>emptyMap() : opm.getAll_();
     }
 
     /**

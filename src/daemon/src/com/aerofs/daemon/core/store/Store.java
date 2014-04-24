@@ -6,7 +6,6 @@ import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.DevicePresence;
-import com.aerofs.daemon.core.net.device.OPMDevices;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.IDumpStatMisc;
@@ -16,7 +15,6 @@ import com.google.inject.Inject;
 import javax.annotation.Nonnull;
 import java.io.PrintStream;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.Map;
 
 public class Store implements Comparable<Store>, IDumpStatMisc
@@ -116,16 +114,48 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         return _sidx.hashCode();
     }
 
+    /** Notifier called when a device becomes potentially online for this store. */
+    public void notifyDeviceOnline(DID did) {
+        _collector.online_(did);
+        _f._ae.request_(_sidx, did);
+    }
+
+    public void notifyDeviceOffline(DID did) { _collector.offline_(did); }
+
+    /**
+     * Called after the Store is created.
+     * If there are no OPM devices for this store, do nothing.
+     */
+    void postCreate()
+    {
+        // TODO: is this necessary? Perhaps not.
+        if (hasOnlinePotentialMemberDevices_()) {
+            // we map online devices in the collector as OPM devices of a member store
+            for (DID did : getOnlinePotentialMemberDevices_().keySet()) {
+                notifyDeviceOnline(did);
+            }
+        }
+    }
+
+    /**
+     * Pre-deletion trigger. Before we remove a Store from the map, mark the devices offline
+     * for this store.
+     */
+    void preDelete()
+    {
+        // TODO: is this necessary? Perhaps not.
+        for (DID did : _dp.getOnlinePotentialMemberDevices_(_sidx).keySet()) {
+            notifyDeviceOffline(did);
+        }
+    }
+
     ////////
     // OPM device management
 
-    // FIXME JP: haha wtf? this gets called from DevicePresence, which supplies the OPM table!
-    // first step, delegate this call to the DevicePresence. Then get rid of this from Store.
     public Map<DID, Device> getOnlinePotentialMemberDevices_()
     {
         assert !_isDeleted;
-        OPMDevices opm = _dp.getOPMDevices_(_sidx);
-        return (opm == null) ? Collections.<DID, Device>emptyMap() : opm.getAll_();
+        return _dp.getOnlinePotentialMemberDevices_(_sidx);
     }
 
     public boolean hasOnlinePotentialMemberDevices_()

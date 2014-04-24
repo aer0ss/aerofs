@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +32,8 @@ public class TestStores extends AbstractTest
     @Mock Trans t;
     @Mock StoreDeletionOperators sdo;
     @Mock Store store;
+    @Mock Store parentStore;
+    @Mock Store extraStore;
 
     IStoreDatabase sdb;
     Stores ss;
@@ -50,6 +53,9 @@ public class TestStores extends AbstractTest
         ss.inject_(sdb, sm, sidx2s, dp, sdo);
 
         when(sidx2s.get_(sidx)).thenReturn(store);
+        when(sidx2s.add_(sidx)).thenReturn(store);
+        when(sidx2s.add_(sidxParent)).thenReturn(parentStore);
+        when(sidx2s.add_(sidxExtra)).thenReturn(extraStore);
     }
 
     @Test(expected = AssertionError.class)

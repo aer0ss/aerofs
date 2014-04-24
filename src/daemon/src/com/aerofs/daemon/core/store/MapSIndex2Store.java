@@ -58,7 +58,8 @@ public class MapSIndex2Store
         return s;
     }
 
-    public void add_(final SIndex sidx) throws SQLException
+    // FIXME: SO WEIRD. Why do we do the creation of the store in the add()?
+    Store add_(final SIndex sidx) throws SQLException
     {
         assert !_sidx2s.containsKey(sidx);
 
@@ -66,6 +67,7 @@ public class MapSIndex2Store
         assert s.sidx().equals(sidx) : s.sidx() + "!=" + sidx;
 
         Util.verify(_sidx2s.put(sidx, s) == null);
+        return s;
     }
 
     public void delete_(final SIndex sidx)
