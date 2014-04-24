@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.block;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.google.common.io.InputSupplier;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
@@ -107,7 +108,9 @@ public class TestChunker extends AbstractBlockTest
         });
     }
 
+    // TODO: use env var or property or something to selectively enable slow tests on CI
     @Test
+    @Ignore
     public void shouldSupportInputLargerThan2GB() throws Exception
     {
         new Chunker(new DevZero((1L << 31) + 1), bsb).splitAndStore_();

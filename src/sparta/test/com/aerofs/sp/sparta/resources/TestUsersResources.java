@@ -33,10 +33,6 @@ import static org.mockito.Mockito.verify;
 @SuppressWarnings("unchecked")
 public class TestUsersResources extends AbstractResourceTest
 {
-    static {
-        LogUtil.setLevel(Level.INFO);
-        LogUtil.enableConsoleLogging();
-    }
     private final String RESOURCE_BASE = "/v1.1/users";
     private final String RESOURCE = RESOURCE_BASE + "/{email}";
 

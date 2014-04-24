@@ -29,11 +29,6 @@ import static org.hamcrest.Matchers.startsWith;
 @SuppressWarnings("unchecked")
 public class TestSharedFolderResource extends AbstractResourceTest
 {
-    static {
-        LogUtil.setLevel(Level.INFO);
-        LogUtil.enableConsoleLogging();
-    }
-
     private final String BASE_RESOURCE = "/v1.1/shares/";
     private final String RESOURCE = BASE_RESOURCE + "{sid}";
 

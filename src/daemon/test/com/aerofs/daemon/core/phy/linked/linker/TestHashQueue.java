@@ -60,10 +60,6 @@ import static org.mockito.Mockito.when;
 
 public class TestHashQueue extends AbstractTest
 {
-    static {
-        LogUtil.enableConsoleLogging();
-        LogUtil.setLevel(Level.DEBUG);
-    }
     @Mock CoreScheduler sched;
     @Mock DirectoryService ds;
     @Mock VersionUpdater vu;

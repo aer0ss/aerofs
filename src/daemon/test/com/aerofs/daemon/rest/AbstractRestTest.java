@@ -141,11 +141,6 @@ import static org.mockito.Mockito.when;
 @RunWith(Parameterized.class)
 public class AbstractRestTest extends AbstractTest
 {
-    static {
-        LogUtil.setLevel(Level.DEBUG);
-        LogUtil.enableConsoleLogging();
-    }
-
     @Parameters
     public static Collection<Object[]> data()
     {
