@@ -23,6 +23,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
 import com.aerofs.proto.Sp.CheckQuotaReply;
 import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.Lists;
@@ -63,7 +64,7 @@ public class TestQuotaEnforcement extends AbstractTest
     @Mock StoreUsageCache usage;
     @Mock TokenManager tokenManager;
     @Mock TransManager tm;
-    @Mock SPBlockingClient.Factory factSP;
+    @Mock InjectableSPBlockingClientFactory factSP;
     @Mock SPBlockingClient sp;
 
     @InjectMocks QuotaEnforcement quota;
@@ -183,9 +184,11 @@ public class TestQuotaEnforcement extends AbstractTest
         verify(ss[0].collector()).includeContent_();
         verify(ss[0]).resetCollectorFiltersForAllDevices_(any(Trans.class));
 
-        buildSPReply(
-                PBStoreShouldCollect.newBuilder().setSid(sids[0].toPB()).setCollectContent(false)
-                        .build());
+        buildSPReply(PBStoreShouldCollect.newBuilder()
+                        .setSid(sids[0].toPB())
+                        .setCollectContent(false)
+                        .build()
+        );
         quota.start_();
 
         verify(ss[0].collector()).excludeContent_();
