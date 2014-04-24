@@ -58,7 +58,7 @@ public class TestSP_requestToSignUp extends AbstractSPTest
                 certificateAuthenticator, factUser, factOrg, factOrgInvite, factDevice, certdb,
                 esdb, factSharedFolder, factEmailer, _deviceRegistrationEmailer,
                 requestToSignUpEmailer, commandQueue, analytics, identitySessionManager,
-                authenticator, sharingRules, sharedFolderNotificationEmailer);
+                authenticator, sharingRules, sharedFolderNotificationEmailer, asyncEmailSender);
         wireSPService();
 
         try {

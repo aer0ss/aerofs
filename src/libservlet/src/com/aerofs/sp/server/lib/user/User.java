@@ -244,6 +244,33 @@ public class User
         _f._udb.setWhitelisted(_id, whitelisted);
     }
 
+    /**
+     * @return the usage in bytes, or null if the value has not been set
+     */
+    public @Nullable Long getBytesUsed()
+            throws SQLException, ExNotFound
+    {
+        return _f._udb.getBytesUsed(_id);
+    }
+
+    public void setBytesUsed(long bytesUsed)
+            throws SQLException
+    {
+        _f._udb.setBytesUsed(_id, bytesUsed);
+    }
+
+    public boolean getUsageWarningSent()
+            throws SQLException, ExNotFound
+    {
+        return _f._udb.getUsageWarningSent(_id);
+    }
+
+    public void setUsageWarningSent(boolean warningSent)
+            throws SQLException
+    {
+        _f._udb.setUsageWarningSent(_id, warningSent);
+    }
+
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setName(FullName fullName) throws SQLException
     {

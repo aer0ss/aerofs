@@ -202,6 +202,7 @@ public class SPService implements ISPService
     private final RequestToSignUpEmailer _requestToSignUpEmailer;
     private final SharedFolderNotificationEmailer _sfnEmailer;
     private final InvitationEmailer.Factory _factInvitationEmailer;
+    private final AsyncEmailSender _emailSender;
 
     private final JedisEpochCommandQueue _commandQueue;
     private final JedisThreadLocalTransaction _jedisTrans;
@@ -212,8 +213,6 @@ public class SPService implements ISPService
     private Authenticator _authenticator;
 
     private final InvitationHelper _invitationHelper;
-
-    private final CheckQuotaHelper _checkQuotaHelper;
 
     // Remember to udpate text in team_members.mako, team_settings.mako, and pricing.mako when
     // changing this number.
@@ -227,7 +226,6 @@ public class SPService implements ISPService
     private final Boolean OPEN_SIGNUP =
             getBooleanProperty("open_signup", true);
 
-    private static final AsyncEmailSender _emailSender = AsyncEmailSender.create();
 
     public SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
@@ -240,7 +238,7 @@ public class SPService implements ISPService
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
             Analytics analytics, IdentitySessionManager identitySessionManager,
             Authenticator authenticator, SharingRulesFactory sharingRules,
-            SharedFolderNotificationEmailer sfnEmailer)
+            SharedFolderNotificationEmailer sfnEmailer, AsyncEmailSender asyncEmailSender)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -263,6 +261,7 @@ public class SPService implements ISPService
         _requestToSignUpEmailer = requestToSignUpEmailer;
         _sfnEmailer = sfnEmailer;
         _factInvitationEmailer = factInvitationEmailer;
+        _emailSender = asyncEmailSender;
 
         _identitySessionManager = identitySessionManager;
         _sharingRules = sharingRules;
@@ -274,8 +273,6 @@ public class SPService implements ISPService
         _commandQueue = commandQueue;
         _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans);
         _analytics = checkNotNull(analytics);
-
-        _checkQuotaHelper = new CheckQuotaHelper(_factSharedFolder);
     }
 
     /**
@@ -1339,6 +1336,15 @@ public class SPService implements ISPService
     {
         CheckQuotaReply.Builder responseBuilder = CheckQuotaReply.newBuilder();
 
+        // When the SPService object is called, the auditclient is null. Since there is no state
+        // and no initialization, we create a CheckQuotaHelper for each call so that we can use
+        // the current value of auditClient
+        CheckQuotaHelper checkQuotaHelper = new CheckQuotaHelper(
+                _factSharedFolder,
+                _emailSender,
+                _auditClient,
+                _sqlTrans);
+
         _sqlTrans.begin();
         User requester = _sessionUser.getUser();
         requester.throwIfNotTeamServer();
@@ -1349,7 +1355,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         final Long quotaPerUser = requester.getOrganization().getQuotaPerUser();
         Set<SharedFolder> storesThatShouldCollectContent =
-                _checkQuotaHelper.getStoresThatShouldCollectContent(storeUsageMap, quotaPerUser);
+                checkQuotaHelper.checkQuota(storeUsageMap, quotaPerUser);
         _sqlTrans.commit();
 
         for (PBStoreUsage storeUsage : stores) {

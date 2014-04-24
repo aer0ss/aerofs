@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.Connection;
@@ -48,6 +49,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ACL_EPOCH;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_BYTES_USED;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_CREDS;
@@ -56,6 +58,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_USAGE_WARNING_SENT;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_WHITELISTED;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
@@ -253,6 +256,57 @@ public class UserDatabase extends AbstractSQLDatabase
         } finally {
             rs.close();
         }
+    }
+
+    public boolean getUsageWarningSent(UserID userID)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryUser(userID, C_USER_USAGE_WARNING_SENT);
+        try {
+            return rs.getBoolean(1);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public void setUsageWarningSent(UserID userID, boolean usageWarningSent)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                updateWhere(T_USER, C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
+                        C_USER_USAGE_WARNING_SENT));
+
+        ps.setBoolean(1, usageWarningSent);
+        ps.setString(2, userID.getString());
+        ps.executeUpdate();
+    }
+
+    /**
+     * @return the usage in bytes, or null if the value has never been set
+     */
+    public @Nullable Long getBytesUsed(UserID userID)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryUser(userID, C_USER_BYTES_USED);
+        try {
+            Long bytesUsed = rs.getLong(1);
+            if (rs.wasNull()) return null;
+            return bytesUsed;
+        } finally {
+            rs.close();
+        }
+    }
+
+    public void setBytesUsed(UserID userID, long bytesUsed)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                updateWhere(T_USER, C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
+                        C_USER_BYTES_USED));
+
+        ps.setLong(1, bytesUsed);
+        ps.setString(2, userID.getString());
+        ps.executeUpdate();
     }
 
     /**

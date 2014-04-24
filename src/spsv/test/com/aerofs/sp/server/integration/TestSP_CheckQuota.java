@@ -13,6 +13,7 @@ import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sv.common.EmailCategory;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,10 +22,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 
 public class TestSP_CheckQuota extends AbstractSPFolderTest
 {
@@ -114,6 +121,23 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         return shouldSync;
     }
 
+    private void checkThatUsersWereEmailed(Set<User> users) throws Exception
+    {
+        // verify that notifications were sent to "users"
+        for (User user : users) {
+            verify(asyncEmailSender).sendPublicEmail(anyString(), anyString(),
+                    eq(user.id().getString()), anyString(), anyString(), anyString(), anyString(),
+                    eq(EmailCategory.QUOTA_WARNING));
+        }
+
+        // verify that no notifications were sent to the other users
+        for (User user : Sets.difference(Sets.newHashSet(admin, user1, user2), users)) {
+            verify(asyncEmailSender, never()).sendPublicEmail(anyString(), anyString(),
+                    eq(user.id().getString()), anyString(), anyString(), anyString(), anyString(),
+                    eq(EmailCategory.QUOTA_WARNING));
+        }
+    }
+
     @Test
     public void responseShouldContainSameStoresAsRequest() throws Exception
     {
@@ -148,6 +172,8 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
 
         Map<SID, Boolean> shouldSync = getResponse(request);
         for (boolean should : shouldSync.values()) assertTrue(should);
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet());
     }
 
     @Test
@@ -167,6 +193,8 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
 
         Map<SID, Boolean> shouldSync = getResponse(request);
         for (Boolean should : shouldSync.values()) assertTrue(should);
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet());
     }
 
     @Test
@@ -193,6 +221,8 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         assertEquals(true, shouldSync.get(sidAll));
         assertEquals(true, shouldSync.get(sidA1));
         assertEquals(true, shouldSync.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(user1));
     }
 
     @Test
@@ -219,6 +249,8 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         assertEquals(true, shouldSync.get(sidAll));
         assertEquals(true, shouldSync.get(sidA1));
         assertEquals(false, shouldSync.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(user1, user2));
     }
 
     @Test
@@ -239,6 +271,8 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         Map<SID, Boolean> shouldSync = getResponse(request);
 
         for (Boolean should : shouldSync.values()) assertFalse(should);
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(admin, user1, user2));
     }
 
     @Test
@@ -265,6 +299,8 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         assertEquals(true, shouldSync.get(sidAll));
         assertEquals(true, shouldSync.get(sidA1));
         assertEquals(true, shouldSync.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(user1));
     }
 
     @Test
@@ -290,6 +326,8 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         assertEquals(true, shouldSync.get(sidAll));
         assertEquals(false, shouldSync.get(sidA1));
         assertEquals(true, shouldSync.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(admin, user1));
     }
 
     @Test
@@ -315,5 +353,140 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         assertEquals(true, shouldCollect.get(sidAll));
         assertEquals(false, shouldCollect.get(sidA1));
         assertEquals(true, shouldCollect.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(admin, user1));
+    }
+
+    @Test
+    public void shouldEmailUsersIfOver80PercentOfQuota_1() throws Exception
+    {
+        // Usages
+        // A: 85
+        // 1: 85
+        // 2: 85
+        List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
+        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(0L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(0L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(0L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(85L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(0L).build());
+
+        Map<SID, Boolean> shouldCollect = getResponse(request);
+
+        assertEquals(true, shouldCollect.get(sidA));
+        assertEquals(true, shouldCollect.get(sid1));
+        assertEquals(true, shouldCollect.get(sid2));
+        assertEquals(true, shouldCollect.get(sidAll));
+        assertEquals(true, shouldCollect.get(sidA1));
+        assertEquals(true, shouldCollect.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(admin, user1, user2));
+    }
+
+    @Test
+    public void shouldEmailUsersIfOver80PercentOfQuota_2() throws Exception
+    {
+        // Usages
+        // A: 85
+        // 1: 85
+        // 2: 85
+        List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
+        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(85L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(85L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(85L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(0L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(0L).build());
+
+        Map<SID, Boolean> shouldCollect = getResponse(request);
+
+        assertEquals(true, shouldCollect.get(sidA));
+        assertEquals(true, shouldCollect.get(sid1));
+        assertEquals(true, shouldCollect.get(sid2));
+        assertEquals(true, shouldCollect.get(sidAll));
+        assertEquals(true, shouldCollect.get(sidA1));
+        assertEquals(true, shouldCollect.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(admin, user1, user2));
+    }
+
+    @Test
+    public void shouldEmailUsersIfOver80PercentOfQuota_3() throws Exception
+    {
+        // Usages
+        // A: 60
+        // 1: 90
+        // 2: 90
+        List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
+        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(20L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(20L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(20L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(40L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(30L).build());
+
+        Map<SID, Boolean> shouldCollect = getResponse(request);
+
+        assertEquals(true, shouldCollect.get(sidA));
+        assertEquals(true, shouldCollect.get(sid1));
+        assertEquals(true, shouldCollect.get(sid2));
+        assertEquals(true, shouldCollect.get(sidAll));
+        assertEquals(true, shouldCollect.get(sidA1));
+        assertEquals(true, shouldCollect.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(user1, user2));
+    }
+
+    @Test
+    public void shouldNotEmailUsersTwiceWhoHaveGoneOver80PercentOfQuota() throws Exception
+    {
+        // Usages
+        // A: 60
+        // 1: 90
+        // 2: 90
+        List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
+        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(20L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(20L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(20L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(40L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(30L).build());
+
+        Map<SID, Boolean> shouldCollect = getResponse(request);
+
+        assertEquals(true, shouldCollect.get(sidA));
+        assertEquals(true, shouldCollect.get(sid1));
+        assertEquals(true, shouldCollect.get(sid2));
+        assertEquals(true, shouldCollect.get(sidAll));
+        assertEquals(true, shouldCollect.get(sidA1));
+        assertEquals(true, shouldCollect.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet(user1, user2));
+
+        reset(asyncEmailSender);
+
+        // Usages
+        // A: 60
+        // 1: 90
+        // 2: 90
+        request = new ArrayList<PBStoreUsage>(6);
+        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(20L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(20L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(20L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(40L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
+        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(30L).build());
+
+        shouldCollect = getResponse(request);
+
+        assertEquals(true, shouldCollect.get(sidA));
+        assertEquals(true, shouldCollect.get(sid1));
+        assertEquals(true, shouldCollect.get(sid2));
+        assertEquals(true, shouldCollect.get(sidAll));
+        assertEquals(true, shouldCollect.get(sidA1));
+        assertEquals(true, shouldCollect.get(sid12));
+
+        checkThatUsersWereEmailed(Sets.<User>newHashSet());
     }
 }

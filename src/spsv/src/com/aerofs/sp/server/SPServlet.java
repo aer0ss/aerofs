@@ -8,6 +8,7 @@ import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.DoPostDelegate;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -113,6 +114,8 @@ public class SPServlet extends AeroServlet
 
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
 
+    private final AsyncEmailSender _asyncEmailSender = AsyncEmailSender.create();
+
     private final Authenticator _authenticator = AuthenticatorFactory.create();
     private final PasswordManagement _passwordManagement =
             new PasswordManagement(_db, _factUser, new PasswordResetEmailer(), _authenticator);
@@ -138,7 +141,7 @@ public class SPServlet extends AeroServlet
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
             _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
             _requestToSignUpEmailer, _commandQueue, _analytics, new IdentitySessionManager(),
-            _authenticator, _sfRules, _sfnEmailer);
+            _authenticator, _sfRules, _sfnEmailer, _asyncEmailSender);
 
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 

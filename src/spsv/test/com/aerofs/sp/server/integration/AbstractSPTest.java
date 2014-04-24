@@ -19,6 +19,7 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.SecUtilHelper;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.Authenticator;
@@ -144,6 +145,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected CertificateAuthenticator certificateAuthenticator =
             mock(CertificateAuthenticator.class);
+
+    @Spy AsyncEmailSender asyncEmailSender = AsyncEmailSender.create();
 
     @Mock protected InvitationEmailer.Factory factEmailer;
 
