@@ -330,6 +330,9 @@ public final class CommandNotificationSubscriber
                 case LOG_THREADS:
                     logThreads();
                     break;
+                case OBSOLETE_WAS_CLEAN_SSS_DATABASE:
+                    // obsoleted command, do no-op
+                    break;
                 default:
                     throw new Exception("cmd type unknown");
             }

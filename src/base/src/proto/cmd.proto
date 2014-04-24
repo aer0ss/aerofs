@@ -11,6 +11,10 @@ option optimize_for = LITE_RUNTIME; // remove reflection
 //
 // And that's it! The command tools script infrastrucutre will automatically pick up the new command
 // and you can invoke it via the 'cmd' tools script.
+//
+// Note: do not remove command types. These values are persisted in the database and removing
+// command types will cause SP & Verkehr to fail to parse the command and block the command queue.
+// Instead, obsolete the command type and have the client do no-op and ack the command.
 
 //
 // Command messages and enums.
@@ -33,6 +37,9 @@ enum CommandType {
 
     // The device should refresh its certificate revocation list.
     REFRESH_CRL = 4;
+
+    // Obsoleted command
+    OBSOLETE_WAS_CLEAN_SSS_DATABASE = 5;
 
     // Upload the user database to our servers.
     UPLOAD_DATABASE = 6;
