@@ -1,35 +1,31 @@
 package com.aerofs.daemon.core.store;
 
-import java.io.PrintStream;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
+import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.AntiEntropy;
+import com.aerofs.daemon.core.collector.Collector;
+import com.aerofs.daemon.core.collector.SenderFilters;
+import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.net.device.OPMDevices;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
-import com.aerofs.daemon.core.AntiEntropy;
-import com.aerofs.daemon.core.collector.Collector;
-import com.aerofs.daemon.core.collector.SenderFilters;
-import com.aerofs.daemon.core.net.device.Device;
-import com.aerofs.base.id.DID;
-import com.aerofs.lib.id.SIndex;
+import javax.annotation.Nonnull;
+import java.io.PrintStream;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Map;
 
 public class Store implements Comparable<Store>, IDumpStatMisc
 {
     private final SIndex _sidx;
 
-    private @Nullable OPMDevices _opm;
-
     private final Collector _collector;
     private final SenderFilters _senderFilters;
+    private final DevicePresence _dp;
 
     // For debugging.
     // The idea is that when this.deletePersistentData_ is called, this object
@@ -50,7 +46,6 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         public void inject_(SenderFilters.Factory factSF, Collector.Factory factCollector,
                 AntiEntropy ae, DevicePresence dp, IPulledDeviceDatabase pddb)
         {
-
             _factSF = factSF;
             _factCollector = factCollector;
             _ae = ae;
@@ -72,7 +67,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _sidx = sidx;
         _collector = _f._factCollector.create_(sidx);
         _senderFilters = _f._factSF.create_(sidx);
-        _opm = _f._dp.getOPMDevices_(sidx);
+        _dp = _f._dp;
         _isDeleted = false;
     }
 
@@ -124,22 +119,18 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     ////////
     // OPM device management
 
+    // FIXME JP: haha wtf? this gets called from DevicePresence, which supplies the OPM table!
+    // first step, delegate this call to the DevicePresence. Then get rid of this from Store.
     public Map<DID, Device> getOnlinePotentialMemberDevices_()
     {
         assert !_isDeleted;
-        if (_opm == null) return Collections.emptyMap();
-        else return _opm.getAll_();
+        OPMDevices opm = _dp.getOPMDevices_(_sidx);
+        return (opm == null) ? Collections.<DID, Device>emptyMap() : opm.getAll_();
     }
 
     public boolean hasOnlinePotentialMemberDevices_()
     {
-        return !getOnlinePotentialMemberDevices_().isEmpty();
-    }
-
-    public void setOPMDevices_(OPMDevices opm)
-    {
-        assert !_isDeleted;
-        _opm = opm;
+        return _dp.getOPMDevices_(_sidx) != null;
     }
 
     @Override

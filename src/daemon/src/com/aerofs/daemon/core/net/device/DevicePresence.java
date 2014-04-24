@@ -45,11 +45,14 @@ import java.util.concurrent.Callable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+// FIXME: what is the expected multiplicity of this class. Singleton would be super convenient.
+// FIXME: what concurrency access controls are wrapped around this class?
 public class DevicePresence implements IDiagnosable
 {
     private static final Logger l = Loggers.getLogger(DevicePresence.class);
 
     private final Map<DID, Device> _did2dev = Maps.newHashMap();
+    // FIXME: sidx2opm can't contain empty OPMDevice objects; wrap this map in safe mutators
     private final Map<SIndex, OPMDevices> _sidx2opm = Maps.newHashMap();
     private final List<IDevicePresenceListener> _listeners = Lists.newArrayList();
 
@@ -212,7 +215,6 @@ public class DevicePresence implements IDiagnosable
                 opm = new OPMDevices();
                 _sidx2opm.put(sidx, opm);
                 if (s != null) {
-                    s.setOPMDevices_(opm);
                     s.startAntiEntropy_();
                 }
             }
@@ -235,7 +237,6 @@ public class DevicePresence implements IDiagnosable
             l.debug("remaining opms 4 {}: {}", sidx, opm);
             if (opm.isEmpty_()) {
                 _sidx2opm.remove(sidx);
-                if (s != null) s.setOPMDevices_(null);
             }
 
             if (s != null) {
@@ -259,6 +260,7 @@ public class DevicePresence implements IDiagnosable
 
         Store s = _sidx2s.get_(sidx);
 
+        // FIXME: we own the OPM table, why are we delegating this to the Store? :(
         if (!s.getOnlinePotentialMemberDevices_().isEmpty()) {
             s.startAntiEntropy_();
             for (DID did : s.getOnlinePotentialMemberDevices_().keySet()) {
@@ -274,7 +276,7 @@ public class DevicePresence implements IDiagnosable
         updateStoresForTransports_(new SID[0], sindex2sid_(Collections.singleton(sidx)));
 
         Store s = _sidx2s.get_(sidx);
-
+        // FIXME: we own the OPM table, why are we delegating this to the Store?
         for (DID did : s.getOnlinePotentialMemberDevices_().keySet()) {
             // we map online devices in the collector as OPM devices of
             // a member store
@@ -293,8 +295,7 @@ public class DevicePresence implements IDiagnosable
         return dev != null && dev.isOnline_() ? dev : null;
     }
 
-    public @Nullable
-    OPMDevices getOPMDevices_(SIndex sidx)
+    public @Nullable OPMDevices getOPMDevices_(SIndex sidx)
     {
         return _sidx2opm.get(sidx);
     }
