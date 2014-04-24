@@ -12,6 +12,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Maps;
 
+import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ class StoreUsageCache
     private final DirectoryService _ds;
     private final Map<SIndex, Long> _cache = Maps.newHashMap();
 
+    @Inject
     StoreUsageCache(DirectoryService ds)
     {
         _ds = ds;

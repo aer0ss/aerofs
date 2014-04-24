@@ -25,13 +25,14 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
 import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPBlockingClient.Factory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -51,9 +52,10 @@ public class QuotaEnforcement implements IQuotaEnforcement
     private final SPBlockingClient.Factory _factSP;
     private final StoreUsageCache _usage;
 
+    @Inject
     public QuotaEnforcement(IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid, MapSIndex2Store sidx2s,
             CoreScheduler sched, IStores stores, TokenManager tokenManager, TransManager tm,
-            Factory factSP, StoreUsageCache usage)
+            InjectableSPBlockingClientFactory factSP, StoreUsageCache usage)
     {
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
