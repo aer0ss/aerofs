@@ -60,6 +60,7 @@ import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetOrgPreferencesReply;
 import com.aerofs.proto.Sp.GetOrganizationIDReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
+import com.aerofs.proto.Sp.GetQuotaReply;
 import com.aerofs.proto.Sp.GetStripeDataReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
@@ -1359,6 +1360,20 @@ public class SPService implements ISPService
                     .build());
         }
         return createReply(responseBuilder.build());
+    }
+
+    @Override
+    public ListenableFuture<GetQuotaReply> getQuota()
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User requester = _sessionUser.getUser();
+        requester.throwIfNotAdmin();
+        @Nullable Long quota = requester.getOrganization().getQuotaPerUser();
+        _sqlTrans.commit();
+
+        return createReply(quota == null ? GetQuotaReply.getDefaultInstance() :
+                GetQuotaReply.newBuilder().setQuota(quota).build());
     }
 
     @Override

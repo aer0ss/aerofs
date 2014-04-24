@@ -5,6 +5,7 @@ from mock import Mock
 from web import util
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
+
 class TestBase(unittest.TestCase):
     def setup_common(self):
         """
@@ -39,6 +40,7 @@ class TestBase(unittest.TestCase):
         Create a spy for the given method. Usage: method = spy(method)
         """
         return Mock(method, side_effect=method)
+
 
 class NullServiceConnection():
     def do_rpc(self, bytes_to_send):

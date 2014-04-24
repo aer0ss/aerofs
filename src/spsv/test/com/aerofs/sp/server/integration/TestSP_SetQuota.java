@@ -11,8 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TestSP_SetQuota extends AbstractSPTest
@@ -60,34 +60,24 @@ public class TestSP_SetQuota extends AbstractSPTest
     @Test
     public void shouldSetQuota() throws Exception
     {
-        Long quota = 42L;
+        long quota = 42L;
         service.setQuota(quota);
 
-        sqlTrans.begin();
-        assertEquals(quota, admin.getOrganization().getQuotaPerUser());
-        sqlTrans.commit();
+        assertEquals(quota, service.getQuota().get().getQuota());
 
-        Long newQuota = 9001L;
+        long newQuota = 9001L;
         service.setQuota(newQuota);
 
-        sqlTrans.begin();
-        assertEquals(newQuota, admin.getOrganization().getQuotaPerUser());
-        sqlTrans.commit();
+        assertEquals(newQuota, service.getQuota().get().getQuota());
     }
 
     @Test
     public void shouldRemoveQuota() throws Exception
     {
         service.setQuota(42L);
-
-        sqlTrans.begin();
-        assertNotNull(admin.getOrganization().getQuotaPerUser());
-        sqlTrans.commit();
+        assertTrue(service.getQuota().get().hasQuota());
 
         service.removeQuota();
-
-        sqlTrans.begin();
-        assertNull(admin.getOrganization().getQuotaPerUser());
-        sqlTrans.commit();
+        assertFalse(service.getQuota().get().hasQuota());
     }
 }

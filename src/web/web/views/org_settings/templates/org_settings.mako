@@ -10,13 +10,44 @@
 
 <h2 class="page-block">Organization settings</h2>
 
-<form class="form-inline page-block" id="update-name-form"
-        action="${request.route_path('org_settings')}" method="post">
+<form class="page-block" action="${request.route_path('org_settings')}" method="post">
     ${self.csrf.token_input()}
-    <label class="control-label" for="organization_name">Organization name:</label>
+
+    <div class="page-block">
+        <label for="organization_name">Organization name:</label>
         <input type="text" id="organization_name" name="organization_name"
                 value="${organization_name}">
-    <button class="btn" id="update-name-button">Update</button>
+    </div>
+
+    <div
+            %if show_quota_options:
+                class="page-block"
+            %else:
+                class="hidden"
+            %endif
+            >
+
+        <label class="checkbox">
+            <input type="checkbox" id="enable_quota" name="enable_quota"
+                   %if quota_enabled:
+                       checked
+                   %endif
+                    >
+            Limit data usage on Team Servers to
+        </label>
+        <div class="input-append">
+          <input type="text" class="input-mini text-right" id="quota" name="quota" required
+                 %if quota_enabled:
+                     value="${quota}"
+                 %endif
+                 >
+          <span class="add-on">GB per user</span>
+        </div>
+    </div>
+
+    <div class="page-block">
+        <button class="btn" id="update-button">Update</button>
+    </div>
 </form>
 
 
@@ -74,12 +105,15 @@
         <%credit_card_modal:javascript/>
     %endif
 
-    <script type="text/javascript">
+    <script>
         $(document).ready(function() {
             $('#organization_name').focus();
 
-            $("#update-name-form").submit(function() {
-                $("#update-name-button").attr("disabled", "disabled");
+            updateQuotaUI();
+            $('#enable_quota').click(updateQuotaUI);
+
+            $("form").submit(function() {
+                $("#update-button").prop("disabled", true);
                 return true;
             });
 
@@ -87,6 +121,11 @@
                 upgrade();
             %endif
         });
+
+        function updateQuotaUI() {
+            var enableQuota = ($('#enable_quota').is(':checked'));
+            $('#quota').prop('disabled', !enableQuota);
+        }
 
         function upgrade() {
             inputCreditCardInfoAndCreateStripeCustomer(function() {

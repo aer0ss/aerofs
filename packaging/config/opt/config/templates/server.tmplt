@@ -57,6 +57,7 @@ base.audit.downstream_certificate={{ audit_downstream_certificate }}
 web.enable_appliance_setup_data_collection={{ enable_appliance_setup_data_collection }}
 web.disable_download_mobile_client={{ web_disable_download_mobile_client }}
 restored_from_backup={{ restored_from_backup }}
+show_quota_options={{ show_quota_options }}
 
 monitoring.username={{ monitoring_username }}
 monitoring.password={{ monitoring_password }}

@@ -676,6 +676,12 @@ service SPService {
     // Reauired Auth Level: admin
     //
     rpc RemoveQuota(Void) returns (Void);
+
+    // Get the organization-wide per-user quota
+    //
+    // Reauired Auth Level: admin
+    //
+    rpc GetQuota(Void) returns (GetQuotaReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1246,6 +1252,11 @@ message CheckQuotaReply {
         required bool collect_content = 2;
     }
     repeated PBStoreShouldCollect store = 1;
+}
+
+message GetQuotaReply {
+    // absent to indicate no quota
+    optional uint64 quota = 1;
 }
 
 message SetQuotaCall {
