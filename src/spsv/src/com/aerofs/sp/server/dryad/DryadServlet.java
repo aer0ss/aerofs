@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.dryad;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.servlets.lib.AsyncEmailSender;
@@ -29,7 +30,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-import java.util.UUID;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
@@ -101,15 +101,17 @@ public class DryadServlet extends HttpServlet
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
     {
         try {
-            String dryadID = UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
-            String customerID = getStringProperty("customer_id", "0");
+            // use our custom UniqueID because they are easier to work with than UUID
+            // Note that DryadServer also expects UniqueuID
+            String dryadID = UniqueID.generate().toStringFormal();
+            String customerID = getStringProperty("customer_id", "Not set");
             String customerName = getStringProperty("license_company", "Unknown");
             String email = req.getParameter("email");
             String desc = req.getParameter("desc");
             String[] users = req.getParameterValues("users");
 
-            // sanitize the external input, this will throw a NumberFormatException if customerID
-            // isn't a long
+            // sanitize the config value, this will throw a NumberFormatException if the config
+            // value isn't a long or if the config value is not set.
             Long.parseLong(customerID);
 
             _service.postToZenDesk(dryadID, customerID, customerName, email, desc);
