@@ -12,6 +12,7 @@ import com.aerofs.base.Version;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
+import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
@@ -208,8 +209,13 @@ public class Sparta extends Service
             @Override
             protected void configure()
             {
+                PooledJedisConnectionProvider jedisConn = new PooledJedisConnectionProvider();
+                String redisHost = REDIS.AOF_ADDRESS.getHostName();
+                short redisPort = (short)REDIS.AOF_ADDRESS.getPort();
+                jedisConn.init_(redisHost, redisPort);
+
                 bind(new TypeLiteral<IDatabaseConnectionProvider<JedisPooledConnection>>() {})
-                        .toInstance(new PooledJedisConnectionProvider());
+                        .toInstance(jedisConn);
                 bind(new TypeLiteral<IThreadLocalTransaction<JedisException>>() {})
                         .to(JedisThreadLocalTransaction.class);
             }
