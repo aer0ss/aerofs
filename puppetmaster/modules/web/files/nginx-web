@@ -29,6 +29,11 @@ server {
         alias /opt/web/docs/;
     }
     location / {
+    # This is where the marketing
+        alias /opt/staticweb/_site/;
+        try_files $uri $uri/ @uwsgi;
+    }
+    location @uwsgi {
         # redirect /developer to /developers
         rewrite /developer(/.*)?$ /developers$1 permanent;
 
@@ -36,6 +41,11 @@ server {
         uwsgi_pass 127.0.0.1:8080;
         include uwsgi_params;
         proxy_set_header Host $host;
+        proxy_set_header Verify $ssl_client_verify;
+        proxy_set_header Serial $ssl_client_serial;
+        proxy_set_header DName $ssl_client_s_dn;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         uwsgi_param UWSGI_SCHEME https;
         uwsgi_param SCRIPT_NAME "";
     }
