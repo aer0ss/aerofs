@@ -18,6 +18,7 @@ import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.oauth.Scope;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.rest.api.Invitation;
+import com.aerofs.rest.api.Quota;
 import com.aerofs.rest.util.AuthToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
@@ -394,7 +395,8 @@ public class UsersResource extends AbstractSpartaResource
         l.warn("Updated user {}", attrs);
         return Response.ok()
                 .entity(new com.aerofs.rest.api.User(target.id().getString(), attrs.firstName,
-                        attrs.lastName, listShares(target, null, auth), listInvitations(target, auth)))
+                        attrs.lastName, listShares(target, null, auth),
+                        listInvitations(target, auth)))
                 .build();
     }
 
@@ -466,5 +468,22 @@ public class UsersResource extends AbstractSpartaResource
                 .publish();
 
         return Response.noContent().build();
+    }
+
+    @Since("1.2")
+    @GET
+    @Path("/{email}/quota")
+    public Response getQuota(@Auth AuthToken auth, @PathParam("email") User user)
+            throws SQLException, ExNotFound
+    {
+        requirePermission(Scope.READ_USER, auth);
+        User caller = _factUser.create(auth.user);
+        throwIfNotSelfOrTSOf(caller, user);
+
+        return Response.ok()
+                .entity(new Quota(
+                        user.getBytesUsed(),
+                        user.getOrganization().getQuotaPerUser()))
+                .build();
     }
 }

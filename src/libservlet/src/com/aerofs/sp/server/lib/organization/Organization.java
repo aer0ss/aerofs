@@ -1,6 +1,7 @@
 package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ParamFactory;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
@@ -48,6 +49,12 @@ public class Organization
             _factUser = factUser;
             _factSharedFolder = factSharedFolder;
             _factOrgInvite = factOrgInvite;
+        }
+
+        @ParamFactory
+        public Organization _create(String orgIdHex)
+        {
+            return create(OrganizationID.fromHexString(orgIdHex));
         }
 
         public Organization create(@Nonnull OrganizationID id)

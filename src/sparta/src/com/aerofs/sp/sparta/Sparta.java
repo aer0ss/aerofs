@@ -34,6 +34,7 @@ import com.aerofs.rest.providers.FactoryReaderProvider;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
 import com.aerofs.sp.sparta.providers.WirableMapper;
 import com.aerofs.sp.sparta.resources.DevicesResource;
+import com.aerofs.sp.sparta.resources.OrganizationsResource;
 import com.aerofs.sp.sparta.resources.SharedFolderResource;
 import com.aerofs.sp.sparta.resources.UsersResource;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
@@ -99,6 +100,7 @@ public class Sparta extends Service
         addResource(UsersResource.class);
         addResource(DevicesResource.class);
         addResource(SharedFolderResource.class);
+        addResource(OrganizationsResource.class);
     }
 
     private static InetSocketAddress listenAddress()

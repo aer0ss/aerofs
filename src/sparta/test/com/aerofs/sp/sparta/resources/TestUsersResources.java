@@ -6,8 +6,6 @@ package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.SID;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableMap;
 import com.jayway.restassured.http.ContentType;
@@ -35,6 +33,7 @@ public class TestUsersResources extends AbstractResourceTest
 {
     private final String RESOURCE_BASE = "/v1.1/users";
     private final String RESOURCE = RESOURCE_BASE + "/{email}";
+    private final String QUOTA_RESOURCE = "/v1.2/users/{email}/quota";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -658,6 +657,48 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("type", equalTo("FORBIDDEN"))
         .when()
                 .delete(RESOURCE + "/password", u.id().getString());
+    }
+
+    @Test
+    public void shouldGetOwnQuotaUsage() throws Exception
+    {
+        long bytesUsed = 42L * (long)1E9;
+        long bytesAllowed = 9000L * (long)1E9;
+
+        sqlTrans.begin();
+        User _user = factUser.create(user);
+        _user.setBytesUsed(bytesUsed);
+        _user.getOrganization().setQuotaPerUser(bytesAllowed);
+        sqlTrans.commit();
+
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("bytes_used", equalTo(bytesUsed))
+                .body("bytes_allowed", equalTo(bytesAllowed))
+        .when().log().everything()
+                .get(QUOTA_RESOURCE, user.getString());
+    }
+
+    @Test
+    public void shouldGetOtherUsersQuotaUsageIfAdmin() throws Exception
+    {
+        long bytesUsed = 42L * (long)1E9;
+        long bytesAllowed = 9000L * (long)1E9;
+
+        sqlTrans.begin();
+        User _user = factUser.create(user);
+        _user.setBytesUsed(bytesUsed);
+        _user.getOrganization().setQuotaPerUser(bytesAllowed);
+        sqlTrans.commit();
+
+        givenAdminAccess()
+        .expect()
+                .statusCode(200)
+                .body("bytes_used", equalTo(bytesUsed))
+                .body("bytes_allowed", equalTo(bytesAllowed))
+        .when().log().everything()
+                .get(QUOTA_RESOURCE, user.getString());
     }
 
     private ImmutableMap<String, String> userAttributes(User u)
