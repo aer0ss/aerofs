@@ -63,9 +63,7 @@ public class DPUTCaseSensitivityHellYeah implements IDaemonPostUpdateTask
                         + C_OA_PARENT + ","
                         + C_OA_TYPE + ", "
                         + C_OA_FID + ","
-                        + C_OA_FLAGS + ","
-                        + C_OA_SYNC + ","
-                        + C_OA_AG_SYNC
+                        + C_OA_FLAGS
                         + " from "
                         + T_OA_OLD
                         );

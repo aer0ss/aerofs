@@ -151,10 +151,7 @@ public class LibParam extends BaseParam
 
     // Epochs initial values
     public static final int INITIAL_ACL_EPOCH = 0;
-    public static final int INITIAL_SYNC_PULL_EPOCH = 0;
-    public static final int INITIAL_SYNC_PUSH_EPOCH = 0;
     public static final int INITIAL_AUDIT_PUSH_EPOCH = 0;
-
 
     // Multiuser password: Multiuser installs use certificates to login to servers. Therefore,
     // they do not need a password for remote communication. However, a password is still needed
@@ -172,7 +169,7 @@ public class LibParam extends BaseParam
     {
         // These variables are saved here rather than *PostUpdateTasks classes so that both
         // UI and processes can access them.
-        public static final int DAEMON_POST_UPDATE_TASKS = 48;
+        public static final int DAEMON_POST_UPDATE_TASKS = 49;
         public static final int UI_POST_UPDATE_TASKS = 2;
     }
 

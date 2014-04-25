@@ -43,7 +43,6 @@ import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.daemon.lib.db.ISenderFilterDatabase;
 import com.aerofs.daemon.lib.db.IStoreContributorsDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
-import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
 import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.MetaDatabase;
 import com.aerofs.daemon.lib.db.PulledDeviceDatabase;
@@ -51,7 +50,6 @@ import com.aerofs.daemon.lib.db.SIDDatabase;
 import com.aerofs.daemon.lib.db.SenderFilterDatabase;
 import com.aerofs.daemon.lib.db.StoreContributorsDatabase;
 import com.aerofs.daemon.lib.db.StoreDatabase;
-import com.aerofs.daemon.lib.db.SyncStatusDatabase;
 import com.aerofs.daemon.lib.db.UserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.INativeVersionDatabase;
@@ -112,7 +110,6 @@ public class CoreModule extends AbstractModule
         bind(IActivityLogDatabase.class).to(ActivityLogDatabase.class);
         bind(IDID2UserDatabase.class).to(DID2UserDatabase.class);
         bind(IUserAndDeviceNameDatabase.class).to(UserAndDeviceNameDatabase.class);
-        bind(ISyncStatusDatabase.class).to(SyncStatusDatabase.class);
         bind(IAuditDatabase.class).to(AuditDatabase.class);
         bind(IAnalyticsPlatformProperties.class).to(DesktopAnalyticsProperties.class);
 

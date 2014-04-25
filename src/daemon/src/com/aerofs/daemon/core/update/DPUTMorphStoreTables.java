@@ -13,12 +13,10 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 
-import javax.annotation.Nullable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.List;
 
 /**
@@ -51,7 +49,6 @@ public class DPUTMorphStoreTables implements IDaemonPostUpdateTask
     private static class StoreRow {
         SIndex _sidx;
         SIndex _sidxParent;
-        @Nullable byte[] _dids;
     }
 
     private void morph_(Statement s)
@@ -72,8 +69,7 @@ public class DPUTMorphStoreTables implements IDaemonPostUpdateTask
     {
         List<StoreRow> srs = Lists.newArrayList();
 
-        ResultSet rs = s.executeQuery(DBUtil.select(T_STORE, C_STORE_SIDX, C_STORE_PARENT,
-                C_STORE_DIDS));
+        ResultSet rs = s.executeQuery(DBUtil.select(T_STORE, C_STORE_SIDX, C_STORE_PARENT));
         try {
             while (rs.next()) {
                 StoreRow sr = new StoreRow();
@@ -81,7 +77,6 @@ public class DPUTMorphStoreTables implements IDaemonPostUpdateTask
                 assert !rs.wasNull();
                 sr._sidxParent = new SIndex(rs.getInt(2));
                 assert !rs.wasNull();
-                sr._dids = rs.getBytes(3);
                 srs.add(sr);
             }
         } finally {
@@ -95,11 +90,9 @@ public class DPUTMorphStoreTables implements IDaemonPostUpdateTask
             throws SQLException
     {
         PreparedStatement ps = _dbcw.getConnection().prepareStatement(
-                DBUtil.insert(T_STORE, C_STORE_SIDX, C_STORE_DIDS));
+                DBUtil.insert(T_STORE, C_STORE_SIDX));
         for (StoreRow sr : srs) {
             ps.setInt(1, sr._sidx.getInt());
-            if (sr._dids == null) ps.setNull(2, Types.BLOB);
-            else ps.setBytes(2, sr._dids);
             ps.addBatch();
         }
         ps.executeBatch();

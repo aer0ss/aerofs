@@ -31,10 +31,10 @@ public class DaemonPostUpdateTasks
 
         _tasks = new IDaemonPostUpdateTask[] {
             new DPUTOptimizeCSTableIndex(dbcw),
-            new DPUTUpdateEpochTable(dbcw),
+            null, // used to be DPUTUpdateEpochTable
             new DPUTCreateActivityLogTables(dbcw),
-            new DPUTUpdateSchemaForSyncStatus(dbcw),
-            new DPUTAddAggregateSyncColumn(dbcw),
+            null, // used to be DPUTUpdateSchemaForSyncStatus
+            null, // used to be DPUTAddAggregateSyncColumn
             new DPUTMakeMTimesNaturalNumbersOnly(dbcw),
             new DPUTGetEncodingStats(dbcw),
             new DPUTMigrateRevisionSuffixToBase64(),
@@ -44,7 +44,7 @@ public class DaemonPostUpdateTasks
             new DPUTMorphStoreTables(dbcw),
             new DPUTMigrateS3Schema(dbcw, _cfgDB),
             null, // used to be DPUTBreakSyncStatActivityLogDependency with missing commit()
-            new DPUTBreakSyncStatActivityLogDependency(dbcw),
+            null, // used to be DPUTBreakSyncStatActivityLogDependency
             null, // used to be DPUTResetSyncStatus (bug in AggregateSyncStatus.objectMoved_)
             new DPUTMigrateAuxRoot(),
             new DPUTUpdateSIDGeneration(cfgUser, dbcw),
@@ -74,10 +74,11 @@ public class DaemonPostUpdateTasks
             new DPUTFixNormalizationOSX(osutil, dbcw, dr, rocklog),
             new DPUTUpdateEpochTableAddAuditColumn(dbcw),
             new DPUTFixCNROsOnOSX(osutil, dbcw),
-            new DPUTResetSyncStatus(dbcw),  // bug in AggragateSyncStatus
+            null, // used to be DPUTResetSyncStatus
             new DPUTFixBlockHistory(dbcw),
             new DPUTUpdateSharedFoldersQueueTable(dbcw),
             new DPUTUpdateCAHash(dbcw),
+            new DPUTClearSyncStatusColumns(dbcw),
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 

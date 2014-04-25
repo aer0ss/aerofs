@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -404,21 +403,13 @@ public class CoreDatabaseDumper
             throws SQLException
     {
         ResultSet rs = s.executeQuery(
-                "select " + C_STORE_SIDX + "," + C_STORE_DIDS +
+                "select " + C_STORE_SIDX +
                 " from " + T_STORE);
         ps.println("================== " + T_STORE + " =====================");
-        ps.println(C_STORE_SIDX + "\t" + C_STORE_DIDS);
+        ps.println(C_STORE_SIDX);
         ps.println("------------------------------------------");
         while (rs.next()) {
-            SIndex sidx = new SIndex(rs.getInt(1));
-            byte[] d = rs.getBytes(2);
-            StringBuilder bd = new StringBuilder();
-            for (int i = 0; i < (d != null ? d.length / DID.LENGTH : 0); ++i) {
-                bd.append(new DID(Arrays.copyOfRange(d, i * DID.LENGTH, (i+1) * DID.LENGTH))
-                        .toStringFormal());
-                bd.append(" ");
-            }
-            ps.println(sidx + "\t" + bd.toString());
+            ps.println(new SIndex(rs.getInt(1)));
         }
     }
 
@@ -565,16 +556,13 @@ public class CoreDatabaseDumper
     private void dumpEpoch_(Statement s, PrintStream ps) throws SQLException
     {
         ResultSet rs = s.executeQuery(
-                "select " + C_EPOCH_ACL + "," + C_EPOCH_SYNC_PULL + "," + C_EPOCH_SYNC_PUSH +
-                " from " + T_EPOCH);
+                "select " + C_EPOCH_ACL + " from " + T_EPOCH);
         ps.println("============ " + T_EPOCH + " ==============");
-        ps.println(C_EPOCH_ACL + "\t" + C_EPOCH_SYNC_PULL + "\t" + C_EPOCH_SYNC_PUSH);
+        ps.println(C_EPOCH_ACL);
         ps.println("------------------------------");
         while (rs.next()) {
             long acl = rs.getInt(1);
-            long syncPull = rs.getLong(2);
-            long syncPush = rs.getLong(3);
-            ps.println(acl + "\t" + syncPull + "\t" + syncPush);
+            ps.println(acl);
         }
     }
 

@@ -21,8 +21,9 @@ public class CoreSchema implements ISchema
             // Stores
             T_STORE         = "s",
             C_STORE_SIDX    = "s_i",        // SIndex
-            C_STORE_DIDS    = "s_d",        // concatenated DIDs
             C_STORE_NAME    = "s_n",        // name
+            // This deprecated field is still in old databases. See DPUTClearSyncStatusColumns
+            // C_STORE_DIDS    = "s_d",     // concatenated DIDs
 
             // Store Hierarchy. See IStores' class-level comments for details.
             // parents.
@@ -112,8 +113,6 @@ public class CoreSchema implements ISchema
             C_OA_FLAGS    = "o_l",          // int
             // local attributes. never transmitted through wire
             C_OA_FID      = "o_f",          // blob. file id (i.e. i-node number)
-            C_OA_SYNC     = "o_st",         // blob. syncstatus bitvector
-            C_OA_AG_SYNC  = "o_as",         // blob. aggregate sync status (folder only)
 
             // Content Attributes
             T_CA            = "c",
@@ -123,6 +122,9 @@ public class CoreSchema implements ISchema
             C_CA_LENGTH     = "c_l",        // long
             C_CA_HASH       = "c_h",        // SHA-256
             C_CA_MTIME      = "c_t",        // mtime in ms, long
+            // This deprecated fields are still in old databases. See DPUTClearSyncStatusColumns
+            // C_OA_SYNC     = "o_st",      // blob. syncstatus bitvector
+            // C_OA_AG_SYNC  = "o_as",      // blob. aggregate sync status (folder only)
 
             // Max ticks
             T_MAXTICK          = "t",
@@ -188,9 +190,10 @@ public class CoreSchema implements ISchema
             // Epoch Table (ACL, SyncStatus, ...) (one row only)
             T_EPOCH             = "ep",
             C_EPOCH_ACL         = "ep_ep",     // acl epoch
-            C_EPOCH_SYNC_PULL   = "ep_s",      // sync status pull epoch (server-issued)
-            C_EPOCH_SYNC_PUSH   = "ep_a",      // index of last local activity pushed to server
             C_EPOCH_AUDIT_PUSH  = "ep_dp",     // index of last activity log entry pushed to the auditor
+            // This deprecated fields are still in old databases. See DPUTClearSyncStatusColumns
+            // C_EPOCH_SYNC_PULL   = "ep_s",   // sync status pull epoch (server-issued)
+            // C_EPOCH_SYNC_PUSH   = "ep_a",   // index of last local activity pushed to server
 
             // Activity Log Table. See IActivityLogDatabase.ActivityRow for field details.
             T_AL             = "ao",
@@ -514,22 +517,16 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_EPOCH + " (" +
                         C_EPOCH_ACL        + dbcw.longType() + " not null," +
-                        C_EPOCH_SYNC_PULL  + dbcw.longType() + " not null," +
-                        C_EPOCH_SYNC_PUSH  + dbcw.longType() + " not null," +
                         C_EPOCH_AUDIT_PUSH + dbcw.longType() + " not null" +
                         ")" + dbcw.charSet());
         s.executeUpdate(
                 "insert into " + T_EPOCH +
                         " (" +
                             C_EPOCH_ACL + "," +
-                            C_EPOCH_SYNC_PULL + "," +
-                            C_EPOCH_SYNC_PUSH + "," +
                             C_EPOCH_AUDIT_PUSH +
                         ")" +
                         " values("+
                             LibParam.INITIAL_ACL_EPOCH + "," +
-                            LibParam.INITIAL_SYNC_PULL_EPOCH + "," +
-                            LibParam.INITIAL_SYNC_PUSH_EPOCH + "," +
                             LibParam.INITIAL_AUDIT_PUSH_EPOCH +
                         ")");
 
@@ -553,8 +550,6 @@ public class CoreSchema implements ISchema
                         C_OA_TYPE + " integer not null, " +
                         C_OA_FID + dbcw.fidType(dr.getFIDLength()) + "," +
                         C_OA_FLAGS + " integer not null," +
-                        C_OA_SYNC + " blob," +
-                        C_OA_AG_SYNC + " blob," +
                         "primary key (" + C_OA_SIDX + "," + C_OA_OID + ")" +
                         ")" + dbcw.charSet());
 
@@ -592,7 +587,6 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_STORE + "(" +
                         C_STORE_SIDX + " integer primary key," +
-                        C_STORE_DIDS + " blob," +
                         C_STORE_NAME + dbcw.nameType() +
                         ")" + dbcw.charSet());
 
