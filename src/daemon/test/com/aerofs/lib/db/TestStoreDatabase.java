@@ -74,4 +74,19 @@ public class TestStoreDatabase extends AbstractTest
         for (SIndex sidx : sidxs) assertTrue(sidx.equals(sidx2));
     }
 
+
+    @Test
+    public void collectingContent_shouldWorkAsExpected()
+            throws SQLException
+    {
+        db.insert_(sidx, "", t);
+
+        // by default content collection is enabled
+        assertTrue(db.isCollectingContent_(sidx));
+
+        db.setCollectingContent_(sidx, false, t);
+        assertFalse(db.isCollectingContent_(sidx));
+        db.setCollectingContent_(sidx, true, t);
+        assertTrue(db.isCollectingContent_(sidx));
+    }
 }

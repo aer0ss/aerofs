@@ -21,7 +21,8 @@ public class CoreSchema implements ISchema
             // Stores
             T_STORE         = "s",
             C_STORE_SIDX    = "s_i",        // SIndex
-            C_STORE_NAME    = "s_n",        // name
+            C_STORE_NAME    = "s_n",        // String
+            C_STORE_COLLECTING_CONTENT = "s_c", // boolean
             // This deprecated field is still in old databases. See DPUTClearSyncStatusColumns
             // C_STORE_DIDS    = "s_d",     // concatenated DIDs
 
@@ -587,7 +588,8 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_STORE + "(" +
                         C_STORE_SIDX + " integer primary key," +
-                        C_STORE_NAME + dbcw.nameType() +
+                        C_STORE_NAME + dbcw.nameType() + "," +
+                        C_STORE_COLLECTING_CONTENT + dbcw.boolType() + " not null" +
                         ")" + dbcw.charSet());
 
         s.executeUpdate(

@@ -65,11 +65,12 @@ public class Collector implements IDumpStatMisc
         private final TransManager _tm;
         private final ExponentialRetry _er;
         private final Downloads _dls;
+        private final CollectorIterator.Factory _factIter;
 
         @Inject
         public Factory(CoreScheduler sched, ICollectorSequenceDatabase csdb, CollectorSkipRule csr,
                 Downloads dls, TransManager tm, CoreExponentialRetry cer,
-                ICollectorFilterDatabase cfdb)
+                ICollectorFilterDatabase cfdb, CollectorIterator.Factory factIter)
         {
             _sched = sched;
             _csdb = csdb;
@@ -78,9 +79,11 @@ public class Collector implements IDumpStatMisc
             _tm = tm;
             _er = cer;
             _dls = dls;
+            _factIter = factIter;
         }
 
         public Collector create_(SIndex sidx)
+                throws SQLException
         {
             return new Collector(this, sidx);
         }
@@ -89,11 +92,12 @@ public class Collector implements IDumpStatMisc
     private final Factory _f;
 
     private Collector(Factory f, SIndex sidx)
+            throws SQLException
     {
         _f = f;
         _sidx = sidx;
         _cfs = new CollectorFilters(f._cfdb, f._tm, sidx);
-        _it = new CollectorIterator(f._csdb, f._csr, sidx);
+        _it = f._factIter.create_(sidx);
         resetBackoffInterval_();
     }
 
@@ -155,17 +159,19 @@ public class Collector implements IDumpStatMisc
     /**
      * A facade method to hide implementation detail from the caller
      */
-    public boolean includeContent_()
+    public boolean includeContent_(Trans t)
+            throws SQLException
     {
-        return _it.includeContent_();
+        return _it.includeContent_(t);
     }
 
     /**
      * A facade method to hide implementation detail from the caller
      */
-    public boolean excludeContent_()
+    public boolean excludeContent_(Trans t)
+            throws SQLException
     {
-        return _it.excludeContent_();
+        return _it.excludeContent_(t);
     }
 
     /**

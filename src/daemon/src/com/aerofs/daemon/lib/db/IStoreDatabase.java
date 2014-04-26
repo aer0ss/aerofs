@@ -22,7 +22,7 @@ public interface IStoreDatabase
 
     String getName_(SIndex sidx) throws SQLException;
 
-    void setName_(SIndex sidx, String name) throws SQLException;
+    void setName_(SIndex sidx, String name, Trans t) throws SQLException;
 
     void insert_(SIndex sidx, String name, Trans t) throws SQLException;
 

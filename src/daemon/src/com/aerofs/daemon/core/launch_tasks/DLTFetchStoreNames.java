@@ -94,7 +94,7 @@ class DLTFetchStoreNames extends DaemonLaunchTask
                 SIndex sidx = _sid2sidx.getNullable_(sid);
 
                 if (sidx != null) {
-                    _sdb.setName_(sidx, store.getName());
+                    _sdb.setName_(sidx, store.getName(), t);
                 }
             }
 

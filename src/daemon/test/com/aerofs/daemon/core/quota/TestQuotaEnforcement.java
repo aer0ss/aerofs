@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.quota;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
@@ -88,10 +87,6 @@ public class TestQuotaEnforcement extends AbstractTest
             sidxs[i] = new SIndex(i);
             sids[i] = SID.generate();
             ss[i] = mock(Store.class);
-            Collector c = mock(Collector.class);
-            when(c.includeContent_()).thenReturn(true);
-            when(c.excludeContent_()).thenReturn(true);
-            when(ss[i].collector()).thenReturn(c);
         }
 
         // Mock store management
@@ -181,8 +176,7 @@ public class TestQuotaEnforcement extends AbstractTest
                         .build());
         quota.start_();
 
-        verify(ss[0].collector()).includeContent_();
-        verify(ss[0]).resetCollectorFiltersForAllDevices_(any(Trans.class));
+        verify(ss[0]).startCollectingContent_(any(Trans.class));
 
         buildSPReply(PBStoreShouldCollect.newBuilder()
                         .setSid(sids[0].toPB())
@@ -191,7 +185,7 @@ public class TestQuotaEnforcement extends AbstractTest
         );
         quota.start_();
 
-        verify(ss[0].collector()).excludeContent_();
+        verify(ss[0]).stopCollectingContent_(any(Trans.class));
     }
 
     @Test
@@ -219,7 +213,7 @@ public class TestQuotaEnforcement extends AbstractTest
         quota.start_();
 
         // Verify that stores not mentioned in the reply weren't looked after.
-        verify(ss[0].collector(), never()).excludeContent_();
-        verify(ss[0].collector(), never()).includeContent_();
+        verify(ss[0], never()).stopCollectingContent_(any(Trans.class));
+        verify(ss[0], never()).startCollectingContent_(any(Trans.class));
     }
 }

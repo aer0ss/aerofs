@@ -162,8 +162,8 @@ public class QuotaEnforcement implements IQuotaEnforcement
     }
 
     /**
-     * Turn on or off content collection on all the stores. A 'true' value in the map turns on
-     * content collection on the corresponding store.
+     * Turn on or off content collection for all the stores mentioned in the parameter. A 'true'
+     * value in the parameter turns on content collection on the corresponding store.
      */
     private void toggleContentCollection_(Map<SID, Boolean> sid2bool)
             throws SQLException
@@ -172,42 +172,19 @@ public class QuotaEnforcement implements IQuotaEnforcement
         try {
             for (Entry<SID, Boolean> en : sid2bool.entrySet()) {
                 SID sid = new SID(en.getKey());
-                if (en.getValue()) includeContent_(sid, t);
-                else excludeContent_(sid);
+                Store s = getStoreNullable_(sid);
+                if (s == null) continue;
+
+                if (en.getValue()) {
+                    s.startCollectingContent_(t);
+                } else {
+                    s.stopCollectingContent_(t);
+                }
             }
             t.commit_();
         } finally {
             t.end_();
         }
-    }
-
-    /**
-     * Nop if the store is not present locally (due to deletion during the SP call) or the content
-     * is already being collected.
-     */
-    private void includeContent_(SID sid, Trans t)
-            throws SQLException
-    {
-        Store s = getStoreNullable_(sid);
-        if (s == null) return;
-
-        if (s.collector().includeContent_()) {
-            // Well, since we've skipped all the content components in the collector queue, reset
-            // filters so we can start collecting them.
-            s.resetCollectorFiltersForAllDevices_(t);
-        }
-    }
-
-    /**
-     * Nop if the store is not present locally (due to deletion during the SP call) or the content
-     * is already excluded from collection.
-     */
-    private void excludeContent_(SID sid)
-    {
-        Store s = getStoreNullable_(sid);
-        if (s == null) return;
-
-        s.collector().excludeContent_();
     }
 
     private @Nullable Store getStoreNullable_(SID sid)

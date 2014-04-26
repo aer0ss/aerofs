@@ -32,6 +32,7 @@ import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IAliasDatabase;
 import com.aerofs.daemon.lib.db.IAuditDatabase;
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
+import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.IExpulsionDatabase;
@@ -105,6 +106,7 @@ public class CoreModule extends AbstractModule
         bind(ISenderFilterDatabase.class).to(SenderFilterDatabase.class);
         bind(ISIDDatabase.class).to(SIDDatabase.class);
         bind(IStoreDatabase.class).to(StoreDatabase.class);
+        bind(ICollectorStateDatabase.class).to(StoreDatabase.class);
         bind(IStoreContributorsDatabase.class).to(StoreContributorsDatabase.class);
         bind(IACLDatabase.class).to(ACLDatabase.class);
         bind(IActivityLogDatabase.class).to(ActivityLogDatabase.class);

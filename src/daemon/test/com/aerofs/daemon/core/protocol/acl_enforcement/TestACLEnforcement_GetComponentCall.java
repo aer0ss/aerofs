@@ -125,7 +125,7 @@ public class TestACLEnforcement_GetComponentCall extends AbstractTest
         try {
             caller._gcc.remoteRequestComponent_(_socid, DID.generate(), mock(Token.class));
             fail();
-        } catch (ExNoPerm e) {}
+        } catch (ExNoPerm ignored) {}
     }
 
     private void connectCallerToReplier()

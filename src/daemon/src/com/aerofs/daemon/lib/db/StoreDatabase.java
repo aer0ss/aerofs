@@ -2,6 +2,7 @@ package com.aerofs.daemon.lib.db;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import static com.aerofs.lib.db.DBUtil.*;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -25,7 +26,8 @@ import com.google.inject.Inject;
  * TODO split this giant class into smaller ones with better defined responsibilities, similar to
  * what we have done for, say, IVersionDatabase, IAliasDatabase, etc.
  */
-public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
+public class StoreDatabase extends AbstractDatabase
+        implements IStoreDatabase, ICollectorStateDatabase
 {
     @Inject
     public StoreDatabase(CoreDBCW dbcw)
@@ -55,50 +57,78 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         }
     }
 
-    private PreparedStatement _psGN;
+    private PreparedStatementWrapper _pswGN = new PreparedStatementWrapper();
     @Override
     public String getName_(SIndex sidx) throws SQLException
     {
         try {
-            if (_psGN == null) {
-                _psGN = c().prepareStatement(selectWhere(T_STORE, C_STORE_SIDX + "=?",
-                        C_STORE_NAME));
-            }
-
-            _psGN.setInt(1, sidx.getInt());
-            ResultSet rs = _psGN.executeQuery();
+            PreparedStatement ps = _pswGN.get(c(), selectWhere(T_STORE, C_STORE_SIDX + "=?",
+                    C_STORE_NAME));
+            ps.setInt(1, sidx.getInt());
+            ResultSet rs = ps.executeQuery();
             try {
-                Util.verify(rs.next());
+                checkState(rs.next());
                 String name = rs.getString(1);
                 return name != null ? name : "";
             } finally {
                 rs.close();
             }
         } catch (SQLException e) {
-            DBUtil.close(_psGN);
-            _psGN = null;
+            _pswGN.close();
             throw detectCorruption(e);
         }
     }
 
-    private PreparedStatement _psSN;
+    private PreparedStatementWrapper _pswSN = new PreparedStatementWrapper();
     @Override
-    public void setName_(SIndex sidx, String name) throws SQLException
+    public void setName_(SIndex sidx, String name, Trans t) throws SQLException
     {
         try {
-            if (_psSN == null) {
-                _psSN = c().prepareStatement(updateWhere(T_STORE, C_STORE_SIDX + "=?",
+            PreparedStatement ps = _pswSN.get(c(), updateWhere(T_STORE, C_STORE_SIDX + "=?",
                         C_STORE_NAME));
-            }
-
-            _psSN.setString(1, name);
-            _psSN.setInt(2, sidx.getInt());
-
-            int rows = _psSN.executeUpdate();
-            Util.verify(rows == 1);
+            ps.setString(1, name);
+            ps.setInt(2, sidx.getInt());
+            checkState(ps.executeUpdate() == 1);
         } catch (SQLException e) {
-            DBUtil.close(_psSN);
-            _psSN = null;
+            _pswSN.close();
+            throw detectCorruption(e);
+        }
+    }
+
+    private PreparedStatementWrapper _pswGCC = new PreparedStatementWrapper();
+    @Override
+    public boolean isCollectingContent_(SIndex sidx) throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswGCC.get(c(), selectWhere(T_STORE, C_STORE_SIDX + "=?",
+                        C_STORE_COLLECTING_CONTENT));
+            ps.setInt(1, sidx.getInt());
+            ResultSet rs = ps.executeQuery();
+            try {
+                checkState(rs.next());
+                return rs.getBoolean(1);
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            _pswGCC.close();
+            throw detectCorruption(e);
+        }
+    }
+
+    private PreparedStatementWrapper _pswSCC = new PreparedStatementWrapper();
+    @Override
+    public void setCollectingContent_(SIndex sidx, boolean collectingContent, Trans t)
+            throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswSCC.get(c(), updateWhere(T_STORE, C_STORE_SIDX + "=?",
+                        C_STORE_COLLECTING_CONTENT));
+            ps.setBoolean(1, collectingContent);
+            ps.setInt(2, sidx.getInt());
+            checkState(ps.executeUpdate() == 1);
+        } catch (SQLException e) {
+            _pswSCC.close();
             throw detectCorruption(e);
         }
     }
@@ -161,11 +191,14 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
     {
         try {
             if (_psAdd == null) {
-                _psAdd = c().prepareStatement(insert(T_STORE, C_STORE_SIDX, C_STORE_NAME));
+                _psAdd = c().prepareStatement(insert(T_STORE, C_STORE_SIDX, C_STORE_NAME,
+                        C_STORE_COLLECTING_CONTENT));
             }
 
             _psAdd.setInt(1, sidx.getInt());
             _psAdd.setString(2, name);
+            // Collect content by default
+            _psAdd.setBoolean(3, true);
             Util.verify(_psAdd.executeUpdate() == 1);
         } catch (SQLException e) {
             DBUtil.close(_psAdd);

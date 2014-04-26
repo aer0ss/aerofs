@@ -5,6 +5,8 @@
 package com.aerofs.daemon.core.collector;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
+import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -16,6 +18,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -48,14 +51,14 @@ class CollectorIterator
     // retarded boxing... I miss good old C/C++
     static final int SHRINK_THRESHOLD = 2000;
 
-    private final CollectorSkipRule _csr;
-    private final ICollectorSequenceDatabase _csdb;
+    private final Factory _f;
+
     private final SIndex _sidx;
 
     // The collector queue cache. See the class-level comment.
     private final ArrayList<OCIDAndCS> _seq = Lists.newArrayList();
 
-    private boolean _isContentIncluded = true;
+    private boolean _isContentIncluded;
 
     private @Nullable OCIDAndCS _current;
 
@@ -67,11 +70,34 @@ class CollectorIterator
     // Whether to clear {@link #_seq} on the next {@link #reset_()} call
     private boolean _clearOnReset;
 
-    CollectorIterator(ICollectorSequenceDatabase csdb, CollectorSkipRule csr, SIndex sidx)
+    public static class Factory {
+
+        private final ICollectorSequenceDatabase _csdb;
+        private final CollectorSkipRule _csr;
+        private final ICollectorStateDatabase _cidb;
+
+        @Inject
+        public Factory(ICollectorSequenceDatabase csdb, CollectorSkipRule csr,
+                ICollectorStateDatabase cidb)
+        {
+            _csdb = csdb;
+            _cidb = cidb;
+            _csr = csr;
+        }
+
+        CollectorIterator create_(SIndex sidx)
+                throws SQLException
+        {
+            return new CollectorIterator(this, sidx);
+        }
+    }
+
+    private CollectorIterator(Factory f, SIndex sidx)
+            throws SQLException
     {
-        _csr = csr;
-        _csdb = csdb;
+        _f = f;
         _sidx = sidx;
+        _isContentIncluded = f._cidb.isCollectingContent_(sidx);
     }
 
     /**
@@ -131,9 +157,9 @@ class CollectorIterator
 
         while (hasNext_()) {
             _current = _seq.get(_next);
-            if (!_csr.shouldSkip_(new SOCID(_sidx, _current._ocid))) break;
+            if (!_f._csr.shouldSkip_(new SOCID(_sidx, _current._ocid))) break;
             // TODO: batch CS deletion whenever possible
-            _csdb.deleteCS_(current_()._cs, t);
+            _f._csdb.deleteCS_(current_()._cs, t);
             ++_discardable;
             ++_next;
         }
@@ -179,12 +205,24 @@ class CollectorIterator
      *
      * @return whether the content was excluded before this call
      */
-    boolean includeContent_()
+    boolean includeContent_(Trans t)
+            throws SQLException
     {
         if (_isContentIncluded) return false;
         l.info("include content for store {}", _sidx);
         clearCache_();
+        _f._cidb.setCollectingContent_(_sidx, true, t);
+
+        // Set the flag, and roll it back if the transaction fails.
         _isContentIncluded = true;
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void aborted_()
+            {
+                _isContentIncluded = false;
+            }
+        });
+
         return true;
     }
 
@@ -193,12 +231,24 @@ class CollectorIterator
      *
      * @return whether the content was included before this call
      */
-    boolean excludeContent_()
+    boolean excludeContent_(Trans t)
+            throws SQLException
     {
         if (!_isContentIncluded) return false;
         l.info("exclude content for store {}", _sidx);
         clearCache_();
+        _f._cidb.setCollectingContent_(_sidx, false, t);
+
+        // Set the flag, and roll it back if the transaction fails.
         _isContentIncluded = false;
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void aborted_()
+            {
+                _isContentIncluded = true;
+            }
+        });
+
         return true;
     }
 
@@ -215,8 +265,8 @@ class CollectorIterator
 
         CollectorSeq cs = _current != null ? _current._cs : null;
         IDBIterator<OCIDAndCS> it = _isContentIncluded ?
-                _csdb.getCS_(_sidx, cs, FETCH_SIZE) :
-                _csdb.getMetaCS_(_sidx, cs, FETCH_SIZE);
+                _f._csdb.getCS_(_sidx, cs, FETCH_SIZE) :
+                _f._csdb.getMetaCS_(_sidx, cs, FETCH_SIZE);
         _seq.ensureCapacity(_seq.size() + FETCH_SIZE);
         try {
             while (it.next_()) {

@@ -80,6 +80,7 @@ public class DaemonPostUpdateTasks
             new DPUTUpdateCAHash(dbcw),
             new DPUTClearSyncStatusColumns(dbcw),
             new DPUTFixStoreContributors(dbcw),
+            new DPUTAddStoreCollectingContentColumn(dbcw),
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 

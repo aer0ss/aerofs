@@ -61,12 +61,12 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     private Store(Factory f, SIndex sidx) throws SQLException
     {
-        _f = f;
         _sidx = sidx;
-        _collector = _f._factCollector.create_(sidx);
-        _senderFilters = _f._factSF.create_(sidx);
-        _dp = _f._dp;
+        _collector = f._factCollector.create_(sidx);
+        _senderFilters = f._factSF.create_(sidx);
+        _dp = f._dp;
         _isDeleted = false;
+        _f = f;
     }
 
     public Collector collector()
@@ -183,6 +183,25 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     public void startAntiEntropy_()
     {
         _f._ae.start_(_sidx);
+    }
+
+    /**
+     * Include content components in future collection by the collector
+     */
+    public void startCollectingContent_(Trans t)
+            throws SQLException
+    {
+        if (collector().includeContent_(t)) {
+            // Well, since we've skipped all the content components in the collector queue, reset
+            // filters so we can start collecting them.
+            resetCollectorFiltersForAllDevices_(t);
+        }
+    }
+
+    public void stopCollectingContent_(Trans t)
+            throws SQLException
+    {
+        collector().excludeContent_(t);
     }
 
     /**

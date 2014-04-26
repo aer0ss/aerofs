@@ -8,7 +8,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.collector.Collector.Factory;
 import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
 import com.aerofs.daemon.core.transfers.download.Downloads;
 import com.aerofs.daemon.core.store.Store;
@@ -16,8 +15,10 @@ import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.daemon.lib.db.CollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.CollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
+import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.ITransListener;
+import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
@@ -35,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.mockito.verification.VerificationMode;
@@ -55,23 +57,74 @@ import static org.mockito.Mockito.when;
 
 public class TestCollector extends AbstractTest
 {
+    InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
+    @Spy ICollectorFilterDatabase cfdb = new CollectorFilterDatabase(idbcw.getCoreDBCW());
+    @Spy ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(idbcw.getCoreDBCW());
+    @Spy ICollectorStateDatabase cidb = new StoreDatabase(idbcw.getCoreDBCW());
+
     @Mock Trans t;
     @Mock TransManager tm;
-
     @Mock CoreScheduler sched;
-    @InjectMocks CoreExponentialRetry er;
-
     @Mock CollectorSkipRule csr;
     @Mock Downloads dls;
 
-    InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
-    ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(idbcw.getCoreDBCW());
+    @InjectMocks CoreExponentialRetry er;
+    @InjectMocks CollectorIterator.Factory factIter;
 
     Collector collector;
 
     SIndex sidx = new SIndex(1);
     DID d0 = DID.generate();
     DID d1 = DID.generate();
+
+    @Before
+    public void setUp() throws Exception
+    {
+        AppRoot.set("dummy");
+
+        idbcw.init_();
+
+        when(tm.begin_()).thenReturn(t);
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable
+            {
+                ((ITransListener)invocation.getArguments()[0]).committed_();
+                return null;
+            }
+        }).when(t).addListener_(any(ITransListener.class));
+
+        doAnswer(new Answer<Void>()
+        {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                l.info("sched");
+                ((AbstractEBSelfHandling)invocation.getArguments()[0]).handle_();
+                return null;
+            }
+        }).when(sched).schedule(any(IEvent.class), anyLong());
+
+        Store store = mock(Store.class);
+        when(store.sidx()).thenReturn(sidx);
+
+        new StoreDatabase(idbcw.getCoreDBCW()).insert_(sidx, "", t);
+
+
+        Collector.Factory fact = new Collector.Factory(sched, csdb, csr, dls, tm, er, cfdb,
+                factIter);
+        collector = fact.create_(sidx);
+
+        // test device online by default
+        collector.online_(d0);
+    }
+
+    @After
+    public void tearDown() throws Exception
+    {
+        idbcw.fini_();
+    }
 
     /**
      * simulate the effect of receiving a new tick about an object:
@@ -111,54 +164,7 @@ public class TestCollector extends AbstractTest
     private void verifyDownloadRequest(SOCID socid, VerificationMode mode, DID... dids)
     {
         verify(dls, mode).downloadAsync_(eq(socid), eq(ImmutableSet.copyOf(dids)),
-                any(ITokenReclamationListener.class),
-                any(IDownloadCompletionListener.class));
-    }
-
-    @Before
-    public void setUp() throws Exception
-    {
-        AppRoot.set("dummy");
-
-        idbcw.init_();
-
-        when(tm.begin_()).thenReturn(t);
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                ((ITransListener)invocation.getArguments()[0]).committed_();
-                return null;
-            }
-        }).when(t).addListener_(any(ITransListener.class));
-
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                l.info("sched");
-                ((AbstractEBSelfHandling)invocation.getArguments()[0]).handle_();
-                return null;
-            }
-        }).when(sched).schedule(any(IEvent.class), anyLong());
-
-        Store store = mock(Store.class);
-        when(store.sidx()).thenReturn(sidx);
-
-        ICollectorFilterDatabase cfdb = new CollectorFilterDatabase(idbcw.getCoreDBCW());
-
-        collector = new Factory(sched, csdb, csr, dls, tm, er, cfdb).create_(sidx);
-
-        // test device online by default
-        collector.online_(d0);
-    }
-
-    @After
-    public void tearDown() throws Exception
-    {
-        idbcw.fini_();
+                any(ITokenReclamationListener.class), any(IDownloadCompletionListener.class));
     }
 
     @Test

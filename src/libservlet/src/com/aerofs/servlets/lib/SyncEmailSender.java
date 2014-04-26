@@ -12,6 +12,10 @@ import javax.mail.MessagingException;
 import javax.mail.Session;
 import java.util.concurrent.Future;
 
+/**
+ * Avoid using this class unless you absolutely need to make sure the email is delivered to the
+ * SMTP server which should be a rare case. Use {@link AsyncEmailSender} instead.
+ */
 public class SyncEmailSender extends AbstractEmailSender
 {
     public SyncEmailSender(String host, String port, String username, String password,
