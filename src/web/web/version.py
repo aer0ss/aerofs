@@ -20,8 +20,7 @@ def get_private_version():
     # cache the value to avoid frequent reads
     if not _private_version:
         with open("/opt/repackaging/installers/original/current.ver") as f:
-            version_line = f.readline().rstrip()
-            _, _private_version = version_line.split("=", 1)
+            _private_version = _parse_version(f.readline())
 
     return _private_version
 
@@ -40,7 +39,7 @@ def get_public_version(settings):
     if time.time() - _public_last_refresh > 60:
         r = requests.get(settings['installer.prefix'] + '/current.ver')
         if r.ok:
-            _, _public_version = r.text.strip().split("=", 1)
+            _public_version = _parse_version(r.text)
             _public_last_refresh = time.time()
         elif _public_version:
             ## Use the old value if there is any
@@ -51,3 +50,12 @@ def get_public_version(settings):
                 r.status_code))
 
     return _public_version
+
+
+def _parse_version(string):
+    """
+    Given a string in the form of "Version=1.2.3" (leading & trailing whitespace allowed), return
+    the version string ("1.2.3")
+    """
+    _, version = string.strip().split("=", 1)
+    return version
