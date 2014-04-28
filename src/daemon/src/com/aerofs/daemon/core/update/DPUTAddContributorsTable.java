@@ -19,9 +19,6 @@ import java.util.Set;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
-/**
- *
- */
 public class DPUTAddContributorsTable implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
@@ -40,11 +37,15 @@ public class DPUTAddContributorsTable implements IDaemonPostUpdateTask
             {
                 CoreSchema.createStoreContributorsTable(s, _dbcw);
                 fillContributorsTable(s, _dbcw);
+
+                // now that the contributors table is ready we can cleanup the old
+                // index whose only purpose was to speed up getAllVersionDIDs
+                deleteVersionIndex(s);
             }
         });
     }
 
-    private static void fillContributorsTable(Statement s, IDBCW dbcw) throws SQLException
+    static void fillContributorsTable(Statement s, IDBCW dbcw) throws SQLException
     {
         Map<Integer, Set<DID>> contrib = Maps.newHashMap();
 
@@ -63,18 +64,14 @@ public class DPUTAddContributorsTable implements IDaemonPostUpdateTask
             }
             ps.executeBatch();
         }
-
-        // now that the contributors table is ready we can cleanup the old
-        // index whose only purpose was to speed up getAllVersionDIDs
-        deleteVersionIndex(s);
     }
 
     private static void fetchContributors(Statement s, Map<Integer, Set<DID>> contrib,
             String t, String c_sidx, String c_did) throws SQLException
     {
-
-        ResultSet rs = s.executeQuery(DBUtil.select(t, c_sidx, c_did)
-                + " group by " + c_sidx);
+        ResultSet rs = s.executeQuery("select distinct "
+                + c_sidx + "," + c_did
+                + " from " + t);
 
         try {
             while (rs.next()) {

@@ -79,6 +79,7 @@ public class DaemonPostUpdateTasks
             new DPUTUpdateSharedFoldersQueueTable(dbcw),
             new DPUTUpdateCAHash(dbcw),
             new DPUTClearSyncStatusColumns(dbcw),
+            new DPUTFixStoreContributors(dbcw),
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 
