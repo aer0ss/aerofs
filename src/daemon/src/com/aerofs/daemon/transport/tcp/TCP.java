@@ -123,7 +123,7 @@ public class TCP implements ITransport, IAddressResolver
         multicast.setStores(stores);
 
         // unicast
-        this.unicast = new Unicast(this);
+        this.unicast = new Unicast(this, this);
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);

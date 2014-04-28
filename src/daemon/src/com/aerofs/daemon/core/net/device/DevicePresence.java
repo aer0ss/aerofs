@@ -38,13 +38,27 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * DevicePresence is responsible for managing the list of potentially-available devices,
+ * mapping those to stores, and detecting edge transitions.
+ *
+ * "Edge transition": device or store goes from offline to online (or vice versa).
+ *
+ * Incoming notifications:
+ *  - online/offline (come from HdPresence only)
+ *  - pulse started (RPC / TRL)
+ *  - pulse stopped (HdPulseStopped)
+ *
+ * Outgoing notifications:
+ *  - notify Store of OPM
+ *  - EOUpdateStores (I don't understand this)
+ */
 // FIXME: what is the expected multiplicity of this class. Singleton would be super convenient.
 // FIXME: what concurrency access controls are wrapped around this class?
 public class DevicePresence implements IDiagnosable
@@ -54,7 +68,6 @@ public class DevicePresence implements IDiagnosable
     private final Map<DID, Device> _did2dev = Maps.newHashMap();
     // FIXME: sidx2opm can't contain empty OPMDevice objects; wrap this map in safe mutators
     private final Map<SIndex, OPMDevices> _sidx2opm = Maps.newHashMap();
-    private final List<IDevicePresenceListener> _listeners = Lists.newArrayList();
 
     private final Transports _tps;
     private final CoreScheduler _sched;
@@ -73,27 +86,6 @@ public class DevicePresence implements IDiagnosable
         _cer = cer;
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
-
-        addListener_(new IDevicePresenceListener()
-        {
-            @Override
-            public void deviceOnline_(DID did)
-            {
-                l.info("DPE +{}", did); // device presence edge
-
-            }
-
-            @Override
-            public void deviceOffline_(DID did)
-            {
-                l.info("DPE -{}", did); // device presence edge
-            }
-        });
-    }
-
-    public void addListener_(IDevicePresenceListener listener)
-    {
-        _listeners.add(listener);
     }
 
     public void online_(ITransport tp, DID did, Collection<SIndex> sidcs)
@@ -112,9 +104,7 @@ public class DevicePresence implements IDiagnosable
         onlineImpl_(dev, sidcsOnline);
 
         if (!wasFormerlyAvailable && dev.isAvailable_()) {
-            for (IDevicePresenceListener listener : _listeners) {
-                listener.deviceOnline_(did);
-            }
+            l.info("DPE +{}", did);
         }
     }
 
@@ -137,9 +127,7 @@ public class DevicePresence implements IDiagnosable
             boolean isNowAvailable)
     {
         if (!isNowAvailable && wasFormerlyAvailable) {
-            for (IDevicePresenceListener listener: _listeners) {
-                listener.deviceOffline_(did);
-            }
+            l.info("DPE -{}", did);
         }
     }
 
@@ -163,6 +151,7 @@ public class DevicePresence implements IDiagnosable
         }
     }
 
+    // FIXME: take an Endpoint instead
     public void startPulse_(ITransport tp, DID did)
     {
         Device dev = _did2dev.get(did);
@@ -204,6 +193,12 @@ public class DevicePresence implements IDiagnosable
         onlineImpl_(dev, sidcsOnline);
     }
 
+    /**
+     * This method is responsible for state changes resulting from a device becoming online.
+     *
+     *  - update opm
+     *  - call Store notifiers
+     */
     private void onlineImpl_(Device dev, Collection<SIndex> sidcs)
     {
         DID did = dev.did();

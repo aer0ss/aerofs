@@ -132,7 +132,7 @@ public class Jingle implements ITransport
 
         // unicast
         JingleAddressResolver resolver = new JingleAddressResolver(xmppServerDomain);
-        this.unicast = new Unicast(resolver);
+        this.unicast = new Unicast(resolver, this);
         linkStateService.addListener(unicast, sameThreadExecutor()); // can be notified on any thread since Unicast is thread-safe
 
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);

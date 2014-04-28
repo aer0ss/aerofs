@@ -9,6 +9,11 @@ import com.aerofs.base.id.DID;
 /**
  * Implemented by classes that want to be notified of
  * events from a transport unicast subsystem.
+ *
+ * FIXME: Two different use cases here that feel disjoint:
+ *      unicast ready / unavailable
+ *      device oneline / offline
+ * Pull into two interfaces?
  */
 public interface IUnicastListener
 {

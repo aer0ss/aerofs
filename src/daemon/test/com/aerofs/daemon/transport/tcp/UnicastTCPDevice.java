@@ -90,7 +90,8 @@ public final class UnicastTCPDevice
         StreamManager streamManager = new StreamManager();
         PulseManager pulseManager = new PulseManager();
 
-        unicast = new Unicast(addressResolver);
+        unicast = new Unicast(addressResolver, transport);
+        unicast.setUnicastListener(unicastListener);
         linkStateService.addListener(unicast, sameThreadExecutor());
 
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
@@ -126,7 +127,6 @@ public final class UnicastTCPDevice
         ServerBootstrap serverBootstrap = tcpBootstrapFactory.newServerBootstrap(serverSocketChannelFactory, serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = tcpBootstrapFactory.newClientBootstrap(clientSocketChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
-        unicast.setUnicastListener(unicastListener);
 
         linkStateService.markLinksUp();
         unicast.start(listeningAddress);

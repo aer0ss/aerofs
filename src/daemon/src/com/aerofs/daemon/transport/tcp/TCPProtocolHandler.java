@@ -54,11 +54,10 @@ final class TCPProtocolHandler extends SimpleChannelUpstreamHandler
         if (!(e.getMessage() instanceof TransportMessage)) return;
         final TransportMessage message = (TransportMessage) e.getMessage();
 
-        PBTPHeader reply = null;
-
         switch (message.getHeader().getType()) {
         case TCP_PING:
-            reply = stores.processPing(false);
+            PBTPHeader reply = stores.processPing(false);
+            if (reply != null) unicast.sendControl(message.getDID(), reply);
             break;
         case TCP_PONG:
             InetAddress remote = ((InetSocketAddress)e.getRemoteAddress()).getAddress();
@@ -71,11 +70,6 @@ final class TCPProtocolHandler extends SimpleChannelUpstreamHandler
             break;
         default: // unknown control message, pass it on
             ctx.sendUpstream(e);
-            return;
-        }
-
-        if (reply != null) {
-            unicast.sendControl(message.getDID(), reply);
         }
     }
 }

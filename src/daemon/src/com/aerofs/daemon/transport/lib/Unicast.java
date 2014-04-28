@@ -6,6 +6,7 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
+import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
@@ -14,9 +15,6 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.SortedSetMultimap;
-import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.Message;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -36,6 +34,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public final class Unicast implements ILinkStateListener, IUnicastInternal, IIncomingChannelListener
@@ -43,21 +42,22 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
     private final Random random = new Random();
-    private final SortedSetMultimap<DID, Channel> channels = Multimaps.synchronizedSortedSetMultimap(TreeMultimap.<DID, Channel>create());
     private final IAddressResolver addressResolver;
 
     private ServerBootstrap serverBootstrap;
     private ClientBootstrap clientBootstrap;
     private IUnicastListener unicastListener;
+    private ChannelDirectory directory;
 
     private Channel serverChannel;
     private volatile boolean paused;
     private volatile boolean running;
     private volatile boolean reuseChannels = true;
 
-    public Unicast(IAddressResolver addressResolver)
+    public Unicast(IAddressResolver addressResolver, ITransport transport)
     {
         this.addressResolver = addressResolver;
+        this.directory = new ChannelDirectory(transport);
     }
 
     // NOTE: these fields cannot be final due to a
@@ -77,6 +77,8 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
     public void setUnicastListener(IUnicastListener unicastListener)
     {
         this.unicastListener = unicastListener;
+        // FIXME(jP): ugh, spreading state. How do we make this go away?
+        directory.setUnicastListener(unicastListener);
     }
 
     public void start(SocketAddress address)
@@ -116,6 +118,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         if (!running) return;
 
         boolean becameLinkDown = !previous.isEmpty() && current.isEmpty();
+        // more edge detection: zero to any links, any to zero links.
 
         if (becameLinkDown) {
             synchronized (this) {
@@ -134,8 +137,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
 
     private void disconnectAll(Exception cause)
     {
-        ImmutableSet<DID> dids = ImmutableSet.copyOf(channels.keySet());
-        for (DID did : dids) {
+        for (DID did : directory.getActiveDevices()) {
             disconnect(did, cause);
         }
     }
@@ -172,8 +174,8 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
     @Override
     public void onIncomingChannel(final DID did, Channel channel)
     {
-        addChannelCloseFuture(did, channel);
-        channels.put(did, channel);
+        checkNotNull(directory);
+        directory.register(channel, did);
 
         // if we've paused syncing or have stopped the system, disconnect
         // NOTE: I do this after setting the close future above so that
@@ -198,7 +200,9 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         // use the presence of the DID, Channel pair in the map
         // to determine whether to notify listeners of a disconnection
         // or not
-        Set<Channel> active = getActiveChannels(did);
+        // NOTE: Well, we could use the removeAll() in multimap, and _then_ close the channels;
+        // same number of state transitions and arguably safer. FIXME(jP): prove this.
+        Set<Channel> active = directory.getSnapshot(did);
         for (Channel channel : active) {
             channel.getPipeline().get(MessageHandler.class).setDisconnectReason(cause);
             channel.close();
@@ -216,7 +220,6 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
     /**
      * Reuse an existing channel for outgoing messages if one exists.
      * This should <em>only</em> be used in unit tests.
-     *
      * @param reuseChannels set to true if channels should be reused, false otherwise.
      */
     void setReuseChannels(boolean reuseChannels)
@@ -247,7 +250,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
                 if (reuseChannels) { // we should pick an existing channel if there is one
                     // check if we've any channels
                     // to this did and simply pick one
-                    Set<Channel> active = getActiveChannels(did);
+                    Set<Channel> active = directory.getSnapshot(did);
                     if (!active.isEmpty()) {
                         channel = chooseActiveChannel(active);
                     }
@@ -285,6 +288,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         return channel;
     }
 
+    // FIXME: move to ChannelDirectory
     private Channel chooseActiveChannel(Set<Channel> active)
     {
         checkArgument(!active.isEmpty());
@@ -299,12 +303,6 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         }
 
         return chosenChannel;
-    }
-
-    private Set<Channel> getActiveChannels(DID did)
-    {
-        // take a copy to avoid a ConcurrentModificationException
-        return ImmutableSet.copyOf(channels.get(did));
     }
 
     public void sendControl(DID did, PBTPHeader h)
@@ -328,42 +326,22 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
 
         SocketAddress remoteAddress = addressResolver.resolve(did);
         final Channel channel = clientBootstrap.connect(remoteAddress).getChannel();
-        addChannelCloseFuture(did, channel);
 
         l.debug("{} created new channel", did);
 
         CNameVerifiedHandler verifiedHandler = channel.getPipeline().get(CNameVerifiedHandler.class);
         verifiedHandler.setExpectedRemoteDID(did);
-        channels.put(did, channel);
+        directory.register(channel, did);
 
         return channel;
     }
 
-    private void addChannelCloseFuture(final DID did, final Channel channel)
-    {
-        channel.getCloseFuture().addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture)
-                    throws Exception
-            {
-                // Remove only if its still the same client in the map.
-                if (channels.remove(did, channel)) {
-                    l.info("{} remove connection", did);
-
-                    if (!channels.containsKey(did)) {
-                        unicastListener.onDeviceDisconnected(did);
-                    }
-                }
-            }
-        });
-    }
 
     public Collection<Message> getChannelDiagnostics(DID did)
     {
         List<Message> diagnostics = Lists.newArrayList();
 
-        for (Channel channel : getActiveChannels(did)) {
+        for (Channel channel : directory.getSnapshot(did)) {
             IChannelDiagnosticsHandler handler = channel.getPipeline().get(IChannelDiagnosticsHandler.class);
             if (handler != null) {
                 diagnostics.add(handler.getDiagnostics(channel));

@@ -123,9 +123,8 @@ class Stores implements IStores, IDevicePresenceListener
         ImmutableSet<SID> sidsOnline = bd.build();
 
         if (l.isDebugEnabled()) {
-            l.debug("filter changed " + did + " " + filter + " " + filterInfo.getSequence() +
-                    " old " + (oldMembership == null ? null : oldMembership._filterSeqnum) +
-                    " " + sidsOnline);
+            l.debug("filter changed {} {} {} old {} {}", did, filter, filterInfo.getSequence(),
+                    (oldMembership == null ? null : oldMembership._filterSeqnum), sidsOnline);
         }
 
         PerDeviceStoreMembership newMembership = new PerDeviceStoreMembership(

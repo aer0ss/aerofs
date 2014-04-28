@@ -89,7 +89,7 @@ public class Device implements Comparable<Device>
     final private SortedMap<ITransport, TransportState> _tpsAvailable =
             new TreeMap<ITransport, TransportState>(Transports.PREFERENCE_COMPARATOR);
 
-    public Device(DID did)
+    Device(DID did)
     {
         _did = did;
     }

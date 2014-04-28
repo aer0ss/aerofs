@@ -120,6 +120,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _f._ae.request_(_sidx, did);
     }
 
+    /** Notifier called when a device becomes offline for this store. */
     public void notifyDeviceOffline(DID did) { _collector.offline_(did); }
 
     /**
