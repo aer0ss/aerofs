@@ -22,9 +22,6 @@ if [[ $# -ne 1 ]]; then
     exit $ERRBADARGS
 fi
 
-# single-quoted - we want $HOME expanded serverside
-DEPLOY_LOCKFILE='$HOME/deploy.lock'
-
 # The version file should have been produced by the packaging scripts.
 VERSION_FILE="$PACKAGE_DIR/$CURRENT_VER"
 if [[ ! -r "$VERSION_FILE" ]]; then
@@ -33,31 +30,10 @@ if [[ ! -r "$VERSION_FILE" ]]; then
 fi
 RELEASE_VERSION=$(cat "$VERSION_FILE" | cut -d = -f 2)
 # Check that the version string has the right format.
-if [[ ! $RELEASE_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+if [[ ! $RELEASE_VERSION =~ $RELEASE_VERSION_REGEX ]]; then
     echo "Expected version string matching <major>.<minor>.<build>, got '$RELEASE_VERSION'"
     exit $ERRBADVERSION
 fi
-
-function lock_release_server() {
-    echo "establishing deploy lock..."
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        if [ -f $DEPLOY_LOCKFILE ] ; then
-            echo "A deploy appears to be in progress already:"
-            cat $DEPLOY_LOCKFILE
-            echo "If you're sure that deploy has indeed been terminated:"
-            echo "    ssh $RELEASE_SERVER_LOGIN rm $DEPLOY_LOCKFILE"
-            exit 1
-        fi
-        lockfile-create --retry 1 --lock-name $DEPLOY_LOCKFILE && echo "Deploy started by $USER at:" >> $DEPLOY_LOCKFILE && date >> $DEPLOY_LOCKFILE && echo "for version $RELEASE_VERSION" >> $DEPLOY_LOCKFILE
-ENDCMDS
-    echo "locked $RELEASE_SERVER for deploy"
-}
-
-function unlock_release_server() {
-    echo "releasing deploy lock..."
-    kssh $RELEASE_SERVER_LOGIN "rm -f $DEPLOY_LOCKFILE"
-    echo "done"
-}
 
 # Uploads proguard map file to the servers that need it.
 function upload_map() {
@@ -84,27 +60,6 @@ function upload_packages_to_antivirus_firms() {
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         chmod a+x \$HOME/send_package_to_antivirus_firms.sh
         screen -d -m \$HOME/send_package_to_antivirus_firms.sh $INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/AeroFSInstall-$RELEASE_VERSION.exe
-ENDCMDS
-}
-
-# Using the version files in $PREFIX/release-versions/,
-# copy exactly the set of things that should exist on S3 into deploy-stage
-# and then use s3cmd to sync them to the bucket
-function publish_public_to_s3() {
-    declare DEPLOY_STAGE=$INSTALLERS_DOWNLOAD_DIR/deploy-stage/
-    ssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        rm -rf $DEPLOY_STAGE
-        mkdir -p $DEPLOY_STAGE
-        for version_file in $INSTALLERS_DOWNLOAD_DIR/release-versions/* ; do
-            foldername=\$(cat \$version_file | cut -d = -f 2)
-            cp -av $INSTALLERS_DOWNLOAD_DIR/\$foldername/* $DEPLOY_STAGE/
-        done
-        # Copy versions in last, since the versioned client folders may have
-        # current.ver and canary.ver files inside
-        for version_file in $INSTALLERS_DOWNLOAD_DIR/release-versions/* ; do
-            cp \$version_file $DEPLOY_STAGE/
-        done
-        s3cmd --follow-symlinks --acl-public --delete-removed --cf-invalidate sync "$DEPLOY_STAGE"/* $1
 ENDCMDS
 }
 
@@ -184,7 +139,7 @@ echo '+--------------------------'
 
 upload_map
 call exec_prepublish_checks $MODE $RELEASE_VERSION
-lock_release_server
+lock_release_server "deploying $MODE $RELEASE_VERSION"
 if is_public ; then
     upload_packages_to_release_server
     upload_packages_to_antivirus_firms

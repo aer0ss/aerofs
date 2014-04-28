@@ -303,6 +303,8 @@ function private_version_file_content() {
     wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PRIVATE}/${CURRENT_VER}
 }
 
+RELEASE_VERSION_REGEX="^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
 ###############################################################################
 #
 # Gets the current active version on S3, like "0.4.98"
@@ -315,8 +317,8 @@ function current_release_version() {
     local local_PRIVATE_VERSION_FILE_CONTENT="$( private_version_file_content )"
     local local_PUBLIC_VERSION="$( echo $local_PUBLIC_VERSION_FILE_CONTENT | sed -e 's/.*=//' )"
     local local_PRIVATE_VERSION="$( echo $local_PRIVATE_VERSION_FILE_CONTENT | sed -e 's/.*=//' )"
-    if [[ ! $local_PUBLIC_VERSION =~ [0-9]+\.[0-9]+\.[0-9]+ ||
-          ! $local_PRIVATE_VERSION =~ [0-9]+\.[0-9]+\.[0-9]+ ]];
+    if [[ ! $local_PUBLIC_VERSION =~ $RELEASE_VERSION_REGEX ||
+          ! $local_PRIVATE_VERSION =~ $RELEASE_VERSION_REGEX ]];
     then
         echo ""
         exit $ERRBADVERSION
@@ -439,6 +441,52 @@ function render_template() {
         "$1" > "$2"
 }
 
+# single-quoted - we want $HOME expanded serverside
+DEPLOY_LOCKFILE='$HOME/deploy.lock'
 
+# Creates a lockfile on the release server, to allow deploys to mutex each other.
+function lock_release_server() {
+    declare REASON="$1"
+    echo "establishing deploy lock..."
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        if [ -f $DEPLOY_LOCKFILE ] ; then
+            echo "A deploy appears to be in progress already:"
+            cat $DEPLOY_LOCKFILE
+            echo "If you're sure that deploy has indeed been terminated:"
+            echo "    ssh $RELEASE_SERVER_LOGIN rm $DEPLOY_LOCKFILE"
+            exit 1
+        fi
+        lockfile-create --retry 1 --lock-name $DEPLOY_LOCKFILE && echo "Deploy started by $USER at:" >> $DEPLOY_LOCKFILE && date >> $DEPLOY_LOCKFILE && echo "for reason $REASON" >> $DEPLOY_LOCKFILE
+ENDCMDS
+    echo "locked $RELEASE_SERVER for deploy"
+}
+
+# Deletes a lockfile from the release server, to allow another deploy to use it.
+function unlock_release_server() {
+    echo "releasing deploy lock..."
+    kssh $RELEASE_SERVER_LOGIN "rm -f $DEPLOY_LOCKFILE"
+    echo "done"
+}
+
+# Using the version files in $INSTALLERS_DOWNLOAD_DIR/release-versions/,
+# copy exactly the set of things that should exist on S3 into deploy-stage
+# and then use s3cmd to sync them to the bucket
+function publish_public_to_s3() {
+    declare DEPLOY_STAGE=$INSTALLERS_DOWNLOAD_DIR/deploy-stage/
+    ssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        rm -rf $DEPLOY_STAGE
+        mkdir -p $DEPLOY_STAGE
+        for version_file in $INSTALLERS_DOWNLOAD_DIR/release-versions/* ; do
+            foldername=\$(cat \$version_file | cut -d = -f 2)
+            cp -av $INSTALLERS_DOWNLOAD_DIR/\$foldername/* $DEPLOY_STAGE/
+        done
+        # Copy versions in last, since the versioned client folders may have
+        # current.ver and canary.ver files inside
+        for version_file in $INSTALLERS_DOWNLOAD_DIR/release-versions/* ; do
+            cp \$version_file $DEPLOY_STAGE/
+        done
+        s3cmd --follow-symlinks --acl-public --delete-removed --cf-invalidate sync "$DEPLOY_STAGE"/* $1
+ENDCMDS
+}
 
 fi # endif
