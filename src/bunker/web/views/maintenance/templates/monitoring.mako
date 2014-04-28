@@ -7,7 +7,7 @@
 <%namespace name="spinner" file="spinner.mako"/>
 <%namespace name="progress_modal" file="progress_modal.mako"/>
 
-<h2>Appliance monitoring</h2>
+<h2>Service status monitor</h2>
 
 <p>Your AeroFS appliance exposes the internal service health monitor as a web service.
 The monitoring endpoint requires HTTP authentication using the special-purpose access token
