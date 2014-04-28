@@ -10,7 +10,7 @@ import com.aerofs.lib.Versions;
 import com.aerofs.lib.Versions.CompareResult;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.ui.update.Updater;
+import com.aerofs.ui.UIGlobals;
 
 class CLIPreSetupUpdateCheck
 {
@@ -26,7 +26,8 @@ class CLIPreSetupUpdateCheck
         //    CLI.enterMainLoop() is called
         // 2. the updater will restart the process in background, which is bad
         //
-        if (Versions.compare(Cfg.ver(), Updater.getServerVersion()) != CompareResult.NO_CHANGE) {
+        if (Versions.compare(Cfg.ver(), UIGlobals.updater().getServerVersion())
+                != CompareResult.NO_CHANGE) {
             System.out.println("An " + L.product() + " update has been found." +
                     " Please " + (OSUtil.isLinux() ?
                         Util.quote("rm -rf " + AppRoot.abs()) :

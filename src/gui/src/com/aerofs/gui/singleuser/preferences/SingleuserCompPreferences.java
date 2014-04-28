@@ -7,10 +7,9 @@ package com.aerofs.gui.singleuser.preferences;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.preferences.PreferencesHelper;
-import com.aerofs.gui.unlink.DlgUnlinkDevice;
-import com.aerofs.lib.S;
+import static com.aerofs.gui.preferences.PreferencesHelper.*;
+
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import org.eclipse.swt.SWT;
@@ -32,7 +31,7 @@ public class SingleuserCompPreferences extends Composite
         super(parent, SWT.NONE);
 
         PreferencesHelper helper = new PreferencesHelper(this);
-        helper.setLayout(this);
+        PreferencesHelper.setLayout(this);
 
         createUserIDRow(this);
         helper.createDeviceNameLabelAndText();
@@ -107,19 +106,15 @@ public class SingleuserCompPreferences extends Composite
         protected void open(Shell shell)
         {
             PreferencesHelper helper = new PreferencesHelper(shell);
-            helper.setLayoutForAdvanced(shell);
+            setLayoutForAdvanced(shell);
 
             helper.createSyncHistory(shell);
             helper.createAPIAccess(shell);
-            helper.createCanaryMode(shell);
-            helper.createSeparator(shell, false);
-            helper.createButtonContainer(shell, "Selective Sync...", new DlgExclusion(shell))
-                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
+            createSeparator(shell, false);
+            helper.createSelectiveSyncButton(shell);
             helper.createLimitBandwidthButton(shell);
-            helper.createSeparator(shell, true);
-            helper.createButtonContainer(shell, S.UNLINK_THIS_COMPUTER,
-                    new DlgUnlinkDevice(shell, true))
-                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
+            helper.createCanaryControls(shell);
+            helper.createUnlinkButton(shell);
         }
     }
 }

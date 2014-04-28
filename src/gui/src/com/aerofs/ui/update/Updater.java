@@ -105,6 +105,9 @@ public abstract class Updater
     private final String _installerFilenameFormat;
     private Status _status = Status.NONE;
 
+    // Whether to force to update to Canary until the next AeroFS relaunch.
+    private boolean _forceCanary;
+
     public static Updater getInstance_()
     {
         if (OSUtil.isOSX()) {
@@ -282,11 +285,11 @@ public abstract class Updater
         });
     }
 
-    public static String getServerVersion()
+    public String getServerVersion()
             throws IOException
     {
         // Are we in the Canary mode?
-        boolean canary = CANARY_FLAG_FILE.exists();
+        boolean canary = _forceCanary || CANARY_FLAG_FILE.exists();
 
         // The version URL for public deployment
         String publicURL = "https://nocache.client.aerofs.com/" +
@@ -484,6 +487,15 @@ public abstract class Updater
         return conn;
     }
 
+    /**
+     * Force to update to Canary until AeroFS relaunches (either automatically by the updater or
+     * manually by the user).
+     */
+    public void forceCanaryUntilRelaunch()
+    {
+        _forceCanary = true;
+    }
+
     public void checkForUpdate(boolean newThread)
     {
         // retrieve server update.properties
@@ -522,7 +534,7 @@ public abstract class Updater
         setUpdateStatus(Status.ONGOING, -1); // signal that the process is ongoing
 
         try {
-            String verServer = Updater.getServerVersion();
+            String verServer = getServerVersion();
             CompareResult cr = verServer == null ? null : Versions.compare(Cfg.ver(), verServer);
 
             if (cr == null || cr == CompareResult.NO_CHANGE) {

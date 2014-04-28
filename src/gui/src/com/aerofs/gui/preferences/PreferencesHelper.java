@@ -10,7 +10,9 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.transfers.DlgThrottling;
+import com.aerofs.gui.unlink.DlgUnlinkDevice;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
@@ -31,6 +33,7 @@ import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.update.Updater;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Control;
@@ -322,16 +325,25 @@ public class PreferencesHelper
     }
 
     /**
-     * Creates a composite containing a button with the text {@paramref}, which opens the dialog
+     * Creates a composite containing a button with the {@paramref label}, which opens the dialog
      * {@paramref dialog} when clicked.
      */
-    public Control createButtonContainer(Composite parent, String text, final AeroFSDialog dialog)
+    public void createButtonContainerWithSpacer(Composite parent, String label,
+            final AeroFSDialog dialog, int colSpan)
+    {
+        createSpacer(parent);
+        createButtonContainer(parent, label, dialog, colSpan, SWT.FILL);
+        createSpacer(parent);
+    }
+
+    /**
+     * @param horizontalAlignment one of SWT.CENTER, LEFT, RIGHT, FILL
+     */
+    private Button createButtonContainer(Composite parent, String label,
+            @Nullable final AeroFSDialog dialog, int colSpan, int horizontalAlignment)
     {
         Control control;
         Button button;
-
-        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
-
         if (OSUtil.isOSX()) {
             Composite container = new Composite(parent, SWT.NONE);
             FillLayout layout = new FillLayout();
@@ -347,31 +359,48 @@ public class PreferencesHelper
             control = button;
         }
 
-        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+        button.setText(label);
 
-        button.setText(text);
-        button.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
+        if (dialog != null) {
+            button.addSelectionListener(new SelectionAdapter()
             {
-                dialog.openDialog();
-            }
-        });
+                @Override
+                public void widgetSelected(SelectionEvent e)
+                {
+                    dialog.openDialog();
+                }
+            });
+        }
 
-        return control;
+        control.setLayoutData(new GridData(horizontalAlignment, SWT.CENTER, true, false,
+                colSpan, 1));
+
+        return button;
     }
 
     public void createAdvancedButton(Composite parent, AeroFSDialog dialog)
     {
-        createButtonContainer(parent, "Advanced...", dialog)
-                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        createButtonContainerWithSpacer(parent, "Advanced...", dialog, 1);
     }
 
-    public void createLimitBandwidthButton(Shell shell)
+    public void createLimitBandwidthButton(Composite parent)
     {
-        createButtonContainer(shell, "Limit Bandwidth...", new DlgThrottling(shell, true))
-                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
+        createButtonContainerWithSpacer(parent, "Limit Bandwidth...",
+                new DlgThrottling(parent.getShell(), true), 3);
+    }
+
+    public void createSelectiveSyncButton(Composite parent)
+    {
+        createButtonContainerWithSpacer(parent, "Selective Sync...",
+                new DlgExclusion(parent.getShell()), 3);
+    }
+
+    public void createUnlinkButton(Composite parent)
+    {
+        createSeparator(parent, true);
+
+        createButtonContainerWithSpacer(parent, S.UNLINK_THIS_COMPUTER,
+                new DlgUnlinkDevice(parent.getShell(), true), 3);
     }
 
     public void setCfg(CfgDatabase.Key key, Boolean value)
@@ -410,7 +439,7 @@ public class PreferencesHelper
         });
     }
 
-    public void setLayout(Composite composite)
+    public static void setLayout(Composite composite)
     {
         GridLayout gridLayout = new GridLayout(3, false);
         gridLayout.marginWidth = GUIParam.MARGIN;
@@ -419,7 +448,7 @@ public class PreferencesHelper
         composite.setLayout(gridLayout);
     }
 
-    public void setLayoutForAdvanced(Composite composite)
+    public static void setLayoutForAdvanced(Composite composite)
     {
         GridLayout layout = new GridLayout(5, false);
         layout.marginWidth = 0;
@@ -428,9 +457,14 @@ public class PreferencesHelper
         composite.setLayout(layout);
     }
 
-    public void createSyncHistory(Composite parent)
+    static private void createSpacer(Composite parent)
     {
         new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+    }
+
+    public void createSyncHistory(Composite parent)
+    {
+        createSpacer(parent);
 
         final Button btnHistory = GUIUtil.createButton(parent, SWT.CHECK);
         btnHistory.setText(S.ENABLE_SYNC_HISTORY);
@@ -462,12 +496,12 @@ public class PreferencesHelper
             }
         });
 
-        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+        createSpacer(parent);
     }
 
     public void createAPIAccess(Composite parent)
     {
-        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+        createSpacer(parent);
 
         final Button btnAPIAccess = GUIUtil.createButton(parent, SWT.CHECK);
 
@@ -510,41 +544,42 @@ public class PreferencesHelper
         lnkWebAccess.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
         lnkWebAccess.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_API_ACCESS));
 
-        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+        createSpacer(parent);
     }
 
     private static final int STABLE_INDEX = 0;
     private static final int CANARY_INDEX = 1;
+    private static final String CANARY_MESSAGE = "Your " + L.product() + " may restart shortly to" +
+            " update to the Canary release.";
+    private static final String CANARY_CONFIRM = "Continue";
 
     private static boolean isCanary()
     {
         return Updater.CANARY_FLAG_FILE.exists();
     }
 
-    public void createCanaryMode(Composite parent)
+    public void createCanaryControls(Composite parent)
     {
         // Don't show the Canary option for private deployment
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) return;
 
-        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+        createSeparator(parent, true);
+
+        createSpacer(parent);
 
         new Label(parent, SWT.NONE).setText("Release channel:");
 
         final Combo comboCanary = new Combo(parent, SWT.READ_ONLY);
-        comboCanary.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+        comboCanary.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
         comboCanary.add("Stable");
         comboCanary.add("Canary");
-
         comboCanary.select(isCanary() ? CANARY_INDEX : STABLE_INDEX);
-        comboCanary.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent ev)
-            {
-                onCanarySelection(comboCanary);
-            }
-        });
+
+        createSpacer(parent);
+
+        // a new line
+        createSpacer(parent);
 
         Link lnkCanary = new Link(parent, SWT.NONE);
         lnkCanary.setText("<a>What is this?</a>");
@@ -552,10 +587,34 @@ public class PreferencesHelper
         lnkCanary.addSelectionListener(GUIUtil.createUrlLaunchListener(
                 "https://support.aerofs.com/hc/en-us/articles/201797484"));
 
-        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+        final Button btnCanaryOnce = createButtonContainer(parent, "Canary Once", null, 2, SWT.FILL);
+        btnCanaryOnce.setEnabled(!isCanary());
+        btnCanaryOnce.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                if (GUI.get().ask(_shell, MessageType.INFO, CANARY_MESSAGE, CANARY_CONFIRM,
+                        IDialogConstants.CANCEL_LABEL)) {
+                    UIGlobals.updater().forceCanaryUntilRelaunch();
+                    UIGlobals.updater().checkForUpdate(true);
+                }
+            }
+        });
+
+        createSpacer(parent);
+
+        comboCanary.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent ev)
+            {
+                onCanarySelection(comboCanary, btnCanaryOnce);
+            }
+        });
     }
 
-    private void onCanarySelection(Combo comboCanary)
+    private void onCanarySelection(Combo comboCanary, Button canaryOnce)
     {
         boolean toCanary = comboCanary.getSelectionIndex() == CANARY_INDEX;
         // No change in selection.
@@ -563,12 +622,14 @@ public class PreferencesHelper
 
         try {
             if (toCanary) {
-                String message = "Your " + L.product() + " may restart shortly to update to the" +
-                        " Canary release.";
-                if (GUI.get().ask(_shell, MessageType.INFO, message, "Continue", "Cancel")) {
+                if (GUI.get().ask(_shell, MessageType.INFO, CANARY_MESSAGE, CANARY_CONFIRM,
+                        IDialogConstants.CANCEL_LABEL)) {
                     FileUtil.createNewFile(Updater.CANARY_FLAG_FILE);
                     UIGlobals.updater().checkForUpdate(true);
+                    // must set the control *after* all operations that might fail
+                    canaryOnce.setEnabled(false);
                 } else {
+                    // revert the change
                     comboCanary.select(STABLE_INDEX);
                 }
 
@@ -580,6 +641,8 @@ public class PreferencesHelper
                         " loss.";
                 GUI.get().show(_shell, MessageType.INFO, message);
                 FileUtil.deleteOrThrowIfExist(Updater.CANARY_FLAG_FILE);
+                // must set the control *after* all operations that might fail
+                canaryOnce.setEnabled(true);
             }
         } catch (IOException e) {
             // Canary users are assumed to be tech savvy. So show them technical details.
@@ -591,10 +654,10 @@ public class PreferencesHelper
     }
 
     // use invisible separator to increase spacing between widgets
-    public void createSeparator(Composite parent, boolean visible)
+    static public void createSeparator(Composite parent, boolean visible)
     {
         Label separator = new Label(parent, SWT.HORIZONTAL | SWT.SEPARATOR);
-        // spans 4 columns because it's the most number of columns for the layouts we use
+        // spans 5 columns because it's the most number of columns for the layouts we use
         separator.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 5, 1));
         separator.setVisible(visible);
     }
