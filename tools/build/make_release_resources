@@ -143,7 +143,7 @@ function copy_resources_to_local_release_directories() {
     # copy the properties files (*.properties, *.xml, etc.)
     #------------------------------------------------------
 
-    cp "${LABELING_FILE}" "${local_BIN}/labeling.properties"
+    cp "${LABELING_FILE}" "${local_BIN}/"
 
     for mode_resource in "${MODE_RESOURCES_DIR}/${LOWERCASE_MODE}"/* ; do
         cp "$mode_resource" "${local_BIN}"/

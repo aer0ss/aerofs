@@ -129,7 +129,7 @@ if ! is_valid_product "$PRODUCT" ; then
     exit $ERRBADPRODUCT
 fi
 readonly LOWERCASE_PRODUCT="$(echo $PRODUCT | tr '[A-Z]' '[a-z]')"
-readonly LABELING_FILE="$LABELING_RESOURCES_DIR/labeling-$LOWERCASE_PRODUCT.properties"
+readonly LABELING_FILE="$LABELING_RESOURCES_DIR/$LOWERCASE_PRODUCT/labeling.properties"
 
 ###############################################################################
 #
