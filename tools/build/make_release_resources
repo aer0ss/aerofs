@@ -145,13 +145,8 @@ function copy_resources_to_local_release_directories() {
 
     cp "${LABELING_FILE}" "${local_BIN}/labeling.properties"
 
-    local local_MODE_RESOURCES=$( ls ${MODE_RESOURCES_DIR}/*-$LOWERCASE_MODE* )
-    for local_MODE_RESOURCE in $local_MODE_RESOURCES
-    do
-        echo $local_MODE_RESOURCE
-        local local_MODE_FILE_BASENAME=$( basename "$local_MODE_RESOURCE" | cut -d'-' -f1 )
-        local local_MODE_FILE_EXTENSION=$( basename "$local_MODE_RESOURCE" | cut -d'.' -f2 )
-        cp "${local_MODE_RESOURCE}" "${local_BIN}/${local_MODE_FILE_BASENAME}.${local_MODE_FILE_EXTENSION}"
+    for mode_resource in "${MODE_RESOURCES_DIR}/${LOWERCASE_MODE}"/* ; do
+        cp "$mode_resource" "${local_BIN}"/
     done
 
     cp -R "${OTHER_RESOURCES_DIR}"/* "${local_BIN}/"

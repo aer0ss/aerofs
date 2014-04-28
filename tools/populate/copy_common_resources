@@ -36,38 +36,31 @@ function print_usage() {
 #   $1 : source filename
 #   $2 : destination filename if it differs from $1. Basename only, no path info.
 #
-function copy_resource() {
+function copy_resource_to_appropriate_target() {
     local srcfile=$1
-    local destfile=${2:-1##*/}
 
     case "$srcfile" in
         *properties|*xml)
-            cp "$srcfile" "$PROPERTIES_OUTPUT_DIR"/"$destfile"
+            cp "$srcfile" "$PROPERTIES_OUTPUT_DIR/"
             ;;
         *)
-            cp "$srcfile" "$ROOT_OUTPUT_DIR"/"$destfile"
+            cp "$srcfile" "$ROOT_OUTPUT_DIR/"
             ;;
     esac
 }
 
 # Copy resources from resource/common/* to the final destinations.
 function copy_resources() {
+    mkdir -p "$ROOT_OUTPUT_DIR"
     mkdir -p "$PROPERTIES_OUTPUT_DIR"
 
-    # copy all the mode-specific resources over and rename them
-    local mode_specific_resources=$( ls $MODE_RESOURCES_DIR/*-$LOWERCASE_MODE* )
-    for mode_resource in $mode_specific_resources
-    do
-        local mode_file=$( basename "$mode_resource" ) # don't use mode_resource directly to get filename/extension
-        local mode_file_basename=$( echo "$mode_file" | cut -d'-' -f1 )
-        local mode_file_extension=$( echo "$mode_file" | cut -d'.' -f2 )
-
-        copy_resource "$mode_resource" "$mode_file_basename"."$mode_file_extension"
+    # copy all the mode-specific resources over
+    for file in "$MODE_RESOURCES_DIR/$LOWERCASE_MODE"/* ; do
+        copy_resource_to_appropriate_target "$file"
     done
-
-    for srcfile in $( ls "$OTHER_RESOURCES_DIR"/* )
-    do
-        copy_resource "$srcfile" "${srcfile##*/}"
+    # and the default logback configs (and maybe more in the future?)
+    for file in "$OTHER_RESOURCES_DIR"/* ; do
+        copy_resource_to_appropriate_target "$file"
     done
 }
 
