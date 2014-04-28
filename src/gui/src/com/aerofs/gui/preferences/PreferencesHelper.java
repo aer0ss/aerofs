@@ -549,8 +549,8 @@ public class PreferencesHelper
         Link lnkCanary = new Link(parent, SWT.NONE);
         lnkCanary.setText("<a>What is this?</a>");
         lnkCanary.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-        lnkCanary.setVisible(false);
-        //lnkCanary.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_API_ACCESS));
+        lnkCanary.addSelectionListener(GUIUtil.createUrlLaunchListener(
+                "https://support.aerofs.com/hc/en-us/articles/201797484"));
 
         new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
     }
