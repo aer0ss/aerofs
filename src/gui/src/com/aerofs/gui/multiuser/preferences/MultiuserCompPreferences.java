@@ -7,10 +7,12 @@ package com.aerofs.gui.multiuser.preferences;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.preferences.PreferencesHelper;
-import static com.aerofs.gui.preferences.PreferencesHelper.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
+
+import static com.aerofs.gui.preferences.PreferencesHelper.createSeparator;
+import static com.aerofs.gui.preferences.PreferencesHelper.setLayoutForAdvanced;
 
 public class MultiuserCompPreferences extends Composite
 {
@@ -47,6 +49,7 @@ public class MultiuserCompPreferences extends Composite
             helper.createCanaryControls(shell);
             createSeparator(shell, false);
             helper.createLimitBandwidthButton(shell);
+            helper.createUnlinkButton(shell);
         }
     }
 }
