@@ -38,8 +38,8 @@ public class SetupModel
         _localOptions = new LocalOptions();
         _s3Config = new S3Config();
         _sp = null;
-        // defaults to true for new devices, some setup path will offer option to change this
-        _apiAccess = true;
+        // defaults to false for new devices, some setup path will offer option to change this
+        _apiAccess = false;
     }
 
     /**
