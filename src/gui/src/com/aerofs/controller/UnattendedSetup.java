@@ -40,7 +40,8 @@ public class UnattendedSetup
         PROP_PASSWORD = "password",
         PROP_DEVICE = "device",
         PROP_ROOT = "root",
-        PROP_STORAGE_TYPE = "storage_type";
+        PROP_STORAGE_TYPE = "storage_type",
+        PROP_API_ACCESS = "api_access";
 
     public UnattendedSetup(String rtRoot)
     {
@@ -65,6 +66,8 @@ public class UnattendedSetup
         model._localOptions._rootAnchorPath = props.getProperty(PROP_ROOT, model._localOptions._rootAnchorPath);
 
         model._storageType = StorageType.fromString(props.getProperty(PROP_STORAGE_TYPE));
+        // true iff value.equalsIgnoreCase("true") is true, defaults to false
+        model._apiAccess = Boolean.parseBoolean(props.getProperty(PROP_API_ACCESS));
 
         String s3BucketId = props.getProperty(Key.S3_BUCKET_ID.keyString());
         if (s3BucketId != null) {
