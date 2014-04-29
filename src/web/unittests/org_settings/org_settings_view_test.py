@@ -1,7 +1,10 @@
 import unittest
+from aerofs_sp.gen.sp_pb2 import GetQuotaReply
 from mock import Mock
 from ..test_base import TestBase
 
+
+_GB = 1024 ** 3
 
 class OrgSettingsViewTest(TestBase):
     def setUp(self):
@@ -45,6 +48,20 @@ class OrgSettingsViewTest(TestBase):
         self.assertEqual(self.sp_rpc_stub.set_org_preferences.call_count, 0)
         self.sp_rpc_stub.get_org_preferences.assert_called_once_with()
 
+    def test_get_quota(self):
+        reply = GetQuotaReply()
+        # a little less than 9 GB
+        reply.quota = 10000000000
+
+        self.sp_rpc_stub.get_quota = Mock(return_value=reply)
+
+        from web.views.org_settings.org_settings_view import org_settings
+
+        ret = org_settings(self._create_request())
+
+        # The returned quota should be rounded down to 9 GB
+        self.assertEqual(ret['quota'], 9)
+
     def test_remove_quota(self):
         from web.views.org_settings.org_settings_view import org_settings
         org_settings(self._create_quota_setting_request(False, '123'))
@@ -54,7 +71,7 @@ class OrgSettingsViewTest(TestBase):
     def test_set_quota_should_handle_whitespace(self):
         from web.views.org_settings.org_settings_view import org_settings
         org_settings(self._create_quota_setting_request(True, '  123\n'))
-        self.sp_rpc_stub.set_quota.assert_called_once_with(123)
+        self.sp_rpc_stub.set_quota.assert_called_once_with(123 * _GB)
         self.assertFalse(self.sp_rpc_stub.remove_quota.called)
 
     def test_set_quota_should_handle_zero_quota(self):

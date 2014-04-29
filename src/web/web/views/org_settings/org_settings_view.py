@@ -54,7 +54,7 @@ def org_settings(request):
     show_quota = str2bool(request.registry.settings['show_quota_options'])
     quota_reply = sp.get_quota()
     quota_enabled = quota_reply.HasField('quota')
-    quota = quota_reply.quota if quota_enabled else None
+    quota = _bytes2gb(quota_reply.quota) if quota_enabled else None
 
     # Show billing links only if the user has a Stripe customer ID
     stripe_data = sp.get_stripe_data().stripe_data
@@ -84,7 +84,17 @@ def _update_org_settings(request, sp):
         except ValueError:
             flash_error(request, "Please input a valid quota number")
             return
-        sp.set_quota(quota)
+        sp.set_quota(_gb2bytes(quota))
 
     flash_success(request, "Organization settings have been updated.")
 
+
+def _bytes2gb(bytes):
+    """
+    This method rounds down the bytes to a integer GB amount.
+    """
+    return bytes / (1024 ** 3)
+
+
+def _gb2bytes(gb):
+    return gb * (1024 ** 3)

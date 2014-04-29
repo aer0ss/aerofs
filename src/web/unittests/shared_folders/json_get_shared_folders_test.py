@@ -1,10 +1,9 @@
 import unittest
 from mock import Mock
-from pyramid.security import authenticated_userid
 from aerofs_sp.gen.sp_pb2 import \
     ListOrganizationSharedFoldersReply, ListSharedFoldersReply
 from aerofs_common._gen.common_pb2 import WRITE, MANAGE
-from aerofs_sp.gen.sp_pb2 import ADMIN, JOINED
+from aerofs_sp.gen.sp_pb2 import JOINED
 from ..test_base import TestBase
 from web import auth
 
