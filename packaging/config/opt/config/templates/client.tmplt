@@ -5,7 +5,6 @@ updater.installer.url=https://{{ base_host }}:4433/static/installers
 
 gui.tray.enable_defect_dialogue=false
 
-daemon.sss.url=https://{{ base_host }}:4433/syncstat
 daemon.oauth.url=https://{{ base_host }}:4433/auth/tokeninfo
 
 lib.anchor.default_location_windows={{ anchor_default_location_windows }}
