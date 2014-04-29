@@ -53,7 +53,7 @@ def get_mobile_access_code(request):
 
     # Create access code
     cacert = get_cacert(request)
-    config_url = request.registry.settings.get('config.loader.configuration_service_url', 'https://config.aerofs.com/')
+    config_url = request.registry.settings.get('config.loader.configuration_service_url', 'https://config.aerofs.com/client')
     oauth_token = generate_mobile_access_code(request)
 
     assert cacert
