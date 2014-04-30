@@ -4,18 +4,18 @@ In reality (PH) this script and ritual.py belong in syndet_test/lib. The goal is
 keep PB related stuff in one place but to also keep syncdet stuff out of python-lib.
 Both this and ritual.py have syncdet dependencies but are in python-lib. The PB stuff
 should probably be extracted out and left here while the rest goes into syndet_test/lib.
+
 """
 from connection import SyncConnectionService
 from gen import sp_pb2
-from lib import param
-from lib.app import cfg
+from param import SP_PROTO_VERSION
 from syncdet.case import local_actor
+
 
 def connect():
     aero_host = local_actor().aero_host
     sp_url = 'https://{}:4433/sp'.format(aero_host)
-    sp_proto_version = param.SP_PROTO_VERSION
-    conn = SyncConnectionService(sp_url, sp_proto_version)
+    conn = SyncConnectionService(sp_url, SP_PROTO_VERSION)
     sp_service = sp_pb2.SPServiceRpcStub(conn)
     return _SPServiceWrapper(sp_service)
 

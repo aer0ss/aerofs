@@ -10,18 +10,16 @@ RPC methods can be called.  For example
 
     r = ritual.connect() # by default connects to localhost
     r.share_folder(...)
-"""
 
-import sys
+"""
 import socket
-import time
-import errno
+import sys
 import tempfile
+import time
+
 import connection
-from lib import convert, param
-from lib.app.cfg import get_cfg
-from lib.cygpathtools import cygpath_to_winpath
-from aerofs_common import exception
+from aerofs_common import exception, convert, param
+from cygpathtools import cygpath_to_winpath
 from gen import ritual_pb2
 from gen.common_pb2 import WRITE, MANAGE, PBException, PBPermissions, PBSubjectPermissions
 
@@ -48,36 +46,19 @@ def _convert_acl(acl):
 
 
 # This will try to connect once, and throw an exception if it fails
-def _connect(rpc_host_addr=None, rpc_host_port=None):
-    rpc_host_addr = rpc_host_addr or 'localhost'
-    rpc_host_port = rpc_host_port or get_cfg().ritual_port()
+def _connect(rpc_host_addr, rpc_host_port):
     conn = connection.SyncConnectionService(rpc_host_addr, rpc_host_port)
     ritual_service = ritual_pb2.RitualServiceRpcStub(conn)
     return _RitualServiceWrapper(ritual_service)
 
 
 # This will try to connect over and over until it succeeds
-def connect(rpc_host_addr=None, rpc_host_port=None):
-    while True:
+def connect(rpc_host_addr, rpc_host_port, max_attempts=50):
+    for _ in xrange(max_attempts):
         try:
             return _connect(rpc_host_addr, rpc_host_port)
         except socket.error:
             time.sleep(param.POLLING_INTERVAL)
-
-
-def wait_for_heartbeat(max_attempts=50):
-    r = connect()
-    try:
-        r.wait_for_heartbeat(max_attempts)
-    except IOError as e:
-        if e.errno == errno.EPIPE:
-            # Catch broken pipe and try a new connection at most once
-            print 'wait_for_heartbeat() caught a broken pipe. Trying once more...'
-            time.sleep(1)
-            r = connect()
-            r.wait_for_heartbeat()
-        else:
-            raise e
 
 
 class _RitualServiceWrapper(object):
@@ -99,11 +80,11 @@ class _RitualServiceWrapper(object):
         self._service.heartbeat()
 
     def wait_for_heartbeat(self, max_attempts=50):
-        ready = False
         attempts = 0
-        while not ready:
+        while True:
             try:
                 self.heartbeat()
+                return
             except Exception as e:
                 # Wait indefinitely for indexing to finish
                 if type(e) == exception.ExceptionReply and e.get_type() == PBException.INDEXING:
@@ -113,8 +94,6 @@ class _RitualServiceWrapper(object):
                 if attempts >= max_attempts:
                     raise
                 time.sleep(param.POLLING_INTERVAL)
-            else:
-                ready = True
 
     def link_root(self, path):
         return self._service.link_root(path).sid

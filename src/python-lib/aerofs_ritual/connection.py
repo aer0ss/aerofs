@@ -1,7 +1,8 @@
 import struct
 import socket
+
 from aerofs_common.exception import ExceptionReply
-from gen import common_pb2
+
 
 # Define a synchronous RPC connection
 class SyncConnectionService(object):

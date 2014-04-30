@@ -1,9 +1,10 @@
 import logging
 import re
 import base64
+
 import requests
 from aerofs_common.exception import ExceptionReply
-from gen import common_pb2
+
 
 log = logging.getLogger(__name__)
 
