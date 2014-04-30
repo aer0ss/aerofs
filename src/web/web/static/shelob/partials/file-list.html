@@ -46,6 +46,11 @@
         <td class="actions"></td>
       </tr>
 
+      <tr ng-if="!objects.length">
+        <td class="icon"></td>
+        <td colspan="3">No files found</td>
+      </tr>
+
       <tr ng-repeat="object in objects | orderBy:['-type', 'name']"
           ng-init="mousedOver.object = null;"
           ng-mouseenter="mousedOver.object = object"
