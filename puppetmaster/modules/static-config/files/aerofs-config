@@ -1,0 +1,3 @@
+    # config snippet for aerofs config backend
+    root /opt/staticconfig;
+    index client;

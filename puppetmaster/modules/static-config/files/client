@@ -1,0 +1,61 @@
+base.host.unified=www.aerofs.com
+
+config.loader.is_private_deployment=false
+config.loader.configuration_service_url=https://config.aerofs.com
+
+config.loader.base_ca_certificate=-----BEGIN CERTIFICATE-----\nMIID5TCCAs2gAwIBAgIJAMglwusARYgmMA0GCSqGSIb3DQEBCwUAMIGAMQ8wDQYD\nVQQDEwZBZXJvRlMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYw\nFAYDVQQHEw1TYW4gRnJhbmNpc2NvMRMwEQYDVQQKEwphZXJvZnMuY29tMR4wHAYJ\nKoZIhvcNAQkBFg90ZWFtQGFlcm9mcy5jb20wHhcNMTMwNTAxMjI0NDU1WhcNMjMw\nNDI5MjI0NDU1WjCBgDEPMA0GA1UEAxMGQWVyb0ZTMQswCQYDVQQGEwJVUzETMBEG\nA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzETMBEGA1UE\nChMKYWVyb2ZzLmNvbTEeMBwGCSqGSIb3DQEJARYPdGVhbUBhZXJvZnMuY29tMIIB\nIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzhK5CxtoqaXEcD0Bq0TG9ExT\nFleIkx4hnblv6OK4Wm6EzA4wo9odeg8/3Jyd0b3cO1QuGAcUydzuknNNi7UMKKvO\nWPCRpQxdgIqWis7yziJ2XVv8GVdJ+YfTeYgkDYheLj0H8Qbv1pvYC2c0yuELb72W\nLr4dcqnqPgwEROSftcEB07G1SuyvkimEO5nRkAcSrTA0nSomKhNGT2IgkbG08vWE\n0tU5AeoefVGjAOygnMgveJg6aO9nrGxDB4Qg2DcJPZPlOt4JIARls6cwR3GGn07w\nUw68sdjCHLQcuQObfwJnar8W2Eu/1xSLoCYgVwNyd0sS3QtSkMzkB1dzo7I7sQID\nAQABo2AwXjAdBgNVHQ4EFgQUyypjgG7zMXZKq0Z+Y7RUWaeNEtMwHwYDVR0jBBgw\nFoAUyypjgG7zMXZKq0Z+Y7RUWaeNEtMwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8E\nBAMCAQYwDQYJKoZIhvcNAQELBQADggEBACpuypRbS1IUqJtEOo3gXZ0YGPiS23ex\n5giLD95JThkQYB7e4iQIsPnPDQ0migNkRumuSIDypr4gUfrPuqt7oVjTDvWUsFGF\nDoTOEBNT3CcFkeeDa6nmGT+y5GaPEQ7Zp8yQTv7dg96Tg/5tHc1wGHO7slqZdzVU\noUjS7N0idzBBFtug2+TM9ZOV36czK5NS1EIPTr47Pnyt+35hs2vqcJv6/z1510vm\nENfCjHBsgZ1Sysw04FX9hkkWEgQkUe4Q3JZ2+CbSego9t2uqs8MGNzQSy7I+yi4+\nU9nQmzLWYykodsNPn7erKjxjmqM77qFnyckKvbPV2gR5zvvU5UGq/bo=\n-----END CERTIFICATE-----\n
+
+base.www.url=https://www.aerofs.com
+base.sp.url=https://sp.aerofs.com/sp/
+base.verkehr.host=verkehr.aerofs.com
+base.verkehr.port.publish=9293
+base.verkehr.port.admin=25234
+# private deployments use 29438
+base.verkehr.port.subscribe=443
+base.xmpp.address=www.aerofs.com:5222
+base.zephyr.address=relay.aerofs.com:443
+# private deployments use 3478, the standard STUN port
+daemon.stun.address=stun.l.google.com:19302
+
+api.url=https://api.aerofs.com:4433/api/
+api.tunnel.host=api.aerofs.com
+api.tunnel.port=8084
+api.daemon.port=0
+
+base.www.support_email_address=support@aerofs.com
+
+base.mixpanel.url=https://api.mixpanel.com/track/?data=
+lib.rocklog.url=http://rocklog.aerofs.com
+lib.sv.url=https://sv.aerofs.com
+lib.notifications.enabled=true
+lib.authenticator=local_credential
+sp.payment.enabled=true
+
+# No openid support in public deployment.
+internal_email_pattern=
+identity_service_identifier=
+openid.service.url=
+openid.service.timeout=
+openid.service.session.timeout=
+openid.service.session.interval=
+openid.service.realm=
+
+# No auditing in public deployment. Fake a URL for the url parser.
+base.audit.enabled=false
+base.audit.public.url=https://localhost/audit/event
+
+base.triks.enabled=true
+base.triks.url=http://triks.aerofs.com
+
+# Unusual url construction avoids https errors.
+updater.version.url=https://s3.amazonaws.com/nocache.client.aerofs.com/current.ver
+updater.installer.url=https://dsy5cjk52fz4a.cloudfront.net
+
+gui.tray.enable_defect_dialogue=true
+
+daemon.oauth.url=https://api.aerofs.com:4433/auth/tokeninfo
+
+# Empty string here means "don't override the default"
+lib.anchor.default_location_windows=
+lib.anchor.default_location_linux=
+lib.anchor.default_location_osx=
