@@ -215,6 +215,17 @@ If you work on UI code, it can be anonying that the daemon restarts every time y
      
 `nodm` means "no daemon monitor." It asks the UI not to take ownership of the daemon process. The next time the UI launches it will not restart the daemon.
 
+## Serve web files properly
+
+By default, the VM uses its own copy of all the web files. This means that you can't see any changes to the website without restarting the entire web service. To fix this:
+
+    lp-ssh
+    cd /opt/web
+    sudo mv web web.back
+    sudo ln -s /mnt/aerofs/src/web/web web
+
+This replaces the VM's web folder with a symlink to the web folder in your repo. Now you can see e.g. CSS changes automatically appear, without having to restart anything.
+
 ## Sign up accounts in local prod
 
 For easy signup you can use signup tool:
