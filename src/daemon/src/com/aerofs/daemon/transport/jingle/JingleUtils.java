@@ -31,4 +31,13 @@ abstract class JingleUtils
     {
         return JabberID.user2did(jid.node());
     }
+
+    static DID jid2didNoThrow(Jid jid)
+    {
+        try {
+            return JabberID.user2did(jid.node());
+        } catch (ExFormatError e) {
+            return new DID(DID.ZERO);
+        }
+    }
 }

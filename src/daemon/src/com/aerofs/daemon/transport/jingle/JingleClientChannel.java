@@ -232,7 +232,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
     {
         state.set(ST_CLOSED);
 
-        l.warn("closing channel due to i/o error", cause);
+        l.warn("closing channel due to i/o error cause:{}", cause.getMessage());
 
         channelWorker.submitChannelTask(new Runnable()
         {

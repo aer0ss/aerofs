@@ -152,7 +152,7 @@ class JingleStream
         signalThread.assertSignalThread();
 
         if (streamClosed) {
-            l.warn("{}: stream already closed", this);
+            l.trace("{}: stream already closed", this);
             return;
         }
 
@@ -160,7 +160,7 @@ class JingleStream
 
         Throwable closeCause  = this.closeCause == null ? cause : this.closeCause;
 
-        l.info("{}: close stream", this, cause);
+        l.info("{}: close stream cause:{}", this, cause.getMessage());
 
         checkState(!objectsDeleted, "%s: C++ objects already deleted", this);
         streamInterface.Close();
@@ -178,8 +178,6 @@ class JingleStream
      */
     private void abort(Exception cause)
     {
-        l.warn("{}: abort stream", this, cause);
-
         closeCause = cause;
         close(cause);
 
