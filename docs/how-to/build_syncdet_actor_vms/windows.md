@@ -11,14 +11,36 @@ It would be ideal if tests cover both 64-bit and 32-bit Windows.
 - Disable Widows Firewall
 - Disable UAC to avoid needless troubles (type "uac" in the start menu to find the settings)
 
-# Install Cygwin
+# Install Python 2.7
 
-Install 32-bit cygwin at `C:\cygwin\`, and save cygwin's setup.exe on the desktop. Install things through the cygwin installation wizard.
+- Download and install Python 2.7 for Windows. Do NOT install Python 3 which SyncDET doesn't support.
 
-# Set up sshd
+# Install Cygwin and packages
 
-- In cygwin, Install cygrunsrv
+Install 32-bit cygwin at `C:\cygwin\`, and save cygwin's setup.exe on the desktop. Install things through the cygwin installation wizard. In Cygwin, install the following packages:
+
+- cygrunsrv
+- openssh
+- rsync
+
+# Configure sshd
+
 - In cygwin (run as administrator):
 
-        ssh-host-config -y
+        ssh-host-config 
+
+   When prompted:
+   
+   - overwrite both files
+   - use privilege separation
+   - enter "tty ntsec" for the CYGWIN value
+   - don't use a different name
+   - use "temp123" as a password
+
+- Edit `/etc/sshd_config`, add `UseDNS no` to the file. Without this flag remote logins may be slow due to reverse DNS lookup.
+
+- Then start the service:
+
         cygrunsrv -S sshd
+
+- Similar to sshd on Linux, copy pubkeys to `~/.ssh/authorized_keys` as necessary to enable password-less logins.

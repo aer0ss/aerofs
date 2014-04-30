@@ -187,6 +187,9 @@ You'll need to be on the VPN to complete this step, since it'll pull some packag
      echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.profile
      sudo sh -c 'echo 192.168.51.150 unified.syncfs.com >> /etc/hosts'
      source ~/repos/aerofs/tools/bashrc/include.sh
+     
+     ssh apt.aerofs.com (Create password and don't forget it!)
+     
      lp-create
 
 The last step may take a while (expect 30 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing. Once done, you can run `lp-ssh` to log in your VM. See [Local Production (aka. local prod)](../references/local_prod.html) for more information about the private environment.
@@ -253,7 +256,7 @@ You only need to run the above two steps once until you need to update client bi
 
 Run a single test case:
 
-    $ ant syncdet -Dcase=core.basic.should_move_file
+    $ ant syncdet -Dcase=core.basic.should_rename_file
     
 This test case correponds to the Python file ~/repos/aerofs/syncdet_test/core/basic/should_move_file.py.
      
