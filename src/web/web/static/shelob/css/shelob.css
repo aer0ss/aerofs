@@ -21,7 +21,6 @@ table#file-list td.actions {
 }
 div#actions {
     float: right;
-    padding-top: 4px;
 }
 table#file-list tr#new-folder input {
     margin-bottom: 0;

@@ -61,6 +61,11 @@ footer {
   margin-top: 30px;
 }
 
+.page-block h2, h2 {
+  line-height: 24.75pt;
+  margin: 0 0 1em 0;
+}
+
 .page-headline-banner {
   padding-bottom: 40px;
   .bottom-divider;
@@ -78,12 +83,23 @@ footer {
 .top-nav {
   // Undo the large bottom margin for the top nav bar.
   margin-bottom: inherit;
+  padding: 8px 0 0;
+  min-height: 68px;
+
+  .dropdown-menu {
+    font-size: 11pt;
+  }
 }
 
 .top-nav > li + li {
   // Pull down all but the first item (i.e. the logo) in the top nav bar
-  margin-top: 14px;
-  font-weight: bold;
+  margin-top: 19px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.breadcrumb {
+  padding-top: 0;
 }
 
 // Override Bootstrap's style for active navigation items
@@ -93,6 +109,12 @@ footer {
   text-shadow: none;
   font-weight: bold;
   color: @linkColorHover;
+}
+
+.nav-header {
+  font-weight: 400;
+  padding-top: 4px;
+  background: #EEE;
 }
 
 // Override Bootstrap's @grayLighter background color
