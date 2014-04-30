@@ -196,11 +196,11 @@ The last step may take a while (expect 30 mins). Grab a coffee from Philz, look 
 This step requires a running local prod. In addition, you need to be on the VPN to complete this step, since it'll pull some packages from an internal repository. In addition, 
 
     cd $HOME/repos/aerofs/
-    ant -Dmode=PRIVATE -Dproduct=CLIENT clean setupenv build_client
+    ant -Dmode=PRIVATE -Dproduct=CLIENT -Ddir.out=approot clean setupenv build_client
     mkdir ~/rtroot
     approot/run ~/rtroot/user1 gui
 
-The `-Dmode=PRIVATE` flag points the client to your private environment. Specify `-Dmode=PUBLIC` to build clients for the public production environment (discouraged).
+The `-Dmode=PRIVATE` flag points the client to your private environment. Specify `-Dmode=PUBLIC` to build clients for the public production environment (discouraged). `-Ddir.out=approot` puts classes in the appropriate place for local development.
 
 Replace `gui` with `cli` to launch AeroFS in the command line. Use `daemon` to run the barebone daemon process with no UI support.
 
