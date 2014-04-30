@@ -13,8 +13,10 @@ import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.lib.IDiagnosable;
+import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.metriks.IMetriks;
 import com.aerofs.proto.Diagnostics.TransportTransfer;
 import com.aerofs.proto.Diagnostics.TransportTransferDiagnostics;
@@ -41,6 +43,7 @@ final class DiagnosticsDumper implements Runnable
     private static final Logger l = Loggers.getLogger(DiagnosticsDumper.class);
 
     private final Object _locker = new Object();
+    private final InjectableCfg _cfg;
     private final CoreQueue _q;
     private final DevicePresence _dp;
     private final TransferStatisticsManager _tsm;
@@ -50,8 +53,9 @@ final class DiagnosticsDumper implements Runnable
     private final IMetriks _metriks;
 
     @Inject
-    DiagnosticsDumper(CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl, IMetriks metriks)
+    DiagnosticsDumper(InjectableCfg cfg, CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl, IMetriks metriks)
     {
+        _cfg = cfg;
         _q = q;
         _dp = dp;
         _tsm = tsm;
@@ -66,6 +70,7 @@ final class DiagnosticsDumper implements Runnable
     {
         try {
             l.info("run dd");
+            dumpSystemInformation();
             dumpDiagnostics("uls", _ul); // runs holding the core lock
             dumpDiagnostics("dls", _dl); // runs holding the core lock
             dumpDiagnostics("devices", _dp); // runs holding the core lock
@@ -74,6 +79,14 @@ final class DiagnosticsDumper implements Runnable
         } catch (Throwable t) {
             l.error("fail dump diagnostics", t);
         }
+    }
+
+    private void dumpSystemInformation()
+    {
+        l.info("did:{}", _cfg.did());
+        l.info("usr:{}", _cfg.user());
+        l.info("ver:{}", _cfg.ver());
+        l.info("os :{}", OSUtil.getOSName());
     }
 
     private void dumpDiagnostics(String componentName, IDiagnosable component)
