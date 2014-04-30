@@ -50,7 +50,7 @@ public final class HealthCheckService implements IStartable
     private static final class DDConstants
     {
         private static final long INITIAL_DELAY = DEFAULT_INITIAL_DELAY;
-        private static final long INTERVAL = DEFAULT_INTERVAL;
+        private static final long INTERVAL = 10 * C.MIN;
     }
 
     //
