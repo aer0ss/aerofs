@@ -1,11 +1,9 @@
 package com.aerofs.daemon.transport.tcp;
 
-import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -114,14 +112,6 @@ class Multicast implements IMaxcast, ILinkStateListener
 
     void start()
     {
-        // FIXME (AG): remove this until we actually do something with this
-        // we don't dynamically detect preferred multicast size (TODO?)
-        tcp.sink().enqueueBlocking(new EITransportMetricsUpdated(
-                maxMulticastDatagramSize
-                    - C.INTEGER_SIZE    // for magic
-                    - 1                 // for core_message
-                    - DID.LENGTH        // for device id
-                ), Prio.LO);
     }
 
     private void close(MulticastSocket s)

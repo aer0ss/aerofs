@@ -46,7 +46,6 @@ import com.aerofs.daemon.core.net.HdPresence;
 import com.aerofs.daemon.core.net.HdPulseStopped;
 import com.aerofs.daemon.core.net.HdStreamAborted;
 import com.aerofs.daemon.core.net.HdStreamBegun;
-import com.aerofs.daemon.core.net.HdTransportMetricsUpdated;
 import com.aerofs.daemon.core.net.HdUnicastMessage;
 import com.aerofs.daemon.core.status.HdGetStatusOverview;
 import com.aerofs.daemon.core.test.HdTestGetAliasObject;
@@ -88,7 +87,6 @@ import com.aerofs.daemon.event.fs.EISetAttr;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.event.net.EIPulseStopped;
-import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.rx.EIChunk;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.event.net.rx.EIStreamAborted;
@@ -117,7 +115,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     @Inject HdStreamBegun _hdStreamBegun;
     @Inject HdMaxcastMessage _hdMaxcastMessage;
     @Inject HdUnicastMessage _hdUnicastMessage;
-    @Inject HdTransportMetricsUpdated _hdTransportMetricsUpdated;
     @Inject HdPresence _hdPresence;
     @Inject HdListConflicts _hdListConflicts;
     @Inject HdExportConflict _hdExportConflict;
@@ -198,7 +195,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
 
                 // net events
                 .setHandler_(EIPresence.class, _hdPresence)
-                .setHandler_(EITransportMetricsUpdated.class, _hdTransportMetricsUpdated)
                 .setHandler_(EIUnicastMessage.class, _hdUnicastMessage)
                 .setHandler_(EIMaxcastMessage.class, _hdMaxcastMessage)
                 .setHandler_(EIStreamBegun.class, _hdStreamBegun)
