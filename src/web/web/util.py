@@ -1,8 +1,6 @@
 """
 Helper functions for AeroFS website
 """
-import os
-
 import re
 import logging
 import smtplib
@@ -177,22 +175,6 @@ def is_private_deployment(settings):
 
 def is_restricted_external_sharing_enabled(settings):
     return str2bool(settings.get('sharing_rules.restrict_external_sharing', False))
-
-def is_configuration_initialized(settings):
-    """
-    Return whether the configuration is initialized. Always return True in
-    public deployment.
-    """
-    return not is_private_deployment(settings) or \
-        is_configuration_initialized_in_private_deployment()
-
-def is_configuration_initialized_in_private_deployment():
-    return os.path.exists('/var/aerofs/configuration-initialized-flag')
-
-def is_maintenance_mode():
-    # bootstrap tasks maintenance-enter & maintenance-exit create and delete
-    # this file
-    return os.path.exists('/var/aerofs/maintenance-flag')
 
 def add_routes(config, routes):
     """

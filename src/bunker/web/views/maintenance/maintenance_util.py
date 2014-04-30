@@ -1,8 +1,21 @@
 import os
 from subprocess import call, Popen, PIPE
 import tempfile
+
 from aerofs_common.configuration import Configuration
 
+def _flag_file_folder(settings):
+    return settings.get('deployment.flag_file_folder', "/var/aerofs")
+
+def is_configuration_initialized(settings):
+    basepath = _flag_file_folder(settings)
+    return os.path.exists(os.path.join(basepath, 'configuration-initialized-flag'))
+
+def is_maintenance_mode(settings):
+    # bootstrap tasks maintenance-enter & maintenance-exit create and delete
+    # this file
+    basepath = _flag_file_folder(settings);
+    return os.path.exists(os.path.join(basepath, 'maintenance-flag'))
 
 def write_pem_to_file(pem_string):
     os_handle, filename = tempfile.mkstemp()

@@ -5,7 +5,7 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
 from root_factory import RootFactory
 from auth import get_principals
-from util import is_private_deployment, is_configuration_initialized
+from util import is_private_deployment
 import views
 
 

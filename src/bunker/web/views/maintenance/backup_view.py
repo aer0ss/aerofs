@@ -27,7 +27,7 @@ def backup(request):
 )
 def upgrade(request):
     return {
-        'current_version': get_private_version()
+        'current_version': get_private_version(request.registry.settings)
     }
 
 @view_config(

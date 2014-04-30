@@ -15,14 +15,14 @@
 <%block name="top_navigation_bar_mobile">
     <li>
         <a href="https://support.aerofs.com/entries/23864878" target="_blank">
-            Version ${get_private_version()}</a>
+            Version ${get_private_version(request.registry.settings)}</a>
     </li>
 </%block>
 
 <%block name="top_navigation_bar_desktop">
     <li class="pull-right" style="font-weight: normal">
         <a href="https://support.aerofs.com/entries/23864878" target="_blank">
-            v${get_private_version()}</a>
+            v${get_private_version(request.registry.settings)}</a>
     </li>
 </%block>
 

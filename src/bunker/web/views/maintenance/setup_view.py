@@ -6,7 +6,7 @@ import os
 import socket
 import re
 import markupsafe
-from web.util import str2bool, is_configuration_initialized_in_private_deployment
+from web.util import str2bool
 from pyramid.security import NO_PERMISSION_REQUIRED, remember
 
 import requests
@@ -19,7 +19,8 @@ from backup_view import BACKUP_FILE_PATH, example_backup_download_file_name
 from maintenance_util import write_pem_to_file, \
     format_pem, is_certificate_formatted_correctly, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \
-    is_key_formatted_correctly, get_conf_client, get_conf
+    is_configuration_initialized, is_key_formatted_correctly, \
+    get_conf_client, get_conf
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ def setup(request):
     return {
         'page': page,
         'current_config': conf,
-        'is_configuration_initialized': is_configuration_initialized_in_private_deployment(),
+        'is_configuration_initialized': is_configuration_initialized(request.registry.settings),
         'enable_data_collection': _is_data_collection_enabled(conf),
         'restored_from_backup': _is_restored_from_backup(conf),
         # The following parameter is used by license_page.mako

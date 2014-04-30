@@ -1,10 +1,9 @@
 import logging
+
 from pyramid.events import subscriber, NewRequest, BeforeRender
 from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.i18n import TranslationStringFactory, get_localizer
 from pyramid.security import authenticated_userid
-from web.auth import is_authenticated
-
 
 @subscriber(NewRequest)
 def validate_csrf_token(event):

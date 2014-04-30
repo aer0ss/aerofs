@@ -2,7 +2,6 @@ import unittest
 from mock import Mock
 from ..test_base import TestBase
 from pyramid.httpexceptions import HTTPOk
-import requests
 
 class MonitoringViewTest(TestBase):
     def setUp(self):

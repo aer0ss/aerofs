@@ -70,13 +70,13 @@ def _initialize_session_keys(settings):
     See http://beaker.readthedocs.org/en/latest/modules/session.html and
     http://beaker.readthedocs.org/en/latest/configuration.html#session-options.
     """
-    settings['session.validate_key'] = _read_or_create_key_file('session_validate_key')
-    settings['session.encrypt_key'] = _read_or_create_key_file('session_encrypt_key')
+    settings['session.validate_key'] = _read_or_create_key_file('session_validate_key', settings)
+    settings['session.encrypt_key'] = _read_or_create_key_file('session_encrypt_key', settings)
 
 
-def _read_or_create_key_file(file_name):
+def _read_or_create_key_file(file_name, settings):
     # The package installer creates and sets proper permissions on the folder /opt/bunker/state
-    path = os.path.join(os.sep, 'opt', 'bunker', 'state', file_name)
+    path = os.path.join(settings.get("deployment.state_folder", "/opt/bunker/state"), file_name)
     if os.path.exists(path):
         log.info('reading ' + path)
     else:

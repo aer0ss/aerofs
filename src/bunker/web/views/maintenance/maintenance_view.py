@@ -1,11 +1,14 @@
 import logging
+
 from pyramid.httpexceptions import HTTPFound
 from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid, remember
 from pyramid.view import view_config
+
+from maintenance_util import is_maintenance_mode, is_configuration_initialized
 from web.license import set_license_file_and_attach_shasum_to_session
 from web.login_util import URL_PARAM_NEXT, get_next_url, \
     redirect_to_next_page
-from web.util import flash_error, is_maintenance_mode, is_configuration_initialized_in_private_deployment
+from web.util import flash_error
 from web.views.maintenance.maintenance_util import get_conf
 
 log = logging.getLogger(__name__)
@@ -22,7 +25,7 @@ _DEFAULT_NEXT = 'status'
 )
 def login(request):
     return {
-        'is_initialized': is_configuration_initialized_in_private_deployment(),
+        'is_initialized': is_configuration_initialized(request.registry.settings),
         'url_param_license': URL_PARAM_LICENSE,
         'url_param_next': URL_PARAM_NEXT,
         'next': get_next_url(request, _DEFAULT_NEXT)
@@ -69,7 +72,7 @@ def login_submit(request):
 )
 def toggle_maintenance_mode(request):
     return {
-        'is_maintenance_mode': is_maintenance_mode()
+        'is_maintenance_mode': is_maintenance_mode(request.registry.settings)
     }
 
 
@@ -80,7 +83,7 @@ def toggle_maintenance_mode(request):
 )
 def maintenance_home(request):
     # Redirect to the setup page if the system is not initialized
-    if is_configuration_initialized_in_private_deployment():
+    if is_configuration_initialized(request.registry.settings):
         redirect = 'status'
     else:
         redirect = 'setup'

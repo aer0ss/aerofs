@@ -78,7 +78,7 @@ def _downloading(request, program, exe, dmg, deb, tgz, cli, sh):
     os = request.params.get('os')
 
     if is_private_deployment(request.registry.settings):
-        version = get_private_version()
+        version = get_private_version(request.registry.settings)
     else:
         version = get_public_version(request.registry.settings)
 

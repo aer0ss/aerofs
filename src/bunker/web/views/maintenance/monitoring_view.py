@@ -3,7 +3,6 @@ from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
 from base64 import b64encode
 from os import urandom
-from web.error import error
 from web.views.maintenance.maintenance_util import get_conf_client, get_conf
 
 log = logging.getLogger(__name__)

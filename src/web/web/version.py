@@ -1,5 +1,7 @@
 import logging
+import os
 import time
+
 import requests
 
 _private_version = None
@@ -9,7 +11,7 @@ _public_last_refresh = 0
 log = logging.getLogger(__name__)
 
 
-def get_private_version():
+def get_private_version(settings):
     """
     Return the current AeroFS version string. This function reads the current.ver in the local
     filesystem which is available only in private deployment.
@@ -19,7 +21,8 @@ def get_private_version():
     global _private_version
     # cache the value to avoid frequent reads
     if not _private_version:
-        with open("/opt/repackaging/installers/original/current.ver") as f:
+        path = os.path.join(settings.get('deployment.installer_folder', "/opt/repackaging/installers/original"), "current.ver")
+        with open(path) as f:
             _private_version = _parse_version(f.readline())
 
     return _private_version

@@ -56,7 +56,7 @@
             ## Hence we attach the id as a property.
             customer_id: "${customer_id}",
             ## The appliance's version
-            version: "${get_private_version()}"
+            version: "${get_private_version(request.registry.settings)}"
         });
     %endif
 </%def>
