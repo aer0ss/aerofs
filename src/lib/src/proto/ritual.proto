@@ -221,6 +221,10 @@ service RitualService {
     rpc TestLogSendDefect(Void) returns(Void);
 
     rpc TestGetAliasObject(TestGetAliasObjectCall) returns(TestGetAliasObjectReply);
+
+    // Check the usage of each store against the org-wide per-user quota and turn
+    // on/off the collectors according to the response from SP
+    rpc TestCheckQuota(Void) returns(Void);
 }
 
 message GetObjectAttributesCall {

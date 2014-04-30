@@ -406,3 +406,7 @@ class _RitualServiceWrapper(object):
                 if l == content.encode('utf-8'):
                     break
             time.sleep(param.POLLING_INTERVAL)
+
+    def check_quota(self):
+        self._service.test_check_quota()
+

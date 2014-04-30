@@ -47,6 +47,8 @@ import com.aerofs.daemon.core.net.HdPulseStopped;
 import com.aerofs.daemon.core.net.HdStreamAborted;
 import com.aerofs.daemon.core.net.HdStreamBegun;
 import com.aerofs.daemon.core.net.HdUnicastMessage;
+import com.aerofs.daemon.core.quota.EITestCheckQuota;
+import com.aerofs.daemon.core.quota.HdTestCheckQuota;
 import com.aerofs.daemon.core.status.HdGetStatusOverview;
 import com.aerofs.daemon.core.test.HdTestGetAliasObject;
 import com.aerofs.daemon.event.admin.EICreateSeedFile;
@@ -143,6 +145,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     @Inject HdInvalidateDeviceNameCache _hdInvalidateDeviceNameCache;
     @Inject HdCreateSeedFile _hdCreateSeedFile;
     @Inject HdTestGetAliasObject _hdTestGetAliasObject;
+    @Inject HdTestCheckQuota _hdTestCheckQuota;
 
     @Override
     public void registerHandlers_(CoreEventDispatcher disp)
@@ -204,6 +207,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
 
                 // test events
                 .setHandler_(EITestGetAliasObject.class, _hdTestGetAliasObject)
+                .setHandler_(EITestCheckQuota.class, _hdTestCheckQuota)
                 ;
     }
 }

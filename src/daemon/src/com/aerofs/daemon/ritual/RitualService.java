@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.core.phy.linked.linker.event.EITestPauseOrResumeLinker;
+import com.aerofs.daemon.core.quota.EITestCheckQuota;
 import com.aerofs.daemon.event.admin.EICreateSeedFile;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.admin.EIDeleteRevision;
@@ -678,5 +679,13 @@ public class RitualService implements IRitualService
         EITestGetAliasObject ev = new EITestGetAliasObject(Path.fromPB(path), Core.imce());
         ev.execute(PRIO);
         return createReply(TestGetAliasObjectReply.newBuilder().addAllOid(ev._oids).build());
+    }
+
+    @Override
+    public ListenableFuture<Void> testCheckQuota()
+            throws Exception
+    {
+        new EITestCheckQuota(Core.imce()).execute(PRIO);
+        return createVoidReply();
     }
 }

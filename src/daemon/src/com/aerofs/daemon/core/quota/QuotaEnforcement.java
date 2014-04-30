@@ -6,8 +6,6 @@ package com.aerofs.daemon.core.quota;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
-import static com.aerofs.daemon.lib.DaemonParam.CHECK_QUOTA_INTERVAL;
-
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -37,6 +35,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static com.aerofs.daemon.lib.DaemonParam.CHECK_QUOTA_INTERVAL;
 
 public class QuotaEnforcement implements IQuotaEnforcement
 {
@@ -91,7 +91,7 @@ public class QuotaEnforcement implements IQuotaEnforcement
      * Collect data usage for all the stores, call SP.checkQuota(), and turn on and off content
      * collection according to the reply from SP.
      */
-    private void enforceQuotas_()
+    public void enforceQuotas_()
             throws Exception
     {
         Map<SID, Long> sid2usage = getBytesUsed_();
