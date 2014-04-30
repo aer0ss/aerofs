@@ -1,0 +1,24 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require 'yaml'
+
+Vagrant.configure("2") do |config|
+  config.vm.define :lucid64 do |box|
+    box.vm.box = "lucid64"
+    box.vm.box_url = "http://files.vagrantup.com/lucid64.box"
+    box.vm.network :private_network, ip: "192.168.60.11"
+    box.vm.hostname = "lucid64"
+    box.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.customize ["modifyvm", :id, "--name", "lucid64"]
+      vb.customize ["modifyvm", :id, "--memory", "512"]
+    end
+#    box.vm.provision :puppet do |puppet|
+#       puppet.manifests_path = "manifests"
+#       puppet.manifest_file  = "syncdet.pp"
+#       puppet.facter = { "aerofstest_ssh_key" => %x(cut -d ' ' -f 2 ~/.ssh/id_rsa.pub).strip() }
+#    end
+    box.vm.provision "shell", inline: '/vagrant/provision.sh'
+  end
+  config.vm.synced_folder "/Users/hugues/repos", "/mnt/repos"
+end
