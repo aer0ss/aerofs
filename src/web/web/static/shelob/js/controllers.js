@@ -302,7 +302,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     $scope.submitDelete = function(object) {
         API.delete('/' + object.type + 's/' + object.id).then(function(response) {
             _remove_by_id(object.id);
-            showSuccessMessage('Successfully deleted ' + object.name);
+            showSuccessMessage('Successfully deleted "' + object.name + '"');
         }, function(response) {
             // failed to delete
             $log.error("deleting object failed: ", object.id);

@@ -86,14 +86,14 @@
                     {% if category == "error" %}
                         <script type="text/javascript">
                             $(document).ready(function() {
-                                showErrorMessage("{{ message }}");
+                                showErrorMessageUnsafe("{{ message }}");
                             });
                         </script>
                     {% endif %}
                     {% if category == "success" %}
                         <script type="text/javascript">
                             $(document).ready(function() {
-                                showSuccessMessage("{{ message }}");
+                                showSuccessMessageUnsafe("{{ message }}");
                             });
                         </script>
                     {% endif %}

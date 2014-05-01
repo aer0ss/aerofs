@@ -1,7 +1,17 @@
 // HTML code is allowed in the message
-function showErrorMessageUnnormalized(message) {
+function showErrorMessageUnnormalizedUnsafe(message) {
     hideAllMessages();
     $('#flash-msg-error-body').html(message);
+    $("#flash-msg-error").fadeIn();
+}
+
+function showErrorMessageUnsafe(message) {
+    showErrorMessageUnnormalizedUnsafe(normalizeMessage(message));
+}
+
+function showErrorMessageUnnormalized(message) {
+    hideAllMessages();
+    $('#flash-msg-error-body').text(message);
     $("#flash-msg-error").fadeIn();
 }
 
@@ -12,10 +22,22 @@ function showErrorMessage(message) {
 var successMessageTimer;
 
 // HTML code is allowed in the message
-function showSuccessMessage(message) {
+function showSuccessMessageUnsafe(message) {
     hideAllMessages();
     var $msg = $("#flash-msg-success");
     $msg.html(normalizeMessage(message));
+    $msg.fadeIn();
+
+    // Fade out the message in 8 seconds
+    successMessageTimer = window.setTimeout(function() {
+        $msg.fadeOut();
+    }, 8000);
+}
+
+function showSuccessMessage(message) {
+    hideAllMessages();
+    var $msg = $("#flash-msg-success");
+    $msg.text(normalizeMessage(message));
     $msg.fadeIn();
 
     // Fade out the message in 8 seconds

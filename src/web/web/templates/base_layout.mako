@@ -201,9 +201,9 @@
                 ## No need to encode message texts here. jQuery will do the job for
                 ## us in show*Message() methods.
                 %if ret[1]:
-                    showSuccessMessage("${ret[0] | n}");
+                    showSuccessMessageUnsafe("${ret[0] | n}");
                 %else:
-                    showErrorMessage("${ret[0] | n}");
+                    showErrorMessageUnsafe("${ret[0] | n}");
                 %endif
             });
         </script>
