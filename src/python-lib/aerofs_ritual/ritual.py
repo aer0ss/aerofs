@@ -383,6 +383,11 @@ class _RitualServiceWrapper(object):
             if e.get_type() == PBException.NOT_FOUND: pass
             else: raise e
 
+    def get_pbpath_content_branches(self, pbpath):
+        """Return an array of content branches."""
+        r = self._service.get_object_attributes(pbpath)
+        return r.object_attributes.branch
+
     def write_file(self, path, content):
         self.write_pbpath(convert.absolute_to_pbpath(path), content)
 
@@ -407,6 +412,6 @@ class _RitualServiceWrapper(object):
                     break
             time.sleep(param.POLLING_INTERVAL)
 
-    def check_quota(self):
+    def test_check_quota(self):
         self._service.test_check_quota()
 

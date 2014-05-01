@@ -58,3 +58,13 @@ class _SPServiceWrapper(object):
 
     def unlink(self, did, erase=False):
         self._service.unlink_device(did, erase)
+
+    def set_quota(self, quota):
+        self._service.set_quota(quota)
+
+    def get_quota(self):
+        return self._service.get_quota()
+
+    def remove_quota(self):
+        return self._service.remove_quota()
+
