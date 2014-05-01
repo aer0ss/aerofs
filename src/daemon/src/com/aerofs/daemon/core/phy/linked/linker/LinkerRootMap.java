@@ -170,6 +170,7 @@ public class LinkerRootMap
                 } catch (SQLException e) {
                     SystemUtil.fatal(e);
                 }
+                remove_(sid);
             }
 
             @Override
@@ -204,6 +205,7 @@ public class LinkerRootMap
                 } catch (SQLException e) {
                     SystemUtil.fatal(e);
                 }
+                add_(sid, absPath);
             }
 
             @Override
