@@ -53,12 +53,14 @@ def _connect(rpc_host_addr, rpc_host_port):
 
 
 # This will try to connect over and over until it succeeds
-def connect(rpc_host_addr, rpc_host_port, max_attempts=50):
+def connect(rpc_host_addr, rpc_host_port, max_attempts=150):
     for _ in xrange(max_attempts):
         try:
             return _connect(rpc_host_addr, rpc_host_port)
-        except socket.error:
+        except socket.error as e:
+            last = e
             time.sleep(param.POLLING_INTERVAL)
+    raise last
 
 
 class _RitualServiceWrapper(object):
