@@ -3,7 +3,8 @@ class servlet::sv {
         ensure => latest,
         require => [
             Apt::Source["aerofs"]
-        ]
+        ],
+        notify => Service["tomcat6"],
     }
 
     file {"/var/svlogs_prod":

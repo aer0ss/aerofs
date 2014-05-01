@@ -3,7 +3,8 @@ class servlet::dryad_servlet {
         ensure => latest,
         require => [
             Apt::Source["aerofs"]
-        ]
+        ],
+        notify => Service["tomcat6"],
     }
 
     servlet::log{"dryad-servlet":

@@ -3,7 +3,8 @@ class servlet::verification {
         ensure => latest,
         require => [
             Apt::Source["aerofs"]
-        ]
+        ],
+        notify => Service["tomcat6"],
     }
 
     servlet::log{"verification":
