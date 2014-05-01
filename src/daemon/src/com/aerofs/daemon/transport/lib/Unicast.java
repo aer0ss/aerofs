@@ -248,12 +248,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
                 channel = (Channel) cookie; // use the channel that was used before
             } else { // apparently the caller has no preference on the channel to be used
                 if (reuseChannels) { // we should pick an existing channel if there is one
-                    // check if we've any channels
-                    // to this did and simply pick one
-                    Set<Channel> active = directory.getSnapshot(did);
-                    if (!active.isEmpty()) {
-                        channel = chooseActiveChannel(active);
-                    }
+                    channel = directory.chooseActiveChannel(did);
                 }
             }
 
@@ -286,23 +281,6 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         });
 
         return channel;
-    }
-
-    // FIXME: move to ChannelDirectory
-    private Channel chooseActiveChannel(Set<Channel> active)
-    {
-        checkArgument(!active.isEmpty());
-
-        Channel chosenChannel = null;
-
-        Iterator<Channel> iterator = active.iterator();
-        int numIterations = Math.max(1, random.nextInt(active.size()));
-        while (iterator.hasNext() && numIterations > 0) {
-            chosenChannel = iterator.next();
-            numIterations--;
-        }
-
-        return chosenChannel;
     }
 
     public void sendControl(DID did, PBTPHeader h)

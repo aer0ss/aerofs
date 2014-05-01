@@ -243,8 +243,7 @@ public class To
 
             if (isSet(ANYCAST)) {
                 DevEntry min = null;
-                for (Entry<DID, Device> en : s.getOnlinePotentialMemberDevices_()
-                        .entrySet()) {
+                for (Entry<DID, Device> en : s.getOnlinePotentialMemberDevices_().entrySet()) {
                     DID did = en.getKey();
                     if (_avoid.contains(did)) continue;
 

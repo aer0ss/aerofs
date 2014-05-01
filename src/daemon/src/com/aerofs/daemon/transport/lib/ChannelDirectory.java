@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.proto.Diagnostics.ChannelState;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimaps;
@@ -16,6 +17,10 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
+
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * Presence: The New Hotness.
@@ -34,15 +39,16 @@ import org.slf4j.Logger;
 public class ChannelDirectory
 {
     private static final Logger l = Loggers.getLogger(ChannelDirectory.class);
-
     private final ITransport tp;
     private IUnicastListener unicastListener;
-
-    // I'd like to know, based on a remove, whether the result set is now empty.
-    // Multimap does not do this. Ditto the inverse (did adding this key require creating a set?)
-    // Asking separately sucks. And if it's uncoordinated, so you can miss or duplicate edges.
+    private Random random = new Random();
+    // channels is a mapping, per-transport, of devices to channels. It cannot distinguish
+    // or sort the Channel instances on any kind of cost. It's used to detect device up/down
+    // transitions on a per-transport basis, and also to handle Transport-down events (down all
+    // the channels registered for a given Transport)
     private final SortedSetMultimap<DID, Channel> channels
             = Multimaps.synchronizedSortedSetMultimap(TreeMultimap.<DID, Channel>create());
+
 
     // No public constructor
     ChannelDirectory(ITransport tp) { this.tp = tp; }
@@ -53,7 +59,8 @@ public class ChannelDirectory
     public void register(Channel channel, DID remotePeer)
     {
         // FIXME(jP): enhancement: better atomicity required here
-        addChannelCloseFuture(remotePeer, channel);
+        ChannelCost cost = new ChannelCost(channel, tp);
+        addChannelCloseFuture(remotePeer, cost, channel);
         channels.put(remotePeer, channel);
 
         l.info("register t:d:c {}:{}:{}", tp.id(), remotePeer, channel.getId() );
@@ -89,21 +96,48 @@ public class ChannelDirectory
     }
 
     /**
+     * Return any Channel that is active for the given DID.
+     */
+    public Channel chooseActiveChannel(DID did)
+    {
+        ImmutableSet<Channel> active = getSnapshot(did);
+
+        if (active.isEmpty()) { return null; }
+        if (active.size() == 1) { return active.iterator().next(); }
+
+        // prefer Verified channels; to do so, we scan the set first.
+        // TODO: This implementation is a little painful. It will be replaced when we
+        // sort by the route-cost for each Channel instance.
+        Set<Channel> verified = new HashSet<Channel>(active.size());
+        for (Channel chan : active) {
+            if (TransportUtil.getChannelState(chan).equals(ChannelState.VERIFIED)) {
+                verified.add(chan);
+            }
+        }
+
+        Channel retval = chooseRandomlyFrom(verified.isEmpty() ? active : verified);
+        l.info("cdir ret c:{}(_/{}) s:{}",
+                retval.getId(), active.size(), TransportUtil.getChannelState(retval).name());
+        return retval;
+    }
+
+    /**
      * Remove the channel (which was previously registered for the given remote peer).
      */
-    void remove(Channel channel, DID remotePeer)
+    void remove(ChannelCost cost, Channel channel, DID remotePeer)
     {
+        // Note: deviceDisconnected is per-transport (at least right now)
         boolean deviceDisconnected = false;
         l.info("unregister t:d:c {}:{}:{}", tp.id(), remotePeer, channel);
 
-        // The monitor is used only to coordinate the remove() and containskey() so we have
+
+        // The channels monitor is used only to coordinate the remove() and containskey() so we have
         // a consistent view. Calling any affected listeners is done outside this lock, which
         // means you could generate an EIPresence Down event _after_ a new channel has been added
         // to the directory. Which feels alarming. Previously this was fully uncoordinated.
 
         synchronized (channels) {
             if (channels.remove(remotePeer, channel)) {
-                l.info("{} remove connection", remotePeer);
 
                 // "If this device now has zero unicast channels for this transport..."
                 if (!channels.containsKey(remotePeer)) {
@@ -111,13 +145,23 @@ public class ChannelDirectory
                 }
             }
         }
+        // FIXME: see that comment just above. This is the line that could generate an EIPresence.
         if (deviceDisconnected) { unicastListener.onDeviceDisconnected(remotePeer); }
+    }
+
+    /**
+     * get a random member from a set.
+     */
+    private Channel chooseRandomlyFrom(Set<Channel> channels)
+    {
+        Preconditions.checkArgument(!channels.isEmpty());
+        return channels.toArray(new Channel[0])[random.nextInt(channels.size())];
     }
 
     /**
      * Add a future that will perform directory management when a channel goes offline.
      */
-    private void addChannelCloseFuture(final DID did, final Channel channel)
+    private void addChannelCloseFuture(final DID did, final ChannelCost cost, final Channel channel)
     {
         Preconditions.checkNotNull(unicastListener);
 
@@ -125,8 +169,25 @@ public class ChannelDirectory
             @Override
             public void operationComplete(ChannelFuture channelFuture) throws Exception
             {
-                ChannelDirectory.this.remove(channel, did);
+                ChannelDirectory.this.remove(cost, channel, did);
             }
         });
+    }
+
+    private class ChannelCost implements Comparable<ChannelCost>
+    {
+        ITransport tp;
+        Channel channel;
+
+        ChannelCost(Channel channel, ITransport tp) { this.channel = channel; this.tp = tp; }
+
+        /** Use Transport rank to compare two ChannelCost instances */
+        // TODO: use channel state as well; prefer VERIFIED over CONNECTED
+        @Override
+        public int compareTo(ChannelCost other)
+        {
+            int delta = this.tp.rank() - other.tp.rank();
+            return (delta == 0) ? this.channel.compareTo(other.channel) : delta;
+        }
     }
 }
