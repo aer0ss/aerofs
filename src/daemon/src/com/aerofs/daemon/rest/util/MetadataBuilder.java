@@ -115,7 +115,12 @@ public class MetadataBuilder
                 SOID soidDir = _ds.followAnchorNullable_(oa);
                 oaDir = soidDir != null ? _ds.getOANullable_(soidDir) : null;
             }
-            if (oaDir != null) children = children(object.toStringFormal(), oaDir, false);
+            if (oaDir != null) {
+                children = children(object.toStringFormal(), oaDir, false);
+            } else {
+                children = new ChildrenList(null, Collections.<Folder>emptyList(),
+                        Collections.<File>emptyList());
+            }
         }
 
         return oa.isDirOrAnchor()
@@ -157,12 +162,11 @@ public class MetadataBuilder
         List<File> files = Lists.newArrayList();
         for (OID c : children) {
             OA coa = _ds.getOAThrows_(new SOID(sidx, c));
-            if (coa.isExpelled()) continue;
             String restId = new RestObject(sid, c).toStringFormal();
             if (coa.isFile()) {
-                long size = -1;
+                Long size = null;
                 Date lastModified = null;
-                if (coa.caMasterNullable() != null) {
+                if (!coa.isExpelled() && coa.caMasterNullable() != null) {
                     size = coa.caMaster().length();
                     lastModified = new Date(coa.caMaster().mtime());
                 }

@@ -161,9 +161,6 @@ public class RestObjectResolver
             oa = _ds.getOAThrows_(soid);
         }
 
-        // the REST API ignores expelled object for now
-        if (oa.isExpelled()) throw new ExNotFound();
-
         return oa;
     }
 
