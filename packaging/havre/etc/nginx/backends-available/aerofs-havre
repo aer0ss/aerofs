@@ -52,4 +52,11 @@ location /api {
     proxy_set_header DName $ssl_client_s_dn;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    # no explicit limit on body size
+    # NB: this could be a problem since nginx buffers the entire body on-disk
+    # ideally a future version of stock nginx will introduce unbuffered upload
+    # to proxy. If that doesn't happen fast enough we may need to switch to
+    # https://github.com/alibaba/tengine
+    client_max_body_size 0;
 }
