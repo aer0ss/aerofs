@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
@@ -38,14 +40,16 @@ public class StoreDeleter
     private final DirectoryService _ds;
     private final IMapSIndex2SID _sidx2sid;
     private final StoreDeletionOperators _operators;
+    private final LocalACL _lacl;
 
     @Inject
     public StoreDeleter(IPhysicalStorage ps, DirectoryService ds, IMapSIndex2SID sidx2sid,
-            IStores ss, StoreDeletionOperators operators)
+            IStores ss, LocalACL lacl, StoreDeletionOperators operators)
     {
         _ss = ss;
         _ps = ps;
         _ds = ds;
+        _lacl = lacl;
         _sidx2sid = sidx2sid;
         _operators = operators;
     }
@@ -65,7 +69,7 @@ public class StoreDeleter
             throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
     {
         Set<SIndex> parents = _ss.getParents_(sidx);
-        if (parents.size() == 1) {
+        if (parents.size() == 1 && canDeleteUnanchored_(sidx)) {
             assert parents.contains(sidxParent);
             deleteRecursively_(sidx, pathOld, op, t);
         }
@@ -73,6 +77,21 @@ public class StoreDeleter
         // Remove the parent _after_ deleting the store, since the deletion code may need the
         // parenthood for path resolution, etc.
         _ss.deleteParent_(sidx, sidxParent, t);
+    }
+
+    /**
+     * on Team Server it's acceptable for a store other than a user root to not be anchored
+     * in any other store and remain admitted (technically it's also acceptable on a regular
+     * client but in that case the ref count never changes).
+     *
+     * In particular, if an arbitrary folder is shared from a Team Server we MUST NOT delete
+     * its content merely because all the members left. Instead we must wait for both
+     *   - the ref count to be 0
+     *   - ACLs to disappear
+     */
+    private boolean canDeleteUnanchored_(SIndex sidx) throws SQLException
+    {
+        return !L.isMultiuser() || _lacl.get_(sidx).isEmpty();
     }
 
     public void deleteRootStore_(SIndex sidx, PhysicalOp op, Trans t)
@@ -129,8 +148,7 @@ public class StoreDeleter
             final PhysicalOp op, final Trans t)
             throws IOException, ExNotFound, SQLException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
-        _ds.walk_(soidRoot, pathOldRoot, new IObjectWalker<ResolvedPath>()
-        {
+        _ds.walk_(soidRoot, pathOldRoot, new IObjectWalker<ResolvedPath>() {
             @Override
             public ResolvedPath prefixWalk_(ResolvedPath pathOldParent, OA oa)
             {
@@ -138,6 +156,13 @@ public class StoreDeleter
                 if (oa.type() != Type.DIR) {
                     return null;
                 } else if (oa.isExpelled()) {
+                    return null;
+                } else if (oa.soid().oid().isRoot()) {
+                    // should not cross store boundary here
+                    // if a sub-store is anchored in the store being deleted
+                    // either it will have been deleted as a result of its
+                    // ref count dropping to zero or it should not actually
+                    // be deleted
                     return null;
                 } else {
                     return pathOldParent.join(oa);

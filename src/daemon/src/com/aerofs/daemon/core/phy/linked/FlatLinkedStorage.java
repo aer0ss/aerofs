@@ -8,6 +8,9 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
@@ -22,7 +25,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.rocklog.RockLog;
@@ -30,6 +35,9 @@ import com.google.inject.Inject;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Arrays;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * A "flat" variant of {@code LinkedStorage} designed for multiuser configurations
@@ -78,6 +86,43 @@ public class FlatLinkedStorage extends LinkedStorage
             _usersDir.ensureDirExists();
             _sharedDir.ensureDirExists();
         }
+    }
+
+    @Override
+    public IPhysicalFile newFile_(ResolvedPath path, KIndex kidx) throws SQLException
+    {
+        return super.newFile_(shortest_(path), kidx);
+    }
+
+    @Override
+    public IPhysicalFolder newFolder_(ResolvedPath path) throws SQLException
+    {
+        return super.newFolder_(shortest_(path));
+    }
+
+    /**
+     * ResolvedPath that start from a user root and reaches into a shared folder
+     * need to be shortened to only include the fragment starting at the innermost
+     * root
+     */
+    private ResolvedPath shortest_(ResolvedPath path)
+    {
+        if (path.isEmpty()) return path;
+
+        SIndex sidx = path.soid().sidx();
+        SID sid = _sidx2sid.get_(sidx);
+        if (sid.equals(path.sid())) return path;
+
+        final int n = path.soids.size();
+        int i = n;
+        while (--i >= 0) {
+            if (!path.soids.get(i).sidx().equals(sidx)) break;
+        }
+        ResolvedPath r = new ResolvedPath(sid,
+                path.soids.subList(i + 1, n),
+                Arrays.asList(path.elements()).subList(i + 1, n));
+        l.debug("shortened {} -> {}", path, r);
+        return r;
     }
 
     @Override

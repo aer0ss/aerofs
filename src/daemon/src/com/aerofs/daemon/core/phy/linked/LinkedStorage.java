@@ -65,7 +65,7 @@ public class LinkedStorage implements IPhysicalStorage
     private final CfgStoragePolicy _cfgStoragePolicy;
     protected final CfgAbsRoots _cfgAbsRoots;
     private final IStores _stores;
-    private final IMapSIndex2SID _sidx2sid;
+    protected final IMapSIndex2SID _sidx2sid;
     private final LinkedRevProvider _revProvider;
     final RepresentabilityHelper _rh;
     private final RockLog _rl;

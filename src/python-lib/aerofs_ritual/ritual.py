@@ -106,11 +106,14 @@ class _RitualServiceWrapper(object):
     def list_pending_roots(self):
         return self._service.list_pending_roots().root
 
-    def share_folder(self, path, acl = {}, note = ""):
+    def share_folder(self, path, acl={}, note=""):
         """
         @param acl a dict of {subject:role}
         """
         pbpath = self.wait_path(path)
+        self.share_pbpath(pbpath, acl, note)
+
+    def share_pbpath(self, pbpath, acl={}, note=""):
         # folder sharing requires at least one invitee
         if not acl:
             acl = {"foo@bar.baz": EDITOR}
