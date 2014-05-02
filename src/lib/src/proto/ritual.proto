@@ -67,6 +67,8 @@ service RitualService {
     // already unshared.
     rpc UnshareFolder(UnshareFolderCall) returns(Void);
 
+    // This call is used exclusively in the TS. Not to be used in a single client. By user roots
+    // we mean the AeroFS folder of each user.
     rpc ListUserRoots(Void) returns(ListUserRootsReply);
 
     rpc ListSharedFolders(Void) returns(ListSharedFoldersReply);
@@ -383,6 +385,13 @@ message PBSharedFolder {
     required PBPath path = 1;
     required string name = 2;
     required bytes store_id = 3;
+    // Admitted is a term used for internal shared folder. Linked is used for external shared
+    // folders (aka external roots). If a folder is admitted or linked it is selected to sync on
+    // the particular device. The client can differentiate between internal and external folders by
+    // checking if the Path for a store contains any elements or not(see Path.java).
+    // Internal stores have non-empty elements array whereas external stores have an empty elements
+    // array.
+    required bool admitted_or_linked = 4;
 }
 
 message ListUserRootsReply {

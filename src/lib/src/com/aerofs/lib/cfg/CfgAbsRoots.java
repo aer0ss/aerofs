@@ -6,13 +6,16 @@ package com.aerofs.lib.cfg;
 
 import com.aerofs.base.id.SID;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class CfgAbsRoots
 {
-    public Map<SID, String> get() throws SQLException
+    public Map<SID, String> getAll() throws SQLException
     {
         return Cfg.getRoots();
     }
@@ -20,6 +23,11 @@ public class CfgAbsRoots
     public @Nullable String getNullable(SID sid) throws SQLException
     {
         return Cfg.getRootPathNullable(sid);
+    }
+
+    public @Nonnull String get(SID sid) throws SQLException
+    {
+        return checkNotNull(getNullable(sid));
     }
 
     public void add(SID sid, String absPath) throws SQLException

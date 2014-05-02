@@ -183,7 +183,7 @@ public class HistoryModel
             // if multiroot, use phy roots as top level
             Map<SID, String> r;
             try {
-                r = _cfgAbsRoots.get();
+                r = _cfgAbsRoots.getAll();
             } catch (SQLException e) {
                 l.error("ignored exception", e);
                 r = Collections.emptyMap();

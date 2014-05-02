@@ -8,18 +8,11 @@ import com.aerofs.proto.Ritual.PBSharedFolder;
 
 public class EIListSharedFolders extends AbstractEBIMC
 {
-    public enum Filter {
-        USER_ROOTS,
-        SHARED_FOLDERS
-    }
-
-    public final Filter _filter;
     public Collection<PBSharedFolder> _sharedFolders;
 
-    public EIListSharedFolders(Filter filter)
+    public EIListSharedFolders()
     {
         super(Core.imce());
-        _filter = filter;
     }
 
     public void setResult_(Collection<PBSharedFolder> sharedFolders)

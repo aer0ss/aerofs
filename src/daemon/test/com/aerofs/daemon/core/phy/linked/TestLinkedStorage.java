@@ -127,7 +127,7 @@ public class TestLinkedStorage extends AbstractTest
 
         when(lrm.absRootAnchor_(rootSID)).thenReturn(rootDir.getAbsolutePath());
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn(rootDir.getAbsolutePath());
-        when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, rootDir.getAbsolutePath()));
+        when(cfgAbsRoots.getAll()).thenReturn(ImmutableMap.of(rootSID, rootDir.getAbsolutePath()));
 
         when(cfgStoragePolicy.useHistory()).thenAnswer(new Answer<Boolean>()
         {

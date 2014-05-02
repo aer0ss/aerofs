@@ -26,7 +26,7 @@ public interface IMapSIndex2SID
     @Nonnull SID get_(SIndex sidx);
 
     /**
-     * @throw ExNotFound if the store doesn't exist locally
+     * @throws ExNotFound if the store doesn't exist locally
      */
     @Nonnull SID getThrows_(SIndex sidx) throws ExNotFound;
 

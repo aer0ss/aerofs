@@ -12,10 +12,13 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
 import com.google.common.base.Joiner;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class represents object paths. The path it presents is always relative to the root anchor.
@@ -76,7 +79,7 @@ public class Path implements Comparable<Path>
     }
 
     @Override
-    public int compareTo(Path otherPath)
+    public int compareTo(@Nonnull Path otherPath)
     {
         int diff = _sid.compareTo(otherPath._sid);
         return diff == 0 ? BaseUtil.compare(_elems, otherPath._elems) : diff;
@@ -101,7 +104,7 @@ public class Path implements Comparable<Path>
         // Don't remove the "o instanceof Path" in the test below.
         // SWT calls Path.equals() somewhere when you list children of a folder under your
         // AeroFS folder in the "Share New Folder..." dialog.
-        // This caused a ClassCastException deep in the bowels of SWT/jface.
+        // This caused a ClassCastException deep in the bowels of SWT/JFace.
         return this == o || (o != null && o instanceof Path &&
                     _sid.equals(((Path)o)._sid) && Arrays.equals(_elems, ((Path) o)._elems));
     }
@@ -116,7 +119,7 @@ public class Path implements Comparable<Path>
      */
     public String last()
     {
-        assert !isEmpty();
+        checkState(!isEmpty());
         return _elems[_elems.length - 1];
     }
 

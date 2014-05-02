@@ -26,6 +26,7 @@ import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
 import com.aerofs.daemon.core.admin.HdSetExpelled;
 import com.aerofs.daemon.core.admin.HdUpdateACL;
+import com.aerofs.daemon.core.fs.HdListSharedFolders;
 import com.aerofs.daemon.core.fs.HdCreateObject;
 import com.aerofs.daemon.core.fs.HdDeleteBranch;
 import com.aerofs.daemon.core.fs.HdDeleteObject;
@@ -35,7 +36,7 @@ import com.aerofs.daemon.core.fs.HdImportFile;
 import com.aerofs.daemon.core.fs.HdJoinSharedFolder;
 import com.aerofs.daemon.core.fs.HdLeaveSharedFolder;
 import com.aerofs.daemon.core.fs.HdListNonRepresentableObjects;
-import com.aerofs.daemon.core.fs.HdListSharedFolders;
+import com.aerofs.daemon.core.fs.HdListUserRoots;
 import com.aerofs.daemon.core.fs.HdMoveObject;
 import com.aerofs.daemon.core.fs.HdSetAttr;
 import com.aerofs.daemon.core.fs.HdShareFolder;
@@ -72,6 +73,7 @@ import com.aerofs.daemon.event.admin.EIListRevChildren;
 import com.aerofs.daemon.event.admin.EIListRevHistory;
 import com.aerofs.daemon.event.admin.EIListSharedFolderInvitations;
 import com.aerofs.daemon.event.admin.EIListSharedFolders;
+import com.aerofs.daemon.event.admin.EIListUserRoots;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
@@ -107,6 +109,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     @Inject HdJoinSharedFolder _hdJoinSharedFolder;
     @Inject HdLeaveSharedFolder _hdLeaveSharedFolder;
     @Inject HdListSharedFolders _hdListSharedFolders;
+    @Inject HdListUserRoots _hdListUserRoots;
     @Inject HdListSharedFolderInvitations _hdListSharedFolderInvitations;
     @Inject HdSetExpelled _hdSetExpelled;
     @Inject HdListExpelledObjects _hdListExpelledObjects;
@@ -172,6 +175,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIJoinSharedFolder.class, _hdJoinSharedFolder)
                 .setHandler_(EILeaveSharedFolder.class, _hdLeaveSharedFolder)
                 .setHandler_(EIListSharedFolders.class, _hdListSharedFolders)
+                .setHandler_(EIListUserRoots.class, _hdListUserRoots)
                 .setHandler_(EIListSharedFolderInvitations.class, _hdListSharedFolderInvitations)
                 .setHandler_(EIListConflicts.class, _hdListConflicts)
                 .setHandler_(EIExportConflict.class, _hdExportConflict)

@@ -10,7 +10,6 @@ import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
@@ -47,7 +46,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URLEncoder;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -778,17 +776,5 @@ public abstract class Util
         } else {
             return path;
         }
-    }
-
-    /**
-     * Derive the name of a shared folder from its Path
-     * This is necessary to handle external roots, whose Path are empty and whose name are dervied
-     * from the physical folder they are linked too.
-     *
-     * Classes that need to be unit-tested cannot access Cfg directly...
-     */
-    public static String sharedFolderName(Path path, CfgAbsRoots absRoots) throws SQLException
-    {
-        return path.isEmpty() ? new File(absRoots.getNullable(path.sid())).getName() : path.last();
     }
 }

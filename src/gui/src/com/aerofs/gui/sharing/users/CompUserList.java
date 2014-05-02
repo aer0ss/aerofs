@@ -45,7 +45,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import java.util.Map;
 
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.canHandle;
@@ -291,7 +290,8 @@ public class CompUserList extends Composite
                 Ritual.ListSharedFoldersReply reply = UIGlobals.ritual().listSharedFolders();
 
                 for (Ritual.PBSharedFolder folder : reply.getSharedFolderList()) {
-                    if (path.equals(Path.fromPB(folder.getPath()))) {
+                    if (folder.getAdmittedOrLinked()
+                            && path.equals(Path.fromPB(folder.getPath()))) {
                         return new SID(folder.getStoreId());
                     }
                 }

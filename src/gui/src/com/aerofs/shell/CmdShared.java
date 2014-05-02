@@ -1,7 +1,7 @@
 package com.aerofs.shell;
 
-import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.lib.Path;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import org.apache.commons.cli.CommandLine;
 
@@ -20,8 +20,8 @@ public class CmdShared extends AbstractShellCommand<ShProgram>
             Path path = Path.fromPB(sf.getPath());
             // Avoid printing SID whenever possible
             s.out().println(path.sid().equals(s.d().getPwd_().sid())
-                    ? path.toStringRelative()
-                    : path.toStringFormal());
+                ? path.toStringRelative()
+                : path.toStringFormal());
         }
     }
 

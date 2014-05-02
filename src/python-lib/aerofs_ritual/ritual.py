@@ -44,7 +44,6 @@ def _convert_acl(acl):
         srps.append(srp)
     return srps
 
-
 # This will try to connect once, and throw an exception if it fails
 def _connect(rpc_host_addr, rpc_host_port):
     conn = connection.SyncConnectionService(rpc_host_addr, rpc_host_port)
@@ -121,11 +120,32 @@ class _RitualServiceWrapper(object):
         return self._service.share_folder(pbpath, srps, note, False)
 
     def list_shared_folders(self):
+        """
+        This returns a list of all shared folders irrespective of if
+        whether they are admitted/linked or not.
+        This returns abs paths.
+        """
         r = []
         # NB: this does NOT handle external roots properly...
         for sf in self._service.list_shared_folders().shared_folder:
             r.append(convert.pbpath_to_absolute(sf.path))
         return r
+
+    def list_admitted_or_linked_shared_folders(self):
+        """
+        This returs a list of only those shared folders that have been
+        admitted/linked (i.e. not expelled folders or unlinked roots)
+        This returns abs paths.
+        """
+        r = []
+        # NB: this does NOT handle external roots properly...
+        for sf in self._service.list_shared_folders().shared_folder:
+            if sf.admitted_or_linked:
+                r.append(convert.pbpath_to_absolute(sf.path))
+        return r
+
+    def list_shared_folders_names(self):
+        return [sf.name for sf in self._service.list_shared_folders().shared_folder]
 
     def get_sid(self, path):
         # NB: this does NOT handle external roots properly...

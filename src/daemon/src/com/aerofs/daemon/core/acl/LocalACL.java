@@ -167,7 +167,10 @@ public class LocalACL
         invalidate_(sidx);
     }
 
-    Set<SIndex> getAccessibleStores_() throws SQLException
+    /**
+     * This method gets all accessible stores for the local user as stored in the LocalACL.
+     */
+    public Set<SIndex> getAccessibleStores_() throws SQLException
     {
         Set<SIndex> s = Sets.newHashSet();
         IDBIterator<SIndex> it = _adb.getAccessibleStores_(_cfgLocalUser.get());

@@ -68,7 +68,7 @@ public class TestLinkedRevProvider extends AbstractTest
         revDir.mkdirs();
 
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn(rootDir.getAbsolutePath());
-        when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, rootDir.getAbsolutePath()));
+        when(cfgAbsRoots.getAll()).thenReturn(ImmutableMap.of(rootSID, rootDir.getAbsolutePath()));
 
         LinkerRoot root = mock(LinkerRoot.class);
         when(root.sid()).thenReturn(rootSID);

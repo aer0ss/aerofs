@@ -58,7 +58,7 @@ public class TestHistoryModel extends AbstractTest
     {
         when(cfgLocalUser.get()).thenReturn(user);
         when(ritualProvider.getBlockingClient()).thenReturn(ritual);
-        when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS"));
+        when(cfgAbsRoots.getAll()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS"));
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn("/AeroFS");
 
         model = new HistoryModel(ritualProvider, StorageType.LINKED, cfgAbsRoots, cfgLocalUser);
@@ -192,7 +192,7 @@ public class TestHistoryModel extends AbstractTest
     public void shouldPopulateFirstLevelWithPhysicalRoots() throws Exception
     {
         SID ext = SID.generate();
-        when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS", ext, "/ext"));
+        when(cfgAbsRoots.getAll()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS", ext, "/ext"));
         when(cfgAbsRoots.getNullable(ext)).thenReturn("/ext");
 
         assertIndexList(null,

@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -288,9 +289,15 @@ class SharedFolderList extends Composite
      */
     private void fill(List<PBSharedFolder> sharedFolders)
     {
-        _table.setItemCount(sharedFolders.size());
+        // We don't want the number of table items to be sharedFolders.size() because right now
+        // we are not exposing expelled/pending folders.
+        Collection<Entry<String, Path>> sharedFoldersAlphabetical = UIUtil.getPathsSortedByName(
+                sharedFolders);
+
+            _table.setItemCount(sharedFoldersAlphabetical.size());
+
         int i = 0;
-        for (Entry<String, Path> entry : UIUtil.getPathsSortedByName(sharedFolders)) {
+        for (Entry<String, Path> entry :sharedFoldersAlphabetical) {
             String name = entry.getKey();
             Path path = entry.getValue();
 
@@ -299,7 +306,6 @@ class SharedFolderList extends Composite
             ti.setImage(Images.get(Images.ICON_SHARED_FOLDER));
             ti.setText(0, name);
             ti.setData(PATH_DATA, path);
-
             // absPath only available for Linked storage
             if (Cfg.storageType() == StorageType.LINKED) {
                 String root = null;
@@ -315,7 +321,6 @@ class SharedFolderList extends Composite
                 ti.setData(ABS_PATH_DATA, path.toAbsoluteString(root));
             }
         }
-
         boolean notEmpty = !sharedFolders.isEmpty();
 
         if (notEmpty) _table.select(0);

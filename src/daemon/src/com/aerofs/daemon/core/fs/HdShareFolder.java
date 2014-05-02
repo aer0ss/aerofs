@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
@@ -143,27 +144,27 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // 1) contact the central ACL server to share the folder
         // 2) convert the local folder into a shared folder
         //
-        // We contact the remote _first_ to update the acls because remote calls are much more
+        // We contact the remote _first_ to update the ACLs because remote calls are much more
         // likely to fail than local ones. A failure will safely prevent the folder from being
         // converted into a store (i.e. a half-state in the system).
         //
         // If the order were reversed we would convert the store locally first,
-        // and then update the acls for this store. At the same time,
+        // and then update the ACLs for this store. At the same time,
         // the migration process has started, and objects will be deleted from the old folder and
         // added to the store. At the same time, this update would be propagated to other devices
         // for the user. If the RPC call fails however, neither the sharer or their devices would
         // have permissions to receive the files or make modifications to the store,
         // resulting in all the contents vanishing. Not good. Moreover,
         // the system is in a half-state; the folder has been shared,
-        // but no acls for the owner exist; again, not good.
+        // but no ACLs for the owner exist; again, not good.
         //
-        // To prevent this we contact the remote first, verify that the acls are added, and then,
+        // To prevent this we contact the remote first, verify that the ACLs are added, and then,
         // make changes locally. Since the acl update process is idempotent from the perspective
         // of the stores' owner, multiple local failures can be handled properly,
         // while remote failures will prevent the system from being in a half-state
         //
 
-        String name = Util.sharedFolderName(ev._path, _absRoots);
+        String name = sharedFolderName(ev._path, _absRoots);
         callSP_(sid, name, SubjectPermissionsList.mapToPB(ev._subject2role), ev._emailNote,
                 ev._suppressSharedFolderRulesWarnings);
 
@@ -174,6 +175,17 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 
         l.info("shared: " + ev._path + " -> " + sid.toStringFormal());
     }
+
+    /**
+     * Derive the name of a shared folder from its Path
+     * This is necessary to handle external roots, whose Path are empty and whose name are derived
+     * from the physical folder they are linked too.
+     */
+    private static String sharedFolderName(Path path, CfgAbsRoots absRoots) throws SQLException
+    {
+        return path.isEmpty() ? new File(absRoots.get(path.sid())).getName() : path.last();
+    }
+
 
     private OA throwIfUnshareable_(Path path)
             throws SQLException, ExNotFound, ExNoPerm, ExExpelled, ExParentAlreadyShared,

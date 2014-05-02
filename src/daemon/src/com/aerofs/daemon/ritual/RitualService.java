@@ -37,7 +37,7 @@ import com.aerofs.daemon.event.admin.EIListRevChildren;
 import com.aerofs.daemon.event.admin.EIListRevHistory;
 import com.aerofs.daemon.event.admin.EIListSharedFolderInvitations;
 import com.aerofs.daemon.event.admin.EIListSharedFolders;
-import com.aerofs.daemon.event.admin.EIListSharedFolders.Filter;
+import com.aerofs.daemon.event.admin.EIListUserRoots;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
@@ -437,16 +437,16 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<ListUserRootsReply> listUserRoots() throws Exception
     {
-        EIListSharedFolders ev = new EIListSharedFolders(Filter.USER_ROOTS);
+        EIListUserRoots ev = new EIListUserRoots();
         ev.execute(PRIO);
         return createReply(
-                ListUserRootsReply.newBuilder().addAllUserRoot(ev._sharedFolders).build());
+                ListUserRootsReply.newBuilder().addAllUserRoot(ev._userRoots).build());
     }
 
     @Override
     public ListenableFuture<ListSharedFoldersReply> listSharedFolders() throws Exception
     {
-        EIListSharedFolders ev = new EIListSharedFolders(Filter.SHARED_FOLDERS);
+        EIListSharedFolders ev = new EIListSharedFolders();
         ev.execute(PRIO);
         return createReply(ListSharedFoldersReply.newBuilder()
                 .addAllSharedFolder(ev._sharedFolders).build());

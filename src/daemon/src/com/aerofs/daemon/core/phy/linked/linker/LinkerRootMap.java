@@ -105,7 +105,7 @@ public class LinkerRootMap
     {
         Map<SID, String> roots;
         try {
-            roots = _cfgAbsRoots.get();
+            roots = _cfgAbsRoots.getAll();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

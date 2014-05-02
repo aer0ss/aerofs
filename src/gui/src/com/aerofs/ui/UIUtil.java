@@ -415,12 +415,13 @@ public class UIUtil
         Multimap<String, Path> multimap = TreeMultimap.create();
 
         for (PBSharedFolder folder : folders) {
-            Path path = Path.fromPB(folder.getPath());
-            String name = sharedFolderName(path, folder.getName());
 
-            multimap.put(name, path);
+            if (folder.getAdmittedOrLinked()) {
+                Path path = Path.fromPB(folder.getPath());
+                String name = sharedFolderName(path, folder.getName());
+                multimap.put(name, path);
+            }
         }
-
         return multimap.entries();
     }
 
