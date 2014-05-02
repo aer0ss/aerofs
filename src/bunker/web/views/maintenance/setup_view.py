@@ -293,7 +293,7 @@ def json_verify_smtp(request):
             # debug their smtp issues. Return the error string.
             # We don't want to show stack dumps for internal failures (500 or any
             # other unexpected failure...)
-            error("Unable to send email. The error is:<br>" + markupsafe.escape(r.text))
+            error("Unable to send email. The error is:\n" + r.text)
         else:
             error("Unable to send email. Please check your SMTP settings.")
 

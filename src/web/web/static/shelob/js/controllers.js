@@ -42,11 +42,11 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     }, function(response) {
         $log.error('get folder call failed with ' + response.status);
         if (response.status == 503) {
-            showErrorMessage(getClientsOfflineErrorText());
+            showErrorMessageUnsafe(getClientsOfflineErrorText());
         } else if (response.status == 404) {
             showErrorMessage("The folder you requested was not found.");
         } else {
-            showErrorMessage(getInternalErrorText());
+            showErrorMessageUnsafe(getInternalErrorText());
         }
     });
 
@@ -84,17 +84,17 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
                 $window.location.replace(API_LOCATION + "/api/v1.2/files/" + oid + "/content?token=" + token);
             }, function(response) {
                 // somehow failed to get token despite the fact that a request just succeeded
-                showErrorMessage(getInternalErrorText());
+                showErrorMessageUnsafe(getInternalErrorText());
             });
         }, function(response) {
             // HEAD request failed
             $log.error('HEAD /files/' + oid + '/content failed with status ' + response.status);
             if (response.status == 503) {
-                showErrorMessage(getClientsOfflineErrorText());
+                showErrorMessageUnsafe(getClientsOfflineErrorText());
             } else if (response.status == 404) {
                 showErrorMessage("The file you requested was not found.");
             } else {
-                showErrorMessage(getInternalErrorText());
+                showErrorMessageUnsafe(getInternalErrorText());
             }
         });
     };
@@ -134,11 +134,11 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
             }, function(response) {
                 // create new folder failed
                 if (response.status == 503) {
-                    showErrorMessage(getClientsOfflineErrorText());
+                    showErrorMessageUnsafe(getClientsOfflineErrorText());
                 } else if (response.status == 409) {
                     showErrorMessage("A file or folder with that name already exists.");
                 } else {
-                    showErrorMessage(getInternalErrorText());
+                    showErrorMessageUnsafe(getInternalErrorText());
                 }
             });
         } else {
@@ -189,11 +189,11 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         }, function(response) {
             // rename failed
             if (response.status == 503) {
-                showErrorMessage(getClientsOfflineErrorText());
+                showErrorMessageUnsafe(getClientsOfflineErrorText());
             } else if (response.status == 409) {
                 showErrorMessage("A file or folder with that name already exists.");
             } else {
-                showErrorMessage(getInternalErrorText());
+                showErrorMessageUnsafe(getInternalErrorText());
             }
         }).finally(function() {
             // after success or failure
@@ -234,11 +234,11 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         }, function(response) {
             // move failed
             if (response.status == 503) {
-                showErrorMessage(getClientsOfflineErrorText());
+                showErrorMessageUnsafe(getClientsOfflineErrorText());
             } else if (response.status == 409) {
                 showErrorMessage("A file or folder with that name already exists.");
             } else {
-                showErrorMessage(getInternalErrorText());
+                showErrorMessageUnsafe(getInternalErrorText());
             }
         });
     };
@@ -290,8 +290,8 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         }, function(response) {
             // get children failed
             $log.error("fetching children failed");
-            if (response.status == 503) showErrorMessage(getClientsOfflineErrorText());
-            else showErrorMessage(getInternalErrorText());
+            if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
+            else showErrorMessageUnsafe(getInternalErrorText());
         });
     };
 
@@ -306,9 +306,9 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         }, function(response) {
             // failed to delete
             $log.error("deleting object failed: ", object.id);
-            if (response.status == 503) showErrorMessage(getClientsOfflineErrorText());
+            if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
             else if (response.status == 404) showErrorMessage("The " + object.type + " you requested was not found.");
-            else showErrorMessage(getInternalErrorText());
+            else showErrorMessageUnsafe(getInternalErrorText());
         });
     };
 

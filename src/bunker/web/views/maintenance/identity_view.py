@@ -48,7 +48,7 @@ def json_verify_ldap(request):
     # debug their LDAP issues. Return the error string.
     if r.status_code == 400:
         error("We couldn't connect to the LDAP server. Please check your "
-              "settings. The error is:<br>" + r.text)
+              "settings. The error is:\n" + r.text)
 
     # Server failure. No human readable error message is available.
     raise HTTPInternalServerError()

@@ -9,7 +9,7 @@
     <script>
         $(document).ready(function() {
             showErrorMessage = function(message) {
-                showErrorMessageUnnormalized(normalizeMessage(message) +
+                showErrorMessageUnnormalizedUnsafe(nltobr(escapify(normalizeMessage(message))) +
                     "<div class='footnote' style='margin-top: 10px'>" +
                         "If you need more information, " +
                         "<a href='${request.route_path('logs_auto_download')}' target='_blank'>" +

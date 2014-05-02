@@ -1,3 +1,17 @@
+// Convert newlines to line breaks
+function nltobr(message) {
+    return message.replace(/\n/g, "<br>");
+}
+
+// Ugly: use the DOM to escape HTML
+function escapify(message) {
+    $('body').append('<div id="dummy-node" style="display: none;"></div>');
+    var node = $('#dummy-node');
+    var escaped_message = node.text(message).html();
+    node.remove();
+    return escaped_message;
+}
+
 // HTML code is allowed in the message
 function showErrorMessageUnnormalizedUnsafe(message) {
     hideAllMessages();
@@ -10,9 +24,7 @@ function showErrorMessageUnsafe(message) {
 }
 
 function showErrorMessageUnnormalized(message) {
-    hideAllMessages();
-    $('#flash-msg-error-body').text(message);
-    $("#flash-msg-error").fadeIn();
+    showErrorMessageUnnormalizedUnsafe(nltobr(escapify(message)));
 }
 
 function showErrorMessage(message) {
@@ -35,15 +47,7 @@ function showSuccessMessageUnsafe(message) {
 }
 
 function showSuccessMessage(message) {
-    hideAllMessages();
-    var $msg = $("#flash-msg-success");
-    $msg.text(normalizeMessage(message));
-    $msg.fadeIn();
-
-    // Fade out the message in 8 seconds
-    successMessageTimer = window.setTimeout(function() {
-        $msg.fadeOut();
-    }, 8000);
+    showSuccessMessageUnsafe(nltobr(escapify(message)));
 }
 
 function hideAllMessages() {
@@ -89,7 +93,7 @@ function showErrorMessageFromResponse(xhr) {
             encodeURIComponent(window.location.pathname +
                 window.location.search + window.location.hash));
     } else {
-        showErrorMessage(getInternalErrorText());
+        showErrorMessageUnsafe(getInternalErrorText());
         console.log("show error message. status: " + xhr.status +
             " statusText: " + xhr.statusText + " responseText: " + xhr.responseText);
     }

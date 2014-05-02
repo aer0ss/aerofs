@@ -16,11 +16,11 @@ def error(message, type="unspecified", data=None):
         data: additional data for the Web frontend to process (optional)
     }
 
-    Note that the defualt "unspecified" type is not consumed by any code but is
+    Note that the default "unspecified" type is not consumed by any code but is
     supposed be read by humans.
 
-    @param message If the frontend uses aerofs.js:showErrorMessage() to display
-    the error, HTML code is allowed in the message.
+    @param message A plaintext message that should include no markup.  The
+                   frontend gets to decide how this will be displayed.
     """
     message = _normalize(message)
 
