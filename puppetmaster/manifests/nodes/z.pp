@@ -35,6 +35,7 @@ node "z.arrowfs.org" inherits default {
     "sv df90 pagerduty@sv.aerofs.com 22 /data",
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
     "x df90 pagerduty@x.aerofs.com 22 /dev/sda",
+    "dryad df90 pagerduty@dryad.aerofs.com 22 /dev/xvdb",
   ]:
     hour => "14",
     minute => "0",
@@ -55,6 +56,7 @@ node "z.arrowfs.org" inherits default {
     "verkehr port verkehr.aerofs.com 443",
     "zephyr checkzephyr zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
+    "dryad port dryad.aerofs.com 443",
   ]:
     hour => "*",
     minute => "*/10",

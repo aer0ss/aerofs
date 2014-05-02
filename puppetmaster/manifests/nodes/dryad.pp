@@ -3,5 +3,7 @@ node /^dryad\.aerofs\.com$/ inherits default {
         [ hiera('dev_users') ]:
     }
 
+    users::add_user { "pagerduty" : }
+
     common::service{"dryad": }
 }
