@@ -103,7 +103,7 @@ This step takes a while. It's probably a good time to look around in our [mailin
 ## Install VM tools
 
 * `vagrant` may be found [here](http://www.vagrantup.com)
-* `VirtualBox` may be found [here](http://www.virtualbox.org/wiki/Downloads) (Recommended version: 4.2.16).
+* `VirtualBox` may be found [here](http://www.virtualbox.org/wiki/Downloads) (Required version: 4.2.16).
 
 
 ## Install optional packages
