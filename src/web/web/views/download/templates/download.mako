@@ -2,24 +2,7 @@
 <%! page_title = "Download" %>
 
 <%block name="css">
-    <style type="text/css">
-        .btn-large {
-            margin-top: 60px;
-            padding-left: 70px;
-            padding-right: 70px;
-        }
-        .subtitle {
-            font-size: 70%;
-        }
-        .download-message {
-            font-style: italic;
-            font-size: 120%;
-        }
-        .description-block {
-            margin-top: 60px;
-            padding-top: 20px;
-        }
-    </style>
+    <link href="${request.static_path('web:static/css/download.css')}" rel="stylesheet">
 </%block>
 
 <%
@@ -65,13 +48,14 @@
 %endif
 
 %if signup_tagline:
-    <p class="download-message text-success" style="margin-top: 30px;">
-        Way to go! You've signed up for AeroFS. Install it now.
-    </p>
+    <div class="download-message">
+        Way to go! You've signed up for AeroFS.<br>
+        <span>Now install the AeroFS software:</span>
+    </div>
 %endif
 
 %if no_device_tagline:
-    <p class="download-message muted">
+    <p class="muted">
         %if is_team_server:
             Your team doesn't have ${program} installed. Install it now?
         %else:
@@ -81,10 +65,8 @@
 %endif
 
 ## The big button
-<p>
-    <a class="btn btn-primary btn-large" href="${downloading_url(os)}">
+    <a class="btn btn-primary btn-large download-button" href="${downloading_url(os)}">
         Download ${program}<br><span class="subtitle">for ${os_names[os]}</span></a>
-</p>
 
 ## Also available for...
 <p>

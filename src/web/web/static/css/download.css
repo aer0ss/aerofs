@@ -1,0 +1,32 @@
+.btn-large {
+    padding-left: 70px;
+    padding-right: 70px;
+}
+.subtitle {
+    font-size: 70%;
+}
+
+/* IE <9 */
+.download-message:first-line {
+    line-height: 1em;
+}
+
+.download-message::first-line {
+    line-height: 1em;
+}
+.download-message {
+    font-size: 2em;
+    margin-bottom: 1em;
+    line-height: 2.2em;
+    font-weight: 400;
+}
+.download-message span {
+    font-weight: 300;
+}
+.download-button {
+    margin-bottom: 2em;
+}
+.description-block {
+    margin-top: 60px;
+    padding-top: 20px;
+}
