@@ -81,18 +81,13 @@ ENDCMDS
 #
 ###############################################################################
 function publish_private_version_file_to_s3() {
-    echo ">> publishing to s3 bucket ${2}"
-
-    local local_DIR="${INSTALLERS_DOWNLOAD_DIR}/${1}"
+    declare VERSION_STRING="${1}"
+    declare S3_BUCKET="${2}"
+    echo ">> publishing version file $VERSION_STRING at ${VERSION_STRING} to s3 bucket ${S3_BUCKET}"
 
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        # Check to see that a version file exists in the specified version directory and is
-        # non-empty.
-        if [ ! -s "${INSTALLERS_DOWNLOAD_DIR}/${1}/${CURRENT_VER}" ]; then
-            exit $ERRS3
-        fi
-
-        s3cmd --follow-symlinks --acl-public --delete-removed \$EXTRA_OPTS sync "${local_DIR}"/* $2
+        echo "Version=$VERSION_STRING" > "${INSTALLERS_DOWNLOAD_DIR}/$CURRENT_VER"
+        s3cmd --follow-symlinks --acl-public --delete-removed put "${INSTALLERS_DOWNLOAD_DIR}/$CURRENT_VER" "${2}/$CURRENT_VER"
 ENDCMDS
 }
 
