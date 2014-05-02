@@ -161,6 +161,8 @@ public class RestObjectResolver
             oa = _ds.getOAThrows_(soid);
         }
 
+        if (oa.soid().oid().isTrash() || _ds.isDeleted_(oa)) throw new ExNotFound();
+
         return oa;
     }
 

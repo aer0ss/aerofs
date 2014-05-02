@@ -250,14 +250,23 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldReturn404ForExpelledPath() throws Exception
+    public void shouldGetExpelledPath() throws Exception
     {
-        mds.root().dir("d1").dir("d2", true);
+        mds.root().dir("d1")
+                .dir("d2", true)
+                    .dir("d3");
 
         givenAccess()
         .expect()
-                .statusCode(404)
-                .body("type", equalTo("NOT_FOUND"))
+                .statusCode(200)
+                .body("folders[0].id", equalTo(id(mds.root().soid())))
+                .body("folders[0].name", equalTo("AeroFS"))
+                .body("folders[0].is_shared", equalTo(false))
+
+                .body("folders[1].id", equalTo(object("d1").toStringFormal()))
+                .body("folders[1].name", equalTo("d1"))
+                .body("folders[1].is_shared", equalTo(false))
+                .body("folders[1].parent", equalTo(id(mds.root().soid())))
         .when().log().everything()
                 .get(RESOURCE + "/path", object("d1/d2").toStringFormal());
     }

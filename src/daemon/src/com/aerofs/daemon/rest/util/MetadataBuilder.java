@@ -173,7 +173,7 @@ public class MetadataBuilder
                 files.add(new File(restId, coa.name(), parent,
                         lastModified, size, _detector.detect(coa.name()),
                         _etags.etagForContent(coa.soid()).getValue()));
-            } else {
+            } else if (!coa.soid().oid().isTrash()){
                 folders.add(new Folder(restId, coa.name(), parent, coa.isAnchor()
                         ? SID.anchorOID2storeSID(coa.soid().oid()).toStringFormal() : null));
             }
