@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# Script to clean dryad log data.
+# N.B. this script is coupled to the implementation of the dryad persistence mechanism.
+
+usage()
+{
+    echo "usage: $0 <days_to_keep>"
+    exit 1
+}
+
+if [ $# -ne 1 ]
+then
+    usage
+fi
+
+days_to_keep=$(echo $1 | grep "^-\?[0-9]*$")
+
+if [ -z "$days_to_keep" ]
+then
+    usage
+fi
+
+# Top level directory is the org ID. Next level directory is the dryad ID.
+# Only find and delete based on dryad IDs.
+find /data/ -mindepth 2 -maxdepth 2 -mtime +$days_to_keep -print -exec rm -rf {} \;
