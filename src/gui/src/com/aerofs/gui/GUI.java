@@ -1,18 +1,18 @@
 package com.aerofs.gui;
 
-import com.aerofs.controller.Setup;
-import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.base.Loggers;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.controller.InstallActor;
+import com.aerofs.controller.Setup;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SignInActor;
+import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup;
 import com.aerofs.gui.multiuser.tray.MultiuserMenuProvider;
-import com.aerofs.gui.setup.DlgSignIn;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
+import com.aerofs.gui.setup.DlgSignIn;
 import com.aerofs.gui.singleuser.tray.SingleuserMenuProvider;
 import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.labeling.L;
@@ -24,11 +24,11 @@ import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
-import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.IUI;
 import com.aerofs.ui.UIUtil;
+import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.util.concurrent.SettableFuture;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -91,6 +91,26 @@ public class GUI implements IUI
              */
             throw new IOException("Graphical interface is not available. Please use the command" +
                     " line interface (" + S.CLI_NAME + ")", e);
+        }
+
+        if (OSUtil.isOSX()) {
+            // N.B. pressing Cmd+Q on OS-X triggers a keyboard shortcut to quit SWT. Doing so leaves
+            // both the GUI and daemon process alive and kills tray menu. Consequently, the users
+            // do not see AeroFS and has no way to interact with it.
+            // Furthermore, since the daemon alive, daemon will listen on the port and block any
+            // future attempts to launch AeroFS.
+            // Since Cmd+Q is a pretty common keyboard shortcut on OS X, this has caused much
+            // grief and confusion.
+            // This adds the listener to block the events from closing AeroFS, thus preventing
+            // users accidentally killing SWT with Cmd+Q shortcut
+            _disp.addListener(SWT.Close, new Listener()
+            {
+                @Override
+                public void handleEvent(Event event)
+                {
+                    event.doit = false;
+                }
+            });
         }
 
         // the grand grand parent shell for all other shells
