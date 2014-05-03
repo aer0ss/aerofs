@@ -249,7 +249,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     private long uploadPrefix_(InputStream in, IPhysicalPrefix pf, MessageDigest md)
             throws ExNoResource, ExAborted, IOException
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.CLIENT, "rest-upload");
+        Token tk = _tokenManager.acquireThrows_(Cat.API_UPLOAD, "rest-upload");
         try {
             TCB tcb = tk.pseudoPause_("rest-upload");
             try {

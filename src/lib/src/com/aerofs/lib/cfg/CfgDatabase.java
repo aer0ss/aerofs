@@ -79,6 +79,7 @@ public class CfgDatabase
         // Config for Categories (see Cat.java)
         MAX_CLIENT_STACKS("max_client_stacks", 5),
         MAX_SERVER_STACKS("max_server_stacks", 20),
+        MAX_API_UPLOADS("max_api_uploads", 10),
         MAX_HOUSEKEEPING_STACKS("max_housekeeping_stacks", 10),
         MAX_D2U_STACKS("max_d2u_stacks", 25),   // 25 = client + server stacks
 

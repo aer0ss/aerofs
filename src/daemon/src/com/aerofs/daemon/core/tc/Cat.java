@@ -5,8 +5,10 @@ package com.aerofs.daemon.core.tc;
  */
 public enum Cat {
 
+    // TODO: avoid tying up core thread on I/O (use async processing or coroutines)
     CLIENT("CLT"),
     SERVER("SRV"),
+    API_UPLOAD("UPLOAD"),
     HOUSEKEEPING("HK"),
     UNLIMITED("UN"),
     DID2USER("D2U");

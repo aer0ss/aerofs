@@ -981,7 +981,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn429WhenOutOfUploadTokens() throws Exception
     {
-        doThrow(new ExNoResource()).when(tokenManager).acquireThrows_(eq(Cat.CLIENT), anyString());
+        doThrow(new ExNoResource()).when(tokenManager).acquireThrows_(eq(Cat.API_UPLOAD), anyString());
 
         SOID soid = mds.root().file("foo.txt").soid();
 
