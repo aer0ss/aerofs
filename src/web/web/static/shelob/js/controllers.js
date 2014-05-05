@@ -8,7 +8,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     // bind $scope.outstandingRequests to the result of OutstandingRequestsCounter.get()
     // with a $watch so that the scope variable is updated when the result of the service
     // method changes
-    $scope.$watch(function() { return OutstandingRequestsCounter.get() }, function(val) {
+    $scope.$watch(function() { return OutstandingRequestsCounter.get(); }, function(val) {
         $scope.outstandingRequests = val;
         if (val > 0) angular.element(document.querySelector('html')).addClass('waiting');
         else angular.element(document.querySelector('html')).removeClass('waiting');
@@ -119,7 +119,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     //
     $scope.submitNewFolder = function() {
         $log.debug("new folder: " + $scope.newFolder.name);
-        if ($scope.newFolder.name != '') {
+        if ($scope.newFolder.name !== '') {
             var folderData = {name: $scope.newFolder.name, parent: $scope.currentFolder.id};
             API.post('/folders', folderData).then(function(response) {
                 // POST /folders returns the new folder object
@@ -176,7 +176,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     //
     $scope.submitRename = function(object) {
         $log.info("attempting rename from " + object.name + " to " + object.newName);
-        if (object.name == object.newName || object.newName == "") {
+        if (object.name == object.newName || object.newName === "") {
             $scope.cancelRename(object);
             return;
         }
