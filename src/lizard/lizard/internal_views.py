@@ -171,6 +171,7 @@ def release():
         else:
             appliance.set_public_version(version)
             flash(u'Released version {}'.format(version), 'success')
+            emails.send_internal_appliance_release_email("team@aerofs.com", version)
             return redirect(url_for('.release'))
     return render_template("release_version.html",
             form=form,

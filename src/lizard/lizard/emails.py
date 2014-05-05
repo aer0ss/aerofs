@@ -1,9 +1,12 @@
+import datetime
 import json
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from flask import current_app, render_template, url_for
+
+from . import appliance
 
 # TODO: extract these into external configuration
 SENDER_ADDR = "AeroFS <support@aerofs.com>"
@@ -137,3 +140,17 @@ def send_support_request_email(requester, message):
     part1 = MIMEText(text_body.encode('utf-8'), 'plain', 'utf-8')
     msg.attach(part1)
     _send_email(SUPPORT_ADDR, msg)
+
+def send_internal_appliance_release_email(email_address, appliance_version):
+    template_args = {
+            "version": appliance_version,
+            "now": datetime.datetime.today(),
+            "ova_link": appliance.ova_url(appliance_version),
+            "qcow_link": appliance.qcow_url(appliance_version),
+    }
+    text_body = render_template("emails/internal_release_email.txt", **template_args)
+    html_body = render_template("emails/internal_release_email.html", **template_args)
+    msg = _make_email_message(email_address,
+            "[Appliance Release] PC {} released".format(appliance_version),
+            text_body, html_body)
+    _send_email(email_address, msg)
