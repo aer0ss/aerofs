@@ -176,6 +176,6 @@ public class AuditClient
 
     private static final Gson       _gson = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .setDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
             .create();
 }
