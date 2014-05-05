@@ -30,3 +30,8 @@
     margin-top: 60px;
     padding-top: 20px;
 }
+
+.installation-instructions {
+    background: #eee;
+    padding: 1px 18px 18px 18px;
+}

@@ -23,7 +23,7 @@
         'steps': [
             ('Run the installer', 'Click on the .dmg file that just downloaded.'),
             ('Drag the icon', 'Drag the {} icon into your Applications folder to copy it to your computer.'.format(program)),
-            ('Double-Click the icon', 'Double click the {} icon in your Applications folder to launch the program!'.format(program))
+            ('Double-click the icon', 'Double click the {} icon in your Applications folder to launch the program!'.format(program))
         ]
     }
     deb_url = request.static_path('web:installer/' + deb)
@@ -48,28 +48,34 @@
         data = win_data
 %>
 
-## Use an iframe to start download automatically
-## http://stackoverflow.com/questions/156686/how-to-start-automatic-download-of-a-file-in-internet-explorer
-<iframe width="1" height="1" frameborder="0" src="${data['url']}"></iframe>
+<%block name="css">
+    <link href="${request.static_path('web:static/css/download.css')}" rel="stylesheet">
+</%block>
 
 <h2>Downloading ${program}...</h2>
 <p>
     ${program} download should automatically start within seconds. If it doesn't,
     <a href="${data['url']}">click here</a> to restart.
 </p>
+
 %if 'header_note' in data:
     <p>${data['header_note'] | n}</p>
 %endif
 
-<div class="row-fluid top-divider top-divider-margin" style="padding-top: 40px;"></div>
+## Use an iframe to start download automatically
+## http://stackoverflow.com/questions/156686/how-to-start-automatic-download-of-a-file-in-internet-explorer
+<iframe width="1" height="1" frameborder="0" src="${data['url']}"></iframe>
 
-%for i in range(len(data['steps'])):
-    ${instruction(data['steps'][i], i)}
-%endfor
+<div class="installation-instructions">
+    <h3>Installation</h3>
+    %for i in range(len(data['steps'])):
+        ${instruction(data['steps'][i], i)}
+    %endfor
+</div>
 
 <%def name="instruction(step, index)">
     <div class="row-fluid page-block">
-        <div class="span6">
+        <div class="span6 instruction">
             <img src="${request.static_path('web:static/img/download/{}{}.png'
             .format(data['id'], index))}">
         </div>
