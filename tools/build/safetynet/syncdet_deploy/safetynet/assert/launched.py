@@ -1,6 +1,6 @@
 from safetynet import client
 
-from aerofs_ritual import ritual
+from lib import ritual
 
 def assert_launched():
     # The daemon should have restarted from the update process
