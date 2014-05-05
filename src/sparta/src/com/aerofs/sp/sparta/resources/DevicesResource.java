@@ -6,7 +6,8 @@ package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.IAuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
@@ -36,7 +37,7 @@ public class DevicesResource
 
     @Since("1.1")
     @GET
-    public Response list(@Auth AuthToken token) throws SQLException
+    public Response list(@Auth IAuthToken token) throws SQLException
     {
         return Response.ok()
                 .entity(new Error(Type.INTERNAL_ERROR, "Not implemented"))

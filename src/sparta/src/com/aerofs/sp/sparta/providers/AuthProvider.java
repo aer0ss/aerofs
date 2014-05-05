@@ -6,7 +6,7 @@ package com.aerofs.sp.sparta.providers;
 
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.rest.providers.OAuthProvider;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.HttpContext;
 
@@ -22,7 +22,7 @@ public class AuthProvider extends OAuthProvider
     }
 
     @Override
-    public AuthToken getValue(HttpContext context)
+    public OAuthToken getValue(HttpContext context)
     {
         // TODO: client cert verification (ideally reuse HttpRequestAuthenticator from auditor)
 

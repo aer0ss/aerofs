@@ -16,7 +16,7 @@ import com.aerofs.daemon.rest.event.EIObjectPath;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.Fields;
 import com.aerofs.rest.api.*;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.restless.Auth;
@@ -53,7 +53,7 @@ public class FilesResource extends AbstractResource
     @Since("0.9")
     @GET
     @Path("/{file_id}")
-    public Response metadata(@Auth AuthToken token,
+    public Response metadata(@Auth OAuthToken token,
             @PathParam("file_id") RestObject object,
             @Context Version version,
             @QueryParam("fields") Fields fields)
@@ -67,7 +67,7 @@ public class FilesResource extends AbstractResource
     @GET
     @Path("/{file_id}/content")
     @Produces({MediaType.APPLICATION_OCTET_STREAM, "multipart/byteranges"})
-    public Response content(@Auth AuthToken token,
+    public Response content(@Auth OAuthToken token,
             @PathParam("file_id") RestObject object,
             @HeaderParam(Names.IF_RANGE) String ifRange,
             @HeaderParam(Names.RANGE) String range,
@@ -80,7 +80,7 @@ public class FilesResource extends AbstractResource
     @Since("0.10")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(@Auth AuthToken token,
+    public Response create(@Auth OAuthToken token,
             @Context Version version,
             File file) throws IOException
     {
@@ -94,7 +94,7 @@ public class FilesResource extends AbstractResource
     @PUT
     @Path("/{file_id}/content")
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
-    public Response upload(@Auth AuthToken token,
+    public Response upload(@Auth OAuthToken token,
             @PathParam("file_id") RestObject object,
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             @HeaderParam(Names.CONTENT_RANGE) ContentRange range,
@@ -112,7 +112,7 @@ public class FilesResource extends AbstractResource
     @PUT
     @Path("/{file_id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response move(@Auth AuthToken token,
+    public Response move(@Auth OAuthToken token,
             @PathParam("file_id") RestObject object,
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             File file) throws IOException
@@ -127,7 +127,7 @@ public class FilesResource extends AbstractResource
     @DELETE
     @Path("/{file_id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response delete(@Auth AuthToken token,
+    public Response delete(@Auth OAuthToken token,
             @PathParam("file_id") RestObject object,
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
             throws IOException
@@ -138,7 +138,7 @@ public class FilesResource extends AbstractResource
     @Since("1.2")
     @GET
     @Path("/{file_id}/path")
-    public Response path(@Auth AuthToken token,
+    public Response path(@Auth OAuthToken token,
             @PathParam("file_id") RestObject object)
     {
         return new EIObjectPath(_imce,  token, object).execute();

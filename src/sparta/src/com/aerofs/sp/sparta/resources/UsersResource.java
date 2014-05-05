@@ -19,7 +19,8 @@ import com.aerofs.oauth.Scope;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.rest.api.Invitation;
 import com.aerofs.rest.api.Quota;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.IAuthToken;
+import com.aerofs.rest.util.IUserAuthToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
@@ -104,17 +105,17 @@ public class UsersResource extends AbstractSpartaResource
         _audit = audit;
     }
 
-    private AuditableEvent audit(User caller, AuthToken token, AuditTopic topic, String event)
+    private AuditableEvent audit(User caller, IUserAuthToken token, AuditTopic topic, String event)
             throws SQLException, ExNotFound
     {
         return _audit.event(topic, event)
-                .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.did()));
+                .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.uniqueId()));
     }
 
     @Since("1.1")
     @GET
     @Path("/{email}")
-    public Response get(@Auth AuthToken token,
+    public Response get(@Auth IUserAuthToken token,
             @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
@@ -132,7 +133,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{email}/shares")
-    public Response listShares(@Auth AuthToken token, @PathParam("email") User user,
+    public Response listShares(@Auth IUserAuthToken token, @PathParam("email") User user,
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws ExNotFound, SQLException
     {
@@ -156,7 +157,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{email}/invitations")
-    public Response listInvitations(@Auth AuthToken token,
+    public Response listInvitations(@Auth IUserAuthToken token,
             @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
@@ -172,7 +173,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{email}/invitations/{sid}")
-    public Response getInvitation(@Auth AuthToken token,
+    public Response getInvitation(@Auth IUserAuthToken token,
             @PathParam("email") User user,
             @PathParam("sid") SharedFolder sf)
             throws ExNotFound, SQLException
@@ -200,7 +201,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @POST
     @Path("/{email}/invitations/{sid}")
-    public Response acceptInvitation(@Auth AuthToken token,
+    public Response acceptInvitation(@Auth IUserAuthToken token,
             @PathParam("email") User user,
             @PathParam("sid") SharedFolder sf,
             @QueryParam("external") @DefaultValue("0") String external,
@@ -240,7 +241,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @DELETE
     @Path("/{email}/invitations/{sid}")
-    public Response ignoreInvitation(@Auth AuthToken token,
+    public Response ignoreInvitation(@Auth IUserAuthToken token,
             @PathParam("email") User user,
             @PathParam("sid") SharedFolder sf)
             throws Exception
@@ -275,7 +276,7 @@ public class UsersResource extends AbstractSpartaResource
     }
 
     static ImmutableCollection<com.aerofs.rest.api.SharedFolder> listShares(User user,
-            MessageDigest md, AuthToken token)
+            MessageDigest md, IAuthToken token)
             throws ExNotFound, SQLException
     {
         ImmutableList.Builder<com.aerofs.rest.api.SharedFolder> bd = ImmutableList.builder();
@@ -300,7 +301,7 @@ public class UsersResource extends AbstractSpartaResource
                 sf.getPermissionsNullable(invitee).toArray());
     }
 
-    static ImmutableCollection<Invitation> listInvitations(User user, AuthToken token)
+    static ImmutableCollection<Invitation> listInvitations(User user, IAuthToken token)
             throws ExNotFound, SQLException
     {
         ImmutableList.Builder<com.aerofs.rest.api.Invitation> bd = ImmutableList.builder();
@@ -315,7 +316,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @POST
     public Response create(
-            @Auth AuthToken auth,
+            @Auth IUserAuthToken auth,
             com.aerofs.rest.api.User attrs,
             @Context Version version) throws Exception
     {
@@ -367,7 +368,7 @@ public class UsersResource extends AbstractSpartaResource
     @PUT
     @Path("/{email}")
     public Response update(
-            @Auth AuthToken auth,
+            @Auth IUserAuthToken auth,
             @PathParam("email") User target,
             com.aerofs.rest.api.User attrs) throws Exception
     {
@@ -404,7 +405,7 @@ public class UsersResource extends AbstractSpartaResource
     @DELETE
     @Path("/{email}")
     public Response delete(
-            @Auth AuthToken auth,
+            @Auth IUserAuthToken auth,
             @PathParam("email") User target)
             throws Exception
     {
@@ -428,7 +429,7 @@ public class UsersResource extends AbstractSpartaResource
     @PUT
     @Path("/{email}/password")
     public Response updatePassword(
-            @Auth AuthToken auth,
+            @Auth IUserAuthToken auth,
             @PathParam("email") User target,
             String newCredential) throws Exception
     {
@@ -452,7 +453,7 @@ public class UsersResource extends AbstractSpartaResource
     @DELETE
     @Path("/{email}/password")
     public Response deletePassword(
-            @Auth AuthToken auth,
+            @Auth IUserAuthToken auth,
             @PathParam("email") User target)
             throws Exception
     {
@@ -473,7 +474,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.2")
     @GET
     @Path("/{email}/quota")
-    public Response getQuota(@Auth AuthToken auth, @PathParam("email") User user)
+    public Response getQuota(@Auth IUserAuthToken auth, @PathParam("email") User user)
             throws SQLException, ExNotFound
     {
         requirePermission(Scope.READ_USER, auth);

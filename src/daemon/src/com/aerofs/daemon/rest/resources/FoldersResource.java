@@ -13,7 +13,7 @@ import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.daemon.rest.event.EIObjectPath;
 import com.aerofs.daemon.rest.util.Fields;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.rest.api.Folder;
 import com.aerofs.restless.Auth;
@@ -47,7 +47,7 @@ public class FoldersResource extends AbstractResource
     @Since("0.9")
     @GET
     @Path("/{folder_id}")
-    public Response metadata(@Auth AuthToken token,
+    public Response metadata(@Auth OAuthToken token,
             @Context Version version,
             @PathParam("folder_id") RestObject object,
             @QueryParam("fields") Fields fields)
@@ -60,7 +60,7 @@ public class FoldersResource extends AbstractResource
     @Since("0.10")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(@Auth AuthToken token,
+    public Response create(@Auth OAuthToken token,
             @Context Version version,
             Folder folder) throws IOException
     {
@@ -74,7 +74,7 @@ public class FoldersResource extends AbstractResource
     @PUT
     @Path("/{folder_id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response move(@Auth AuthToken token,
+    public Response move(@Auth OAuthToken token,
             @PathParam("folder_id") RestObject object,
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             Folder folder) throws IOException
@@ -88,7 +88,7 @@ public class FoldersResource extends AbstractResource
     @Since("0.10")
     @DELETE
     @Path("/{folder_id}")
-    public Response delete(@Auth AuthToken token,
+    public Response delete(@Auth OAuthToken token,
             @PathParam("folder_id") RestObject object,
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
             throws IOException
@@ -99,7 +99,7 @@ public class FoldersResource extends AbstractResource
     @Since("1.2")
     @GET
     @Path("/{folder_id}/children")
-    public Response children(@Auth AuthToken token,
+    public Response children(@Auth OAuthToken token,
             @PathParam("folder_id") RestObject object)
     {
         return new EIListChildren(_imce, token, object, false).execute();
@@ -108,7 +108,7 @@ public class FoldersResource extends AbstractResource
     @Since("1.2")
     @GET
     @Path("/{folder_id}/path")
-    public Response path(@Auth AuthToken token,
+    public Response path(@Auth OAuthToken token,
             @PathParam("folder_id") RestObject object)
     {
         return new EIObjectPath(_imce,  token, object).execute();

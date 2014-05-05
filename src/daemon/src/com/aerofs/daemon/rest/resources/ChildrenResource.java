@@ -6,7 +6,7 @@ package com.aerofs.daemon.rest.resources;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
 import com.aerofs.restless.Auth;
@@ -27,7 +27,7 @@ public class ChildrenResource extends AbstractResource
 {
     @Since("0.8")
     @GET
-    public Response listUserRoot(@Auth AuthToken token)
+    public Response listUserRoot(@Auth OAuthToken token)
     {
         return list(token, new RestObject(SID.rootSID(token.user()), OID.ROOT));
     }
@@ -35,7 +35,7 @@ public class ChildrenResource extends AbstractResource
     @Since("0.9")
     @GET
     @Path("/{folder_id}")
-    public Response list(@Auth AuthToken token,
+    public Response list(@Auth OAuthToken token,
             @PathParam("folder_id") RestObject object)
     {
         return new EIListChildren(_imce, token, object, true).execute();

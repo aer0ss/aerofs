@@ -18,7 +18,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.google.inject.Inject;
 
 import javax.ws.rs.WebApplicationException;
@@ -53,14 +53,14 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
 
 
     // TODO: handle fine-grained token scoping
-    protected static boolean hasAccessToFile(AuthToken token, Scope scope, ResolvedPath path)
+    protected static boolean hasAccessToFile(OAuthToken token, Scope scope, ResolvedPath path)
     {
         checkArgument(scope == Scope.READ_FILES || scope == Scope.WRITE_FILES);
         return (token.hasPermission(Scope.APPDATA) && path.isUnderOrEqual(appDataPath(token)))
                 || token.hasPermission(scope);
     }
 
-    protected static void requireAccessToFile(AuthToken token, Scope scope, ResolvedPath path)
+    protected static void requireAccessToFile(OAuthToken token, Scope scope, ResolvedPath path)
     {
         if (hasAccessToFile(token, scope, path)) return;
 
@@ -70,7 +70,7 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
                 .build());
     }
 
-    protected ResolvedPath requireAccessToFile(AuthToken token, Scope scope, OA oa)
+    protected ResolvedPath requireAccessToFile(OAuthToken token, Scope scope, OA oa)
             throws SQLException
     {
         ResolvedPath path = _access.resolve(oa, token.user());

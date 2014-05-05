@@ -1,7 +1,7 @@
 package com.aerofs.daemon.rest.event;
 
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.aerofs.daemon.rest.util.RestObject;
 import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.restless.util.ContentRange;
@@ -18,7 +18,7 @@ public class EIFileUpload extends AbstractRestEBIMC
     public final @Nullable ContentRange _range;
     public final InputStream _content;
 
-    public EIFileUpload(IIMCExecutor imce, AuthToken token, RestObject object,
+    public EIFileUpload(IIMCExecutor imce, OAuthToken token, RestObject object,
             EntityTagSet ifMatch, UploadID ulid, @Nullable ContentRange range, InputStream content)
     {
         super(imce, token);

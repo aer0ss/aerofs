@@ -6,6 +6,7 @@ package com.aerofs.sp.server.audit;
 
 import com.aerofs.base.NoObfuscation;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 
 import javax.annotation.Nonnull;
@@ -25,10 +26,10 @@ public class AuditCaller
         device = null;
     }
 
-    public AuditCaller(UserID user, @Nonnull UserID issuer, @Nonnull DID did)
+    public AuditCaller(UserID user, @Nonnull UserID issuer, @Nonnull UniqueID id)
     {
         email = issuer.getString();
         acting_as = issuer.equals(user) ? null : user.getString();
-        device = did.toStringFormal();
+        device = id.toStringFormal();
     }
 }

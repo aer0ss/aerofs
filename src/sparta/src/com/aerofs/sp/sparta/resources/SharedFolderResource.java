@@ -22,7 +22,7 @@ import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.rest.api.*;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.IUserAuthToken;
 import com.aerofs.oauth.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
@@ -101,18 +101,18 @@ public class SharedFolderResource extends AbstractSpartaResource
         _audit = audit;
     }
 
-    private AuditableEvent audit(SharedFolder sf, User caller, AuthToken token, String event)
+    private AuditableEvent audit(SharedFolder sf, User caller, IUserAuthToken token, String event)
             throws SQLException, ExNotFound
     {
         return _audit.event(AuditTopic.SHARING, event)
                 .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
-                .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.did()));
+                .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.uniqueId()));
     }
 
     @Since("1.1")
     @GET
     @Path("/{id}")
-    public Response get(@Auth AuthToken token,
+    public Response get(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws SQLException, ExNotFound
@@ -138,7 +138,7 @@ public class SharedFolderResource extends AbstractSpartaResource
 
     @Since("1.1")
     @POST
-    public Response create(@Auth AuthToken token,
+    public Response create(@Auth IUserAuthToken token,
             @Context Version version,
             com.aerofs.rest.api.SharedFolder share)
             throws Exception
@@ -180,7 +180,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{id}/members")
-    public Response listMembers(@Auth AuthToken token,
+    public Response listMembers(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws SQLException, ExNotFound
@@ -204,7 +204,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{id}/members/{email}")
-    public Response getMember(@Auth AuthToken token,
+    public Response getMember(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @PathParam("email") User member,
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
@@ -230,7 +230,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @POST
     @Path("/{id}/members")
-    public Response addMember(@Auth AuthToken token,
+    public Response addMember(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @Context Version version,
             Member member)
@@ -297,7 +297,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @PUT
     @Path("/{id}/members/{email}")
-    public Response updateMember(@Auth AuthToken token,
+    public Response updateMember(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @PathParam("email") User user,
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
@@ -353,7 +353,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @DELETE
     @Path("/{id}/members/{email}")
-    public Response removeMember(@Auth AuthToken token,
+    public Response removeMember(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @PathParam("email") User user,
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
@@ -394,7 +394,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{id}/pending")
-    public Response listPendingMembers(@Auth AuthToken token,
+    public Response listPendingMembers(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws SQLException, ExNotFound
@@ -421,7 +421,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{id}/pending/{email}")
-    public Response getPendingMember(@Auth AuthToken token,
+    public Response getPendingMember(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @PathParam("email") User user)
             throws SQLException, ExNotFound
@@ -443,7 +443,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @POST
     @Path("/{id}/pending")
-    public Response inviteMember(@Auth AuthToken token,
+    public Response inviteMember(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @Context Version version,
             PendingMember invitee)
@@ -497,7 +497,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @DELETE
     @Path("/{id}/pending/{email}")
-    public Response revokeInvitation(@Auth AuthToken token,
+    public Response revokeInvitation(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @PathParam("email") User user)
             throws SQLException, ExNotFound, ExNoPerm, ExBadArgs

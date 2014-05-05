@@ -7,7 +7,6 @@ package com.aerofs.rest.util;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.MDID;
-import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
@@ -24,31 +23,29 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-public class AuthToken
+public class OAuthToken
+    implements IUserAuthToken
 {
-    private final static Logger l = LoggerFactory.getLogger(AuthToken.class);
+    private final static Logger l = LoggerFactory.getLogger(OAuthToken.class);
 
     private final UserID user;
     private final UserID issuer;
     private final DID did;
-    private final OrganizationID org;
     private final String app;
+    //empty set means unrestricted scope
+    private final Map<Scope, Set<SID>> scopes;
 
     public UserID user() { return user; }
     public UserID issuer() { return issuer; }
+    public UniqueID uniqueId() { return did(); }
     public DID did() { return did; }
-    public OrganizationID orgId() { return org; }
     public String app() { return app; }
 
-    //empty set means unrestricted scope
-    public final Map<Scope, Set<SID>> scopes;
-
-    public AuthToken(VerifyTokenResponse response) throws ExFormatError
+    public OAuthToken(VerifyTokenResponse response) throws ExFormatError
     {
         issuer = response.principal.getIssuingUserID();
         user = response.principal.getEffectiveUserID();
         did = new MDID(UniqueID.fromStringFormal(response.mdid));
-        org = response.principal.getOrganizationID();
         scopes = parseScopes(response.scopes);
         app = response.audience;
     }

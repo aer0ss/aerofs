@@ -9,7 +9,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.aerofs.restless.util.HttpStatus;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.rest.api.Error;
@@ -27,11 +27,11 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
 {
     private static final Logger l = Loggers.getLogger(AbstractRestEBIMC.class);
 
-    public final AuthToken _token;
+    public final OAuthToken _token;
 
     private Object _result;
 
-    protected AbstractRestEBIMC(IIMCExecutor imce, AuthToken token)
+    protected AbstractRestEBIMC(IIMCExecutor imce, OAuthToken token)
     {
         super(imce);
         _token = token;

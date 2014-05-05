@@ -20,7 +20,7 @@ import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.lib.FullName;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.aerofs.oauth.Scope;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
@@ -354,7 +354,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     {
         sqlTrans.begin();
         MessageDigest md = BaseSecUtil.newMessageDigestMD5();
-        AuthToken tok = mock(AuthToken.class);
+        OAuthToken tok = mock(OAuthToken.class);
         when(tok.hasFolderPermission(any(Scope.class), any(SID.class))).thenReturn(true);
         UsersResource.listShares(factUser.create(user), md, tok);
         String etag = "W/\""

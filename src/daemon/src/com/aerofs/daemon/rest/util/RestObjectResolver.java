@@ -27,7 +27,7 @@ import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.IOSUtil;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.OAuthToken;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -56,7 +56,7 @@ public class RestObjectResolver
     @Inject private ObjectCreator _oc;
     @Inject private TransManager _tm;
 
-    public OA resolveFollowsAnchor_(RestObject object, AuthToken token)
+    public OA resolveFollowsAnchor_(RestObject object, OAuthToken token)
             throws ExNotFound, SQLException
     {
         try {
@@ -67,7 +67,7 @@ public class RestObjectResolver
         }
     }
 
-    public OA resolve_(RestObject object, AuthToken token) throws ExNotFound, SQLException
+    public OA resolve_(RestObject object, OAuthToken token) throws ExNotFound, SQLException
     {
         try {
             return resolveWithPermissions_(object, token, VIEWER);
@@ -77,7 +77,7 @@ public class RestObjectResolver
         }
     }
 
-    public OA resolveFollowsAnchorWithPermissions_(RestObject object, AuthToken token,
+    public OA resolveFollowsAnchorWithPermissions_(RestObject object, OAuthToken token,
             Permissions permissions)
             throws ExNotFound, ExNoPerm, SQLException
     {
@@ -93,7 +93,7 @@ public class RestObjectResolver
         return oa;
     }
 
-    public OA resolveWithPermissions_(RestObject object, AuthToken token, Permissions permissions)
+    public OA resolveWithPermissions_(RestObject object, OAuthToken token, Permissions permissions)
             throws ExNotFound, ExNoPerm, SQLException
     {
         OA oa = resolveImpl_(object, token);
@@ -103,7 +103,7 @@ public class RestObjectResolver
 
     private static final String APPDATA = ".appdata";
 
-    public static Path appDataPath(AuthToken token)
+    public static Path appDataPath(OAuthToken token)
     {
         return Path.fromString(SID.rootSID(token.user()), APPDATA);
     }
@@ -116,7 +116,7 @@ public class RestObjectResolver
         } catch (Exception e) {}
     }
 
-    private SOID createAppDataIfMissing(AuthToken token) throws SQLException, ExNotFound
+    private SOID createAppDataIfMissing(OAuthToken token) throws SQLException, ExNotFound
     {
         Path p = appDataPath(token);
         SOID soid = _ds.resolveNullable_(p);
@@ -142,7 +142,7 @@ public class RestObjectResolver
         }
     }
 
-    private OA resolveImpl_(RestObject object, AuthToken token) throws ExNotFound, SQLException
+    private OA resolveImpl_(RestObject object, OAuthToken token) throws ExNotFound, SQLException
     {
         OA oa;
         if (object.isAppData()) {

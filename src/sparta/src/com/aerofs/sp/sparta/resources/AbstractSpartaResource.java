@@ -7,7 +7,7 @@ package com.aerofs.sp.sparta.resources;
 import com.aerofs.base.id.SID;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.aerofs.rest.util.AuthToken;
+import com.aerofs.rest.util.IAuthToken;
 import com.aerofs.oauth.Scope;
 
 import javax.ws.rs.WebApplicationException;
@@ -17,14 +17,14 @@ import javax.ws.rs.core.Response.Status;
 
 public class AbstractSpartaResource
 {
-    protected static void requirePermission(Scope scope, AuthToken token)
+    protected static void requirePermission(Scope scope, IAuthToken token)
     {
         if (!token.hasPermission(scope)) {
             throw new WebApplicationException(tokenScope().build());
         }
     }
 
-    protected static void requirePermissionOnFolder(Scope scope, AuthToken token, SID sid)
+    protected static void requirePermissionOnFolder(Scope scope, IAuthToken token, SID sid)
     {
         if (!token.hasFolderPermission(scope, sid)) {
             throw new WebApplicationException(tokenScope().build());
