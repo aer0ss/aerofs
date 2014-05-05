@@ -21,4 +21,3 @@ public class ExFormatErrorExceptionMapper implements  ExceptionMapper<ExFormatEr
         return Response.status(Status.BAD_REQUEST).build();
     }
 }
-

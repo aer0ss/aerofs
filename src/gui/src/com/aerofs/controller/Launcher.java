@@ -270,6 +270,7 @@ public class Launcher
         new CommandNotificationSubscriber(
                 ChannelFactories.getClientChannelFactory(),
                 UIGlobals.scheduler(),
+                DryadUploadService.Factory.create(absRTRoot()),
                 Cfg.did())
             .start();
 

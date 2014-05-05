@@ -1,25 +1,25 @@
 package com.aerofs.dryad;
 
 import com.aerofs.base.Loggers;
-
+import com.aerofs.dryad.persistence.IDryadPersistence;
+import com.aerofs.dryad.persistence.LocalFileBasedPersistence;
 import com.aerofs.dryad.providers.ExFormatErrorExceptionMapper;
 import com.aerofs.dryad.resources.ApplianceLogsResource;
 import com.aerofs.dryad.resources.ClientLogsResource;
-import com.aerofs.dryad.storage.ApplianceLogsDryadDatabase;
-import com.aerofs.dryad.storage.ClientLogsDryadDatabase;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Module;
 
-import java.io.FileInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetSocketAddress;
-import java.util.Properties;
 import java.util.Set;
+
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class DryadServer extends Service
 {
@@ -28,9 +28,10 @@ public class DryadServer extends Service
         Loggers.init();
     }
 
-    public DryadServer(Injector injector, ApplianceLogsDryadDatabase ad, ClientLogsDryadDatabase cd)
+    public DryadServer(Injector injector)
     {
-        super("dryad-upload", new InetSocketAddress("0.0.0.0", 4433), null, injector, null);
+        super("dryad-upload", new InetSocketAddress("0.0.0.0", 4433), null, injector,
+                newCachedThreadPool());
 
         addResource(ApplianceLogsResource.class);
         addResource(ClientLogsResource.class);
@@ -54,17 +55,9 @@ public class DryadServer extends Service
             System.exit(1);
         }
 
-        Properties properties = new Properties();
-        properties.load(new FileInputStream(args[0]));
+        Injector injector = Guice.createInjector(new DryadModule(args[0]));
 
-        String storageDirectory = properties.getProperty("dryad.storage.directory");
-
-        ApplianceLogsDryadDatabase ad = new ApplianceLogsDryadDatabase(storageDirectory);
-        ClientLogsDryadDatabase cd = new ClientLogsDryadDatabase(storageDirectory);
-
-        Injector injector = Guice.createInjector(dryadModule(ad, cd));
-
-        final DryadServer dryad = new DryadServer(injector, ad, cd);
+        final DryadServer dryad = new DryadServer(injector);
         dryad.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -82,17 +75,22 @@ public class DryadServer extends Service
         return ImmutableSet.<Class<?>>of(ExFormatErrorExceptionMapper.class);
     }
 
-    public static Module dryadModule(final ApplianceLogsDryadDatabase ad,
-            final ClientLogsDryadDatabase cd)
+    private static class DryadModule extends AbstractModule
     {
-        return new AbstractModule() {
-            @Override
-            protected void configure()
-            {
-                bind(Configuration.class).to(DryadConfiguration.class);
-                bind(ApplianceLogsResource.class).toInstance(new ApplianceLogsResource(ad));
-                bind(ClientLogsResource.class).toInstance(new ClientLogsResource(cd));
-            }
-        };
+        private final DryadProperties _properties;
+
+        public DryadModule(String propertiesSource)
+                throws IOException
+        {
+            _properties = new DryadProperties(new File(propertiesSource));
+        }
+
+        @Override
+        protected void configure()
+        {
+            bind(DryadProperties.class).toInstance(_properties);
+            bind(Configuration.class).to(DryadConfiguration.class);
+            bind(IDryadPersistence.class).to(LocalFileBasedPersistence.class);
+        }
     }
 }

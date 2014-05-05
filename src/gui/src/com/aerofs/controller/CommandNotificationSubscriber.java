@@ -36,6 +36,7 @@ import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
 import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -92,14 +93,17 @@ public final class CommandNotificationSubscriber
     private final VerkehrSubscriber _subscriber;
 
     private final VerkehrListener _listener;
+    private final DryadUploadService _uploader;
 
     public CommandNotificationSubscriber(
             ClientSocketChannelFactory clientChannelFactory,
             IScheduler scheduler,
+            DryadUploadService uploader,
             DID localDevice)
     {
         _scheduler = scheduler;
         _er = new ExponentialRetry(_scheduler);
+        _uploader = uploader;
 
         _listener = new VerkehrListener();
 
@@ -197,7 +201,7 @@ public final class CommandNotificationSubscriber
                     },
                     ExNoPerm.class, ExBadArgs.class, IOException.class);
                 }
-           }, 0);
+            }, 0);
         }
 
         private void syncWithCommandServer()
@@ -330,6 +334,9 @@ public final class CommandNotificationSubscriber
                 case LOG_THREADS:
                     logThreads();
                     break;
+                case UPLOAD_LOGS:
+                    uploadLogs(command);
+                    break;
                 case OBSOLETE_WAS_CLEAN_SSS_DATABASE:
                     // obsoleted command, do no-op
                     break;
@@ -452,6 +459,16 @@ public final class CommandNotificationSubscriber
 
         // Log threads for the daemon process
         UIGlobals.ritual().logThreads();
+    }
+
+    private void uploadLogs(Command command) throws Exception
+    {
+        Preconditions.checkArgument(command.hasUploadLogsArgs());
+
+        final String dryadID = command.getUploadLogsArgs().getDryadId();
+        final String customerID = command.getUploadLogsArgs().getCustomerId();
+
+        _uploader.submit(dryadID, customerID);
     }
 
     private static class CommandFailed extends Exception

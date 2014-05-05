@@ -53,6 +53,11 @@ public class ContentRange
         return Range.closedOpen(Long.parseLong(tmp[0]), Long.parseLong(tmp[1]) + 1);
     }
 
+    public static @Nullable Range<Long> rangeNullable(@Nullable ContentRange contentRange)
+    {
+        return contentRange == null || contentRange.range() == null ? null : contentRange.range();
+    }
+
     @Override
     public String toString()
     {
