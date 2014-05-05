@@ -28,11 +28,17 @@ public class AuthToken
 {
     private final static Logger l = LoggerFactory.getLogger(AuthToken.class);
 
-    public final UserID user;
-    public final UserID issuer;
-    public final DID did;
-    public final OrganizationID org;
-    public final String app;
+    private final UserID user;
+    private final UserID issuer;
+    private final DID did;
+    private final OrganizationID org;
+    private final String app;
+
+    public UserID user() { return user; }
+    public UserID issuer() { return issuer; }
+    public DID did() { return did; }
+    public OrganizationID orgId() { return org; }
+    public String app() { return app; }
 
     //empty set means unrestricted scope
     public final Map<Scope, Set<SID>> scopes;

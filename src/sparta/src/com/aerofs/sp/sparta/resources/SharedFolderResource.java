@@ -106,7 +106,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     {
         return _audit.event(AuditTopic.SHARING, event)
                 .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
-                .embed("caller", new AuditCaller(caller.id(), token.issuer, token.did));
+                .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.did()));
     }
 
     @Since("1.1")
@@ -118,7 +118,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws SQLException, ExNotFound
     {
         requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
 
         MessageDigest md = BaseSecUtil.newMessageDigestMD5();
@@ -144,7 +144,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws Exception
     {
         checkArgument(share.name != null, "Request body missing required field: name");
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
 
         // in the unlikely event that we generate a UUID that's already taken,
         // retry up to 10 times before returning a 5xx
@@ -186,7 +186,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws SQLException, ExNotFound
     {
         requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
 
         // TODO: consider more robust etag
@@ -211,7 +211,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws ExBadArgs, ExNotFound, SQLException
     {
         requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
         Permissions p = throwIfNotAMember(sf, member, "No such member");
 
@@ -237,7 +237,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws Exception
     {
         requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         User user;
         try {
             user = _factUser.create(UserID.fromExternal(member.email));
@@ -305,7 +305,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws Exception
     {
         requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
         Permissions oldPermissions = throwIfNotAMember(sf, user, "No such member");
 
@@ -360,7 +360,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws Exception
     {
         requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
 
         // TODO: oauth scopes
@@ -400,7 +400,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws SQLException, ExNotFound
     {
         requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
 
 
@@ -427,7 +427,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws SQLException, ExNotFound
     {
         requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
 
         Permissions p = sf.getPermissionsNullable(user);
@@ -450,7 +450,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws Exception
     {
         requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
         User user;
         try {
@@ -503,7 +503,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws SQLException, ExNotFound, ExNoPerm, ExBadArgs
     {
         requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
         sf.throwIfNoPrivilegeToChangeACL(caller);
 

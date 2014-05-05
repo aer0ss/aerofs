@@ -44,12 +44,12 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
 
     public final UserID user()
     {
-        return _token.user;
+        return _token.user();
     }
 
     public final DID did()
     {
-        return _token.did;
+        return _token.did();
     }
 
     public Response execute()

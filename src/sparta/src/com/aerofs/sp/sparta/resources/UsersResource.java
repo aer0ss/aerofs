@@ -108,7 +108,7 @@ public class UsersResource extends AbstractSpartaResource
             throws SQLException, ExNotFound
     {
         return _audit.event(topic, event)
-                .embed("caller", new AuditCaller(caller.id(), token.issuer, token.did));
+                .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.did()));
     }
 
     @Since("1.1")
@@ -119,7 +119,7 @@ public class UsersResource extends AbstractSpartaResource
             throws ExNotFound, SQLException
     {
         requirePermission(Scope.READ_USER, token);
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotSelfOrTSOf(caller, user);
 
         FullName n = user.getFullName();
@@ -136,7 +136,7 @@ public class UsersResource extends AbstractSpartaResource
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws ExNotFound, SQLException
     {
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotSelfOrTSOf(caller, user);
 
         MessageDigest md = BaseSecUtil.newMessageDigestMD5();
@@ -161,7 +161,7 @@ public class UsersResource extends AbstractSpartaResource
             throws ExNotFound, SQLException
     {
         requirePermission(Scope.MANAGE_INVITATIONS, token);
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotSelfOrTSOf(caller, user);
 
         return Response.ok()
@@ -178,7 +178,7 @@ public class UsersResource extends AbstractSpartaResource
             throws ExNotFound, SQLException
     {
         requirePermission(Scope.MANAGE_INVITATIONS, token);
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotSelfOrTSOf(caller, user);
 
         if (sf.getStateNullable(user) != SharedFolderState.PENDING) {
@@ -208,7 +208,7 @@ public class UsersResource extends AbstractSpartaResource
             throws Exception
     {
         requirePermission(Scope.MANAGE_INVITATIONS, token);
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotSelfOrTSOf(caller, user);
 
         if (sf.getStateNullable(user) != SharedFolderState.PENDING) {
@@ -246,7 +246,7 @@ public class UsersResource extends AbstractSpartaResource
             throws Exception
     {
         requirePermission(Scope.MANAGE_INVITATIONS, token);
-        User caller = _factUser.create(token.user);
+        User caller = _factUser.create(token.user());
         throwIfNotSelfOrTSOf(caller, user);
 
         if (sf.getStateNullable(user) != SharedFolderState.PENDING) {
@@ -324,7 +324,7 @@ public class UsersResource extends AbstractSpartaResource
         checkArgument(attrs.firstName != null, "Request body missing required field: first_name");
         checkArgument(attrs.lastName != null, "Request body missing required field: last_name");
 
-        User caller = _factUser.create(auth.user);
+        User caller = _factUser.create(auth.user());
         User newUser = _factUser.createFromExternalID(attrs.email);
 
         // We are using "Team Server"-ness as a simple way to distinguish elevated callers.
@@ -375,7 +375,7 @@ public class UsersResource extends AbstractSpartaResource
         checkArgument(attrs.firstName != null, "Request body missing required first_name");
         checkArgument(attrs.lastName != null, "Request body missing required last_name");
 
-        User caller = _factUser.create(auth.user);
+        User caller = _factUser.create(auth.user());
         throwIfNotSelfOrTSOf(caller, target);
 
         FullName fullName = FullName.fromExternal(attrs.firstName, attrs.lastName);
@@ -409,7 +409,7 @@ public class UsersResource extends AbstractSpartaResource
             throws Exception
     {
         requirePermission(Scope.WRITE_USER, auth);
-        User caller = _factUser.create(auth.user);
+        User caller = _factUser.create(auth.user());
         throwIfNotSelfOrTSOf(caller, target);
 
         l.debug("API: user {} attempt delete {}", caller, target);
@@ -435,7 +435,7 @@ public class UsersResource extends AbstractSpartaResource
         requirePermission(Scope.MANAGE_PASSWORD, auth);
         checkArgument(!Strings.isNullOrEmpty(newCredential), "Cannot set an empty password value");
 
-        User caller = _factUser.create(auth.user);
+        User caller = _factUser.create(auth.user());
         throwIfNotSelfOrTSOf(caller, target);
 
         l.debug("API: user {} requests password update for {}", caller, target);
@@ -457,7 +457,7 @@ public class UsersResource extends AbstractSpartaResource
             throws Exception
     {
         requirePermission(Scope.MANAGE_PASSWORD, auth);
-        User caller = _factUser.create(auth.user);
+        User caller = _factUser.create(auth.user());
         throwIfNotSelfOrTSOf(caller, target);
 
         l.debug("API: user {} requests password delete for {}", caller, target);
@@ -477,7 +477,7 @@ public class UsersResource extends AbstractSpartaResource
             throws SQLException, ExNotFound
     {
         requirePermission(Scope.READ_USER, auth);
-        User caller = _factUser.create(auth.user);
+        User caller = _factUser.create(auth.user());
         throwIfNotSelfOrTSOf(caller, user);
 
         return Response.ok()

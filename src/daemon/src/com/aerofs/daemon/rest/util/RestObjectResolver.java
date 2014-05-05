@@ -89,7 +89,7 @@ public class RestObjectResolver
                 throw new ExNotFound();
             }
         }
-        _acl.checkThrows_(token.user, oa.soid().sidx(), permissions);
+        _acl.checkThrows_(token.user(), oa.soid().sidx(), permissions);
         return oa;
     }
 
@@ -97,7 +97,7 @@ public class RestObjectResolver
             throws ExNotFound, ExNoPerm, SQLException
     {
         OA oa = resolveImpl_(object, token);
-        _acl.checkThrows_(token.user, oa.soid().sidx(), permissions);
+        _acl.checkThrows_(token.user(), oa.soid().sidx(), permissions);
         return oa;
     }
 
@@ -105,7 +105,7 @@ public class RestObjectResolver
 
     public static Path appDataPath(AuthToken token)
     {
-        return Path.fromString(SID.rootSID(token.user), APPDATA);
+        return Path.fromString(SID.rootSID(token.user()), APPDATA);
     }
 
     private void markHidden(Path p)
@@ -127,9 +127,9 @@ public class RestObjectResolver
                         PhysicalOp.APPLY, t);
                 markHidden(p);
             }
-            OID oid = _ds.getChild_(soid.sidx(), soid.oid(), token.app);
+            OID oid = _ds.getChild_(soid.sidx(), soid.oid(), token.app());
             if (oid == null) {
-                soid = _oc.create_(Type.DIR, soid, token.app, PhysicalOp.APPLY, t);
+                soid = _oc.create_(Type.DIR, soid, token.app(), PhysicalOp.APPLY, t);
             } else {
                 soid = new SOID(soid.sidx(), oid);
             }
@@ -151,7 +151,7 @@ public class RestObjectResolver
             SID sid = object.sid;
             OID oid = object.oid;
             if (object.isRoot()) {
-                sid = SID.rootSID(token.user);
+                sid = SID.rootSID(token.user());
                 oid = OID.ROOT;
             }
             SIndex sidx = _sid2sidx.getNullable_(sid);

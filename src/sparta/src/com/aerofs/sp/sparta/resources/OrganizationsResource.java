@@ -38,7 +38,7 @@ public class OrganizationsResource extends AbstractSpartaResource
     public Response get(@Auth AuthToken token, @PathParam("orgid") Organization org)
             throws SQLException, ExNotFound
     {
-        if (!token.user.equals(org.getTeamServerUser().id())) {
+        if (!token.user().equals(org.getTeamServerUser().id())) {
             return Response.status(Status.NOT_FOUND).build();
         }
 

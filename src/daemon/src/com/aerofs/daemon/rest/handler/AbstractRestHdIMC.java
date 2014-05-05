@@ -73,7 +73,7 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
     protected ResolvedPath requireAccessToFile(AuthToken token, Scope scope, OA oa)
             throws SQLException
     {
-        ResolvedPath path = _access.resolve(oa, token.user);
+        ResolvedPath path = _access.resolve(oa, token.user());
         requireAccessToFile(token, scope, path);
         return path;
     }

@@ -29,7 +29,7 @@ public class ChildrenResource extends AbstractResource
     @GET
     public Response listUserRoot(@Auth AuthToken token)
     {
-        return list(token, new RestObject(SID.rootSID(token.user), OID.ROOT));
+        return list(token, new RestObject(SID.rootSID(token.user()), OID.ROOT));
     }
 
     @Since("0.9")
