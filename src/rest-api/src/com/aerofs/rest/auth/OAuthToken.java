@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.rest.util;
+package com.aerofs.rest.auth;
 
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
@@ -69,7 +69,7 @@ public class OAuthToken implements IUserAuthToken
 
     public boolean hasUnrestrictedPermission(Scope scope)
     {
-        return !Scope.isQualifiable(scope) || Collections.emptySet().equals(scopes.get(scope));
+        return !Scope.isQualifiable(scope) || Collections.<RestObject>emptySet().equals(scopes.get(scope));
     }
 
     @Override

@@ -30,7 +30,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.aerofs.rest.util.OAuthToken;
+import com.aerofs.rest.auth.OAuthToken;
 import com.google.inject.Inject;
 
 import javax.ws.rs.WebApplicationException;

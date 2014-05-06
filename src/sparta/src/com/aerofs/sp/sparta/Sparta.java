@@ -11,7 +11,8 @@ import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
-import com.aerofs.rest.util.OAuthRequestFilter;
+import com.aerofs.rest.auth.OAuthExtractor;
+import com.aerofs.rest.auth.OAuthRequestFilter;
 import com.aerofs.restless.Version;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
@@ -32,7 +33,9 @@ import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
-import com.aerofs.sp.sparta.providers.AuthProvider;
+import com.aerofs.sp.server.lib.cert.CertificateDatabase;
+import com.aerofs.rest.providers.AuthProvider;
+import com.aerofs.sp.sparta.providers.CertAuthExtractor;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
 import com.aerofs.sp.sparta.providers.WirableMapper;
 import com.aerofs.sp.sparta.resources.DevicesResource;
@@ -99,6 +102,10 @@ public class Sparta extends Service
 
         enableVersioning();
 
+        addResource(new AuthProvider(
+                new OAuthExtractor(),
+                new CertAuthExtractor(injector.getInstance(CertificateDatabase.class))));
+
         addResource(UsersResource.class);
         addResource(DevicesResource.class);
         addResource(SharedFolderResource.class);
@@ -157,7 +164,6 @@ public class Sparta extends Service
     protected Set<Class<?>> singletons()
     {
         return ImmutableSet.of(
-                AuthProvider.class,
                 FactoryReaderProvider.class,
                 TransactionWrapper.class,
                 WirableMapper.class,

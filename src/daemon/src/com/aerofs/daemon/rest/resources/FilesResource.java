@@ -16,7 +16,7 @@ import com.aerofs.daemon.rest.event.EIObjectPath;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.Fields;
 import com.aerofs.rest.api.*;
-import com.aerofs.rest.util.OAuthToken;
+import com.aerofs.rest.auth.OAuthToken;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.restless.Auth;

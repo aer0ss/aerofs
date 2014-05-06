@@ -5,18 +5,29 @@
 package com.aerofs.sp.sparta.resources;
 
 
+import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.rest.api.Member;
 import com.aerofs.rest.api.PendingMember;
 import com.aerofs.rest.api.SharedFolder;
+import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
+import com.jayway.restassured.specification.RequestSpecification;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 
+import java.util.Base64;
+import java.util.Date;
+import java.util.Random;
+
 import static com.jayway.restassured.RestAssured.expect;
+import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -27,6 +38,11 @@ import static org.hamcrest.Matchers.startsWith;
 @SuppressWarnings("unchecked")
 public class TestSharedFolderResource extends AbstractResourceTest
 {
+    static {
+        LogUtil.enableConsoleLogging();
+        LogUtil.setLevel(LogUtil.Level.DEBUG);
+    }
+
     private final String BASE_RESOURCE = "/v1.1/shares/";
     private final String RESOURCE = BASE_RESOURCE + "{sid}";
 
@@ -34,6 +50,79 @@ public class TestSharedFolderResource extends AbstractResourceTest
     public void shouldReturn401WhenTokenMissing() throws Exception
     {
         expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+        .when().log().everything()
+                .get(RESOURCE, SID.generate().toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn401WhenCertSerialUnknown() throws Exception
+    {
+        Long serial = (long)new Random().nextInt(1000);
+        givenCert(DID.generate(), user, serial)
+        .expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+        .when().log().everything()
+                .get(RESOURCE, SID.generate().toStringFormal());
+    }
+
+    private static final Base64.Encoder base64 = Base64.getEncoder();
+
+    private static String encode(UserID user)
+    {
+        return BaseUtil.utf2string(base64.encode(BaseUtil.string2utf(user.getString())));
+    }
+
+    private RequestSpecification givenCert(DID did, UserID user, long serial)
+    {
+        return given()
+                .header(Names.AUTHORIZATION,
+                        "Aero-Device-Cert " + encode(user) + " " + did.toStringFormal())
+                .header("DName", "CN=" + BaseSecUtil.getCertificateCName(user, did))
+                .header("Serial", Long.toString(serial, 16))
+                .header("Verify", "SUCCESS");
+    }
+
+    @Test
+    public void shouldReturn401WhenCertRevoked() throws Exception
+    {
+        DID did = DID.generate();
+        Long serial = (long)new Random().nextInt(1000);
+
+        sqlTrans.begin();
+        CertificateDatabase certdb = inj.getInstance(CertificateDatabase.class);
+        certdb.insertCertificate(serial, did, new Date());
+        certdb.revokeCertificate(serial);
+        sqlTrans.commit();
+
+        givenCert(did, user, serial)
+        .expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+        .when().log().everything()
+                .get(RESOURCE, SID.generate().toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn401WhenCertDNameInvalid() throws Exception
+    {
+        DID did = DID.generate();
+        Long serial = (long)new Random().nextInt(1000);
+
+        sqlTrans.begin();
+        CertificateDatabase certdb = inj.getInstance(CertificateDatabase.class);
+        certdb.insertCertificate(serial, did, new Date());
+        sqlTrans.commit();
+
+        given()
+                .header(Names.AUTHORIZATION,
+                        "Aero-Device-Cert " + encode(user) + " " + did.toStringFormal())
+                .header("DName", "CN=foo")
+                .header("Serial", Long.toString(serial, 16))
+                .header("Verify", "SUCCESS")
+        .expect()
                 .statusCode(401)
                 .body("type", equalTo("UNAUTHORIZED"))
         .when().log().everything()
@@ -57,6 +146,29 @@ public class TestSharedFolderResource extends AbstractResourceTest
         SID sid = SID.rootSID(user);
 
         givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(sid.toStringFormal()))
+                .body("members.email", hasItem(user.getString()))
+                .body("members.permissions", hasItem(hasItems("MANAGE", "WRITE")))
+                .body("pending", emptyIterable())
+        .when()
+                .get(RESOURCE, sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldListRootStoreWithCert() throws Exception
+    {
+        SID sid = SID.rootSID(user);
+        DID did = DID.generate();
+        Long serial = (long)new Random().nextInt(1000);
+
+        sqlTrans.begin();
+        inj.getInstance(CertificateDatabase.class)
+                .insertCertificate(serial, did, new Date());
+        sqlTrans.commit();
+
+        givenCert(did, user, serial)
         .expect()
                 .statusCode(200)
                 .body("id", equalTo(sid.toStringFormal()))

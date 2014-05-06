@@ -12,13 +12,14 @@ import com.aerofs.daemon.rest.resources.FoldersResource;
 import com.aerofs.daemon.rest.resources.VersionResource;
 import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.rest.providers.AuthProvider;
 import com.aerofs.rest.providers.FactoryReaderProvider;
 import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
 import com.aerofs.rest.providers.JsonExceptionMapper;
-import com.aerofs.rest.providers.OAuthProvider;
+import com.aerofs.rest.auth.OAuthExtractor;
 import com.aerofs.rest.providers.ParamExceptionMapper;
 import com.aerofs.rest.providers.RuntimeExceptionMapper;
-import com.aerofs.rest.util.OAuthRequestFilter;
+import com.aerofs.rest.auth.OAuthRequestFilter;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Version;
 import com.google.common.collect.ImmutableSet;
@@ -60,6 +61,8 @@ public class RestService extends Service
         checkNotNull(kmgr.getCert());
         checkNotNull(kmgr.getPrivateKey());
 
+        addResource(new AuthProvider(new OAuthExtractor()));
+
         addResource(VersionResource.class);
         addResource(ChildrenResource.class);
         addResource(FoldersResource.class);
@@ -88,7 +91,6 @@ public class RestService extends Service
         // specify all providers explicitly instead of using a package scanner
         // because we flatten packages in the proguard step
         return ImmutableSet.of(
-                OAuthProvider.class,
                 FactoryReaderProvider.class,
                 JsonExceptionMapper.class,
                 ParamExceptionMapper.class,

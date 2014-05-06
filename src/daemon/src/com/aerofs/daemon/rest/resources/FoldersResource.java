@@ -13,7 +13,7 @@ import com.aerofs.daemon.rest.event.EIObjectInfo;
 import com.aerofs.daemon.rest.event.EIObjectInfo.Type;
 import com.aerofs.daemon.rest.event.EIObjectPath;
 import com.aerofs.daemon.rest.util.Fields;
-import com.aerofs.rest.util.OAuthToken;
+import com.aerofs.rest.auth.OAuthToken;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.rest.api.Folder;
 import com.aerofs.restless.Auth;

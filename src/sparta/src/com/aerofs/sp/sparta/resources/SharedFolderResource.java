@@ -23,7 +23,7 @@ import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.rest.api.*;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.aerofs.rest.util.IUserAuthToken;
+import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.oauth.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;

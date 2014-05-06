@@ -7,7 +7,7 @@ package com.aerofs.sp.sparta.resources;
 import com.aerofs.base.id.SID;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.aerofs.rest.util.IAuthToken;
+import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.oauth.Scope;
 
 import javax.ws.rs.WebApplicationException;

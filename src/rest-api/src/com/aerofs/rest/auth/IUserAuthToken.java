@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.rest.util;
+package com.aerofs.rest.auth;
 
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;

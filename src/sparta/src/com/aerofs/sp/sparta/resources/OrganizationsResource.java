@@ -5,7 +5,7 @@
 package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.rest.util.IUserAuthToken;
+import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;

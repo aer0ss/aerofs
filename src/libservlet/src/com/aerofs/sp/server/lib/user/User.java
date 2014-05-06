@@ -25,8 +25,8 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
-import com.aerofs.rest.util.IUserAuthToken;
-import com.aerofs.rest.util.OAuthRequestFilter;
+import com.aerofs.rest.auth.IUserAuthToken;
+import com.aerofs.rest.auth.OAuthRequestFilter;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.TOTP;
 import com.aerofs.sp.common.Base62CodeGenerator;
@@ -63,7 +63,6 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class User

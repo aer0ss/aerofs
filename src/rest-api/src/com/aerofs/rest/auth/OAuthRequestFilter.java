@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2015.
  */
 
-package com.aerofs.rest.util;
+package com.aerofs.rest.auth;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * Jersey container request filter that validates OAuth access tokens in HTTP requests and extracts
- * an {@link com.aerofs.rest.util.OAuthToken} to make it available through Context properties.
+ * an {@link OAuthToken} to make it available through Context properties.
  *
  * The actual verification is done by {@link TokenVerifier}, which provides a cache atop of bifrost.
  */
@@ -59,8 +59,8 @@ public class OAuthRequestFilter implements ContainerRequestFilter
         return req;
     }
 
-    private @Nullable String singleton(List<String> l)
+    private static @Nullable String singleton(List<String> l)
     {
-        return l != null && l.size() == 1 ? l.get(0) : null;
+        return l != null  && l.size() == 1 ? l.get(0) : null;
     }
 }

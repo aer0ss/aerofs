@@ -9,7 +9,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.rest.util.OAuthToken;
+import com.aerofs.rest.auth.OAuthToken;
 import com.aerofs.restless.util.HttpStatus;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.rest.api.Error;

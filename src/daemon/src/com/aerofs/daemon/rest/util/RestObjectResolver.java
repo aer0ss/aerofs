@@ -28,7 +28,7 @@ import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.IOSUtil;
-import com.aerofs.rest.util.OAuthToken;
+import com.aerofs.rest.auth.OAuthToken;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 

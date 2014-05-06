@@ -31,7 +31,7 @@ import com.aerofs.rest.api.File;
 import com.aerofs.rest.api.File.ContentState;
 import com.aerofs.rest.api.Folder;
 import com.aerofs.rest.api.ParentPath;
-import com.aerofs.rest.util.OAuthToken;
+import com.aerofs.rest.auth.OAuthToken;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
