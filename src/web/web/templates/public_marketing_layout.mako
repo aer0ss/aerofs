@@ -85,21 +85,21 @@
 
     <li><a href="${request.route_path('pricing')}">Pricing</a></li>
     %if sign_up_button:
-        <li class="pull-right">
+        <!-- <li class="pull-right">
             <a class="btn" id="nav-btn-sign-up" href="${request.route_path('pricing')}">
                 Sign up
             </a>
-        </li>
+        </li> -->
     %endif
     %if sign_in_button:
-        <li class="pull-right"><a href="${request.route_path('dashboard_home')}">Sign in</a></li>
+        <!-- <li class="pull-right"><a href="${request.route_path('dashboard_home')}">Sign in</a></li> -->
     %endif
-    <li class="pull-right top-contact"><a href="http://www.twitter.com/aerofs">
+    <!-- <li class="pull-right top-contact"><a href="http://www.twitter.com/aerofs">
         <i class="aerofs-icon-twitter" id="contact-twitter"></i></a></li>
     <li class="pull-right top-contact"><a href="mailto:business@aerofs.com">
         <i class="icon-envelope" id="contact-email"></i></a></li>
     <li class="pull-right top-contact"><a href="#" onclick="showEnterpriseContactForm(); return false;">
-        <i class="aerofs-icon-earphone" id="contact-phone"></i></a></li>
+        <i class="aerofs-icon-earphone" id="contact-phone"></i></a></li> -->
 </%block>
 
 <%def name="home_url()">
