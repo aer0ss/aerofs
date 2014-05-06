@@ -33,8 +33,6 @@ then
     # the "sed 127.0.0.1..." below is so the config server listens to the
     # world so we can test license file uploads using locally deployed web
     # (see the Wiki page for setting up locally deployed web).
-    #
-    # also updates mysqld to accept connections from *
     vagrant ssh -c \
         "cd /etc/nginx/sites-available && \
         sudo sed -i 's/listen localhost:/listen /g' * && \
@@ -42,8 +40,6 @@ then
         cd /opt/config && \
         sudo sed -i 's/127.0.0.1/0.0.0.0/g' *.py && \
         sudo service config restart && \
-        sudo sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf && \
-        sudo service mysql restart && \
         sudo iptables --flush"
 
     popd 1>/dev/null
