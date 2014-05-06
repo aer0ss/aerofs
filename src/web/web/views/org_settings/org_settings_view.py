@@ -1,8 +1,8 @@
-import logging, base64
+import logging
+import base64
 from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
-from web.util import flash_error, flash_success, get_rpc_stub, \
-    parse_rpc_error_exception, str2bool
+from web.util import flash_error, flash_success, get_rpc_stub, str2bool
 from web.views.payment.stripe_util \
     import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
 
@@ -51,7 +51,7 @@ def org_settings(request):
 
     reply = sp.get_org_preferences()
 
-    show_quota = str2bool(request.registry.settings['show_quota_options'])
+    show_quota = str2bool(request.registry.settings.get('show_quota_options', False))
     quota_reply = sp.get_quota()
     quota_enabled = quota_reply.HasField('quota')
     quota = _bytes2gb(quota_reply.quota) if quota_enabled else None
