@@ -249,6 +249,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
             new Label(composite, SWT.NONE);
 
            _helper.createCheckbox(composite);
+           _helper.readFromModel(_model);
            _helper._chkAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
            _controls.add(_helper._chkAPIAccess);
 

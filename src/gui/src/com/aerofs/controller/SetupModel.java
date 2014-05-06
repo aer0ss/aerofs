@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
+import com.aerofs.lib.cfg.CfgRestService;
 import com.aerofs.sp.client.SPBlockingClient;
 
 /**
@@ -38,8 +39,9 @@ public class SetupModel
         _localOptions = new LocalOptions();
         _s3Config = new S3Config();
         _sp = null;
-        // defaults to true for new devices, some setup path will offer option to change this
-        _apiAccess = true;
+        // The default value is controlled by CfgRestService and provided here. For both clients
+        // and Team Servers, this value should be used to initialize the UI state.
+        _apiAccess = new CfgRestService().getDefaultValue();
     }
 
     /**

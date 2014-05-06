@@ -12,7 +12,13 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Link;
 
-// a helper class for setup dialogs relating to API access.
+/**
+ * A helper class for setup dialogs relating to API access.
+ *
+ * The intention is for the setup dialogs and pages to call the helper methods to create the
+ * widgets first, and then the dialogs and pages will provide the model to initialize the widgets'
+ * states. The default state of the widget is entirely controlled by the model.
+ */
 public class APIAccessSetupHelper
 {
     public final boolean _showAPIAccess;
@@ -49,6 +55,7 @@ public class APIAccessSetupHelper
         return data;
     }
 
+    // this method _should always_ be called at least once to initialize the value for checkbox
     public void readFromModel(SetupModel model)
     {
         if (_showAPIAccess) {
