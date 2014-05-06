@@ -71,7 +71,7 @@ class _RitualServiceWrapper(object):
     All the methods that operate on logical objects wait until the object is
     recognized by the Daemon, except for *_no_wait() methods. This is necessary
     because test cases usually create physical objects on the filesystem first
-    and then call Ritual immediataely to manipulate them. Without the waiting
+    and then call Ritual immediately to manipulate them. Without the waiting
     the Daemon may throw object-not-found exceptions.
     """
 
@@ -81,7 +81,7 @@ class _RitualServiceWrapper(object):
     def heartbeat(self):
         self._service.heartbeat()
 
-    def wait_for_heartbeat(self, max_attempts=50):
+    def wait_for_heartbeat(self, max_attempts=300):
         attempts = 0
         while True:
             try:
