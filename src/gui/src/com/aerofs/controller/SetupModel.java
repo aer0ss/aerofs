@@ -38,8 +38,8 @@ public class SetupModel
         _localOptions = new LocalOptions();
         _s3Config = new S3Config();
         _sp = null;
-        // defaults to false for new devices, some setup path will offer option to change this
-        _apiAccess = false;
+        // defaults to true for new devices, some setup path will offer option to change this
+        _apiAccess = true;
     }
 
     /**
@@ -140,7 +140,7 @@ public class SetupModel
     private String          _username;
     private String          _password;
 
-    public boolean          _apiAccess;
+    private boolean         _apiAccess;
 
     private String          _devAlias;
     public boolean          _isLocal;
