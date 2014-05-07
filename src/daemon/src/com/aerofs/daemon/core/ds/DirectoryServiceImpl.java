@@ -515,8 +515,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         OA oa = getOA_(sokid.soid());
         assert oa.isFile();
 
-        // Non-master branches must have non-null hashes. See Hasher for detail.
-        assert h != null || sokid.kidx().equals(KIndex.MASTER);
         // Mtime since the 1970 epoch must not be negative
         assert mtime >= 0 : Joiner.on(' ').join(sokid, oa, mtime);
 

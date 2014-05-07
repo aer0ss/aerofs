@@ -266,25 +266,6 @@ public class Hasher
         }
     }
 
-    // Following method computes hash but doesn't store it in db.
-    public ContentHash computeHash_(IPhysicalPrefix pf, Token tk)
-        throws ExAborted, IOException, DigestException
-    {
-        // Pseudo pause before computing the IO intensive hash of the file.
-        TCB tcb = TC.tcb();
-        Util.verify(tk.pseudoPause_("hasher.compute") == tcb);
-        try {
-            InputStream in = pf.newInputStream_();
-            try {
-                return computeHashImpl(in, pf.getLength_(), null);
-            } finally {
-                in.close();
-            }
-        } finally {
-            tcb.pseudoResumed_();
-        }
-    }
-
     private static interface IAborter
     {
         // the implementer can throw at any time to abort hash computation
