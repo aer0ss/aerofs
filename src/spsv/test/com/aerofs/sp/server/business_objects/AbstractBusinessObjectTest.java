@@ -170,7 +170,7 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     protected static final String RETURNED_CERT = "returned_cert";
     protected static long _lastSerialNumber = 564645L;
 
-    Certificate addCert(Device device) throws Exception
+    void addCert(Device device) throws Exception
     {
         CertificationResult cert = mock(CertificationResult.class);
         when(cert.toString()).thenReturn(RETURNED_CERT);
@@ -178,6 +178,5 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
         when(cert.getExpiry()).thenReturn(new Timestamp(System.currentTimeMillis() + C.DAY * 365L));
 
         device.addCertificate(cert);
-        return device.certificate();
     }
 }

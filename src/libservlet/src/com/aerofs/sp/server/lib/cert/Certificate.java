@@ -1,10 +1,14 @@
 package com.aerofs.sp.server.lib.cert;
 
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
 
 import javax.inject.Inject;
 import java.sql.SQLException;
+import java.util.List;
 
 public class Certificate
 {
@@ -18,19 +22,27 @@ public class Certificate
             _certdb = certdb;
         }
 
-        public Certificate create(DID did)
+        public ImmutableList<Certificate> list(DID did)
+                throws SQLException, ExNotFound, ExFormatError
         {
-            return new Certificate(this, did);
+            List<Long> serials = _certdb.getAllSerialsIssuedFor(did);
+            Builder<Certificate> builder = ImmutableList.builder();
+            for (long s: serials) {
+                builder.add(new Certificate(this, _certdb.getDid(s), s));
+            }
+            return builder.build();
         }
     }
 
     private final Factory _f;
     private final DID _did;
+    private final long  _serial;
 
-    public Certificate(Factory f, DID did)
+    public Certificate(Factory f, DID did, long serial)
     {
         _f = f;
         _did = did;
+        _serial = serial;
     }
 
     public DID did()
@@ -39,26 +51,19 @@ public class Certificate
     }
 
     public long serial()
-            throws SQLException, ExNotFound
     {
-        return _f._certdb.getSerial(_did);
-    }
-
-    public boolean exists()
-            throws SQLException
-    {
-        return _f._certdb.exists(_did);
+        return _serial;
     }
 
     public boolean isRevoked()
             throws SQLException, ExNotFound
     {
-        return _f._certdb.isRevoked(_did);
+        return _f._certdb.isRevoked(_serial);
     }
 
     public void revoke()
             throws SQLException, ExNotFound
     {
-        _f._certdb.revokeCertificate(_did);
+        _f._certdb.revokeCertificate(_serial);
     }
 }

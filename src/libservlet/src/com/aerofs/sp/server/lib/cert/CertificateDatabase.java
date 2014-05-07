@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.db.DBUtil;
@@ -21,7 +22,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
-import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_CERT_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_CERT_EXPIRE_TS;
@@ -60,15 +60,15 @@ public class CertificateDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void revokeCertificate(DID did)
+    public void revokeCertificate(long serial)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement("update "
                 + T_CERT + " set " + C_CERT_REVOKE_TS + " = current_timestamp, " +
                 C_CERT_EXPIRE_TS + " = " + C_CERT_EXPIRE_TS + " where " + C_CERT_REVOKE_TS +
-                " = 0 and " + C_CERT_DEVICE_ID + " = ?");
+                " = 0 and " + C_CERT_SERIAL + " = ?");
 
-        ps.setString(1, did.toStringFormal());
+        ps.setLong(1, serial);
         ps.execute();
     }
 
@@ -97,67 +97,55 @@ public class CertificateDatabase extends AbstractSQLDatabase
         }
     }
 
-    public boolean isRevoked(DID did)
-        throws SQLException, ExNotFound
+    public ImmutableList<Long> getAllSerialsIssuedFor(DID did)
+            throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_CERT, C_CERT_DEVICE_ID + " =?", C_CERT_REVOKE_TS));
-
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
+                C_CERT_DEVICE_ID + " = ?", C_CERT_SERIAL ));
         ps.setString(1, did.toStringFormal());
         ResultSet rs = ps.executeQuery();
+        try {
+            Builder<Long> builder = ImmutableList.builder();
+            while (rs.next()) {
+                builder.add(rs.getLong(1));
+            }
+            return builder.build();
+        } finally {
+            rs.close();
+        }
+    }
 
+    public DID getDid(long serial)
+            throws SQLException, ExNotFound, ExFormatError
+    {
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
+                C_CERT_SERIAL + " = ?", C_CERT_DEVICE_ID));
+        ps.setLong(1, serial);
+        ResultSet rs = ps.executeQuery();
         try {
             if (!rs.next()) {
                 throw new ExNotFound();
             }
-
-            long revokeTime = rs.getLong(1);
-            // If the revoke timestamp is greater than 0, then the certificate has been revoked.
-            return revokeTime > 0;
+            return new DID(rs.getString(1));
         } finally {
             rs.close();
         }
     }
 
-    /**
-     * Get the serial number for a given device.
-     *
-     * @return the serial number of the most recent certificate associated with the specified
-     * device, or INVALID_SERIAL if a certificate does not exist for this DID.
-     */
-    public long getSerial(DID did)
+    public boolean isRevoked(long serial)
             throws SQLException, ExNotFound
     {
-        // We want the most *recent* cert associated with this DID.  It's possible that we
-        // know about multiple certificates, as devices may renew their certificates over
-        // time.  However, CA serial numbers are guaranteed to be increasing for the entire life of
-        // the product.
-        PreparedStatement ps = prepareStatement(selectWhere(T_CERT, C_CERT_DEVICE_ID + "=?",
-                C_CERT_SERIAL) + " order by " + C_CERT_SERIAL + " desc");
-        ps.setString(1, did.toStringFormal());
-
+        PreparedStatement ps = prepareStatement(
+                DBUtil.selectWhere(T_CERT, C_CERT_SERIAL + " =?", C_CERT_REVOKE_TS));
+        ps.setLong(1, serial);
         ResultSet rs = ps.executeQuery();
         try {
             if (!rs.next()) {
-                throw new ExNotFound("device " + did);
-            } else {
-                return rs.getLong(1);
+                throw new ExNotFound();
             }
-        } finally {
-            assert !rs.next();
-            rs.close();
-        }
-    }
-
-    public boolean exists(DID did)
-            throws SQLException
-    {
-        PreparedStatement ps = prepareStatement(selectWhere(T_CERT, C_CERT_DEVICE_ID + "=?",
-                "count(*)"));
-        ps.setString(1, did.toStringFormal());
-        ResultSet rs = ps.executeQuery();
-        try {
-            return binaryCount(rs);
+            long revokeTime = rs.getLong(1);
+            // If the revoke timestamp is greater than 0, then the certificate has been revoked.
+            return revokeTime > 0;
         } finally {
             rs.close();
         }

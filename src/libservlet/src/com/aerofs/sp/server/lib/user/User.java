@@ -551,7 +551,7 @@ public class User
      * or missing user.
      */
     public void throwIfBadCertificate(CertificateAuthenticator certauth, Device device)
-            throws SQLException, ExBadCredential, ExNotFound
+            throws SQLException, ExBadCredential, ExNotFound, ExFormatError
     {
         if (!certauth.isAuthenticated())
         {
@@ -570,13 +570,7 @@ public class User
             throw new ExBadCredential();
         }
 
-        // Should never happen, check just for good measure.
-        if (certauth.getSerial() != device.certificate().serial()) {
-            l.error(toString() + ": serial mismatch");
-            throw new ExBadCredential();
-        }
-
-        if (device.certificate().isRevoked()) {
+        if (!device.hasValidCertWithSerial(certauth.getSerial())) {
             l.warn(toString() + ": cert revoked");
             throw new ExBadCredential();
         }

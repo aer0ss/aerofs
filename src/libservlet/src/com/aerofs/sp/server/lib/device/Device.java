@@ -18,6 +18,7 @@ import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -127,10 +128,21 @@ public class Device
         return _f._db.getOSName(_id);
     }
 
-    public Certificate certificate()
-            throws SQLException
+    public ImmutableList<Certificate> certificates()
+            throws SQLException, ExNotFound, ExFormatError
     {
-        return _f._factCert.create(_id);
+        return _f._factCert.list(_id);
+    }
+
+    public boolean hasValidCertWithSerial(long serial)
+            throws ExFormatError, SQLException, ExNotFound
+    {
+        for (Certificate cert : certificates()) {
+            if (cert.serial() == serial) {
+                return !cert.isRevoked();
+            }
+        }
+        return false;
     }
 
     public void setName(String name)
@@ -197,16 +209,11 @@ public class Device
 
         ImmutableSet.Builder<Long> serials = ImmutableSet.builder();
 
-        Certificate cert = certificate();
-
-        // Do not try to revoke certs that do not exist. This will only effect devices created
-        // before the certificate tracking code was rolled out.
-        boolean certExists = cert.exists();
-        if (certExists) {
-            cert.revoke();
-            serials.add(cert.serial());
-        } else {
-            l.warn(id() + " no cert exists. unlink anyway.");
+        for (Certificate cert : certificates()) {
+            if (!cert.isRevoked()) {
+                cert.revoke();
+                serials.add(cert.serial());
+            }
         }
 
         _f._db.markUnlinked(_id);
