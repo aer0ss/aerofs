@@ -32,7 +32,7 @@
             <div class="row">
                 <div class="span10 offset1" id="footer-span">
                     <ul class="inline">
-                        <li class="pull-right">&copy; Air Computing Inc. 2013</li>
+                        <li class="pull-right">&copy; Air Computing Inc. 2014</li>
                     </ul>
                 </div>
             </div>
