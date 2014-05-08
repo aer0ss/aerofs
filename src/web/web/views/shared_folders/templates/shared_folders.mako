@@ -56,7 +56,7 @@
     %endif
     <%spinner:scripts/>
     <script src="${request.static_path('web:static/js/jquery.dataTables.min.js')}"></script>
-    <script src="${request.static_path('web:static/js/datatables_extensions.js')}"></script>
+    <script src="${request.static_path('web:static/js/compiled/datatables_extensions.js')}"></script>
 
     <script type="text/javascript">
         $(document).ready(function() {

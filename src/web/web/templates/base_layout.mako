@@ -63,9 +63,7 @@
     ## N.B. to support private deployment, all static assets must be hosted
     ## locally as opposed to on 3rd-party servers.
     <link href="${request.static_path('web:static/css/google-open-sans.css')}" rel='stylesheet'>
-    <link href="${request.static_path('web:static/css/bootstrap.css')}" rel="stylesheet">
-    <link href="${request.static_path('web:static/css/responsive.css')}" rel="stylesheet">
-    <link href="${request.static_path('web:static/css/aerofs.css')}" rel="stylesheet">
+    <link href="${request.static_path('web:static/css/compiled/aerofs.min.css')}" rel="stylesheet">
 
     <%block name="css"/>
 
@@ -187,8 +185,8 @@
     <script src="${request.static_path('web:static/js/jquery.min.js')}"></script>
     <script src="${request.static_path('web:static/js/jquery.easing.1.3.js')}"></script>
     <script src="${request.static_path('web:static/js/bootstrap.min.js')}"></script>
-    <script src="${request.static_path('web:static/js/aerofs.js')}"></script>
-    <script src="${request.static_path('web:static/js/csrf.js')}"></script>
+    <script src="${request.static_path('web:static/js/compiled/aerofs.js')}"></script>
+    <script src="${request.static_path('web:static/js/compiled/csrf.js')}"></script>
 
     <%
         from web.util import get_last_flash_message_and_empty_queue

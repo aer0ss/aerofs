@@ -12,3 +12,5 @@ syncdet_test/.idea/
 .metadata
 .gradle
 *.pyc
+src/web/web/static/js/compiled/
+src/web/web/static/css/compiled/

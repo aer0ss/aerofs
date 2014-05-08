@@ -229,6 +229,12 @@ By default, the VM uses its own copy of all the web files. This means that you c
 
 This replaces the VM's web folder with a symlink to the web folder in your repo. Now you can see e.g. CSS changes automatically appear, without having to restart anything.
 
+## Compile static files
+
+Compiled files are not included in source control, so to get all the styles and JS working on the local version of the website you'll need to compile them. For how to do so, please see "Compiling Less and JS" in src/web/web/README.txt. 
+
+You'll need to install some dependencies, then run `make watch` and hopefully never need to pay attention to Less/JS compilation/minification again!
+
 ## Sign up accounts in local prod
 
 For easy signup you can use signup tool:

@@ -63,6 +63,11 @@ A commit must pass CI before we will push it to production.  Additionally, we te
 # upload all server packages to apt repo
 # use puppet to upgrade all packages
 ant -Dmode=PROD deploy
+# Make sure that all website assets are compiled.
+# This step should be unnecessary if you are using watchman and make watch. 
+# See "Compiling Less and JS" in src/web/web/README.txt
+$ cd src/web/web/
+$ make clean && make
 # refresh website assets hosted on cloudfront
 ant -Dmode=PROD update_cloudfront
 # build clients

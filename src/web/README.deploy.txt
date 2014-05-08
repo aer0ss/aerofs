@@ -12,7 +12,8 @@ The steps are as follows:
     ./tools/puppet/kick puppet.arrowfs.org webadmin.aerofs.com
 
 And if you have updated static assets:
-
+    cd ~/repos/aerofs/src/web/web
+    make clean && make
     cd ~/repos/aerofs
     ant update_cloudfront -Dmode=PUBLIC
 
