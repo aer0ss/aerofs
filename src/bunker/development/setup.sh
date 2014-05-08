@@ -8,12 +8,16 @@ ENV="$HOME/bunker-env"
 
 # Create a directory and touch a flag that's needed to serve bunker locally
 # because bunker assumes the web server is running on the appliance
-mkdir state
-mkdir flags && touch flags/configuration-initialized-flag
+mkdir -p state
+mkdir -p flags && touch flags/configuration-initialized-flag
 
 # Create the version file if none exists
-VERSION_FILE="$SRC_ROOT/../out.ant/packages/current.ver"
-[[ -f $VERSION_FILE ]] || echo 'Version=1.2.3' > $VERSION_FILE
+PACKAGES_DIR="$SRC_ROOT/../out.ant/packages"
+VERSION_FILE="$PACKAGES_DIR/current.ver"
+
+if [[ ! -f "$VERSION_FILE" ]]; then
+  mkdir -p "$PACKAGES_DIR" && echo 'Version=0.0.1' > "$VERSION_FILE"
+fi
 
 # Create virtualenv
 virtualenv "$ENV"
