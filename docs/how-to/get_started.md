@@ -61,7 +61,7 @@ ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go/install)"
 
 It'll prompt you before it does anything, but the defaults are sane.
 
-Note: Your path may not have homebrew paths before `/usr/bin`, which causes you to use system binaries instead of those installed by brew if both are available. Running `brew doctor` will tell you if this is the case. If you have this problem you can remedy it by prepending
+Prepending (not append):
 
     /usr/local/bin:/usr/local/sbin:/usr/local/Cellar/ruby/{version}/bin
     
