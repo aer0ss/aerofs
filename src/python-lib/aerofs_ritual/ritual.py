@@ -126,7 +126,6 @@ class _RitualServiceWrapper(object):
         This returns abs paths.
         """
         r = []
-        # NB: this does NOT handle external roots properly...
         for sf in self._service.list_shared_folders().shared_folder:
             r.append(convert.pbpath_to_absolute(sf.path))
         return r
@@ -184,6 +183,9 @@ class _RitualServiceWrapper(object):
         for p in self._service.list_excluded_folders().path:
             r.append(convert.pbpath_to_absolute(p))
         return r
+
+    def unlink_root(self, sid):
+        self._service.unlink_root(sid)
 
     def get_object_attributes_no_wait(self, path):
         pbpath = convert.absolute_to_pbpath(path)

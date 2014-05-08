@@ -42,6 +42,7 @@ import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
+import com.aerofs.daemon.event.fs.EIUnlinkRoot;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
@@ -328,6 +329,14 @@ public class RitualService implements IRitualService
         ListExcludedFoldersReply.Builder bdReply = ListExcludedFoldersReply.newBuilder();
         for (Path path : ev._expelledObjects) bdReply.addPath(path.toPB());
         return createReply(bdReply.build());
+    }
+
+    @Override
+    public ListenableFuture<Void> unlinkRoot(ByteString sid)
+            throws Exception
+    {
+        new EIUnlinkRoot(new SID(sid)).execute(PRIO);
+        return createVoidReply();
     }
 
     @Override

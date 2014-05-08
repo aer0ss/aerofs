@@ -54,6 +54,9 @@ service RitualService {
     // List accessible shared folders that have yet to be linked to a physical path
     rpc ListPendingRoots(Void) returns(ListPendingRootsReply);
 
+    // Unlink a root which converts it into an unlinked root.
+    rpc UnlinkRoot(UnlinkRootCall) returns(Void);
+
     // Share a specified folder, and optionally specify the list of users and their roles to be
     // added the the shared folder. The user that calls this method is always added as an owner of
     // the shared folder. If the folder is already shared, the method only adds the users specified
@@ -96,7 +99,6 @@ service RitualService {
 
     // Return a list of excluded folders
     rpc ListExcludedFolders(Void) returns(ListExcludedFoldersReply);
-
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // ACL
@@ -341,6 +343,10 @@ message LinkRootCall {
 }
 
 message LinkRootReply {
+    required bytes sid = 1;
+}
+
+message UnlinkRootCall {
     required bytes sid = 1;
 }
 
