@@ -10,6 +10,7 @@ import com.aerofs.cli.CLI;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
@@ -115,7 +116,6 @@ public class ShProgram implements IProgram, ICallback
         _runner.addCommand_(new CmdLeave());
         _runner.addCommand_(new CmdInvite());
         _runner.addCommand_(new CmdDelUser());
-        _runner.addCommand_(new CmdDefect());
         _runner.addCommand_(new CmdDiagnostics());
         _runner.addCommand_(new CmdVersion());
         _runner.addCommand_(new CmdTransfers());
@@ -140,6 +140,9 @@ public class ShProgram implements IProgram, ICallback
         // Hidden commands
         _runner.addCommand_(new CmdDstat());
         _runner.addCommand_(new CmdSeed());
+
+        // Only available on HC
+        if (!PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) _runner.addCommand_(new CmdDefect());
     }
 
     // return the abolute path. path can be null to represent pwd

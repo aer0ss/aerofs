@@ -115,7 +115,8 @@ public class CmdDefect extends AbstractShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "report an issue to the " + L.product() + " team";
+        return "report an issue to the " + L.product() + " team." +
+                " Type \"report\" followed by a short description.";
     }
 
     @Override
