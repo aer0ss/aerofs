@@ -34,8 +34,6 @@ PACKAGES= \
 	sparta \
 	stun \
 	sv \
-	syncstat \
-	syncstat-tools \
 	verification \
 	verkehr \
 	web \

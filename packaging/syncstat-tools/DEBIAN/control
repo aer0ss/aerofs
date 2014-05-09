@@ -1,7 +1,0 @@
-Package: aerofs-syncstat-tools
-Section: java
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS syncstat server tools package.
-Architecture: all
-Depends: aerofs-syncstat, python-pip
