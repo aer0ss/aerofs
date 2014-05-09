@@ -1,2 +1,3 @@
 #!/bin/bash
-sudo easy_install requests
+# TODO: get this virtualenv'd
+easy_install requests

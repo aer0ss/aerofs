@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+# TODO: precompile all this; don't rebuild it every time ;_;
 cd /opt/stun
 source constants
 
@@ -10,7 +11,7 @@ do
     tar xf $package.tar.gz
     cd $package
     make
-    sudo make install
+    make install
 done
 
 service restund start || true
