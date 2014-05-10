@@ -97,8 +97,8 @@ public class DlgTutorial extends AeroFSDialog
 
             // Step 3
             new StepData("Right click to share",
-                    "Right click any folder in " + L.product() + " with friends or colleagues to share, " +
-                            "even if they're not using " + L.product() + " yet.",
+                    "Right click any folder in " + L.product() + " to share it with friends and " +
+                            "colleagues.",
                     "tutorial3.png", null, null)
 
             // Step 4
