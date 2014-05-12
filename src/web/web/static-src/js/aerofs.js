@@ -66,7 +66,7 @@ $(document).ready(function() {
     // modal dialog itself to close when any tooltips are to be shown.
     // This case occurs on the shared folder members dialog.
     $('div.modal').on('show', hideAllModalsExceptThis);
-})
+});
 
 function fadeOutErrorMessage() {
     $("#flash-msg-error").fadeOut();
@@ -100,10 +100,12 @@ function showErrorMessageFromResponse(xhr) {
 }
 
 function getInternalErrorText() {
-    return "Sorry! An error has occurred. Please refresh" +
-        " this page and try again. If this issue persists contact" +
+    return "<p>Oops! Our server ran into an unexpected error while it was trying " +
+        "to serve this page. It looks like we may have broken something. " +
+        "Sorry about that!</p> <p>Please refresh the page and try again." +
+        " If this issue persists, please contact" +
         " <a href='mailto:support@aerofs.com' target='_blank'>" +
-        "support@aerofs.com</a> for assistance."
+        "support@aerofs.com</a> for assistance.</p>";
 }
 
 // N.B. this message should match the text in the iOS app. Make sure to keep
@@ -111,7 +113,7 @@ function getInternalErrorText() {
 function getClientsOfflineErrorText() {
     return "All AeroFS clients are offline. Please make sure at least one AeroFS desktop client or Team Server is" +
         " online and <a href='https://support.aerofs.com/hc/en-us/articles/201438954' target='_blank'>" +
-        "has API access enabled</a>."
+        "has API access enabled</a>.";
 }
 
 

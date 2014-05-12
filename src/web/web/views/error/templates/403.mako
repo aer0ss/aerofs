@@ -3,8 +3,8 @@
 
 <div class="row">
     <div class="span6 offset3">
-        <h2>403 Forbidden</h2>
-        <p>Sorry! You are not allowed to perform this operation. Are you an admin of
-            your organization in AeroFS?</p>
+        <h2>403: Forbidden Action Error</h2>
+        <p>Sorry! It looks like you aren't allowed to perform this operation.</p>
+        <p>Are you an admin of your organization in AeroFS? If so, <a href="${request.route_path('dashboard_home')}">please sign in</a>.</p>
     </div>
 </div>
