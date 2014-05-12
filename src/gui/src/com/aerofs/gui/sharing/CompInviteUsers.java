@@ -202,7 +202,11 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
     public static String getDefaultInvitationNote(String folderName, String fromPerson)
     {
-        return "I'd like to share \"" + folderName + "\" with you.\r\n\r\n-- " + fromPerson;
+        if (folderName != null) {
+            return "I'd like to share \"" + folderName + "\" with you.\r\n\r\n-- " + fromPerson;
+        } else {
+            return "I'd like to share a folder with you.\r\n\r\n-- " + fromPerson;
+        }
     }
 
     private void setAsyncFields()
