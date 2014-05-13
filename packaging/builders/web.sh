@@ -19,6 +19,8 @@ done
 # The postinst script logs to this folder, so ensure it exists
 mkdir -p $OUTPUT_DIR/var/log/web
 
+# Generate static files before they get copied over
+pushd $SOURCE_DIR/web && make clean && make && popd
 # Copy the actual web module to the output dir
 # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
 mkdir -p $OPT
