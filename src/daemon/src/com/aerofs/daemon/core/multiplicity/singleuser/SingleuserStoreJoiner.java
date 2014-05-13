@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -104,8 +105,8 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
         // delete any existing anchor (even expelled ones)
         Collection<SIndex> sidxs = _stores.getAll_();
 
-        for (SIndex sidxWithanchor : sidxs) {
-            final Path path = deleteAnchorIfNeeded_(sidxWithanchor, sid, t);
+        for (SIndex sidxWithAnchor : sidxs) {
+            final Path path = deleteAnchorIfNeeded_(sidxWithAnchor, sid, t);
 
             if (path == null) continue;
 
@@ -124,5 +125,12 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
         if (_sidx2sid.getNullable_(sidx) != null && _stores.isRoot_(sidx)) {
             _sd.deleteRootStore_(sidx, PhysicalOp.APPLY, t);
         }
+    }
+
+    @Override
+    public void adjustAnchor_(SIndex sidx, String folderName, UserID user, Trans t)
+            throws Exception
+    {
+        // nop
     }
 }

@@ -27,7 +27,6 @@ public class ShellCommandRunner<T>
         String getPrompt_();
     }
 
-    public static final Options EMPTY_OPTS = new Options();
     public static final String ARG_ECHO_LONG = "--echo";
     public static final String ARG_ECHO = "-e";
 

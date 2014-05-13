@@ -11,9 +11,6 @@ It would be ideal if tests cover both 64-bit and 32-bit Windows.
 - Disable Widows Firewall
 - Disable UAC to avoid needless troubles (type "uac" in the start menu to find the settings)
 
-# Install Python 2.7
-
-- Download and install Python 2.7 for Windows. Do NOT install Python 3 which SyncDET doesn't support.
 
 # Install Cygwin and packages
 
@@ -22,6 +19,12 @@ Install 32-bit cygwin at `C:\cygwin\`, and save cygwin's setup.exe on the deskto
 - cygrunsrv
 - openssh
 - rsync
+
+Note 2: Run Cygwin as administrator when installing pip.
+
+
+Note: DO NOT install Python for Windows which doesn't recognize UNIX paths. Install Python via Cygwin instead.
+
 
 # Configure sshd
 

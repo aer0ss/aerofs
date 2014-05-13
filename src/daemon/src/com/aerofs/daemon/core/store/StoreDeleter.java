@@ -88,6 +88,8 @@ public class StoreDeleter
      * its content merely because all the members left. Instead we must wait for both
      *   - the ref count to be 0
      *   - ACLs to disappear
+     *
+     * TODO (WW) use polymorphism to hide multiplicity from this class.
      */
     private boolean canDeleteUnanchored_(SIndex sidx) throws SQLException
     {
@@ -205,7 +207,7 @@ public class StoreDeleter
         l.debug("delete store " + sidx);
 
         // MJ thinks (but is unsure whether) we have to do physical store deletion first, before
-        // runing other deletion operators
+        // running other deletion operators
         _ps.deleteStore_(sidx, _sidx2sid.get_(sidx), op, t);
 
         _operators.runAll_(sidx, t);

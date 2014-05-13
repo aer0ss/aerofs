@@ -48,10 +48,9 @@ public class Path implements Comparable<Path>
         assertNoEmptyElement();
     }
 
-    private static final String[] _root = new String[0];
     public static Path root(SID sid)
     {
-        return new Path(sid, _root);
+        return new Path(sid);
     }
 
     public static Path fromPB(PBPath pb)

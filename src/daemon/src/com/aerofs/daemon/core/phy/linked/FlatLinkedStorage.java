@@ -40,7 +40,10 @@ import java.util.Arrays;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * A "flat" variant of {@code LinkedStorage} designed for multiuser configurations
+ * A "flat" variant of {@code LinkedStorage} designed for multiuser configurations.
+ *
+ * TODO (WW) Inheriting a concrete class is generally a dangerous practice. It can easily cause
+ * violation of the Liskov substitution principle. Use composition instead.
  */
 public class FlatLinkedStorage extends LinkedStorage
 {

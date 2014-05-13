@@ -25,6 +25,8 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -55,7 +57,8 @@ public abstract class AbstractStoreJoiner
     /**
      * Create logical/physical objects as needed when gaining access to a store.
      */
-    public abstract void joinStore_(SIndex sidx, SID sid, String folderName, boolean external, Trans t) throws Exception;
+    public abstract void joinStore_(SIndex sidx, SID sid, String folderName, boolean external,
+            Trans t) throws Exception;
 
     /**
      * Remove logical/physical objects as needed when losing access to a store.
@@ -63,25 +66,26 @@ public abstract class AbstractStoreJoiner
     public abstract void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception;
 
     /**
-     * Create anchor as needed on TS when member list changes
+     * Create anchor as needed on TS when member list changes.
+     *
+     * TODO (WW) It's not a great idea to expose TS specific functions in this interface.
      */
-    public void adjustAnchor_(SIndex sidx, String folderName, UserID user, Trans t)
-            throws Exception
-    {}
+    public abstract void adjustAnchor_(SIndex sidx, String folderName, UserID user, Trans t)
+            throws Exception;
 
     /**
      * Creating an anchor when joining a store is a complex operation
      *
      * This method is meant to be used by subclasses and NOT meant to be reimplemented.
      */
-    protected void createAnchorIfNeeded_(SIndex sidx, SID sid, String folderName, SIndex root, Trans t)
-            throws Exception
+    protected void createAnchorIfNeeded_(SIndex sidx, SID sid, String folderName, SIndex root,
+            Trans t) throws Exception
     {
         /**
          * If the original folder is already present in the root store we should not auto-join but
          * instead wait for the conversion to propagate. We do not check for its presence in other
          * stores as some migration scenarios could lead us to wrongly ignore explicit joins (e.g
-         * if a subfolder of a shared folder is moved up to the root store, shared and joined
+         * if a sub-folder of a shared folder is moved up to the root store, shared and joined
          * before the original move propagates)
          */
         OID oid = SID.convertedStoreSID2folderOID(sid);
@@ -114,7 +118,7 @@ public abstract class AbstractStoreJoiner
          * dependent on DirectoryService which is probably a bad idea...
          */
         if (oaAnchor != null) {
-            assert oaAnchor.isAnchor() : anchor;
+            checkArgument(oaAnchor.isAnchor(), anchor);
             if (_ds.isDeleted_(oaAnchor)) {
                 l.info("restore deleted anchor {} {}", sidx, anchor);
                 /**
@@ -155,7 +159,7 @@ public abstract class AbstractStoreJoiner
      *
      * This method is meant to be used by subclasses and NOT meant to be reimplemented.
      */
-    protected Path deleteAnchorIfNeeded_(SIndex sidx, SID sid, Trans t) throws Exception
+    protected @Nullable Path deleteAnchorIfNeeded_(SIndex sidx, SID sid, Trans t) throws Exception
     {
         SOID soid = new SOID(sidx, SID.storeSID2anchorOID(sid));
         OA oa = _ds.getOANullable_(soid);

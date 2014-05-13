@@ -45,7 +45,6 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
         return _soid;
     }
 
-    @SuppressWarnings("fallthrough")
     @Override
     public void create_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
@@ -79,7 +78,6 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
         }
     }
 
-    @SuppressWarnings("fallthrough")
     @Override
     public void move_(ResolvedPath to, PhysicalOp op, Trans t)
             throws IOException, SQLException
@@ -154,11 +152,10 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
             // 1. we *can* safely recursively delete children
             // 2. we *must* recursively delete children when the requested op was MAP
             //    because the caller won't have done it for us (once again we observe
-            //    the akwardness of the whole PhysicalOp concept that not only leaks
+            //    the awkwardness of the whole PhysicalOp concept that not only leaks
             //    implementation behavior in the logical layer but does so in such a
             //    broken way that it often generate subtle bugs.
             // TODO: refactor logical/physical interface as part of upcoming scalability work
-            // TLDR: correctness first, cleanup later
             _f.deleteOrThrowIfExistRecursively();
         }
 

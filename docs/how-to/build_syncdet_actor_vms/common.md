@@ -14,13 +14,13 @@ Before you start, read [this doc](http://docs.vagrantup.com/v2/boxes/base.html) 
 
 - Install Virtualbox guest additions: http://www.virtualbox.org/manual/ch04.html
 
-Through cygwin, homebrew, or apt-get, install: openssh, vim, git, rsync, python2.7, curl, nc
+Through cygwin, homebrew, or apt-get, install: openssh, vim, git, rsync, python2.7, curl, netcat.
 
-Copy and paste the following into your terminal:
+Install pip. Copy and paste the following into your terminal:
 
-    curl https://bitbucket.org/pypa/setuptools/raw/0.7.5/ez_setup.py | python
-    curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
-    pip install virtualenv protobuf pyyaml requests
+    curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | python
+    sudo pip install protobuf pyyaml requests
+
 
 # Authorize ssh access
 

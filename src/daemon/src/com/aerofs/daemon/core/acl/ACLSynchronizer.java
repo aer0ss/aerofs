@@ -172,14 +172,9 @@ public class ACLSynchronizer
     {
         ServerACLReturn serverACLReturn = getServerACL_(localEpochBeforeSPCall);
 
-        //
         // get the local acl again. we do this to verify that another acl update didn't sneak in
         // while we were parked
         //
-        // IMPORTANT: I can do this check out here (instead of inside the transaction) because I'm
-        // now holding the core lock and no one else can operate on the db
-        //
-
         long localEpochAfterSPCall = _adb.getEpoch_();
         if (serverACLReturn._serverEpoch <= localEpochAfterSPCall) {
             l.info("server has no acl updates " + localEpochBeforeSPCall + " " +
@@ -190,29 +185,26 @@ public class ACLSynchronizer
         Set<SIndex> stores = _lacl.getAccessibleStores_();
         Map<SIndex, Set<UserID>> newMembers = Maps.newHashMap();
 
-        l.debug("accessible stores: {}", stores);
+        l.info("accessible stores: {}", stores);
 
-        // We go to great length to split ACL updates into multiple transactions.
-        // This increases robustness and allows incremental progress to be made
-        // in the face of weird corner cases.
+        // We go to great length to split ACL updates into multiple transactions. This increases
+        // robustness and allows incremental progress to be made in the face of weird corner cases.
         //
-        // Say you reinstall a Team Server w/ linked storage without cleanly unlinking.
-        // Upon receiving ACLs, roots will be automatically created. If they are still
-        // at the default location and tag files haven't been messed with they will be
-        // simply relinked (instead of creating duplicates).
-        // All is fine and dandy until we attempt to adjust anchors: there may already
-        // be a physical object at the default location, in which case lower layers will
-        // throw, expecting the linker/scanner to reconcile the inconsistency by the time
-        // the operation is attempted again.
-        // Unfortunately the linker/scanner would not have the opportunity to kick in
-        // since the user root store was joined as part of the same transaction that
-        // attempted to adjust anchors and any exception would rollback the auto-join.
-        // In such a scenario, using a single transaction would prevent the reinstalled
-        // Team Server from ever applying ACL updates whihc would result in a permanent
-        // no-sync.
+        // Say you reinstall a Team Server w/ linked storage without cleanly unlinking. Upon
+        // receiving ACLs, roots will be automatically created. If they are still at the default
+        // location and tag files haven't been messed with they will be simply relinked (instead of
+        // creating duplicates). All is fine and dandy until we attempt to adjust anchors
+        // (see adjustAnchors_()): there may already be a physical object at the default location,
+        // in which case lower layers will throw, expecting the linker/scanner to reconcile the
+        // inconsistency by the time the operation is attempted again. Unfortunately the
+        // linker/scanner would not have the opportunity to kick in since the user root store was
+        // joined as part of the same transaction that attempted to adjust anchors and any exception
+        // would rollback the auto-join. In such a scenario, using a single transaction would
+        // prevent the reinstalled Team Server from ever applying ACL updates which would result in
+        // a permanent no-sync.
         //
-        // To safely allow incremental progress we must make sure that the ACL epoch
-        // is not bumped when the ACL update is not fully applied.
+        // To safely allow incremental progress we must make sure that the ACL epoch is not bumped
+        // when the ACL update is not fully applied.
 
         boolean updateEpoch = true;
         for (Entry<SID, StoreInfo> e : serverACLReturn._acl.entrySet()) {
@@ -222,6 +214,7 @@ public class ACLSynchronizer
                 SIndex sidx = updateACLAndJoin_(sid, info, stores);
                 stores.remove(sidx);
 
+                // TODO (WW) This class should not handle TS specific logic. Use polymorphism
                 // list of members that ought to have an anchor on TS
                 if (!sid.isUserRoot() && L.isMultiuser()) {
                     newMembers.put(sidx, Sets.filter(
@@ -241,16 +234,18 @@ public class ACLSynchronizer
             }
         }
 
-        // leave stores to which we no longer have access
-        // NB: the set of stores to leave is not computed correctly if any update/auto-join fails
+        // Leave stores to which we no longer have access.
+        // NB: Skip the leaving if any update/auto-join fails, since the set of stores to leave is
+        // not computed correctly in this situation.
         if (updateEpoch) {
             for (SIndex sidx : stores) {
                 updateEpoch &= leave_(sidx);
             }
         }
 
-        l.info("adjust {}", newMembers);
+        // TODO (WW) This class should not handle TS specific logic. Use polymorphism
         // for TS, must be done AFTER auto-join/auto-leave
+        l.info("adjust {}", newMembers);
         for (Entry<SIndex, Set<UserID>> e : newMembers.entrySet()) {
             SIndex sidx = e.getKey();
             SID sid = _sidx2sid.getNullable_(sidx);
@@ -339,6 +334,8 @@ public class ACLSynchronizer
     }
 
     /**
+     * TODO (WW) This class should not handle TS specific logic. Use polymorphism
+     *
      * @return whether anchors were successfully adjusted
      */
     private boolean adjustAnchors_(SIndex sidx, String name, Set<UserID> newMembers)
