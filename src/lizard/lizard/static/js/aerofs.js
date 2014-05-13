@@ -1,1 +1,0 @@
-../../../../web/web/static/js/aerofs.js

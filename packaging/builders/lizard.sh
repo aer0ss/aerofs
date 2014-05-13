@@ -21,6 +21,8 @@ cp -a $SOURCE_DIR/requirements.txt $OPT/
 cp -a $SOURCE_DIR/config.py $OPT/
 # Include entry point script
 cp -a $SOURCE_DIR/entry.py $OPT/
+# Compile static files over in web
+pushd ../src/web/web && make clean && make && popd
 # Include static assets.  Since we share assets with the web module, we must
 # use the -L flag to cp to dereference symlinks.
 mkdir -p $OPT/static
