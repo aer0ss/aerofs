@@ -1,9 +1,26 @@
 #!/bin/sh
 #
+# Retrace an obfuscated stack trace to its original form using the map file corresponding
+# to the specified version number.
+# 
 # Usage:
-#        $ ./retrace <version> <<end
+#        $ ./retrace public|private <version> <<end
 #        (paste obfuscated stack trace here as "heredoc")
 #        end
+#
+# Example:
+#        $ ./retrace public 0.8.34 <<end
+#java.io.IOException: There is not enough space on the disk
+#	at com.aerofs.op.a(SourceFile:33)
+#	at com.aerofs.dp.b(SourceFile:64)
+#	at com.aerofs.dA.a(SourceFile:13)
+#end
+#
+# Output:
+#java.io.IOException: There is not enough space on the disk
+#        at com.aerofs.daemon.core.tc.CoreLockReleasingExecutor.execute_(SourceFile:33)
+#        at com.aerofs.daemon.core.admin.AbstractHdExport.export_(SourceFile:64)
+#        at com.aerofs.daemon.core.admin.AbstractHdExport.exportOrDeleteDest_(SourceFile:13)
 #
 
 BASE=$(dirname "$0")
@@ -11,14 +28,15 @@ source "$BASE"/common #for abspath()
 
 BASE=$(abspath "$BASE") # needed by proguard's retrace.sh
 
-VER=$1
-
-if [ x"$VER" == x ]; then
-    echo "usage: $0 <VER>"
+if [ $# -ne 2 ]; then
+    echo "usage: please read file header comment for usage"
     exit 1
 fi
 
-MAP_FILE="$BASE/aerofs-$VER-public.map"
-"$BASE"/get-map $VER $BASE
+MODE=$1
+VER=$2
+
+MAP_FILE="$BASE/aerofs-$VER-$MODE.map"
+"$BASE"/get-map $MODE $VER $BASE
 cd "$BASE"/proguard
 bin/retrace.sh "$MAP_FILE"

@@ -1,17 +1,18 @@
 #!/bin/sh
 
-VER="$1"
-DIR="$2"
+MODE="$1"
+VER="$2"
+DIR="$3"
 
-if [ ! "$#" -eq "2" ]; then
-  echo "usage: $0 [version] [path]"
+if [ ! "$#" -eq "3" ]; then
+  echo "usage: $0 public|private [version] [dir_to_save_the_file]"
   exit 1
 fi
 
-FILE="aerofs-$VER-public.map"
+FILE="aerofs-$VER-$MODE.map"
 MAP_FILE="$DIR"/"$FILE"
 
 if [ ! -f "$MAP_FILE" ]; then
-    echo "retrieving map file..."
+    echo "retrieving $FILE..."
     scp sv.aerofs.com:/maps/"$FILE" "$MAP_FILE"
 fi

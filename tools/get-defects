@@ -2,19 +2,21 @@
 # This script retrives defect log files and retrace them
 set -eu
 
-if [ $# -lt 2 ]; then
-    echo "usage: $0 [public version] [defect # (multiple, space separated)]"
+if [ $# -lt 3 ]; then
+    echo "usage: $0 public|private [version] [defect # (multiple, space separated)]"
     echo
-    echo "example: $0 0.2.37 6308 6310 6317"
+    echo "example: $0 public 0.2.37 6308 6310 6317"
     exit 1
 fi
 
-VER="$1"
-shift # remove the first argument
+MODE="$1"
+VER="$2"
+shift 
+shift
 DEFECTS="$@"
 
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-MAP_FILE="$BASE"/"aerofs-$VER-public.map"
+MAP_FILE="$BASE"/"aerofs-$VER-$MODE.map"
 
 retrace()
 {
@@ -30,7 +32,7 @@ retrace()
 
 main()
 {
-    $BASE/get-map $VER $BASE
+    $BASE/get-map $MODE $VER $BASE
 
     for DEFECT in $DEFECTS; do
         TARGET_FOLDER="defect-$DEFECT" # puts this into the pwd
@@ -54,14 +56,14 @@ main()
 
         if [ ! -z "$(ls $TARGET_FOLDER/name*map 2>/dev/null)" ]
         then
-            echo "Reverse map logs for $DEFECT"
+            echo "Reverse crc logs for $DEFECT"
 
             for i in daemon cli gui; do
                 if [ -f "$TARGET_FOLDER/$i.log" ]; then
                     mv "$TARGET_FOLDER/$i.log" "$TARGET_FOLDER/unmapped.$i.log"
 
                     cat "$TARGET_FOLDER/unmapped.$i.log" | \
-                        ${BASE}/reverse-map/reverse-map.py -f $(ls "$TARGET_FOLDER/name"*"map") > \
+                        ${BASE}/reverse-crc/reverse-crc.py -f $(ls "$TARGET_FOLDER/name"*"map") > \
                         "$TARGET_FOLDER/$i.log"
                 fi
             done
