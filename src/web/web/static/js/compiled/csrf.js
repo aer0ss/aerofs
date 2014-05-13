@@ -1,1 +1,0 @@
-(function(){$(document).ready(function(){$.ajaxSetup({beforeSend:function(xhr,settings){var csrftoken=$("meta[name=csrf-token]").attr("content");if(!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)){xhr.setRequestHeader("X-CSRF-Token",csrftoken)}}})})}).call(this);

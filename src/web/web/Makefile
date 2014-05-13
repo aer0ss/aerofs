@@ -16,8 +16,8 @@ all: $(FILES_OUT_JS) $(FILES_OUT_CSS)
 
 # Destroy the final targets
 clean:
-	rm -r $(DEST)/css/compiled/
-	rm -r $(DEST)/js/compiled/
+	rm -rf $(DEST)/css/compiled/
+	rm -rf $(DEST)/js/compiled/
 	mkdir $(DEST)/css/compiled/
 	mkdir $(DEST)/js/compiled/
 
