@@ -60,6 +60,8 @@ import static com.aerofs.lib.Util.deleteOldHeapDumps;
 import static com.aerofs.lib.Util.e;
 import static com.aerofs.lib.Util.join;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
+import static com.aerofs.lib.os.OSUtil.OSArch.X86;
+import static com.aerofs.lib.os.OSUtil.OSArch.X86_64;
 
 public final class SVClient
 {
@@ -456,16 +458,13 @@ public final class SVClient
             bdDefect.addJavaEnvName("uname -a");
             bdDefect.addJavaEnvValue(uname.get());
 
-            // "file /bin/ls" result
-            OutArg<String> fileRes = new OutArg<String>();
-            fileRes.set("n/a");
-            try {
-                SystemUtil.execForeground(fileRes, "file", "-L", "/bin/ls");
-            } catch (Throwable t) {
-                //ignored
+            // architecture
+            bdDefect.addJavaEnvName("arch");
+            switch (OSUtil.getOSArch()) {
+                case X86: bdDefect.addJavaEnvValue("x86"); break;
+                case X86_64: bdDefect.addJavaEnvValue("amd64"); break;
+                default: bdDefect.addJavaEnvValue("unknown"); break;
             }
-            bdDefect.addJavaEnvName("file bin/ls");
-            bdDefect.addJavaEnvValue(fileRes.get());
 
             // "df" result
             OutArg<String> df = new OutArg<String>();

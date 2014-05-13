@@ -24,15 +24,27 @@ elif [ $OS == osx ]; then
     VMARGS="$VMARGS -XstartOnFirstThread"
     export DYLD_LIBRARY_PATH=$PPWD:$DYLD_LIBRARY_PATH
 elif [ x`echo $OS | grep linux` != x ]; then
+    # Architecture detection without dependencies beyond coreutils.
+    # ELF files start out "\x7fELF", and the following byte is
+    #   0x01 for 32-bit and
+    #   0x02 for 64-bit.
+    CURRENT_EXE_HEAD=$(head -c 5 /proc/self/exe )
+    case "$CURRENT_EXE_HEAD" in
+        "$(printf '\x7fELF\x01')")
+            # 32-bit ELF
+            JRE_LIB_ARCH=i386
+            ;;
+        "$(printf '\x7fELF\x02')")
+            # 64-bit ELF
+            JRE_LIB_ARCH=amd64
+            ;;
+        *)
+            echo "I don't recognize your userspace executable format, so I can't launch."
+            echo "Sorry about that."
+            exit 1
+    esac
     # We need to set the LD_LIBRARY_PATH to include the JRE directories so that
     # aerofsd will successfully launch
-    if [ x"$(file $(readlink -f /bin/ls) | grep 64)" != x ]; then
-        ARCH=64
-        JRE_LIB_ARCH=amd64
-    else
-        ARCH=32
-        JRE_LIB_ARCH=i386
-    fi
     JRE_BASE="$(dirname $(dirname $(readlink -f $(which java))))"
     # Oracle ships two "java" executables in the JDK package - one in the
     # jre/bin/ folder, and the other just in the bin/ folder.  This finds the

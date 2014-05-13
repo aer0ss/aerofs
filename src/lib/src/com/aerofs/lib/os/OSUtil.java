@@ -2,7 +2,9 @@ package com.aerofs.lib.os;
 
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 
 public abstract class OSUtil
@@ -63,32 +65,37 @@ public abstract class OSUtil
             _arch = System.getProperty("os.arch").equals("x86") ? OSArch.X86 : null;
         } else if (os.startsWith("Linux")) {
             _os = new OSUtilLinux();
-            OSArch arch;
+            OSArch arch = null;
             try {
-                OutArg<String> commandOutput = new OutArg<String>();
-
-                /* FIXME(jP): Ok, the following comment and block of code is crazy.
-                 * There is no reason we can't have the logging subsystem initialized - the only
-                 * blocker here is that we do some magic in daemon to direct the log name
-                 * based on the program name. We could push all of that to the launcher, and
-                 * have _it_ tell us what config file to use (daemon/gui/shell and prod/staging)
-                 * and then this comment disappears.
-                 */
-
-                // can't use logging subsystem as it may not be initialized yet
-                // We avoid uname because we care about the userspace bitness, not the kernel
-                // bitness.  /bin/ls may be a symlink to /usr/bin/ls, see
-                // http://www.freedesktop.org/wiki/Software/systemd/TheCaseForTheUsrMerge
-                String path = "/bin/ls";
-                int result = SystemUtil.execForegroundNoLogging(commandOutput, "file", "-L", path);
-                if (result != 0) {
-                    SystemUtil.fatal(
-                            "arch detect, error code " + result + ": could not read '" + path + "'");
+                // Detect the bitness of the userspace by reading the ELF header from the current
+                // executable.  The first four bytes of an ELF header are "\x7fELF", the fifth is:
+                // 0x01 for 32-bit binaries
+                // 0x02 for 64-bit binaries
+                FileInputStream f = new FileInputStream("/proc/self/exe");
+                byte[] b = new byte[5];
+                int read = f.read(b);
+                if (read != 5 || b[0] != 0x7f || b[1] != 0x45 || b[2] != 0x4c || b[3] != 0x46 ) {
+                    System.err.println(
+                            "Couldn't detect architecture: missing or corrupted ELF header?");
+                } else {
+                    switch (b[4]) {
+                    case 0x01:
+                        arch = OSArch.X86;
+                        break;
+                    case 0x02:
+                        arch = OSArch.X86_64;
+                        break;
+                    default:
+                        // No logging this early
+                        System.err.println("Unknown architecture " + String.valueOf(b[4]));
+                        arch = null;
+                        break;
+                    }
                 }
-
-                if (commandOutput.get().contains("64")) arch = OSArch.X86_64;
-                else arch = OSArch.X86;
             } catch (IOException e) {
+                // No logging this early
+                System.err.println("Couldn't detect architecture:"
+                        + " unable to open/read /proc/self/exe");
                 arch = null;
             }
             _arch = arch;
@@ -98,8 +105,13 @@ public abstract class OSUtil
             _arch = System.getProperty("os.arch").equals("x86_64") ? OSArch.X86_64 : null;
 
         } else {
+            // should never be reached
             _os = null;
             _arch = null;
+        }
+        // If we didn't figure out the architecture, die loudly
+        if (_arch == null) {
+            ExitCode.FAIL_TO_DETECT_ARCH.exit();
         }
     }
 
