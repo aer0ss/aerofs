@@ -13,7 +13,6 @@ import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.sv.common.EmailCategory;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
@@ -126,15 +125,13 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // verify that notifications were sent to "users"
         for (User user : users) {
             verify(asyncEmailSender).sendPublicEmail(anyString(), anyString(),
-                    eq(user.id().getString()), anyString(), anyString(), anyString(), anyString(),
-                    eq(EmailCategory.QUOTA_WARNING));
+                    eq(user.id().getString()), anyString(), anyString(), anyString(), anyString());
         }
 
         // verify that no notifications were sent to the other users
         for (User user : Sets.difference(Sets.newHashSet(admin, user1, user2), users)) {
             verify(asyncEmailSender, never()).sendPublicEmail(anyString(), anyString(),
-                    eq(user.id().getString()), anyString(), anyString(), anyString(), anyString(),
-                    eq(EmailCategory.QUOTA_WARNING));
+                    eq(user.id().getString()), anyString(), anyString(), anyString(), anyString());
         }
     }
 

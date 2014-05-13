@@ -10,7 +10,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sv.common.EmailCategory;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -61,7 +60,7 @@ public class DeviceRegistrationEmailer
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
-                subject, email.getTextEmail(), email.getHTMLEmail(), EmailCategory.DEVICE_CERTIFIED);
+                subject, email.getTextEmail(), email.getHTMLEmail());
 
         EmailUtil.emailInternalNotification(emailAddress + " device certified email.",
                 "device id: " + did.toStringFormal());

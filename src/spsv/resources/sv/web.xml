@@ -28,21 +28,9 @@
     <servlet-class>com.aerofs.sv.server.SVServlet</servlet-class>
   </servlet>
 
-  <!-- TODO (MP) should be moved to a different servlet -->
-  <servlet>
-    <servlet-name>SendgridServlet</servlet-name>
-    <servlet-class>com.aerofs.sv.server.SendgridServlet</servlet-class>
-  </servlet>
-
   <!-- URL mapping -->
   <servlet-mapping>
     <servlet-name>ServletSV</servlet-name>
     <url-pattern>/sv</url-pattern>
-  </servlet-mapping>
-
-  <!-- TODO (MP) should be moved to a different servlet -->
-  <servlet-mapping>
-    <servlet-name>SendgridServlet</servlet-name>
-    <url-pattern>/sendgrid</url-pattern>
   </servlet-mapping>
 </web-app>

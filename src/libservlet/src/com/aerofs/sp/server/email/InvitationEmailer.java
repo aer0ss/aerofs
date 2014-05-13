@@ -11,7 +11,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.servlets.lib.AsyncEmailSender;
-import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.lib.user.User;
 
 import javax.annotation.Nonnull;
@@ -58,8 +57,7 @@ public class InvitationEmailer
                 {
                     _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
                             invitee.id().getString(), getReplyTo(inviter), cs.subject(),
-                            email.getTextEmail(), email.getHTMLEmail(),
-                            EmailCategory.FOLDERLESS_INVITE);
+                            email.getTextEmail(), email.getHTMLEmail());
 
                     EmailUtil.emailInternalNotification(inviter + " invited " + invitee +
                             " to " + folderName, "code " + signUpCode);
@@ -119,7 +117,7 @@ public class InvitationEmailer
                 {
                     _emailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
                             sharee.id().getString(), getReplyTo(sharer), cs.subject(),
-                            email.getTextEmail(), email.getHTMLEmail(), EmailCategory.FOLDER_INVITE);
+                            email.getTextEmail(), email.getHTMLEmail());
 
                     EmailUtil.emailInternalNotification(
                             sharer + " shared " + folderName + " with " + sharee,
@@ -154,7 +152,7 @@ public class InvitationEmailer
                 {
                     _emailSender.sendPublicEmailFromSupport(ns.nameOnly(), invitee.id().getString(),
                             getReplyTo(inviter), subject, email.getTextEmail(),
-                            email.getHTMLEmail(), EmailCategory.ORGANIZATION_INVITATION);
+                            email.getHTMLEmail());
 
                     return null;
                 }

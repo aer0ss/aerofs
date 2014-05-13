@@ -10,7 +10,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sv.common.EmailCategory;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -95,6 +94,6 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, target.getString(), null,
-                subject, email.getTextEmail(), email.getHTMLEmail(), EmailCategory.PASSWORD_RESET);
+                subject, email.getTextEmail(), email.getHTMLEmail());
     }
 }

@@ -7,7 +7,6 @@ package com.aerofs.servlets.lib;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -79,7 +78,7 @@ public class TestEmailSender extends AbstractTest
         ConfigurationProperties.setProperties(properties);
         AsyncEmailSender.create().sendPublicEmail(
                 "f1@example.com", null, "to1@example.com", "r1@example.com",
-                "Subject subject", "Body body", null, EmailCategory.PASSWORD_RESET);
+                "Subject subject", "Body body", null);
         waitForMessages(1);
 
         for (WiserMessage msg : _wiser.getMessages()) {
@@ -95,7 +94,7 @@ public class TestEmailSender extends AbstractTest
         Properties properties = getProperties("localhost", _port, "", "", false);
         ConfigurationProperties.setProperties(properties);
         AsyncEmailSender.create().sendPublicEmailFromSupport(null, "to2@example.com", "r2@example.com",
-                "Subject2 subject2", "Body body", null, EmailCategory.PASSWORD_RESET);
+                "Subject2 subject2", "Body body", null);
         waitForMessages(1);
 
         for (WiserMessage msg : _wiser.getMessages()) {
@@ -119,13 +118,13 @@ public class TestEmailSender extends AbstractTest
 
         _idFactory.delayMsec = 180000;
         _emailSender.sendPublicEmailFromSupport(null, "die@bart.die", "I@said.die",
-                "It's German", "For 'the bart, the'", null, EmailCategory.DEVICE_CERTIFIED);
+                "It's German", "For 'the bart, the'", null);
         _emailSender.sendPublicEmailFromSupport(null, "to3@example.com", "r@example.com",
-                "This mail is ok", "Oh yes it is", null, EmailCategory.DEVICE_CERTIFIED);
+                "This mail is ok", "Oh yes it is", null);
         _emailSender.sendPublicEmailFromSupport(null, "to3@example.com", "r@example.com",
-                "This mail is ok", "Oh yes it is", null, EmailCategory.DEVICE_CERTIFIED);
+                "This mail is ok", "Oh yes it is", null);
         _emailSender.sendPublicEmailFromSupport(null, "to3@example.com", "r@example.com",
-                "This mail is ok", "Oh yes it is", null, EmailCategory.DEVICE_CERTIFIED);
+                "This mail is ok", "Oh yes it is", null);
         waitForMessages(3);
 
         for (WiserMessage msg : _wiser.getMessages()) {
@@ -144,7 +143,7 @@ public class TestEmailSender extends AbstractTest
 
         AsyncEmailSender.create().sendPublicEmail(
                 "f1@example.com", null, "to1@example.com", "r1@example.com",
-                "Subject subject", "Body body", null, EmailCategory.PASSWORD_RESET);
+                "Subject subject", "Body body", null);
         waitForMessages(1);
 
         for (WiserMessage msg : _wiser.getMessages()) {

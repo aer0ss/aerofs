@@ -16,7 +16,6 @@ import com.aerofs.sp.server.CommandUtil;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.UserDatabase;
-import com.aerofs.sv.common.EmailCategory;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
@@ -85,9 +84,8 @@ public class DryadService
                 "Contact Email: " + email + "\n\n" +
                 desc;
         String htmlBody = null;
-        EmailCategory category = EmailCategory.SUPPORT;
 
-        _email.sendPublicEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, category);
+        _email.sendPublicEmail(from, fromName, to, replyTo, subject, textBody, htmlBody);
     }
 
     public void enqueueCommandsForUsers(String dryadID, String customerID, String[] users)

@@ -133,7 +133,6 @@ import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.sharing_rules.ISharingRules;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
-import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.base.Strings;
@@ -1080,7 +1079,7 @@ public class SPService implements ISPService
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME,
                 _sessionUser.getUser().id().getString(), null,
-                UserID.fromExternal(userId).getString(), body, null, EmailCategory.SUPPORT);
+                UserID.fromExternal(userId).getString(), body, null);
 
         _sqlTrans.commit();
 

@@ -7,7 +7,6 @@ package com.aerofs.sp.server.email;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.servlets.lib.AsyncEmailSender;
-import com.aerofs.sv.common.EmailCategory;
 
 public class InvitationReminderEmailer
 {
@@ -46,6 +45,6 @@ public class InvitationReminderEmailer
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(fromName, to, null, subject, email.getTextEmail(),
-                email.getHTMLEmail(), EmailCategory.AEROFS_INVITATION_REMINDER);
+                email.getHTMLEmail());
     }
 }

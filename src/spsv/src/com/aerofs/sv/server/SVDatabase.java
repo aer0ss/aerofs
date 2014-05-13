@@ -1,24 +1,28 @@
 package com.aerofs.sv.server;
 
-import java.sql.Connection;
-
-import javax.annotation.Nullable;
-
 import com.aerofs.base.BaseUtil;
+import com.aerofs.lib.Util;
+import com.aerofs.proto.Sv.PBSVHeader;
+import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
-import com.aerofs.sv.common.Event;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import com.aerofs.lib.Util;
-import com.aerofs.lib.db.DBUtil;
-import com.aerofs.proto.Sv.PBSVHeader;
-
-import static com.aerofs.sv.server.SVSchema.*;
-
-import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import static com.aerofs.sv.server.SVSchema.C_DEF_AUTO;
+import static com.aerofs.sv.server.SVSchema.C_DEF_CFG;
+import static com.aerofs.sv.server.SVSchema.C_DEF_DESC;
+import static com.aerofs.sv.server.SVSchema.C_DEF_JAVA_ENV;
+import static com.aerofs.sv.server.SVSchema.C_HDR_APPROOT;
+import static com.aerofs.sv.server.SVSchema.C_HDR_CLIENT;
+import static com.aerofs.sv.server.SVSchema.C_HDR_DID;
+import static com.aerofs.sv.server.SVSchema.C_HDR_RTROOT;
+import static com.aerofs.sv.server.SVSchema.C_HDR_TS;
+import static com.aerofs.sv.server.SVSchema.C_HDR_USER;
+import static com.aerofs.sv.server.SVSchema.C_HDR_VER;
+import static com.aerofs.sv.server.SVSchema.T_DEF;
 
 public class SVDatabase extends AbstractSQLDatabase
 {
@@ -75,68 +79,6 @@ public class SVDatabase extends AbstractSQLDatabase
             return keys.getInt(1);
         } finally {
             keys.close();
-        }
-    }
-
-    /**
-     * add email event to the database
-     * @return the unique id associated with this event
-     */
-    public int insertEmailEvent(EmailEvent ee)
-           throws SQLException
-    {
-        PreparedStatement psAddEmailEvent = getConnection().prepareStatement(
-                DBUtil.insert(
-                        T_EE, C_EE_EMAIL, C_EE_EVENT, C_EE_DESC, C_EE_CATEGORY, C_EE_TS),
-                PreparedStatement.RETURN_GENERATED_KEYS);
-
-        psAddEmailEvent.setString(1, ee._email);
-        psAddEmailEvent.setString(2, ee._event.toString().toLowerCase());
-        psAddEmailEvent.setString(3, ee._desc);
-        psAddEmailEvent.setString(4, ee._category);
-        psAddEmailEvent.setLong(5, ee._timestamp);
-        Util.verify(psAddEmailEvent.executeUpdate() == 1);
-
-        ResultSet keys = psAddEmailEvent.getGeneratedKeys();
-        try {
-            Util.verify(keys.next());
-            return keys.getInt(1);
-        } finally {
-            keys.close();
-        }
-    }
-
-    /**
-     * get email event from database based on the unique eventid
-     * @return the EmailEvent or null if the event doesn't exist
-     * @throws SQLException
-     */
-    public @Nullable EmailEvent getEmailEvent(int eventId)
-        throws SQLException
-    {
-        PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.selectWhere(T_EE, C_EE_ID + "=?", C_EE_EMAIL, C_EE_EVENT, C_EE_DESC,
-                                C_EE_CATEGORY, C_EE_TS)
-                                );
-
-        ps.setInt(1, eventId);
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            if (rs.next()) {
-                String email = rs.getString(1);
-                String event = rs.getString(2);
-                String desc = rs.getString(3);
-                String cat = rs.getString(4);
-                Long timestamp = rs.getLong(5);
-
-                return new EmailEvent(email, Event.valueOf(event.toUpperCase()), desc,
-                        cat, timestamp);
-            } else {
-                return null;
-            }
-        } finally {
-            rs.close();
         }
     }
 }

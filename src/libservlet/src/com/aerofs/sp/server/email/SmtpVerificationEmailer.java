@@ -6,7 +6,6 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.servlets.lib.SyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sv.common.EmailCategory;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -33,6 +32,6 @@ public class SmtpVerificationEmailer
         // system is not up to date.
         SyncEmailSender sender = new SyncEmailSender(host, port, username, password, useTls, cert);
         sender.sendPublicEmail(fromEmail, SPParam.EMAIL_FROM_NAME, toEmail, null, subject,
-                email.getTextEmail(), email.getHTMLEmail(), EmailCategory.SMTP_VERIFICATION);
+                email.getTextEmail(), email.getHTMLEmail());
     }
 }

@@ -38,7 +38,6 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.Exceptions;
-import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVDefect;
@@ -288,8 +287,7 @@ public class SVReactor
                 "device: " + did;
 
         Future<Void> f = _emailSender.sendPublicEmail(contactEmail, contactEmail,
-                WWW.SUPPORT_EMAIL_ADDRESS, null, L.brand() + " Problem # " + id, body, null,
-                EmailCategory.SUPPORT);
+                WWW.SUPPORT_EMAIL_ADDRESS, null, L.brand() + " Problem # " + id, body, null);
         try {
             f.get(); // block to make sure email reaches support system
         } catch (Exception e) {

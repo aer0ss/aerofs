@@ -8,7 +8,6 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sv.common.EmailCategory;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -34,8 +33,7 @@ public class UserQuotaUsageEmailer
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.EMAIL_FROM_NAME, toEmail,
-                null, subject, email.getTextEmail(), email.getHTMLEmail(),
-                EmailCategory.QUOTA_WARNING);
+                null, subject, email.getTextEmail(), email.getHTMLEmail());
     }
 
     private static String getEmailSubject(int percentQuotaUsed)

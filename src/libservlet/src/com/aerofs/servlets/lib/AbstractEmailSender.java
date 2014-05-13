@@ -15,11 +15,9 @@ import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.aerofs.labeling.L;
 import com.aerofs.proto.Common.Void;
-import com.aerofs.sv.common.EmailCategory;
 import com.google.common.base.Strings;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -148,7 +146,7 @@ public abstract class AbstractEmailSender
             return UncancellableFuture.createSucceeded(Void.getDefaultInstance());
         }
 
-        return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, null);
+        return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody);
     }
 
     /**
@@ -156,25 +154,22 @@ public abstract class AbstractEmailSender
      * from address.
      */
     public Future<Void> sendPublicEmailFromSupport(@Nullable String fromName, String to,
-            @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
-            @Nonnull EmailCategory category)
+            @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody)
             throws MessagingException, UnsupportedEncodingException
     {
         return sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, fromName, to, replyTo, subject, textBody,
-                htmlBody, category);
+                htmlBody);
     }
 
-    public Future<Void> sendPublicEmail(String from,
-            @Nullable String fromName, String to, @Nullable String replyTo, String subject,
-            String textBody, @Nullable String htmlBody, @Nonnull EmailCategory category)
+    public Future<Void> sendPublicEmail(String from, @Nullable String fromName, String to, @Nullable String replyTo, String subject,
+            String textBody, @Nullable String htmlBody)
             throws MessagingException, UnsupportedEncodingException
     {
-        return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, category);
+        return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody);
     }
 
     private Future<Void> sendEmail(String from, @Nullable String fromName, String to,
-            @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
-            @Nullable EmailCategory category)
+            @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody)
             throws MessagingException, UnsupportedEncodingException
     {
         MimeMessage msg;
@@ -187,10 +182,6 @@ public abstract class AbstractEmailSender
                 subject,
                 session);
         msg.setContent(multiPart);
-
-        if (category != null) {
-            msg.addHeaderLine("X-SMTPAPI: {\"category\": \"" + category.name() + "\"}");
-        }
 
         try {
             return sendMessage(msg, session);

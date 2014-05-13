@@ -9,7 +9,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sv.common.EmailCategory;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -44,8 +43,7 @@ public class RequestToSignUpEmailer
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
-                subject, email.getTextEmail(), email.getHTMLEmail(),
-                EmailCategory.REQUEST_TO_SIGN_UP);
+                subject, email.getTextEmail(), email.getHTMLEmail());
     }
 
     public void sendAlreadySignedUpEmail(String emailAddress)
@@ -67,7 +65,6 @@ public class RequestToSignUpEmailer
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
-                subject, email.getTextEmail(), email.getHTMLEmail(),
-                EmailCategory.REQUEST_TO_SIGN_UP);
+                subject, email.getTextEmail(), email.getHTMLEmail());
     }
 }

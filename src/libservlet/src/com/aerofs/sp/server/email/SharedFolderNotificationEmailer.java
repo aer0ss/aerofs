@@ -15,7 +15,6 @@ import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.sv.common.EmailCategory;
 import org.slf4j.Logger;
 
 import javax.mail.MessagingException;
@@ -55,8 +54,7 @@ public class SharedFolderNotificationEmailer
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, inviter.id().getString(),
-                null, subject, email.getTextEmail(), email.getHTMLEmail(),
-                EmailCategory.SHARED_FOLDER_INVITATION_ACCEPTED_NOTIFICATION);
+                null, subject, email.getTextEmail(), email.getHTMLEmail());
     }
 
     private static void describePermissionChange(StringBuilder bd, int diff, String base)
@@ -99,7 +97,6 @@ public class SharedFolderNotificationEmailer
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, subject.id().getString(),
-                null, title, email.getTextEmail(), email.getHTMLEmail(),
-                EmailCategory.SHARED_FOLDER_ROLE_CHANGE_NOTIFICATION);
+                null, title, email.getTextEmail(), email.getHTMLEmail());
     }
 }
