@@ -79,7 +79,9 @@ Note: Do not use `sudo` for the following command. You should not need it if the
     
     ln -s $(brew --prefix apt-cacher-ng)/homebrew.mxcl.apt-cacher-ng.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/homebrew.mxcl.apt-cacher-ng.plist
     
-    pip install protobuf requests pyyaml        
+    pip install protobuf requests pyyaml
+
+    npm install less minifier uglify-js
 
 This step takes a while. It's probably a good time to look around in our [mailing list](../references/mailing_list.html).
 
@@ -99,6 +101,9 @@ This step takes a while. It's probably a good time to look around in our [mailin
   * `jekyll` is used to build the API docs, which are part of the web package
   * `pyyaml` is used for SyncDET to parse yaml files.
   * `npm` is used to run JavaScript unit tests.
+  * `less` is used to compile less scripts into CSS.
+  * `minifier` is used to minify JavaScripts.
+  * `uglify-js` is used to beautify JavaScripts.
 
 ## Install VM tools
 
