@@ -2,21 +2,21 @@
 <%namespace name="modal" file="../modal.mako"/>
 <%namespace name="common" file="setup_common.mako"/>
 
-<form method="POST" onsubmit="submitForm(); return false;">
+<form method="POST" role="form" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
 
     <h4>This appliance's hostname:</h4>
     ## current_config is a template parameter
-    <input class="input-block-level" id="base-host-unified" name="base.host.unified" type="text"/>
+    <div class="form-group">
+        <input class="form-control" id="base-host-unified" name="base.host.unified" type="text"/>
 
-    <p>We recommend using <strong>share.*</strong> as the
-        hostname. For example, ACME Inc. may choose <strong>share.acme.com</strong>.
-        You need to configure your DNS server to point the hostname to this appliance's IP
-        address.</p>
-    <p>Changing the hostname in the future might ${require_reinstall()}</p>
-    <hr />
-    ${common.render_next_button()}
-    ${common.render_previous_button()}
+        <p class="help-block">We recommend using <strong>share.*</strong> as the
+            hostname. For example, ACME Inc. may choose <strong>share.acme.com</strong>.
+            You need to configure your DNS server to point the hostname to this appliance's IP
+            address.</p>
+        <p class="help-block">Changing the hostname in the future might ${require_reinstall()}</p>
+    </div>
+    ${common.render_next_prev_buttons()}
 </form>
 
 <%modal:modal>
@@ -34,7 +34,7 @@
         this appliance.</p>
 
     <%def name="footer()">
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+        <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
         <a href="#" class="btn btn-primary"
             onclick="confirmHostnameChange(); return false;">
             This appliance has a fixed IP. Proceed</a>
@@ -48,7 +48,7 @@
     Are you sure you want to change the hostname? It might ${require_reinstall()}
 
     <%def name="footer()">
-        <a href="#" class="btn"
+        <a href="#" class="btn btn-default"
            onclick="restoreHostname(); return false;">Undo Change</a>
         <a href="#" class="btn btn-danger"
            onclick="confirmFirewall(); return false;">Proceed</a>
@@ -74,7 +74,7 @@
         Read more about network requirements</a>.</p>
 
     <%def name="footer()">
-        <a class="btn" href="#" data-dismiss="modal">Cancel</a>
+        <a class="btn btn-default" href="#" data-dismiss="modal">Cancel</a>
         <a class="btn btn-primary"
             onclick="$('#confirm-firewall-modal').modal('hide'); doSubmit(); return false;">
             I've unblocked all the ports. Continue</a>

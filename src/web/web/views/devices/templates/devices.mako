@@ -45,11 +45,11 @@
                                data-device-id="${device_id}">
 
                         <a href="#" onclick="setAndStopEditingName('${device_id}'); return false;">
-                            <i class="icon-ok"></i>
+                            <span class="glyphicon glyphicon-ok"></span>
                         </a>
 
                         <a href="#" onclick="stopEditingName('${device_id}'); return false;">
-                            <i class="icon-remove"></i>
+                            <span class="glyphicon glyphicon-remove"></span>
                         </a>
                     </span>
                 </form>
@@ -107,7 +107,7 @@
             <label style="display: inline-block;">${device_icon(os_name, os_name)}</label>
             <label style="display: inline-block;">AeroFS ${os_name} Device</label>
           </td>
-          <td class="muted">N/A</td>
+          <td class="text-muted">N/A</td>
           <td></td>
           <td><a href="#" onclick='confirmUnlinkMobile("${token}", "${os_name}"); return false;'>Unlink</a></td>
         </tr>
@@ -116,7 +116,7 @@
     </tbody>
 </table>
 
-<div class="muted">
+<div class="text-muted">
     %if are_team_servers:
         <a href="${request.route_path('download_team_server')}">Install the Team Server app</a>
     %else:
@@ -141,11 +141,11 @@
         elif os_family == 'iOS':
             icon = "aerofs-icon-osx"
         else:
-            icon = "icon-question-sign"
+            icon = "glyphicon glyphicon-question-sign"
             tooltip = "Unknown operating system"
     %>
 
-    <i data-toggle="tooltip" class="${icon} os_name_tooltip" title="${tooltip | h}"></i>
+    <span data-toggle="tooltip" class="${icon} os_name_tooltip" title="${tooltip | h}"></span>
 </%def>
 
 <%include file="device_modals.html" />

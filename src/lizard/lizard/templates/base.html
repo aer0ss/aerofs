@@ -26,7 +26,7 @@
             <div id="dark-blue-header">
                 <div class="container">
                     <div class="row">
-                        <div class="span10 offset1">
+                        <div class="col-sm-12">
                             <a class="brand" href="{% block navbar_logo_link %}{% endblock %}">
                                 <img src="{{ url_for('static', filename='img/logo_small.png') }}" alt="AeroFS"/>
                             </a>
@@ -39,27 +39,27 @@
             </div>
 
             {# Message bar #}
-            <div id="flash-msg-wrap">
-                <span id="flash-msg-success" class="flash-msg" style="display: none">
-                </span>
-                <span id="flash-msg-error" class="flash-msg" style="display: none">
-                    <table>
-                        <tr><td id="flash-msg-error-body">
-                            </td>
-                            <td id="flash-msg-error-close">
-                                <a class="close" onclick="fadeOutErrorMessage(); return false">
-                                    &times;</a>
-                        </td></tr>
-                    </table>
-                </span>
+            <div class="container">
+                <div class="row">
+                    <div id="error-wrap" class="col-sm-12">
+                        <div id="flash-msg-success" class="alert alert-success alert-dismissable" style="display: none">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                            <span id="flash-msg-success-body"></span>
+                        </div>
+                        <div id="flash-msg-error" class="alert alert-danger alert-dismissable" style="display: none">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                            <span id="flash-msg-error-body"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="container">
                 <div class="row">
-                    <div class="span2 offset1">
+                    <div class="col-sm-3">
                         {% block sidebar %}{% endblock %}
                     </div>
-                    <div class="span8">
+                    <div class="col-sm-9">
                         {% block content %}{% endblock %}
                     </div>
                 </div>

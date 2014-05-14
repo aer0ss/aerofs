@@ -21,24 +21,29 @@
         <input type="text" id="invite_user_email" placeHolder="Email address"/>
         <input id='invite_button' class="btn btn-primary" type="submit" value="Send Invite"/>
     </form>
+    <br>
     <table class="table"><tbody id='invited_users_tbody'></tbody></table>
 </div>
 
-<div id="remove_user_modal" class="modal hide">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4>Remove the user from your organization?</h4>
-    </div>
-    <div class="modal-body">
-        <p>Are you sure that you want to remove <strong class="user_email"></strong> from your organization?</p>
-        <p>This user will still have access to all folders currently shared with them, but their
-            data will no longer be backed up on the AeroFS Team Server.</p>
-        <p>If you would like to unlink or erase this user's devices, you may do so by visiting the
-            <a href="#" class="device_link">devices</a> page before removing the user from your organization.</p>
-    </div>
-    <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</a>
-        <a href="#" id="confirm_remove_user" class="btn btn-danger">Remove User From Team</a>
+<div id="remove_user_modal" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4>Remove the user from your organization?</h4>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure that you want to remove <strong class="user_email"></strong> from your organization?</p>
+                <p>This user will still have access to all folders currently shared with them, but their
+                    data will no longer be backed up on the AeroFS Team Server.</p>
+                <p>If you would like to unlink or erase this user's devices, you may do so by visiting the
+                    <a href="#" class="device_link">devices</a> page before removing the user from your organization.</p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-default" data-dismiss="modal" aria-hidden="true">Cancel</a>
+                <a href="#" id="confirm_remove_user" class="btn btn-danger">Remove User From Team</a>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -46,7 +51,7 @@
     <%def name="id()">deactivate_modal</%def>
     <%def name="title()">Delete user</%def>
     <%def name="footer()">
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+        <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
         <a href="#" id="confirm_deactivate" class="btn btn-danger">Delete User</a>
     </%def>
 
@@ -97,7 +102,7 @@
                 "bLengthChange": false,
 
                 ## Parameters
-                "sDom": "<'datatable_body't><'row'<'span1'r><'span7'pi>>",
+                "sDom": "<'datatable_body't><'row'<'col-sm-2'r><'col-sm-10'pi>>",
                 "sAjaxSource": "${request.route_path("json.list_org_users")}",
                 "sPaginationType": "bootstrap",
                 "iDisplayLength": 20,

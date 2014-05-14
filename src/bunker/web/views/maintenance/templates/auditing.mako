@@ -55,7 +55,7 @@
 
         <div id="external-endpoint-options"
             %if not is_audit_enabled:
-                class="hide"
+                style="display: none;"
             %endif
         >
             <hr/>
@@ -64,41 +64,54 @@
                 publish audit events. The events will be sent as newline-separated
                 JSON documents over tcp (or tcp-ssl):</p>
 
-            <div class="row-fluid">
-                <div class="span8">
+            <div class="row">
+                <div class="col-sm-6">
                     <label for="audit-downstream-host">Hostname:</label>
-                    <input class="input-block-level" id="audit-downstream-host"
+                    <input class="form-control" id="audit-downstream-host"
                         name="audit-downstream-host" type="text" required
                         value="${downstream_host}">
                 </div>
-                <div class="span4">
+                <div class="col-sm-3">
                     <label for="audit-downstream-port">Port:</label>
-                    <input class="input-block-level" id="audit-downstream-port"
+                    <input class="form-control" id="audit-downstream-port"
                         name="audit-downstream-port" type="text" required
                         value="${downstream_port}">
                 </div>
             </div>
 
-            <label for="audit-downstream-ssl-enabled" class="checkbox">
-                <input id="audit-downstream-ssl-enabled"
-                    name="audit-downstream-ssl-enabled" type="checkbox"
-                    %if downstream_ssl_enabled:
-                        checked
-                    %endif
-                >Use SSL encryption
-            </label>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="checkbox">
+                        <label for="audit-downstream-ssl-enabled">
+                            <input id="audit-downstream-ssl-enabled"
+                                name="audit-downstream-ssl-enabled" type="checkbox"
+                                %if downstream_ssl_enabled:
+                                    checked
+                                %endif
+                            >Use SSL encryption
+                        </label>
+                    </div>
+                </div>
+            </div>
 
-            <label for="audit-downstream-certificate">Server certificate for SSL (optional):</label>
-            <textarea rows="4" class="input-block-level"
-                id="audit-downstream-certificate"
-                name="audit-downstream-certificate">${downstream_cert}</textarea>
-            <div class="input-footnote">Supply the downstream server's certificate
-                only if the certificate is <strong>not</strong> publicly signed.
+            <div class="row">
+                <div class="col-sm-12">
+                    <label for="audit-downstream-certificate">Server certificate for SSL (optional):</label>
+                    <textarea rows="4" class="form-control"
+                        id="audit-downstream-certificate"
+                        name="audit-downstream-certificate">${downstream_cert}</textarea>
+                    <div class="help-block">Supply the downstream server's certificate
+                        only if the certificate is <strong>not</strong> publicly signed.
+                    </div>
+                </div>
             </div>
         </div>
 
-        <hr/>
-        <button id="save-btn" class="btn btn-primary">Save</button>
+        <div class="row">
+            <div class="col-sm-6">
+                <button id="save-btn" class="btn btn-primary">Save</button>
+            </div>
+        </div>
     </form>
 </%def>
 

@@ -1,5 +1,4 @@
 @import "includes/bootstrap/bootstrap.less";
-@import "includes/bootstrap/responsive.less";
 @import "includes/aerofs-variables.less";
 
 // We use h4 for modal titles. A normal font weight is not pretty for titles.
@@ -13,8 +12,23 @@ h4 {
 @footerHeight: 4em;
 @footerPaddingTop: 10px;
 
+.border-radius(@radius) {
+  .border-top-radius(@radius);
+  .border-right-radius(@radius);
+  .border-bottom-radius(@radius);
+  .border-left-radius(@radius);
+}
+
 html, body {
   height: 100%;
+}
+
+h1, h4 {
+  margin-bottom: @line-height-computed;
+}
+
+label {
+  font-weight: normal;
 }
 
 #wrapper {
@@ -29,10 +43,9 @@ html, body {
 }
 
 footer {
+  margin-top: @standard-padding;
   height: @footerHeight;
-  // background: @base02;
-  // color: @base1;
-  color: @grayLight;
+  color: @gray-light;
   font-size: 85%;
 }
 
@@ -98,6 +111,10 @@ footer {
   font-size: 18px;
 }
 
+.top-nav-wrapper {
+  margin-bottom: @standard-padding;
+}
+
 .breadcrumb {
   padding-top: 0;
 }
@@ -108,19 +125,34 @@ footer {
   background: transparent;
   text-shadow: none;
   font-weight: bold;
-  color: @linkColorHover;
+  color: @link-hover-color;
 }
 
 .nav-header {
   font-weight: 400;
-  padding-top: 4px;
+  font-size: .9em;
+  padding: 4px 0 2px 15px;
   background: #EEE;
+  color: #999;
+  text-shadow: 0 1px 0 rgba(255,255,255, 0.5);
+  text-transform: uppercase;
 }
 
-// Override Bootstrap's @grayLighter background color
+.nav > li > a, .nav ul li a {
+  display: block;
+  padding: 3px 15px;
+}
+
+// Override Bootstrap's @gray-lighter background color
 .nav > li > a:hover,
 .nav > li > a:focus {
   background-color: inherit;
+}
+
+.left-nav ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-bottom: 9px;
 }
 
 // Override Bootstrap's grey background defined for .nav > li > a:hover/focus
@@ -128,7 +160,7 @@ footer {
 // specific than classes).
 #nav-btn-sign-up {
   // Values of the last two parameters are copied from Bootstrap's .btn style.
-  .buttonBackground(@yellow, spin(@yellow, -5%), @grayDark, 0 1px 1px rgba(255,255,255,.75));
+  .button-variant(@btn-primary-color, @btn-primary-bg, @btn-primary-border);
 }
 
 .side-bar-accordion .accordion-toggle {
@@ -175,7 +207,7 @@ footer {
 }
 
 ul.big-thumbnails .thumbnail {
-  .border-radius(@borderRadiusLarge);
+  .border-radius(@border-radius-large);
   padding-left: 15px;
   padding-right: 15px;
 }
@@ -212,58 +244,6 @@ div.input_container a.btn {
 
 div.input_container.submit {
     margin-top: 25px;
-}
-
-////////
-// Messages
-
-#flash-msg-wrap {
-  width: 100%;
-  height: 0;
-  left: 0;
-  top: 0;
-  text-align: center;
-  position: fixed;
-  // Leave sufficient margin to avoid covering the top navigation bar.
-  margin-top: 46px;
-  // Bootstrap's modals have pretty big z-index. Use a bigger index here to
-  // avoid the message being covered by modals.
-  z-index: 100000;
-}
-
-.flash-msg-mixin(@color) {
-  color: @color;
-  background-color: lighten(@color, 45%);
-  border: 1px solid lighten(@color, 35%);
-  a {
-    font-weight: bold;
-    color: @color;
-  }
-}
-
-.flash-msg {
-  // A block-level element is necessary to apply max-width
-  display: inline-block;
-  max-width: 550px;
-  text-align: left;
-  padding: 4px 17px;
-  border-radius: @inputBorderRadius;
-  td {
-    padding: 0;
-    &#flash-msg-error-close {
-      vertical-align: top;
-      padding-left: 10px;
-      padding-top: 3px;
-    }
-  }
-}
-
-#flash-msg-success {
-  .flash-msg-mixin(@successMessageColor);
-}
-
-#flash-msg-error {
-  .flash-msg-mixin(@errorMessageColor);
 }
 
 div.jumbo_banner {
@@ -333,6 +313,15 @@ div.jumbo_banner > h2 {
 .aerofs-icon-earphone         { background-position: -96px  0; }
 .aerofs-icon-twitter          { background-position: -120px  0; }
 
+// Use smaller fonts for labels, and push labels away from main text (assuming
+// labels are always to the right of text).
+.label {
+  font-size: 70%;
+  margin-left: 7px;
+  text-shadow: 0 -1px 0 rgba(0,0,0,0.25);
+  background-color: #999;
+}
+
 ////////
 // Datatables
 
@@ -340,14 +329,45 @@ div.jumbo_banner > h2 {
   margin-bottom: 15px;
 }
 
+.dataTables_paginate ul {
+  padding: 0;
+  a {
+    .btn();
+    .btn-sm();
+    .btn-default();
+  }
+
+  .prev a {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-left: -1px;
+  }
+
+  .next a {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .disabled a {
+    .btn.disabled();
+  }
+}
+
 // Force dataTables info text (e.g. "1-10 of 100") stay close to pagination
 // buttons. The sDom parameter must place the text _after_ pagination,
-// e.g. "<'span3'pi>". See invocations to dataTable() in shared_folder.mako,
+// e.g. "<'col-sm-3'pi>". See invocations to dataTable() in shared_folder.mako,
 // org_users.mako, etc for examples.
 .dataTables_info {
   display: inline;
   float: right;
   margin-right: 10px;
+}
+
+.pagination ul {
+  list-style-type: none;
+  li {
+    display: inline-block;
+  }
 }
 
 ////////
@@ -360,13 +380,6 @@ img.screenshot {
 
 .full_name {
   font-weight: bold;
-}
-
-// Use smaller fonts for labels, and push labels away from main text (assuming
-// labels are always to the right of text).
-.label {
-  font-size: 70%;
-  margin-left: 7px;
 }
 
 blockquote {
@@ -388,7 +401,7 @@ code {
 }
 
 .img-bordered {
-  border: 1px solid @grayLight;
+  border: 1px solid @gray-light;
 }
 
 .sign-up-text-highlight {
@@ -422,4 +435,31 @@ div.arch-image {
 }
 .spinner {
     display: inline;
+}
+
+// Login page
+.login {
+  h1 {
+    text-align: center;
+    color: @base02;
+  }
+
+  .openid-login {
+    .btn {
+      width: 100%;
+    }
+    .login-divider {
+      border-top: 1px solid #d3d3d3;
+      margin-top: 60px; 
+      margin-bottom: 40px;
+    }
+    span {
+      color: #a0a0a0; 
+      background-color: #e7eef3; 
+      display: block; 
+      text-align: center; 
+      margin: -12px auto 0 auto; 
+      width: 50px;
+    }
+  }
 }

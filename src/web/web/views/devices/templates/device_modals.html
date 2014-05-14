@@ -1,67 +1,79 @@
-<div id="unlink-mobile-modal" class="modal hide" tabindex="-1" role="dialog">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">×</button>
-        <h4>Unlink <span class="modal-mobile-os-name"></span> Device</h4>
-    </div>
-    <div class="modal-body">
-        <p>
-            Are you sure you want to unlink the AeroFS
-            <span class="modal-mobile-os-name"></span> Device? You will no longer be
-            able to access your files through the mobile app until you sign in again.
-        </p>
-    </div>
-    <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <a href="#" id="unlink-mobile-modal-confirm" class="btn btn-danger">Unlink</a>
-    </div>
-</div>
-
-<div id="unlink-modal" class="modal hide" tabindex="-1" role="dialog">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">×</button>
-        <h4>Unlink Device</h4>
-    </div>
-    <div class="modal-body">
-        <p>
-            ## Note: the text should be consistent with text in S.java.
-            Are you sure you want to unlink
-            &quot;<span id="unlink-modal-device-name"></span>&quot;
-            from AeroFS? This device will no longer stay in sync, but
-            <strong>will</strong> keep files it currently has.
-        </p>
-        <p class="footnote">
-            Please use "Erase" to prevent data leakage if the device is lost
-            or stolen.
-        </p>
-    </div>
-    <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <a href="#" id="unlink-model-confirm" class="btn btn-danger">Unlink</a>
+<div id="unlink-mobile-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4>Unlink <span class="modal-mobile-os-name"></span> Device</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Are you sure you want to unlink the AeroFS
+                    <span class="modal-mobile-os-name"></span> Device? You will no longer be
+                    able to access your files through the mobile app until you sign in again.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <a href="#" id="unlink-mobile-modal-confirm" class="btn btn-danger">Unlink</a>
+            </div>
+        </div>
     </div>
 </div>
 
-<div id="erase-modal" class="modal hide" tabindex="-1" role="dialog">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">×</button>
-        <h4>Erase Device</h4>
+<div id="unlink-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4>Unlink Device</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    ## Note: the text should be consistent with text in S.java.
+                    Are you sure you want to unlink
+                    &quot;<span id="unlink-modal-device-name"></span>&quot;
+                    from AeroFS? This device will no longer stay in sync, but
+                    <strong>will</strong> keep files it currently has.
+                </p>
+                <p class="footnote">
+                    Please use "Erase" to prevent data leakage if the device is lost
+                    or stolen.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <a href="#" id="unlink-model-confirm" class="btn btn-danger">Unlink</a>
+            </div>
+        </div>
     </div>
-    <div class="modal-body">
-        <p>
-            Are you sure you want to unlink and erase AeroFS files on
-            &quot;<span id="erase-modal-device-name"></span>&quot;? This device
-            will no longer stay in sync and will lose all the data that is synced
-            with AeroFS.
-        </p>
-        <p>
-            <img class="icon-vertical-align-fix"
-                 src="${request.static_path('web:static/img/warning_16.png')}"
-                 width="16px" height="16px">
-            This action cannot be undone.
-        </p>
+</div>
 
-    </div>
-    <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <a href="#" id="erase-model-confirm" class="btn btn-danger">Unlink Device and Erase Files</a>
+<div id="erase-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4>Erase Device</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Are you sure you want to unlink and erase AeroFS files on
+                    &quot;<span id="erase-modal-device-name"></span>&quot;? This device
+                    will no longer stay in sync and will lose all the data that is synced
+                    with AeroFS.
+                </p>
+                <p>
+                    <img class="icon-vertical-align-fix"
+                         src="${request.static_path('web:static/img/warning_16.png')}"
+                         width="16px" height="16px">
+                    This action cannot be undone.
+                </p>
+
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <a href="#" id="erase-model-confirm" class="btn btn-danger">Unlink Device and Erase Files</a>
+            </div>
+        </div>
     </div>
 </div>

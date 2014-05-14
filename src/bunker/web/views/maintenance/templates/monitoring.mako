@@ -21,18 +21,18 @@ given below.</p>
 %endif
 
 <%def name="create_new_pw()">
-    <div class="row-fluid">
-        <dd style="margin-top: 4px">
-            <a class="btn" onclick="autoGenerate(); return false;">
+    <div class="row">
+        <div class="col-sm-12">
+            <a class="btn btn-primary" onclick="autoGenerate(); return false;">
                 Create Access Token
             </a>
-        </dd>
+        </div>
     </div>
 </%def>
 
 <%def name="replace_existing_pw()">
-    <div class="row-fluid">
-        <div class="span6">
+    <div class="row">
+        <div class="col-sm-6">
             <dl class="dl-horizontal" style="margin-top: auto">
                 <dt>Monitoring URL:</dt>
                 <dd><code>${base_url}/monitor</code></dd>
@@ -40,10 +40,11 @@ given below.</p>
                 <dd>${username}</dd>
                 <dt>Password:</dt>
                 <dd>${password}</dd>
+                <br>
                 <dt></dt>
 
-                <dd style="margin-top: 4px">
-                    <a class="btn btn-small" onclick="confirmGenerate(); return false;">
+                <dd>
+                    <a class="btn btn-default" onclick="confirmGenerate(); return false;">
                         Generate new access token
                     </a>
                 </dd>
@@ -51,9 +52,13 @@ given below.</p>
         </div>
     </div>
 
-    <p>Automated systems can provide credentials in an HTTP Authorization header:</p>
+    <div class="row">
+        <div class="col-sm-12">
+        <p>Automated systems can provide credentials in an HTTP Authorization header:</p>
 
-    <code>curl -H 'Authorization: Basic ${base64_str}' ${base_url}/monitor</code>
+        <pre>curl -H 'Authorization: Basic ${base64_str}' ${base_url}/monitor</pre>
+        </p>
+    </div>
 </%def>
 
 <%modal:modal>
@@ -64,7 +69,7 @@ given below.</p>
     You will need to update any systems using the existing values. Are you sure?</p>
 
     <%def name="footer()">
-        <a href="#" class="btn" data-dismiss="modal">Keep Existing</a>
+        <a href="#" class="btn btn-default" data-dismiss="modal">Keep Existing</a>
         <a href="#" id="confirm-btn" class="btn btn-danger" data-dismiss="modal">Regenerate</a>
     </%def>
 </%modal:modal>

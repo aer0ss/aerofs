@@ -26,6 +26,16 @@
         Next ></button>
 </%def>
 
+<%def name="render_next_prev_buttons()">
+    <div class="row next-prev">
+        <div class="col-sm-12">
+        <hr/>
+            ${render_next_button()}
+            ${render_previous_button()}
+        </div>
+    </div>
+</%def>
+
 ## Log an event into Segment.io. Available only during the initial setup with
 ## a trial license. The function is a no-op in other cases. Usage:
 ##

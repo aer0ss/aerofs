@@ -2,7 +2,7 @@
 <%! page_title = "Invalid Signup Code" %>
 
 <div class="row">
-    <div class="span12 text-center">
+    <div class="col-sm-12 text-center">
 
         <div class="page-block">
             <h1>Invalid Signup Code</h1>

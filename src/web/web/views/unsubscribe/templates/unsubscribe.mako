@@ -2,7 +2,7 @@
 <%! page_title = "Unsubscribe Email" %>
 
 <div class="row">
-    <div class="span6 offset3">
+    <div class="col-sm-6 col-sm-offset-3">
         <h2>AeroFS Unsubscribe Request</h2>
 
         %if success:

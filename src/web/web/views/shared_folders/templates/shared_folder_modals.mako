@@ -9,7 +9,7 @@
         <%def name="id()">modal</%def>
         <%def name="title()">
             <span id="modal-folder-title"></span>&nbsp;
-            <i id="modal-folder-title-info-icon" class="icon-info-sign"></i>
+            <span id="modal-folder-title-info-icon" class="glyphicon glyphicon-info-sign"></span>
         </%def>
         <%def name="footer()">
             <form id="modal-invite-form" class="form-inline" method="post">
@@ -19,7 +19,7 @@
                     <input type="hidden" id="modal-invite-role">
                     ## .btn-group is needed for the button drop-down menu
                     <div class="btn-group">
-                        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                        <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" href="#">
                             ## do not use .caret as it doesn't align correctly
                             ## in the vertical direction -- I don't know why
                             <span id="modal-invite-role-label"></span>&nbsp;&#x25BE;
@@ -32,17 +32,15 @@
                 </span>
                 ## Use a space to keep the spinner in place
                 <span id="modal-spinner" class="pull-left" style="margin-left: 30px;">&nbsp;</span>
-                <a href="#" class="btn" data-dismiss="modal">Close</a>
+                <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
             </form>
         </%def>
-        <%def name="modal_style()">width: 700px</%def>
-        <%def name="body_style()">min-height: 300px</%def>
 
         <table id="modal-user-role-table" class="table table-hover">
             ## min-width to avoid table cell shifting due to different lengths of role
             ## strings, when the user updates members roles.
             <thead><tr><th>Member</th><th style="min-width: 64px">Role
-                <a href="https://support.aerofs.com/entries/22831810" target="_blank"><i class="icon-question-sign"></i></a></th>
+                <a href="https://support.aerofs.com/entries/22831810" target="_blank"><span class="glyphicon glyphicon-question-sign"></span></a></th>
                 <th></th></tr></thead>
             <tbody></tbody>
         </table>
@@ -52,7 +50,7 @@
         <%def name="id()">remove-modal</%def>
         <%def name="title()">Remove from folder</%def>
         <%def name="footer()">
-            <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+            <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
             <a href="#" id="remove-model-confirm" class="btn btn-danger">Remove</a>
         </%def>
 
@@ -72,7 +70,7 @@
         <%def name="id()">sharing-warning-modal</%def>
         <%def name="title()">Error</%def>
         <%def name="footer()">
-            <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+            <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
             <a href="#" id="sharing-warning-confirm" class="btn btn-danger">Proceed</a>
         </%def>
     </%modal:modal>
@@ -82,7 +80,7 @@
         <%def name="title()">Warning</%def>
         <%def name="error()"></%def>
         <%def name="footer()">
-            <a href="#" class="btn" data-dismiss="modal">Close</a>
+            <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
         </%def>
     </%modal:modal>
 </%def>

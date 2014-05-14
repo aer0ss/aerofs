@@ -2,9 +2,9 @@
 <%! page_title = "Oops" %>
 
 <div class="row">
-    <div class="span6 offset3">
-        <h2>500: Internal Server Error</h2>
-        <div id="error_text"></div>
+    <div class="col-sm-6 col-sm-offset-3">
+        <h2>500 Internal Server Error</h2>
+        <p id="error_text"></p>
     </div>
 </div>
 

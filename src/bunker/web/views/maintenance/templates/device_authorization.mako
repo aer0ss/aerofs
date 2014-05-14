@@ -60,26 +60,26 @@ enabled and cannot be configured.
 
             <p>Your endpoint: <b><span id="uri"></span></b></p>
 
-            <div class="row-fluid">
-                <div class="span5">
+            <div class="row">
+                <div class="col-sm-4">
                     <label for="host">Hostname:</label>
                     <input class="input-block-level" id="host"
                         oninput="optionsUpdated();"
-                        name="host" type="text"
+                        name="host" type="text" class="form-control"
                         value="${device_authorization_endpoint_host}">
                 </div>
-                <div class="span3">
+                <div class="col-sm-4">
                     <label for="port">Port:</label>
                     <input class="input-block-level" id="port"
                         oninput="optionsUpdated();"
-                        name="port" type="text"
+                        name="port" type="text" class="form-control"
                         value="${device_authorization_endpoint_port}">
                 </div>
-                <div class="span4">
+                <div class="col-sm-4">
                     <label for="path">Path:</label>
                     <input class="input-block-level" id="path"
                         oninput="optionsUpdated();"
-                        name="path" type="text"
+                        name="path" type="text" class="form-control"
                         value="${device_authorization_endpoint_path}">
                 </div>
             </div>
@@ -95,15 +95,14 @@ enabled and cannot be configured.
             </label>
 
             <label for="certificate">Server certificate for SSL (optional):</label>
-            <textarea rows="4" class="input-block-level"
+            <textarea rows="4" class="input-block-level form-control"
                 id="certificate"
                 name="certificate">${device_authorization_endpoint_certificate}</textarea>
-            <div class="input-footnote">Supply the endpoint server's certificate
+            <div class="help-block">Supply the endpoint server's certificate
                 only if the certificate is <strong>not</strong> publicly signed.
             </div>
         </div>
 
-        <hr/>
         <button id="save-btn" class="btn btn-primary">Save</button>
     </form>
 </%def>

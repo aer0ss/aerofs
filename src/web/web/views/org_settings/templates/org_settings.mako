@@ -10,13 +10,15 @@
 
 <h2 class="page-block">Organization settings</h2>
 
-<form class="page-block" action="${request.route_path('org_settings')}" method="post">
+<form class="page-block form-horizontal" action="${request.route_path('org_settings')}" method="post" role="form">
     ${self.csrf.token_input()}
 
-    <div class="page-block">
-        <label for="organization_name">Organization name:</label>
-        <input type="text" id="organization_name" name="organization_name"
+    <div class="page-block form-group">
+        <label for="organization_name" class="col-sm-3 control-label">Organization name:</label>
+        <div class="col-sm-6">
+            <input type="text" id="organization_name" class="form-control" name="organization_name"
                 value="${organization_name}">
+        </div>
     </div>
 
     <div
@@ -26,27 +28,38 @@
                 class="hidden"
             %endif
             >
-
-        <label class="checkbox">
-            <input type="checkbox" id="enable_quota" name="enable_quota"
-                   %if quota_enabled:
-                       checked
-                   %endif
-                    >
-            Limit data usage on Team Servers to
-        </label>
-        <div class="input-append">
-          <input type="text" class="input-mini text-right" id="quota" name="quota" required
-                 %if quota_enabled:
-                     value="${quota}"
-                 %endif
-                 >
-          <span class="add-on">GB per user</span>
+        <div class="form-group">
+            <div class="col-sm-6 col-sm-offset-3">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="enable_quota" name="enable_quota"
+                               %if quota_enabled:
+                                   checked
+                               %endif
+                                >
+                        Limit data usage on Team Servers to
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="input-append col-sm-6 col-sm-offset-3">
+              <input type="text" size=4 maxlength=4 id="quota" name="quota" required
+                     %if quota_enabled:
+                         value="${quota}"
+                     %else:
+                         value="5"
+                     %endif
+                     >
+              <span class="add-on">GB per user</span>
+            </div>
         </div>
     </div>
 
-    <div class="page-block">
-        <button class="btn" id="update-button">Update</button>
+    <div class="page-block form-group">
+        <div class="col-sm-6 col-sm-offset-3">
+            <button class="btn btn-primary" id="update-button">Update</button>
+        </div>
     </div>
 </form>
 

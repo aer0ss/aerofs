@@ -2,13 +2,13 @@
 <%! page_title = "Create Account" %>
 
 <div class="row">
-    <div class="span12 text-center">
+    <div class="col-sm-4 col-sm-offset-4 text-center">
         <h1>Create an AeroFS account</h1>
     </div>
 </div>
 
 <div class="row">
-    <div class="span4 offset4">
+    <div class="col-sm-4 col-sm-offset-4">
         <div class="well well-small text-center" style="margin: 0 auto;">
             You will sign up using this email:<br>
             <strong>${email_address}</strong>
@@ -18,55 +18,83 @@
 </div>
 
 <div class="row">
-    <div class="span8 offset4">
-        <div class="row-fluid">
-            <div class="span8 offset1">
+    <div class="col-sm-4 col-sm-offset-4">
                 ## Always use POST to avoid disclose passwords in the URL when JS is disabled.
-                <form id="signupForm" method="post">
+                <form id="signupForm" method="post" role="form" class="form-horizontal">
                     ${self.csrf.token_input()}
                     ## signup.py needs the email address only to generate scrypt
                     ## credentials. Alternatively, we can query the SP for the email address
                     ## but this would add an extra round trip to SP.
                     <input type="hidden" name="${url_param_email}" value="${email_address}"/>
                     <input type="hidden" name="${url_param_signup_code}" value="${code}"/>
-                    <label for="inputFirstName">First name: *</label>
-                    <input class="span6" id="inputFirstName" type="text" name="${url_param_first_name}" required>
-                    <label for="inputLastName">Last name: *</label>
-                    <input class="span6" id="inputLastName" type="text" name="${url_param_last_name}" required>
-
+                    <div class="form-group">
+                        <label for="inputFirstName" class="col-sm-4">First name: *</label>
+                        <div class="col-sm-8">
+                            <input id="inputFirstName" class="form-control" type="text" name="${url_param_first_name}" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputLastName" class="col-sm-4">Last name: *</label>
+                        <div class="col-sm-8">
+                            <input id="inputLastName" class="form-control" type="text" name="${url_param_last_name}" required>
+                        </div>
+                    </div>
                     <div
                     %if is_private_deployment:
                         class="hidden"
                     %endif
                     >
-                        <label for="inputPhone">Phone: *</label>
-                        <input class="span6" id="inputPhone" type="text" name="${url_param_phone}"
-                        %if not is_private_deployment:
-                        required
-                        %endif
-                        >
+                        <div class="form-group">
+                            <label for="inputPhone" class="col-sm-4">Phone: *</label>
+                            <div class="col-sm-8">
+                            <input id="inputPhone" class="form-control" type="text" name="${url_param_phone}"
+                            %if not is_private_deployment:
+                            required
+                            %endif
+                            ></div>
+                        </div>
 
-                        <label for="inputCompany">Company:</label>
-                        <input class="span6" id="inputCompany" type="text" name="${url_param_company}">
-                        <label for="inputTitle">Job Title:</label>
-                        <input class="span6" id="inputTitle" type="text" name="${url_param_title}">
-                        <label for="inputCompanySize">Company Size:</label>
-                        <input class="span6" id="inputCompanySize" type="text" name="${url_param_company_size}">
-
+                        <div class="form-group">
+                            <label for="inputCompany" class="col-sm-4">Company:</label>
+                            <div class="col-sm-8">
+                                <input id="inputCompany" class="form-control" type="text" name="${url_param_company}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputTitle" class="col-sm-4">Job Title:</label>
+                            <div class="col-sm-8">
+                                <input id="inputTitle" class="form-control" type="text" name="${url_param_title}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputCompanySize" class="col-sm-4">Company Size:</label>
+                            <div class="col-sm-8">
+                                <input id="inputCompanySize" class="form-control" type="text" name="${url_param_company_size}">
+                            </div>
+                        </div>
                     </div>
 
-                    <label for="inputPasswd">Create password: *</label>
-                    <input class="span6" id="inputPasswd" type="password" name="${url_param_password}">
+                    <div class="form-group">
+                        <label for="inputPasswd" class="col-sm-4">Create password: *</label>
+                        <div class="col-sm-8">
+                            <input id="inputPasswd" class="form-control" type="password" name="${url_param_password}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-8 col-sm-offset-4">
+                            <span class="help-block">
+                                Fields marked by (*) are mandatory.<br/><br/>
+                                By signing up, you agree to AeroFS's <a href="${request.route_path('terms')}#tos" target="_blank">Terms of Service</a>.
+                            </span>
+                        </div>
+                    </div>
 
-                    <span class="help-block footnote" style="margin-top: 10px;">
-                        Fields marked by (*) are mandatory.<br/><br/>
-                        By signing up you agree to AeroFS <a href="${request.route_path('terms')}#tos" target="_blank">Terms of Service</a>
-                    </span>
-
-                    <button id="submitButton" class="btn btn-primary" type="submit">Sign Up</button>
+                    <div class="form-group">
+                        <div class="col-sm-8 col-sm-offset-4">
+                            <button id="submitButton" class="btn btn-primary" type="submit">Sign Up</button>
+                        </div>
+                    </div>
                 </form>
-            </div>
-        </div>
     </div>
 </div>
 

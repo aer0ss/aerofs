@@ -1,0 +1,187 @@
+@import "includes/bootstrap/variables.less";
+@import "includes/aerofs-variables.less";
+
+@top-padding: 30px;
+
+.python {
+  display: none;
+}
+
+.nav-list {
+  padding-top: @top-padding;
+}
+
+.nav-node {
+  font-weight: bold;
+}
+
+.nav-subnode {
+  margin-left: 15px;
+  &.active {
+    color: @blue;
+  }
+}
+
+.methods {
+  margin-left: 50% !important;
+  width: 50% !important;
+  background: @gray-dark;
+}
+
+.method {
+  // the width value is determined empirically without mathmatical calculations.
+  width: 195% !important;
+  margin-left: -100%;
+
+  padding-top: 50px;
+  padding-left: 2.5%;
+}
+
+.method::first-of-type, .method:first-of-type {
+  padding-top: @top-padding;
+}
+
+pre {
+  // reset Bootstrap's boarder and background for pre's
+  padding: inherit;
+  margin: inherit;
+  background-color: inherit;
+  border: none;
+}
+
+.example,
+.example pre code {
+  color: rgb(218, 228, 242);
+  text-shadow: rgba(0, 0, 0, 0.701961) 0px 1px 0px;
+
+}
+
+.description {
+  padding-right: 10px;
+}
+
+.example {
+  padding: 47px 10px 0px 20px;
+}
+
+// The block below is adapted from .dt-horizontal in bootstrap.css, to apply
+// the .dt-horizontal style to all <dl>s without requiring the dt-horizontal class.
+dl {
+  *zoom: 1;
+}
+dl:before,
+dl:after {
+  display: table;
+  content: "";
+  line-height: 0;
+}
+dl:after {
+  clear: both;
+}
+dl dt {
+  float: left;
+  width: 120px;
+  clear: left;
+  text-align: right;
+  text-transform: uppercase;
+  color: slategrey;
+  font-weight: inherit;
+  font-size: 12.7px;
+}
+dl dd {
+  margin-left: 140px;
+  margin-bottom: 15px;
+}
+
+// Keep sufficient top margin before <dt>s
+dt:before, dt + dd:before {
+  display: table;
+  content: "";
+  height: 10px;
+}
+
+.code_heading_style() {
+  display: block;
+  font-size: small;
+  margin-top: 20px;
+}
+
+.ex_json:before {
+  content: "EXAMPLE OBJECT";
+  .code_heading_style();
+}
+
+.ex_request:before {
+  content: "EXAMPLE REQUEST";
+  .code_heading_style();
+}
+
+.ex_response:before {
+  content: "EXAMPLE RESPONSE";
+  .code_heading_style();
+}
+
+div.example p {
+  margin-top: 10px;
+  color: @gray-light;
+}
+
+.reset_em_style() {
+  // In markdown we use "*attr*{: param}" to define parameters. font-style is to
+  // reset the style of <em>
+  font-style: normal;
+}
+
+em.param {
+  .reset_em_style();
+  font-weight: bold;
+  margin-right: 6px;
+}
+
+em.status_code {
+  .reset_em_style();
+  // This entire block is adapted from bootstrap.css to mimic the <code> style
+  color: @codeColor;
+  border: 1px solid #e1e1e8;
+  white-space: nowrap;
+  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+  font-size: 9pt;
+
+  padding: 2px 4px;
+  background-color: #f7f7f9;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+}
+
+.affix-top {
+  float: left;
+}
+
+.affix {
+  position: fixed;
+  top: 0;
+  left: 20px;
+}
+
+#left-nav {
+  width: 200px;
+}
+
+@media only screen and (min-width:951px) {
+  #main-body {
+    border-left: 1px solid silver;
+    margin-left: 200px;
+  }
+}
+
+@media only screen and (max-width:950px) {
+  #left-nav {
+    visibility: hidden;
+    width: 0;
+  }
+
+  #main-body {
+    margin-left: 0;
+  }
+}

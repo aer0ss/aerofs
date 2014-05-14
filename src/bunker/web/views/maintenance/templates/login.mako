@@ -3,7 +3,7 @@
 
 <%namespace name="csrf" file="csrf.mako"/>
 
-<div class="span8 offset2 text-center">
+<div class="col-sm-8 col-sm-offset-2 text-center">
     %if is_initialized:
         <h3>Sign in to Manage Appliance</h3>
         <p>Please sign in with your license to manage this appliance.</p>
@@ -19,11 +19,11 @@
         <input type="hidden" name="${url_param_next}" value="${next}">
 
         <input id="license-file" name="${url_param_license}" type="file" style="display: none">
-        <div class="row-fluid" style="margin-top: 80px; margin-bottom: 100px;">
-            <div class="span6 offset3">
+        <div class="row" style="margin-top: 80px; margin-bottom: 100px;">
+            <div class="col-sm-6 col-sm-offset-3">
                 <p>
                     <button type="button" id='license-btn' class="btn btn-large btn-primary
-                            input-block-level"
+                            "
                             ## keep height consistent with create_or_restore_page.mako
                             style="height: 60px"
                             onclick="$('#license-file').click(); return false;">

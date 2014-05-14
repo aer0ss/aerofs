@@ -2,7 +2,7 @@
 <%! page_title = "Reset Password" %>
 
 <div class="row">
-    <div class="span6 offset3">
+    <div class="col-sm-6 col-sm-offset-3">
         %if success:
             <h2>Password Updated</h2>
             <div id="success_msg">
@@ -24,7 +24,7 @@
                     <div class="input_container" style="margin-top: 20px">
                         <label for="password">New Password:</label>
                         <input type="password" id="password" name="password" value=""/>
-                        <input class="btn" type="submit" value="Update"/>
+                        <input class="btn btn-primary" type="submit" value="Update"/>
                     </div>
                 </form>
             %else:

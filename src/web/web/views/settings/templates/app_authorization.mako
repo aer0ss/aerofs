@@ -68,38 +68,38 @@
     </script>
 </%block>
 
-<div class="row-fluid">
-<div class="offset3 span8">
-    ## Don't allow navigate off this page
-    <%def name="home_url()">#</%def>
+<div class="row">
+    <div class="col-sm-8 col-sm-offset-2">
+        ## Don't allow navigate off this page
+        <%def name="home_url()">#</%def>
 
-    <h2 class="page-block">Authorize "${client_name}"</h2>
+        <h2 class="page-block">Authorize "${client_name}"</h2>
 
-    <p class="page-block">Please review the requested permissions below.</p>
+        <p class="page-block">Please review the requested permissions below.</p>
 
-    <div class="page-block">
-    <span><strong>${client_name}</strong> wants to:</span>
+        <div class="page-block">
+        <span><strong>${client_name}</strong> wants to:</span>
+        </div>
+
+        <div id="scopes">
+        </div>
+
+        <hr/>
+
+        <p style="margin-top: 20px">
+            <form method="post" action="auth/authorize" method="post">
+                ${self.csrf.token_input()}
+                <input type="hidden" name="response_type" value="${response_type}"/>
+                <input type="hidden" name="client_id" value="${client_id}"/>
+                <input type="hidden" name="nonce" value="${identity_nonce}"/>
+                <input type="hidden" name="redirect_uri" value="${redirect_uri}"/>
+                <input type="hidden" id="granted_scope" name="scope" value=""/>
+                % if state is not None:
+                    <input type="hidden" name="state" value="${state}"/>
+                % endif
+                <button class="btn btn-primary">Accept</button>
+                <a class="btn btn-link" href="${request.route_path('access_tokens')}">Cancel</a>
+            </form>
+        </p>
     </div>
-
-    <div id="scopes">
-    </div>
-
-    <hr/>
-
-    <p style="margin-top: 20px">
-        <form method="post" action="auth/authorize" method="post">
-            ${self.csrf.token_input()}
-            <input type="hidden" name="response_type" value="${response_type}"/>
-            <input type="hidden" name="client_id" value="${client_id}"/>
-            <input type="hidden" name="nonce" value="${identity_nonce}"/>
-            <input type="hidden" name="redirect_uri" value="${redirect_uri}"/>
-            <input type="hidden" id="granted_scope" name="scope" value=""/>
-            % if state is not None:
-                <input type="hidden" name="state" value="${state}"/>
-            % endif
-            <button class="btn btn-primary">Accept</button>
-            <a class="btn btn-link" href="${request.route_path('access_tokens')}">Cancel</a>
-        </form>
-    </p>
-</div>
 </div>

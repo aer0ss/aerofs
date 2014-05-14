@@ -59,7 +59,7 @@
 
     ${caller.body()}
 
-    <div class="alert alert-success">
+    <div class="alert alert-info">
         API access is available for the AeroFS <strong>Private Cloud only</strong>.
         <a href="${request.route_path('developers_signup')}">Click here</a>
         to request a developer license for free.
@@ -155,11 +155,11 @@
                         <ul class="nav nav-list left-nav">
                             <li>
                                 <a class="sign-up-text-highlight" href="${request.route_path('pricing')}">
-                                    <i class="icon-circle-arrow-right"></i> Sign Up Now</a>
+                                    <span class="glyphicon glyphicon-circle-arrow-right"></span> Sign Up Now</a>
                             </li>
                             <li>
                                 <a href="${request.route_path('demo_videos')}">
-                                    <i class="icon-film"></i> Watch Demos
+                                    <span class="glyphicon glyphicon-film"></span> Watch Demos
                                 </a>
                             </li>
                         </ul>

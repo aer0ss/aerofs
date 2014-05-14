@@ -55,7 +55,7 @@
 %endif
 
 %if no_device_tagline:
-    <p class="muted">
+    <p class="text-muted">
         %if is_team_server:
             Your team doesn't have ${program} installed. Install it now?
         %else:

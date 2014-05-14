@@ -39,16 +39,17 @@
 <%def name="id()">progress-modal</%def>
 
 <%def name="html()">
-    <div id="${id()}" class="modal hide" tabindex="-1" role="dialog"
+    <div id="${id()}" class="modal fade" tabindex="-1" role="dialog"
             style="top: 200px">
-        <div class="modal-body">
-            ## "display: table-cell" is needed for caller.body()s that have more
-            ## than one line of text.
-            ## TODO (WW) a better approach
-            <div id="progress-modal-spinner" class="pull-left"
-                  style="display: table-cell; margin-right: 28px; padding-top: -10px">&nbsp;</div>
-            <div style="display: table-cell;">
-                ${caller.body()}
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div id="progress-modal-spinner" class="pull-left"
+                          style="margin-right: 28px; padding-top: -10px">&nbsp;</div>
+                    <div>
+                        ${caller.body()}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -62,12 +63,7 @@
 
             var $modal = $('#${id()}');
             disableEsapingFromModal($modal);
-
-            $modal.on('shown', function() {
-                startSpinner($spinner, 0);
-            }).on('hidden', function() {
-                stopSpinner($spinner);
-            });
+            startSpinner($spinner, 0);
         }
     </script>
 </%def>

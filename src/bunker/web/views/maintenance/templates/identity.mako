@@ -26,43 +26,47 @@
 ## their corresponding external properties (as oppose to template properties).
 ############################################
 
-<form class="page-block" method="POST" onsubmit="submitForm(); return false;">
+<form method="POST" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
 
-    <label class="radio">
-        <input type='radio' name='authenticator' value='local_credential'
-               onchange="localSelected()"
-           %if local.local_auth:
-               checked
-           %endif
-        >
-        Use AeroFS to manage user accounts
-    </label>
+    <div class="row">
+        <div class="col-sm-12">
 
-    <label class="radio">
-        <input type='radio' name='authenticator' value='external_credential'
-               onchange="ldapSelected()"
-            %if not local.local_auth:
-               checked
-            %endif
-        >
-        Use ActiveDirectory or LDAP
+            <label class="radio">
+                <input type='radio' name='authenticator' value='local_credential'
+                       onchange="localSelected()"
+                   %if local.local_auth:
+                       checked
+                   %endif
+                >
+                Use AeroFS to manage user accounts
+            </label>
 
-        ## The slide down options
-        <div id="ldap-options"
-            %if local.local_auth:
-                class="hide"
-            %endif
-        >
-            <p style="margin-top: 6px"><a href="https://support.aerofs.com/entries/23101219" target="_blank">
-                    Need help setting up or troubleshooting AD/LDAP?</a></p>
+            <label class="radio">
+                <input type='radio' name='authenticator' value='external_credential'
+                       onchange="ldapSelected()"
+                    %if not local.local_auth:
+                       checked
+                    %endif
+                >
+                Use ActiveDirectory or LDAP
 
-            ${ldap_options()}
+                ## The slide down options
+                <div id="ldap-options"
+                    %if local.local_auth:
+                        style="display: none;"
+                    %endif
+                >
+                    <p><a href="https://support.aerofs.com/entries/23101219" target="_blank">
+                            Need help setting up or troubleshooting AD/LDAP?</a></p>
+
+                    ${ldap_options()}
+                </div>
+            </label>
+
+            <button id="save-btn" class="btn btn-primary">Save</button>
         </div>
-    </label>
-
-    <hr />
-    <button id="save-btn" class="btn btn-primary">Save</button>
+    </div>
 </form>
 
 ########
@@ -71,195 +75,219 @@
 ########
 
 <%def name="ldap_options()">
-    <div class="row-fluid">
-        <div class="span8">
-            <label for="ldap-server-host">Server host:</label>
-            <input class="ldap-opt input-block-level" id="ldap-server-host"
+    <div class="row">
+        <div class="col-sm-6">
+            <label for="ldap-server-host" class="control-label">Server host:</label>
+            <input class="form-control" id="ldap-server-host"
                     name="ldap_server_host" type="text" required
                     value="${conf['ldap.server.host']}">
-            <div class="input-footnote">example: <i>ldap.example.com</i></div>
+            <div class="help-block">e.g. ldap.example.com</div>
         </div>
-        <div class="span4">
-            <label for="ldap-server-port">Server port:</label>
-            <input class="ldap-opt input-block-level" id="ldap-server-port"
+        <div class="col-sm-6">
+            <label for="ldap-server-port" class="control-label">Server port:</label>
+            <input class="form-control" id="ldap-server-port"
                    name="ldap_server_port" type="text" required
                    value="${conf['ldap.server.port']}">
-            <div class="input-footnote">example: <i>389</i>, or <i>636</i> for SSL</div>
+            <div class="help-block">e.g. 389, or 636 for SSL</div>
         </div>
     </div>
 
-    <label for="ldap-server-schema-user-base">Base DN:</label>
-    <input class="ldap-opt input-block-level" id="ldap-server-schema-user-base"
-           name="ldap_server_schema_user_base" type="text" required
-           value="${conf['ldap.server.schema.user.base']}">
-    <div class="input-footnote">example: <i>cn=users,dc=example,dc=com</i></div>
-
-    <div class="row-fluid">
-        <div class="span6">
-            <label for="ldap-server-principal">Bind user name:</label>
-            <input class="ldap-opt input-block-level" id="ldap-server-principal"
+    <div class="row">
+        <div class="col-sm-6">
+            <label for="ldap-server-schema-user-base" class="control-label">Base DN:</label>
+            <input class="form-control" id="ldap-server-schema-user-base"
+                   name="ldap_server_schema_user_base" type="text" required
+                   value="${conf['ldap.server.schema.user.base']}">
+            <div class="help-block">e.g. <code>cn=users,dc=example,dc=com</code></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <label for="ldap-server-principal" class="control-label">Bind user name:</label>
+            <input class="form-control" id="ldap-server-principal"
                    name="ldap_server_principal" type="text" required
                    value="${conf['ldap.server.principal']}">
-            <div class="input-footnote">example: <i>cn=admin,ou=users,dc=example,dc=com</i></div>
+            <div class="help-block">e.g. <code>cn=admin,ou=users,dc=example,dc=com</code></div>
         </div>
-        <div class="span6">
-            <label for="ldap-server-credential">Password:</label>
-            <input class="ldap-opt input-block-level" id="ldap-server-credential"
+        <div class="col-sm-6">
+            <label for="ldap-server-credential" class="control-label">Bind user password:</label>
+            <input class="form-control" id="ldap-server-credential"
                    name="ldap_server_credential" type="password" required
                    value="${conf['ldap.server.credential']}">
-            <div class="input-footnote">password for the bind user</div>
         </div>
     </div>
 
     <% security = conf['ldap.server.security'] %>
-
-    <label>Security:</label>
-    <label class="radio inline">
-        <input class="ldap-opt" type="radio" name="ldap_server_security" value="none"
-            %if security == 'none':
-                checked
-            %endif
-        > Plaintext
-    </label>
-    <label class="radio inline">
-        <input class="ldap-opt" type="radio" name="ldap_server_security" value="tls"
-            ## Use TLS by default
-            %if security == '' or security == 'tls':
-                checked
-            %endif
-        > StartTLS
-    </label>
-    <label class="radio inline">
-        <input class="ldap-opt" type="radio" name="ldap_server_security" value="ssl"
-            %if security == 'ssl':
-                checked
-            %endif
-        > SSL
-    </label>
-
-    <p style="margin-top: 20px;">
-        <a id="show-advanced-ldap-options" href="#"
-            onclick="showAdvancedLDAPOptions(); return false;">
-            Show advanced options &#x25BE;</a>
-        <a id="hide-advanced-ldap-options" href="#" class="hide"
-            onclick="hideAdvancedLDAPOptions(); return true;">
-            Hide advanced options &#x25B4;</a>
-    </p>
-
-    <div id="advanced-ldap-options" class="hide">
+    <div class="row">
+        <div class="col-sm-6">
+            <label>Security: &nbsp;</label>
+            <label class="radio-inline">
+                <input type="radio" name="ldap_server_security" value="none"
+                    %if security == 'none':
+                        checked
+                    %endif
+                > Plaintext
+            </label>
+            <label class="radio-inline">
+                <input type="radio" name="ldap_server_security" value="tls"
+                    ## Use TLS by default
+                    %if security == '' or security == 'tls':
+                        checked
+                    %endif
+                > StartTLS
+            </label>
+            <label class="radio-inline">
+                <input type="radio" name="ldap_server_security" value="ssl"
+                    %if security == 'ssl':
+                        checked
+                    %endif
+                > SSL
+            </label>
+        </div>
+    </div>
     <hr />
-        ${advanced_ldap_options()}
+    <div class="row">
+        <div class="col-sm-6">
+            <p>
+                <a id="show-advanced-ldap-options" href="#"
+                    onclick="showAdvancedLDAPOptions(); return false;">
+                    Show advanced options &#x25BE;</a>
+                <a id="hide-advanced-ldap-options" href="#"
+                    onclick="hideAdvancedLDAPOptions(); return true;" style="display: none;">
+                    Hide advanced options &#x25B4;</a>
+            </p>
+            <br>
+        </div>
+    </div>
+    <div id="advanced-ldap-options" style="display: none;">
+            <div class="col-sm-12">
+            ${advanced_ldap_options()}
+            </div>
     </div>
 </%def>
 
 <%def name="advanced_ldap_options()">
     <% scope = conf['ldap.server.schema.user.scope'] %>
-    <label>Search scope:</label>
-    <label class="radio">
-        <input class="ldap-opt" type="radio" name="ldap_server_schema_user_scope" value="subtree"
-            %if scope =='' or scope == 'subtree':
-                checked
-            %endif
-        > Search the object specified by Base DN <i>and</i> its entire subtree
-    </label>
-    <label class="radio">
-        <input class="ldap-opt" type="radio" name="ldap_server_schema_user_scope" value="one"
-            %if scope == 'one':
-                checked
-            %endif
-        > Search the immediate children of Base DN, but not Base DN itself
-    </label>
-    <label class="radio">
-        <input class="ldap-opt" type="radio" name="ldap_server_schema_user_scope" value="base"
-            %if scope == 'base':
-                checked
-            %endif
-        > Search Base DN only
-    </label>
+    <div class="row">
+        <div class="col-sm-12">
+            <label>Search scope:</label>
+            <div class="radio">
+            <label>
+                <input type="radio" name="ldap_server_schema_user_scope" value="subtree"
+                    %if scope =='' or scope == 'subtree':
+                        checked
+                    %endif
+                > Object specified by Base DN <em>and</em> its entire subtree
+            </label>
+            </div>
+            <div class="radio">
+            <label>
+                <input type="radio" name="ldap_server_schema_user_scope" value="one"
+                    %if scope == 'one':
+                        checked
+                    %endif
+                > Immediate children of Base DN, but not Base DN itself
+            </label>
+            </div>
+            <div class="radio">
+            <label>
+                <input type="radio" name="ldap_server_schema_user_scope" value="base"
+                    %if scope == 'base':
+                        checked
+                    %endif
+                > Base DN only
+            </label>
+            </div>
+        </div>
+    </div>
 
-    <div class="row-fluid" style="margin-top: 20px;">
-        <div class="span6">
+    <div class="row">
+        <div class="col-sm-6">
             <%
                 default = 'givenName'
                 value = conf['ldap.server.schema.user.field.firstname']
                 if not value: value = default
             %>
-            <label for="ldap-server-schema-user-field-firstname">First name attribute:</label>
-            <input class="ldap-opt input-block-level" id="ldap-server-schema-user-field-firstname"
+            <label class="control-label" for="ldap-server-schema-user-field-firstname">LDAP first name attribute:</label>
+            <input class="form-control" id="ldap-server-schema-user-field-firstname"
                    name="ldap_server_schema_user_field_firstname" type="text" required
                    value="${value}">
-            <div class="input-footnote">LDAP attribute for users' first names.
-                default is <i>${default}</i></div>
+            <div class="help-block">Default is <code>${default}</code>.</div>
         </div>
-        <div class="span6">
+        <div class="col-sm-6">
             <%
                 default = 'sn'
                 value = conf['ldap.server.schema.user.field.lastname']
                 if not value: value = default
             %>
-            <label for="ldap-server-schema-user-field-lastname">Last name attribute:</label>
-            <input class="ldap-opt input-block-level" id="ldap-server-schema-user-field-lastname"
+            <label class="control-label" for="ldap-server-schema-user-field-lastname">LDAP last name attribute:</label>
+            <input class="form-control" id="ldap-server-schema-user-field-lastname"
                    name="ldap_server_schema_user_field_lastname" type="text" required
                    value="${value}">
-            <div class="input-footnote">LDAP attribute for users' last names.
-                default is <i>${default}</i></div>
+            <div class="help-block">Default is <code>${default}</code>.</div>
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span6">
+    <div class="row">
+        <div class="col-sm-6">
             <%
                 default = 'mail'
                 value = conf['ldap.server.schema.user.field.email']
                 if not value: value = default
             %>
-            <label for="ldap-server-schema-user-field-email">Email attribute:</label>
-            <input class="ldap-opt input-block-level" id="ldap-server-schema-user-field-email"
+            <label class="control-label" for="ldap-server-schema-user-field-email">LDAP email attribute:</label>
+            <input class="form-control" id="ldap-server-schema-user-field-email"
                    name="ldap_server_schema_user_field_email" type="text" required
                    value="${value}">
-            <div class="input-footnote">LDAP attribute for users' email.
-                default is <i>${default}</i></div>
+            <div class="help-block">
+                Default is <code>${default}</code></div>
         </div>
-        <div class="span6">
+        <div class="col-sm-6">
             <%
                 default = 'organizationalPerson'
                 value = conf['ldap.server.schema.user.class']
                 if not value: value = default
             %>
-            <label for="ldap-server-schema-user-class">User class:</label>
-            <input class="ldap-opt input-block-level" id="ldap-server-schema-user-class"
+            <label class="control-label" for="ldap-server-schema-user-class">LDAP object class for user records:</label>
+            <input class="form-control" id="ldap-server-schema-user-class"
                    name="ldap_server_schema_user_class" type="text" required
                    value="${value}">
-            <div class="input-footnote">The object class all user records should belong to.
-                default is <i>${default}</i></div>
+            <div class="help-block">
+                Default is <code>${default}</code>.</div>
         </div>
     </div>
 
-    <%
-        default = 'dn'
-        value = conf['ldap.server.schema.user.field.rdn']
-        if not value: value = default
-    %>
-    <label for="ldap-server-schema-user-field-rdn">Distinguished name attribute:</label>
-    <input class="ldap-opt input-block-level" id="ldap-server-schema-user-field-rdn"
-           name="ldap_server_schema_user_field_rdn" type="text" required
-           value="${value}">
-    <div class="input-footnote">The attribute that contains users' Relative
-        Distinguished Names (RDN) that will be used for authentication.
-        This should be an attribute that returns an LDAPidentifier like
-        "CN=User,OU=People,DC=example,DC=com".
-        default is <i>${default}</i></div>
+    <div class="row">
+        <div class="col-sm-6">
+            <%
+                default = 'dn'
+                value = conf['ldap.server.schema.user.field.rdn']
+                if not value: value = default
+            %>
+            <label class="control-label" for="ldap-server-schema-user-field-rdn">LDAP Relative Distinguished Names (RDN) attribute:</label>
+            <input class="form-control" id="ldap-server-schema-user-field-rdn"
+                   name="ldap_server_schema_user_field_rdn" type="text" required
+                   value="${value}">
+            <div class="help-block">This attribute should return an LDAPidentifier like
+                "CN=User,OU=People,DC=example,DC=com".
+                Default is <code>${default}</code>.</div>
+        </div>
+    </div>
 
-    <label for="ldap-server-ca_certificate">Server certificate for StartTLS and SSL (optional):</label>
-    <textarea rows="4" class="ldap-opt input-block-level" id="ldap-server-ca_certificate"
-            name="ldap_server_ca_certificate"
-            ## Don't leave spaces around the config value; otherwise they will
-            ## show up in the box.
-            ## the .replace() converts the cert from properties format to HTML format.
-            ## Also see setup_view.py:_format_pem() for the reversed convertion.
-            >${conf['ldap.server.ca_certificate'].replace('\\n', '\n')}</textarea>
-    <div class="input-footnote">Supply the LDAP server's certificate only
-        if the certificate is <strong>not</strong> publicly signed.</div>
+    <div class="row">
+        <div class="col-sm-12">
+            <label class="control-label" for="ldap-server-ca_certificate">Server certificate for StartTLS and SSL (optional):</label>
+            <textarea rows="4" class="form-control" id="ldap-server-ca_certificate"
+                    name="ldap_server_ca_certificate"
+                    ## Don't leave spaces around the config value; otherwise they will
+                    ## show up in the box.
+                    ## the .replace() converts the cert from properties format to HTML format.
+                    ## Also see setup_view.py:_format_pem() for the reversed convertion.
+                    >${conf['ldap.server.ca_certificate'].replace('\\n', '\n')}</textarea>
+            <div class="help-block">Supply the LDAP server's certificate only
+                if the certificate is <strong>not</strong> publicly signed.</div>
+        </div>
+    </div>
 </%def>
 
 <%modal:modal>

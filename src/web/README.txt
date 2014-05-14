@@ -96,7 +96,7 @@ Updating Bootstrap:
 A. Update JS and images
 ----
 1. Download prebuilt Bootstrap from http://twitter.github.com/bootstrap/assets/bootstrap.zip
-2. Copy bootstrap.min.js and files under img to src/web/web/static/{js,img}
+2. Copy bootstrap.min.js and fonts to src/web/web/static/{js,fonts}
 
 B. Update LESS and CSS
 ----

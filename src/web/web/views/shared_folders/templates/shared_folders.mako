@@ -13,7 +13,7 @@
 <%! from web.util import is_private_deployment %>
 
 <div class="row page-block">
-    <div class="span8">
+    <div class="col-sm-12">
         <h2>${page_heading}</h2>
             %if not is_private_deployment(request.registry.settings):
               <div class="well well-small footnote">

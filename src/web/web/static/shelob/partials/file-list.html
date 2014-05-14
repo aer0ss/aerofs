@@ -1,6 +1,6 @@
 <div id="breadcrumb-and-actions">
   <div id="actions">
-    <span aero-file-upload class="btn btn-default" id="upload-file"></span>
+    <span aero-file-upload class="btn btn-primary" id="upload-file"></span>
     <button type="button" class="btn btn-default" id="new-folder" ng-click="newFolder.hidden=false">New Folder</button>
   </div>
 
@@ -9,12 +9,10 @@
       <li ng-if="currentFolder.id != 'root'"><a href="#/root">My Files</a></li>
 
       <li ng-repeat="folder in breadcrumbs">
-        <span class="divider">&rsaquo;</span>
         <a href="#/{{folder.id}}">{{folder.name}}</a>
       </li>
 
       <li ng-if="currentFolder.id != 'root'" class="active">
-        <span class="divider">&rsaquo;</span>
         {{currentFolder.name}}
       </li>
   </ul>

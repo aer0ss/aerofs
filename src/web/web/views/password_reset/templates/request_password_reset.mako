@@ -2,7 +2,7 @@
 <%! page_title = "Reset Password" %>
 
 <div class="row">
-    <div class="span6 offset3">
+    <div class="col-sm-6 col-sm-offset-3">
 
         %if success:
             <h2>Please Check Your Email</h2>
@@ -20,7 +20,7 @@
                     method="post">
                 ${self.csrf.token_input()}
                 <input type="text" id="email-input" name="login" value=""/>
-                <input class="btn" type="submit" value="Send Email"/>
+                <input class="btn btn-default" type="submit" value="Send Email"/>
             </form>
         %endif
     </div>

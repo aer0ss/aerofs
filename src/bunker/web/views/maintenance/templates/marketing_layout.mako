@@ -30,8 +30,8 @@
     <footer>
         <div class="container">
             <div class="row">
-                <div class="span10 offset1" id="footer-span">
-                    <ul class="inline">
+                <div class="col-sm-12" id="footer-span">
+                    <ul class="list-inline">
                         <li class="pull-right">&copy; Air Computing Inc. 2014</li>
                     </ul>
                 </div>
@@ -44,3 +44,7 @@
     ## Main body
     ${next.body()}
 </div>
+
+<%block name="css">
+    <link href="${request.static_path('web:static/css/compiled/aerofs-bunker.min.css')}" rel="stylesheet">
+</%block>

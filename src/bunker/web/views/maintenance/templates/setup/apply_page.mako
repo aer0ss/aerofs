@@ -24,39 +24,43 @@ ${common.render_previous_button()}
         <span id="be-patient-text">It should be done very shortly...</span>
 </%progress_modal:html>
 
-<div id="success-modal" class="modal hide small-modal" tabindex="-1" role="dialog">
-    <div class="modal-header">
-        <h4 class="text-success">The system is ready!</h4>
-    </div>
-    <div class="modal-body">
-        <% first_user_created = is_configuration_initialized or restored_from_backup %>
+<div id="success-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="text-success">The system is ready!</h4>
+            </div>
+            <div class="modal-body">
+                <% first_user_created = is_configuration_initialized or restored_from_backup %>
 
-        %if first_user_created:
-            <p>System configuration is complete.</p>
-        %else:
-            <p>Next, you will create the system's first user.</p>
-            <p>Your browser may warn about the certificate if you chose a self-signed certificate
-                in the previous step.</p>
-        %endif
+                %if first_user_created:
+                    <p>System configuration is complete.</p>
+                %else:
+                    <p>Next, you will create the system's first user.</p>
+                    <p>Your browser may warn about the certificate if you chose a self-signed certificate
+                        in the previous step.</p>
+                %endif
 
-    </div>
-    <div class="modal-footer">
+            </div>
+            <div class="modal-footer">
 
-        <%
-            # Redirect user to the set hostname rather than the hostname derived from the current URL which can be an IP
-            # address. This is useful to suppress browser warnings if the CNAME of the browser certificate doesn't match
-            # the IP address.
-            home_url = 'https://' + current_config['base.host.unified']
-            # Use the SMTP verification email as the default first user email
-            email = current_config['last_smtp_verification_email']
-        %>
+                <%
+                    # Redirect user to the set hostname rather than the hostname derived from the current URL which can be an IP
+                    # address. This is useful to suppress browser warnings if the CNAME of the browser certificate doesn't match
+                    # the IP address.
+                    home_url = 'https://' + current_config['base.host.unified']
+                    # Use the SMTP verification email as the default first user email
+                    email = current_config['last_smtp_verification_email']
+                %>
 
-        %if first_user_created:
-            <a class="btn btn-primary" href='${home_url}'>Go to Home Page</a>
-        %else:
-            <a class="btn btn-primary" href='${home_url}/create_first_user?email=${email | u}'>
-                Create First User</a>
-        %endif
+                %if first_user_created:
+                    <a class="btn btn-primary" href='${home_url}'>Go to Home Page</a>
+                %else:
+                    <a class="btn btn-primary" href='${home_url}/create_first_user?email=${email | u}'>
+                        Create First User</a>
+                %endif
+            </div>
+        </div>
     </div>
 </div>
 
@@ -76,7 +80,7 @@ ${common.render_previous_button()}
 
         function initializeModals() {
             var countDownInterval;
-            $('#${progress_modal.id()}').on('shown', function() {
+            $('#finish-btn').on('click', function() {
                 ## Start countdown
                 var countDown = 90;
                 printCountDown();
@@ -97,7 +101,8 @@ ${common.render_previous_button()}
                         $('#be-patient-text').show();
                     }
                 }
-            }).on('hidden', function() {
+            });
+            $('#${progress_modal.id()}').on('hidden', function() {
                 ## Stop countdown
                 window.clearInterval(countDownInterval);
             });
@@ -120,10 +125,12 @@ ${common.render_previous_button()}
             console.log("finalizing...");
             $.post("${request.route_path('json_setup_finalize')}")
             .done(function() {
+                console.log('succeeded');
                 hideAllModals();
                 $('#success-modal').modal('show');
                 trackSuccessAndDisableDataCollection();
             }).fail(function(xhr) {
+                console.log('failed');
                 hideAllModals();
                 showAndTrackErrorMessageFromResponse(xhr);
             });

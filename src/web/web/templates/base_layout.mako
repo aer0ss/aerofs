@@ -122,9 +122,9 @@
     ## height is less than the window height ("sticky" footer)
     <div id="wrapper">
         ## Horizontal navigation bar
-        <div class="container" style="margin-bottom: 20px;">
+        <div class="container top-nav-wrapper">
             <div class="row">
-                <div class="span10 offset1 visible-desktop" id="top-nav-span">
+                <div class="col-sm-12 visible-lg" id="top-nav-span">
                     <ul class="nav nav-pills top-nav">
                         <li><a href="${self.home_url()}">
                             <img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/>
@@ -133,12 +133,12 @@
                     </ul>
                 </div>
 
-                <div class="span10 offset1 hidden-desktop" style="margin-top: 14px">
+                <div class="col-sm-12 hidden-lg" style="margin-top: 14px">
                     <a href="${self.home_url()}"><img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/></a>
-                    <div class="btn-group pull-right hidden-desktop">
-                        <a href="#" class="btn dropdown-toggle"
+                    <div class="btn-group pull-right hidden-lg">
+                        <a href="#" class="btn btn-default dropdown-toggle"
                                 data-toggle="dropdown">
-                            <i class="icon-th-list"></i>
+                            <span class="glyphicon glyphicon-th-list"></span>
                         </a>
                         <ul class="dropdown-menu">
                             <%block name="top_navigation_bar_mobile"/>
@@ -149,19 +149,19 @@
         </div>
 
         ## Message bar
-        <div id="flash-msg-wrap">
-            <span id="flash-msg-success" class="flash-msg" style="display: none">
-            </span>
-            <span id="flash-msg-error" class="flash-msg" style="display: none">
-                <table>
-                    <tr><td id="flash-msg-error-body">
-                    </td>
-                    <td id="flash-msg-error-close">
-                        <a class="close" onclick="fadeOutErrorMessage(); return false">
-                            &times;</a>
-                    </td></tr>
-                </table>
-            </span>
+        <div class="container">
+            <div class="row">
+            <div id="error-wrap" class="col-sm-12">
+                <div id="flash-msg-success" class="alert alert-success alert-dismissable" style="display: none">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <span id="flash-msg-success-body"></span>
+                </div>
+                <div id="flash-msg-error" class="alert alert-danger alert-dismissable" style="display: none">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <span id="flash-msg-error-body"></span>
+                </div>
+            </div>
+            </div>
         </div>
 
         ## Main body

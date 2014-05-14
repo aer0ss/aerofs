@@ -38,7 +38,7 @@
     <form class="form-inline" action="{{ url_for('.invite_to_organization') }}" method="post" name="invite">
         {{ form.hidden_tag() }}
         {{ render_field(form.email, with_label=False, no_divs=True) }}
-        {{ submit_button("Send Invite") }}
+        {{ submit_button("Send Invite", horizontal=False) }}
     </form>
     {# TODO: add invite button/form here that POSTs? #}
 

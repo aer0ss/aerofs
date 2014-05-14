@@ -90,60 +90,68 @@
     </tr>
 </%def>
 
-<div id="join-team-modal" class="modal hide" tabindex="-1" role="dialog">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">×</button>
-        <h4>Leave the Current Organization</h4>
-    </div>
-    <div class="modal-body">
-        <p>
-            Accepting this invitation will require leaving your current organization.
-            Are you sure you want to proceed?
-        </p>
-        <p>
-            If you continue,
-            %if i_am_admin:
-                you will no longer be able to administrate the current organization.
-                Additionally,
-            %endif
-            the Team Servers of your current organization will
-            automatically delete your files that are not shared with other
-            users of the current organization. The Team Servers of the new organization
-            will sync all your files once this change is complete.
-        </p>
-        <p>
-            Files and shared folders on your own AeroFS devices will not be
-            affected.
-        </p>
-    </div>
-    <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <a href="#" id="join-team-model-confirm" class="btn btn-primary">
-            Leave my organization and join the new one</a>
+<div id="join-team-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4>Leave the Current Organization</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Accepting this invitation will require leaving your current organization.
+                    Are you sure you want to proceed?
+                </p>
+                <p>
+                    If you continue,
+                    %if i_am_admin:
+                        you will no longer be able to administrate the current organization.
+                        Additionally,
+                    %endif
+                    the Team Servers of your current organization will
+                    automatically delete your files that are not shared with other
+                    users of the current organization. The Team Servers of the new organization
+                    will sync all your files once this change is complete.
+                </p>
+                <p>
+                    Files and shared folders on your own AeroFS devices will not be
+                    affected.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <a href="#" id="join-team-model-confirm" class="btn btn-primary">
+                    Leave my organization and join the new one</a>
+            </div>
+        </div>
     </div>
 </div>
 
-<div id="no-admin-for-team-modal" class="modal hide" tabindex="-1" role="dialog">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">×</button>
-        <h4 class="text-error"><img class="icon-vertical-align-fix"
-                src="${request.static_path('web:static/img/warning_16.png')}"
-                width="16px" height="16px">
-            Please Assign an Administrator</h4>
-    </div>
-    <div class="modal-body">
-        <p>
-            Unfortunately, you can't leave your current organization since you
-            are the only administrator of the organization. Please assign another
-            user as an admin before accepting the invitation.
-        </p>
+<div id="no-admin-for-team-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4 class="text-error"><img class="icon-vertical-align-fix"
+                        src="${request.static_path('web:static/img/warning_16.png')}"
+                        width="16px" height="16px">
+                    Please Assign an Administrator</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Unfortunately, you can't leave your current organization since you
+                    are the only administrator of the organization. Please assign another
+                    user as an admin before accepting the invitation.
+                </p>
 
-        <p class="footnote">Organizations with no admins will be eaten by dinosaurs.</p>
-    </div>
-    <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Close</a>
-        <a href="${request.route_path('org_users')}" class="btn btn-primary">
-            View Users</a>
+                <p class="footnote">Organizations with no admins will be eaten by dinosaurs.</p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
+                <a href="${request.route_path('org_users')}" class="btn btn-primary">
+                    View Users</a>
+            </div>
+        </div>
     </div>
 </div>
 

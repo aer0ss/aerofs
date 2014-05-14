@@ -74,12 +74,12 @@
 </div>
 
 <%def name="instruction(step, index)">
-    <div class="row-fluid page-block">
-        <div class="span6 instruction">
+    <div class="row page-block">
+        <div class="col-sm-6 instruction">
             <img src="${request.static_path('web:static/img/download/{}{}.png'
             .format(data['id'], index))}">
         </div>
-        <div class="span6">
+        <div class="col-sm-6">
             <h4>${index + 1}. ${data['steps'][index][0]}</h4>
             <p>${data['steps'][index][1] | n}</p>
         </div>

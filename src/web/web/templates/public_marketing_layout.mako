@@ -86,7 +86,7 @@
     <li><a href="${request.route_path('pricing')}">Pricing</a></li>
     %if sign_up_button:
         <!-- <li class="pull-right">
-            <a class="btn" id="nav-btn-sign-up" href="${request.route_path('pricing')}">
+            <a class="btn btn-default" id="nav-btn-sign-up" href="${request.route_path('pricing')}">
                 Sign up
             </a>
         </li> -->
@@ -95,11 +95,11 @@
         <!-- <li class="pull-right"><a href="${request.route_path('dashboard_home')}">Sign in</a></li> -->
     %endif
     <!-- <li class="pull-right top-contact"><a href="http://www.twitter.com/aerofs">
-        <i class="aerofs-icon-twitter" id="contact-twitter"></i></a></li>
+        <span class="aerofs-icon-twitter" id="contact-twitter"></span></a></li>
     <li class="pull-right top-contact"><a href="mailto:business@aerofs.com">
-        <i class="icon-envelope" id="contact-email"></i></a></li>
+        <span class="glyphicon glyphicon-envelope" id="contact-email"></span></a></li>
     <li class="pull-right top-contact"><a href="#" onclick="showEnterpriseContactForm(); return false;">
-        <i class="aerofs-icon-earphone" id="contact-phone"></i></a></li> -->
+        <span class="aerofs-icon-earphone" id="contact-phone"></span></a></li> -->
 </%block>
 
 <%def name="home_url()">
@@ -117,8 +117,8 @@
     <footer>
         <div class="container">
             <div class="row">
-                <div class="span10 offset1" id="footer-span">
-                    <ul class="inline">
+                <div class="col-sm-12" id="footer-span">
+                    <ul class="list-inline">
                         <li><a href="${request.route_path('about')}">About</a></li>
                         <li><a href="${request.route_path('press')}">Press</a></li>
                         <li><a href="http://blog.aerofs.com">Blog</a></li>

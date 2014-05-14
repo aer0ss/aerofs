@@ -4,12 +4,12 @@
 <%inherit file="public_marketing_layout.mako"/>
 
 <div class="row page-block">
-    <div class="span10 offset1">
-        <div class="row-fluid">
-            <div class="span3" style="margin-top: 20px;">
+    <div class="col-sm-12">
+        <div class="row">
+            <div class="col-sm-3" style="margin-top: 20px;">
                 <%block name="side_bar"/>
             </div>
-            <div class="span9">
+            <div class="col-sm-9">
                 ${next.body()}
             </div>
         </div>

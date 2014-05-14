@@ -49,7 +49,7 @@
     <%def name="id()">delete-modal</%def>
     <%def name="title()">Remove <span class="confirm-client-name"></span>?</%def>
     <%def name="footer()">
-        <a href="#" class="btn" data-dismiss="modal">Close</a>
+        <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
         <a href="#" id="confirm-btn" class="btn btn-danger" data-dismiss="modal">Remove App</a>
     </%def>
 

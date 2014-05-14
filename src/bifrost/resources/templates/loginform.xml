@@ -29,9 +29,9 @@
 
     <form class="form-horizontal" id="registerHere" method="post" action="${actionUri}">
       <fieldset>
-        <div class="control-group">
+        <div class="form-group">
           <label class="control-label">Identifier</label>
-          <div class="controls">
+          <div class="">
             <input type="text" class="input-xlarge" id="username"
               name="j_username" rel="popover"
               data-content="Enter your identifier."
@@ -39,9 +39,9 @@
           </div>
         </div>
 
-        <div class="control-group">
+        <div class="form-group">
           <label class="control-label">Password</label>
-          <div class="controls">
+          <div class="">
             <input type="password" class="input-xlarge" id="password"
               name="j_password" rel="popover"
               data-content="What's your password?"

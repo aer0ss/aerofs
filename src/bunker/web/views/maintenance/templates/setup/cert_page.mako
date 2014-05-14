@@ -3,44 +3,58 @@
 
 <h4>Browser certificate:</h4>
 
-<form method="POST" onsubmit="submitForm(); return false;">
+<form method="POST" role="form" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
+    <div class="row">
+        <div class="col-sm-12">
+            <label class="radio">
+                <input type='radio' id="cert-option-existing" name='cert.option'
+                        value='existing' checked onchange="useInstalledCertSelected()">
+                %if is_configuration_initialized:
+                    Use installed certificate and key
+                %else:
+                    Use pre-installed, self-signed certificate and key
+                %endif
+            </label>
+        </div>
 
-    <label class="radio">
-        <input type='radio' id="cert-option-existing" name='cert.option'
-                value='existing' checked onchange="useInstalledCertSelected()">
-        %if is_configuration_initialized:
-            Use installed certificate and key
-        %else:
-            Use pre-installed, self-signed certificate and key
-        %endif
-    </label>
-    <label class="radio">
-        <input type='radio' id="cert-option-new" name='cert.option' value='new'
-                onchange="useNewCertSelected()">
-        Upload new certificate and key
+        <div class="col-sm-12">
+            <label class="radio">
+                <input type='radio' id="cert-option-existing" name='cert.option'
+                        value='existing' checked onchange="useInstalledCertSelected()">
+                %if is_configuration_initialized:
+                    Use installed certificate and key
+                %else:
+                    Use pre-installed, self-signed certificate and key
+                %endif
+            </label>
+            <label class="radio">
+                <input type='radio' id="cert-option-new" name='cert.option' value='new'
+                        onchange="useNewCertSelected()">
+                Upload new certificate and key:
+            </label>
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <label for="server.browser.certificate">Certificate file:</label>
+                    <input type="file" id="cert-selector" disabled/>
+                    <input type="hidden" id="server-browser-certificate" name="server.browser.certificate" />
+                </div>
+                <div class="col-sm-6">
+                    <label for="server.browser.certificate">Key file:</label>
+                    <input type="file" id="key-selector" disabled/>
+                    <input type="hidden" id="server-browser-key" name="server.browser.key" />
+                </div>
 
-        <div class="row-fluid" style="margin-top: 8px;">
-            <div class="span6">
-                <label for="cert-selector">Certificate file:</label>
-                <input type="file" id="cert-selector" disabled/>
-                <input type="hidden" id="server-browser-certificate" name="server.browser.certificate" />
-            </div>
-            <div class="span6">
-                <label for="key-selector">Key file:</label>
-                <input type="file" id="key-selector" disabled/>
-                <input type="hidden" id="server-browser-key" name="server.browser.key" />
+                <div class="col-sm-12">
+                    <p class="help-block">Provide publicly signed certificate and key to eliminate
+                    certification error messages when your users browse the AeroFS Web
+                    site. We require valid x509 SSL certificate and private key files in
+                    the PEM format.</p>
+                </div>
             </div>
         </div>
-    </label>
-
-    <p style="margin-top: 10px">Provide publicly signed certificate and key to eliminate
-        certification error messages when your users browse the AeroFS Web
-        site. We require valid x509 SSL certificate and private key files in
-        the PEM format.</p>
-    <hr />
-    ${common.render_next_button()}
-    ${common.render_previous_button()}
+    </div>
+    ${common.render_next_prev_buttons()}
 </form>
 
 <%def name="scripts()">

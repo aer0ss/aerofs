@@ -2,59 +2,67 @@
 <%! page_title = "Sign In" %>
 
 <div class="row">
-    <div class="span12" style="margin-bottom: 40px">
-        <h1 style="text-align: center">Sign In to AeroFS
+    <div class="col-sm-4 col-sm-offset-4 login">
+        <h1>Sign In to AeroFS
             %if not is_private_deployment:
                 Hybrid Cloud
             %endif
         </h1>
-    </div>
-    %if openid_enabled:
-        <div class="span12 text-center">
-            <a class="btn btn-primary btn-large" href="${openid_url}">Sign In with ${openid_service_identifier}</a>
-        </div>
-        <div class="span10 offset1 text-center" style="border-top: 1px solid #d3d3d3;
-        margin-top: 60px; margin-bottom: 40px">
-            <div style="margin-top: -12px">
-                ## Nasty hack 1: #e7eef3 is @base2 defined in aerofs-variables.less.
-                ## Because the current aerofs.less will be replaced soon when the new
-                ## Web site is up, I don't want to update aerofs.less for the time being.
-                ## After the new Web site is deployed, however, please move this code
-                ## into aerofs.less
-                <span style="color: #a0a0a0; background-color: #e7eef3;">
-                    ## Nasty hack 2: I don't know how to extend the background-color
-                    ## beyond the text other than using spaces.
-                    &nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;
+        %if openid_enabled:
+        <div class="openid-login">
+            <div class="col-sm-12">
+                <a class="btn btn-primary btn-large" href="${openid_url}">Sign in with ${openid_service_identifier}</a>
+            </div>
+            <div class="col-sm-12 text-center login-divider">
+                <span>
+                    OR
                 </span>
             </div>
+            <div class="col-sm-12 text-center">
+                <h3>${openid_service_external_hint}</h3>
+            </div>
         </div>
-        <div class="span12 text-center">
-            <h3>${openid_service_external_hint}</h3>
-        </div>
-    %endif
+        %endif
 
-    <div class="span7 offset5">
-        ## N.B. signup.mock manually creates this form. Make sure the fields there
-        ## are consistent with the fields here.
+            ## N.B. signup.mock manually creates this form. Make sure the fields there
+            ## are consistent with the fields here.
 
-        <form id="signin_form" action="" method="post">
-            ${self.csrf.token_input()}
-            <label for="input_email">Email</label>
-            <input class="input-medium" id="input_email" type="text" name="${url_param_email}"
-                %if login:
-                    value="${login}"
-                %endif
-            >
-            <label for="input_passwd">Password</label>
-            <input class="input-medium" id="input_passwd" type="password" name="${url_param_password}">
-            <label class="checkbox">
-                <input type="checkbox" name="${url_param_remember_me}" value="staySignedIn"
-                       checked="checked"> Remember me
-            </label>
-            <input id="signin_button" class="btn btn-primary" type="submit" value="Sign In"/>
-        </form>
+            <form id="signin_form" class="form-horizontal" role="form" action="" method="post">
+                ${self.csrf.token_input()}
+                <div class="form-group">
+                    <label for="input_email" class="col-sm-4 control-label">Email</label>
+                    <div class="col-sm-8">
+                        <input class="input-medium form-control" id="input_email" type="email" name="${url_param_email}"
+                            %if login:
+                                value="${login}"
+                            %endif
+                        >
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="input_passwd" class="col-sm-4 control-label">Password</label>
+                    <div class="col-sm-8">
+                        <input class="input-medium form-control" id="input_passwd" type="password" name="${url_param_password}">
+                    <div class="col-sm-8">
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <label class="checkbox">
+                            <input type="checkbox" name="${url_param_remember_me}" value="staySignedIn"
+                                   checked="checked"> Remember me
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <input id="signin_button" class="btn btn-primary" type="submit" value="Sign In"/>
+                    </div>
+                </div>
+            </form>
 
-        <a href="${request.route_path('request_password_reset')}">Forgot your password?</a>
+            <div class="row">
+                <div class="col-sm-12"><a href="${request.route_path('request_password_reset')}">Forgot your password?</a></div>
+            </div>
     </div>
 </div>
 

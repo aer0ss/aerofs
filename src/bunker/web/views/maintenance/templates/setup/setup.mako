@@ -11,33 +11,16 @@
     ${request.route_path('maintenance_home')}
 </%def>
 
+<%block name="css">
+    <link href="${request.static_path('web:static/css/compiled/aerofs-bunker.min.css')}" rel="stylesheet">
+</%block>
+
 <%block name="tracking_codes">
     ## This tracking code corresponds to the Private Cloud project in segment.io.
     ${segment_io.code('xtw6kl4cml')}
 </%block>
 
-<%block name="css">
-    <style type="text/css">
-        ## For footnotes under main options
-        .main-option-footnote {
-            margin-top: 8px;
-            font-size: small;
-        }
-        ## For footnotes under input boxes
-        .input-footnote {
-            margin-top: -8px;
-            margin-bottom: 8px;
-            font-size: small;
-        }
-        .small-modal {
-            top: 150px;
-            width: 440px;
-            margin-left: -220px;
-        }
-    </style>
-</%block>
-
-<div class="span8 offset2">
+<div class="col-sm-8 col-sm-offset-2">
 
     <%maintenance_alert:html/>
 

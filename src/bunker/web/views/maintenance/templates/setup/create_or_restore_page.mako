@@ -14,36 +14,30 @@
     </style>
 </%block>
 
-<form method="post" action="${request.route_path('setup_submit_data_collection_form')}">
+<form role="form" method="post" action="${request.route_path('setup_submit_data_collection_form')}">
     ${csrf.token_input()}
     <p>Please select your next step:</p>
 
-    <div class="row-fluid">
-        <div class="span6 offset3">
-            <p>
-                <button type="submit" class="btn btn-large btn-primary input-block-level">
-                    Create a New Appliance
-                </button>
-            </p>
-            <p>
-                <input id="backup-file" name="backup-file" type="file" style="display: none">
-                <button type="button" id="restore-button" class="btn btn-large input-block-level"
-                        onclick="$('#backup-file').click(); return false;">
-                    Restore from Backup
-                </button>
-            </p>
-        </div>
+    <div class="form-group">
+        <button type="submit" class="form-control btn btn-large btn-primary ">
+            Create a New Appliance
+        </button>
     </div>
-    <div class="row-fluid">
-        <div class="span12 text-center footnote">
+    <div class="form-group">
+        <input id="backup-file" name="backup-file" type="file" style="display: none">
+        <button type="button" id="restore-button" class="form-control btn btn-default btn-large "
+                onclick="$('#backup-file').click(); return false;">
+            Restore from Backup
+        </button>
+        <div class="help-block">
             Backup files are in the format of <em>${example_backup_download_file_name}</em>
         </div>
     </div>
 
     <hr />
 
-    <div class="form-inline text-center">
-        <label class="checkbox">
+    <div class="checkbox">
+        <label>
             <input type="checkbox" id="data-collection" name="data-collection" checked />
             Allow AeroFS to collect setup experience for trial licenses.
             <a href="https://support.aerofs.com/entries/25712809"

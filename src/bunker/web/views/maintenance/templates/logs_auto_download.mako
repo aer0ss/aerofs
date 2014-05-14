@@ -7,7 +7,7 @@
 
 <%namespace name="common" file="logs_common.mako"/>
 
-<div class="span6 offset3">
+<div class="col-sm-6 col-sm-offset-3">
     <h3>Downloading logs</h3>
     <p>${common.submit_logs_text(False)}</p>
 </div>

@@ -7,27 +7,30 @@
 
 @blue:                  #71c9f1;
 @yellow:                #fddb0e;
+@green:                 #5cb85c;
+@red:                   #d9534f;
 
 // N.B. update @hrBorder accordingly if this value changes
 @bodyBackground:        white;
 
 // Typography
 // -------------------------
-@sansFontFamily:        'Open Sans', sans-serif;
-@baseFontSize:          11pt;
-@baseLineHeight:        @baseFontSize * 1.5;
-@headingsFontWeight:    300;
-@headingsColor:         @base02;
+@font-family-sans-serif:  'Open Sans', sans-serif;
+@font-size-base:          11pt;
+@headings-font-weight:    300;
+@headings-color:          @base02;
+
+@standard-padding: 22px;
 
 // Buttons
 // -------------------------
 // Note: we use aerofs.less to override buttons' foreground colors
 
 // This color is sampled from the dropbown menu background in the hover state.
-@btnPrimaryBackground:              #358ac3;
-// Since @btnPrimaryBackground has been changed, copy this line from
+@btn-primary-bg:        #358ac3;
+// Since @btn-primary-bg has been changed, copy this line from
 // variable.less to update @btnPrimaryBackgroundHighlight.
-@btnPrimaryBackgroundHighlight:     spin(@btnPrimaryBackground, 20%);
+@btnPrimaryBackgroundHighlight:     spin(@btn-primary-bg, 20%);
 
 // AeroFS specific variables
 // -------------------------
@@ -50,3 +53,4 @@
 
 @aerofsIconSpritePath:  "/static/img/aerofs-icons.png";
 @iconSpritePath: "/static/img/glyphicons-halflings.png";
+@icon-font-path: "/static/fonts/";

@@ -21,69 +21,68 @@
     {% set placeholder = '' %}
     {% if not with_label %}{% set placeholder = field.label.text %}{% endif %}
     {% if with_divs %}
-        <div class="control-group {% if field.errors %}error{% endif %}">
+        <div class="form-group {% if field.errors %}error{% endif %}">
     {% endif %}
         {% if with_label %}
-            <label for="{{ field.id }}" class="control-label">
+            <label for="{{ field.id }}" class="col-sm-3 control-label">
                 {{ field.label.text }}:{% if field.flags.required %} *{% endif %}
             </label>
         {% endif %}
         {% if with_divs %}
-            <div class="controls">
+            <div class="col-sm-9">
         {% endif %}
             {% set class_ = kwargs.pop('class_', '') %}
+            {% set type_ = "text" %}
             {% if field.flags.required %}
                 {% set class_ = class_ + ' required' %}
             {% endif %}
             {% if field.type == 'BooleanField' %}
-                <label class="checkbox">
+                <label class="checkbox control-label">
                     {{ field(class_=class_, **kwargs) }}
                     {{ field.label.text|safe }}
                 </label>
             {% else %}
-                {% if field.type in ('TextField', 'PasswordField') %}
-                    {% set class_ = class_ + ' input-xlarge' %}
-                {% elif field.type == 'TextAreaField' %}
-                    {% set class_ = class_ + ' input-block-level' %}
+                {% if field.type == 'TextAreaField' %}
+                    {% set class_ = class_ + ' ' %}
                 {% elif field.type == 'FileField' %}
                     {% set class_ = class_ + ' input-file' %}
                 {% endif %}
                 {{ field(class_=class_, placeholder=placeholder, **kwargs) }}
             {% endif %}
             {% if field.errors %}
-                <span class="error help-inline">{{ field.errors|join(' ') }}</span>
+                <span class="error help-block">{{ field.errors|join(' ') }}</span>
             {% endif %}
             {% if field.description %}
                 <p class="help-block">{{ field.description|safe }}</p>
             {% endif %}
-            {% if with_divs %}
-                </div>
-                </div>
-            {% endif %}
+        {% if with_divs %}
+            </div>
+        </div>
+        {% endif %}
 {% endmacro %}
 
 {% macro render_disabled_field(label, value) %}
-    <div class="control-group ">
-        <label class="control-label">{{ label }}</label>
-        <div class="controls">
-            <input class="input-xlarge" type="text" disabled value="{{ value }}"/>
+    <div class="form-group">
+        <label class="col-sm-3 control-label">{{ label }}</label>
+        <div class="col-sm-9">
+            <input class="form-control" type="text" disabled value="{{ value }}"/>
         </div>
     </div>
 {% endmacro %}
 
-{% macro submit_button(button_text, horizontal=False) %}
+{% macro submit_button(button_text, horizontal=True) %}
     {% if horizontal %}
-        <div class="control-group"><div class="controls">
+        <div class="form-group"><div class="col-sm-9 col-sm-offset-3">
     {% endif %}
-    <input class="btn btn-primary" type="submit" value="{{ button_text }}">
+    <button class="btn btn-primary" type="submit">{{ button_text }}</button>
     {% if horizontal %}
         </div></div>
     {% endif %}
 {% endmacro %}
 
 {% macro eula_notice() %}
-    <div class="control-group">
-        <div class="controls">
+    <div class="form-group">
+        <div class="">
             <p>By submitting this form you are agreeing <br/>to the
                 <a href="https://www.aerofs.com/private-cloud-terms">AeroFS Private Cloud License Agreement</a>.
             </p>

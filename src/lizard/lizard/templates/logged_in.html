@@ -4,7 +4,7 @@
 {# due to the pull-right logic, pills are listed from right to left here #}
 {% block additional_nav_pills %}
     <li>
-        <form id="logout_form" action="{{ url_for('.logout') }}" method="post" name="logout" class="hidden">
+        <form role="form" class="form-horizontal hidden" id="logout_form" action="{{ url_for('.logout') }}" method="post" name="logout">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         </form>
         {{ current_user.email }} <a href="#" onclick="$('#logout_form').submit();" style="margin: 0 12px;">Sign out</a>

@@ -6,7 +6,7 @@
 </%block>
 
 <div class="row">
-    <div class="span6 offset3">
+    <div class="col-sm-6 col-sm-offset-3">
         <h2>404: Page Not Found</h2>
         <p>Sorry, the page or file you are looking for cannot be found here.</p>
         <div id="no-referrer" class="extra-error-info">

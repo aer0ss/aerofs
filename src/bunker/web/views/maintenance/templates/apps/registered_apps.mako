@@ -7,19 +7,7 @@
 
 <%namespace file="../modal.mako" name="modal"/>
 
-<%block name="css">
-    <style>
-        .info-label {
-            display: inline-block;
-            width: 100px;
-        }
-        .id_string {
-            font-family:monospace;
-        }
-    </style>
-</%block>
-
-<h2 style="margin-bottom: 30px">Apps</h2>
+<h2>Apps</h2>
 
 <table id='clients-table' class="table table-hover hidden">
     <tbody>
@@ -56,7 +44,7 @@
                     ## N.B. download= is not present before HTML5
                     <a href="data:'text/json;charset=utf-8,${blob | n}" download="appconfig.json">Download JSON</a>
                     <a href="https://www.aerofs.com/developers/publish">
-                        <i class="icon-question-sign tooltip_json_blob"></i></a>
+                        <span class="glyphicon glyphicon-question-sign tooltip_json_blob"></span></a>
                   </div>
                   <div>
                     <a href="#" onclick="confirmDeletion('${client['client_id']}', $(this));
@@ -77,7 +65,7 @@
     <%def name="id()">delete-modal</%def>
     <%def name="title()">Delete the app?</%def>
     <%def name="footer()">
-        <a href="#" class="btn" data-dismiss="modal">Close</a>
+        <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
         <a href="#" id="confirm-btn" class="btn btn-danger" data-dismiss="modal">Delete App</a>
     </%def>
 

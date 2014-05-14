@@ -36,7 +36,7 @@
         <p>No state change allowed for FILLED licenses.</p>
     {% else %}
         <h3>Change request state</h3>
-        <form action="" method="post">
+        <form role="form" class="form-horizontal" action="" method="post">
             {{ form.hidden_tag() }}
             {{ render_field(form.state) }}
             {{ submit_button("Change state") }}
