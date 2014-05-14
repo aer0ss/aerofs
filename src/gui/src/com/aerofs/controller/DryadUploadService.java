@@ -12,25 +12,20 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sv.client.SVClient;
-import com.google.common.io.ByteStreams;
-import com.google.common.net.HttpHeaders;
 import org.slf4j.Logger;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -40,6 +35,8 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.MediaType.OCTET_STREAM;
 import static java.lang.String.format;
 
 public class DryadUploadService
@@ -135,43 +132,15 @@ public class DryadUploadService
         public Void call()
                 throws Exception
         {
-            File archive = createLogsArchive(_rtroot);
             URL url = createResourceURL(_dryadID, _customerID, Cfg.user().getString(),
                     Cfg.did().toStringFormal());
             SSLContext ssl = createSSLContext();
+            URLConnection conn = openSecureConnection(url, ssl);
+            File[] files = getSourceFiles(_rtroot);
 
-            uploadFile(archive, url, ssl);
-
-            FileUtil.deleteIgnoreErrorRecursively(archive);
+            uploadFiles(conn, files);
 
             return null;
-        }
-
-        private File createLogsArchive(String rtroot)
-                throws IOException
-        {
-            File archive = FileUtil.createTempFile("aerofs", ".zip", null);
-            File[] logs = new File(rtroot).listFiles(new FilenameFilter()
-            {
-                @Override
-                public boolean accept(File parent, String filename)
-                {
-                    return filename.contains(LibParam.LOG_FILE_EXT)
-                            || filename.endsWith(LibParam.HPROF_FILE_EXT);
-                }
-            });
-
-            OutputStream os = null;
-            try {
-                os = new FileOutputStream(archive);
-
-                // TODO (AT): look into extracting this out of SVClient and into an utility class.
-                SVClient.compress(logs, os);
-            } finally {
-                if (os != null) { os.close(); }
-            }
-
-            return archive;
         }
 
         private URL createResourceURL(String dryadID, String customerID, String username,
@@ -191,56 +160,59 @@ public class DryadUploadService
                     .getSSLContext();
         }
 
-        private void uploadFile(File file, URL url, SSLContext ssl)
+        private void uploadFiles(URLConnection conn, File[] files)
                 throws Exception
         {
-            FileInputStream is = null;
+            OutputStream os = null;
+
             try {
-                is = new FileInputStream(file);
-                long fileSize = file.length(),
-                        uploaded = 0;
+                os = conn.getOutputStream();
 
-                // the intention here is to upload the archived logs by making multiple https
-                // requests where each request contains at most CHUNK_SIZE bytes in the request
-                // body.
-                while (uploaded < fileSize) {
-                    long chunkSize = Math.min(fileSize - uploaded, CHUNK_SIZE);
-
-                    HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-
-                    // setup connection
-                    conn.setSSLSocketFactory(ssl.getSocketFactory());
-                    conn.setDoOutput(true);
-                    conn.setUseCaches(false);
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, "application/octet-stream");
-                    conn.setRequestProperty(HttpHeaders.CONTENT_RANGE, format("bytes %d-%d/%d",
-                            uploaded, uploaded + chunkSize - 1, fileSize));
-                    conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunkSize));
-                    conn.connect();
-
-                    // send request body
-                    OutputStream os = null;
-                    try {
-                        os = conn.getOutputStream();
-                        ByteStreams.copy(ByteStreams.limit(is, chunkSize), os);
-                    } finally {
-                        if (os != null) { os.close(); }
-                    }
-
-                    // process response
-                    int response = conn.getResponseCode();
-
-                    if (response != HttpURLConnection.HTTP_OK
-                            && response != HttpURLConnection.HTTP_NO_CONTENT) {
-                        throw new Exception(format("Unexpected response code: %d", response));
-                    }
-
-                    uploaded += chunkSize;
-                }
+                /**
+                 * TODO (AT): look into extracting this out of SVClient and into an utility class.
+                 *
+                 * N.B. there's subtle techno-magic at work here.
+                 *
+                 * Compression, by nature, is cpu-intensive. However, since we stream the output
+                 * directly to network, the system's throughput is throttled by the network
+                 * capacity.
+                 *
+                 * This applies back pressure to the compression layer. Consequently, the CPU usage
+                 * is reduced and we don't need to explicitly yield threads.
+                 */
+                SVClient.compress(files, os);
             } finally {
-                if (is != null) { is.close(); }
+                if (os != null) { os.close(); }
             }
+        }
+
+        private File[] getSourceFiles(String rtroot)
+        {
+            return new File(rtroot).listFiles(new FilenameFilter()
+            {
+                @Override
+                public boolean accept(File parent, String filename)
+                {
+                    return filename.contains(LibParam.LOG_FILE_EXT)
+                            || filename.endsWith(LibParam.HPROF_FILE_EXT);
+                }
+            });
+        }
+
+        private URLConnection openSecureConnection(URL url, SSLContext ssl)
+                throws IOException
+        {
+            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+
+            conn.setSSLSocketFactory(ssl.getSocketFactory());
+            conn.setDoOutput(true);
+            conn.setUseCaches(false);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty(CONTENT_TYPE, OCTET_STREAM.toString());
+            conn.setChunkedStreamingMode(CHUNK_SIZE);
+            conn.connect();
+
+            return conn;
         }
     }
 }
