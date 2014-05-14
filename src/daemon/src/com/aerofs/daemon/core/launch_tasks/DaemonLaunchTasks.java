@@ -11,7 +11,7 @@ import javax.inject.Inject;
 import java.util.Set;
 
 /**
- * This class is very similar to UILaunchTasks except that this class is more suitable for dameon
+ * This class is very similar to UILaunchTasks except that this class is more suitable for daemon
  * specific tasks, and the tasks are run in the core thread.
  */
 public class DaemonLaunchTasks
@@ -26,7 +26,7 @@ public class DaemonLaunchTasks
 
     /**
      * DaemonLaunchTasks can be run in any order so we use a set binder to simplify their
-     * instanciation. However we don't want to leak the specific classes outside the package
+     * instantiation. However we don't want to leak the specific classes outside the package
      * hence the use of a static method.
      */
     public static void bindTasks(Binder binder)

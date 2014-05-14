@@ -6,13 +6,11 @@ import java.util.Set;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SIndex;
 
+/**
+ * Do not use this class directly. Use {@link com.aerofs.daemon.core.store.Stores} instead
+ */
 public interface IStoreDatabase
 {
-    /**
-     * Do not use the following methods directly!
-     * Use {@link com.aerofs.daemon.core.store.Stores} instead
-     */
-
     Set<SIndex> getAll_() throws SQLException;
 
     /**
@@ -21,8 +19,6 @@ public interface IStoreDatabase
     boolean hasAny_() throws SQLException;
 
     String getName_(SIndex sidx) throws SQLException;
-
-    void setName_(SIndex sidx, String name, Trans t) throws SQLException;
 
     void insert_(SIndex sidx, String name, Trans t) throws SQLException;
 

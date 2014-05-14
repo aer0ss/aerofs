@@ -22,6 +22,9 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * See class-level comments in IStores for details.
  */
@@ -84,7 +87,7 @@ public class SingleuserStores extends Stores
     public SIndex getPhysicalRoot_(SIndex sidx) throws SQLException
     {
         Set<SIndex> parents = getParents_(sidx);
-        assert parents.isEmpty() || parents.size() == 1 : sidx + " " + parents;
+        checkArgument(parents.size() <= 1, "%s %s", sidx, parents);
         return parents.isEmpty() ? sidx : getPhysicalRoot_(Iterables.getOnlyElement(parents));
     }
 
@@ -97,13 +100,13 @@ public class SingleuserStores extends Stores
     public @Nonnull SIndex getParent_(SIndex sidx) throws SQLException
     {
         Collection<SIndex> ret = getParents_(sidx);
-        assert ret.size() == 1;
+        checkArgument(ret.size() == 1);
         return ret.iterator().next();
     }
 
     public @Nonnull SIndex getUserRoot_()
     {
-        assert _userRoot != null;
+        checkState(_userRoot != null);
         return _userRoot;
     }
 }

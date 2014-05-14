@@ -27,10 +27,9 @@ import java.util.List;
  *
  * In multi-user systems:
  *  o The path to a store's root folder is "/SID" where SID is the string format of the store's SID.
- *  o The above is true regardless of whether the root is a root store (there may be multiple root
- *    stores in a multi-user system).
+ *  o The above is true regardless of whether the store is a root store.
  *
- * Also see IStores for store hierachy, which is related to but different from path hierarchy.
+ * Also see IStores for store hierarchy, which is related to but different from path hierarchy.
  *
  * N.B. implementations should be stateless and should not cache results. The classes they
  * depend on (DirectoryService and other classes) may cache state internally. A stateful

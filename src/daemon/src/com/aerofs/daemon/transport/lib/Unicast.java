@@ -28,12 +28,9 @@ import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -41,7 +38,6 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
-    private final Random random = new Random();
     private final IAddressResolver addressResolver;
 
     private ServerBootstrap serverBootstrap;

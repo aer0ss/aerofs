@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * This interface provide a high-level accessor to IStoreDatabase. Clients should use this interface
- * instead of referring to IStoreDatabse directly.
+ * instead of referring to IStoreDatabase directly.
  *
  * General model of store hierarchy:
  *
@@ -24,7 +24,8 @@ import java.util.Set;
  *  o Each non-root store has one and only one parent store. This is maintained by the migration
  *    system.
  *
- * Also see IPathResolver for path hierachy, which is related to but different from store hierarchy.
+ * Also see AbstractPathResolver for path hierarchy, which is related to but different from store
+ * hierarchy.
  */
 public interface IStores
 {
@@ -73,12 +74,17 @@ public interface IStores
 
     /**
      * @return the physical root store under which this store resides
+     * @pre the store is present locally
      *
      * On a multiuser system, stores can have multiple parents but the physical store hierarchy is
      * flat so each store has its own physical root. On a singleuser system, each can have at most
-     * one parent so the physical root is found by a straightforward walk up the store hierachy
+     * one parent so the physical root is found by a straightforward walk up the store hierarchy.
      */
     SIndex getPhysicalRoot_(SIndex sidx) throws SQLException;
 
+    /**
+     * @return the name of the store set by add_()
+     * @pre the store is present locally
+     */
     String getName_(SIndex sidx) throws SQLException;
 }

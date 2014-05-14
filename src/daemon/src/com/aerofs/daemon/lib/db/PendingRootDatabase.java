@@ -27,7 +27,7 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
  * and "link" each of them to a physical location at the user's request.
  *
  * As the name indicates, this database only hold pending roots. External shared folders should be
- * removed from it when linked".
+ * removed from it when linked.
  */
 public class PendingRootDatabase extends AbstractDatabase
 {

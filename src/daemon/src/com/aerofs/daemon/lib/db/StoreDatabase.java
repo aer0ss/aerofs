@@ -69,28 +69,13 @@ public class StoreDatabase extends AbstractDatabase
             try {
                 checkState(rs.next());
                 String name = rs.getString(1);
+                // the name may be null before DLTFetchStoreNames is executed.
                 return name != null ? name : "";
             } finally {
                 rs.close();
             }
         } catch (SQLException e) {
             _pswGN.close();
-            throw detectCorruption(e);
-        }
-    }
-
-    private PreparedStatementWrapper _pswSN = new PreparedStatementWrapper();
-    @Override
-    public void setName_(SIndex sidx, String name, Trans t) throws SQLException
-    {
-        try {
-            PreparedStatement ps = _pswSN.get(c(), updateWhere(T_STORE, C_STORE_SIDX + "=?",
-                        C_STORE_NAME));
-            ps.setString(1, name);
-            ps.setInt(2, sidx.getInt());
-            checkState(ps.executeUpdate() == 1);
-        } catch (SQLException e) {
-            _pswSN.close();
             throw detectCorruption(e);
         }
     }

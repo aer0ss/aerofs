@@ -9,7 +9,8 @@ import com.aerofs.daemon.lib.db.ITransListener;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
-/* usage:
+/**
+ * Usage:
  *
  *  Trans trans = tm.begin_();
  *  try {
@@ -18,6 +19,8 @@ import com.google.common.collect.Lists;
  *  } finally {
  *      trans.end_();
  *  }
+ *
+ *  The try block is always required.
  */
 public class TransManager
 {
