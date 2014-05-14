@@ -45,6 +45,7 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
         return _soid;
     }
 
+    @SuppressWarnings("fallthrough")
     @Override
     public void create_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
@@ -78,6 +79,7 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
         }
     }
 
+    @SuppressWarnings("fallthrough")
     @Override
     public void move_(ResolvedPath to, PhysicalOp op, Trans t)
             throws IOException, SQLException
