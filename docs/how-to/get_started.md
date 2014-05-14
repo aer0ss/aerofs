@@ -81,7 +81,7 @@ Note: Do not use `sudo` for the following command. You should not need it if the
     
     pip install protobuf requests pyyaml
 
-    npm install less minifier uglify-js
+    npm install -g less minifier uglify-js
 
 This step takes a while. It's probably a good time to look around in our [mailing list](../references/mailing_list.html).
 
