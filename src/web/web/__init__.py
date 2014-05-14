@@ -42,13 +42,7 @@ def main(global_config, **settings):
 
     # Static views
     config.add_static_view(settings['static.prefix'], 'static', cache_max_age=3600)
-
-    # Special handling for installer prefix view.
-    installer_prefix = settings['installer.prefix']
-    if installer_prefix == 'static':
-        config.add_static_view('static/installers', 'installer')
-    else:
-        config.add_static_view(installer_prefix, 'installer')
+    config.add_static_view(settings['installer.prefix'], 'installer')
 
     # Use different home page for private and public deployment
     if is_private_deployment(settings):

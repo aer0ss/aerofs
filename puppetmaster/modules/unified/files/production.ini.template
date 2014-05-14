@@ -22,7 +22,7 @@ mako.directories = web:templates
 static.prefix = static
 # Where installer packages are hosted (aka cache.client.aerofs.com)
 # Note that using https://cache... would cause the browser to complain cert errors
-installer.prefix = static
+installer.prefix = static/installers
 
 # Session factory settings
 # see http://beaker.readthedocs.org/en/latest/configuration.html#session-options
