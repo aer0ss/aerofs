@@ -5,11 +5,16 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.exclusion.CompExclusionList.FolderData;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
+import com.aerofs.lib.ex.ExChildAlreadyShared;
+import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.ritual.IRitualClientProvider;
-import com.aerofs.ui.UIGlobals;
-import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UIGlobals;
+import com.aerofs.ui.error.ErrorMessage;
+import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -37,8 +42,10 @@ public class CompExclusion extends Composite
     private Button              _btnCancel;
 
     private final String _strMessage = "Only checked folders will sync to this computer.";
-    private final String _strWarning = "Unchecked folders will be deleted from this computer. " +
-            "They will not be deleted from other computers. Do you want to continue?";
+    private final String _strWarning = "Unchecked folders outside your AeroFS folder will no longer " +
+            "be synced to this device. They will not be deleted until done so explicitly.\n" +
+            "Unchecked folders within your AeroFS folder will be deleted from this computer. " +
+            "They will not be deleted from other computers. Do you still want to continue?";
 
     public CompExclusion(Composite parent)
     {
@@ -69,13 +76,13 @@ public class CompExclusion extends Composite
                 // after we show a warning.
 
                 // no changes
-                if (ops._include.isEmpty() && ops._exclude.isEmpty()) {
+                if (ops._newlyIncludedFolders.isEmpty() && ops._newlyExcludedFolders.isEmpty()) {
                     getShell().close();
                     return;
                 }
 
                 // warn user before we exclude folders, and exits if the user cancels
-                if (!ops._exclude.isEmpty() &&
+                if (!ops._newlyExcludedFolders.isEmpty() &&
                         !GUI.get().ask(getShell(), MessageType.WARN, _strWarning)) return;
 
                 setBusyState(true);
@@ -164,9 +171,25 @@ public class CompExclusion extends Composite
         public void run()
                 throws Exception
         {
-            // N.B. per GUI.safeWork()'s contract, this method is called on a new task thread
-            for (Path path : _ops._exclude) _ritual.getBlockingClient().excludeFolder(path.toPB());
-            for (Path path : _ops._include) _ritual.getBlockingClient().includeFolder(path.toPB());
+           // N.B. per GUI.safeWork()'s contract, this method is called on a new task thread
+            for (FolderData folderData : _ops._newlyExcludedFolders) {
+                Path path = folderData._path;
+                if (CompExclusionList.isInternalFolder(folderData)) {
+                    _ritual.getBlockingClient().excludeFolder(path.toPB());
+                } else {
+                    _ritual.getBlockingClient().unlinkRoot(path.sid());
+               }
+            }
+            for (FolderData folderData : _ops._newlyIncludedFolders) {
+                Path path = folderData._path;
+                if(CompExclusionList.isInternalFolder(folderData)) {
+                    _ritual.getBlockingClient().includeFolder(path.toPB());
+                }
+                else {
+                    _ritual.getBlockingClient().linkRoot(folderData._absPath, path.toPB().getSid()  );
+                }
+
+            }
         }
 
         @Override
@@ -181,8 +204,10 @@ public class CompExclusion extends Composite
         public void error(Exception e)
         {
             // N.B. per GUI.safeWork()'s contract, this method is called on the UI thread
-            String message = "An error has occurred while updating your sync folders.";
-            ErrorMessages.show(getShell(), e, message);
+            ErrorMessages.show(getShell(), e,
+                    "An error has occurred while updating the folders you chose to sync.",
+                    new ErrorMessage(ExChildAlreadyShared.class, S.CHILD_ALREADY_SHARED),
+                    new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED));
             setBusyState(false);
         }
     }
