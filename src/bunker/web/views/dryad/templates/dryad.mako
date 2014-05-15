@@ -4,6 +4,7 @@
 <%namespace name="csrf" file="csrf.mako"/>
 <%namespace name="modal" file="modal.mako"/>
 
+## TODO: hacks were used to do button styling, replace them with proper styling
 <h2>Report a Problem</h2>
 <div>
     <form action="${request.route_path('json-submit-report')}" method="POST">
@@ -23,57 +24,70 @@
             </p>
 
             <p id="message-error" hidden>
-                Sorry, we have encountered an error while retrieving the list of AeroFS users. Please refresh the page
-                and try again later.
+                Sorry, we have encountered an error while retrieving the list of
+                AeroFS users. Please refresh the page and try again later.
             </p>
 
             <div id="users-table">
+                ## the following script is not executed nor rendered. The
+                ## purpose of the script is to serve as templates and we will
+                ## render the templates later on with javascript.
                 <script id="users-row-template" type="text/template">
                     <label id="users-row-template" for="user-{{ index }}">
-                        <input id="user-{{ index }}" name="user" value="{{ user }}" type="checkbox">{{ label }}
+                        ## TODO: a space was inserted here before the text,
+                        ## replace it with proper styling!
+                        <input id="user-{{ index }}" name="user" value="{{ user }}" type="checkbox"> {{ label }}
                     </label>
                 </script>
             </div>
 
-            <button type="button" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Done</button>
         </%modal:modal>
 
         <div>
-            <label for="email">Contact Email:</label>
-            <input id="email" name="email" type="email">
+            <label for="email">Contact Email: *</label>
+            <input id="email" name="email" type="email" required>
         </div>
         <div>
-            <label for="desc">Description:</label>
-            <textarea id="desc" name="desc"></textarea>
+            <label for="desc">Description: *</label>
+            <textarea id="desc" name="desc" required></textarea>
         </div>
         <div>
             <label>Client Logs:</label>
             <div>
                 <div>
-                    <button type="button" onclick="onAddUsersClick()">Add Users</button>
+                    ## TODO: replace the margin styling with proper styling
+                    <button type="button" class="btn btn-default" id="select-users" style="margin-bottom: 8px">Select Users</button>
                 </div>
                 <p>
-                    Add users whose AeroFS logs will be collected from their computers to AeroFS support system. The
-                    logs do not contain user data or metadata including file names. <a href="">Read more.</a>
+                    AeroFS will collect the AeroFS logs from these users'
+                    computers and send them to AeroFS Support. These logs
+                    contains data on how the user uses AeroFS and may contain
+                    the file name of the files on the users' computers.
+                    <a href="">Read more</a>
                 </p>
             </div>
         </div>
         <div>
-            <button type="submit">Submit</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
             <hr>
-            <a href="">You can download and submit appliance logs separately here.</a>
+            <a href="">You can download and submit appliance logs here.</a>
         </div>
     </form>
 </div>
 
+## TODO: replace this with proper styling
+<style>
+    button {
+        margin-top: 5px;
+    }
+</style>
+
 <%block name="scripts">
     <script type="text/javascript">
-        function onAddUsersClick() {
-            $('#modal').modal('show');
-        }
-
-        ## given a template string and a map of key -> value
-        ## replace all occurrences of '{{ key }}' in template with corresponding the value for all keys in map.
+        ## given a template string and a map of key -> value, replace all
+        ## occurrences of '{{ key }}' in template with corresponding the value
+        ## for all keys in the map.
         function render(template, map) {
             var rendered = template;
             for (var key in map) {
@@ -110,6 +124,12 @@
             ;
         }
 
-        $(document).ready(getUsersList);
+        $(document).ready(function() {
+            $('#select-users').click(function() {
+                $('#modal').modal('show');
+            });
+
+            getUsersList();
+        });
     </script>
 </%block>
