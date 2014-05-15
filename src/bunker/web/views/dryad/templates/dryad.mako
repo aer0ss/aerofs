@@ -73,8 +73,6 @@
         </div>
         <div>
             <button type="submit" class="btn btn-primary">Submit</button>
-            <hr>
-            <a href="">You can download and submit appliance logs here.</a>
         </div>
     </form>
 </div>
