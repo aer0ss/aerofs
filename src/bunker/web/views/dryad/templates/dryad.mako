@@ -20,7 +20,7 @@
             </p>
 
             <p id="message-loaded" hidden>
-                Please select users of whom AeroFS client logs will be collected:
+                Please select the users to collect AeroFS client logs from:
             </p>
 
             <p id="message-error" hidden>
@@ -29,11 +29,14 @@
             </p>
 
             <div id="users-table">
+                <label for="search">Search:</label>
+                <input type="search" id="search" name="search" placeholder="Start typing an user's email">
+
                 ## the following script is not executed nor rendered. The
                 ## purpose of the script is to serve as templates and we will
                 ## render the templates later on with javascript.
-                <script id="users-row-template" type="text/template">
-                    <label id="users-row-template" for="user-{{ index }}">
+                <script id="user-row-template" type="text/template">
+                    <label for="user-{{ index }}" class="searchable" data-index="{{ label }}">
                         ## TODO: a space was inserted here before the text,
                         ## replace it with proper styling!
                         <input id="user-{{ index }}" name="user" value="{{ user }}" type="checkbox"> {{ label }}
@@ -41,7 +44,7 @@
                 </script>
             </div>
 
-            <button type="button" class="btn btn-primary" data-dismiss="modal">Done</button>
+            <button type="submit" class="btn btn-primary" data-dismiss="modal">Done</button>
         </%modal:modal>
 
         <div>
@@ -97,11 +100,16 @@
             return rendered;
         }
 
+        ## returns true iff _str_ starts with _prefix_
+        function startsWith(str, prefix) {
+            return str.substr(0, prefix.length) == prefix;
+        }
+
         function getUsersList() {
             $.get("${request.route_path('json-get-users')}")
                     .done(function(data) {
                         var $table = $('#users-table');
-                        var template = $('#users-row-template').html();
+                        var template = $('#user-row-template').html();
 
                         $.each(data['users'], function(index, user) {
                             var map = {
@@ -114,6 +122,8 @@
                             $table.append(render(template, map));
                         });
 
+                        filterUsers();
+
                         $('#message-loading').hide();
                         $('#message-loaded').show();
                     })
@@ -124,10 +134,32 @@
             ;
         }
 
+        ## the following method of filtering is not sufficiently fast.
+        ##
+        ## this was added to deal with the early release and is fast enough when
+        ## there are only 500 users, but it's visibly laggy when there are 1277
+        ## users.
+        function filterUsers() {
+            var query = $('#search').val().trim().toLowerCase();
+
+            ## enforce the following rules in order of priority:
+            ## * checked items must be shown
+            ## * empty query means hide all items
+            ## * only show items whose label starts with the query (case-insensitive)
+            $('.searchable').has(':not(:checked)').each(function() {
+                var show = query.length > 0
+                        && startsWith(this.getAttribute('data-index').toLowerCase(), query);
+                this.style.display = show ? 'block' : 'none';
+            });
+        }
+
         $(document).ready(function() {
             $('#select-users').click(function() {
                 $('#modal').modal('show');
+                $('#search').focus();
             });
+
+            $('#search').on('input', filterUsers);
 
             getUsersList();
         });

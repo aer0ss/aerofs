@@ -130,7 +130,7 @@ public class DryadServlet extends HttpServlet
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
     {
         try {
-            List<String> userIDs = _service.listUserIDs(0, 50);
+            List<String> userIDs = _service.listUserIDs();
             String content = _gson.toJson(userIDs);
 
             resp.setContentType("application/json");

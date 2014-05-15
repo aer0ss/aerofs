@@ -6,7 +6,6 @@ package com.aerofs.sp.server.dryad;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.servlets.lib.AbstractEmailSender;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.id.OrganizationID.PRIVATE_ORGANIZATION;
 
 public class DryadService
 {
@@ -44,7 +44,12 @@ public class DryadService
         _cmd = cmd;
     }
 
-    public List<String> listUserIDs(final int offset, final int maxResult)
+    /**
+     * @return user IDs of all users and let the client handle pagination.
+     *
+     * TODO (AT): clean this up!
+     */
+    public List<String> listUserIDs()
             throws Exception
     {
         List<UserID> userIDs = callWithSqlTrans(new Callable<List<UserID>>()
@@ -53,12 +58,24 @@ public class DryadService
             public List<UserID> call()
                     throws Exception
             {
-                return _odb.listUsers(OrganizationID.PRIVATE_ORGANIZATION, offset, maxResult);
+                List<UserID> users = Lists.newArrayList();
+
+                List<UserID> newUsers;
+                // let's do a single page of 100k users for now, let's hope we will some day need
+                // to query more than one page.
+                int pageSize = 100000;
+
+                do {
+                    newUsers = _odb.listUsers(PRIVATE_ORGANIZATION, users.size(), pageSize);
+                    users.addAll(newUsers);
+                } while(newUsers.size() >= pageSize);
+
+                return users;
             }
         });
 
         List<String> results = Lists.newArrayListWithCapacity(userIDs.size() + 1);
-        results.add(OrganizationID.PRIVATE_ORGANIZATION.toTeamServerUserID().getString());
+        results.add(PRIVATE_ORGANIZATION.toTeamServerUserID().getString());
 
         for (UserID userID : userIDs) {
             results.add(userID.getString());
