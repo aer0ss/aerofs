@@ -78,7 +78,7 @@ class AddSharedFolderDialogs
 
     private Path shareExternalFolder(String path) throws Exception
     {
-        SID sid = new SID(UIGlobals.ritual().linkRoot(path).getSid());
+        SID sid = new SID(UIGlobals.ritual().createRoot(path).getSid());
         return new Path(sid);
     }
 

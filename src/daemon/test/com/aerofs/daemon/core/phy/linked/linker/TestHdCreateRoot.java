@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Air Computing Inc., 2014.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.daemon.core.phy.linked.linker;
@@ -7,13 +7,15 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
+import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.event.fs.EILinkRoot;
+import com.aerofs.daemon.event.fs.EICreateRoot;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
@@ -21,10 +23,13 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
+import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,6 +40,7 @@ import org.mockito.Spy;
 
 import java.io.File;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -44,10 +50,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * Test to make sure that linking an unlink external shared folder works.
- */
-public class TestHdLinkRoot extends AbstractTest
+public class TestHdCreateRoot extends AbstractTest
 {
     @Mock Trans t;
     @Mock Token tk;
@@ -67,7 +70,6 @@ public class TestHdLinkRoot extends AbstractTest
     @Mock CfgAbsRTRoot cfgAbsRTRoot;
 
     @InjectMocks HdCreateRoot hdCreateRoot;
-    @InjectMocks HdLinkRoot hdLinkRoot;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -93,21 +95,62 @@ public class TestHdLinkRoot extends AbstractTest
         when(cfgAbsRTRoot.get()).thenReturn("");
     }
 
-    private void handle(InjectableFile f, SID sid) throws Exception
+    private void handle(String path) throws Exception
     {
-        hdLinkRoot.handleThrows_(new EILinkRoot(f.getPath(), sid), Prio.LO);
+        hdCreateRoot.handleThrows_(new EICreateRoot(path), Prio.LO);
     }
-    @Test
-    public void shouldLinkExternalSharedFolder() throws Exception
+
+    @SuppressWarnings("unchecked")
+    <T> Iterable<T> anyIterableOf(Class<T> c)
     {
-        SID sid = SID.generate();
+        return (Iterable<T>)any(Iterable.class);
+    }
+
+    @Test
+    public void shouldCreateSharedFolder() throws Exception
+    {
         InjectableFile f = factFile.create(path);
         f.mkdir();
+
         doNothing().when(lru).checkSanity(f);
-        handle(f, sid);
-        verify(lru).checkSanity(eq(f));
-        verify(lru).linkRoot(eq(f), eq(sid));
+
+        handle(path);
+
+        verify(lru).linkRoot(eq(f), any(SID.class));
+        verify(sp).signInRemote();
+        verify(sp).shareFolder(eq(name), any(ByteString.class),
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(true), any(Boolean.class));
+        verify(aclsync).syncToLocal_();
+
         verify(lrm, never()).unlink_(any(SID.class), eq(t));
-        verifyZeroInteractions(sp, aclsync, sd);
+        verifyZeroInteractions(sd);
+    }
+
+    @Test
+    public void shouldUnlinkOnSPException() throws Exception
+    {
+        InjectableFile f = factFile.create(path);
+        f.mkdir();
+
+        doNothing().when(lru).checkSanity(f);
+
+        when(sp.shareFolder(eq(name), any(ByteString.class),
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(true), any(Boolean.class)))
+                .thenThrow(new ExArbitrary());
+
+        try {
+            handle(path);
+            fail();
+        } catch (ExArbitrary e) {}
+
+        verify(lru).linkRoot(eq(f), any(SID.class));
+        verify(sp).signInRemote();
+        verify(sp).shareFolder(eq(name), any(ByteString.class),
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(true), any(Boolean.class));
+
+        verify(lrm).unlink_(any(SID.class), eq(t));
+        verify(sd).deleteRootStore_(any(SIndex.class), eq(PhysicalOp.MAP), eq(t));
+
+        verifyZeroInteractions(aclsync);
     }
 }

@@ -9,17 +9,27 @@ import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 
 /**
- * Event that links unlinked external shared folder.
+ * NB: although this event is not located in phy.linker to be accessible from Ritual, it is only
+ * handled by LinkedStorage
  */
-public class EILinkRoot extends AbstractEBIMC
+public class EICreateRoot extends AbstractEBIMC
 {
     public final String _path;
-    public final SID _sid;
+    public SID _sid;
 
-    public EILinkRoot(String path, SID sid)
+    public EICreateRoot(String path)
     {
         super(Core.imce());
         _path = path;
+    }
+
+    public void setResult(SID sid)
+    {
         _sid = sid;
+    }
+
+    public SID sid()
+    {
+        return _sid;
     }
 }

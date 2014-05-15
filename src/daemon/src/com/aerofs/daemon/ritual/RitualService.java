@@ -45,6 +45,7 @@ import com.aerofs.daemon.event.admin.EISetExpelled;
 import com.aerofs.daemon.event.fs.EIUnlinkRoot;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
+import com.aerofs.daemon.event.fs.EICreateRoot;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
 import com.aerofs.daemon.event.fs.EIDeleteObject;
 import com.aerofs.daemon.event.fs.EIGetAttr;
@@ -69,6 +70,7 @@ import com.aerofs.proto.Common.PBPermissions;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
+import com.aerofs.proto.Ritual.CreateRootReply;
 import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import com.aerofs.proto.Ritual.DumpStatsReply;
 import com.aerofs.proto.Ritual.ExportConflictReply;
@@ -81,7 +83,6 @@ import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
 import com.aerofs.proto.Ritual.GetTransferStatsReply;
 import com.aerofs.proto.Ritual.IRitualService;
-import com.aerofs.proto.Ritual.LinkRootReply;
 import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListExcludedFoldersReply;
 import com.aerofs.proto.Ritual.ListNonRepresentableObjectsReply;
@@ -153,16 +154,16 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<LinkRootReply> linkRoot(String path)
+    public ListenableFuture<CreateRootReply> createRoot(String path)
             throws Exception
     {
-        EILinkRoot ev = new EILinkRoot(path, null);
+        EICreateRoot ev = new EICreateRoot(path);
         ev.execute(PRIO);
-        return createReply(LinkRootReply.newBuilder().setSid(ev.sid().toPB()).build());
+        return createReply(CreateRootReply.newBuilder().setSid(ev.sid().toPB()).build());
     }
 
     @Override
-    public ListenableFuture<Void> linkPendingRoot(String path, ByteString sid)
+    public ListenableFuture<Void> linkRoot(String path, ByteString sid)
             throws Exception
     {
         EILinkRoot ev = new EILinkRoot(path, new SID(sid));

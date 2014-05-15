@@ -45,11 +45,11 @@ service RitualService {
 
     // Create a new "external" shared folder and link it to a location on the filesystem
     // NB: will throw when called on a client that does not use LINKED storage
-    rpc LinkRoot(LinkRootCall) returns(LinkRootReply);
+    rpc CreateRoot(CreateRootCall) returns(CreateRootReply);
 
-    // Link a pending root to a physical location in the filesystem
+    // Link an unlinked external shared folder to a physical location in the filesystem
     // NB: will throw when called on a client that does not use LINKED storage
-    rpc LinkPendingRoot(LinkPendingRootCall) returns(Void);
+    rpc LinkRoot(LinkRootCall) returns(Void);
 
     // List accessible shared folders that have yet to be linked to a physical path
     rpc ListPendingRoots(Void) returns(ListPendingRootsReply);
@@ -338,11 +338,11 @@ message GetExcludedFoldersReply {
     repeated string name = 1;
 }
 
-message LinkRootCall {
+message CreateRootCall {
     required string path = 1;
 }
 
-message LinkRootReply {
+message CreateRootReply {
     required bytes sid = 1;
 }
 
@@ -350,7 +350,7 @@ message UnlinkRootCall {
     required bytes sid = 1;
 }
 
-message LinkPendingRootCall {
+message LinkRootCall {
     required string path = 1;
     required bytes sid = 2;
 }

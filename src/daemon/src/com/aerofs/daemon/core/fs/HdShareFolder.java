@@ -223,7 +223,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-share");
-            // NB: external shared folders are create by HdLinkRoot only
+            // NB: external shared folders are create by HdCreateRoot only
             _factSP.create()
                     .signInRemote()
                     .shareFolder(folderName, sid.toPB(), roles, emailNote, false,

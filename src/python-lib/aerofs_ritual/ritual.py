@@ -96,11 +96,14 @@ class _RitualServiceWrapper(object):
                     raise
                 time.sleep(param.POLLING_INTERVAL)
 
-    def link_root(self, path):
-        return self._service.link_root(path).sid
+    def create_root(self, path):
+        return self._service.create_root(path).sid
 
-    def link_pending_root(self, path, sid):
-        self._service.link_pending_root(path, sid)
+    """
+    This method links unlinked external shared folder.
+    """
+    def link_root(self, path, sid):
+        self._service.link_root(path, sid)
 
     def list_pending_roots(self):
         return self._service.list_pending_roots().root
