@@ -81,7 +81,7 @@ class _RitualServiceWrapper(object):
     def heartbeat(self):
         self._service.heartbeat()
 
-    def wait_for_heartbeat(self, max_attempts=300):
+    def wait_for_heartbeat(self, max_attempts=600):
         attempts = 0
         while True:
             try:
