@@ -72,7 +72,7 @@ final class SVRPCClient
             throw e;
         } finally {
             if (conn != null) {
-                l.warn("diconnect from sv");
+                l.warn("disconnect from sv");
                 conn.disconnect();
             }
         }

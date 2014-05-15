@@ -125,7 +125,7 @@ public class LinkedStorage implements IPhysicalStorage
     {
         SOKID sokid = new SOKID(path.soid(), kidx);
         return new LinkedFile(this, sokid, kidx.equals(KIndex.MASTER)
-                ? _rh.physicalPath(path, type)
+                ? _rh.getPhysicalPath_(path, type)
                 : LinkedPath.auxiliary(path, _lrm.auxFilePath_(path.sid(), sokid, AuxFolder.CONFLICT)));
     }
 
@@ -137,7 +137,7 @@ public class LinkedStorage implements IPhysicalStorage
 
     LinkedFolder newFolder_(ResolvedPath path, PathType type) throws SQLException
     {
-        return new LinkedFolder(this, path.soid(), _rh.physicalPath(path, type));
+        return new LinkedFolder(this, path.soid(), _rh.getPhysicalPath_(path, type));
     }
 
 

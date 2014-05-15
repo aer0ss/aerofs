@@ -101,7 +101,7 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
                 // Root objects have null FIDs
                 if (!oa.soid().oid().isRoot() && oa.fid() != null) {
                     ResolvedPath path = oldParent.join(oa);
-                    LinkedPath lp = _rh.physicalPath(path, PathType.Source);
+                    LinkedPath lp = _rh.getPhysicalPath_(path, PathType.Source);
                     FID newFID = null;
                     try {
                         newFID = _dr.getFID(lp.physical);

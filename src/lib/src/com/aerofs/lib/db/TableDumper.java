@@ -72,15 +72,6 @@ public class TableDumper
         }
     }
 
-    public void dumpAndClose(ResultSet rs) throws SQLException, IOException
-    {
-        try {
-            dump(rs);
-        } finally {
-            rs.close();
-        }
-    }
-
     protected CellFormatter getFormatter(ResultSetMetaData metadata, int col) throws SQLException
     {
         int type = metadata.getColumnType(col);

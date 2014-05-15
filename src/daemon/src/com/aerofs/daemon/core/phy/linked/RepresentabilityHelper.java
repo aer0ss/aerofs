@@ -107,7 +107,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
      * {@link NRODatabase}. This is necessary to prevent NROs from getting "stuck". Without this,
      * moving an NRO to a representable path would not trigger automatic representability update.
      */
-    LinkedPath physicalPath(ResolvedPath path, PathType type) throws SQLException
+    LinkedPath getPhysicalPath_(ResolvedPath path, PathType type) throws SQLException
     {
         String s = "";
         String[] elems = path.elements();
