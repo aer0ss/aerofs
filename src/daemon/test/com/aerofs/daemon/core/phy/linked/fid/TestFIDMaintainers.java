@@ -45,7 +45,7 @@ public class TestFIDMaintainers extends AbstractTest
     @Before
     public void setup() throws IOException, SQLException, ExNotFound
     {
-        when(dr.getFIDAndType(anyString())).thenReturn(new FIDAndType(fid, false));
+        when(dr.getFIDAndTypeNullable(anyString())).thenReturn(new FIDAndType(fid, false));
         when(ds.getOA_(any(SOID.class))).thenReturn(oa);
         when(oa.fid()).thenReturn(fid);
     }

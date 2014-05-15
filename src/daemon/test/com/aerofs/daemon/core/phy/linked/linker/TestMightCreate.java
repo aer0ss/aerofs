@@ -86,7 +86,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     private Result mightCreate(String path, FIDAndType fnt) throws Exception
     {
         PathCombo pc = new PathCombo(absRootAnchor, mkpath(path));
-        when(dr.getFIDAndType(eq(pc._absPath))).thenReturn(fnt);
+        when(dr.getFIDAndTypeNullable(eq(pc._absPath))).thenReturn(fnt);
         return mc.mightCreate_(pc, delBuffer, og, t);
     }
 
@@ -100,7 +100,7 @@ public class TestMightCreate extends AbstractMightCreateTest
             String path) throws Exception
     {
         PathCombo pc = new PathCombo(absRootAnchor, mkpath(path));
-        FIDAndType fnt = dr.getFIDAndType(pc._absPath);
+        FIDAndType fnt = dr.getFIDAndTypeNullable(pc._absPath);
 
         verify(mcop).executeOperation_(eq(ops), eq(source), eq(target), eq(pc), eq(fnt),
                 eq(delBuffer), eq(og), eq(t));
@@ -142,7 +142,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     public void shouldIgnoreFileIfGetFIDThrowsExFileNotFound() throws Exception
     {
         PathCombo pc = new PathCombo(absRootAnchor, mkpath("foo"));
-        when(dr.getFIDAndType(eq(pc._absPath))).thenThrow(new ExFileNotFound(pc._path));
+        when(dr.getFIDAndTypeNullable(eq(pc._absPath))).thenThrow(new ExFileNotFound(pc._path));
 
         assertEquals(Result.IGNORED, mc.mightCreate_(pc, delBuffer, og, t));
         verify(rocklog).newDefect("mc.fid.notfound");
@@ -152,7 +152,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     public void shouldIgnoreFileIfGetFIDThrowsExFileNoPerm() throws Exception
     {
         PathCombo pc = new PathCombo(absRootAnchor, mkpath("foo"));
-        when(dr.getFIDAndType(eq(pc._absPath))).thenThrow(new ExFileNoPerm(new File(pc._absPath)));
+        when(dr.getFIDAndTypeNullable(eq(pc._absPath))).thenThrow(new ExFileNoPerm(new File(pc._absPath)));
 
         assertEquals(Result.IGNORED, mc.mightCreate_(pc, delBuffer, og, t));
         verify(rocklog).newDefect("mc.fid.noperm");
@@ -162,7 +162,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     public void shouldIgnoreFileIfGetFIDThrowsException() throws Exception
     {
         PathCombo pc = new PathCombo(absRootAnchor, mkpath("foo"));
-        when(dr.getFIDAndType(eq(pc._absPath))).thenThrow(new IOException("foo"));
+        when(dr.getFIDAndTypeNullable(eq(pc._absPath))).thenThrow(new IOException("foo"));
 
         assertEquals(Result.IGNORED, mc.mightCreate_(pc, delBuffer, og, t));
         verify(rocklog).newDefect("mc.fid.exception");
@@ -534,7 +534,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("f1"));
         FIDAndType fnt = generateFileFnt(soid);
 
-        when(dr.getFIDAndType(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
+        when(dr.getFIDAndTypeNullable(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
 
         assertEquals(Result.IGNORED, mightCreate("f42", fnt));
     }
@@ -545,7 +545,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("f1"));
         FIDAndType fnt = generateFileFnt(soid);
 
-        when(dr.getFIDAndType(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
+        when(dr.getFIDAndTypeNullable(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
 
         assertEquals(Result.IGNORED, mightCreate("F1", fnt));
     }
@@ -557,7 +557,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("f1"));
         FIDAndType fnt = generateFileFnt(soid);
 
-        when(dr.getFIDAndType(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
+        when(dr.getFIDAndTypeNullable(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
 
         assertEquals(Result.FILE, mightCreate("F1", fnt));
         verifyOperationExecuted(EnumSet.of(Operation.Update),

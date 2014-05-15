@@ -147,8 +147,8 @@ class MightCreateOperations
         if (ops.contains(Operation.RenameTarget)) {
             PhysicalOp op = MAP;
             if (ops.contains(Operation.NonRepresentableTarget)) {
-                // when the target is non representable it is garanteed to still exist and also
-                // garanteed to NOT appear in the scan, hence:
+                // when the target is non representable it is guaranteed to still exist and also
+                // guaranteed to NOT appear in the scan, hence:
                 //   1. APPLY the rename to make the object visible again
                 //   2. remove the target from TDB to prevent it from being deleted
                 op = APPLY;

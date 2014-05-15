@@ -23,7 +23,7 @@ public class TestMightCreate_OtherCases extends AbstractTestMightCreate
         throws Exception
     {
         String physicalObj = "non-existing";
-        when(dr.getFIDAndType(Util.join(pRoot, physicalObj))).thenThrow(
+        when(dr.getFIDAndTypeNullable(Util.join(pRoot, physicalObj))).thenThrow(
                 new ExFileNotFound(mkpath("dummy/path")));
         assertEquals(Result.IGNORED, mightCreate(physicalObj));
         verify(rocklog).newDefect("mc.fid.notfound");
@@ -34,7 +34,7 @@ public class TestMightCreate_OtherCases extends AbstractTestMightCreate
             throws Exception
     {
         String physicalObj = "non-existing";
-        when(dr.getFIDAndType(Util.join(pRoot, physicalObj))).thenThrow(
+        when(dr.getFIDAndTypeNullable(Util.join(pRoot, physicalObj))).thenThrow(
                 new ExFileNoPerm(new File("dummy/path")));
         assertEquals(Result.IGNORED, mightCreate(physicalObj));
         verify(rocklog).newDefect("mc.fid.noperm");

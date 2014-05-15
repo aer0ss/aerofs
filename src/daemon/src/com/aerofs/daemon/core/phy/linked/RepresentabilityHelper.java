@@ -42,7 +42,7 @@ import java.util.Set;
 /**
  * Helper class that abstracts out most of the complexity of dealing with Non-Representable Objects
  *
- * See docs/design/filesystem_restricitons.md for a high-level overview
+ * See docs/design/filesystem_restrictions.md for a high-level overview
  */
 public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
 {

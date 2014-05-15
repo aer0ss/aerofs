@@ -8,6 +8,7 @@ import java.util.Set;
 
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.*;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.aerofs.base.Loggers;
@@ -34,6 +35,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -114,8 +116,8 @@ public class MightCreate
      * Comment (A) in ScanSession.
      *
      * @param pcPhysical the path of the physical file
-     * @throws ExNotFound if either the physical object or the parent of the logical object is not
-     * found when creating or moving the object.
+     * @throws com.aerofs.base.ex.ExNotFound if either the physical object or the parent of the
+     * logical object is not found when creating or moving the object.
      */
     public Result mightCreate_(PathCombo pcPhysical, IDeletionBuffer delBuffer, OIDGenerator og,
             Trans t) throws Exception
@@ -132,9 +134,9 @@ public class MightCreate
             return Result.IGNORED;
         }
 
-        FIDAndType fnt = null;
+        @Nullable FIDAndType fnt = null;
         try {
-            fnt = _dr.getFIDAndType(pcPhysical._absPath);
+            fnt = _dr.getFIDAndTypeNullable(pcPhysical._absPath);
             // TODO: report to UI if FID null (symlink or special file)
         } catch (ExFileNoPerm e) {
             // TODO: report to UI
@@ -164,11 +166,11 @@ public class MightCreate
         l.debug("{}:{} under {}", pcPhysical, fnt._fid, parent);
 
         // See class-level comment for vocabulary definitions
-        SOID sourceSOID = _ds.getSOIDNullable_(fnt._fid);
-        SOID targetSOID = _ds.resolveNullable_(pcPhysical._path);
+        @Nullable SOID sourceSOID = _ds.getSOIDNullable_(fnt._fid);
+        @Nullable SOID targetSOID = _ds.resolveNullable_(pcPhysical._path);
 
-        Path targetPath = pcPhysical._path;
-        Path sourcePath = sourceSOID != null ? _ds.resolveNullable_(sourceSOID) : null;
+        @Nonnull  Path targetPath = pcPhysical._path;
+        @Nullable Path sourcePath = sourceSOID != null ? _ds.resolveNullable_(sourceSOID) : null;
 
         // Hard-link handling:
         // Generally, we only let one of the hard-linked physical files/folders to
@@ -233,7 +235,6 @@ public class MightCreate
      * @return whether a hardlink has been detected
      */
     private boolean detectHardLink_(Path sourcePath, Path targetPath, FID physicalFID)
-            throws SQLException
     {
         // If the source and target paths are not equal but the corresponding FIDs are equal then
         // we detected a hard link
@@ -269,10 +270,11 @@ public class MightCreate
      * @param targetSOID logical object whose path coincide with the target physical object, if any
      * @return update operations required to bring the logical mapping up-to-date
      */
-    private Set<Operation> determineUpdateOperation_(PathCombo pc, @Nullable SOID sourceSOID,
-            @Nullable SOID targetSOID, FIDAndType fnt) throws SQLException
+    private Set<Operation> determineUpdateOperation_(@Nonnull PathCombo pc,
+            @Nullable SOID sourceSOID, @Nullable SOID targetSOID, @Nonnull FIDAndType fnt)
+            throws SQLException
     {
-        OA sourceOA = sourceSOID != null ? _ds.getOA_(sourceSOID) : null;
+        @Nullable OA sourceOA = sourceSOID != null ? _ds.getOA_(sourceSOID) : null;
         boolean sourceSameType = sourceOA != null && sourceOA.isDirOrAnchor() == fnt._dir;
 
         if (targetSOID == null) return updateSource(sourceSOID, sourceSameType);
@@ -307,8 +309,10 @@ public class MightCreate
 
         if (canSafelyReplaceFID(pc, sourceSOID, targetOA, fnt._dir)) {
             // The assertion below is guaranteed by the above code.
-            // N.B: oa.fid() may be null if no branch is present.
-            checkState(!fnt._fid.equals(targetOA.fid()));
+            // N.B: targetOA.fid() may be null if no branch is present.
+            checkArgument(!fnt._fid.equals(targetOA.fid()), "%s %s %s %s %s %s", fnt._fid, fnt._dir,
+                    sourceSameType, sourceSOID, targetSOID,
+                    sourceOA == null ? null : sourceOA.isDirOrAnchor());
             return EnumSet.of(Replace);
         }
 
@@ -368,16 +372,19 @@ public class MightCreate
      * Regular folders can still be eligible for FID replacement provided the new FID is not
      * associated with any existing SOID.
      */
-    private boolean canSafelyReplaceFID(PathCombo pc, SOID sourceSOID, OA target, boolean dir)
+    private boolean canSafelyReplaceFID(PathCombo pc, @Nullable SOID sourceSOID, OA target,
+            boolean dir)
     {
-        if (target.isExpelled()) return false;
+        if (target.isExpelled()) {
+            return false;
 
-        if (target.isAnchor()) {
+        } else if (target.isAnchor()) {
             // if the tag file matches the anchor we can replace the FID
             return _sfti.isSharedFolderRoot(SID.anchorOID2storeSID(target.soid().oid()),
                     pc._absPath);
-        }
 
-        return (target.isDirOrAnchor() == dir) && (target.isFile() || sourceSOID == null);
+        } else {
+            return (target.isDirOrAnchor() == dir) && (target.isFile() || sourceSOID == null);
+        }
     }
 }

@@ -80,9 +80,9 @@ public class InjectableDriver
     }
 
     /**
-     * @return null on OS-specific files
+     * @return null for OS-specific files
      */
-    public @Nullable FIDAndType getFIDAndType(String absPath)
+    public @Nullable FIDAndType getFIDAndTypeNullable(String absPath)
             throws IOException
     {
         File f = new File(absPath);
@@ -131,7 +131,7 @@ public class InjectableDriver
      */
     final public @Nullable FID getFID(String absPath) throws IOException
     {
-        FIDAndType fnt = getFIDAndType(absPath);
+        FIDAndType fnt = getFIDAndTypeNullable(absPath);
         return fnt == null ? null : fnt._fid;
     }
 

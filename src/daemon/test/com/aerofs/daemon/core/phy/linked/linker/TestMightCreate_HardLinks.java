@@ -31,14 +31,14 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
     {
         // Simulate hard link between file names fName1-3
         // by setting the same FID {@code fFNT} to all of them
-        fFNT = dr.getFIDAndType(Util.join(pRoot, fName1));
-        when(dr.getFIDAndType(Util.join(pRoot, fName2))).thenReturn(fFNT);
-        when(dr.getFIDAndType(Util.join(pRoot, fName3))).thenReturn(fFNT);
+        fFNT = dr.getFIDAndTypeNullable(Util.join(pRoot, fName1));
+        when(dr.getFIDAndTypeNullable(Util.join(pRoot, fName2))).thenReturn(fFNT);
+        when(dr.getFIDAndTypeNullable(Util.join(pRoot, fName3))).thenReturn(fFNT);
 
         // Simulate hard link between the directory names nonExistingDirName, existingDirName
         // by settting the same FID {@code dirFNT} to both of them
-        dirFNT = dr.getFIDAndType(Util.join(pRoot, existingDirName));
-        when(dr.getFIDAndType(Util.join(pRoot, nonExistingDirName))).thenReturn(dirFNT);
+        dirFNT = dr.getFIDAndTypeNullable(Util.join(pRoot, existingDirName));
+        when(dr.getFIDAndTypeNullable(Util.join(pRoot, nonExistingDirName))).thenReturn(dirFNT);
     }
 
     @Test
@@ -90,7 +90,7 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         assertEquals(Result.IGNORED, mightCreate(fName2));
 
         // Act as if fName1 is now deleted from file system by setting its FID to null.
-        when(dr.getFIDAndType(Util.join(pRoot, fName1))).thenReturn(null);
+        when(dr.getFIDAndTypeNullable(Util.join(pRoot, fName1))).thenReturn(null);
 
         assertEquals(Result.FILE, mightCreate(fName2));
 
@@ -136,7 +136,7 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         verifyOperationExecuted(Operation.Update, existingDirName);
 
         // Act as if existingDirName is now deleted from file system by setting its FID to null.
-        when(dr.getFIDAndType(Util.join(pRoot, existingDirName))).thenReturn(null);
+        when(dr.getFIDAndTypeNullable(Util.join(pRoot, existingDirName))).thenReturn(null);
 
         assertEquals(Result.EXISTING_FOLDER, mightCreate(nonExistingDirName));
         verifyOperationExecuted(Operation.Update, dirSOID, null, nonExistingDirName);

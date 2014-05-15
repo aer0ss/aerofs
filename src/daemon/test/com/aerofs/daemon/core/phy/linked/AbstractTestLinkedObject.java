@@ -82,7 +82,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
     @Before
     public void setupAbstractTestLocalObject() throws IOException, SQLException, ExNotFound
     {
-        when(dr.getFIDAndType(any(String.class))).thenReturn(new FIDAndType(fid, false));
+        when(dr.getFIDAndTypeNullable(any(String.class))).thenReturn(new FIDAndType(fid, false));
 
         when(lrm.absRootAnchor_(rootSID)).thenReturn("");
         when(factFile.create(any(String.class))).then(RETURNS_MOCKS);

@@ -92,7 +92,7 @@ public abstract class AbstractMockPhysicalObject
         // mock driver methods
         if (dr != null) {
             FID fid = new FID(UniqueID.generate().getBytes());
-            when(dr.getFIDAndType(path)).thenReturn(new FIDAndType(fid, _children != null));
+            when(dr.getFIDAndTypeNullable(path)).thenReturn(new FIDAndType(fid, _children != null));
         }
 
         return f;

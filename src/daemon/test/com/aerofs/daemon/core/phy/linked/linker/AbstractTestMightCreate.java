@@ -186,7 +186,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
     protected void verifyOperationExecuted(Set<Operation> ops, String path) throws Exception
     {
         PathCombo pc = new PathCombo(pRoot, Path.fromString(rootSID, path));
-        FIDAndType fnt = dr.getFIDAndType(pc._absPath);
+        FIDAndType fnt = dr.getFIDAndTypeNullable(pc._absPath);
 
         verify(mcop).executeOperation_(eq(ops), any(SOID.class), any(SOID.class),
                 eq(pc), eq(fnt), eq(delBuffer), eq(og), eq(t));
@@ -202,7 +202,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
             String path) throws Exception
     {
         PathCombo pc = new PathCombo(pRoot, Path.fromString(rootSID, path));
-        FIDAndType fnt = dr.getFIDAndType(pc._absPath);
+        FIDAndType fnt = dr.getFIDAndTypeNullable(pc._absPath);
 
         verify(mcop).executeOperation_(eq(ops), eq(source), eq(target), eq(pc), eq(fnt),
                 eq(delBuffer), eq(og), eq(t));

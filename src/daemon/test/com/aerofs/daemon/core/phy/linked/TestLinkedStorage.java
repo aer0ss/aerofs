@@ -120,7 +120,7 @@ public class TestLinkedStorage extends AbstractTest
         // these mocks are used to set up the LinkedStorage but also when
         // committing/ending transactions.
         when(dbcw.get()).then(RETURNS_MOCKS);
-        when(dr.getFIDAndType(any(String.class))).thenReturn(new FIDAndType(fid, false));
+        when(dr.getFIDAndTypeNullable(any(String.class))).thenReturn(new FIDAndType(fid, false));
         when(ds.getOA_(soid)).thenReturn(oa);
         when(ds.getOANullable_(soid)).thenReturn(oa);
         when(oa.fid()).thenReturn(fid);
