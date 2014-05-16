@@ -9,22 +9,17 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.dryad.persistence.IDryadPersistence;
 import com.aerofs.restless.Service;
-import com.aerofs.restless.util.ContentRange;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
-
-import static com.aerofs.restless.util.ContentRange.rangeNullable;
 
 @Path(Service.VERSION + "/client")
 @Consumes(MediaType.APPLICATION_OCTET_STREAM)
@@ -48,7 +43,6 @@ public class ClientLogsResource
             @PathParam("dryad_id") UniqueID dryadID,
             @PathParam("user_id") String userID,
             @PathParam("device_id") DID deviceID,
-            @HeaderParam(Names.CONTENT_RANGE) ContentRange contentRange,
             InputStream body)
             throws Exception
     {
@@ -58,7 +52,7 @@ public class ClientLogsResource
         try {
             // convert userID to UserID to validate user ID
             _persistence.putClientLogs(customerID, dryadID, UserID.fromExternal(userID), deviceID,
-                    body, rangeNullable(contentRange));
+                    body);
         } finally {
             body.close();
         }

@@ -7,7 +7,6 @@ package com.aerofs.dryad.persistence;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
-import com.google.common.collect.Range;
 
 import java.io.InputStream;
 
@@ -17,8 +16,7 @@ import java.io.InputStream;
  */
 public interface IDryadPersistence
 {
-    void putApplianceLogs(long customerID, UniqueID dryadID, InputStream src, Range<Long> range)
-        throws Exception;
+    void putApplianceLogs(long customerID, UniqueID dryadID, InputStream src) throws Exception;
     void putClientLogs(long customerID, UniqueID dryadID, UserID userID, DID deviceID,
-            InputStream src, Range<Long> range) throws Exception;
+            InputStream src) throws Exception;
 }
