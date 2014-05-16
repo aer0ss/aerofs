@@ -90,9 +90,7 @@ public class DryadService
     {
         String from = getStringProperty("base.www.support_email_address", "");
         String fromName = SPParam.EMAIL_FROM_NAME;
-        // TODO (AT): replace with support@aerofs.com before release
-        // String to = "support@aerofs.com";
-        String to = "alex+dryad@aerofs.com";
+        String to = "support@aerofs.com";
         String replyTo = email;
         String subject = L.brand() + " Problem #" + dryadID;
         String textBody =
