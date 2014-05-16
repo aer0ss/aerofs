@@ -16,6 +16,8 @@ all: $(FILES_OUT_JS) $(FILES_OUT_CSS)
 
 # Destroy the final targets
 clean:
+	watchman trigger-del $(shell pwd) remakejs
+	watchman trigger-del $(shell pwd) remakeless
 	rm -rf $(DEST)/css/compiled/
 	rm -rf $(DEST)/js/compiled/
 	mkdir $(DEST)/css/compiled/
