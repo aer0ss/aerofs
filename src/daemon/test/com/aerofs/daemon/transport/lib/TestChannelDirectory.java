@@ -7,6 +7,8 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.proto.Diagnostics.ChannelState;
 import com.aerofs.testlib.AbstractTest;
@@ -26,7 +28,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -58,7 +60,6 @@ public class TestChannelDirectory extends AbstractTest
 
     private Channel[] getMockChannels(int count, ChannelState state)
     {
-        IChannelData connectedChannelData;
         List<Channel> list = new ArrayList<Channel>();
 
         for (int i=0; i<count; i++) {
@@ -77,8 +78,6 @@ public class TestChannelDirectory extends AbstractTest
                 public Integer answer(InvocationOnMock invocation)
                         throws Throwable
                 {
-                    Object[] arguments = invocation.getArguments();
-
                     return ((Channel)invocation.getArguments()[0]).getId() -
                             ((Channel)invocation.getMock()).getId();
                 }
@@ -92,7 +91,7 @@ public class TestChannelDirectory extends AbstractTest
     @Test
     public void shouldCountChannels() throws Exception
     {
-        ChannelDirectory channelDirectory = new ChannelDirectory(tp);
+        ChannelDirectory channelDirectory = new ChannelDirectory(tp, mock(IUnicastConnector.class));
         Channel[] channels = getMockChannels(2, ChannelState.CONNECTING);
         channelDirectory.setUnicastListener(unicastListener);
 
@@ -117,34 +116,48 @@ public class TestChannelDirectory extends AbstractTest
     @Test
     public void shouldChooseActiveChannel() throws Exception
     {
-        ChannelDirectory channelDirectory = new ChannelDirectory(tp);
+        ChannelDirectory channelDirectory = new ChannelDirectory(tp, new IUnicastConnector() {
+            @Override
+            public ChannelFuture newChannel(DID did)
+                    throws ExTransportUnavailable, ExDeviceUnavailable
+            {
+                return mock(ChannelFuture.class);
+            }
+        });
         channelDirectory.setUnicastListener(unicastListener);
 
-        assertNull(channelDirectory.chooseActiveChannel(did));
+        assertTrue(channelDirectory.getSnapshot(did).isEmpty());
 
         channelDirectory.register(getMockChannels(1, ChannelState.CONNECTING)[0], did);
 
-        assertNotNull(channelDirectory.chooseActiveChannel(did));
+        assertNotNull(channelDirectory.chooseActiveChannel(did).getChannel());
     }
 
     @Test
     public void shouldPreferActiveChannel() throws Exception
     {
-        ChannelDirectory channelDirectory = new ChannelDirectory(tp);
+        ChannelDirectory channelDirectory = new ChannelDirectory(tp, new IUnicastConnector() {
+            @Override
+            public ChannelFuture newChannel(DID did)
+                    throws ExTransportUnavailable, ExDeviceUnavailable
+            {
+                return mock(ChannelFuture.class);
+            }
+        });
         channelDirectory.setUnicastListener(unicastListener);
-        assertNull(channelDirectory.chooseActiveChannel(did));
+        assertTrue(channelDirectory.getSnapshot(did).isEmpty());
 
         Channel connectingChannel = getMockChannels(1, ChannelState.CONNECTING)[0];
         Channel verifiedChannel = getMockChannels(2, ChannelState.VERIFIED)[1];
         assertNotEquals(connectingChannel, verifiedChannel);
 
         channelDirectory.register(connectingChannel, did);
-        assertEquals(connectingChannel, channelDirectory.chooseActiveChannel(did));
+        assertEquals(connectingChannel, channelDirectory.chooseActiveChannel(did).getChannel());
 
         channelDirectory.register(verifiedChannel, did);
 
-        for (int i=0; i<10; i++) {
-            Channel result = channelDirectory.chooseActiveChannel(did);
+        for (int i = 0; i < 10; i++) {
+            Channel result = channelDirectory.chooseActiveChannel(did).getChannel();
             assertEquals(ChannelState.VERIFIED, TransportUtil.getChannelState(result));
             assertEquals(verifiedChannel, result);
         }
@@ -154,7 +167,7 @@ public class TestChannelDirectory extends AbstractTest
     public void shouldAutoRemove()
             throws Exception
     {
-        ChannelDirectory channelDirectory = new ChannelDirectory(tp);
+        ChannelDirectory channelDirectory = new ChannelDirectory(tp, mock(IUnicastConnector.class));
         channelDirectory.setUnicastListener(unicastListener);
         channelDirectory.register(getMockChannels(1, ChannelState.CONNECTING)[0], did);
 

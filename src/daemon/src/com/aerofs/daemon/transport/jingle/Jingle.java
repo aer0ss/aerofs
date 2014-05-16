@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.jingle;
 
 import com.aerofs.base.BaseParam.XMPP;
+import com.aerofs.base.TimerUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -12,6 +13,7 @@ import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.lib.ChannelPreallocator;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
@@ -166,6 +168,7 @@ public class Jingle implements ITransport
         signalThread.setUnicastListener(presenceService); // presence service is notified whenever signal thread goes up/down
         unicast.setUnicastListener(presenceService); // presence service is notified whenever a device connects/disconnects to unicast
         presenceService.addListener(new DevicePresenceListener(this.id, unicast, pulseManager, rockLog)); // shut down pulsing and disconnect everyone when they go offline
+        presenceService.addListener(new ChannelPreallocator(presenceService, unicast.getDirectory(), TimerUtil.getGlobalTimer())); // try connecting when we hear of a device
         presenceService.addListener(xmppPresenceProcessor); // send any final offline presence to the core when people go offline
 
         // multicast

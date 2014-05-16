@@ -34,7 +34,7 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public final class Unicast implements ILinkStateListener, IUnicastInternal, IIncomingChannelListener
+public final class Unicast implements ILinkStateListener, IUnicastInternal, IUnicastConnector, IIncomingChannelListener
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
@@ -53,7 +53,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
     public Unicast(IAddressResolver addressResolver, ITransport transport)
     {
         this.addressResolver = addressResolver;
-        this.directory = new ChannelDirectory(transport);
+        this.directory = new ChannelDirectory(transport, this);
     }
 
     // NOTE: these fields cannot be final due to a
@@ -234,22 +234,14 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         // 5. the rest of the chunks in the stream will be sent via the latter link, which violates
         // streams' guarantee of in-order delivery.
 
-        Channel channel = null;
+        Channel channel;
         synchronized (this) {
-            if (cookie != null) {
-                channel = (Channel) cookie; // use the channel that was used before
-            } else { // apparently the caller has no preference on the channel to be used
-                if (reuseChannels) { // we should pick an existing channel if there is one
-                    channel = directory.chooseActiveChannel(did);
-                }
-            }
-
-            // no cookie was specified and no active channel exists
-            // let's create a channel for them
-            // FWIW, it's _definitely_ possible for this channel to be null - don't believe the IDE
-            // noinspection ConstantConditions
-            if (channel == null) {
-                channel = newChannel(did);
+            if (cookie!= null) {
+                channel = (Channel) cookie;
+            } else if (reuseChannels) {
+                channel = directory.chooseActiveChannel(did).getChannel();
+            } else { // TODO: remove this case, used in unit tests only :(
+                channel = directory.createChannel(did).getChannel();
             }
         }
 
@@ -287,25 +279,26 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
      * @throws ExTransportUnavailable if the unicast service is paused or has already been shut down
      * @throws ExDeviceUnavailable if we cannot find a remote address for the device
      */
-    private Channel newChannel(final DID did)
-            throws ExTransportUnavailable, ExDeviceUnavailable
+    @Override
+    public ChannelFuture newChannel(final DID did) throws ExTransportUnavailable, ExDeviceUnavailable
     {
         if (!isServiceAvailable()) {
             throw new ExTransportUnavailable("transport unavailable running:" + running + " paused:" + paused);
         }
 
         SocketAddress remoteAddress = addressResolver.resolve(did);
-        final Channel channel = clientBootstrap.connect(remoteAddress).getChannel();
+        ChannelFuture channelFuture = clientBootstrap.connect(remoteAddress);
+        Channel channel = channelFuture.getChannel();
 
         l.debug("{} created new channel {}", did, TransportUtil.hexify(channel));
 
         CNameVerifiedHandler verifiedHandler = channel.getPipeline().get(CNameVerifiedHandler.class);
         verifiedHandler.setExpectedRemoteDID(did);
-        directory.register(channel, did);
 
-        return channel;
+        return channelFuture;
     }
 
+    public ChannelDirectory getDirectory() { return directory; }
 
     public Collection<Message> getChannelDiagnostics(DID did)
     {

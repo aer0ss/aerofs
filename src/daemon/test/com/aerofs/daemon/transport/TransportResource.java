@@ -161,7 +161,6 @@ public final class TransportResource extends ExternalResource
         transport.init();
         transport.start();
         linkStateService.markLinksUp();
-        ChannelBufferFactory factory;
     }
 
     private SSLEngineFactory newServerSSLEngineFactory(IPrivateKeyProvider privateKeyProvider, ICertificateProvider caCertificateProvider)

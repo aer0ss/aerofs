@@ -20,7 +20,7 @@ import static com.google.common.collect.Sets.newHashSet;
  * are sent whenever a device:
  * <ul>
  *     <li>Transitions from unavailable -> potentially available.</li>
- *     <li>Transitions from potentially available -> unavilable.</li>
+ *     <li>Transitions from potentially available -> unavailable.</li>
  * </ul>
  * <br/>
  * Implements the presence rules outlined in "docs/design/transport/transport_presence_service_design.md".

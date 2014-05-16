@@ -7,6 +7,7 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.TimerUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -15,6 +16,7 @@ import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.lib.ChannelPreallocator;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IAddressResolver;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -153,6 +155,8 @@ public class TCP implements ITransport, IAddressResolver
         multicast.setListener(presenceService);
         presenceService.addListener(new DevicePresenceListener(id, unicast, pulseManager, rockLog));
         presenceService.addListener(stores);
+        presenceService.addListener(new ChannelPreallocator(
+                presenceService, unicast.getDirectory(), TimerUtil.getGlobalTimer()));
         arp.addListener(new IARPListener()
         {
             @Override
