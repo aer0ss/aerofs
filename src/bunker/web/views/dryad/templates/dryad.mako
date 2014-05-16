@@ -67,7 +67,7 @@
                     computers and send them to AeroFS Support. These logs
                     contains data on how the user uses AeroFS and may contain
                     the file name of the files on the users' computers.
-                    <a href="">Read more</a>
+                    <a href="https://support.aerofs.com/hc/en-us/articles/202258960">Read more</a>
                 </p>
             </div>
         </div>
