@@ -16,6 +16,7 @@ import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.ui.UIGlobals;
+import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.swt.SWT;
@@ -68,6 +69,19 @@ class AddSharedFolderDialogs
         if (snf != null) shareFolder(snf);
     }
 
+    private Path shareInternalFolder(Path path) throws Exception
+    {
+        List<PBSubjectPermissions> sps = Collections.emptyList();
+        UIGlobals.ritual().shareFolder(path.toPB(), sps, "", false);
+        return path;
+    }
+
+    private Path shareExternalFolder(String path) throws Exception
+    {
+        SID sid = new SID(UIGlobals.ritual().linkRoot(path).getSid());
+        return new Path(sid);
+    }
+
     /**
      * This method allows users to pick a folder out of the default root anchor.
      *
@@ -91,8 +105,12 @@ class AddSharedFolderDialogs
             public @Nonnull Path share()
                     throws Exception
             {
-                SID sid = new SID(UIGlobals.ritual().linkRoot(path).getSid());
-                return new Path(sid);
+                // Even after clicking shift add, the user is trying to share a folder within
+                // the AeroFS folder.
+                if (path.startsWith(Cfg.absDefaultRootAnchor())) {
+                    return shareInternalFolder(UIUtil.getPathNullable(path));
+                }
+                return shareExternalFolder(path);
             }
         };
     }
@@ -116,9 +134,7 @@ class AddSharedFolderDialogs
             @Override
             public @Nonnull Path share() throws Exception
             {
-                List<PBSubjectPermissions> sps = Collections.emptyList();
-                UIGlobals.ritual().shareFolder(path.toPB(), sps, "", false);
-                return path;
+                return shareInternalFolder(path);
             }
         };
     }
