@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -110,15 +111,7 @@ public class TokenResource
             List<TokenResponseObject> tokenResponseObjects =
                     new ArrayList<TokenResponseObject>(tokens.size());
             for (AccessToken t : tokens) {
-                // SIGH. I wish we could pass AccessToken to TokenResponseObject constructor.
-                tokenResponseObjects.add(new TokenResponseObject(
-                        t.getClientId(),
-                        t.getClient().getName(),
-                        t.getCreationDate(),
-                        t.getExpires(),
-                        t.getOwner(),
-                        t.getEffectiveUserID(),
-                        t.getToken()));
+                tokenResponseObjects.add(new TokenResponseObject(t));
             }
 
             TokenListReponse response = new TokenListReponse(tokenResponseObjects);
@@ -194,7 +187,7 @@ public class TokenResource
     {
         AccessTokenRequest accessTokenRequest = AccessTokenRequest.fromMultiValuedFormParameters(
                 formParameters);
-        UserPassCredentials credentials = getUserPassCredentials(authorization, accessTokenRequest);
+        UserPassCredentials credentials = getClientCredentials(authorization, accessTokenRequest);
         String grantType = accessTokenRequest.getGrantType();
         ValidationResponse vr = oAuth2Validator.validate(accessTokenRequest);
         if (!vr.valid()) {
@@ -203,9 +196,9 @@ public class TokenResource
         AuthorizationRequest request;
         try {
             if (GRANT_TYPE_AUTHORIZATION_CODE.equals(grantType)) {
-                request = authorizationCodeToken(accessTokenRequest);
+                request = authRequestFromCode(accessTokenRequest);
             } else if (GRANT_TYPE_REFRESH_TOKEN.equals(grantType)) {
-                request = refreshTokenToken(accessTokenRequest);
+                request = authRequestFromRefreshToken(accessTokenRequest);
             } else {
                 return sendErrorResponse(ValidationResponse.UNSUPPORTED_GRANT_TYPE);
             }
@@ -227,29 +220,46 @@ public class TokenResource
 
     }
 
-    private AccessToken createAccessToken(AuthorizationRequest request, boolean isImplicitGrant)
+    /**
+     * http://tools.ietf.org/html/draft-ietf-oauth-v2#section-2.3.1
+     *
+     * We support both options. Clients can use the Basic Authentication or
+     * include the secret and id in the request body
+     */
+    private UserPassCredentials getClientCredentials(String authorization,
+            AccessTokenRequest accessTokenRequest)
     {
-        Client client = request.getClient();
-        long expires = client.getExpireDuration() == 0 ?
-                0L : (System.currentTimeMillis() + (1000 * client.getExpireDuration()));
-        String refreshToken = (client.isUseRefreshTokens() && !isImplicitGrant) ?
-                getTokenValue(true) : null;
-        AuthenticatedPrincipal principal = request.getPrincipal();
-        return accessTokenRepository.save(
-                new AccessToken(
-                    getTokenValue(false),
-                    principal,
-                    client,
-                    expires,
-                    request.getGrantedScopes(),
-                    refreshToken)
-        );
+        return StringUtils.isBlank(authorization) ? new UserPassCredentials(
+                accessTokenRequest.getClientId(),
+                accessTokenRequest.getClientSecret()) : new UserPassCredentials(authorization);
     }
 
-    private AuthorizationRequest authorizationCodeToken(AccessTokenRequest accessTokenRequest)
+    private AuthorizationRequest authRequestFromRefreshToken(AccessTokenRequest accessTokenRequest)
     {
-        return (accessTokenRequest.hasDeviceAuthorizationNonce())
-                ? handleDeviceAuthorization(accessTokenRequest) : handleAccessCode(accessTokenRequest);
+        AccessToken accessToken = accessTokenRepository.findByRefreshToken(
+                accessTokenRequest.getRefreshToken());
+        if (accessToken == null) {
+            throw new ValidationResponseException(ValidationResponse.INVALID_GRANT_REFRESH_TOKEN);
+        }
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setClient(accessToken.getClient());
+        request.setPrincipal(accessToken.getPrincipal());
+        request.setGrantedScopes(accessToken.getScopes());
+        accessTokenRepository.delete(accessToken);
+        return request;
+
+    }
+
+    /**
+     * Fetch the AuthorizationRequest from the DB if the user provided an authorization code. If
+     * the user provided an SP nonce, fetch the principal information from SP and create an
+     * AuthorizationRequest object.
+     */
+    private AuthorizationRequest authRequestFromCode(AccessTokenRequest accessTokenRequest)
+    {
+        return (accessTokenRequest.hasDeviceAuthorizationNonce()) ?
+                authRequestFromNonce(accessTokenRequest)
+                : authRequestFromAuthCode(accessTokenRequest);
     }
 
     /**
@@ -257,7 +267,7 @@ public class TokenResource
      * In this case, we don't have an access code record to look up, therefore we have to
      * get the principal information (it comes from SP via getDeviceAuthorization).
      */
-    private AuthorizationRequest handleDeviceAuthorization(AccessTokenRequest accessTokenRequest)
+    private AuthorizationRequest authRequestFromNonce(AccessTokenRequest accessTokenRequest)
     {
         AuthenticatedPrincipal principal;
         Client client = getClientForRequest(accessTokenRequest);
@@ -286,30 +296,18 @@ public class TokenResource
         return authReq;
     }
 
-    private Client getClientForRequest(AccessTokenRequest accessTokenRequest)
-    {
-        Client client = StringUtils.isBlank(
-                accessTokenRequest.getClientId()) ? null : clientRepository.findByClientId(
-                accessTokenRequest.getClientId());
-        if (client == null) {
-            throw new ValidationResponseException(UNKNOWN_CLIENT_ID);
-        }
-        return client;
-    }
-
     /**
      * Authorize a request that arrives with an OAuth access code. In this case, the principal
      * information comes from the original authorization request (stored in the db when
      * the access code was granted)
      */
-    private AuthorizationRequest handleAccessCode(AccessTokenRequest accessTokenRequest)
+    private AuthorizationRequest authRequestFromAuthCode(AccessTokenRequest accessTokenRequest)
     {
         AuthorizationRequest authReq = authorizationRequestRepository.findByAuthorizationCode(
                 accessTokenRequest.getCode());
         if (authReq == null) {
             l.info("Error handling access code {}.", accessTokenRequest.getCode());
-            throw new ValidationResponseException(
-                    ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE);
+            throw new ValidationResponseException(ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE);
         }
         String uri = accessTokenRequest.getRedirectUri();
         if (!authReq.getRedirectUri().equalsIgnoreCase(uri)) {
@@ -319,45 +317,44 @@ public class TokenResource
         return authReq;
     }
 
-    private AuthorizationRequest refreshTokenToken(AccessTokenRequest accessTokenRequest)
+    /**
+     * @throws ValidationResponseException if the client ID is missing or does not match a client
+     */
+    private @NotNull Client getClientForRequest(AccessTokenRequest accessTokenRequest)
     {
-        AccessToken accessToken = accessTokenRepository.findByRefreshToken(
-                accessTokenRequest.getRefreshToken());
-        if (accessToken == null) {
-            throw new ValidationResponseException(ValidationResponse.INVALID_GRANT_REFRESH_TOKEN);
+        Client client = StringUtils.isBlank(accessTokenRequest.getClientId()) ?
+                null : clientRepository.findByClientId(accessTokenRequest.getClientId());
+        if (client == null) {
+            throw new ValidationResponseException(UNKNOWN_CLIENT_ID);
         }
-        AuthorizationRequest request = new AuthorizationRequest();
-        request.setClient(accessToken.getClient());
-        request.setPrincipal(accessToken.getPrincipal());
-        request.setGrantedScopes(accessToken.getScopes());
-        accessTokenRepository.delete(accessToken);
-        return request;
-
+        return client;
     }
 
-  /*
-   * http://tools.ietf.org/html/draft-ietf-oauth-v2#section-2.3.1
-   *
-   * We support both options. Clients can use the Basic Authentication or
-   * include the secret and id in the request body
-   */
-
-    private UserPassCredentials getUserPassCredentials(String authorization,
-            AccessTokenRequest accessTokenRequest)
+    private AccessToken createAccessToken(AuthorizationRequest request, boolean isImplicitGrant)
     {
-        return StringUtils.isBlank(authorization) ? new UserPassCredentials(
-                accessTokenRequest.getClientId(),
-                accessTokenRequest.getClientSecret()) : new UserPassCredentials(authorization);
+        Client client = request.getClient();
+        long expires = client.getExpireDuration() == 0 ?
+                0L : (System.currentTimeMillis() + (1000 * client.getExpireDuration()));
+        String refreshToken = (client.isUseRefreshTokens() && !isImplicitGrant) ?
+                newTokenValue() : null;
+        AuthenticatedPrincipal principal = request.getPrincipal();
+        return accessTokenRepository.save(
+                new AccessToken(
+                        newTokenValue(),
+                        principal,
+                        client,
+                        expires,
+                        request.getGrantedScopes(),
+                        refreshToken)
+        );
     }
 
-    protected String getTokenValue(boolean isRefreshToken)
+    /**
+     * Generate a new access token or refresh token string
+     */
+    private String newTokenValue()
     {
         return UniqueID.generate().toStringFormal();
-    }
-
-    protected String getAuthorizationCodeValue()
-    {
-        return getTokenValue(false);
     }
 
     private Response sendErrorResponse(String error, String description)
@@ -370,47 +367,5 @@ public class TokenResource
     private Response sendErrorResponse(ValidationResponse response)
     {
         return sendErrorResponse(response.getValue(), response.getDescription());
-    }
-
-    private String appendQueryMark(String uri)
-    {
-        return uri.contains("?") ? "&" : "?";
-    }
-
-    private String appendStateParameter(AuthorizationRequest authReq)
-    {
-        String state = authReq.getState();
-        return StringUtils.isBlank(state) ? "" : "&state=".concat(state);
-    }
-
-    private Response serverError(String msg)
-    {
-        l.warn(msg);
-        return Response.serverError().build();
-    }
-
-    /**
-     * @param authorizationRequestRepository the authorizationRequestRepository to set
-     */
-    public void setAuthorizationRequestRepository(
-            AuthorizationRequestRepository authorizationRequestRepository)
-    {
-        this.authorizationRequestRepository = authorizationRequestRepository;
-    }
-
-    /**
-     * @param accessTokenRepository the accessTokenRepository to set
-     */
-    public void setAccessTokenRepository(AccessTokenRepository accessTokenRepository)
-    {
-        this.accessTokenRepository = accessTokenRepository;
-    }
-
-    /**
-     * @param oAuth2Validator the oAuth2Validator to set
-     */
-    public void setoAuth2Validator(OAuth2Validator oAuth2Validator)
-    {
-        this.oAuth2Validator = oAuth2Validator;
     }
 }

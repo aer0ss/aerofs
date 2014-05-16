@@ -19,66 +19,15 @@ public class TokenResponseObject
     String effectiveUser;
     String token;
 
-    public TokenResponseObject(String clientId, String clientName, Date creationDate, Long expires,
-            String owner, String effectiveUser, String token)
+    public TokenResponseObject(AccessToken token)
     {
-        this.clientId = clientId;
-        this.clientName = clientName;
-        this.creationDate = creationDate;
-        this.expires = expires;
-        this.owner = owner;
-        this.effectiveUser = effectiveUser;
-        this.token = token;
-    }
-
-    public String getClientId()
-    {
-        return clientId;
-    }
-
-    public void setClientId(String clientId)
-    {
-        this.clientId = clientId;
-    }
-
-    public String getClientName()
-    {
-        return clientName;
-    }
-
-    public void setClientName(String clientName)
-    {
-        this.clientName = clientName;
-    }
-
-    public Date getCreationDate()
-    {
-        return creationDate;
-    }
-
-    public void setCreationDate(Date creationDate)
-    {
-        this.creationDate = creationDate;
-    }
-
-    public Long getExpires()
-    {
-        return expires;
-    }
-
-    public void setExpires(Long expires)
-    {
-        this.expires = expires;
-    }
-
-    public String getToken()
-    {
-        return token;
-    }
-
-    public void setToken(String token)
-    {
-        this.token = token;
+        this.clientId = token.getClientId();
+        this.clientName = token.getClient().getName();
+        this.creationDate = token.getCreationDate();
+        this.expires = token.getExpires();
+        this.owner = token.getOwner();
+        this.effectiveUser = token.getEffectiveUserID();
+        this.token = token.getToken();
     }
 }
 
