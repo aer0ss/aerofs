@@ -289,5 +289,5 @@ def dashboard_home(request):
         # Don't redirect to the files page for public deployment as most users would have API
         # access disabled
         redirect = 'my_shared_folders'
-    return HTTPFound(location=request.route_path(redirect))
+    return HTTPFound(location=request.route_path(redirect), headers=request.response.headers)
 

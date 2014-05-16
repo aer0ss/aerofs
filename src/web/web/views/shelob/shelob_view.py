@@ -22,7 +22,11 @@ def get_new_shelob_token(request):
         request_method='GET',
 )
 def files(request):
-    return {}
+    if 'aerofs_welcome_seen' not in request.cookies:
+        request.response.set_cookie('aerofs_welcome_seen','true')
+        return { 'splash': True }
+    else:
+        return { 'splash': False }
 
 
 # map of userid -> access_token

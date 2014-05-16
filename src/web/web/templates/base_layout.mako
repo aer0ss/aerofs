@@ -137,6 +137,16 @@
             </div>
         </div>
 
+        %if splash:
+            <div class="container">
+                <div id="splash" class="row">
+                    <div class="col-sm-12">
+                        <img id="splash-img" src="${request.static_path('web:static/img/splash.png')}" class="img-responsive">
+                    </div>
+                </div>
+            </div>
+        %endif
+
         ## Message bar
         <div class="container">
             <div class="row">

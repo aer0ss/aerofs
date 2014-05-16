@@ -111,6 +111,11 @@ def _shared_folders(datatables_paginate, request,
                     page_heading, datatables_request_route_url,
                     privileged_modal_tooltip,
                     unprivileged_modal_tooltip):
+    if 'aerofs_welcome_seen' not in request.cookies:
+        request.response.set_cookie('aerofs_welcome_seen','true')
+        splash = True
+    else:
+        splash = False
     return {
         # constants
         'open_modal_class': _OPEN_MODAL_CLASS,
@@ -131,7 +136,8 @@ def _shared_folders(datatables_paginate, request,
         'page_heading': page_heading,
         'datatables_request_route_url': datatables_request_route_url,
         'privileged_modal_tooltip': privileged_modal_tooltip,
-        'unprivileged_modal_tooltip': unprivileged_modal_tooltip
+        'unprivileged_modal_tooltip': unprivileged_modal_tooltip,
+        'splash': splash
     }
 
 
