@@ -14,10 +14,10 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * OAuth scopes supported by the API
  *
- * some scopes are "qualifiable", i.e. they can be restricted to a specific
- * subset of the data controlled by the scope. For now the only qualifiers
- * supported are shared folders but in the future it is conceivable that
- * SIDOID or path could be supported as well.
+ * Some scopes are "qualifiable", i.e. they can be restricted to a specific
+ * subset of the data controlled by the scope. Currently, a qualifiable scope
+ * can be restricted to a particular RestObject (which includes child objects,
+ * in the case of a folder).
  */
 public enum Scope
 {
@@ -48,8 +48,7 @@ public enum Scope
         for (Scope scope : values()) checkState(NAMES.put(scope.name, scope) == null);
     }
 
-    static @Nullable
-    public Scope fromName(String name)
+    public static @Nullable Scope fromName(String name)
     {
         return NAMES.get(name);
     }

@@ -4,11 +4,13 @@
 
 package com.aerofs.bifrost.oaaas.resource;
 
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.oauth.OAuthScopeParsingUtil;
 import com.aerofs.oauth.PrincipalFactory;
 import com.google.common.collect.Sets;
 import org.hibernate.SessionFactory;
@@ -87,7 +89,6 @@ public class AuthorizeResource
                         "proof-of-identity nonce is invalid", state);
             }
 
-            // TODO: make client scopes meaningful and ensure request scopes <= client scopes?
             AuthorizationRequest authorizationRequest = new AuthorizationRequest(responseType,
                     client, redirectUri, scopes, state, principal);
             authorizationRequest.setGrantedScopes(scopes);
@@ -179,6 +180,13 @@ public class AuthorizeResource
             l.warn("not specified: scope");
             return sendErrorToRedirectUri(redirectUri, "invalid_request",
                     "not specified: scope", state);
+        }
+        try {
+            OAuthScopeParsingUtil.validateScopes(formParameters.getFirst("scope"));
+        } catch (ExFormatError e) {
+            l.warn("invalid scope: ", formParameters.getFirst("scope"));
+            return sendErrorToRedirectUri(redirectUri, "invalid_request",
+                    "invalid scope", state);
         }
 
         return null;

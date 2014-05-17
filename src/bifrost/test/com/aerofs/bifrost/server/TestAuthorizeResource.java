@@ -28,6 +28,11 @@ public class TestAuthorizeResource extends BifrostTest
     private static final String USER_NONCE = "nonce-ponder-tie-em";
     private static final String BAD_NONCE = "dies-ist-nicht-eine-nonce";
 
+    private static final String VALID_SOID =
+            "df084c5033083b540e7730a2b29d928b457b7a71fbd74d86add7c4f0a56d2093";
+    private static final String VALID_SOID_1 =
+            "df084c5033083b540e7730a2b29d928b86a457dfdd600978a84a830c72acdad1";
+
     @Before
     public void setUpTestAuthorizeResource() throws Exception
     {
@@ -240,8 +245,6 @@ public class TestAuthorizeResource extends BifrostTest
         assertTrue(principal.getEffectiveUserID().isTeamServerID());
     }
 
-
-
     @Test
     public void testShouldDisallowUserRequestForAdmin()
     {
@@ -257,6 +260,86 @@ public class TestAuthorizeResource extends BifrostTest
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("state", "wang_chung")
                 .formParam("scope", "organization.admin") // FIXME : magic string constant
+                .post(AUTH_URL);
+    }
+
+    @Test
+    public void testShouldDisallowScopeStringWithInvalidScope()
+    {
+        expect()
+                .statusCode(302).and()
+                .response().header("Location", startsWith(CLIENTREDIRECT)).and()
+                .response().header("Location", containsString("error=invalid_request"))
+        .given()
+                .formParam("response_type", "code")
+                .formParam("client_id", CLIENTID)
+                .formParam("nonce", ADMIN_NONCE)
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "user.read,this.is.not.a.scope,user.write")
+                .post(AUTH_URL);
+    }
+
+    @Test
+    public void testShouldDisallowBadlyFormedScopeString()
+    {
+        expect()
+                .statusCode(302).and()
+                .response().header("Location", startsWith(CLIENTREDIRECT)).and()
+                .response().header("Location", containsString("error=invalid_request"))
+        .given()
+                .formParam("response_type", "code")
+                .formParam("client_id", CLIENTID)
+                .formParam("nonce", ADMIN_NONCE)
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "user.read,,user.write")
+                .post(AUTH_URL);
+    }
+
+    @Test
+    public void testShouldAllowScopeWithSOID()
+    {
+        expect()
+                .statusCode(302)
+                .response().header("Location", startsWith(CLIENTREDIRECT)).and()
+                .response().header("Location", containsString("code="))
+        .given()
+                .formParam("response_type", "code")
+                .formParam("client_id", CLIENTID)
+                .formParam("nonce", ADMIN_NONCE)
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "files.read:" + VALID_SOID)
+                .post(AUTH_URL);
+    }
+
+    @Test
+    public void testShouldDisallowScopeWithBadSOID()
+    {
+        expect()
+                .statusCode(302).and()
+                .response().header("Location", startsWith(CLIENTREDIRECT)).and()
+                .response().header("Location", containsString("error=invalid_request"))
+        .given()
+                .formParam("response_type", "code")
+                .formParam("client_id", CLIENTID)
+                .formParam("nonce", ADMIN_NONCE)
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "files.read:thisisnotavalidsoid")
+                .post(AUTH_URL);
+    }
+
+    @Test
+    public void testShouldAllowScopeWithTwoSOIDs()
+    {
+        expect()
+                .statusCode(302)
+                .response().header("Location", startsWith(CLIENTREDIRECT)).and()
+                .response().header("Location", containsString("code="))
+        .given()
+                .formParam("response_type", "code")
+                .formParam("client_id", CLIENTID)
+                .formParam("nonce", ADMIN_NONCE)
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("scope", "files.read:" + VALID_SOID + ",files.read:" + VALID_SOID_1)
                 .post(AUTH_URL);
     }
 }

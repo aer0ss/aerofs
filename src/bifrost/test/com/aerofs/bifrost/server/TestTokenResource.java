@@ -14,8 +14,10 @@ import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.google.common.collect.Sets;
 import com.jayway.restassured.response.Response;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,18 +30,35 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
  */
 public class TestTokenResource extends BifrostTest
 {
+    private static final String GOOD_NONCE = "noncy-reagan";
+    private static final String BAD_NONCE = "noncing-to-see-here";
+    private static final String VALID_SOID =
+            "df084c5033083b540e7730a2b29d928b457b7a71fbd74d86add7c4f0a56d2093";
+
+    @Before
+    public void setUpSPResponses() throws Exception
+    {
+        when(_spClient.authorizeMobileDevice(eq(GOOD_NONCE), anyString())).thenReturn(
+                AuthorizeMobileDeviceReply.newBuilder()
+                        .setUserId("test1@b.c")
+                        .setOrgId("2")
+                        .setIsOrgAdmin(true)
+                        .build());
+
+        when(_spClient.authorizeMobileDevice(eq(BAD_NONCE), anyString()))
+                .thenThrow(new ExBadCredential());
+    }
+
     @Test
     public void shouldHandleBadAccessCode() throws Exception
     {
-        when(_spClient.authorizeMobileDevice(anyString(), anyString()))
-                .thenThrow(new ExBadCredential());
-
         expect()
                 .statusCode(400)
         .given()
@@ -47,20 +66,13 @@ public class TestTokenResource extends BifrostTest
                 .formParam("client_secret", CLIENTSECRET)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
-                .formParam("code", "magic")
+                .formParam("code", BAD_NONCE)
                 .post(TOKEN_URL);
     }
 
     @Test
     public void shouldRejectBadClientPassword() throws Exception
     {
-        when(_spClient.authorizeMobileDevice(anyString(), anyString())).thenReturn(
-                AuthorizeMobileDeviceReply.newBuilder()
-                        .setUserId("test1@b.c")
-                        .setOrgId("2")
-                        .setIsOrgAdmin(true)
-                        .build());
-
         expect()
                 .statusCode(401)
         .given()
@@ -68,26 +80,19 @@ public class TestTokenResource extends BifrostTest
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
-                .formParam("code", "magic")
+                .formParam("code", GOOD_NONCE)
                 .post(TOKEN_URL);
     }
 
     @Test
     public void shouldGetTokenForMobileAccessCode() throws Exception
     {
-        when(_spClient.authorizeMobileDevice(anyString(), anyString())).thenReturn(
-                AuthorizeMobileDeviceReply.newBuilder()
-                    .setUserId("test1@b.c")
-                    .setOrgId("2")
-                    .setIsOrgAdmin(true)
-                    .build());
-
         String response = given()
                 .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
-                .formParam("code", "magic")
+                .formParam("code", GOOD_NONCE)
                 .post(TOKEN_URL).asString();
 
         String token = from(response).get("access_token");
@@ -109,38 +114,35 @@ public class TestTokenResource extends BifrostTest
         assertNotNull(attr.get("userid"));
     }
 
-    @Test
-    public void shouldGetTokenForOAuthAccessCode() throws Exception
+    private String getCodeFromAuthorizationEndpoint(String scope) throws Exception
     {
-        // make any nonce valid
-        when(_spClient.authorizeMobileDevice(anyString(), anyString())).thenReturn(
-                AuthorizeMobileDeviceReply.newBuilder()
-                        .setUserId("test1@b.c")
-                        .setOrgId("2")
-                        .setIsOrgAdmin(true)
-                        .build());
-
-        // get an auth code from the authorization endpoint
         Response response = given()
                 .formParam("response_type", "code")
                 .formParam("client_id", CLIENTID)
-                .formParam("nonce", "noooooonce")
+                .formParam("nonce", GOOD_NONCE)
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("state", "echoechoechoechoecho")
-                .formParam("scope", "user.read")
+                .formParam("scope", scope)
                 .post(AUTH_URL);
 
         assertEquals(302, response.getStatusCode());
         Map<String, String> q = extractQuery(response.getHeader("Location"));
         assertTrue(q.containsKey("code"));
         assertTrue(q.get("code").length() > 0);
+        return q.get("code");
+    }
+
+    @Test
+    public void shouldGetTokenForOAuthAccessCode() throws Exception
+    {
+        String authCode = getCodeFromAuthorizationEndpoint("user.read");
 
         String tokenResponse = given()
                 .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
-                .formParam("code", q.get("code"))
+                .formParam("code", authCode)
                 .post(TOKEN_URL).asString();
 
         String token = from(tokenResponse).get("access_token");
@@ -155,7 +157,7 @@ public class TestTokenResource extends BifrostTest
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
-                .formParam("code", q.get("code"))
+                .formParam("code", authCode)
                 .post(TOKEN_URL);
     }
 
@@ -163,19 +165,12 @@ public class TestTokenResource extends BifrostTest
     @Test
     public void shouldSupportClientSecret() throws Exception
     {
-        when(_spClient.authorizeMobileDevice(anyString(), anyString())).thenReturn(
-                AuthorizeMobileDeviceReply.newBuilder()
-                        .setUserId("test1@b.c")
-                        .setOrgId("2")
-                        .setIsOrgAdmin(true)
-                        .build());
-
         String response = given()
                 .formParam("client_id", CLIENTID)
                 .formParam("client_secret", CLIENTSECRET)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
-                .formParam("code", "magic")
+                .formParam("code", GOOD_NONCE)
              .post(TOKEN_URL).asString();
 
         String token = from(response).get("access_token");
@@ -189,12 +184,115 @@ public class TestTokenResource extends BifrostTest
         Response post = given()
                 .formParam("grant_type", "I_am_a_bad_grant_type")
                 .formParam("code_type", "device_authorization")
-                .formParam("authorization_code", "magic")
+                .formParam("authorization_code", GOOD_NONCE)
                 .formParam("redirect_uri", CLIENTREDIRECT)
             .post(TOKEN_URL);
 
         assertEquals(400, post.getStatusCode());
         assertEquals("unsupported_grant_type", from(post.asString()).get("error"));
+    }
+
+    @Test
+    public void shouldUseDefaultClientScopesIfNoneProvidedWithSPNonce() throws Exception
+    {
+        String response = given()
+                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .formParam("client_id", CLIENTID)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code_type", "device_authorization")
+                .formParam("code", GOOD_NONCE)
+                .post(TOKEN_URL).asString();
+
+        String token = from(response).get("access_token");
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
+
+        String verifyResponse = given()
+                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .queryParam("access_token", token)
+                .get("/tokeninfo").asString();
+
+        ArrayList<String> scopes = from(verifyResponse).get("scopes");
+        assertEquals(_clientRepository.findByClientId(CLIENTID).getScopes(), Sets.newHashSet(scopes));
+    }
+
+    @Test
+    public void shouldUseScopesInRequestWithSPNonce() throws Exception
+    {
+        String response = given()
+                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .formParam("client_id", CLIENTID)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code_type", "device_authorization")
+                .formParam("code", GOOD_NONCE)
+                .formParam("scope", "files.read,user.read")
+                .post(TOKEN_URL).asString();
+
+        String token = from(response).get("access_token");
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
+
+        String verifyResponse = given()
+                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .queryParam("access_token", token)
+                .get("/tokeninfo").asString();
+
+        ArrayList<String> scopes = from(verifyResponse).get("scopes");
+        assertEquals(Sets.newHashSet("files.read", "user.read"), Sets.newHashSet(scopes));
+    }
+
+    @Test
+    public void shouldUseScopesWithSOIDInRequestWithSPNonce() throws Exception
+    {
+        String response = given()
+                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .formParam("client_id", CLIENTID)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code_type", "device_authorization")
+                .formParam("code", GOOD_NONCE)
+                .formParam("scope", "files.read:" + VALID_SOID + ",user.read")
+                .post(TOKEN_URL).asString();
+
+        String token = from(response).get("access_token");
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
+
+        String verifyResponse = given()
+                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .queryParam("access_token", token)
+                .get("/tokeninfo").asString();
+
+        ArrayList<String> scopes = from(verifyResponse).get("scopes");
+        assertEquals(Sets.newHashSet("files.read:" + VALID_SOID, "user.read"),
+                Sets.newHashSet(scopes));
+    }
+
+    @Test
+    public void shouldIgnoreScopesInRequestWithAuthCode() throws Exception
+    {
+        String authCode = getCodeFromAuthorizationEndpoint("files.read");
+
+        String tokenResponse = given()
+                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("client_id", CLIENTID)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code", authCode)
+                .formParam("scope", "files.read,files.write,user.read,user.write,organization.admin")
+                .post(TOKEN_URL).asString();
+
+        String token = from(tokenResponse).get("access_token");
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
+
+        String verifyResponse = given()
+                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .queryParam("access_token", token)
+                .get("/tokeninfo").asString();
+
+        // ensure token has the scope that was authorized by the user
+        ArrayList<String> scopes = from(verifyResponse).get("scopes");
+        assertEquals(Sets.newHashSet("files.read"), Sets.newHashSet(scopes));
     }
 
     @Test
@@ -252,7 +350,6 @@ public class TestTokenResource extends BifrostTest
     @Test
     public void deleteAllTokens_shouldSucceedForUser() throws Exception
     {
-        final String tokenVal = createTokenForUser(false);
         assertFalse("tokens exist", _accessTokenRepository.findByOwner(USERNAME).isEmpty());
 
         expect()

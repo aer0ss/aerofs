@@ -18,6 +18,7 @@
  */
 package com.aerofs.bifrost.oaaas.resource;
 
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
 import com.aerofs.bifrost.oaaas.auth.ValidationResponseException;
@@ -36,6 +37,8 @@ import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.PrincipalFactory;
+import com.aerofs.oauth.OAuthScopeParsingUtil;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -271,7 +274,16 @@ public class TokenResource
     {
         AuthenticatedPrincipal principal;
         Client client = getClientForRequest(accessTokenRequest);
-        Set<String> scopes = client.getScopes();
+
+        Set<String> scopes = accessTokenRequest.getScope() == null ?
+            client.getScopes() : Sets.newHashSet(accessTokenRequest.getScope().split(","));
+
+        try {
+            OAuthScopeParsingUtil.validateScopes(scopes);
+        } catch (ExFormatError e) {
+            l.info("Invalid scope: {}", scopes);
+            throw new ValidationResponseException(ValidationResponse.SCOPE_NOT_VALID);
+        }
 
         try {
             principal = _principalFactory.authenticate(
