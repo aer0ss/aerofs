@@ -5,6 +5,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -162,8 +163,8 @@ public class RestObjectResolver
         if (object.isAppData()) {
             oa = _ds.getOAThrows_(createAppDataIfMissing_(token));
         } else {
-            SID sid = object.sid;
-            OID oid = object.oid;
+            SID sid = object.getSID();
+            OID oid = object.getOID();
             if (object.isRoot()) {
                 sid = SID.rootSID(token.user());
                 oid = OID.ROOT;

@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.rest.util.RestObject;
+import com.aerofs.base.id.RestObject;
 import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.oauth.Scope;

@@ -7,7 +7,7 @@ package com.aerofs.daemon.rest.resources;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.rest.util.OAuthToken;
-import com.aerofs.daemon.rest.util.RestObject;
+import com.aerofs.base.id.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;

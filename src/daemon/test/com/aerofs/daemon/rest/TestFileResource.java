@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.rest.util.RestObject;
+import com.aerofs.base.id.RestObject;
 import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;

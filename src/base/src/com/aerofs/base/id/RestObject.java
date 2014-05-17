@@ -1,9 +1,6 @@
-package com.aerofs.daemon.rest.util;
+package com.aerofs.base.id;
 
 import com.aerofs.base.ParamFactory;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
 
 public class RestObject
 {
@@ -12,6 +9,9 @@ public class RestObject
 
     final SID sid;
     final OID oid;
+
+    public SID getSID() { return sid; }
+    public OID getOID() { return oid; }
 
     public RestObject(SID sid, OID oid)
     {
