@@ -94,6 +94,7 @@ import java.util.List;
 import java.util.SortedMap;
 
 import static com.aerofs.daemon.core.protocol.GetComponentReply.fromPB;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 public class ReceiveAndApplyUpdate
@@ -586,7 +587,7 @@ public class ReceiveAndApplyUpdate
      * @param soidMsg soid of the object for which GetComponentCall was made.
      *        It may not necessarily be same as soidRemote especially while
      *        processing alias msg. It's used for detecting cyclic dependency.
-     * @return whether oids were merged on name conflict.
+     * @return whether OIDs were merged (i.e. one is aliased to the other)
      */
     private boolean resolveNameConflict_(SOID soidRemote, OID parent, PBMeta meta,
             boolean wasPresent, int metaDiff, Trans t, SOID soidNoNewVersion, Version vRemote,
@@ -597,13 +598,13 @@ public class ReceiveAndApplyUpdate
 
         Path pLocal = pParent.append(meta.getName());
         SOID soidLocal = _ds.resolveNullable_(pLocal);
-        assert soidLocal != null && soidLocal.sidx().equals(soidRemote.sidx()) :
-                soidLocal + " " + soidRemote + " " + pLocal;
+        checkArgument(soidLocal != null && soidLocal.sidx().equals(soidRemote.sidx()), "%s %s %s",
+                soidLocal, soidRemote, pLocal);
         OA oaLocal = _ds.getOA_(soidLocal);
         OA.Type typeRemote = fromPB(meta.getType());
 
-        if (l.isDebugEnabled()) l.debug("name conflict on " + pLocal + ": local " + soidLocal.oid() +
-                " " + oaLocal.type() + " remote " + soidRemote.oid() + " " + typeRemote);
+        l.info("name conflict on {}: local {} {} remote {} {}", pLocal, soidLocal.oid(),
+                oaLocal.type(), soidRemote.oid(), typeRemote);
 
         if (_sc.detectFolderToAnchorConversion_(soidLocal.oid(), oaLocal.type(), soidRemote.oid(),
                 typeRemote)) {
@@ -620,8 +621,8 @@ public class ReceiveAndApplyUpdate
             // local renaming. If not, the folder name will become permanently
             // inconsistent with other peers.
             //
-            l.debug("folder->anchor conversion detected: " + soidLocal + "->" + soidRemote);
-            String newName = L.product() + " temporary folder - do not remove";
+            l.info("folder->anchor conversion detected: {}->{}", soidLocal, soidRemote);
+            String newName = oaLocal.name() + " (being converted to shared folder - do not remove)";
 
             while (_ds.resolveNullable_(pParent.append(newName)) != null) {
                 newName = Util.nextFileName(newName);

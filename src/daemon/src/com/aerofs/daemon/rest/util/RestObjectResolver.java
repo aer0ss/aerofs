@@ -43,6 +43,15 @@ public class RestObjectResolver
 {
     private final static Logger l = Loggers.getLogger(RestObjectResolver.class);
 
+    /**
+     * The appdata folder structure (in the virtual filesystem) for an app with Client ID "123":
+     *
+     * <user's root store>/.appdata/123
+     *
+     * Read the API doc to learn more about appdata.
+     */
+    private static final String APPDATA_FOLDER_NAME = ".appdata";
+
     @Inject private LocalACL _acl;
     @Inject private DirectoryService _ds;
     @Inject private IMapSID2SIndex _sid2sidx;
@@ -101,11 +110,9 @@ public class RestObjectResolver
         return oa;
     }
 
-    private static final String APPDATA = ".appdata";
-
     public static Path appDataPath(OAuthToken token)
     {
-        return Path.fromString(SID.rootSID(token.user()), APPDATA);
+        return new Path(SID.rootSID(token.user()), APPDATA_FOLDER_NAME);
     }
 
     private void markHidden(Path p)
@@ -113,20 +120,27 @@ public class RestObjectResolver
         if (_storageType.get() != StorageType.LINKED) return;
         try {
             _os.markHiddenSystemFile(p.toAbsoluteString(_absRoots.getNullable(p.sid())));
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            l.warn("mark hidden {}, ignored", p, e);
+        }
     }
 
-    private SOID createAppDataIfMissing(OAuthToken token) throws SQLException, ExNotFound
+    /**
+     * @return SOID of the appdata folder for the app (i.e. /.appdata/{client_id})
+     */
+    private SOID createAppDataIfMissing_(OAuthToken token) throws SQLException, ExNotFound
     {
         Path p = appDataPath(token);
         SOID soid = _ds.resolveNullable_(p);
         Trans t = _tm.begin_();
         try {
+            // create /.appdata if needed
             if (soid == null) {
-                soid = _oc.create_(Type.DIR, _ds.resolveNullable_(p.removeLast()), APPDATA,
-                        PhysicalOp.APPLY, t);
+                soid = _oc.create_(Type.DIR, _ds.resolveNullable_(p.removeLast()),
+                        APPDATA_FOLDER_NAME, PhysicalOp.APPLY, t);
                 markHidden(p);
             }
+            // create /.appdata/{client_id} if needed
             OID oid = _ds.getChild_(soid.sidx(), soid.oid(), token.app());
             if (oid == null) {
                 soid = _oc.create_(Type.DIR, soid, token.app(), PhysicalOp.APPLY, t);
@@ -146,7 +160,7 @@ public class RestObjectResolver
     {
         OA oa;
         if (object.isAppData()) {
-            oa = _ds.getOAThrows_(createAppDataIfMissing(token));
+            oa = _ds.getOAThrows_(createAppDataIfMissing_(token));
         } else {
             SID sid = object.sid;
             OID oid = object.oid;

@@ -166,11 +166,10 @@ public class GetComponentReply
             metaDiff = _mdiff.computeMetaDiff_(socid.soid(), meta, oidParent);
 
             if (Util.test(metaDiff, MetaDiff.NAME | MetaDiff.PARENT)) {
-                // perform emigration only for the target object, because at this
-                // point it's difficult to decide whether an object, and which one,
-                // will be aliased or renamed, etc. this is all right as very rare
-                // that aliasing/name conflicts and emigration happen at the same
-                // time.
+                // perform emigration only for the target object as oppose to the aliased object,
+                // because at this point it's difficult to decide whether an object, and which one,
+                // will be aliased or renamed, etc. this is all right as very rare that
+                // aliasing/name conflicts and emigration happen at the same time.
                 _emd.detectAndPerformEmigration_(socid.soid(), oidParent, meta.getName(),
                         meta.getEmigrantTargetAncestorSidList(), cxt);
                 // N.B after the call the local meta might have been updated.

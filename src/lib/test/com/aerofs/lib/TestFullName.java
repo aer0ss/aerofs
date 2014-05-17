@@ -65,7 +65,7 @@ public class TestFullName
     private void shouldFail(String first, String last, Class<?> expectedException) throws ExBadArgs
     {
         try {
-            FullName fullName = FullName.fromExternal(first, last);
+            FullName.fromExternal(first, last);
             Assert.fail("should have thrown here");
         } catch (Exception e) {
             Assert.assertEquals(expectedException, e.getClass());

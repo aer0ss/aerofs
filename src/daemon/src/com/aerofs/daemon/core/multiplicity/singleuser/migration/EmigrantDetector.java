@@ -25,6 +25,8 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class EmigrantDetector implements IEmigrantDetector
 {
     static final Logger l = Loggers.getLogger(EmigrantDetector.class);
@@ -47,33 +49,33 @@ public class EmigrantDetector implements IEmigrantDetector
         if (!shouldMigrate_(soid, oidParentTo, nameTo, sidsEmigrantTargetAncestor))  return;
 
         SID sidTo = EmigrantUtil.getEmigrantTargetSID(nameTo);
-        assert sidTo != null : nameTo;
-        l.debug("emigration detected " + soid + "->" + sidTo);
+        checkArgument(sidTo != null, nameTo);
+        l.debug("emigration detected {}=>{}", soid, sidTo);
 
-        // download the store (i.e. their anchors) and its ancestors as necessary
-        Queue<SID> sids = new ArrayDeque<SID>(sidsEmigrantTargetAncestor.size() + 1);
-        sids.add(sidTo);
-        for (ByteString bstr : sidsEmigrantTargetAncestor) {
-            SID sidAncestor = new SID(bstr);
-            // sid == sidAncestor if the emigrant object is under the root store of the remote peer
-            if (!sidTo.equals(sidAncestor)) sids.add(sidAncestor);
-        }
-
-        SIndex sidxTo = downloadEmigrantAncestorStores_(sids, soid, cxt);
+        SIndex sidxTo = downloadTargetAndAncestorStores_(sidsEmigrantTargetAncestor, cxt, sidTo);
         if (sidxTo == null) return;
-        assert sidxTo.equals(_sid2sidx.get_(sidTo));
 
+        emigrate(soid, cxt, sidxTo);
+    }
+
+    private void emigrate(SOID soid, IDownloadContext cxt, SIndex sidxTo)
+            throws Exception
+    {
         OA oa = _ds.getOA_(soid);
 
-        // Now the target store is in place. Emigrate the object.
-        // If the object is an anchor, moving the object causes the entire store under the anchor
-        // to be moved as well.
-        if (!oa.isDir()) {
+        if (oa.isAnchor() || oa.isFile()) {
+            // Download the anchor or file's metadata into the target store to trigger the
+            // immigration process. If it's an anchor, moving the anchor causes the entire store
+            // under the anchor to be moved.
+            //
             SOCID socidTo = new SOCID(sidxTo, soid.oid(), CID.META);
-            l.debug("dl immigrant " + socidTo.soid());
+            l.debug("dl immigrant {}", socidTo.soid());
             cxt.downloadSync_(socidTo, DependencyType.UNSPECIFIED);
+
         } else {
-            // Comment (A), referred to by ObjectDeletion.deleteAndEmigrate_().
+            checkArgument(oa.isDir(), "%s %s", oa.soid(), oa.type());
+
+            // Comment (A), referred to by ObjectDeleter.deleteAndEmigrate_().
             //
             // if it's a folder, try to move out children before deleting it (by this method's
             // caller). There are two cases where a non-empty folder can receive an emigrating
@@ -85,10 +87,9 @@ public class EmigrantDetector implements IEmigrantDetector
             //      was emigrated by the other peer.
             //
             // the following code can address the first but not the second case, which causes the
-            // new objects to be incorrectly deleted (into the revision area). this is a bug and
-            // will be fixed after we implement fine-grained download error control, so that we can
-            // use the "object not found" error to indicate which objects don't exist on the remote
-            // peer.
+            // new objects to be incorrectly deleted (into Sync History). This is a bug and will be
+            // fixed after we implement fine-grained download error control, so that we can use the
+            // "object not found" error to indicate which objects don't exist on the remote peer.
             //
             for (OID oidChild : _ds.getChildren_(soid)) {
                 SOCID socidChild = new SOCID(soid.sidx(), oidChild, CID.META);
@@ -97,7 +98,7 @@ public class EmigrantDetector implements IEmigrantDetector
                 } catch (Exception e) {
                     // it might be a false alarm, as the child may have been downloaded and migrated
                     // before the downloadSync above started the download thread.
-                    l.debug("emigration child dl " + socidChild + ", bug aerofs-165: " + Util.e(e));
+                    l.debug("emigration child dl {}, bug ENG-1287: {}", socidChild, Util.e(e));
                 }
             }
         }
@@ -120,9 +121,30 @@ public class EmigrantDetector implements IEmigrantDetector
 
         // do not migrate if the object has been migrated before
         // TODO: check isDeleted_ ?
-        if (EmigrantUtil.isEmigrantName(oa.name()) && oa.parent().isTrash()) return false;
+        return !(EmigrantUtil.isEmigrantName(oa.name()) && oa.parent().isTrash());
+    }
 
-        return true;
+    /**
+     * Download the emigrant's target store and its ancestors (i.e. their anchors) as necessary.
+     */
+    private SIndex downloadTargetAndAncestorStores_(List<ByteString> sidsEmigrantTargetAncestor,
+            IDownloadContext cxt, SID sidTarget)
+            throws Exception
+    {
+        Queue<SID> sids = new ArrayDeque<SID>(sidsEmigrantTargetAncestor.size() + 1);
+        sids.add(sidTarget);
+        for (ByteString bstr : sidsEmigrantTargetAncestor) {
+            SID sidAncestor = new SID(bstr);
+            // sid == sidAncestor if the emigrant object is under the root store of the remote peer
+            if (!sidTarget.equals(sidAncestor)) sids.add(sidAncestor);
+        }
+
+        SIndex sidx = downloadAncestorStores_(sids, cxt);
+        if (sidx != null) {
+            checkArgument(sidx.equals(_sid2sidx.get_(sidTarget)), "%s %s", sidx, sidTarget);
+        }
+
+        return sidx;
     }
 
     /**
@@ -133,8 +155,7 @@ public class EmigrantDetector implements IEmigrantDetector
      * @return the ancestor store being downloaded. null if the local and remote
      * peers don't share common ancestors
      */
-    private @Nullable SIndex downloadEmigrantAncestorStores_(Queue<SID> sids, SOID soid,
-            IDownloadContext cxt)
+    private @Nullable SIndex downloadAncestorStores_(Queue<SID> sids, IDownloadContext cxt)
             throws Exception
     {
         if (sids.isEmpty()) return null;
@@ -145,7 +166,7 @@ public class EmigrantDetector implements IEmigrantDetector
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx != null) return sidx;
 
-        SIndex sidxAnchor = downloadEmigrantAncestorStores_(sids, soid, cxt);
+        SIndex sidxAnchor = downloadAncestorStores_(sids, cxt);
         if (sidxAnchor == null) return null;
 
         SOID soidAnchor = new SOID(sidxAnchor, SID.storeSID2anchorOID(sid));

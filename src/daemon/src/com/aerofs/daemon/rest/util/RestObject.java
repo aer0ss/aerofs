@@ -7,8 +7,8 @@ import com.aerofs.base.id.UniqueID;
 
 public class RestObject
 {
-    public final static RestObject ROOT = new RestObject(null, OID.ROOT);
-    public final static RestObject APPDATA = new RestObject(null, null);
+    private final static RestObject ROOT = new RestObject(null, OID.ROOT);
+    private final static RestObject APPDATA = new RestObject(null, null);
 
     final SID sid;
     final OID oid;

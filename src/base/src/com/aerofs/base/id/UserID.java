@@ -32,7 +32,7 @@ public class UserID extends StringID
             throws ExEmptyEmailAddress
     {
         str = str.trim();
-        // Don't check for validity of email adress characters. It is too expensive. Do the check
+        // Don't check for validity of email address characters. It is too expensive. Do the check
         // at API entry points.
         if (str.isEmpty()) throw new ExEmptyEmailAddress();
         return new UserID(str.toLowerCase());
