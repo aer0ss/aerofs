@@ -14,15 +14,18 @@ import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.IDaemonMonitor;
+import com.aerofs.ui.UIGlobals;
+import com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import java.io.File;
-import java.io.FilenameFilter;
+import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -34,6 +37,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.OCTET_STREAM;
@@ -45,11 +50,13 @@ public class DryadUploadService
 
     private final String _rtroot;
     private final ExecutorService _executor;
+    private final IDaemonMonitor _dm;
 
-    public DryadUploadService(String rtroot, ExecutorService executor)
+    public DryadUploadService(String rtroot, ExecutorService executor, IDaemonMonitor dm)
     {
         _rtroot = rtroot;
         _executor = executor;
+        _dm = dm;
     }
 
     public void submit(String dryadID, String customerID)
@@ -61,7 +68,7 @@ public class DryadUploadService
     {
         public static DryadUploadService create(String rtroot)
         {
-            return new DryadUploadService(rtroot, new DryadExecutor());
+            return new DryadUploadService(rtroot, new DryadExecutor(), UIGlobals.dm());
         }
     }
 
@@ -113,7 +120,7 @@ public class DryadUploadService
         }
     }
 
-    private static class DryadUploadTask implements Callable<Void>
+    private class DryadUploadTask implements Callable<Void>
     {
         private static final int CHUNK_SIZE = 4 * C.MB;
 
@@ -163,13 +170,13 @@ public class DryadUploadService
         private void uploadFiles(URLConnection conn, File[] files)
                 throws Exception
         {
-            OutputStream os = null;
+            ZipOutputStream os = null;
 
             try {
-                os = conn.getOutputStream();
+                os = new ZipOutputStream(conn.getOutputStream());
 
                 /**
-                 * TODO (AT): look into extracting this out of SVClient and into an utility class.
+                 * TODO (AT): look into consolidating this with SVClient
                  *
                  * N.B. there's subtle techno-magic at work here.
                  *
@@ -180,21 +187,53 @@ public class DryadUploadService
                  * This applies back pressure to the compression layer. Consequently, the CPU usage
                  * is reduced and we don't need to explicitly yield threads.
                  */
-                SVClient.compress(files, os);
+                compressAndUploadFiles(files, os);
             } finally {
                 if (os != null) { os.close(); }
             }
         }
 
+        /**
+         * This is very similar to SVClient except for stopping daemon while we upload the core db
+         */
+        private void compressAndUploadFiles(File[] files, ZipOutputStream os)
+                throws Exception
+        {
+            for (File file : files) {
+                // stop the daemon to release the file lock on the database file on Windows
+                if (file.getName().equals(LibParam.CORE_DATABASE)) {
+                    _dm.stopIgnoreException();
+                }
+
+                try {
+                    os.putNextEntry(new ZipEntry(file.getName()));
+
+                    InputStream is = null;
+                    try {
+                        is = new FileInputStream(file);
+
+                        ByteStreams.copy(is, os);
+                    } finally {
+                        if (is != null) is.close();
+                    }
+                } catch (IOException e) {
+                    l.warn("failed to compressAndUploadFiles " + file);
+                }
+
+                if (file.getName().equals(LibParam.CORE_DATABASE)) {
+                    _dm.start();
+                }
+            }
+        }
+
         private File[] getSourceFiles(String rtroot)
         {
-            return new File(rtroot).listFiles(new FilenameFilter()
+            return new File(rtroot).listFiles(new FileFilter()
             {
                 @Override
-                public boolean accept(File parent, String filename)
+                public boolean accept(File file)
                 {
-                    return filename.contains(LibParam.LOG_FILE_EXT)
-                            || filename.endsWith(LibParam.HPROF_FILE_EXT);
+                    return file.isFile();
                 }
             });
         }

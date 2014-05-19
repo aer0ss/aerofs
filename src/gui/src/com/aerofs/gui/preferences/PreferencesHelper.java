@@ -527,7 +527,9 @@ public class PreferencesHelper
                 setCfg(Key.REST_SERVICE, btnAPIAccess.getSelection());
 
                 try {
-                    UIGlobals.dm().stop();
+                    // the problem with calling stop that the daemon is not restarted if there are
+                    // any exceptions.
+                    UIGlobals.dm().stopIgnoreException();
                     UIGlobals.dm().start();
                 } catch (Exception ex) {
                     String message2 = L.product() + " couldn't start the background service after " +
