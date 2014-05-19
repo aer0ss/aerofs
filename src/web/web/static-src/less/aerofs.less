@@ -231,6 +231,16 @@ div.input_container.submit {
   z-index: 100000;
 }
 
+.flash-msg-mixin(@color) {
+  color: @color;
+  background-color: lighten(@color, 45%);
+  border: 1px solid lighten(@color, 35%);
+  a {
+    font-weight: bold;
+    color: @color;
+  }
+}
+
 .flash-msg {
   // A block-level element is necessary to apply max-width
   display: inline-block;
@@ -238,28 +248,22 @@ div.input_container.submit {
   text-align: left;
   padding: 4px 17px;
   border-radius: @inputBorderRadius;
+  td {
+    padding: 0;
+    &#flash-msg-error-close {
+      vertical-align: top;
+      padding-left: 10px;
+      padding-top: 3px;
+    }
+  }
 }
 
 #flash-msg-success {
-  color: darken(@successMessageColor, 20%);
-  background-color: lighten(@successMessageColor, 40%);
-  border: 1px solid darken(@successMessageColor, 20%);
+  .flash-msg-mixin(@successMessageColor);
 }
 
 #flash-msg-error {
-  color: darken(@errorMessageColor, 20%);
-  background-color: lighten(@errorMessageColor, 40%);
-  border: 1px solid darken(@errorMessageColor, 20%);
-}
-
-#flash-msg-error td {
-  padding: 0;
-}
-
-#flash-msg-error td#flash-msg-error-close {
-  vertical-align: top;
-  padding-left: 10px;
-  padding-top: 3px;
+  .flash-msg-mixin(@errorMessageColor);
 }
 
 div.jumbo_banner {
