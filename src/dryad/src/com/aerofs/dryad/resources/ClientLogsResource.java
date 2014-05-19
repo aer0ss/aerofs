@@ -4,10 +4,12 @@
 
 package com.aerofs.dryad.resources;
 
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.dryad.persistence.IDryadPersistence;
+import com.aerofs.lib.Util;
 import com.aerofs.restless.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +19,10 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import java.io.InputStream;
 
 @Path(Service.VERSION + "/client")
@@ -51,12 +55,29 @@ public class ClientLogsResource
 
         try {
             // convert userID to UserID to validate user ID
-            _persistence.putClientLogs(customerID, dryadID, UserID.fromExternal(userID), deviceID,
+            _persistence.putClientLogs(customerID, dryadID, getUserID(userID), deviceID,
                     body);
         } finally {
             body.close();
         }
 
         return Response.noContent().build();
+    }
+
+    private UserID getUserID(String userID)
+    {
+        UserID uid;
+
+        try {
+            uid = UserID.fromExternal(userID);
+        } catch (ExEmptyEmailAddress e) {
+            throw new WebApplicationException(e, Status.BAD_REQUEST);
+        }
+
+        if (!(uid.isTeamServerID() || Util.isValidEmailAddress(userID))) {
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
+
+        return uid;
     }
 }
