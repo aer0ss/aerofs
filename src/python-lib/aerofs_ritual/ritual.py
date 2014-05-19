@@ -53,7 +53,7 @@ def _connect(rpc_host_addr, rpc_host_port):
 
 
 # This will try to connect over and over until it succeeds
-def connect(rpc_host_addr, rpc_host_port, max_attempts=150):
+def connect(rpc_host_addr, rpc_host_port, max_attempts=600):
     for _ in xrange(max_attempts):
         try:
             return _connect(rpc_host_addr, rpc_host_port)
