@@ -20,6 +20,7 @@ public final class SPSchema
             C_USER_WHITELISTED              = "u_whitelisted",
             C_USER_BYTES_USED               = "u_bytes_used",
             C_USER_USAGE_WARNING_SENT       = "u_usage_warning_sent",
+            C_USER_TWO_FACTOR_ENFORCED      = "u_two_factor_enforced",
 
             // (eric) made the columns match the SQL names here, easier to autocomplete in IDE
             // when the prefix used here matches that in the SQL schema
@@ -59,6 +60,17 @@ public final class SPSchema
             C_PASS_TOKEN                    = "r_token",
             C_PASS_USER                     = "r_user_id",
             C_PASS_TS                       = "r_ts",
+
+            T_TWO_FACTOR_SECRET             = "sp_two_factor_secret",
+            C_TWO_FACTOR_USER_ID            = "tf_u_id",
+            C_TWO_FACTOR_SECRET             = "tf_secret",
+            C_TWO_FACTOR_ENROLL_DATE        = "tf_enroll_ts",
+
+            T_TWO_FACTOR_RECOVERY           = "sp_two_factor_recovery",
+            C_TF_RECOVERY_ID                = "tfr_id",
+            C_TF_RECOVERY_USER_ID           = "tfr_u_id",
+            C_TF_RECOVERY_CODE              = "tfr_code",
+            C_TF_RECOVERY_CODE_USE_DATE     = "tfr_code_used_ts",
 
             /*
              * create table if not exists sp_acls (a_sid binary(16) not null, a_id varchar(320) not

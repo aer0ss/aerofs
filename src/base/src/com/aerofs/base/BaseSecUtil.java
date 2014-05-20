@@ -97,6 +97,16 @@ public abstract class BaseSecUtil
         return s_rand.nextInt();
     }
 
+    /**
+     * Get a secure random number in the range [0, upperBound).
+     * @param upperBound one more than the maximum number this function will return
+     * @return a secure, uniformly random integer between 0 (inclusive) and upperBound (exclusive)
+     */
+    public static int newRandomInt(int upperBound)
+    {
+        return s_rand.nextInt(upperBound);
+    }
+
     public static byte[] newRandomBytes(int length)
     {
         byte[] bs = new byte[length];

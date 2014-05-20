@@ -42,6 +42,7 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
 import com.aerofs.sp.server.lib.session.ThreadLocalHttpSessionProvider;
+import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
@@ -80,6 +81,7 @@ public class SPServlet extends AeroServlet
     private final SPDatabase _db = new SPDatabase(_sqlTrans);
     private final OrganizationDatabase _odb = new OrganizationDatabase(_sqlTrans);
     private final UserDatabase _udb = new UserDatabase(_sqlTrans);
+    private final TwoFactorAuthDatabase _tfdb = new TwoFactorAuthDatabase(_sqlTrans);
     private final DeviceDatabase _ddb = new DeviceDatabase(_sqlTrans);
     private final CertificateDatabase _certdb = new CertificateDatabase(_sqlTrans);
     private final EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(_sqlTrans);
@@ -102,7 +104,7 @@ public class SPServlet extends AeroServlet
     private final License _license = new License();
     private final User.Factory _factUser = new User.Factory();
     {
-        _factUser.inject(_udb, _oidb, _factDevice, _factOrg,
+        _factUser.inject(_udb, _oidb, _tfdb, _factDevice, _factOrg,
                 _factOrgInvite, _factSharedFolder, _license);
         _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
         _factOrg.inject(_odb, _oidb, _factUser, _factSharedFolder, _factOrgInvite);

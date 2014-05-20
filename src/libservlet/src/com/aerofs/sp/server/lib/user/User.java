@@ -31,9 +31,12 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.twofactor.RecoveryCode;
+import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -55,6 +58,7 @@ public class User
     {
         private UserDatabase _udb;
         private OrganizationInvitationDatabase _odb;
+        private TwoFactorAuthDatabase _tfdb;
 
         private Device.Factory _factDevice;
         private Organization.Factory _factOrg;
@@ -64,12 +68,14 @@ public class User
 
         @Inject
         public void inject(UserDatabase udb, OrganizationInvitationDatabase odb,
+                TwoFactorAuthDatabase tfdb,
                 Device.Factory factDevice, Organization.Factory factOrg,
                 OrganizationInvitation.Factory factOrgInvite, SharedFolder.Factory factSharedFolder,
                 License license)
         {
             _udb = udb;
             _odb = odb;
+            _tfdb = tfdb;
             _factDevice = factDevice;
             _factOrg = factOrg;
             _factOrgInvite = factOrgInvite;
@@ -693,5 +699,72 @@ public class User
             throws SQLException
     {
         _f._udb.deleteAllSignUpCodes(_id);
+    }
+
+    public boolean shouldEnforceTwoFactor()
+            throws SQLException, ExNotFound
+    {
+        return _f._udb.getEnforceSecondFactor(_id);
+    }
+
+    public byte[] twoFactorSecret()
+            throws SQLException, ExNotFound
+    {
+        return _f._tfdb.secretFor(_id);
+    }
+
+    public ImmutableList<RecoveryCode> recoveryCodes()
+            throws SQLException, ExNotFound
+    {
+        return _f._tfdb.recoveryCodesFor(_id);
+    }
+
+    public byte[] setupTwoFactor()
+            throws SQLException
+    {
+        byte[] secret = BaseSecUtil.newRandomBytes(
+                TwoFactorAuthDatabase.TWO_FACTOR_SECRET_KEY_LENGTH);
+        Builder<String> builder = ImmutableList.builder();
+        for (int i = 0 ; i < TwoFactorAuthDatabase.EXPECTED_RECOVERY_CODE_COUNT ; i++) {
+            String code = generateRecoveryCode(TwoFactorAuthDatabase.RECOVERY_CODE_MAX_LENGTH);
+            builder.add(code);
+        }
+        _f._tfdb.prepareUser(_id, secret, builder.build());
+        return secret;
+    }
+
+    // generates a secure-random string of digits.  e.g. generateRecoveryCode(10) ->
+    // "1248812019"
+    private String generateRecoveryCode(int length)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0 ; i < length; i++) {
+            sb.append(String.valueOf(BaseSecUtil.newRandomIntBetweenZeroAnd(10)));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Enables second-factor enforcement for a user's future logins.
+     * This should only be called once the user has proven that they can correctly use their
+     * authenticator application and that they have imported their current secret.
+     */
+    public void enableTwoFactorEnforcement()
+            throws SQLException
+    {
+        // Sanity check: make sure user has a two-factor secret created.
+        try {
+            _f._tfdb.secretFor(_id);
+        } catch (ExNotFound e) {
+            Preconditions.checkState(false, "can't enforce two-factor on user with no TFA secret");
+        }
+        _f._udb.setEnforceSecondFactor(_id, true);
+    }
+
+    public void disableTwoFactorEnforcement()
+            throws SQLException
+    {
+        // It's okay to leave the secrets in the DB; they will no longer be used.
+        _f._udb.setEnforceSecondFactor(_id, false);
     }
 }

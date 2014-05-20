@@ -50,6 +50,7 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -112,6 +113,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected SPDatabase db = new SPDatabase(sqlTrans);
     @Spy protected DeviceDatabase ddb = new DeviceDatabase(sqlTrans);
     @Spy protected UserDatabase udb = new UserDatabase(sqlTrans);
+    @Spy protected TwoFactorAuthDatabase tfdb = new TwoFactorAuthDatabase(sqlTrans);
     @Spy protected CertificateDatabase certdb = new CertificateDatabase(sqlTrans);
     @Spy protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(sqlTrans);
     @Spy protected SharedFolderDatabase sfdb = new SharedFolderDatabase(sqlTrans);
@@ -135,7 +137,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     License license = mock(License.class);
     @Spy protected User.Factory factUser = new User.Factory();
     {
-        factUser.inject(udb, oidb, factDevice, factOrg,
+        factUser.inject(udb, oidb, tfdb, factDevice, factOrg,
                 factOrgInvite, factSharedFolder, license);
         factDevice.inject(ddb, certdb, certgen, factUser, factCert);
         factSharedFolder.inject(sfdb, factUser);

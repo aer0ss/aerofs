@@ -58,6 +58,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_TWO_FACTOR_ENFORCED;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_USAGE_WARNING_SENT;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_WHITELISTED;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
@@ -131,8 +132,7 @@ public class UserDatabase extends AbstractSQLDatabase
     private void reactivate(UserID id, FullName fullName, byte[] shaedSP, OrganizationID orgID,
             AuthorizationLevel level) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.updateWhere(T_USER,
-                C_USER_ID + "=?",
+        PreparedStatement ps = prepareStatement(DBUtil.updateWhere(T_USER, C_USER_ID + "=?",
                 C_USER_CREDS, C_USER_FIRST_NAME, C_USER_LAST_NAME, C_USER_ORG_ID,
                 C_USER_AUTHORIZATION_LEVEL, C_USER_ACL_EPOCH, C_USER_DEACTIVATED));
 
@@ -166,8 +166,7 @@ public class UserDatabase extends AbstractSQLDatabase
     public boolean hasUsers()
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_USER,
-                C_USER_DEACTIVATED + "=0",
+        PreparedStatement ps = prepareStatement(selectWhere(T_USER, C_USER_DEACTIVATED + "=0",
                 "count(*)"));
         ResultSet rs = ps.executeQuery();
         try {
@@ -191,9 +190,10 @@ public class UserDatabase extends AbstractSQLDatabase
     public void setOrganizationID(UserID userId, OrganizationID orgId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(updateWhere(T_USER,
-                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
-                C_USER_ORG_ID));
+        PreparedStatement ps = prepareStatement(
+                updateWhere(T_USER, C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
+                        C_USER_ORG_ID)
+        );
 
         ps.setInt(1, orgId.getInt());
         ps.setString(2, userId.getString());
@@ -274,7 +274,8 @@ public class UserDatabase extends AbstractSQLDatabase
     {
         PreparedStatement ps = prepareStatement(
                 updateWhere(T_USER, C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
-                        C_USER_USAGE_WARNING_SENT));
+                        C_USER_USAGE_WARNING_SENT)
+        );
 
         ps.setBoolean(1, usageWarningSent);
         ps.setString(2, userID.getString());
@@ -302,7 +303,8 @@ public class UserDatabase extends AbstractSQLDatabase
     {
         PreparedStatement ps = prepareStatement(
                 updateWhere(T_USER, C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
-                        C_USER_BYTES_USED));
+                        C_USER_BYTES_USED)
+        );
 
         ps.setLong(1, bytesUsed);
         ps.setString(2, userID.getString());
@@ -354,8 +356,7 @@ public class UserDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_USER,
-                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
-                C_USER_AUTHORIZATION_LEVEL));
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", C_USER_AUTHORIZATION_LEVEL));
 
         ps.setInt(1, authLevel.ordinal());
         ps.setString(2, userId.getString());
@@ -377,8 +378,8 @@ public class UserDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_USER,
-                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
-                C_USER_FIRST_NAME, C_USER_LAST_NAME));
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", C_USER_FIRST_NAME,
+                C_USER_LAST_NAME));
 
         // TODO (WW) instead of doing trim here, normalize the FullName at entry points.
         // See UserID.fromInternal/fromExternal
@@ -426,8 +427,7 @@ public class UserDatabase extends AbstractSQLDatabase
     public Collection<SID> getSharedFolders(UserID userId) throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_USER_ID + "=? and " + C_AC_STATE + "=?",
-                C_AC_STORE_ID));
+                C_AC_USER_ID + "=? and " + C_AC_STATE + "=?", C_AC_STORE_ID));
 
         ps.setString(1, userId.getString());
         ps.setInt(2, SharedFolderState.JOINED.ordinal());
@@ -453,12 +453,33 @@ public class UserDatabase extends AbstractSQLDatabase
      */
     public void deactivate(UserID userId) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(updateWhere(T_USER,
-                C_USER_ID + "=?", C_USER_DEACTIVATED));
+        PreparedStatement ps = prepareStatement(updateWhere(T_USER, C_USER_ID + "=?",
+                C_USER_DEACTIVATED));
 
         ps.setBoolean(1, true);
         ps.setString(2, userId.getString());
 
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
+    public boolean getEnforceSecondFactor(UserID id)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryUser(id, C_USER_TWO_FACTOR_ENFORCED);
+        try {
+            return rs.getBoolean(1);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public void setEnforceSecondFactor(UserID id, boolean enabled)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(updateWhere(T_USER,
+                C_USER_ID + "=?", C_USER_TWO_FACTOR_ENFORCED));
+        ps.setBoolean(1, enabled);
+        ps.setString(2, id.getString());
         Util.verify(ps.executeUpdate() == 1);
     }
 

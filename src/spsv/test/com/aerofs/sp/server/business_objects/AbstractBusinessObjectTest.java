@@ -31,6 +31,7 @@ import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import org.junit.Before;
@@ -53,6 +54,7 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     @Spy protected final EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(sqlTrans);
     @Spy protected final OrganizationInvitationDatabase oidb =
             new OrganizationInvitationDatabase(sqlTrans);
+    @Spy protected final TwoFactorAuthDatabase tfdb = new TwoFactorAuthDatabase(sqlTrans);
 
     @Spy protected final DeviceDatabase ddb = new DeviceDatabase(sqlTrans);
     @Spy protected final CertificateDatabase cdb = new CertificateDatabase(sqlTrans);
@@ -69,7 +71,7 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
 
     @Spy protected final User.Factory factUser = new User.Factory();
     {
-        factUser.inject(udb, oidb, factDevice, factOrg,
+        factUser.inject(udb, oidb, tfdb, factDevice, factOrg,
                 factOrgInvite, factSharedFolder, license);
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
         factSharedFolder.inject(sfdb, factUser);
