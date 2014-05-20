@@ -5,12 +5,12 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.base.id.RestObject;
 import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
@@ -37,12 +37,12 @@ import java.util.Arrays;
 import java.util.Date;
 
 import static com.jayway.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -60,8 +60,7 @@ public class TestFileResource extends AbstractRestTest
     private final String RESOURCE = "/v1.2/files/{file}";
 
     private static long FILE_MTIME = 0xdeadbeef;
-    private static byte[] FILE_CONTENT = { 'H', 'e', 'l', 'l', 'o'};
-
+    private static byte[] FILE_CONTENT = {'H', 'e', 'l', 'l', 'o'};
 
     public TestFileResource(boolean useProxy)
     {

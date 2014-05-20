@@ -49,11 +49,11 @@ public abstract class BifrostTest extends AbstractTest
 {
     public final static String RESOURCEKEY = "authorization-server-admin";
     public final static String RESOURCESECRET = "rs_secret";
-    protected final static String CLIENTID = "test-app-unique-id";
-    protected final static String CLIENTNAME = "test-app-name";
-    protected final static String CLIENTSECRET = "test-app-secret";
-    protected final static String CLIENTREDIRECT = "http://client.example.com:9000/redirect";
-    protected final static String USERNAME = "user";
+    public final static String CLIENTID = "test-app-unique-id";
+    public final static String CLIENTNAME = "test-app-name";
+    public final static String CLIENTSECRET = "test-app-secret";
+    public final static String CLIENTREDIRECT = "http://client.example.com:9000/redirect";
+    public final static String USERNAME = "user";
     public final static String RW_TOKEN = "rwtoken";
     public final static String RO_TOKEN = "rotoken";
     public final static String EXPIRED = "expired";

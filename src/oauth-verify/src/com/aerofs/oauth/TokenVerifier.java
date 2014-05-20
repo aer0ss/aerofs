@@ -45,7 +45,7 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
             ClientSocketChannelFactory clientChannelFactory)
     {
         _auth = TokenVerificationClient.makeAuth(clientId, clientSecret);
-        _client = new TokenVerificationClient(endpoint, cacert,clientChannelFactory, timer);
+        _client = new TokenVerificationClient(endpoint, cacert, clientChannelFactory, timer);
         _cache = builder.build(this);
     }
 

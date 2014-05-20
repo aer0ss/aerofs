@@ -6,8 +6,12 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.MDID;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
@@ -41,10 +45,9 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.daemon.rest.util.EntityTagUtil;
-import com.aerofs.base.id.RestObject;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.havre.Havre;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -60,9 +63,14 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.oauth.TokenVerificationClient;
+import com.aerofs.oauth.TokenVerifier;
+import com.aerofs.oauth.VerifyTokenResponse;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.FieldNamingPolicy;
@@ -114,6 +122,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
@@ -129,6 +138,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -172,6 +182,11 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock Token tk;
     protected @Mock TokenManager tokenManager;
     protected @Mock TCB tcb;
+    protected @Spy TokenVerifier tokenVerifier = new TokenVerifier(
+            BifrostTest.CLIENTID,
+            BifrostTest.CLIENTSECRET,
+            mock(TokenVerificationClient.class),
+            CacheBuilder.newBuilder());
 
     protected @Mock ObjectCreator oc;
     protected @Mock ObjectDeleter od;
@@ -181,6 +196,7 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock ImmigrantCreator ic;
 
     protected @Spy InMemoryPrefix pf = new InMemoryPrefix();
+
 
     protected class InMemoryPrefix implements IPhysicalPrefix
     {
@@ -314,10 +330,6 @@ public class AbstractRestTest extends AbstractTest
         prop.setProperty("havre.oauth.url", bifrostUrl);
         ConfigurationProperties.setProperties(prop);
 
-        // start local gateway
-        havre = new Havre(user, did, kmgr, kmgr, cacert);
-        havre.start();
-
         RestAssured.config = RestAssuredConfig.config()
                 .objectMapperConfig(ObjectMapperConfig.objectMapperConfig()
                         .gsonObjectMapperFactory(new GOMF()));
@@ -336,7 +348,6 @@ public class AbstractRestTest extends AbstractTest
     @AfterClass
     public static void commonCleanup()
     {
-        havre.stop();
         bifrost.stop();
 
         ca.cleanup();
@@ -359,7 +370,7 @@ public class AbstractRestTest extends AbstractTest
     protected final static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     protected final static byte[] VERSION_HASH =
-            BaseSecUtil.newMessageDigestMD5().digest(new byte[] {0});
+            BaseSecUtil.newMessageDigestMD5().digest(new byte[]{0});
 
     protected final String CURRENT_ETAG_VALUE = BaseUtil.hexEncode(VERSION_HASH);
     protected final String CURRENT_ETAG = "\"" + CURRENT_ETAG_VALUE + "\"";
@@ -422,6 +433,10 @@ public class AbstractRestTest extends AbstractTest
                     }
                 });
 
+        // start local gateway
+        havre = new Havre(user, did, kmgr, kmgr, cacert, getGlobalTimer(), tokenVerifier);
+        havre.start();
+
         // start REST service
         inj = coreInjector();
         service = new RestService(inj, kmgr) {
@@ -460,7 +475,7 @@ public class AbstractRestTest extends AbstractTest
     {
         final IIMCExecutor imce = mock(IIMCExecutor.class);
 
-        Injector inj = Guice.createInjector(new RestModule(), new AbstractModule()
+        Injector inj = Guice.createInjector(new RestModule(tokenVerifier), new AbstractModule()
         {
             @Override
             protected void configure()
@@ -531,6 +546,7 @@ public class AbstractRestTest extends AbstractTest
     @After
     public void tearDown() throws Exception
     {
+        havre.stop();
         service.stop();
         if (useProxy) {
             tunnel.stop();
@@ -555,16 +571,48 @@ public class AbstractRestTest extends AbstractTest
         return id(soid.oid());
     }
 
-    protected RequestSpecification givenAccess()
+    protected RequestSpecification givenTokenWithScopes(Set<String> scopes)
+            throws Exception
     {
+        String token = UniqueID.generate().toStringFormal();
+        VerifyTokenResponse response = new VerifyTokenResponse(
+                BifrostTest.CLIENTID,
+                scopes,
+                0L,
+                new AuthenticatedPrincipal(user.getString(), user, OrganizationID.PRIVATE_ORGANIZATION),
+                MDID.generate().toStringFormal());
+        doReturn(response).when(tokenVerifier).verifyToken(anyString());
         return given()
-                .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.RW_TOKEN);
+                .header(Names.AUTHORIZATION, "Bearer " + token);
     }
 
-    protected RequestSpecification givenReadAccess()
+    protected RequestSpecification givenAccess() throws Exception
     {
+        return givenTokenWithScopes(ImmutableSet.of("files.read", "files.write"));
+    }
+
+    protected RequestSpecification givenReadAccess() throws Exception
+    {
+        return givenTokenWithScopes(ImmutableSet.of("files.read"));
+    }
+
+    protected RequestSpecification givenReadAccessTo(RestObject object) throws Exception
+    {
+        return givenTokenWithScopes(ImmutableSet.of("files.read:" + object.toStringFormal()));
+    }
+
+    protected RequestSpecification givenExpiredToken() throws Exception
+    {
+        doReturn(VerifyTokenResponse.EXPIRED).when(tokenVerifier).verifyToken(anyString());
         return given()
-                .header(Names.AUTHORIZATION, "Bearer " + BifrostTest.RO_TOKEN);
+                .header(Names.AUTHORIZATION, "Bearer " + UniqueID.generate().toStringFormal());
+    }
+
+    protected RequestSpecification givenInvalidToken() throws Exception
+    {
+        doReturn(VerifyTokenResponse.NOT_FOUND).when(tokenVerifier).verifyToken(anyString());
+        return given()
+                .header(Names.AUTHORIZATION, "Bearer invalid");
     }
 
     protected static Matcher<String> matches(final String regex)
@@ -635,9 +683,11 @@ public class AbstractRestTest extends AbstractTest
         final SettableFuture<SOID> soid = SettableFuture.create();
 
         when(oc.create_(eq(type), eq(p), eq(name), eq(PhysicalOp.APPLY), eq(t)))
-                .thenAnswer(new Answer<Object>() {
+                .thenAnswer(new Answer<Object>()
+                {
                     @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable
+                    public Object answer(InvocationOnMock invocation)
+                            throws Throwable
                     {
                         Object[] args = invocation.getArguments();
                         MockDSDir d = mds.root().dir((String)args[2]);
@@ -700,5 +750,4 @@ public class AbstractRestTest extends AbstractTest
 
         return soid;
     }
-
 }

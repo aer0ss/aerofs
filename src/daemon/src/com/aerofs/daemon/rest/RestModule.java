@@ -19,6 +19,13 @@ public class RestModule extends AbstractModule
 {
     private TokenVerifier verifier;
 
+    public RestModule() {}
+
+    public RestModule(TokenVerifier _verifier)
+    {
+        verifier = _verifier;
+    }
+
     @Override
     protected void configure()
     {

@@ -13,7 +13,9 @@ import com.aerofs.havre.auth.OAuthAuthenticator;
 import com.aerofs.havre.proxy.HttpProxyServer;
 import com.aerofs.havre.tunnel.EndpointVersionDetector;
 import com.aerofs.havre.tunnel.TunnelEndpointConnector;
+import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.tunnel.TunnelServer;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
@@ -22,6 +24,7 @@ import javax.annotation.Nullable;
 import java.io.FileInputStream;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.Properties;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
@@ -51,14 +54,14 @@ public class Havre
     private final TunnelServer _tunnel;
 
     public Havre(final UserID user, DID did, @Nullable IPrivateKeyProvider proxyKey,
-            IPrivateKeyProvider tunnelKey, ICertificateProvider cacert)
+            IPrivateKeyProvider tunnelKey, ICertificateProvider cacert, Timer timer,
+            TokenVerifier verifier)
     {
-        Timer timer = new HashedWheelTimer();
         TunnelEndpointConnector c = new TunnelEndpointConnector(new EndpointVersionDetector());
         _tunnel = new TunnelServer(new InetSocketAddress(TUNNEL_HOST, TUNNEL_PORT),
                 tunnelKey, cacert, user, did, timer, c);
         _proxy = new HttpProxyServer(new InetSocketAddress(PROXY_HOST, PROXY_PORT),
-                proxyKey, timer, new OAuthAuthenticator(timer, cacert), c);
+                proxyKey, timer, new OAuthAuthenticator(verifier), c);
     }
 
     public void start()
@@ -112,7 +115,13 @@ public class Havre
         checkNotNull(tunnelKey.getPrivateKey());
         checkNotNull(cacert.getCert());
 
-        final Havre havre = new Havre(tunnelUser, tunnelDevice, null, tunnelKey, cacert);
+        Timer timer = new HashedWheelTimer();
+        TokenVerifier verifier = new TokenVerifier(getStringProperty("havre.oauth.id", ""),
+                getStringProperty("havre.oauth.secret", ""),
+                URI.create(getStringProperty("havre.oauth.url", "http://localhost:8700/tokeninfo")),
+                timer, cacert, new NioClientSocketChannelFactory());
+
+        final Havre havre = new Havre(tunnelUser, tunnelDevice, null, tunnelKey, cacert, timer, verifier);
         havre.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread() {

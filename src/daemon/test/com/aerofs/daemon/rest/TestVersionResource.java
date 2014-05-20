@@ -15,7 +15,7 @@ public class TestVersionResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldReturnVersion()
+    public void shouldReturnVersion() throws Exception
     {
         assumeFalse(useProxy);
 
@@ -28,7 +28,7 @@ public class TestVersionResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldFindClientForLowerVersion()
+    public void shouldFindClientForLowerVersion() throws Exception
     {
         givenAccess()
         .expect()
@@ -38,7 +38,7 @@ public class TestVersionResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldNotFindClientForHigherMinorVersion()
+    public void shouldNotFindClientForHigherMinorVersion() throws Exception
     {
         assumeTrue(useProxy);
 
@@ -50,7 +50,7 @@ public class TestVersionResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldNotFindClientForHigherMajorVersion()
+    public void shouldNotFindClientForHigherMajorVersion() throws Exception
     {
         assumeTrue(useProxy);
 

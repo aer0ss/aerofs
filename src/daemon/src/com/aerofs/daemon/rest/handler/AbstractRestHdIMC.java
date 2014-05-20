@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.rest.handler;
 
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.RestObject;
 import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -24,7 +26,6 @@ import com.google.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-
 import java.sql.SQLException;
 
 import static com.aerofs.daemon.rest.util.RestObjectResolver.appDataPath;
@@ -51,16 +52,33 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
 
     protected abstract void handleThrows_(T ev) throws Exception;
 
-
-    // TODO: handle fine-grained token scoping
-    protected static boolean hasAccessToFile(OAuthToken token, Scope scope, ResolvedPath path)
+    protected boolean hasAccessToFile(OAuthToken token, Scope scope, ResolvedPath path)
+            throws SQLException
     {
         checkArgument(scope == Scope.READ_FILES || scope == Scope.WRITE_FILES);
-        return (token.hasPermission(Scope.APPDATA) && path.isUnderOrEqual(appDataPath(token)))
-                || token.hasPermission(scope);
-    }
+        if ((scope == Scope.READ_FILES && token.hasUnrestrictedPermission(Scope.READ_FILES)) ||
+            (scope == Scope.WRITE_FILES && token.hasUnrestrictedPermission(Scope.WRITE_FILES)))
+        {
+            return true;
+        }
+        OA oa;
+        for (RestObject object : token.scopes.get(scope)) {
+            try {
+                oa = _access.resolve_(object, token);
+            } catch (ExNotFound e) {
+                // treat ExNotFound like a lack of permission and try the next object
+                l.debug("could not resolve RestObject {}", object.toStringFormal());
+                continue;
+            }
+            if (path.soids.contains(oa.soid())) {
+                return true;
+            }
+        }
+        return token.hasPermission(Scope.APPDATA) && path.isUnderOrEqual(appDataPath(token));
+   }
 
-    protected static void requireAccessToFile(OAuthToken token, Scope scope, ResolvedPath path)
+    protected void requireAccessToFile(OAuthToken token, Scope scope, ResolvedPath path)
+            throws SQLException
     {
         if (hasAccessToFile(token, scope, path)) return;
 

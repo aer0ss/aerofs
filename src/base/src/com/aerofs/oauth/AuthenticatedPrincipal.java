@@ -49,7 +49,7 @@ public class AuthenticatedPrincipal implements Serializable, Principal
      */
     private Map<String, String> attributes;
 
-    AuthenticatedPrincipal(String username, UserID userID, OrganizationID orgID) {
+    public AuthenticatedPrincipal(String username, UserID userID, OrganizationID orgID) {
         this(username);
         setOrganizationID(orgID);
         setEffectiveUserID(userID);
