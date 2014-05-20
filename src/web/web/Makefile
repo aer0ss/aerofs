@@ -2,9 +2,10 @@ SRC=static-src
 DEST=static
 LESS=less
 JS=js
-watchman=watchman
 
-.PHONY : all clean watch
+IS_WATCHMAN=$(shell which watchman)
+
+.PHONY : all clean watch clean-watch clean-dirs
 
 FILES_IN_CSS = $(shell find $(SRC)/$(LESS) -name *.less -maxdepth 1)
 FILES_OUT_CSS = $(subst static-src,static,$(subst /less/,/css/compiled/,$(FILES_IN_CSS:.less=.css)))
@@ -15,9 +16,17 @@ FILES_OUT_JS = $(subst /js/,/js/compiled/,$(subst static-src,static,$(FILES_IN_J
 all: $(FILES_OUT_JS) $(FILES_OUT_CSS)
 
 # Destroy the final targets
-clean:
+ifneq ($(IS_WATCHMAN),)
+clean: clean-watch clean-dirs
+else
+clean: clean-dirs
+endif
+
+clean-watch:
 	watchman trigger-del $(shell pwd) remakejs
 	watchman trigger-del $(shell pwd) remakeless
+
+clean-dirs:
 	rm -rf $(DEST)/css/compiled/
 	rm -rf $(DEST)/js/compiled/
 	mkdir $(DEST)/css/compiled/
@@ -25,9 +34,9 @@ clean:
 
 # Watch the filesystem and recompile on file modification
 watch:
-	$(watchman) watch $(shell pwd)
-	$(watchman) -- trigger $(shell pwd) remakejs '*.js' -- python $(shell pwd)/make.py
-	$(watchman) -- trigger $(shell pwd) remakeless '*.less' -- python $(shell pwd)/make.py
+	watchman watch $(shell pwd)
+	watchman -- trigger $(shell pwd) remakejs '*.js' -- python $(shell pwd)/make.py
+	watchman -- trigger $(shell pwd) remakeless '*.less' -- python $(shell pwd)/make.py
 
 $(DEST)/css/compiled/%.css: $(SRC)/$(LESS)/%.less
 	lessc $? > $@
