@@ -20,6 +20,9 @@ public class UserID extends StringID
 
     public final static UserID UNKNOWN = UserID.fromInternal("(unknown)");
 
+    public final static UserID UNKNOWN_TEAM_SERVER = UserID.fromInternal("" + TEAM_SERVER_PREFIX
+            + "unknown");
+
     private static final String AEROFS_EMAIL_DOMAIN = "@aerofs.com";
 
     /**

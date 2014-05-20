@@ -9,6 +9,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
@@ -643,8 +644,8 @@ public final class SVClient
 
     private static PBSVHeader newHeader()
     {
-        return Cfg.inited() ? newHeader(Cfg.user(), Cfg.did(), absRTRoot())
-                            : newHeader(UserID.UNKNOWN, null, "unknown");
+        return Cfg.inited() ? newHeader(Cfg.user(), Cfg.did(), absRTRoot()) :
+                newHeader(L.isMultiuser() ? UserID.UNKNOWN_TEAM_SERVER : UserID.UNKNOWN, null, "unknown");
     }
 
     // FIXME (AG): I can get rid of this by creating a static block with a header initializer

@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.Map;
 
 import javax.mail.MessagingException;
@@ -196,7 +197,7 @@ public class SVReactor
             // old clients may not populate the contact email field
             String contactEmail = defect.hasContactEmail() ? defect.getContactEmail() :
                     header.getUser();
-            emailCustomerSupport(desc, id, contactEmail, did);
+            emailCustomerSupport(desc, id, contactEmail, did, header.getUser(), header.getVersion());
         }
 
         // create defect file directory
@@ -275,19 +276,22 @@ public class SVReactor
         return toReturn;
     }
 
-    private void emailCustomerSupport(String desc, int id, String contactEmail, String did)
+    private void emailCustomerSupport(String desc, int id, String contactEmail, String did,
+            String userID, String version)
             throws MessagingException, UnsupportedEncodingException
     {
         // truncate the description to leave only the message the user provides
         int eom = desc.indexOf(LibParam.END_OF_DEFECT_MESSAGE);
         String msg =  eom >= 0 ? desc.substring(0, eom) : desc;
 
+        String title = MessageFormat.format("{0} Problem #{1} from {2}(v{3})",
+                L.brand(), id, userID, version);
         String body = msg + "\n\n" +
                 "contact email: " + contactEmail + "\n" +
                 "device: " + did;
 
         Future<Void> f = _emailSender.sendPublicEmail(contactEmail, contactEmail,
-                WWW.SUPPORT_EMAIL_ADDRESS, null, L.brand() + " Problem # " + id, body, null);
+                WWW.SUPPORT_EMAIL_ADDRESS, null, title, body, null);
         try {
             f.get(); // block to make sure email reaches support system
         } catch (Exception e) {
