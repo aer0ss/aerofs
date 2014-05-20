@@ -7,7 +7,6 @@ package com.aerofs.sp.sparta.resources;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.aerofs.rest.util.IAuthToken;
-import com.aerofs.rest.util.OAuthToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;

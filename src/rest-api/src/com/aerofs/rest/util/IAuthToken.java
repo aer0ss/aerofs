@@ -5,7 +5,6 @@
 package com.aerofs.rest.util;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.oauth.Scope;
 
 public interface IAuthToken

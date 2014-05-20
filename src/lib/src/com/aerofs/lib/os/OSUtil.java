@@ -1,7 +1,5 @@
 package com.aerofs.lib.os;
 
-import com.aerofs.lib.OutArg;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 
 import java.io.FileInputStream;

@@ -59,8 +59,6 @@ import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;

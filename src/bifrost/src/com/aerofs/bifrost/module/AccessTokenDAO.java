@@ -9,7 +9,6 @@ import com.google.inject.Inject;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
-import org.hibernate.sql.Delete;
 
 import java.util.List;
 

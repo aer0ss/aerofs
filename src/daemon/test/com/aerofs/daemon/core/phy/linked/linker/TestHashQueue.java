@@ -28,8 +28,6 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.rocklog.Defect;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;

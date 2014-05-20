@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.audit;
 
 import com.aerofs.base.NoObfuscation;
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 

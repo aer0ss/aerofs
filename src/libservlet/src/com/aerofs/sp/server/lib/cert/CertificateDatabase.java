@@ -22,7 +22,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
-import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_CERT_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_CERT_EXPIRE_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_CERT_REVOKE_TS;

@@ -27,7 +27,6 @@ import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.rocklog.RockLog;
@@ -36,8 +35,6 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * A "flat" variant of {@code LinkedStorage} designed for multiuser configurations.

@@ -13,7 +13,6 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.multiuser.preferences.MultiuserDlgPreferences;
-import com.aerofs.gui.sharing.DlgManageSharedFolders;
 import com.aerofs.gui.tray.AbstractTrayMenu;
 import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.ITrayMenuComponentListener;

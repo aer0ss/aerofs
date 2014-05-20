@@ -20,7 +20,6 @@ import org.mockito.Mock;
 import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
