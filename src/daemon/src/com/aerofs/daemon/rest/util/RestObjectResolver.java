@@ -46,11 +46,11 @@ public class RestObjectResolver
     /**
      * The appdata folder structure (in the virtual filesystem) for an app with Client ID "123":
      *
-     * <user's root store>/.aerofs-appdata/123
+     * <user's root store>/.appdata/123
      *
      * Read the API doc to learn more about appdata.
      */
-    private static final String APPDATA_FOLDER_NAME = ".aerofs-appdata";
+    private static final String APPDATA_FOLDER_NAME = ".appdata";
 
     @Inject private LocalACL _acl;
     @Inject private DirectoryService _ds;
@@ -126,7 +126,7 @@ public class RestObjectResolver
     }
 
     /**
-     * @return SOID of the appdata folder for the app (i.e. /.aerofs-appdata/{client_id})
+     * @return SOID of the appdata folder for the app (i.e. /.appdata/{client_id})
      */
     private SOID createAppDataIfMissing_(OAuthToken token) throws SQLException, ExNotFound
     {
@@ -134,13 +134,13 @@ public class RestObjectResolver
         SOID soid = _ds.resolveNullable_(p);
         Trans t = _tm.begin_();
         try {
-            // create /.aerofs-appdata if needed
+            // create /.appdata if needed
             if (soid == null) {
                 soid = _oc.create_(Type.DIR, _ds.resolveNullable_(p.removeLast()),
                         APPDATA_FOLDER_NAME, PhysicalOp.APPLY, t);
                 markHidden(p);
             }
-            // create /.aerofs-appdata/{client_id} if needed
+            // create /.appdata/{client_id} if needed
             OID oid = _ds.getChild_(soid.sidx(), soid.oid(), token.app());
             if (oid == null) {
                 soid = _oc.create_(Type.DIR, soid, token.app(), PhysicalOp.APPLY, t);
