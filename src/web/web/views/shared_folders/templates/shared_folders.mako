@@ -218,32 +218,58 @@
                 if (privileged) $inviteUserInputs.removeClass("hidden");
                 else $inviteUserInputs.addClass("hidden");
 
-                ## Populate the table
-                var urs = modalUserAndPermissionsList();
+                ## Turn JSON blob into sortable list
+                ## and sort by pending/not pending, then by permissions
+                var sortable_users = [];
+                $.each(modalUserAndPermissionsList(), function(email, ur) {
+                    ur.email = email;
+                    sortable_users.push(ur);
+                });
+                sortable_users.sort(function(a,b){
+                    if (b.state == a.state) {
+                        return b.permissions.length > a.permissions.length;
+                    } else {
+                        return b.state > a.state;
+                    }
+                });
 
-                $.each(urs, function(email, ur) {
+                ## Populate the table
+                $.each(sortable_users, function(index, ur) {
+                    var tooltip = true;
                     var permissions = ur.permissions;
                     var name = ur.first_name + " " + ur.last_name;
+                    if (name === " ") {
+                        name = ur.email;
+                    }
 
                     var actions, roleStr;
-                    if (email === '${session_user}') {
+                    if (ur.email === '${session_user}') {
                         roleStr = roleName(permissions);
                         actions = '';
                     } else if (privileged) {
-                        roleStr = renderActionableRole(email, permissions);
-                        actions = renderPrivilegedUserActions(email, name);
+                        roleStr = renderActionableRole(ur.email, permissions);
+                        actions = renderPrivilegedUserActions(ur.email, name);
                     } else {
                         roleStr = roleName(permissions);
-                        actions = renderUnprivilegedUserActions(email);
+                        actions = renderUnprivilegedUserActions(ur.email);
                     }
 
                     var $row = $("<tr></tr>");
-                    $row.append($("<td></td>").append(
-                            $("<span></span>")
+                    if (ur.state === 0) {
+                        $row.addClass('pending');
+                        tooltip = false;
+
+                    }
+                    var nameSpan = $("<span></span>");
+                    if (tooltip){
+                        $(nameSpan).text(name)
                                     .addClass("tooltip_email")
                                     .attr("data-toggle", "tooltip")
-                                    .attr("title", email)
-                                    .text(name)));
+                                    .attr("title", ur.email);
+                    } else {
+                        $(nameSpan).text(name + ' (pending)');
+                    }
+                    $row.append($("<td></td>").append(nameSpan));
                     $row.append($("<td></td>").append(roleStr));
                     $row.append($("<td></td>").append(actions));
 
@@ -343,7 +369,7 @@
                         .text("Send Email");
             }
 
-            function registerEmailTooltips() {
+            function registerTooltips() {
                 $('.tooltip_email').tooltip({
                     ## To avoid tooltips being cut off by the modal boundary.
                     ## See https://github.com/twitter/bootstrap/pull/6378
@@ -353,7 +379,7 @@
 
             ## Set event handlers and activities for elements in the table
             function activateModelTableElements() {
-                registerEmailTooltips();
+                registerTooltips();
 
                 $('.model-set-role').click(function() {
                     setPermissions($(this).data('email'), $(this).data('permissions'), false);

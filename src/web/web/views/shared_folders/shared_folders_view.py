@@ -19,7 +19,7 @@ from web.util import get_rpc_stub, parse_rpc_error_exception, is_restricted_exte
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException, MANAGE
-from aerofs_sp.gen.sp_pb2 import JOINED
+from aerofs_sp.gen.sp_pb2 import JOINED, PENDING
 
 
 from web.views.payment.stripe_util\
@@ -292,7 +292,7 @@ def _render_shared_folder_options_link(folder, session_user, privileged):
     @param privileged whether the session user has the privilege to modify ACL
     """
     id = _encode_store_id(folder.store_id)
-    urs = to_json(folder.user_permissions_and_state, session_user)
+    urs = to_json(filter(lambda user: user.state == JOINED or user.state == PENDING, folder.user_permissions_and_state), session_user)  
     escaped_folder_name = escape(folder.name)
 
     # The data tags must be consistent with the ones in loadModalData() in
@@ -319,7 +319,8 @@ def to_json(user_permissions_and_state_list, session_user):
         urss[urs.user.user_email] = {
             "first_name":   _get_first_name(urs, session_user),
             "last_name":    _get_last_name(urs, session_user),
-            "permissions":  _pb_permissions_to_json(urs.permissions)
+            "permissions":  _pb_permissions_to_json(urs.permissions),
+            "state": urs.state
         }
 
     # dump to a compact-format JSON string
