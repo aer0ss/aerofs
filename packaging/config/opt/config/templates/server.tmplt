@@ -62,6 +62,11 @@ show_quota_options={{ show_quota_options }}
 monitoring.username=monitor
 monitoring.password={{ monitoring_password }}
 
+system.authorization.endpoint_enabled={{ system_authorization_endpoint_enabled }}
+system.authorization.endpoint_uri={{ system_authorization_endpoint_uri }}
+system.authorization.endpoint_use_ssl={{ system_authorization_endpoint_use_ssl }}
+system.authorization.endpoint_certificate={{ system_authorization_endpoint_certificate }}
+
 {# This section will be filled with all key-value pairs stored in the
  # license-info file inside the license file.  On first boot, it will be empty;
  # otherwise, it will contain a set of key-value pairs, including at least
