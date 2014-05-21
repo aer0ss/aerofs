@@ -61,21 +61,8 @@
             } else if (choice == 'new') {
                 if (verifyPresence("server.browser.certificate", "Please specify a certificate file.") &&
                         verifyPresence("server.browser.key", "Please specify a key file.")) {
-                    ## Certificate.
-                    var certificateFile = document.getElementById("server.browser.certificate").files[0];
-                    var certificateReader = new FileReader();
-                    certificateReader.onload = function() {
-                        setCertificateData(this.result);
-                    };
-                    certificateReader.readAsBinaryString(certificateFile);
-
-                    ## Key.
-                    var keyFile = document.getElementById("server.browser.key").files[0];
-                    var keyReader = new FileReader();
-                    keyReader.onload = function() {
-                        setKeyData(this.result);
-                    };
-                    keyReader.readAsBinaryString(keyFile);
+                    readFile("server.browser.certificate", setCertificateData);
+                    readFile("server.browser.key", setKeyData);
                 }
             }
         }
@@ -83,13 +70,8 @@
         var certificateData = null;
         var keyData = null;
 
-        ## TOOD (WW) use multipart data upload
-        function formatPostData(data) {
-            return data.replace(/\+/g, '%2B');
-        }
-
         function setCertificateData(data) {
-            certificateData = formatPostData(data);
+            certificateData = data;
 
             if (keyData != null) {
                 postCertificateData();
@@ -97,7 +79,7 @@
         }
 
         function setKeyData(data) {
-            keyData = formatPostData(data);
+            keyData = data;
 
             if (certificateData != null) {
                 postCertificateData();
@@ -105,11 +87,12 @@
         }
 
         function postCertificateData() {
-            var serializedData = $('form').serialize();
+            var serializedData = $('form').serialize()
+                    + "&server.browser.certificate=" + certificateData
+                    + "&server.browser.key=" + keyData;
 
             doPost("${request.route_path('json_setup_certificate')}",
-                serializedData + "&server.browser.certificate=" + certificateData + "&server.browser.key=" + keyData,
-                gotoNextPage, enableNavButtons);
+                serializedData, gotoNextPage, enableNavButtons);
         }
     </script>
 </%def>
