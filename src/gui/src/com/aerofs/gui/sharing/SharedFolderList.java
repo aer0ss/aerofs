@@ -6,10 +6,12 @@ package com.aerofs.gui.sharing;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.AbstractSpinAnimator;
+import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.TaskDialog;
+import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.sharing.AddSharedFolderDialogs.IShareNewFolderCallback;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
@@ -19,14 +21,18 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.PBSharedFolder;
+import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessages;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -39,10 +45,13 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -68,6 +77,12 @@ class SharedFolderList extends Composite
 
     private static final String PATH_DATA = "Path";
     private static final String ABS_PATH_DATA = "AbsPath";
+
+    private static final String OPEN_UNLINKED_FOLDERS_MSG = "This folder cannot be opened because " +
+            "it is not currently syncing to this device. To sync it to this device, " +
+            "please select it in the Selective Sync Dialog under the Advanced tab in " +
+            "Preferences.\n\nYou can still share this folder with others without syncing.";
+
 
     SharedFolderList(Composite composite, int style)
     {
@@ -98,16 +113,15 @@ class SharedFolderList extends Composite
             {
                 TableItem ti = (TableItem)e.item;
                 Path path = ti != null ? (Path)ti.getData(PATH_DATA) : null;
-                _memberList.setFolder(path);
+                _btnOpen.setEnabled(path != null);
+                _btnLeave.setEnabled(path != null);
+                _memberList.setFolder(path, ti.getText());
             }
 
             @Override
             public void widgetDefaultSelected(SelectionEvent e)
             {
-                TableItem ti = (TableItem)e.item;
-                if (ti == null) return;
-
-                GUIUtil.launch((String)ti.getData(ABS_PATH_DATA));
+                openSelectedFolder();
             }
         });
 
@@ -142,10 +156,7 @@ class SharedFolderList extends Composite
             @Override
             public void widgetSelected(SelectionEvent selectionEvent)
             {
-                Path path = selectedPath();
-                if (path == null) return;
-                String absPath = UIUtil.absPathNullable(path);
-                if (absPath != null) GUIUtil.launch(absPath);
+                openSelectedFolder();
             }
         });
 
@@ -174,6 +185,49 @@ class SharedFolderList extends Composite
             // hidden so the dialog layout is consistent across different configurations.
             _btnOpen.setVisible(false);
             btnAdd.setVisible(false);
+        }
+    }
+
+    private void openSelectedFolder() {
+        Path path = selectedPath();
+        if (path == null) return;
+        // We can only open a folder as long they are linked. Expelled folders and Pending roots
+        // cannot be opened. Linked Folders will have an absolute path where'as the other two won't.
+        if (selectedAbsPath() != null) {
+            GUIUtil.launch(UIUtil.absPathNullable(path));
+        } else {
+            addFolderToSync();
+        }
+    }
+
+    /**
+     * This function displays the Selective Sync dialog. It is invoked when the user tries to open
+     * or double clicks on a pending or expelled folder.
+     */
+    private void addFolderToSync()
+    {
+        try {
+            final Path path = selectedPath();
+            GUI askToSyncGui = new GUI();
+            //askToSyncGui.
+            if (askToSyncGui.ask(getShell(), MessageType.INFO, OPEN_UNLINKED_FOLDERS_MSG,
+                    "Open Selective Sync Dialog",
+                    "Not Now")) {
+                new DlgExclusion(getShell()).openDialog();
+                refreshAsync(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        // This makes sure that the same folder is selected in the table
+                        // after refresing it.
+                        select(path);
+                        _memberList.setFolder(path, selectedName());
+                    }
+                });
+            }
+        } catch (IOException e) {
+            l.warn("ignored exception", e);
         }
     }
 
@@ -206,6 +260,12 @@ class SharedFolderList extends Composite
     {
         TableItem[] items = _table.getSelection();
         return items.length != 1 ? null : (Path)items[0].getData(PATH_DATA);
+    }
+
+    private @Nullable String selectedAbsPath()
+    {
+        TableItem[] items = _table.getSelection();
+        return items.length != 1 ? null : (String)items[0].getData(ABS_PATH_DATA);
     }
 
     private @Nullable String selectedName()
@@ -241,7 +301,7 @@ class SharedFolderList extends Composite
      */
     private void refreshAsync(@Nullable final Runnable callback)
     {
-        _memberList.setFolder(null);
+        _memberList.setFolder(null, null);
         setLoading(true);
 
         Futures.addCallback(UIGlobals.ritualNonBlocking().listSharedFolders(),
@@ -278,57 +338,143 @@ class SharedFolderList extends Composite
                 _table.deselectAll();
                 _table.setSelection(ti);
                 _table.showSelection();
-                _memberList.setFolder(path);
+                _memberList.setFolder(path, ti.getText());
                 break;
             }
         }
     }
 
+    private void addSharedFolderToDisplayTable(TableItem ti,
+            PBSharedFolder folder)
+    {
+        Path path = Path.fromPB(folder.getPath());
+        ti.setData(PATH_DATA, path);
+        ti.setImage(Images.get(Images.ICON_SHARED_FOLDER));
+        ti.setText(0, folder.getName());
+
+        // absPath only available for Linked storage
+        if (Cfg.storageType() == StorageType.LINKED) {
+            String root = null;
+            try {
+                root = Cfg.getRootPathNullable(path.sid());
+            } catch (SQLException e) {
+                l.error("ignored exception", e);
+            }
+            if (root == null) {
+                l.warn("unknown root " + path.sid());
+                return;
+            }
+            ti.setData(ABS_PATH_DATA, folder.getAdmittedOrLinked()
+                ? path.toAbsoluteString(root)
+                : null);
+        }
+    }
+
+    private void addSeparatorToDisplayTable(TableItem ti, String separatorText)
+    {
+
+        ti.setText(separatorText);
+        // Setting ABS_PATH_DATA to empty string because the TableToolTip shouldn't display anything
+        // for separators.
+        ti.setData(ABS_PATH_DATA, null);
+        ti.setData(PATH_DATA, null);
+
+        // Make the text bold, the background gray.
+        FontData separatorFontData = new FontData();
+        separatorFontData.setStyle(SWT.BOLD);
+
+        ti.setFont(new Font(getDisplay(), separatorFontData));
+        ti.setBackground(getDisplay().getSystemColor(SWT.COLOR_GRAY));
+    }
+
+    /**
+     * Given a collection of PBSharedFolders, gets internal or external folders depending upon
+     * the boolean value passed in.
+     */
+    private Collection<PBSharedFolder> filterStoresIntoInternalOrExternal(
+            Collection<PBSharedFolder> folders,
+            boolean isInternal)
+    {
+        List<PBSharedFolder> filteredStores = new ArrayList<PBSharedFolder>();
+
+        for (PBSharedFolder folder : folders) {
+            // Path.getElemCount is 0 for external folders and > 0 for internal folders.
+            if ((folder.getPath().getElemCount() > 0) == isInternal) {
+                filteredStores.add(folder);
+            }
+        }
+        // Sort the shared folders based on their names.
+        Collections.sort(filteredStores, new Comparator<PBSharedFolder>()
+        {
+            @Override
+            public int compare(PBSharedFolder o1, PBSharedFolder o2)
+            {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+
+        return filteredStores;
+    }
+
+    private List<Object> getTableContent(Collection<PBSharedFolder> internalStores,
+            Collection<PBSharedFolder> externalStores)
+    {
+        boolean needSeparator = externalStores.size() > 0;
+        List<Object> tableContents = Lists.newArrayList();
+
+        for(PBSharedFolder folder: internalStores) {
+            tableContents.add(folder);
+        }
+        if (needSeparator) {
+            if (!L.isMultiuser()) {
+                tableContents.add("Folders outside your AeroFS folder");
+            }
+            for(PBSharedFolder folder: externalStores) {
+                tableContents.add(folder);
+            }
+        }
+        return tableContents;
+    }
     /**
      * Populate the view with the given shared folder list.
+     * We want the shared folder list to contain all internal folders first (sorted alphabetically),
+     * then a separator(to separate internal and external folders) followed by external folders
+     * (sorted alphabetically).
      */
     private void fill(List<PBSharedFolder> sharedFolders)
     {
-        // We don't want the number of table items to be sharedFolders.size() because right now
-        // we are not exposing expelled/pending folders.
-        Collection<Entry<String, Path>> sharedFoldersAlphabetical = UIUtil.getPathsSortedByName(
-                sharedFolders);
+        // Split the shared folders into internal and external shared folders
+        Collection<PBSharedFolder> internalStores = filterStoresIntoInternalOrExternal(
+                sharedFolders,
+                true);
+        Collection<PBSharedFolder> externalStores = filterStoresIntoInternalOrExternal(
+                sharedFolders,
+                false);
 
-            _table.setItemCount(sharedFoldersAlphabetical.size());
+        List<Object> tableContent = getTableContent(internalStores, externalStores);
 
-        int i = 0;
-        for (Entry<String, Path> entry :sharedFoldersAlphabetical) {
-            String name = entry.getKey();
-            Path path = entry.getValue();
-
-            TableItem ti = _table.getItem(i++);
-
-            ti.setImage(Images.get(Images.ICON_SHARED_FOLDER));
-            ti.setText(0, name);
-            ti.setData(PATH_DATA, path);
-            // absPath only available for Linked storage
-            if (Cfg.storageType() == StorageType.LINKED) {
-                String root = null;
-                try {
-                    root = Cfg.getRootPathNullable(path.sid());
-                } catch (SQLException e) {
-                    l.error("ignored exception", e);
-                }
-                if (root == null) {
-                    l.warn("unknown root " + path.sid());
-                    continue;
-                }
-                ti.setData(ABS_PATH_DATA, path.toAbsoluteString(root));
+        for (Object elem: tableContent) {
+            TableItem ti = new TableItem(_table, SWT.NONE);
+            if (elem instanceof PBSharedFolder) {
+                addSharedFolderToDisplayTable(ti, (PBSharedFolder)elem);
+            } else if (elem instanceof String) {
+                addSeparatorToDisplayTable(ti, (String)elem);
             }
         }
+
         boolean notEmpty = !sharedFolders.isEmpty();
 
-        if (notEmpty) _table.select(0);
+        /* If we have internal folders, the default selection should be the first table item.
+           If we have no internal folders, then default selection should be the second table item.
+           In this case, the first table item is the External folders separator.
+        */
+        if (notEmpty) _table.select(internalStores.isEmpty() ? 1 : 0);
         if (_btnLeave != null) _btnLeave.setEnabled(notEmpty);
         if (_btnOpen != null) _btnOpen.setEnabled(notEmpty);
 
-        _memberList.setFolder(selectedPath());
+        _memberList.setFolder(selectedPath(), selectedName());
     }
+
 
     private void leave(final Path path, String defaultName)
     {

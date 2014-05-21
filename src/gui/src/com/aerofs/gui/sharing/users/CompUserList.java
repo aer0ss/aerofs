@@ -265,19 +265,20 @@ public class CompUserList extends Composite
 
         GUI.get().safeWork(_tv.getTable(), new ISWTWorker()
         {
-            Map<UserID, SharedFolderMember> _newMembers;
+            Map<UserID, SharedFolderMember> _newMembers = Maps.newHashMap();
             Permissions _newLocalUserPermissions;
 
             @Override
             public void run()
                     throws Exception
             {
+                if (path == null) return;
+
                 CfgLocalUser localUser = new CfgLocalUser();
                 SID sid = getStoreID(path);
                 Sp.PBSharedFolder pbFolder = getSharedFolderWithSID(sid);
 
                 _newMembers = filterLeftMembersAndCreateMapFromPB(new Factory(localUser), pbFolder);
-
                 // N.B. the local user may not be a member, e.g. Team Server
                 SharedFolderMember localUserAsMember = _newMembers.get(localUser.get());
                 if (localUserAsMember != null) _newLocalUserPermissions = localUserAsMember._permissions;
@@ -290,10 +291,8 @@ public class CompUserList extends Composite
                 Ritual.ListSharedFoldersReply reply = UIGlobals.ritual().listSharedFolders();
 
                 for (Ritual.PBSharedFolder folder : reply.getSharedFolderList()) {
-                    if (folder.getAdmittedOrLinked()
-                            && path.equals(Path.fromPB(folder.getPath()))) {
-                        return new SID(folder.getStoreId());
-                    }
+                    if (path.equals(Path.fromPB(folder.getPath())))
+                    return new SID(folder.getStoreId());
                 }
 
                 throw new ExBadArgs("Invalid shared folder.");

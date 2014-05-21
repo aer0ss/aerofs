@@ -51,6 +51,14 @@ class TableToolTip implements Listener
             Display display = _table.getDisplay();
             TableItem item = _table.getItem(new Point(event.x, event.y));
             if (item != null) {
+                String itemToolTipData = (String) item.getData(_toolTipData);
+                // The itemToolTipData helps differentiate between separators and shared folders.
+                // For separators the itemToolTipData would be empty. So it won't pass the check
+                // below.
+                if (itemToolTipData == null) {
+                    break;
+                }
+
                 if (_tip != null  && !_tip.isDisposed ()) _tip.dispose();
                 _tip = new Shell(_table.getShell(), SWT.ON_TOP | SWT.NO_FOCUS | SWT.TOOL);
                 _tip.setBackground(display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));

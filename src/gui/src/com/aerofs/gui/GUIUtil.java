@@ -304,7 +304,7 @@ public class GUIUtil
     /**
      * This method can be run in a non-UI thread
      */
-    public static void shareFolder(final Path path)
+    public static void shareFolder(final Path path, final String name)
     {
         if (new Path(Cfg.rootSID()).equals(path)) {
             // Sharing the default root folder?
@@ -317,7 +317,7 @@ public class GUIUtil
             @Override
             public void run()
             {
-                new DlgShareFolder(GUI.get().sh(), path).openDialog();
+                new DlgShareFolder(GUI.get().sh(), path, name).openDialog();
             }
         });
     }

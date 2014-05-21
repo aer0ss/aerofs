@@ -168,8 +168,8 @@ public class ShellextService
             l.warn("shellext provided an external path " + absPath);
             return;
         }
-
-        GUIUtil.shareFolder(mkpath(absRootAnchor, absPath));
+        Path path = mkpath(absRootAnchor, absPath);
+        GUIUtil.shareFolder(path, path.last());
     }
 
     private void versionHistory(final String absPath)

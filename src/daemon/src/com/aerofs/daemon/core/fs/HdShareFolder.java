@@ -1,30 +1,20 @@
 package com.aerofs.daemon.core.fs;
 
-import java.io.File;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Set;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.SubjectPermissionsList;
-import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
-
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
-
-import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
-import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
-import static com.aerofs.daemon.core.phy.PhysicalOp.NOP;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -35,22 +25,16 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.cfg.CfgStorageType;
-import com.aerofs.lib.event.Prio;
+import com.aerofs.daemon.lib.db.PendingRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExChildAlreadyShared;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.ex.ExParentAlreadyShared;
-import com.aerofs.daemon.core.ex.ExExpelled;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.base.id.OID;
 import com.aerofs.lib.Path;
-import com.aerofs.base.id.SID;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.ex.ExChildAlreadyShared;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
@@ -58,6 +42,18 @@ import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
+
+import java.io.File;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Set;
+
+import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
+import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
+import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
+import static com.aerofs.daemon.core.phy.PhysicalOp.NOP;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 {
@@ -76,7 +72,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final DescendantStores _dss;
     private final ACLSynchronizer _aclsync;
     private final SPBlockingClient.Factory _factSP;
-    private final CfgStorageType _storageType;
+    private final PendingRootDatabase _prdb;
     private final CfgAbsRoots _absRoots;
 
     @Inject
@@ -84,7 +80,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             IPhysicalStorage ps, DirectoryService ds, ImmigrantCreator imc, ObjectMover om,
             ObjectDeleter od, IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss,
             ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP,
-            CfgAbsRoots cfgAbsRoots, CfgStorageType storageType)
+            CfgAbsRoots cfgAbsRoots, PendingRootDatabase prdb)
     {
         _ss = ss;
         _tokenManager = tokenManager;
@@ -100,7 +96,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _aclsync = aclsync;
         _factSP = factSP;
         _absRoots = cfgAbsRoots;
-        _storageType = storageType;
+        _prdb = prdb;
     }
 
     @Override
@@ -110,6 +106,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 
         OA oa;
         SID sid;
+        String name;
         boolean alreadyShared = false;
 
         if (ev._path.sid().isUserRoot()) {
@@ -124,6 +121,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             } else {
                 throw new ExNotDir();
             }
+            name = sharedFolderName(ev._path, _absRoots);
         } else {
             // option 1: Block Storage
             // option 2: physical root is an external shared folder. The root can be shared and no
@@ -133,10 +131,11 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             alreadyShared = true;
             sid = ev._path.sid();
             oa = null;
-            // if linked storage is used, check that the sid is a valid external root
-            if (_storageType.get() == StorageType.LINKED && _absRoots.getNullable(sid) == null) {
-                throw new ExBadArgs();
-            }
+            // Grabing name for external shared folders. If the store is pending, query pending
+            // root db else get it thorugh the sharedFolderName util.
+            name = _prdb.getPendingRoots().containsKey(sid)
+                    ? _prdb.getPendingRoots().get(sid)
+                    : sharedFolderName(ev._path, _absRoots);
         }
 
         //
@@ -165,8 +164,6 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // of the stores' owner, multiple local failures can be handled properly,
         // while remote failures will prevent the system from being in a half-state
         //
-
-        String name = sharedFolderName(ev._path, _absRoots);
         callSP_(sid, name, SubjectPermissionsList.mapToPB(ev._subject2role), ev._emailNote,
                 ev._suppressSharedFolderRulesWarnings);
 
@@ -200,9 +197,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             throw new ExNoPerm("can't share system folders");
         }
 
-        // can't share if the object is expelled
         OA oa = _ds.getOA_(soid);
-        if (oa.isExpelled()) throw new ExExpelled();
 
         // can't share if a parent folder is already shared
         if (!_ss.isRoot_(soid.sidx())) throw new ExParentAlreadyShared();

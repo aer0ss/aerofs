@@ -25,7 +25,6 @@ import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
-import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.collect.Lists;
@@ -62,16 +61,18 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     private final Text _txtNote;
 
     private final Path _path;
+    private final String _name;
     private String _fromPerson;
 
     private final Label _lblStatus;
     private final CompSpin _compSpin;
     private final CompEmailAddressTextBox _compAddresses;
 
-    public CompInviteUsers(Composite parent, Path path, boolean notifyOnSuccess)
+    public CompInviteUsers(Composite parent, Path path, String name, boolean notifyOnSuccess)
     {
         super(parent, SWT.NONE);
         _path = path;
+        _name = name;
         _notifyOnSuccess = notifyOnSuccess;
 
         GridLayout glShell = new GridLayout(1, false);
@@ -213,7 +214,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     {
         if (_fromPerson == null) return;
 
-        String note = getDefaultInvitationNote(UIUtil.sharedFolderName(_path, null), _fromPerson);
+        String note = getDefaultInvitationNote(_name, _fromPerson);
         _txtNote.setText(note);
         _txtNote.setEditable(true);
 

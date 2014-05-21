@@ -17,7 +17,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
-import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -26,7 +25,6 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
@@ -46,12 +44,13 @@ class MemberList extends Composite
     private static class DlgInvite extends AeroFSDialog
     {
         private final Path _path;
+        private final String _name;
 
-        public DlgInvite(Shell parent, Path path, String defaultName)
+        public DlgInvite(Shell parent, Path path, String name)
         {
-            super(parent, "Invite Members to "
-                    + Util.quote(UIUtil.sharedFolderName(path, defaultName)), true, false);
+            super(parent, "Invite Members to " + Util.quote(name), true, false);
             _path = path;
+            _name = name;
         }
 
         @Override
@@ -63,7 +62,7 @@ class MemberList extends Composite
 
             shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-            new CompInviteUsers(shell, _path, false);
+            new CompInviteUsers(shell, _path, _name, false);
         }
     }
 
@@ -71,6 +70,7 @@ class MemberList extends Composite
     private final Composite _btnBar;
     private final Button _btnInvite;
     private @Nullable Path _path;
+    private @Nullable String _name;
     private boolean _iAmAdmin;      // whether the local user is an admin of the shared folder.
 
     MemberList(Composite composite, int style)
@@ -94,7 +94,9 @@ class MemberList extends Composite
         c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
         _userList = new CompUserList(c);
-        _userList.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        GridData userListLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
+        userListLayoutData.widthHint = 420; // Magic number to keep layouts happy.
+        _userList.setLayoutData(userListLayoutData);
 
         Link link = new Link(c, SWT.NONE);
         link.setText("<a>Learn more about roles</a>");
@@ -120,15 +122,10 @@ class MemberList extends Composite
         });
     }
 
-    private void setVisible(Control c, boolean visible)
-    {
-        c.setVisible(visible);
-        ((GridData) c.getLayoutData()).exclude = !visible;
-    }
-
-    void setFolder(@Nullable Path path)
+    void setFolder(@Nullable Path path, @Nullable String name)
     {
         _path = path;
+        _name = name;
         refreshAsync();
     }
 
@@ -137,12 +134,7 @@ class MemberList extends Composite
      */
     private void refreshAsync()
     {
-        boolean valid = _path != null;
-        setVisible(_userList, valid);
-        setVisible(_btnBar, valid);
-
-        if (valid) {
-            _userList.setLoadListener(new ILoadListener() {
+        _userList.setLoadListener(new ILoadListener() {
                 @Override
                 public void loaded(int membersCount, @Nullable Permissions localUserPermissions)
                 {
@@ -150,13 +142,12 @@ class MemberList extends Composite
                     // the ACL check is slightly more complicated...
                     // FIXME: TS needs effective ACL
                     _iAmAdmin = L.isMultiuser() ||
-                            (localUserPermissions != null
-                                     && localUserPermissions.covers(Permission.MANAGE));
+                        (localUserPermissions != null
+                                && localUserPermissions.covers(Permission.MANAGE));
                     _btnInvite.setEnabled(_iAmAdmin);
                 }
-            });
-            _userList.load(_path);
-        }
+        });
+        _userList.load(_path);
 
         layout(true, true);
     }
@@ -167,7 +158,7 @@ class MemberList extends Composite
             l.error("invite to a null folder?");
 
         } else if (_iAmAdmin) {
-            new DlgInvite(getShell(), _path, null).openDialog();
+            new DlgInvite(getShell(), _path, _name).openDialog();
             refreshAsync();
 
         } else {

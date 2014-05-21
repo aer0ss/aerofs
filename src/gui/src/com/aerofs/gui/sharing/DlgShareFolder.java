@@ -18,11 +18,13 @@ import org.eclipse.swt.layout.FillLayout;
 public class DlgShareFolder extends AeroFSDialog
 {
     private final Path _path;
+    private final String _name;
 
-    public DlgShareFolder(Shell parent, Path path)
+    public DlgShareFolder(Shell parent, Path path, String name)
     {
         super(parent, "Share Folder " + Util.quote(UIUtil.sharedFolderName(path, "")), false, false);
         _path = path;
+        _name = name;
     }
 
     @Override
@@ -34,6 +36,6 @@ public class DlgShareFolder extends AeroFSDialog
 
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        new CompInviteUsers(shell, _path, true);
+        new CompInviteUsers(shell, _path, _name, true);
     }
 }

@@ -72,7 +72,7 @@ public class GUI implements IUI
     /**
      * the caller thread will become the UI thread
      */
-    GUI() throws IOException
+    public GUI() throws IOException
     {
         try {
             _disp = Display.getDefault();

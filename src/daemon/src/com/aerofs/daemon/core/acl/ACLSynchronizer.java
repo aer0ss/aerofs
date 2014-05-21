@@ -449,7 +449,7 @@ public class ACLSynchronizer
         // call SP first to avoid setting local ACL if SP returns no permission or other errors.
         //
 
-        SID sid = _sidx2sid.get_(sidx); // first, resolve the sid
+        SID sid = resolveSIndex_(sidx);
 
         // make the SP call
         Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl");
