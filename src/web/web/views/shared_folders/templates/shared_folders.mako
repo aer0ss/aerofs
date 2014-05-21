@@ -22,7 +22,14 @@
               </div>
             %endif
         <table id="folders_table" class="table table-hover">
-            <thead><tr><th>Folder</th><th>Members</th><th></th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Folder</th>
+                    <th>Owners</th>
+                    <th>Viewers and Editors</th>
+                    <th></th>
+                </tr>
+            </thead>
             <tbody></tbody>
         </table>
     </div>
@@ -67,7 +74,8 @@
                 },
                 "aoColumns": [
                     { "mDataProp": "name" },
-                    { "mDataProp": "users" },
+                    { "mDataProp": "owners" },
+                    { "mDataProp": "members" },
                     { "mDataProp": "options" }
                 ],
 

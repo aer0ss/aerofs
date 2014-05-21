@@ -18,8 +18,9 @@ from web.sp_util import exception2error
 from web.util import get_rpc_stub, parse_rpc_error_exception, is_restricted_external_sharing_enabled
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
-from aerofs_sp.gen.common_pb2 import PBException
+from aerofs_sp.gen.common_pb2 import PBException, MANAGE
 from aerofs_sp.gen.sp_pb2 import JOINED
+
 
 from web.views.payment.stripe_util\
     import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
@@ -216,13 +217,17 @@ def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
         # a workaround to filter folder.user_permissions_and_state to leave only joined users
         # using del & extend because setting folder.user_permissions_and_state doesn't work
         # due to Protobuf magic
-        filtered_urss = filter(lambda urs: urs.state == JOINED, folder.user_permissions_and_state)
-        del folder.user_permissions_and_state[:]
-        folder.user_permissions_and_state.extend(filtered_urss)
+        member_folder = folder
+        owners = filter(lambda urs: urs.state == JOINED and MANAGE in urs.permissions.permission, 
+            folder.user_permissions_and_state)
+        members = filter(lambda urs: urs.state == JOINED and MANAGE not in urs.permissions.permission, 
+            member_folder.user_permissions_and_state)
+
 
         data.append({
             'name': escape(folder.name),
-            'users': _render_shared_folder_users(folder.user_permissions_and_state, session_user),
+            'owners': _render_shared_folder_users(owners, session_user),
+            'members': _render_shared_folder_users(members, session_user),
             'options': _render_shared_folder_options_link(folder, session_user,
                 privileger(folder, session_user)),
         })
@@ -238,7 +243,7 @@ def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
 def _render_shared_folder_users(user_permissions_and_state_list, session_user):
 
     # Place 'me' to the end of the list so that if the list is too long we show
-    # "Foo, Bar, and 10 others" instead of "Foo, me, and 10 others"
+    # "Foo, Bar, me, and 10 others" instead of "me, Foo, and 10 others"
     #
     # Also, it's polite to place "me" last.
     #
@@ -253,9 +258,9 @@ def _render_shared_folder_users(user_permissions_and_state_list, session_user):
 
     str = ''
     if total == 0:
-        pass
+        str = "--"
     elif total == 1:
-        str = _get_first_name(reordered_list[0], session_user) + " only"
+        str = _get_first_name(reordered_list[0], session_user)
     elif total == 2:
         str = u"{} and {}".format(
             _get_first_name(reordered_list[0], session_user),
@@ -266,11 +271,17 @@ def _render_shared_folder_users(user_permissions_and_state_list, session_user):
             if i == total - 1: str += "and "
             str += _get_first_name(reordered_list[i], session_user)
     else:
-        # If there are more than 5 people, print the first 3 only
-        printed = 3
+        # If there are more than 5 people, print the first 2 or 3 only
+        # Always print "me" if user is in group
+        printed = 2
         for i in range(printed):
             str += _get_first_name(reordered_list[i], session_user)
             str += ", "
+        # if current user in list, make sure they get printed
+        # because of reordering, we know they'll be the last in the list
+        if reordered_list[len(reordered_list)-1].user.user_email == session_user:
+            str += "me, "
+            printed += 1
         str += "and {} others".format(total - printed)
 
     return escape(str)
