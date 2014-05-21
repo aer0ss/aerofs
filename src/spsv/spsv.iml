@@ -13,6 +13,7 @@
     <orderEntry type="module" module-name="libservlet" />
     <orderEntry type="library" name="metrics" level="project" />
     <orderEntry type="library" name="commons-codec" level="project" />
+    <orderEntry type="library" name="json-simple" level="project" />
     <orderEntry type="library" name="bouncycastle" level="project" />
     <orderEntry type="library" name="metrics-graphite-reporter" level="project" />
     <orderEntry type="library" scope="TEST" name="jetty" level="project" />

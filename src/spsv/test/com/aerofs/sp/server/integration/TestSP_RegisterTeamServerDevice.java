@@ -62,6 +62,7 @@ public class TestSP_RegisterTeamServerDevice extends AbstractSPTest
     {
         mockCertificateGeneratorAndIncrementSerialNumber();
 
-        service.registerTeamServerDevice(tsDevice.id().toPB(), newCSR(tsUser, tsDevice), "", "", "");
+        service.registerTeamServerDevice(
+                tsDevice.id().toPB(), newCSR(tsUser, tsDevice), "", "", "", null);
     }
 }

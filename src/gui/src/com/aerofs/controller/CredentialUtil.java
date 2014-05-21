@@ -76,7 +76,7 @@ public class CredentialUtil
             {
                 IOSUtil osu = OSUtil.get();
                 return sp.registerTeamServerDevice(did, csr, osu.getOSFamily().getString(),
-                        osu.getFullOSName(), deviceName);
+                        osu.getFullOSName(), deviceName, InterfacesUtil.getSystemInterfaces());
             }
         });
     }
@@ -98,7 +98,7 @@ public class CredentialUtil
             {
                 IOSUtil osu = OSUtil.get();
                 return sp.registerDevice(did, csr, osu.getOSFamily().getString(),
-                        osu.getFullOSName(), deviceName);
+                        osu.getFullOSName(), deviceName, InterfacesUtil.getSystemInterfaces());
             }
         });
     }

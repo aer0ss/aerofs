@@ -18,6 +18,7 @@ import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
@@ -87,6 +88,7 @@ import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.proto.Sp.PBStripeData;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.RecertifyDeviceReply;
+import com.aerofs.proto.Sp.RegisterDeviceCall.Interface;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
@@ -108,6 +110,9 @@ import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
+import com.aerofs.sp.server.authentication.SystemAuthClient;
+import com.aerofs.sp.server.authentication.SystemAuthEndpoint;
+import com.aerofs.sp.server.authentication.SystemAuthParam;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
@@ -150,6 +155,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -225,6 +231,8 @@ public class SPService implements ISPService
     private final Boolean OPEN_SIGNUP =
             getBooleanProperty("open_signup", true);
 
+    private final SystemAuthClient _systemAuthClient =
+            new SystemAuthClient(new SystemAuthEndpoint());
 
     public SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
@@ -894,11 +902,14 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<RegisterDeviceReply> registerDevice(ByteString deviceId, ByteString csr,
-            String osFamily, String osName, String deviceName)
+            String osFamily, String osName, String deviceName, List<Interface> interfaces)
             throws Exception
     {
         User user = _sessionUser.getUser();
         Device device = _factDevice.create(deviceId);
+
+        throwIfSystemIsNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
+                interfaces);
 
         CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
                 user);
@@ -990,13 +1001,66 @@ public class SPService implements ISPService
         }
     }
 
+    /**
+     * Throw if system is not authorized to register a device, i.e. install the AeroFS desktop
+     * client or Team Server.
+     *
+     * This function is related to the system authorization subsystem. For details please consult
+     * the design document: docs/design/system_authorization.md
+     *
+     * @throws ExBadArgs when the interfaces parameter is invalid.
+     * @throws ExNoPerm when the system is not authorized to register a device. This occurs when
+     * both of the following are true: (1) the system authorization endpoint has been configured and
+     * is enabled in the bunker configuration interface, and (2) when the system authorization
+     * endpoint says the device is not authorized.
+     * @throws ExNoResource when there is some communication failure with the system authorization
+     * endpoint and the appliance.
+     */
+    private void throwIfSystemIsNotAuthorizedToRegisterDevice(UserID userID, String osFamily,
+            String osName, String deviceName, List<Interface> interfaces)
+            throws ExBadArgs, ExNoPerm, ExNoResource
+    {
+        if (!SystemAuthParam.SYSTEM_AUTH_ENDPOINT_ENABLED) {
+            return;
+        }
+
+        l.info("{}: check endpoint for system authorization", userID);
+
+        // Null check for backward compatibility.
+        // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove null check on proto version bump.
+        if (interfaces == null || interfaces.size() < 1) {
+            l.warn("{}: register device call with no interfaces param.", userID);
+            throw new ExBadArgs();
+        }
+
+        boolean isSystemAuthorized;
+        try {
+             isSystemAuthorized = _systemAuthClient.isSystemAuthorized(userID, osFamily, osName,
+                     deviceName, interfaces);
+        } catch (IOException e) {
+            l.error("{}: I/O error contacting system authorization endpoint: {}", userID, e);
+            throw new ExNoResource();
+        } catch (GeneralSecurityException e) {
+            l.error("{}: general security exception: ", userID, e);
+            throw new ExNoResource();
+        }
+
+        if (!isSystemAuthorized) {
+            l.warn("{}: device registration rejected by endpoint.", userID);
+            throw new ExNoPerm();
+        }
+    }
+
     @Override
     public ListenableFuture<RegisterDeviceReply> registerTeamServerDevice(ByteString deviceId,
-            ByteString csr, String osFamily, String osName,
-            String deviceName)
+            ByteString csr, String osFamily, String osName, String deviceName,
+            List<Interface> interfaces)
             throws Exception
     {
         User user = _sessionUser.getUser();
+
+        throwIfSystemIsNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
+                interfaces);
 
         // We need two transactions. The first is read only, so no rollback ability needed. In
         // between the transaction we make an RPC call.

@@ -63,7 +63,8 @@ monitoring.username=monitor
 monitoring.password={{ monitoring_password }}
 
 system.authorization.endpoint_enabled={{ system_authorization_endpoint_enabled }}
-system.authorization.endpoint_uri={{ system_authorization_endpoint_uri }}
+system.authorization.endpoint_host={{ system_authorization_endpoint_host }}
+system.authorization.endpoint_port={{ system_authorization_endpoint_port }}
 system.authorization.endpoint_use_ssl={{ system_authorization_endpoint_use_ssl }}
 system.authorization.endpoint_certificate={{ system_authorization_endpoint_certificate }}
 
