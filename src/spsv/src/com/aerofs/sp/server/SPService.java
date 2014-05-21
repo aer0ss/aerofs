@@ -397,11 +397,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove the test (as userID will become required)
-        User user = userID == null ?
-                _sessionUser.getUser() :
-                _factUser.createFromExternalID(userID);
-
+        User user = _factUser.createFromExternalID(userID);
         throwIfSessionUserIsNotOrAdminOf(user);
 
         if (firstName != null || lastName != null) {
@@ -901,11 +897,6 @@ public class SPService implements ISPService
             String osFamily, String osName, String deviceName)
             throws Exception
     {
-        // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove nulltoEmpty calls
-        osFamily = Strings.nullToEmpty(osFamily);
-        osName = Strings.nullToEmpty(osName);
-        deviceName = Strings.nullToEmpty(deviceName);
-
         User user = _sessionUser.getUser();
         Device device = _factDevice.create(deviceId);
 
@@ -1005,11 +996,6 @@ public class SPService implements ISPService
             String deviceName)
             throws Exception
     {
-        // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove nulltoEmpty calls
-        osFamily = Strings.nullToEmpty(osFamily);
-        osName = Strings.nullToEmpty(osName);
-        deviceName = Strings.nullToEmpty(deviceName);
-
         User user = _sessionUser.getUser();
 
         // We need two transactions. The first is read only, so no rollback ability needed. In
