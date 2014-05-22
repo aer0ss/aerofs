@@ -781,6 +781,15 @@ service SPService {
     //   ExFormatError if the Dryad ID is invalid
     //
     rpc SendDryadEmail(SendDryadEmailCall) returns (Void);
+
+    // Request (re-)generation of two-factor auth secrets/recovery tokens for
+    // the session's user
+    // Required Auth Level: user
+    rpc SetupTwoFactor(Void) returns (SetupTwoFactorReply);
+
+    // Enable or disable two-factor enforcement for the session's user.
+    // Required Auth Level: user
+    rpc SetTwoFactorEnforcement(SetTwoFactorEnforcementCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1442,4 +1451,18 @@ message SendDryadEmailCall {
     required string dryad_id = 1;
     required string contact_email = 2;
     required string description = 3;
+}
+
+message SetupTwoFactorCall {
+    // currently empty, but we may need to add things like "code delivery
+    // mechanism" later.
+}
+
+message SetupTwoFactorReply {
+    required bytes secret = 1;
+}
+
+message SetTwoFactorEnforcementCall {
+    required bool enforce = 1;
+    optional int32 current_code = 2;
 }

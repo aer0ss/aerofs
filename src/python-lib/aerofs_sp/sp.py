@@ -71,3 +71,9 @@ class _SPServiceWrapper(object):
     def remove_quota(self):
         return self._service.remove_quota()
 
+    def setup_two_factor(self):
+        return self._service.setup_two_factor().secret
+
+    def set_two_factor_enforcement(self, enforce, current_code=None):
+        return self._service.set_two_factor_enforcement(enforce, current_code)
+

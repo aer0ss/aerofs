@@ -42,6 +42,7 @@ import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
+import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Common.PBPermissions;
@@ -99,6 +100,7 @@ import com.aerofs.proto.Sp.RegisterDeviceCall.Interface;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
+import com.aerofs.proto.Sp.SetupTwoFactorReply;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -112,6 +114,7 @@ import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.authentication.IAuthority;
 import com.aerofs.sp.authentication.LocalCredential;
+import com.aerofs.sp.authentication.TOTP;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
@@ -1639,7 +1642,53 @@ public class SPService implements ISPService
         UrlShare link = _factUrlShare.create(key);
         link.validatePassword(password.toByteArray());
         _sqlTrans.commit();
+        return createVoidReply();
+    }
 
+    @Override
+    public ListenableFuture<SetupTwoFactorReply> setupTwoFactor()
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User requester = _sessionUser.getUser();
+        if (requester.shouldEnforceTwoFactor()) {
+            // TODO: email user
+            requester.disableTwoFactorEnforcement();
+        }
+        byte[] secret = requester.setupTwoFactor();
+        SetupTwoFactorReply.Builder builder = SetupTwoFactorReply.newBuilder();
+        builder.setSecret(ByteString.copyFrom(secret));
+        _sqlTrans.commit();
+
+        return createReply(builder.build());
+    }
+
+    @Override
+    public ListenableFuture<Void> setTwoFactorEnforcement(Boolean enforce, Integer currentCode)
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User requester = _sessionUser.getUser();
+        // Noop happily unless there's actually a state change happening
+        if (enforce != requester.shouldEnforceTwoFactor()) {
+            if (enforce) {
+                // Verify the user provided a code
+                if (currentCode == null) {
+                    throw new ExBadArgs("No current two-factor code provided");
+                }
+                // Verify that currentCode matches our expectations for the user's current secret
+                if (!TOTP.check(requester.twoFactorSecret(), currentCode, 1)) {
+                    // TODO: throw something that indicates "bad or missing code"
+                    throw new ExBadCredential("Incorrect two-factor auth code");
+                }
+                requester.enableTwoFactorEnforcement();
+                // TODO: email user
+            } else {
+                requester.disableTwoFactorEnforcement();
+                // TODO: email user
+            }
+        }
+        _sqlTrans.commit();
         return createVoidReply();
     }
 
