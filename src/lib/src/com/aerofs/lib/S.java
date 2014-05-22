@@ -224,5 +224,7 @@ public class S
 
             ENABLE_SYNC_HISTORY = "Keep Sync History",
             SYNC_HISTORY_CONFIRM = "Are you sure? Without Sync History, " + L.product()
-                    + " cannot restore any files you modify or delete on other devices.";
+                    + " cannot restore any files you modify or delete on other devices.",
+
+            NON_OWNER_CANNOT_SHARE = "You don't have the permissions to share this folder with other users.";
 }

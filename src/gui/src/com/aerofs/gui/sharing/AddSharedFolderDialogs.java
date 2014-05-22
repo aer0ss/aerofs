@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing;
 
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.gui.TaskDialog;
 import com.aerofs.gui.sharing.folders.DlgFolders;
@@ -162,7 +163,8 @@ class AddSharedFolderDialogs
             {
                 ErrorMessages.show(getShell(), e, L.product() + " could not share this folder.",
                         new ErrorMessage(ExChildAlreadyShared.class, S.CHILD_ALREADY_SHARED),
-                        new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED));
+                        new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED),
+                        new ErrorMessage(ExNoPerm.class, S.NON_OWNER_CANNOT_SHARE));
 
                 errorWithNoErrorMessage();
             }
