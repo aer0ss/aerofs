@@ -115,19 +115,19 @@
         ##########
         ## Utility functions to read files
 
-        function readFile(elementID, onSuccess) {
-            var file = document.getElementById(elementID).files[0];
-            var reader = new FileReader();
-            reader.onload = function() {
-                onSuccess(urlEncode(this.result));
-            };
-            reader.readAsBinaryString(file);
-        }
-
-        ## TOOD (WW) use multipart data upload
-        function urlEncode(data) {
-            ## this is not a 'true' URL encode, but it suffices for our purpose
-            return data.replace(/\+/g, '%2B');
+        function linkFileSelectorToField(selectorQuery, fieldQuery) {
+            $(selectorQuery).on('change', function() {
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function() {
+                        $(fieldQuery).val(this.result);
+                    };
+                    reader.readAsBinaryString(file);
+                } else {
+                    $(fieldQuery).val('');
+                }
+            });
         }
 
         ##########

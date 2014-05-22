@@ -22,12 +22,14 @@
 
         <div class="row-fluid" style="margin-top: 8px;">
             <div class="span6">
-                <label for="server.browser.certificate">Certificate file:</label>
-                <input type="file" id="server.browser.certificate" name="server.browser.certificate" disabled/>
+                <label for="cert-selector">Certificate file:</label>
+                <input type="file" id="cert-selector" disabled/>
+                <input type="hidden" id="server-browser-certificate" name="server.browser.certificate" />
             </div>
             <div class="span6">
-                <label for="server.browser.certificate">Key file:</label>
-                <input type="file" id="server.browser.key" name="server.browser.key" disabled/>
+                <label for="key-selector">Key file:</label>
+                <input type="file" id="key-selector" disabled/>
+                <input type="hidden" id="server-browser-key" name="server.browser.key" />
             </div>
         </div>
     </label>
@@ -43,9 +45,15 @@
 
 <%def name="scripts()">
     <script>
+        $(document).ready(function() {
+            linkFileSelectorToField('#cert-selector', '#server-browser-certificate');
+            linkFileSelectorToField('#key-selector', '#server-browser-key');
+        });
+
         function useInstalledCertSelected() {
             ## disable the file upload and remove set files
             $('input:file').attr("disabled", "disabled").val("");
+            $('input:hidden').val("");
         }
 
         function useNewCertSelected() {
@@ -59,40 +67,12 @@
             if (choice == 'existing') {
                 gotoNextPage();
             } else if (choice == 'new') {
-                if (verifyPresence("server.browser.certificate", "Please specify a certificate file.") &&
-                        verifyPresence("server.browser.key", "Please specify a key file.")) {
-                    readFile("server.browser.certificate", setCertificateData);
-                    readFile("server.browser.key", setKeyData);
+                if (verifyPresence("server-browser-certificate", "Please specify a certificate file.") &&
+                        verifyPresence("server-browser-key", "Please specify a key file.")) {
+                    doPost("${request.route_path('json_setup_certificate')}",
+                        $('form').serialize(), gotoNextPage, enableNavButtons);
                 }
             }
-        }
-
-        var certificateData = null;
-        var keyData = null;
-
-        function setCertificateData(data) {
-            certificateData = data;
-
-            if (keyData != null) {
-                postCertificateData();
-            }
-        }
-
-        function setKeyData(data) {
-            keyData = data;
-
-            if (certificateData != null) {
-                postCertificateData();
-            }
-        }
-
-        function postCertificateData() {
-            var serializedData = $('form').serialize()
-                    + "&server.browser.certificate=" + certificateData
-                    + "&server.browser.key=" + keyData;
-
-            doPost("${request.route_path('json_setup_certificate')}",
-                serializedData, gotoNextPage, enableNavButtons);
         }
     </script>
 </%def>
