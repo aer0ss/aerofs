@@ -4,23 +4,28 @@
 
 package com.aerofs.daemon.event.admin;
 
-import java.util.Collection;
-
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
-import com.aerofs.proto.Ritual.PBSharedFolder;
+
+import java.util.Map;
 
 public class EIListUserRoots extends AbstractEBIMC
 {
-    public Collection<PBSharedFolder> _userRoots;
+    private Map<SID, String> _userRoots;
 
     public EIListUserRoots()
     {
         super(Core.imce());
     }
 
-    public void setResult_(Collection<PBSharedFolder> userRoots)
+    public void setResult_(Map<SID, String> userRoots)
     {
         _userRoots = userRoots;
+    }
+
+    public Map<SID, String> getUserRoots()
+    {
+        return _userRoots;
     }
 }

@@ -18,6 +18,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.proto.Ritual.ListUserRootsReply.UserRoot;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
@@ -198,8 +199,9 @@ public class HistoryModel
             try {
                 List<ModelIndex> list = Lists.newArrayList();
                 // use user roots as top level
-                for (PBSharedFolder sf : ritual().listUserRoots().getUserRootList()) {
-                    list.add(new ModelIndex(this, Path.fromPB(sf.getPath()), sf.getName()));
+                for (UserRoot userRoot : ritual().listUserRoots().getRootList()) {
+                    list.add(new ModelIndex(this, new Path(new SID(userRoot.getSid())),
+                            userRoot.getName()));
                 }
                 // need to list shared folders too:
                 // 1. otherwise we might miss folders created on a linked TS of the same org

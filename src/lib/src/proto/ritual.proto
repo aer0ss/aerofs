@@ -401,7 +401,11 @@ message PBSharedFolder {
 }
 
 message ListUserRootsReply {
-    repeated PBSharedFolder user_root = 1;
+    message UserRoot {
+        required bytes sid = 1;
+        required string name = 2;
+    }
+    repeated UserRoot root = 1;
 }
 
 message ListSharedFoldersReply {

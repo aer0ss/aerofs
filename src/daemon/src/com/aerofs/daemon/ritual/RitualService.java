@@ -93,6 +93,7 @@ import com.aerofs.proto.Ritual.ListRevHistoryReply;
 import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.ListUserRootsReply;
+import com.aerofs.proto.Ritual.ListUserRootsReply.UserRoot;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
@@ -450,8 +451,13 @@ public class RitualService implements IRitualService
     {
         EIListUserRoots ev = new EIListUserRoots();
         ev.execute(PRIO);
-        return createReply(
-                ListUserRootsReply.newBuilder().addAllUserRoot(ev._userRoots).build());
+        ListUserRootsReply.Builder bd = ListUserRootsReply.newBuilder();
+        for (Entry<SID, String> e : ev.getUserRoots().entrySet()) {
+            bd.addRoot(UserRoot.newBuilder()
+                    .setSid(e.getKey().toPB())
+                    .setName(e.getValue()));
+        }
+        return createReply(bd.build());
     }
 
     @Override

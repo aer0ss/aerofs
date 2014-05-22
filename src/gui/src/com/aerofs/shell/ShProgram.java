@@ -15,6 +15,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.Ritual.ListUserRootsReply.UserRoot;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.ritual.RitualClientProvider;
@@ -217,8 +218,8 @@ public class ShProgram implements IProgram, ICallback
         } else if (L.isMultiuser()) {
             Map<SID, String> roots = Maps.newHashMap();
             // use user roots as top level
-            for (PBSharedFolder sf : getRitualClient_().listUserRoots().getUserRootList()) {
-                roots.put(new SID(sf.getPath().getSid()), sf.getName());
+            for (UserRoot userRoot : getRitualClient_().listUserRoots().getRootList()) {
+                roots.put(new SID(userRoot.getSid()), userRoot.getName());
             }
             // need to list shared folders too:
             // 1. otherwise we might miss folders created on a linked TS of the same org
