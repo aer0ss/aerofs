@@ -739,7 +739,7 @@ public class User
     {
         StringBuilder sb = new StringBuilder();
         for (int i = 0 ; i < length; i++) {
-            sb.append(String.valueOf(BaseSecUtil.newRandomIntBetweenZeroAnd(10)));
+            sb.append(String.valueOf(BaseSecUtil.newRandomInt(10)));
         }
         return sb.toString();
     }
