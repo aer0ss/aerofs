@@ -28,6 +28,8 @@ import com.aerofs.sp.server.AbstractTestWithDatabase;
 import com.aerofs.sp.server.IdentitySessionManager;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
+import com.aerofs.sp.server.URLSharing.UrlShare;
+import com.aerofs.sp.server.URLSharing.UrlSharingDatabase;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
@@ -119,6 +121,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(sqlTrans);
     @Spy protected SharedFolderDatabase sfdb = new SharedFolderDatabase(sqlTrans);
     @Spy protected OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(sqlTrans);
+    @Spy protected UrlSharingDatabase usdb = new UrlSharingDatabase(sqlTrans);
 
     // Can't use @Spy as Device.Factory's constructor needs a non-null certgen object.
     protected OrganizationDatabase odb = spy(new OrganizationDatabase(sqlTrans));
@@ -132,6 +135,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected Device.Factory factDevice = new Device.Factory();
     @Spy protected OrganizationInvitation.Factory factOrgInvite =
             new OrganizationInvitation.Factory();
+    @Spy protected UrlShare.Factory factUrlShare = new UrlShare.Factory(usdb);
 
     @Spy protected JedisEpochCommandQueue commandQueue = new JedisEpochCommandQueue(jedisTrans);
 

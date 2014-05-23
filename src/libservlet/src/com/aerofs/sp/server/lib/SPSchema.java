@@ -100,5 +100,13 @@ public final class SPSchema
             C_ES_EMAIL                      = "es_email",
             C_ES_TOKEN_ID                   = "es_token_id",
             C_ES_SUBSCRIPTION               = "es_subscription",
-            C_ES_LAST_EMAILED               = "es_last_emailed";
+            C_ES_LAST_EMAILED               = "es_last_emailed",
+
+            T_US                            = "sp_url_sharing",
+            C_US_KEY                        = "us_key",
+            C_US_SID                        = "us_sid",
+            C_US_OID                        = "us_oid",
+            C_US_CREATED_BY                 = "us_created_by",
+            C_US_TOKEN                      = "us_token",
+            C_US_EXPIRES                    = "us_expires";
 }

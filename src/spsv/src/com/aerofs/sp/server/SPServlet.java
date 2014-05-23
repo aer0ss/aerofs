@@ -19,6 +19,8 @@ import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
+import com.aerofs.sp.server.URLSharing.UrlShare;
+import com.aerofs.sp.server.URLSharing.UrlSharingDatabase;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
@@ -88,6 +90,7 @@ public class SPServlet extends AeroServlet
     private final EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(_sqlTrans);
     private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_sqlTrans);
     private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_sqlTrans);
+    private final UrlSharingDatabase _usdb = new UrlSharingDatabase(_sqlTrans);
 
     private final ThreadLocalHttpSessionProvider _sessionProvider =
             new ThreadLocalHttpSessionProvider();
@@ -106,6 +109,8 @@ public class SPServlet extends AeroServlet
             new OrganizationInvitation.Factory();
     private final License _license = new License();
     private final User.Factory _factUser = new User.Factory();
+    private final UrlShare.Factory _factUrlShare = new UrlShare.Factory(_usdb);
+
     {
         _factUser.inject(_udb, _oidb, _tfdb, _factDevice, _factOrg,
                 _factOrgInvite, _factSharedFolder, _license);
@@ -165,7 +170,7 @@ public class SPServlet extends AeroServlet
             _authenticator,
             _sfRules,
             _sfnEmailer,
-            _asyncEmailSender);
+            _asyncEmailSender, _factUrlShare);
 
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 

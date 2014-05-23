@@ -57,7 +57,7 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         // Ask SharedFolderRulesFactory to create ReadOnlyExternalFolderRules
         setProperties(true, INTERNAL_ADDRESSES);
 
-        // Authentiator factory reads and caches property values so we have to construct a new one
+        // Authenticator factory reads and caches property values so we have to construct a new one
         SharingRulesFactory sharedFolderRules = new SharingRulesFactory(AuthenticatorFactory.create(),
                 factUser, sharedFolderNotificationEmailer);
 
@@ -85,7 +85,7 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
                 authenticator,
                 sharedFolderRules,
                 sharedFolderNotificationEmailer,
-                asyncEmailSender);
+                asyncEmailSender, factUrlShare);
         wireSPService();
 
         sqlTrans.begin();

@@ -667,21 +667,56 @@ service SPService {
 
     // Set the organization-wide per-user quota
     //
-    // Reauired Auth Level: admin
+    // Required Auth Level: admin
     //
     rpc SetQuota(SetQuotaCall) returns (Void);
 
     // Remove the organization-wide per-user quota
     //
-    // Reauired Auth Level: admin
+    // Required Auth Level: admin
     //
     rpc RemoveQuota(Void) returns (Void);
 
     // Get the organization-wide per-user quota
     //
-    // Reauired Auth Level: admin
+    // Required Auth Level: admin
     //
     rpc GetQuota(Void) returns (GetQuotaReply);
+
+    // Create a unique key which maps to a rest object and an OAuth token,
+    // which a user can share to allow access to that object via URL
+    //
+    // Required Auth Level: store manager
+    // Throws:
+    //   ExNoPerm if the current user isn't a manager of the containing store
+    //
+    rpc CreateUrl(CreateUrlCall) returns (CreateUrlReply);
+
+    // Get the info associated with a URL key (rest object, token, expiry, etc.)
+    //
+    // Required Auth Level: None (knowledge of the key is enough)
+    // Throws:
+    //   ExNotFound if the key does not exist
+    //
+    rpc GetUrlInfo(GetUrlInfoCall) returns (GetUrlInfoReply);
+
+    // Set the expiry associated with a URL
+    //
+    // Required Auth Level: store manager
+    // Throws:
+    //   ExNotFound if the key does not exist
+    //   ExNoPerm if the current user isn't a manager of the containing store
+    //
+    rpc SetUrlExpires(SetUrlExpiresCall) returns (Void);
+
+    // Remove the expiry associated with a URL
+    //
+    // Required Auth Level: store manager
+    // Throws:
+    //   ExNotFound if the key does not exist
+    //   ExNoPerm if the current user isn't a manager of the containing store
+    //
+    rpc RemoveUrlExpires(RemoveUrlExpiresCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1270,4 +1305,40 @@ message GetQuotaReply {
 
 message SetQuotaCall {
     required uint64 quota = 1;
+}
+
+message CreateUrlCall {
+    required string soid = 1;
+    required string token = 2;
+}
+
+message PBRestObjectUrl {
+    required string key = 1;
+    required string soid = 2;
+    required string token = 3;
+    required string created_by = 4;
+    optional uint64 expires = 5;
+}
+
+message CreateUrlReply {
+    required PBRestObjectUrl url_info = 1;
+}
+
+message SetUrlExpiresCall {
+    required string key = 1;
+    required uint64 expires = 2;
+    required string new_token = 3;
+}
+
+message RemoveUrlExpiresCall {
+    required string key = 1;
+    required string new_token = 2;
+}
+
+message GetUrlInfoCall {
+    required string key = 1;
+}
+
+message GetUrlInfoReply {
+    required PBRestObjectUrl url_info = 1;
 }

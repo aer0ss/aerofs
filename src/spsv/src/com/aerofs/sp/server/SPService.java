@@ -23,6 +23,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OrganizationID;
+import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
@@ -49,6 +50,7 @@ import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
 import com.aerofs.proto.Sp.CheckQuotaReply;
 import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
+import com.aerofs.proto.Sp.CreateUrlReply;
 import com.aerofs.proto.Sp.DeactivateUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
@@ -65,6 +67,7 @@ import com.aerofs.proto.Sp.GetQuotaReply;
 import com.aerofs.proto.Sp.GetStripeDataReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
+import com.aerofs.proto.Sp.GetUrlInfoReply;
 import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.proto.Sp.ISPService;
@@ -82,6 +85,7 @@ import com.aerofs.proto.Sp.MobileAccessCode;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
+import com.aerofs.proto.Sp.PBRestObjectUrl;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.Builder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
@@ -108,6 +112,7 @@ import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
+import com.aerofs.sp.server.URLSharing.UrlShare;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.authorization.DeviceAuthClient;
@@ -204,6 +209,7 @@ public class SPService implements ISPService
     private final OrganizationInvitation.Factory _factOrgInvite;
     private final Device.Factory _factDevice;
     private final SharedFolder.Factory _factSharedFolder;
+    private final UrlShare.Factory _factUrlShare;
 
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
     private final RequestToSignUpEmailer _requestToSignUpEmailer;
@@ -259,7 +265,8 @@ public class SPService implements ISPService
             Authenticator authenticator,
             SharingRulesFactory sharingRules,
             SharedFolderNotificationEmailer sfnEmailer,
-            AsyncEmailSender asyncEmailSender)
+            AsyncEmailSender asyncEmailSender,
+            UrlShare.Factory factUrlShare)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -278,6 +285,7 @@ public class SPService implements ISPService
         _factDevice = factDevice;
         _esdb = esdb;
         _factSharedFolder = factSharedFolder;
+        _factUrlShare = factUrlShare;
 
         _deviceRegistrationEmailer = deviceRegistrationEmailer;
         _requestToSignUpEmailer = requestToSignUpEmailer;
@@ -1444,6 +1452,86 @@ public class SPService implements ISPService
 
         return createReply(quota == null ? GetQuotaReply.getDefaultInstance() :
                 GetQuotaReply.newBuilder().setQuota(quota).build());
+    }
+
+    @Override
+    public ListenableFuture<CreateUrlReply> createUrl(String soid, String token)
+            throws Exception
+    {
+        RestObject restObject = RestObject.fromString(soid);
+        SharedFolder sf = _factSharedFolder.create(restObject.getSID());
+        User requester = _sessionUser.getUser();
+
+        _sqlTrans.begin();
+        sf.throwIfNoPrivilegeToChangeACL(requester);
+        UrlShare link = _factUrlShare.save(restObject, token, requester.id());
+        _sqlTrans.commit();
+
+        return createReply(CreateUrlReply.newBuilder()
+                .setUrlInfo(PBRestObjectUrl.newBuilder()
+                        .setKey(link.getKey())
+                        .setSoid(restObject.toStringFormal())
+                        .setToken(token)
+                        .setCreatedBy(requester.id().getString()))
+                .build());
+    }
+
+    @Override
+    public ListenableFuture<GetUrlInfoReply> getUrlInfo(String key)
+            throws Exception
+    {
+        _sqlTrans.begin();
+        UrlShare link = _factUrlShare.create(key);
+        RestObject object = link.getRestObject();
+        String token = link.getToken();
+        @Nullable Long expires = link.getExpiresNullable();
+        UserID createdBy = link.getCreatedBy();
+        _sqlTrans.commit();
+
+        PBRestObjectUrl.Builder objectBuilder = PBRestObjectUrl.newBuilder()
+                .setKey(key)
+                .setSoid(object.toStringFormal())
+                .setCreatedBy(createdBy.getString())
+                .setToken(token);
+        if (expires != null) objectBuilder.setExpires(expires);
+
+        return createReply(GetUrlInfoReply.newBuilder()
+                .setUrlInfo(objectBuilder)
+                .build());
+    }
+
+    @Override
+    public ListenableFuture<Void> setUrlExpires(String key, Long expires, String newToken)
+            throws Exception
+    {
+        User requester = _sessionUser.getUser();
+
+        _sqlTrans.begin();
+        UrlShare link = _factUrlShare.create(key);
+        SID sid = link.getSid();
+        SharedFolder sf = _factSharedFolder.create(sid);
+        sf.throwIfNoPrivilegeToChangeACL(requester);
+        link.setExpires(expires, newToken);
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> removeUrlExpires(String key, String newToken)
+            throws Exception
+    {
+        User requester = _sessionUser.getUser();
+
+        _sqlTrans.begin();
+        UrlShare link = _factUrlShare.create(key);
+        SID sid = link.getSid();
+        SharedFolder sf = _factSharedFolder.create(sid);
+        sf.throwIfNoPrivilegeToChangeACL(requester);
+        link.removeExpires(newToken);
+        _sqlTrans.commit();
+
+        return createVoidReply();
     }
 
     @Override
