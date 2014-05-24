@@ -1,5 +1,6 @@
 package com.aerofs.cli;
 
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.controller.CredentialUtil;
 import com.aerofs.lib.OutArg;
@@ -7,14 +8,13 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
+import com.aerofs.ui.UIParam;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.IUI;
-import com.aerofs.ui.UIParam;
 
 import javax.annotation.Nonnull;
 import java.io.IOError;

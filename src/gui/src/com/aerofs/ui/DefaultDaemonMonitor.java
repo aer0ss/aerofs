@@ -4,6 +4,7 @@
 
 package com.aerofs.ui;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -34,6 +35,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.DriverConstants;
 import com.aerofs.ui.IUI.IWaiter;
 import com.aerofs.ui.IUI.MessageType;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -42,6 +44,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.lib.SystemUtil.ExitCode.CORE_DB_TAMPERING;
@@ -69,6 +72,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     private final InjectableDriver _driver = new InjectableDriver();
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
+    private final LaunchArgs _launchArgs;
+
+    public DefaultDaemonMonitor(LaunchArgs launchArgs)
+    {
+        _launchArgs = launchArgs;
+    }
     /**
      * Waits until daemon starts. Throw if the daemon fails to start or timeout occurs.
      *
@@ -84,9 +93,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         } else {
             aerofsd = Util.join(AppRoot.abs(), "aerofsd");
         }
-
         Process proc = tryExec(aerofsd);
-
         IWaiter waiter = null;
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
         try {
@@ -140,8 +147,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
     private Process tryExec(String aerofsd) throws ExDaemonFailedToStart
     {
+        List<String> cmds = Lists.newArrayList();
+        cmds.add(aerofsd);
+        cmds.add(Cfg.absRTRoot());
+        cmds.addAll(_launchArgs.getArgs());
         try {
-            return SystemUtil.execBackground(aerofsd, Cfg.absRTRoot());
+            return SystemUtil.execBackground(cmds.toArray(new String[cmds.size()]));
         } catch (Exception e) {
             throw new ExDaemonFailedToStart(e);
         }
@@ -308,7 +319,6 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             _stopping = false;
             return;
         }
-
         // Cleanup any previous existing daemons
         try {
             kill();

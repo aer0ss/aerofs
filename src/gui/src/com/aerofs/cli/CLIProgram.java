@@ -1,5 +1,6 @@
 package com.aerofs.cli;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.controller.SPBadCredentialListener;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil.ExitCode;
@@ -7,6 +8,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
+import com.google.common.collect.Lists;
 
 public class CLIProgram implements IProgram
 {
@@ -18,7 +20,7 @@ public class CLIProgram implements IProgram
         // process application arguments
         for (String arg : args) processArgument(arg);
 
-        UIGlobals.initialize_(false);
+        UIGlobals.initialize_(false, new LaunchArgs(Lists.newArrayList(args)));
         SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
 
         CLI cli = new CLI();

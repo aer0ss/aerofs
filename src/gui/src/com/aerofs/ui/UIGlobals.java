@@ -1,5 +1,6 @@
 package com.aerofs.ui;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.AtomicInitializer;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.gui.TransferState;
@@ -13,6 +14,7 @@ import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.rocklog.RockLog;
+import com.aerofs.ui.IDaemonMonitor.Factory;
 import com.aerofs.ui.defect.DefectReporter;
 import com.aerofs.ui.update.Updater;
 
@@ -73,13 +75,18 @@ public final class UIGlobals
     private static final UIScheduler s_sched = new UIScheduler();
     private static final Analytics s_analytics = new Analytics(new DesktopAnalyticsProperties());
     private static final RockLog s_rockLog = new RockLog();
-    private static final DefectReporter s_defect = new DefectReporter(s_ritualProvider, dm());
 
-    public static void initialize_(boolean createShellextService)
+    private static Factory _idm;
+    private static DefectReporter s_defect;
+
+
+    public static void initialize_(boolean createShellextService, LaunchArgs launchArgs)
     {
         if (createShellextService) {
             s_shellext = new ShellextService(getServerChannelFactory(), s_ritualProvider);
         }
+        _idm = new Factory(launchArgs);
+        s_defect = new DefectReporter(s_ritualProvider, dm());
     }
 
     public static ShellextService shellext() { return s_shellext; }
@@ -98,7 +105,7 @@ public final class UIGlobals
 
     public static UINotifier notifier() { return s_notifier; }
 
-    public static IDaemonMonitor dm() { return IDaemonMonitor.Factory.get(); }
+    public static IDaemonMonitor dm() { return _idm.get(); }
 
     public static UIScheduler scheduler() { return s_sched; }
 

@@ -5,11 +5,15 @@
 package com.aerofs.gui;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.controller.CredentialUtil;
+import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.ui.UIParam;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -22,12 +26,6 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-
-
-import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
-import com.aerofs.ui.UIParam;
-import com.aerofs.gui.GUI.ISWTWorker;
 import org.slf4j.Logger;
 
 /**

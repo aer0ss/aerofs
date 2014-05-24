@@ -1,5 +1,6 @@
 package com.aerofs.shell;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
@@ -21,10 +22,11 @@ import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.hidden.CmdDstat;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.ui.IDaemonMonitor;
+import com.aerofs.ui.IDaemonMonitor.Factory;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.defect.DefectReporter;
 import com.aerofs.ui.error.ErrorMessages;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 
@@ -46,8 +48,7 @@ public class ShProgram implements IProgram, ICallback
 
     private final RitualClientProvider _ritualProvider =
             new RitualClientProvider(ChannelFactories.getClientChannelFactory());
-    public final DefectReporter _defectReporter =
-            new DefectReporter(_ritualProvider, IDaemonMonitor.Factory.getNoop());
+    public DefectReporter _defectReporter;
 
     private Path _pwd;
     private SPBlockingClient _sp;
@@ -72,6 +73,10 @@ public class ShProgram implements IProgram, ICallback
             _runner = new ShellCommandRunner<ShProgram>(this, this, PROG,
                     L.product() + " Shell, the command-line console for " + L.product(),
                     args);
+
+            LaunchArgs launchArgs = new LaunchArgs(Lists.newArrayList(args));
+            _defectReporter = new DefectReporter(_ritualProvider,
+                    new Factory(launchArgs).getNoop());
 
             initCommands_();
 

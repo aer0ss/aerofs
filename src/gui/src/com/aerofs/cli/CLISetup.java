@@ -1,14 +1,14 @@
 package com.aerofs.cli;
 
-import com.aerofs.controller.Setup;
-import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.controller.InstallActor;
+import com.aerofs.controller.Setup;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SetupModel.S3Config;
 import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdCLIActor;
+import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.RootAnchorUtil;

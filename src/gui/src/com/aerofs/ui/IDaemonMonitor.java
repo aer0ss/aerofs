@@ -1,5 +1,6 @@
 package com.aerofs.ui;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.Cfg;
 import org.slf4j.Logger;
@@ -32,11 +33,16 @@ public interface IDaemonMonitor
     /**
      * Factory class that instantiates an implementation of IDaemonMonitor
      */
-    public static abstract class Factory
+    public class Factory
     {
-        private static IDaemonMonitor _defaultMonitor = new DefaultDaemonMonitor();
-        private static IDaemonMonitor _noopMonitor = new NoopDaemonMonitor();
+        private IDaemonMonitor _defaultDaemonMonitor;
+        private IDaemonMonitor _noopMonitor;
 
+        public Factory(LaunchArgs launchArgs)
+        {
+            _defaultDaemonMonitor = new DefaultDaemonMonitor(launchArgs);
+            _noopMonitor = new NoopDaemonMonitor();
+        }
         /**
          * Creates and returns an implementation of IDaemonMonitor dependant on Cfg.useDM().
          * If Cfg.useDM() returns true, the default daemon monitor will be instantiated. Otherwise,
@@ -44,12 +50,12 @@ public interface IDaemonMonitor
          *
          * @return An implementation of IDaemonMonitor
          */
-        public static IDaemonMonitor get()
+        public IDaemonMonitor get()
         {
-            return Cfg.useDM() ? _defaultMonitor : _noopMonitor;
+            return Cfg.useDM() ? _defaultDaemonMonitor : _noopMonitor;
         }
 
-        public static IDaemonMonitor getNoop()
+        public IDaemonMonitor getNoop()
         {
             return _noopMonitor;
         }

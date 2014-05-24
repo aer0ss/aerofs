@@ -148,8 +148,7 @@ public class UIUtil
      *
      * FIXME(AT) despite what the method signature states and suggests, preLaunch isn't executed
      * before Launcher.launch().
-     *
-     * @param preLaunch a runnable that will be executed in the UI thread
+     *  @param preLaunch a runnable that will be executed in the UI thread
      * @param postLaunch a runnable that will be executed in the UI thread, iff the launch succeeds
      */
     public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch)
@@ -235,7 +234,8 @@ public class UIUtil
         }
     }
 
-    private static void scheduleLaunch(final String rtRoot, Runnable preLaunch, final Runnable postLaunch)
+    private static void scheduleLaunch(final String rtRoot, Runnable preLaunch,
+            final Runnable postLaunch)
     {
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
         ThreadUtil.startDaemonThread("launcher-worker", new Runnable() {
