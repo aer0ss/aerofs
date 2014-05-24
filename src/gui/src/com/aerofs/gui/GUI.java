@@ -1,5 +1,6 @@
 package com.aerofs.gui;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.Loggers;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.controller.InstallActor;
@@ -122,7 +123,7 @@ public class GUI implements IUI
         GUIUtil.centerShell(_sh);
     }
 
-    public void scheduleLaunch(final String rtRoot)
+    public void scheduleLaunch(final String rtRoot, final LaunchArgs launchArgs)
     {
         asyncExec(new Runnable()
         {
@@ -142,7 +143,7 @@ public class GUI implements IUI
                             {
                                 postLaunch();
                             }
-                        });
+                        }, launchArgs);
             }
         });
     }
@@ -554,9 +555,9 @@ public class GUI implements IUI
     }
 
     @Override
-    public void setup_(String rtRoot) throws Exception
+    public void setup_(String rtRoot, LaunchArgs launchArgs) throws Exception
     {
-        SetupModel model = new SetupModel(rtRoot);
+        SetupModel model = new SetupModel(rtRoot, launchArgs);
         UnattendedSetup unattendedSetup = new UnattendedSetup(rtRoot);
 
         if (unattendedSetup.setupFileExists()) {
@@ -695,9 +696,9 @@ public class GUI implements IUI
     }
 
     @Override
-    public void retypePassword()
+    public void retypePassword(LaunchArgs launchArgs)
     {
-        new DlgRetypePassword(GUI.get().sh()).open();
+        new DlgRetypePassword(GUI.get().sh(), launchArgs).open();
     }
 
     private int _openShells;

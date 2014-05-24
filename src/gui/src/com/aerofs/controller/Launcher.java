@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -132,7 +133,7 @@ public class Launcher
         }
     }
 
-    public static void launch(final boolean isFirstTime) throws Exception
+    public static void launch(final boolean isFirstTime, final LaunchArgs launchArgs) throws Exception
     {
         try {
             // verify checksums *before* launching the daemon to avoid reporting daemon launching
@@ -142,7 +143,7 @@ public class Launcher
             // SanityPoller should be executed before the daemon starts so that the users know
             // that they moved or deleted the root anchor prior to the daemon failing because
             // that folder is missing
-            UIGlobals.rap().start();
+            UIGlobals.rap().start(launchArgs);
 
             if (isFirstTime) {
                 // need to bind to singleton port
@@ -152,7 +153,7 @@ public class Launcher
                 // should already be bound to singleton port
                 Preconditions.checkNotNull(_ss);
                 try {
-                    UIGlobals.dm().start();
+                    UIGlobals.dm().start(launchArgs);
                 } catch (ExNotSetup e) {
                     destroySingletonSocket();
                     throw e;
@@ -185,13 +186,13 @@ public class Launcher
 
             runPostUpdateTasks();
 
-            new UILaunchTasks().runAll();
+            new UILaunchTasks(launchArgs).runAll();
 
             // TODO (WW) use UILaunchTasks to run them?
             cleanNativeLogs();
 
             // TODO (WW) use UILaunchTasks to run them?
-            startWorkerThreads();
+            startWorkerThreads(launchArgs);
 
         } catch (Exception ex) {
             SVClient.logSendDefectAsync(true, "launch failed", ex);
@@ -258,7 +259,7 @@ public class Launcher
         }
     }
 
-    private static void startWorkerThreads()
+    private static void startWorkerThreads(LaunchArgs launchArgs)
     {
         // There is no SV in enterprise, so the archiver's gzipped logs will stick around
         // forever. Don't compress on enterprise, and let logback delete old logs
@@ -270,7 +271,7 @@ public class Launcher
         new CommandNotificationSubscriber(
                 ChannelFactories.getClientChannelFactory(),
                 UIGlobals.scheduler(),
-                DryadUploadService.Factory.create(absRTRoot()),
+                DryadUploadService.Factory.create(absRTRoot(), launchArgs),
                 Cfg.did())
             .start();
 

@@ -4,6 +4,7 @@
 
 package com.aerofs.ui.launch_tasks;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -37,13 +38,15 @@ public class ULTRecertifyDevice extends UILaunchTask
     private static final int REFRESH_MARGIN_DAYS = 150;
     private UserID _userId;
     private DID _deviceId;
+    private LaunchArgs _launchArgs;
 
     @Inject
-    ULTRecertifyDevice(IScheduler sched, UserID userId, DID deviceId)
+    ULTRecertifyDevice(IScheduler sched, UserID userId, DID deviceId, LaunchArgs launchArgs)
     {
         super(sched);
         _userId = userId;
         _deviceId = deviceId;
+        _launchArgs = launchArgs;
     }
 
     @Override
@@ -92,7 +95,7 @@ public class ULTRecertifyDevice extends UILaunchTask
             recertifyAction.call();
             Cfg.init_(Cfg.absRTRoot(), false);
         } finally {
-            UIGlobals.dm().start();
+            UIGlobals.dm().start(_launchArgs);
         }
     }
 
@@ -114,7 +117,7 @@ public class ULTRecertifyDevice extends UILaunchTask
         l.info("attempting to recertify device {}", Cfg.did());
 
         final ExceptionWrapper ac = new ExceptionWrapper();
-        final SetupModel setupModel = new SetupModel(Cfg.absRTRoot());
+        final SetupModel setupModel = new SetupModel(Cfg.absRTRoot(), _launchArgs);
 
         UI.get().exec(new Runnable()
         {

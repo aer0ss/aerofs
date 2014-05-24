@@ -4,6 +4,7 @@
 
 package com.aerofs.ui;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -34,6 +35,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.DriverConstants;
 import com.aerofs.ui.IUI.IWaiter;
 import com.aerofs.ui.IUI.MessageType;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -42,6 +44,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.lib.SystemUtil.ExitCode.CORE_DB_TAMPERING;
@@ -73,8 +76,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      * Waits until daemon starts. Throw if the daemon fails to start or timeout occurs.
      *
      * @return the daemon process.
+     * @param launchArgs
      */
-    private @Nonnull Process startDaemon()
+    private @Nonnull Process startDaemon(LaunchArgs launchArgs)
             throws ExUIMessage, ExNotSetup, IOException, ExTimeout, ExDaemonFailedToStart
     {
         String aerofsd;
@@ -84,9 +88,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         } else {
             aerofsd = Util.join(AppRoot.abs(), "aerofsd");
         }
-
-        Process proc = tryExec(aerofsd);
-
+        Process proc = tryExec(aerofsd, launchArgs);
         IWaiter waiter = null;
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
         try {
@@ -97,7 +99,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 try {
                     throwIfDaemonExits(proc);
                 } catch (ShouldRestart ee) {
-                    proc = tryExec(aerofsd);
+                    proc = tryExec(aerofsd,launchArgs);
                 }
 
                 switch (getDaemonState()) {
@@ -138,10 +140,14 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         }
     }
 
-    private Process tryExec(String aerofsd) throws ExDaemonFailedToStart
+    private Process tryExec(String aerofsd, LaunchArgs launchArgs) throws ExDaemonFailedToStart
     {
+        List<String> cmds = Lists.newArrayList();
+        cmds.add(aerofsd);
+        cmds.add(Cfg.absRTRoot());
+        cmds.addAll(launchArgs.getArgs());
         try {
-            return SystemUtil.execBackground(aerofsd, Cfg.absRTRoot());
+            return SystemUtil.execBackground(cmds.toArray(new String[cmds.size()]));
         } catch (Exception e) {
             throw new ExDaemonFailedToStart(e);
         }
@@ -300,7 +306,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     }
 
     @Override
-    public void start()
+    public void start(final LaunchArgs launchArgs)
             throws IOException, ExUIMessage, ExNotSetup, ExDaemonFailedToStart, ExTimeout
     {
         // if we were stopped, simply let the monitor thread restart the daemon
@@ -308,7 +314,6 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             _stopping = false;
             return;
         }
-
         // Cleanup any previous existing daemons
         try {
             kill();
@@ -320,7 +325,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         l.info("starting daemon");
 
         _stopping = false;
-        final @Nonnull Process proc = startDaemon();
+        final @Nonnull Process proc = startDaemon(launchArgs);
 
         if (_firstStart) {
             // start the monitor thread
@@ -328,7 +333,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 @Override
                 public void run()
                 {
-                    thdMonitor(proc);
+                    thdMonitor(proc, launchArgs);
                 }
             });
 
@@ -384,7 +389,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     /**
      * Monitors the daemon process and restarts it if necessary. Executed in its own thread.
      */
-    private void thdMonitor(@Nonnull Process proc)
+    private void thdMonitor(@Nonnull Process proc, LaunchArgs launchArgs)
     {
         //noinspection InfiniteLoopStatement
         while (true) {
@@ -407,7 +412,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             while (true) {
                 try {
                     l.info("restart daemon");
-                    proc = startDaemon();
+                    proc = startDaemon(launchArgs);
                     l.info("daemon restarted");
                     break;
                 } catch (ExUIMessage e) {

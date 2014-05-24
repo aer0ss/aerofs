@@ -1,5 +1,6 @@
 package com.aerofs.ui;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.lib.ex.ExNoConsole;
 
 /**
@@ -109,7 +110,7 @@ public interface IUI {
      * Do the setup process
      * @throws com.aerofs.controller.ExLaunchAborted if the user canceled the setup
      */
-    void setup_(String rtRoot) throws Exception;
+    void setup_(String rtRoot, LaunchArgs launchArgs) throws Exception;
 
     /**
      * Stop daemon (ignoring errors), dispose all UI components, and quit the current process
@@ -120,5 +121,5 @@ public interface IUI {
      * @throws ExNoConsole if no console is found. the method show()s an error
      * message before throwing.
      */
-    void retypePassword() throws ExNoConsole;
+    void retypePassword(LaunchArgs launchArgs) throws ExNoConsole;
 }

@@ -1,5 +1,6 @@
 package com.aerofs.ui;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.Cfg;
 import org.slf4j.Logger;
@@ -13,8 +14,9 @@ public interface IDaemonMonitor
      * (when it responds to RPC calls).
      *
      * @throws Exception
+     * @param launchArgs
      */
-    void start() throws Exception;
+    void start(LaunchArgs launchArgs) throws Exception;
 
     /**
      * Stops the daemon and ignores any exceptions that may have
@@ -62,7 +64,7 @@ public interface IDaemonMonitor
             private static final Logger l = Loggers.getLogger(NoopDaemonMonitor.class);
 
             @Override
-            public void start() throws Exception
+            public void start(LaunchArgs args) throws Exception
             {
                 l.info("starting daemon has no effect");
             }

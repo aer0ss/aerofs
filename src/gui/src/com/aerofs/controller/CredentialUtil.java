@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.Base64;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
@@ -38,7 +39,7 @@ public class CredentialUtil
     // updateStoredPassword updated the credentials stored locally.  This must be called
     // when a password is changed so the client can authenticate successfully.  It also
     // is called when a new password is provided (after ExBadCredentials).
-    static public void updateStoredPassword(UserID userId, char[] password)
+    static public void updateStoredPassword(UserID userId, char[] password, LaunchArgs launchArgs)
             throws Exception
     {
         byte[] scrypted = SecUtil.scrypt(password, userId);
@@ -55,7 +56,7 @@ public class CredentialUtil
 
         //restart the daemon to reload the new password.
         UIGlobals.dm().stop();
-        UIGlobals.dm().start();
+        UIGlobals.dm().start(launchArgs);
     }
 
     /**

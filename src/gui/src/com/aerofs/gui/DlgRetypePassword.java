@@ -4,6 +4,7 @@
 
 package com.aerofs.gui;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
 import com.aerofs.controller.CredentialUtil;
@@ -40,8 +41,9 @@ public class DlgRetypePassword extends AeroFSJFaceDialog
 
     private Label _status;
     private Text _passwd;
+    private LaunchArgs _launchArgs;
 
-    public DlgRetypePassword(Shell parentShell)
+    public DlgRetypePassword(Shell parentShell, LaunchArgs launchArgs)
     {
         super("Enter Password", parentShell, false, false, true, true);
     }
@@ -124,7 +126,8 @@ public class DlgRetypePassword extends AeroFSJFaceDialog
                 {
                     try {
                         CredentialUtil.updateStoredPassword(
-                                UserID.fromExternal(Cfg.user().getString()), passwd.toCharArray());
+                                UserID.fromExternal(Cfg.user().getString()), passwd.toCharArray(),
+                                _launchArgs);
                     } catch (Exception e) {
                         ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
                         throw e;

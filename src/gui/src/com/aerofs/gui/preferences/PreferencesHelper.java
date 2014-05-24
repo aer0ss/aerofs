@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.preferences;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
@@ -530,7 +531,7 @@ public class PreferencesHelper
                     // the problem with calling stop that the daemon is not restarted if there are
                     // any exceptions.
                     UIGlobals.dm().stopIgnoreException();
-                    UIGlobals.dm().start();
+                    UIGlobals.dm().start(new LaunchArgs());
                 } catch (Exception ex) {
                     String message2 = L.product() + " couldn't start the background service after " +
                             "applying these changes. Please restart " + L.product();

@@ -4,6 +4,7 @@
 
 package com.aerofs.ui;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.Loggers;
 import com.aerofs.controller.IViewNotifier.Type;
 import org.slf4j.Logger;
@@ -20,26 +21,26 @@ public class RetypePasswordDialogDisplayer
      */
     private AtomicBoolean dialogIsOpen = new AtomicBoolean(false);
 
-    public RetypePasswordDialogDisplayer()
+    public RetypePasswordDialogDisplayer(final LaunchArgs launchArgs)
     {
         IUINotificationListener l = new IUINotificationListener() {
             @Override
             public void onNotificationReceived(Object notification)
             {
-                showDialog();
+                showDialog(launchArgs);
             }
         };
         UIGlobals.notifier().addListener(Type.SHOW_RETYPE_PASSWORD, l);
     }
 
-    private void showDialog()
+    private void showDialog(LaunchArgs launchArgs)
     {
         l.warn("Retype password");
         // Try to set dialogIsOpen from false to true.  This will only succeed for one
         // thread at a time, guaranteeing only one dialog can be displayed at a time.
         if (dialogIsOpen.compareAndSet(false, true)) {
             try {
-                UI.get().retypePassword();
+                UI.get().retypePassword(launchArgs);
             } catch (Exception e) {
                 l.warn("password err:", e);
             }

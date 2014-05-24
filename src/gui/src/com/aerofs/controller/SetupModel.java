@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SecUtil;
@@ -29,9 +30,9 @@ import com.aerofs.sp.client.SPBlockingClient;
  */
 public class SetupModel
 {
-    public SetupModel(String rtroot)
+    public SetupModel(String rtroot, LaunchArgs launchArgs)
     {
-        _setup = new Setup(rtroot);
+        _setup = new Setup(rtroot, launchArgs);
 
         _devAlias = Setup.getDefaultDeviceName();
         _isLocal = true;

@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.LaunchArgs;
 import com.aerofs.base.Base64;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
@@ -51,11 +52,14 @@ public class Setup
 {
     private static final Logger l = Loggers.getLogger(Setup.class);
     private final String _rtRoot;
+    private final LaunchArgs _launchArgs;
+
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
-    public Setup(String rtRoot)
+    public Setup(String rtRoot, LaunchArgs launchArgs)
     {
         _rtRoot = checkNotNull(rtRoot);
+        _launchArgs = launchArgs;
     }
 
     /**
@@ -166,7 +170,7 @@ public class Setup
         initializeConfiguration(userID, userID.getString(), did, rootAnchorPath, storageType,
                 s3config, scrypted, sp, apiAccess);
 
-        setupCommon(rootAnchorPath);
+        setupCommon(rootAnchorPath, _launchArgs);
 
         addToFavorite(rootAnchorPath);
     }
@@ -187,19 +191,19 @@ public class Setup
         initializeConfiguration(tsUserId, userID.getString(), tsDID, rootAnchorPath, storageType,
                 s3config, tsScrypted, sp, apiAccess);
 
-        setupCommon(rootAnchorPath);
+        setupCommon(rootAnchorPath, _launchArgs);
     }
 
-    private void setupCommon(String rootAnchorPath)
+    private void setupCommon(String rootAnchorPath, LaunchArgs launchArgs)
             throws Exception
     {
-        initializeAndLaunchDaemon();
+        initializeAndLaunchDaemon(launchArgs);
 
         // indicates that the user is fully setup
         _factFile.create(_rtRoot, LibParam.SETTING_UP).deleteOrOnExit();
 
         // Proceed with AeroFS launch
-        Launcher.launch(true);
+        Launcher.launch(true, launchArgs);
 
         setRootAnchorIcon(rootAnchorPath);
     }
@@ -237,7 +241,7 @@ public class Setup
         }
     }
 
-    private void initializeAndLaunchDaemon()
+    private void initializeAndLaunchDaemon(LaunchArgs launchArgs)
             throws Exception
     {
         // Clean up the running daemon if any. It is needed as the daemon process may lock files in
@@ -268,7 +272,7 @@ public class Setup
         InjectableFile fDB = _factFile.create(_rtRoot, LibParam.CORE_DATABASE);
         fDB.deleteOrThrowIfExist();
 
-        UIGlobals.dm().start();
+        UIGlobals.dm().start(launchArgs);
     }
 
     /**
@@ -323,7 +327,7 @@ public class Setup
      */
     private static void addToFavorite(final String rootAnchorPath)
     {
-        ThreadUtil.startDaemonThread("add-to-fav", new Runnable()
+        ThreadUtil.startDaemonThread("addArg-to-fav", new Runnable()
         {
             @Override
             public void run()
@@ -331,7 +335,7 @@ public class Setup
                 try {
                     OSUtil.get().addToFavorite(rootAnchorPath);
                 } catch (Exception e) {
-                    l.warn("add to fav: " + Util.e(e));
+                    l.warn("addArg to fav: " + Util.e(e));
                 }
             }
         });
