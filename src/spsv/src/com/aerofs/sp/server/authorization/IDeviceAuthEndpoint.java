@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.authentication;
+package com.aerofs.sp.server.authorization;
 
 import com.aerofs.base.id.UserID;
 import org.json.simple.JSONObject;
@@ -6,8 +6,8 @@ import org.json.simple.JSONObject;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
-public interface ISystemAuthEndpoint
+public interface IDeviceAuthEndpoint
 {
-    public boolean isSystemAuthorized(UserID userID, JSONObject body)
+    public boolean isDeviceAuthorized(UserID userID, JSONObject body)
             throws IOException, GeneralSecurityException;
 }

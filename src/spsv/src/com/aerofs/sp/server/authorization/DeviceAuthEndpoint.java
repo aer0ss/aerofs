@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.authentication;
+package com.aerofs.sp.server.authorization;
 
 import java.io.OutputStream;
 import com.aerofs.base.Loggers;
@@ -19,31 +19,35 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 
-public class SystemAuthEndpoint implements ISystemAuthEndpoint
+public class DeviceAuthEndpoint implements IDeviceAuthEndpoint
 {
-    private static final Logger l = Loggers.getLogger(SystemAuthEndpoint.class);
+    private static final Logger l = Loggers.getLogger(DeviceAuthEndpoint.class);
 
     private final String _host;
     private final int _port;
+    private final String _path;
     private final boolean _useSSL;
     private final String _certificate;
 
-    public SystemAuthEndpoint()
+    public DeviceAuthEndpoint()
     {
-        _host = SystemAuthParam.SYSTEM_AUTH_ENDPOINT_HOST;
-        _port = SystemAuthParam.SYSTEM_AUTH_ENDPOINT_PORT;
-        _useSSL = SystemAuthParam.SYSTEM_AUTH_ENDPOINT_USE_SSL;
-        _certificate = SystemAuthParam.SYSTEM_AUTH_ENDPOINT_CERTIFICATE;
+        _host = DeviceAuthParam.DEVICE_AUTH_ENDPOINT_HOST;
+        _port = DeviceAuthParam.DEVICE_AUTH_ENDPOINT_PORT;
+        _path = DeviceAuthParam.DEVICE_AUTH_ENDPOINT_PATH;
+        _useSSL = DeviceAuthParam.DEVICE_AUTH_ENDPOINT_USE_SSL;
+        _certificate = DeviceAuthParam.DEVICE_AUTH_ENDPOINT_CERTIFICATE;
     }
 
     private URL createResourceURL(UserID userID)
             throws MalformedURLException
     {
-        return new URL(String.format("%s://%s%s/system/v1.0/%s/authorized",
-                _useSSL ? "https" : "http",
-                _host,
-                _port == 0 ? "" : String.format(":%d", _port),
-                userID));
+        return new URL(
+                String.format("%s://", _useSSL ? "https" : "http") +
+                String.format("%s%s/%s/device/v1.0/%s/authorized",
+                    _host,
+                    _port == 0 ? "" : String.format(":%d", _port),
+                    _path,
+                    userID).replaceAll("/+", "/"));
     }
 
     private SSLContext createSSLContext()
@@ -55,11 +59,13 @@ public class SystemAuthEndpoint implements ISystemAuthEndpoint
     }
 
     @Override
-    public boolean isSystemAuthorized(UserID userID, JSONObject body)
+    public boolean isDeviceAuthorized(UserID userID, JSONObject body)
             throws IOException, GeneralSecurityException
     {
         URL url = createResourceURL(userID);
         HttpURLConnection connection;
+
+        l.info("Using device auth URI: " + url.toString());
 
         // In the case when we are using SSL, cast to an HTTPS connection and optionally specify
         // the endpoint certificate.
@@ -76,7 +82,8 @@ public class SystemAuthEndpoint implements ISystemAuthEndpoint
         }
 
         connection.setRequestMethod("POST");
-        connection.setReadTimeout(5000);
+        connection.setConnectTimeout(3000);
+        connection.setReadTimeout(3000);
 
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);

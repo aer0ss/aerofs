@@ -110,9 +110,9 @@ import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
-import com.aerofs.sp.server.authentication.SystemAuthClient;
-import com.aerofs.sp.server.authentication.SystemAuthEndpoint;
-import com.aerofs.sp.server.authentication.SystemAuthParam;
+import com.aerofs.sp.server.authorization.DeviceAuthClient;
+import com.aerofs.sp.server.authorization.DeviceAuthEndpoint;
+import com.aerofs.sp.server.authorization.DeviceAuthParam;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
@@ -231,8 +231,8 @@ public class SPService implements ISPService
     private final Boolean OPEN_SIGNUP =
             getBooleanProperty("open_signup", true);
 
-    private final SystemAuthClient _systemAuthClient =
-            new SystemAuthClient(new SystemAuthEndpoint());
+    private final DeviceAuthClient _systemAuthClient =
+            new DeviceAuthClient(new DeviceAuthEndpoint());
 
     public SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
@@ -1005,26 +1005,26 @@ public class SPService implements ISPService
      * Throw if system is not authorized to register a device, i.e. install the AeroFS desktop
      * client or Team Server.
      *
-     * This function is related to the system authorization subsystem. For details please consult
-     * the design document: docs/design/system_authorization.md
+     * This function is related to the device authorization subsystem. For details please consult
+     * the design document: docs/design/device_authorization.md
      *
      * @throws ExBadArgs when the interfaces parameter is invalid.
      * @throws ExNoPerm when the system is not authorized to register a device. This occurs when
-     * both of the following are true: (1) the system authorization endpoint has been configured and
-     * is enabled in the bunker configuration interface, and (2) when the system authorization
+     * both of the following are true: (1) the device authorization endpoint has been configured and
+     * is enabled in the bunker configuration interface, and (2) when the device authorization
      * endpoint says the device is not authorized.
-     * @throws ExNoResource when there is some communication failure with the system authorization
+     * @throws ExNoResource when there is some communication failure with the device authorization
      * endpoint and the appliance.
      */
     private void throwIfSystemIsNotAuthorizedToRegisterDevice(UserID userID, String osFamily,
             String osName, String deviceName, List<Interface> interfaces)
             throws ExBadArgs, ExNoPerm, ExNoResource
     {
-        if (!SystemAuthParam.SYSTEM_AUTH_ENDPOINT_ENABLED) {
+        if (!DeviceAuthParam.DEVICE_AUTH_ENDPOINT_ENABLED) {
             return;
         }
 
-        l.info("{}: check endpoint for system authorization", userID);
+        l.info("{}: check endpoint for device authorization", userID);
 
         // Null check for backward compatibility.
         // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove null check on proto version bump.
@@ -1038,10 +1038,10 @@ public class SPService implements ISPService
              isSystemAuthorized = _systemAuthClient.isSystemAuthorized(userID, osFamily, osName,
                      deviceName, interfaces);
         } catch (IOException e) {
-            l.error("{}: I/O error contacting system authorization endpoint: {}", userID, e);
+            l.error("{}: I/O error contacting device authorization endpoint: {}", userID, e);
             throw new ExNoResource();
         } catch (GeneralSecurityException e) {
-            l.error("{}: general security exception: ", userID, e);
+            l.error("{}: general security exception: {}", userID, e);
             throw new ExNoResource();
         }
 

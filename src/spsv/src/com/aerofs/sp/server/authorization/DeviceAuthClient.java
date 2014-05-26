@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.authentication;
+package com.aerofs.sp.server.authorization;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -11,13 +11,13 @@ import org.json.simple.JSONObject;
 import com.aerofs.proto.Sp.RegisterDeviceCall.Interface;
 
 /**
- * See docs/design/system_authorization.md for the design of the endpoint.
+ * See docs/design/device_authorization.md for the design of the endpoint.
  */
-public class SystemAuthClient
+public class DeviceAuthClient
 {
-    private final ISystemAuthEndpoint _endpoint;
+    private final IDeviceAuthEndpoint _endpoint;
 
-    public SystemAuthClient(ISystemAuthEndpoint endpoint)
+    public DeviceAuthClient(IDeviceAuthEndpoint endpoint)
     {
         _endpoint = endpoint;
     }
@@ -55,6 +55,6 @@ public class SystemAuthClient
             throws IOException, GeneralSecurityException
     {
         JSONObject jsonBody = encodeParamsAsJSON(osFamily, osName, deviceName, interfaces);
-        return _endpoint.isSystemAuthorized(userID, jsonBody);
+        return _endpoint.isDeviceAuthorized(userID, jsonBody);
     }
 }

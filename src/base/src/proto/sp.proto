@@ -934,7 +934,7 @@ message RegisterDeviceCall {
     required string device_name = 5;
 
     // The list of interfaces on the machine. Required for validation with the system authorization
-    // endpoint (see docs/design/system_authorization.md).
+    // endpoint (see docs/design/device_authorization.md).
     repeated Interface interfaces = 6;
 }
 

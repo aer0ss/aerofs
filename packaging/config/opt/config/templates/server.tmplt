@@ -62,11 +62,12 @@ show_quota_options={{ show_quota_options }}
 monitoring.username=monitor
 monitoring.password={{ monitoring_password }}
 
-system.authorization.endpoint_enabled={{ system_authorization_endpoint_enabled }}
-system.authorization.endpoint_host={{ system_authorization_endpoint_host }}
-system.authorization.endpoint_port={{ system_authorization_endpoint_port }}
-system.authorization.endpoint_use_ssl={{ system_authorization_endpoint_use_ssl }}
-system.authorization.endpoint_certificate={{ system_authorization_endpoint_certificate }}
+device.authorization.endpoint_enabled={{ device_authorization_endpoint_enabled }}
+device.authorization.endpoint_host={{ device_authorization_endpoint_host }}
+device.authorization.endpoint_port={{ device_authorization_endpoint_port }}
+device.authorization.endpoint_path={{ device_authorization_endpoint_path }}
+device.authorization.endpoint_use_ssl={{ device_authorization_endpoint_use_ssl }}
+device.authorization.endpoint_certificate={{ device_authorization_endpoint_certificate }}
 
 {# This section will be filled with all key-value pairs stored in the
  # license-info file inside the license file.  On first boot, it will be empty;

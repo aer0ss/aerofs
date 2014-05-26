@@ -6,8 +6,8 @@ package com.aerofs.sp.authentication;
 
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.RegisterDeviceCall.Interface;
-import com.aerofs.sp.server.authentication.ISystemAuthEndpoint;
-import com.aerofs.sp.server.authentication.SystemAuthClient;
+import com.aerofs.sp.server.authorization.DeviceAuthClient;
+import com.aerofs.sp.server.authorization.IDeviceAuthEndpoint;
 import com.google.common.collect.ImmutableList.Builder;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -30,10 +30,10 @@ public class TestSP_SystemAuthClient
     @Test
     public void shouldEncodeBodyAsValidJSON() throws Exception
     {
-        SystemAuthClient client = new SystemAuthClient(new ISystemAuthEndpoint()
+        DeviceAuthClient client = new DeviceAuthClient(new IDeviceAuthEndpoint()
         {
             @Override
-            public boolean isSystemAuthorized(UserID userID, JSONObject body)
+            public boolean isDeviceAuthorized(UserID userID, JSONObject body)
                     throws IOException
             {
                 // Fully encode and decode the JSON object to ensure toJSONString() is working.

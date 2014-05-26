@@ -33,6 +33,8 @@ routes = [
     'download_logs',
     'auditing',
     'json_set_auditing',
+    'device_authorization',
+    'json_set_device_authorization',
     'registered_apps',
     'register_app',
     'json_delete_app',
