@@ -8,8 +8,8 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.RestObject;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.sun.istack.internal.NotNull;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
@@ -22,7 +22,7 @@ public class OAuthScopeParsingUtil
         Scope scope;
         RestObject object;
 
-        public QualifiedScope(@NotNull Scope scope, @Nullable RestObject object)
+        public QualifiedScope(@Nonnull Scope scope, @Nullable RestObject object)
         {
             this.scope = scope;
             this.object = object;
