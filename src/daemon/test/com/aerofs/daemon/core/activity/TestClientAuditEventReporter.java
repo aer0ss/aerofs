@@ -9,7 +9,9 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Cat;
@@ -29,11 +31,13 @@ import com.google.common.collect.Sets;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -43,6 +47,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.notNull;
@@ -53,6 +59,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+
+import static org.junit.Assert.assertEquals;
 
 // TODO (AG): verify date format?
 // TODO (AG): attempt to inject batch size and num events/publish size
@@ -96,7 +104,36 @@ public final class TestClientAuditEventReporter
         }
     }
 
-    private static ActivityRow newActivityRow(long rowIndex, int activityValue, boolean hasParentPath, DID sourceDid)
+    private static class MockRemoteActivityLogDBIterator extends MockDBIterator<ActivityRow>
+    {
+        private static Random RANDOM = new Random();
+
+        public MockRemoteActivityLogDBIterator(long startIndex, int numRows)
+        {
+            this(generateRows(startIndex, numRows));
+        }
+
+        private MockRemoteActivityLogDBIterator(ActivityRow[] rows)
+        {
+            super(rows);
+        }
+
+        private static ActivityRow[] generateRows(long startIndex, int numRows)
+        {
+            ActivityRow[] rows = new ActivityRow[numRows];
+
+            for (int i = 0; i < numRows; i++) {
+                rows[i] = newActivityRow(startIndex + i,
+                        ClientActivity.CONTENT_COMPLETED.getValue(), RANDOM.nextBoolean(),
+                        DID.generate());
+            }
+
+            return rows;
+        }
+    }
+
+    private static ActivityRow newActivityRow(long rowIndex, int activityValue,
+            boolean hasParentPath, DID sourceDid)
     {
         return new ActivityRow(
                 rowIndex,
@@ -119,6 +156,7 @@ public final class TestClientAuditEventReporter
     private final ActivityLog _al = mock(ActivityLog.class);
     private final IAuditorClient _auditorClient = mock(IAuditorClient.class);
     private final IAuditDatabase _auditDatabase = mock(IAuditDatabase.class);
+    private final UserAndDeviceNames _udinfo = mock(UserAndDeviceNames.class);
 
     private ClientAuditEventReporter _caer; // sut
 
@@ -140,7 +178,8 @@ public final class TestClientAuditEventReporter
                 _sidxToSid,
                 _al,
                 _auditorClient,
-                _auditDatabase);
+                _auditDatabase,
+                _udinfo);
     }
 
     @Test
@@ -376,7 +415,7 @@ public final class TestClientAuditEventReporter
         assertThat(thrown.get(), notNullValue());
         assertThat(thrown.get(), Matchers.<Exception>is(auditorException));
 
-        // verify that we tried to publish a few times before the acutal failing call
+        // verify that we tried to publish a few times before the actual failing call
         verify(_auditorClient, times(3)).submit(notNull(String.class));
         verifyNoMoreInteractions(_auditorClient);
 
@@ -387,5 +426,65 @@ public final class TestClientAuditEventReporter
 
         // just a final check of the internal state
         assertThat(_caer.getLastActivityLogIndex_(), equalTo(startActivityLogIndex));
+    }
+
+    @Test
+    public void shouldResolveDestinationUserIDForFileTransferEvents()
+            throws Exception
+    {
+        int numNewActivityLogRows = 1;
+        long startActivityLogIndex = 0;
+        long finitActivityLogIndex = startActivityLogIndex + numNewActivityLogRows;
+
+        when(_auditDatabase.getLastReportedActivityRow_())
+                .thenReturn(startActivityLogIndex);
+        when(_al.getActivitesAfterIndex_(startActivityLogIndex))
+                .thenReturn(new MockRemoteActivityLogDBIterator(1, numNewActivityLogRows));
+        when(_al.getActivitesAfterIndex_(finitActivityLogIndex))
+                .thenReturn(new MockRemoteActivityLogDBIterator(2, 0));
+        when(_udinfo.getDeviceOwnerNullable_(any(DID.class)))
+                .thenReturn(UserID.fromExternal("user@acme.com"));
+
+        _caer.init_();
+        _caer.reportEventsForUnitTestOnly_();
+
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(_auditorClient).submit(captor.capture());
+
+        List<String> args = captor.getAllValues();
+        assertEquals(1, args.size());
+        assertTrue(args.get(0).contains("\"destination_user\":\"user@acme.com\""));
+
+        // just a final check of the internal state
+        assertThat(_caer.getLastActivityLogIndex_(), equalTo(finitActivityLogIndex));
+    }
+
+    @Test
+    public void shouldInsertEmptyTagForFileTransferEvents()
+            throws Exception
+    {
+        int numNewActivityLogRows = 1;
+        long startActivityLogIndex = 0;
+        long finitActivityLogIndex = startActivityLogIndex + numNewActivityLogRows;
+
+        when(_auditDatabase.getLastReportedActivityRow_())
+                .thenReturn(startActivityLogIndex);
+        when(_al.getActivitesAfterIndex_(startActivityLogIndex))
+                .thenReturn(new MockRemoteActivityLogDBIterator(1, numNewActivityLogRows));
+        when(_al.getActivitesAfterIndex_(finitActivityLogIndex))
+                .thenReturn(new MockRemoteActivityLogDBIterator(2, 0));
+
+        _caer.init_();
+        _caer.reportEventsForUnitTestOnly_();
+
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(_auditorClient).submit(captor.capture());
+
+        List<String> args = captor.getAllValues();
+        assertEquals(1, args.size());
+        assertFalse(args.get(0).contains("\"destination_user\":\"user@acme.com\""));
+
+        // just a final check of the internal state
+        assertThat(_caer.getLastActivityLogIndex_(), equalTo(finitActivityLogIndex));
     }
 }

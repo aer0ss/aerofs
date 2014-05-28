@@ -136,7 +136,7 @@ public enum ClientActivity
                 }
             }
         } else {
-            // remotely-requested activitiesare exclusive
+            // remotely-requested activities are exclusive
             if ((activityValue ^ META_REQUEST.getValue()) == 0) {
                 activities.add(META_REQUEST);
             } else if ((activityValue ^ CONTENT_REQUEST.getValue()) == 0) {

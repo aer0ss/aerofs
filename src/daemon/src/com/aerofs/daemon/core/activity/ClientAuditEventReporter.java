@@ -11,10 +11,13 @@ import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.NoObfuscation;
 import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Cat;
@@ -72,6 +75,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
     private final Scheduler _scheduler;
     private final TransManager _tm;
     private final IAuditDatabase _auditDatabase;
+    private final UserAndDeviceNames _udinfo;
     private final ActivityLog _activityLog;
     private final IMapSIndex2SID _sidxTosid;
     private final SimpleDateFormat _dateFormat;
@@ -143,7 +147,8 @@ public final class ClientAuditEventReporter // this can be final because it's no
             IMapSIndex2SID sidxTosid,
             ActivityLog activityLog,
             IAuditorClient auditorClient,
-            IAuditDatabase auditDatabase)
+            IAuditDatabase auditDatabase,
+            UserAndDeviceNames udinfo)
     {
         _localdid = localdid.get();
         _hexEncodedLocalDid = localdid.get().toStringFormal();
@@ -151,6 +156,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
         _scheduler = scheduler;
         _tm = tm;
         _auditDatabase = auditDatabase;
+        _udinfo = udinfo;
         _activityLog = activityLog;
         _sidxTosid = sidxTosid;
         _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -291,7 +297,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
     }
 
     private EventBatch createAuditableEventBatch_(long initialActivityLogIndex)
-            throws SQLException
+            throws SQLException, ExProtocolError
     {
         IDBIterator<ActivityRow> activityRowIterator = _activityLog.getActivitesAfterIndex_(lastActivityLogIndex);
         try {
@@ -313,7 +319,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
                     continue;
                 }
 
-                AuditableEvent event = createAuditableEvent(isLocalEvent, row);
+                AuditableEvent event = createAuditableEvent_(isLocalEvent, row);
                 reportableEvents.add(event);
             }
 
@@ -342,8 +348,8 @@ public final class ClientAuditEventReporter // this can be final because it's no
         return d0.equals(_localdid) ? Iterables.get(dids, 1) : d0;
     }
 
-    private AuditableEvent createAuditableEvent(boolean isLocalEvent, ActivityRow row)
-            throws SQLException
+    private AuditableEvent createAuditableEvent_(boolean isLocalEvent, ActivityRow row)
+            throws SQLException, ExProtocolError
     {
         AuditableEvent event = _auditClient.event(AuditTopic.FILE, isLocalEvent ? LOCAL_EVENT_NAME : REMOTELY_REQUESTED_EVENT_NAME);
 
@@ -353,7 +359,18 @@ public final class ClientAuditEventReporter // this can be final because it's no
         // destination device
         if (!isLocalEvent) {
             checkArgument(row._dids.size() == 1, "row idx:%s dids:%s", row._idx, row._dids);
-            event.embed("destination_device", getOnlyElement(row._dids).toStringFormal());
+
+            DID destinationDevice = getOnlyElement(row._dids);
+            event.embed("destination_device", destinationDevice.toStringFormal());
+
+            // Remote events with unresolvable destination users should be very rare, because such
+            // events only occur if file transfer happens immediately before shared folder user
+            // removal, or if other similar race conditions happen, AND we experience a local DID
+            // to user cache miss. In this case we simply leave the destination user key empty in
+            // the event.
+            UserID destinationUser = _udinfo.getDeviceOwnerNullable_(destinationDevice);
+            event.embed("destination_user",
+                    destinationUser != null ? destinationUser.getString() : "");
         } else if (row._dids.size() == 2) {
             // on behalf of mobile device
             DID mdid = otherDevice(row._dids);

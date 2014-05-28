@@ -214,7 +214,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
         boolean first = true;
         if (!myDIDs.isEmpty()) {
             if (mobile != null) {
-                // TODO app/device nname
+                // TODO app/device name
                 sb.append("An authorized application");
             } else if (brief) {
                 first = and(sb, first);

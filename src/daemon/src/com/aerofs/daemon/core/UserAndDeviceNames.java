@@ -125,7 +125,7 @@ public class UserAndDeviceNames
      * @throws ExProtocolError SP results cannot be interpreted unambiguously
      */
     public boolean updateLocalDeviceInfo_(List<DID> dids)
-        throws ExProtocolError
+            throws ExProtocolError
     {
         // immediately return "failed to update" if we try to update within 30 minutes
         //   of the last failed update
@@ -145,7 +145,7 @@ public class UserAndDeviceNames
             _lastSPUpdateFailed = true;
             _SPUpdateFailureTimer.start();
 
-            if (e instanceof ExProtocolError) throw (ExProtocolError)e;
+            if (e instanceof ExProtocolError) throw (ExProtocolError) e;
             return false;
         }
     }
@@ -271,7 +271,8 @@ public class UserAndDeviceNames
     /**
      * @return userid of the owner of the given {@code did}
      */
-    public @Nullable UserID getDeviceOwnerNullable_(DID did) throws Exception
+    public @Nullable UserID getDeviceOwnerNullable_(DID did)
+            throws SQLException, ExProtocolError
     {
         UserID owner = _d2u.getFromLocalNullable_(did);
 
