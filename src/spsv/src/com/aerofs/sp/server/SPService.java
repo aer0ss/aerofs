@@ -2285,6 +2285,17 @@ public class SPService implements ISPService
 
         _sqlTrans.commit();
 
+        // Do not remote this event! It's important!
+        //
+        // This audit event is temporarily being used by Bloomberg to identify a device's last
+        // known IP address for the purpose of detecting file transfers across network boundaries.
+        // We rely on the ACL Syncronizer to reconnect to SP and sign in using the device
+        // certificate on Verkehr reconnect.
+        _auditClient.event(AuditTopic.DEVICE, "device.signin")
+                .add("user", user.id())
+                .add("ip", _remoteAddress.get())
+                .publish();
+
         return createVoidReply();
     }
 
