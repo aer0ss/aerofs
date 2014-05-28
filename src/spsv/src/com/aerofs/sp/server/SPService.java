@@ -1472,17 +1472,35 @@ public class SPService implements ISPService
                         .setKey(link.getKey())
                         .setSoid(restObject.toStringFormal())
                         .setToken(token)
+                        .setHasPassword(false)
                         .setCreatedBy(requester.id().getString()))
                 .build());
     }
 
-    @Override
     public ListenableFuture<GetUrlInfoReply> getUrlInfo(String key)
             throws Exception
     {
+        return getUrlInfo(key, null);
+    }
+
+    @Override
+    public ListenableFuture<GetUrlInfoReply> getUrlInfo(String key, @Nullable ByteString password)
+            throws Exception
+    {
+        User requester = _sessionUser.getUser();
+
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
         RestObject object = link.getRestObject();
+        boolean hasPassword = link.hasPassword();
+        if (hasPassword) {
+            try {
+                _factSharedFolder.create(object.getSID()).throwIfNoPrivilegeToChangeACL(requester);
+            } catch (ExNoPerm ignored) {
+                if (password == null) throw new ExBadCredential();
+                link.validatePassword(password.toByteArray());
+            }
+        }
         String token = link.getToken();
         @Nullable Long expires = link.getExpiresNullable();
         UserID createdBy = link.getCreatedBy();
@@ -1492,12 +1510,11 @@ public class SPService implements ISPService
                 .setKey(key)
                 .setSoid(object.toStringFormal())
                 .setCreatedBy(createdBy.getString())
+                .setHasPassword(hasPassword)
                 .setToken(token);
         if (expires != null) objectBuilder.setExpires(expires);
 
-        return createReply(GetUrlInfoReply.newBuilder()
-                .setUrlInfo(objectBuilder)
-                .build());
+        return createReply(GetUrlInfoReply.newBuilder().setUrlInfo(objectBuilder).build());
     }
 
     @Override
@@ -1546,6 +1563,52 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(sid);
         sf.throwIfNoPrivilegeToChangeACL(requester);
         link.delete();
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> setUrlPassword(String key, ByteString password, String newToken)
+            throws Exception
+    {
+        User requester = _sessionUser.getUser();
+
+        _sqlTrans.begin();
+        UrlShare link = _factUrlShare.create(key);
+        SID sid = link.getSid();
+        SharedFolder sf = _factSharedFolder.create(sid);
+        sf.throwIfNoPrivilegeToChangeACL(requester);
+        link.setPassword(password.toByteArray(), newToken);
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> removeUrlPassword(String key)
+            throws Exception
+    {
+        User requester = _sessionUser.getUser();
+
+        _sqlTrans.begin();
+        UrlShare link = _factUrlShare.create(key);
+        SID sid = link.getSid();
+        SharedFolder sf = _factSharedFolder.create(sid);
+        sf.throwIfNoPrivilegeToChangeACL(requester);
+        link.removePassword();
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> validateUrlPassword(String key, ByteString password)
+            throws Exception
+    {
+        _sqlTrans.begin();
+        UrlShare link = _factUrlShare.create(key);
+        link.validatePassword(password.toByteArray());
         _sqlTrans.commit();
 
         return createVoidReply();

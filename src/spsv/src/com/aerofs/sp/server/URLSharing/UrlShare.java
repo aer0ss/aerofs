@@ -4,17 +4,23 @@
 
 package com.aerofs.sp.server.URLSharing;
 
+import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseSecUtil.KeyDerivation;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.sp.server.URLSharing.UrlSharingDatabase.HashedPasswordAndSalt;
+import com.lambdaworks.crypto.SCrypt;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 
 /**
@@ -24,6 +30,8 @@ import java.sql.SQLException;
  */
 public class UrlShare
 {
+    public static int PASSWORD_SALT_LENGTH = 16;  // must match db column
+
     public static String generateKey()
     {
         return UniqueID.generate().toStringFormal();
@@ -117,7 +125,7 @@ public class UrlShare
         _f._db.setExpiresAndToken(_key, expires, newToken);
     }
 
-    public void removeExpires(String newToken)
+    public void removeExpires(@Nonnull String newToken)
             throws SQLException, ExNotFound
     {
         _f._db.removeExpiresAndSetToken(_key, newToken);
@@ -127,6 +135,46 @@ public class UrlShare
             throws SQLException, ExNotFound
     {
         _f._db.removeRow(_key);
+    }
+
+    /*
+     * N.B. a new token is required because otherwise, users who had accessed
+     * the link before setPassword was called could still access content by
+     * using the old token directly. We therefore replace the token with a
+     * new one, and require the caller to invalidate the old token.
+     */
+    public void setPassword(@Nonnull byte[] password, @Nonnull String newToken)
+            throws SQLException, ExNotFound, GeneralSecurityException
+    {
+        byte[] salt = BaseSecUtil.newRandomBytes(PASSWORD_SALT_LENGTH);
+        byte[] hash = SCrypt.scrypt(password, salt, KeyDerivation.N, KeyDerivation.r,
+                KeyDerivation.p, KeyDerivation.dkLen);
+        _f._db.setPasswordAndToken(_key, hash, salt, newToken);
+    }
+
+    public void removePassword()
+            throws SQLException, ExNotFound
+    {
+        _f._db.removePassword(_key);
+    }
+
+    public void validatePassword(@Nonnull byte[] password)
+            throws SQLException, ExNotFound, ExBadCredential, GeneralSecurityException
+    {
+        HashedPasswordAndSalt hashedPasswordAndSalt = _f._db.getHashedPasswordAndSalt(_key);
+        if (hashedPasswordAndSalt == null) throw new ExBadCredential("no password is set");
+        byte[] candidate = SCrypt.scrypt(password, hashedPasswordAndSalt.salt, KeyDerivation.N,
+                KeyDerivation.r, KeyDerivation.p, KeyDerivation.dkLen);
+        if (!BaseSecUtil.constantTimeIsEqual(hashedPasswordAndSalt.hash, candidate)) {
+            throw new ExBadCredential();
+        }
+    }
+
+    public boolean hasPassword()
+            throws SQLException, ExNotFound
+    {
+        HashedPasswordAndSalt hashedPasswordAndSalt = _f._db.getHashedPasswordAndSalt(_key);
+        return (hashedPasswordAndSalt != null);
     }
 }
 

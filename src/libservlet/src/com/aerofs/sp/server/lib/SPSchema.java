@@ -108,5 +108,7 @@ public final class SPSchema
             C_US_OID                        = "us_oid",
             C_US_CREATED_BY                 = "us_created_by",
             C_US_TOKEN                      = "us_token",
-            C_US_EXPIRES                    = "us_expires";
+            C_US_EXPIRES                    = "us_expires",
+            C_US_HASHED_PASSWORD            = "us_hashed_password",
+            C_US_PASSWORD_SALT              = "us_password_salt";
 }

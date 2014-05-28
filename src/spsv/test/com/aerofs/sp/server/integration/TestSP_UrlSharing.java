@@ -6,6 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.RestObject;
@@ -13,12 +14,14 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Sp.PBRestObjectUrl;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TestSP_UrlSharing extends AbstractSPFolderTest
@@ -98,6 +101,95 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         } catch (ExNotFound ignored) {
             // success
         }
+    }
+
+    @Test
+    public void getUrlInfo_shouldThrowIfNonManagerProvidesNoPassword() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // check that GetUrlInfo fails for an editor
+        setSessionUser(editor);
+        try {
+            service.getUrlInfo(key).get();
+            fail();
+        } catch (ExBadCredential ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void getUrlInfo_shouldThrowIfNonManagerProvidesInvalidPassword() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // check that GetUrlInfo fails for an editor
+        setSessionUser(editor);
+        try {
+            service.getUrlInfo(key, ByteString.copyFromUtf8("*******")).get();
+            fail();
+        } catch (ExBadCredential ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void getUrlInfo_shouldGetUrlInfoIfNonManagerProvidesCorrectPassword() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // check that GetUrlInfo succeeds for editor with password
+        setSessionUser(editor);
+        service.getUrlInfo(key, ByteString.copyFromUtf8("hunter2")).get();
+    }
+
+    @Test
+    public void getUrlInfo_shouldGetUrlInfoIfManagerProvidesNoPassword() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // check that GetUrlInfo succeeds for an owner
+        service.getUrlInfo(key).get().getUrlInfo();
     }
 
     @Test
@@ -269,6 +361,219 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         setSessionUser(editor);
         try {
             service.removeUrl(key);
+            fail();
+        } catch (ExNoPerm ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void setUrlPassword_shouldSetUrlPassword() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // check that the password was set
+        PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
+        assertTrue(getReply.getHasPassword());
+        assertEquals(newToken, getReply.getToken());
+    }
+
+    @Test
+    public void setUrlPassword_shouldThrowIfKeyDoesNotExist() throws Exception
+    {
+        String key = UniqueID.generate().toStringFormal();
+        ByteString password = ByteString.copyFromUtf8("hunter2");
+        String token = UniqueID.generate().toStringFormal();
+        try {
+            service.setUrlPassword(key, password, token);
+            fail();
+        } catch (ExNotFound ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void setUrlPassword_shouldThrowIfUserIsNotManager() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // try to set the password
+        setSessionUser(editor);
+        ByteString password = ByteString.copyFromUtf8("hunter2");
+        String newToken = UniqueID.generate().toStringFormal();
+        try {
+            service.setUrlPassword(key, password, newToken);
+            fail();
+        } catch (ExNoPerm ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void validateUrlPassword_shouldValidateUrlPassword() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // validate the password
+        service.validateUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
+    }
+
+    @Test
+    public void validateUrlPassword_shouldValidateUrlPasswordForEditor() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // validate the password
+        setSessionUser(editor);
+        service.validateUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
+    }
+
+    @Test
+    public void validateUrlPassword_shouldFailToValidateIncorrectPassword() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // validate the password
+        try {
+            service.validateUrlPassword(key, ByteString.copyFromUtf8("all I see is *******"));
+            fail();
+        } catch (ExBadCredential ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void validateUrlPassword_shouldThrowIfKeyDoesNotExist() throws Exception
+    {
+        String key = UniqueID.generate().toStringFormal();
+        ByteString password = ByteString.copyFromUtf8("hunter2");
+        try {
+            service.validateUrlPassword(key, password);
+        } catch (ExNotFound ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void validateUrlPassword_shouldThrowIfNoPasswordSet() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // validate the password
+        try {
+            service.validateUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
+            fail();
+        } catch (ExBadCredential ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void removeUrlPassword_shouldRemoveUrlPassword() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // remove the password
+        service.removeUrlPassword(key);
+
+        // check that the password was removed
+        PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
+        assertFalse(getReply.hasHasPassword() && getReply.getHasPassword());
+    }
+
+    @Test
+    public void removeUrlPassword_shouldThrowIfKeyDoesNotExist() throws Exception
+    {
+        String key = UniqueID.generate().toStringFormal();
+        try {
+            service.removeUrlPassword(key);
+        } catch (ExNotFound ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void removeUrlPassword_shouldThrowIfUserIsNotManager() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        ByteString password = ByteString.copyFromUtf8("hunter2");
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, password, newToken);
+
+        // try to remove the password
+        setSessionUser(editor);
+        try {
+            service.removeUrlPassword(key);
             fail();
         } catch (ExNoPerm ignored) {
             // success

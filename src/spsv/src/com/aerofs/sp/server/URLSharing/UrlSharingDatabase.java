@@ -24,14 +24,28 @@ import java.sql.Types;
 
 import static com.aerofs.sp.server.lib.SPSchema.C_US_CREATED_BY;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_EXPIRES;
+import static com.aerofs.sp.server.lib.SPSchema.C_US_HASHED_PASSWORD;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_KEY;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_OID;
+import static com.aerofs.sp.server.lib.SPSchema.C_US_PASSWORD_SALT;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_SID;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_TOKEN;
 import static com.aerofs.sp.server.lib.SPSchema.T_US;
 
 public class UrlSharingDatabase extends AbstractSQLDatabase
 {
+    public static class HashedPasswordAndSalt
+    {
+        public @Nonnull byte[] hash;
+        public @Nonnull byte[] salt;
+
+        public HashedPasswordAndSalt(@Nonnull byte[] hash, @Nonnull byte[] salt)
+        {
+            this.hash = hash;
+            this.salt = salt;
+        }
+    }
+
     @Inject
     public UrlSharingDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
@@ -160,5 +174,56 @@ public class UrlSharingDatabase extends AbstractSQLDatabase
         ps.setString(1, key);
 
         if (ps.executeUpdate() == 0) throw new ExNotFound();
+    }
+
+    public void setPasswordAndToken(@Nonnull String key, byte[] hash, byte[] salt,
+            @Nonnull String token)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(
+                DBUtil.updateWhere(T_US, C_US_KEY + "=?", C_US_HASHED_PASSWORD, C_US_PASSWORD_SALT,
+                        C_US_TOKEN));
+        ps.setBytes(1, hash);
+        ps.setBytes(2, salt);
+        ps.setString(3, token);
+        ps.setString(4, key);
+
+        if (ps.executeUpdate() != 1) throw new ExNotFound();
+    }
+
+    public void removePassword(@Nonnull String key)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(
+                DBUtil.updateWhere(T_US, C_US_KEY + "=?", C_US_HASHED_PASSWORD, C_US_PASSWORD_SALT));
+        ps.setNull(1, Types.BINARY);
+        ps.setNull(2, Types.BINARY);
+        ps.setString(3, key);
+
+        if (ps.executeUpdate() != 1) throw new ExNotFound();
+    }
+
+    public @Nullable
+    HashedPasswordAndSalt getHashedPasswordAndSalt(@Nonnull String key)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(
+                DBUtil.selectWhere(T_US, C_US_KEY + "=?", C_US_HASHED_PASSWORD, C_US_PASSWORD_SALT));
+        ps.setString(1, key);
+
+        byte[] hash;
+        byte[] salt;
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (!rs.next()) throw new ExNotFound();
+            hash = rs.getBytes(1);
+            salt = rs.getBytes(2);
+        } finally {
+            rs.close();
+        }
+        if (hash == null && salt == null) return null;
+        if (hash != null && salt != null) return new HashedPasswordAndSalt(hash, salt);
+        throw new IllegalStateException("hash and salt must both be present or both be null");
     }
 }

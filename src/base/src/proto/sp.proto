@@ -694,9 +694,13 @@ service SPService {
 
     // Get the info associated with a URL key (rest object, token, expiry, etc.)
     //
-    // Required Auth Level: None (knowledge of the key is enough)
+    // Required Auth Level:
+    //   None, if no password is set
+    //   store manager OR provide password, if password is set
     // Throws:
     //   ExNotFound if the key does not exist
+    //   ExBadCredential if a password is set and the user is not a store manager and does not
+    //      provide the correct password.
     //
     rpc GetUrlInfo(GetUrlInfoCall) returns (GetUrlInfoReply);
 
@@ -726,6 +730,34 @@ service SPService {
     //   ExNoPerm if the current user isn't a manager of the containing store
     //
     rpc RemoveUrl(RemoveUrlCall) returns (Void);
+
+    // Set a password for the URL
+    //
+    // Required Auth Level: store manager
+    // Throws:
+    //   ExNotFound if the key does not exist
+    //   ExNoPerm if the current user isn't a manager of the containing store
+    //
+    rpc SetUrlPassword(SetUrlPasswordCall) returns (Void);
+
+    // Remove the password for the URL
+    //
+    // Required Auth Level: store manager
+    // Throws:
+    //   ExNotFound if the key does not exist
+    //   ExNoPerm if the current user isn't a manager of the containing store
+    //
+    rpc RemoveUrlPassword(RemoveUrlPasswordCall) returns (Void);
+
+    // Check the password against the hashed password stored in the db.
+    // No-op if they match, and throw ExBadCredential if they do not.
+    //
+    // Required Auth Level: none
+    // Throws:
+    //   ExNotFound if the key does not exist
+    //   ExBadCredential if the password is incorrect
+    //
+    rpc ValidateUrlPassword(ValidateUrlPasswordCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1327,6 +1359,7 @@ message PBRestObjectUrl {
     required string token = 3;
     required string created_by = 4;
     optional uint64 expires = 5;
+    optional bool has_password = 6;  // no field == false
 }
 
 message CreateUrlReply {
@@ -1346,6 +1379,7 @@ message RemoveUrlExpiresCall {
 
 message GetUrlInfoCall {
     required string key = 1;
+    optional bytes password = 2;
 }
 
 message GetUrlInfoReply {
@@ -1354,4 +1388,19 @@ message GetUrlInfoReply {
 
 message RemoveUrlCall {
     required string key = 1;
+}
+
+message SetUrlPasswordCall {
+    required string key = 1;
+    required bytes password = 2;
+    required string new_token = 3;
+}
+
+message RemoveUrlPasswordCall {
+    required string key = 1;
+}
+
+message ValidateUrlPasswordCall {
+    required string key = 1;
+    required bytes password = 2;
 }
