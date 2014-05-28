@@ -6,6 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
@@ -71,6 +72,17 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertEquals(token, objectUrl.getToken());
         assertEquals(owner.id().getString(), objectUrl.getCreatedBy());
         assertFalse(objectUrl.hasExpires());
+    }
+
+    @Test
+    public void createUrl_shouldThrowExBadArgsIfSoidIsInvalid() throws Exception
+    {
+        try {
+            service.createUrl("abc123", UniqueID.generate().toStringFormal());
+            fail();
+        } catch (ExBadArgs ignored) {
+            // success
+        }
     }
 
     @Test

@@ -1458,7 +1458,12 @@ public class SPService implements ISPService
     public ListenableFuture<CreateUrlReply> createUrl(String soid, String token)
             throws Exception
     {
-        RestObject restObject = RestObject.fromString(soid);
+        RestObject restObject;
+        try {
+            restObject = RestObject.fromString(soid);
+        } catch (IllegalArgumentException e) {
+            throw new ExBadArgs("invalid soid");
+        }
         SharedFolder sf = _factSharedFolder.create(restObject.getSID());
         User requester = _sessionUser.getUser();
 

@@ -689,6 +689,7 @@ service SPService {
     // Required Auth Level: store manager
     // Throws:
     //   ExNoPerm if the current user isn't a manager of the containing store
+    //   ExBadArgs if the SOID provided is invalid
     //
     rpc CreateUrl(CreateUrlCall) returns (CreateUrlReply);
 
