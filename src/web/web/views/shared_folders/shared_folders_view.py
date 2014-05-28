@@ -301,14 +301,23 @@ def _render_shared_folder_options_link(folder, session_user, privileged):
     # quotes.
     #
     # N.B. need to sub out quotes for proper rendering of the dialog.
-    return u'<a href="#" class="{}" data-{}="{}" data-{}="{}"' \
-           u'data-{}="{}" data-{}="{}">{}</a>'.format(
+    actions_front = ('<div class="btn-group">'
+              '<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">'
+                'Actions <span class="caret"></span>'
+              '</button>'
+              '<ul class="dropdown-menu" role="menu">')
+    manage_link = u'<li><a href="#" class="{}" data-{}="{}" data-{}="{}"' \
+           u'data-{}="{}" data-{}="{}"><span class="glyphicon glyphicon-user"></span> {}</a></li>'.format(
             _OPEN_MODAL_CLASS,
             _LINK_DATA_SID, escape(id),
             _LINK_DATA_PRIVILEGED, 1 if privileged else 0,
             _LINK_DATA_NAME, escaped_folder_name,
             _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST, escape(urs).replace('"', '&#34;'),
-            "Manage Folder" if privileged else "View Members")
+            "Manage Members" if privileged else "View Members")
+    actions_end = ('</ul>'
+            '</div>')
+
+    return actions_front + manage_link + actions_end
 
 
 def to_json(user_permissions_and_state_list, session_user):

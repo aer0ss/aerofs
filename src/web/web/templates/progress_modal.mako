@@ -62,7 +62,7 @@
             var $spinner = $('#progress-modal-spinner');
 
             var $modal = $('#${id()}');
-            disableEsapingFromModal($modal);
+            disableEscapingFromModal($modal);
             startSpinner($spinner, 0);
         }
     </script>

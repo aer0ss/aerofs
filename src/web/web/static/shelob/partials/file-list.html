@@ -75,21 +75,25 @@
         <td class="last-modified">{{object.last_modified | date: 'short'}}</td>
         <td class="actions">
           <div ng-show="mousedOver.object.id == object.id">
-            <a
-               tooltip="Delete"
-               ng-click="startDelete(object)"
-               class="glyphicon glyphicon-trash remove_2 action action-delete"/>
-            <a
-               tooltip="Rename"
-               ng-click="startRename(object)"
-               class="glyphicon glyphicon-pencil edit action action-rename"/>
-            <a
-               tooltip="Move"
-               ng-click="startMove(object)"
-               class="glyphicon glyphicon-arrow-right redo action action-move"/>
-            <a ng-href="/shared_folders" ng-show="object.is_shared"
-               tooltip="Manage Shared Folder"
-               class="glyphicon glyphicon-share_alt action action-manage"/>
+            <div class="btn-group">
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                Actions <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu" role="menu">
+                <li><a
+                   ng-click="startRename(object)"
+                   class="edit action action-rename"><span class="glyphicon glyphicon-pencil"></span> Rename</a></li>
+                <li><a
+                   ng-click="startMove(object)"
+                   class="redo action action-move"><span class="glyphicon glyphicon-arrow-right"></span> Move</a></li>
+                <li><a ng-href="/shared_folders" ng-show="object.is_shared"
+                   class="action action-manage"><span class="glyphicon glyphicon-share"></span> Manage Sharing</a></li>
+                <li class="divider"></li>
+                <li><a
+                   ng-click="startDelete(object)"
+                   class="remove_2 action action-delete"><span class="glyphicon glyphicon-trash"></span> Delete</a></li>
+              </ul>
+            </div>
           </div>
         </td>
       </tr>

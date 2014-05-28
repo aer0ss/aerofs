@@ -144,7 +144,7 @@ function setEnabled($elem, enabled) {
     return $elem;
 }
 
-function disableEsapingFromModal($modal) {
+function disableEscapingFromModal($modal) {
     // For all the modals on this page, prevent ESC or mouse clicking on the
     // background to close the modal.
     // See http://stackoverflow.com/questions/9894339/disallow-twitter-bootstrap-modal-window-from-closing

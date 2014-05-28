@@ -32,23 +32,7 @@ a {
      */
     cursor: pointer;
 }
-a.action {
-    cursor: pointer;
-    height: 24px;
-    padding-left: 28px;
-    float: right;
-}
-a.action.glyphicon {
-    color: #888;
-    display: inline-block;
-    font-size: 1.6em;
-    margin-left: -30px;
-    padding-right: 10px;
-}
-a.action.glyphicon:hover {
-    color: #222;
-    text-decoration: none;
-}
+
 .waiting, .waiting * {
     cursor: wait;
 }
