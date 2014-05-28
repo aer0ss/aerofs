@@ -22,6 +22,8 @@ routes = [
     'login',
     'login_submit',
     'identity',
+    'problem_reporting',
+    'json_set_problem_reporting_options',
     'monitoring',
     'json_regenerate_monitoring_cred',
     'json_set_identity_options',

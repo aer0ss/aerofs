@@ -181,3 +181,20 @@ $.extend({
         });
     }
 });
+
+// the intended usage is to have a file selector for users to upload a file,
+// and a hidden input whose value is the file content.
+function linkFileSelectorToField(selector, field) {
+    $(selector).on('change', function() {
+        var file = this.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function() {
+                $(field).val(this.result);
+            };
+            reader.readAsBinaryString(file);
+        } else {
+            $(field).val('');
+        }
+    });
+}

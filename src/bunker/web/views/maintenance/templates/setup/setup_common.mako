@@ -123,24 +123,6 @@
         }
 
         ##########
-        ## Utility functions to read files
-
-        function linkFileSelectorToField(selectorQuery, fieldQuery) {
-            $(selectorQuery).on('change', function() {
-                var file = this.files[0];
-                if (file) {
-                    var reader = new FileReader();
-                    reader.onload = function() {
-                        $(fieldQuery).val(this.result);
-                    };
-                    reader.readAsBinaryString(file);
-                } else {
-                    $(fieldQuery).val('');
-                }
-            });
-        }
-
-        ##########
         ## Tracking related code
 
         function showAndTrackErrorMessage(message) {

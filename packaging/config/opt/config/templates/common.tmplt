@@ -21,6 +21,14 @@ api.daemon.port=0
 
 base.www.support_email_address={{ support_address }}
 
+base.dryad.enabled={{ dryad_enabled }}
+base.dryad.hostname={{ dryad_hostname }}
+base.dryad.port={{ dryad_port }}
+base.dryad.certificate={{ dryad_certificate }}
+
+public.dryad.hostname=dryad.aerofs.com
+public.dryad.certificate=-----BEGIN CERTIFICATE-----\nMIIDgjCCAmoCCQDpEonugGpoZDANBgkqhkiG9w0BAQUFADCBgjELMAkGA1UEBhMC\nVVMxCzAJBgNVBAgMAkNBMRYwFAYDVQQHDA1TYW4gRnJhbmNpc2NvMRMwEQYDVQQK\nDAphZXJvZnMuY29tMRkwFwYDVQQDDBBkcnlhZC5hZXJvZnMuY29tMR4wHAYJKoZI\nhvcNAQkBFg90ZWFtQGFlcm9mcy5jb20wHhcNMTQwNTI4MDIwMTExWhcNMjQwNTI1\nMDIwMTExWjCBgjELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAkNBMRYwFAYDVQQHDA1T\nYW4gRnJhbmNpc2NvMRMwEQYDVQQKDAphZXJvZnMuY29tMRkwFwYDVQQDDBBkcnlh\nZC5hZXJvZnMuY29tMR4wHAYJKoZIhvcNAQkBFg90ZWFtQGFlcm9mcy5jb20wggEi\nMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCx19mhkgZuVAgG/GrNQ5HPaQ+I\nbF/+3lhFJYlIkaJmwv3AFENnouR0gWkK/EZ7hBWDxLK1C5+3tXDz6uN9oivypSD8\nk3vvX4rYTjVTZ7ePPWmFNLeiPob27ZfFgi5tXvWM72fEigHvmGpwGZ+FfXvc2TRG\nEm1REYNSI2tEl2EbmBTFWe5cWaaJGmkqgyfNHX9XOJvhOq9VwcyJnKbJ5CcnHMjy\nNhqqa0EHUQPPnkwtzZI4zuyyJKTIHyjaoA9NN7fFT0n4AGxgzv/8iCJN4Xkdd50X\ngUqHzOdXgzI7bZRQoVsLlJUjdFAlaiVU/aiUT4uLBr6EpUwbLdvB2ynFVMHTAgMB\nAAEwDQYJKoZIhvcNAQEFBQADggEBAKuZWTHaeIoo+5kFCEI1BFyrTyfuAnS4iDeS\nlJXW+uOH8NOaX4khGdbBOCvUD7n0Maig8GAXoikO2rIF/T7exLNwafiFVJaHWpU5\nh7+r9QxVQEBtNM/cXx8ZfSUAyHa+x+/xGiKPYR+8E4wnY65AeyY1v2TBi5suJZZD\n42834R7QvCFhXdo3N4kFbNMFfeFhtddKcYfUWUVu+jtLdiyfbNUbGRYP32I06g4H\nIiKvwBBysgVWzYaDW323vPjc7XRoGkSbxsJrv2LblRnPry/vfLq7DhTJp28CjcYS\nkfo3MTLIsHmyKK28cUVxJ3+DLFAxsJb6eLyUXzIdK8hprzE0xfw=\n-----END CERTIFICATE-----\n
+
 base.mixpanel.url=
 lib.rocklog.url=
 lib.sv.url=
