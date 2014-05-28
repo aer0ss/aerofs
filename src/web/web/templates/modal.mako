@@ -9,7 +9,7 @@
 ## Style Guide: see README.style.txt
 ##
 <%def name="modal()">
-    <div id="${caller.id()}" class="modal fade" tabindex="-1" role="dialog"
+    <div id="${caller.id()}" class="modal" tabindex="-1" role="dialog"
     >
         <div class="modal-dialog">
             <div class="modal-content">

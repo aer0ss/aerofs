@@ -154,7 +154,7 @@
     </div>
 </div>
 
-<div id="verify-modal-code-input" class="modal fade" tabindex="-1" role="dialog">
+<div id="verify-modal-code-input" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -180,7 +180,7 @@
     </div>
 </div>
 
-<div id="verify-succeed-modal" class="modal fade" tabindex="-1" role="dialog">
+<div id="verify-succeed-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

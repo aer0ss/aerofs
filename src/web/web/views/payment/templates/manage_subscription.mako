@@ -92,7 +92,7 @@
     </a>
 </div>
 
-<div id="cancel-subscription-modal" class="modal fade" tabindex="-1" role="dialog">
+<div id="cancel-subscription-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -115,7 +115,7 @@
     </div>
 </div>
 
-<div id="cancel-subscription-feedback-modal" class="modal fade" tabindex="-1" role="dialog">
+<div id="cancel-subscription-feedback-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -145,7 +145,7 @@
     </div>
 </div>
 
-<div id="chance-given-modal" class="modal fade" tabindex="-1" role="dialog">
+<div id="chance-given-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -162,7 +162,7 @@
     </div>
 </div>
 
-<div id="subscription-cancelled-modal" class="modal fade" tabindex="-1" role="dialog">
+<div id="subscription-cancelled-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

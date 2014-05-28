@@ -90,7 +90,7 @@
     </tr>
 </%def>
 
-<div id="join-team-modal" class="modal fade" tabindex="-1" role="dialog">
+<div id="join-team-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -127,7 +127,7 @@
     </div>
 </div>
 
-<div id="no-admin-for-team-modal" class="modal fade" tabindex="-1" role="dialog">
+<div id="no-admin-for-team-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

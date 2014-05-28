@@ -3,7 +3,7 @@
 <%def name="html()">
     <form method="post" id="credit-card-form">
         <fieldset>
-            <div id="credit-card-modal" class="modal fade" tabindex="-1" role="dialog">
+            <div id="credit-card-modal" class="modal" tabindex="-1" role="dialog">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">

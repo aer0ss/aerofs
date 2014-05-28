@@ -18,7 +18,7 @@
     </div>
 </div>
 
-<div id="email-sent-modal" class="modal fade" tabindex="-1" role="dialog">
+<div id="email-sent-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

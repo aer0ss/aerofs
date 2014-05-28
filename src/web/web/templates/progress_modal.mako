@@ -39,7 +39,7 @@
 <%def name="id()">progress-modal</%def>
 
 <%def name="html()">
-    <div id="${id()}" class="modal fade" tabindex="-1" role="dialog"
+    <div id="${id()}" class="modal" tabindex="-1" role="dialog"
             style="top: 200px">
         <div class="modal-dialog">
             <div class="modal-content">

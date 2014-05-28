@@ -25,7 +25,7 @@
     <table class="table"><tbody id='invited_users_tbody'></tbody></table>
 </div>
 
-<div id="remove_user_modal" class="modal fade">
+<div id="remove_user_modal" class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
