@@ -40,6 +40,7 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.session.HttpSessionRemoteAddress;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
 import com.aerofs.sp.server.lib.session.ThreadLocalHttpSessionProvider;
 import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
@@ -94,6 +95,8 @@ public class SPServlet extends AeroServlet
     private final CertificateGenerator _certgen = new CertificateGenerator();
     private final CertificateAuthenticator _certauth =
             new CertificateAuthenticator(_sessionProvider);
+    private final HttpSessionRemoteAddress _remoteAddress =
+            new HttpSessionRemoteAddress(_sessionProvider);
 
     private final Organization.Factory _factOrg = new Organization.Factory();
     private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
@@ -139,11 +142,30 @@ public class SPServlet extends AeroServlet
     private final SharingRulesFactory _sfRules =
             new SharingRulesFactory(_authenticator, _factUser, _sfnEmailer);
 
-    private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
-            _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
-            _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
-            _requestToSignUpEmailer, _commandQueue, _analytics, new IdentitySessionManager(),
-            _authenticator, _sfRules, _sfnEmailer, _asyncEmailSender);
+    private final SPService _service = new SPService(_db,
+            _sqlTrans,
+            _jedisTrans,
+            _sessionUser,
+            _passwordManagement,
+            _certauth,
+            _remoteAddress,
+            _factUser,
+            _factOrg,
+            _factOrgInvite,
+            _factDevice,
+            _certdb,
+            _esdb,
+            _factSharedFolder,
+            _factEmailer,
+            _deviceRegistrationEmailer,
+            _requestToSignUpEmailer,
+            _commandQueue,
+            _analytics,
+            new IdentitySessionManager(),
+            _authenticator,
+            _sfRules,
+            _sfnEmailer,
+            _asyncEmailSender);
 
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
@@ -247,6 +269,7 @@ public class SPServlet extends AeroServlet
 
         _sessionProvider.setSession(req.getSession());
         _certauth.init(req);
+        _remoteAddress.init(req);
 
         // Receive protocol version number.
         int protocol;

@@ -54,11 +54,30 @@ public class TestSP_requestToSignUp extends AbstractSPTest
         ConfigurationProperties.setProperties(props);
 
         // reconstruct SP using the new shared folder rules
-        service = new SPService(db, sqlTrans, jedisTrans, sessionUser, passwordManagement,
-                certificateAuthenticator, factUser, factOrg, factOrgInvite, factDevice, certdb,
-                esdb, factSharedFolder, factEmailer, _deviceRegistrationEmailer,
-                requestToSignUpEmailer, commandQueue, analytics, identitySessionManager,
-                authenticator, sharingRules, sharedFolderNotificationEmailer, asyncEmailSender);
+        service = new SPService(db,
+                sqlTrans,
+                jedisTrans,
+                sessionUser,
+                passwordManagement,
+                certificateAuthenticator,
+                remoteAddress,
+                factUser,
+                factOrg,
+                factOrgInvite,
+                factDevice,
+                certdb,
+                esdb,
+                factSharedFolder,
+                factEmailer,
+                _deviceRegistrationEmailer,
+                requestToSignUpEmailer,
+                commandQueue,
+                analytics,
+                identitySessionManager,
+                authenticator,
+                sharingRules,
+                sharedFolderNotificationEmailer,
+                asyncEmailSender);
         wireSPService();
 
         try {

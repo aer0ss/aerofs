@@ -176,7 +176,7 @@ public class ULTRecertifyDevice extends UILaunchTask
         l.info("successfully recertified device");
 
         // For some reason the old certificate is cached somewhere in memory. It causes logging in
-        // to SP to fail and in turn repeatitive UI messages complaining about wrong certificate.
+        // to SP to fail and in turn repetitive UI messages complaining about wrong certificate.
         // Although it's ideal to identify and fix the root cause, it's probably not worth the
         // efforts since so far most old Team Servers should have been recertified. As a quick
         // workaround, we simply shutdown the process and let the user to restart it manually.

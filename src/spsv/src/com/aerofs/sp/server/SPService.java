@@ -129,6 +129,7 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.session.HttpSessionRemoteAddress;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
@@ -197,6 +198,7 @@ public class SPService implements ISPService
 
     private final PasswordManagement _passwordManagement;
     private final CertificateAuthenticator _certauth;
+    private final HttpSessionRemoteAddress _remoteAddress;
     private final User.Factory _factUser;
     private final Organization.Factory _factOrg;
     private final OrganizationInvitation.Factory _factOrgInvite;
@@ -234,18 +236,30 @@ public class SPService implements ISPService
     private final DeviceAuthClient _systemAuthClient =
             new DeviceAuthClient(new DeviceAuthEndpoint());
 
-    public SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
-            JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
+    public SPService(SPDatabase db,
+            SQLThreadLocalTransaction sqlTrans,
+            JedisThreadLocalTransaction jedisTrans,
+            ISessionUser sessionUser,
             PasswordManagement passwordManagement,
-            CertificateAuthenticator certificateAuthenticator, User.Factory factUser,
-            Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
-            Device.Factory factDevice, CertificateDatabase certdb, EmailSubscriptionDatabase esdb,
-            Factory factSharedFolder, InvitationEmailer.Factory factInvitationEmailer,
+            CertificateAuthenticator certificateAuthenticator,
+            HttpSessionRemoteAddress remoteAddress,
+            User.Factory factUser,
+            Organization.Factory factOrg,
+            OrganizationInvitation.Factory factOrgInvite,
+            Device.Factory factDevice,
+            CertificateDatabase certdb,
+            EmailSubscriptionDatabase esdb,
+            Factory factSharedFolder,
+            InvitationEmailer.Factory factInvitationEmailer,
             DeviceRegistrationEmailer deviceRegistrationEmailer,
-            RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
-            Analytics analytics, IdentitySessionManager identitySessionManager,
-            Authenticator authenticator, SharingRulesFactory sharingRules,
-            SharedFolderNotificationEmailer sfnEmailer, AsyncEmailSender asyncEmailSender)
+            RequestToSignUpEmailer requestToSignUpEmailer,
+            JedisEpochCommandQueue commandQueue,
+            Analytics analytics,
+            IdentitySessionManager identitySessionManager,
+            Authenticator authenticator,
+            SharingRulesFactory sharingRules,
+            SharedFolderNotificationEmailer sfnEmailer,
+            AsyncEmailSender asyncEmailSender)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -257,6 +271,7 @@ public class SPService implements ISPService
         _sessionUser = sessionUser;
         _passwordManagement = passwordManagement;
         _certauth = certificateAuthenticator;
+        _remoteAddress = remoteAddress;
         _factUser = factUser;
         _factOrg = factOrg;
         _factOrgInvite = factOrgInvite;
@@ -908,8 +923,8 @@ public class SPService implements ISPService
         User user = _sessionUser.getUser();
         Device device = _factDevice.create(deviceId);
 
-        throwIfSystemIsNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
-                interfaces);
+        throwIfNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
+                _remoteAddress.get(), interfaces);
 
         CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
                 user);
@@ -1016,8 +1031,8 @@ public class SPService implements ISPService
      * @throws ExNoResource when there is some communication failure with the device authorization
      * endpoint and the appliance.
      */
-    private void throwIfSystemIsNotAuthorizedToRegisterDevice(UserID userID, String osFamily,
-            String osName, String deviceName, List<Interface> interfaces)
+    private void throwIfNotAuthorizedToRegisterDevice(UserID userID, String osFamily, String osName,
+            String deviceName, String remoteAddress, List<Interface> interfaces)
             throws ExBadArgs, ExNoPerm, ExNoResource
     {
         if (!DeviceAuthParam.DEVICE_AUTH_ENDPOINT_ENABLED) {
@@ -1036,7 +1051,7 @@ public class SPService implements ISPService
         boolean isSystemAuthorized;
         try {
              isSystemAuthorized = _systemAuthClient.isSystemAuthorized(userID, osFamily, osName,
-                     deviceName, interfaces);
+                     deviceName, remoteAddress, interfaces);
         } catch (IOException e) {
             l.error("{}: I/O error contacting device authorization endpoint: {}", userID, e);
             throw new ExNoResource();
@@ -1059,8 +1074,8 @@ public class SPService implements ISPService
     {
         User user = _sessionUser.getUser();
 
-        throwIfSystemIsNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
-                interfaces);
+        throwIfNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
+                _remoteAddress.get(), interfaces);
 
         // We need two transactions. The first is read only, so no rollback ability needed. In
         // between the transaction we make an RPC call.

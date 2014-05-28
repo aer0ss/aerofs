@@ -24,11 +24,12 @@ public class DeviceAuthClient
 
     @SuppressWarnings("unchecked")
     private static JSONObject encodeParamsAsJSON(String osFamily, String osName, String deviceName,
-            List<Interface> interfaces)
+            String remoteAddress, List<Interface> interfaces)
     {
         JSONObject jsonBody = new JSONObject();
 
         jsonBody.put("name", deviceName);
+        jsonBody.put("ip",  remoteAddress);
 
         JSONObject jsonOS = new JSONObject();
         jsonOS.put("family", osFamily);
@@ -51,10 +52,12 @@ public class DeviceAuthClient
     }
 
     public boolean isSystemAuthorized(UserID userID, String osFamily, String osName,
-            String deviceName, List<Interface> interfaces)
+            String deviceName, String remoteAddress, List<Interface> interfaces)
             throws IOException, GeneralSecurityException
     {
-        JSONObject jsonBody = encodeParamsAsJSON(osFamily, osName, deviceName, interfaces);
+        JSONObject jsonBody = encodeParamsAsJSON(osFamily, osName, deviceName, remoteAddress,
+                interfaces);
+
         return _endpoint.isDeviceAuthorized(userID, jsonBody);
     }
 }

@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
  * the request body that is bound for the system authorization endpoint. Testing the the single
  * REST contract isn't worthwhile here (for now), and should be covered by larger system tests.
  */
-public class TestSP_SystemAuthClient
+public class TestSP_DeviceAuthClient
 {
     @Test
     public void shouldEncodeBodyAsValidJSON() throws Exception
@@ -45,8 +45,10 @@ public class TestSP_SystemAuthClient
                 JSONObject os = (JSONObject) body.get("os");
                 assertEquals(os.get("family"), "Mac");
                 assertEquals(os.get("name"), "Mac OS X");
-                // System name.
+                // Device name.
                 assertEquals(body.get("name"), "Matt's Super Awesome Laptop");
+                // Device IP as seen by the appliance.
+                assertEquals(body.get("ip"), "192.168.1.1");
 
                 // Interfaces.
                 @SuppressWarnings("unchecked")
@@ -90,7 +92,7 @@ public class TestSP_SystemAuthClient
                 .build();
 
         boolean authorized = client.isSystemAuthorized(UserID.fromExternal("matt@aerofs.com"),
-                "Mac", "Mac OS X", "Matt's Super Awesome Laptop", interfaces);
+                "Mac", "Mac OS X", "Matt's Super Awesome Laptop", "192.168.1.1", interfaces);
 
         assertEquals(true, authorized);
     }

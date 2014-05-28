@@ -62,11 +62,30 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
                 factUser, sharedFolderNotificationEmailer);
 
         // reconstruct SP using the new shared folder rules
-        service = new SPService(db, sqlTrans, jedisTrans, sessionUser, passwordManagement,
-                certificateAuthenticator, factUser, factOrg, factOrgInvite, factDevice, certdb,
-                esdb, factSharedFolder, factEmailer, _deviceRegistrationEmailer,
-                requestToSignUpEmailer, commandQueue, analytics, identitySessionManager,
-                authenticator, sharedFolderRules, sharedFolderNotificationEmailer, asyncEmailSender);
+        service = new SPService(db,
+                sqlTrans,
+                jedisTrans,
+                sessionUser,
+                passwordManagement,
+                certificateAuthenticator,
+                remoteAddress,
+                factUser,
+                factOrg,
+                factOrgInvite,
+                factDevice,
+                certdb,
+                esdb,
+                factSharedFolder,
+                factEmailer,
+                _deviceRegistrationEmailer,
+                requestToSignUpEmailer,
+                commandQueue,
+                analytics,
+                identitySessionManager,
+                authenticator,
+                sharedFolderRules,
+                sharedFolderNotificationEmailer,
+                asyncEmailSender);
         wireSPService();
 
         sqlTrans.begin();

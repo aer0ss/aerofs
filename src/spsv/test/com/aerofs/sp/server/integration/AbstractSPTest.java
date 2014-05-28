@@ -50,6 +50,7 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.session.HttpSessionRemoteAddress;
 import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
@@ -147,6 +148,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected CertificateAuthenticator certificateAuthenticator =
             mock(CertificateAuthenticator.class);
+    @Spy protected HttpSessionRemoteAddress remoteAddress = mock(HttpSessionRemoteAddress.class);
 
     @Spy AsyncEmailSender asyncEmailSender = AsyncEmailSender.create();
 
