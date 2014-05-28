@@ -44,16 +44,16 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
     def test_empty_user_list(self):
 
         str = self._render_shared_folder_users([])
-        self.assertEquals(str, '')
+        self.assertEquals(str, '--')
 
     def test_one_user(self):
         str = self._render_shared_folder_users([NAME1])
-        self.assertEquals(str, NAME1 + " only")
+        self.assertEquals(str, NAME1)
 
     def test_one_user_with_session_user(self):
         str = self._render_shared_folder_users_with_session_user(["hahahaha"],
             self._get_user_id(0))
-        self.assertEquals(str, "me only")
+        self.assertEquals(str, "me")
 
     def test_two_users_with_unicode(self):
         str = self._render_shared_folder_users([NAME1, NAME2])
@@ -88,13 +88,12 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
     def test_six_users_with_session_user(self):
         str = self._render_shared_folder_users_with_session_user(
             [NAME1, NAME2, NAME3, NAME4, NAME4, NAME6], self._get_user_id(0))
-        self.assertEquals(str, NAME2 + ", " + NAME3 + ", " +
-                               NAME4 + ", and 3 others")
+        self.assertEquals(str, NAME2 + ", " + NAME3 + ", " + "me, and 3 others")
 
     def test_should_escape_html(self):
         first_name = '<&>'
         str = self._render_shared_folder_users([first_name])
-        self.assertEquals(str, "&lt;&amp;&gt; only")
+        self.assertEquals(str, "&lt;&amp;&gt;")
 
 def test_suite():
     loader = unittest.TestLoader()
