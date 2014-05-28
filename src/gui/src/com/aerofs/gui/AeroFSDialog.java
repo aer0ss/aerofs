@@ -49,7 +49,7 @@ public abstract class AeroFSDialog extends Dialog {
 
     /**
      * Subclasses need to implement this method. The following code must be
-     * present at the begining of the method so WindowsBuilder Pro can parse the
+     * present at the beginning of the method so WindowsBuilder Pro can parse the
      * file:
      *
      *      if (isWindowBuilderPro()) // $hide$
