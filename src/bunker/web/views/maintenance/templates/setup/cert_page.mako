@@ -6,17 +6,6 @@
 <form method="POST" role="form" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
     <div class="row">
-        <div class="col-sm-12">
-            <label class="radio">
-                <input type='radio' id="cert-option-existing" name='cert.option'
-                        value='existing' checked onchange="useInstalledCertSelected()">
-                %if is_configuration_initialized:
-                    Use installed certificate and key
-                %else:
-                    Use pre-installed, self-signed certificate and key
-                %endif
-            </label>
-        </div>
 
         <div class="col-sm-12">
             <label class="radio">
