@@ -101,12 +101,19 @@
             ## The Options link that opens the modal. It holds all the data
             ## required by the modal.
             var $link;
-            var $mainModal = $('#modal');
+            var $manageModal = $('#manage-modal');
+            var $leaveModal = $('#leave-folder-modal');
 
             $('.${open_modal_class}').live('click', function () {
                 $link = $(this);
-                refreshModal();
-                $mainModal.modal('show');
+                var myModal = $manageModal;
+                if ($link.data('action') == 'manage') {
+                    refreshManageModal();
+                } else if ($link.data('action') == 'leave') {
+                    refreshLeaveModal();
+                    myModal = $leaveModal;
+                }
+                myModal.modal('show');
             });
 
             ## N.B. updates to the return value will be propagated back to the
@@ -189,6 +196,18 @@
 
             ## Refresh the modal based using the current values in $link
             function refreshModal() {
+                if ($link.data('data-action') == 'manage') {
+                    refreshManageModal();
+                } else if ($link.data('data-action') == 'leave') {
+                    refreshLeaveModal()
+                }
+            }
+
+            function refreshLeaveModal() {
+                $('#left-folder-name').text(modalFolderName());
+            }
+
+            function refreshManageModal() {
                 var privileged = modalPrivileged();
 
                 ## Set the modal's title
@@ -390,11 +409,11 @@
                 });
             }
 
-            $mainModal.on('shown', function() {
+            $manageModal.on('shown', function() {
                 $("#modal-invitee-email").focus();
             });
 
-            $mainModal.on('hidden', function() {
+            $manageModal.on('hidden', function() {
                 stopModalSpinner();
                 ## Remove previous invited email
                 $("#modal-invitee-email").val('');
@@ -431,7 +450,7 @@
                 $('.remove-modal-full-name').text(fullName);
                 $('.remove-modal-email').text(email);
 
-                $mainModal.modal('hide');
+                $manageModal.modal('hide');
                 $('#remove-modal').modal('show');
 
                 var $confirm = $('#remove-model-confirm');
@@ -467,8 +486,30 @@
             }
 
             $('#remove-modal').on('hidden', function() {
-                $mainModal.modal('show');
+                $manageModal.modal('show');
             })
+
+            $('#modal-leave-form').submit(function(ev){
+                var sid = modalSID();
+                var name = modalFolderName();
+                var permissions = $('#modal-invite-role').data("permissions");
+
+                $.postJSON(
+                    "${request.route_path('json.leave_shared_folder')}",
+                    {
+                        permissions: permissions,
+                        store_id: sid,
+                        folder_name: name,
+                    }
+                ).done(function(e) {
+                    showSuccessMessage('You have left folder "'+ name +'".');
+                }).fail(showErrorMessageFromResponse);
+                /* Table refresh and modal hiding ought to be inside an .always(), but 
+                   for some reason they won't fire if I do that. :/ */
+                refreshTable();
+                $leaveModal.modal('hide');
+                return false;
+            });
 
             $('#modal-invite-form').submit(function(ev) {
                 ## Since IE doesnt support String.trim(), use $.trim()
@@ -496,8 +537,8 @@
             setModalTransition($sharingErrorModal);
 
             function setModalTransition($modal) {
-                $modal.on('show', function() { $mainModal.modal("hide"); })
-                      .on('hidden', function() { $mainModal.modal("show"); })
+                $modal.on('show', function() { $manageModal.modal("hide"); })
+                      .on('hidden', function() { $manageModal.modal("show"); })
             }
 
             ## This method passes the email as a parameter rather than fetching
@@ -625,7 +666,7 @@
                 $("#ask-admin-modal")
             %endif
                 .on("hidden", function() {
-                    $mainModal.modal("show");
+                    $manageModal.modal("show");
                 });
 
             function paymentRequiredToInvite(email, permissions) {

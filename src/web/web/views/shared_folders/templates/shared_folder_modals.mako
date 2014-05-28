@@ -6,7 +6,7 @@
 
 <%def name="main_modals()">
     <%modal:modal>
-        <%def name="id()">modal</%def>
+        <%def name="id()">manage-modal</%def>
         <%def name="title()">
             <span id="modal-folder-title"></span>&nbsp;
             <span id="modal-folder-title-info-icon" class="glyphicon glyphicon-info-sign"></span>
@@ -81,6 +81,18 @@
         <%def name="error()"></%def>
         <%def name="footer()">
             <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
+        </%def>
+    </%modal:modal>
+
+    <%modal:modal>
+        <%def name="id()">leave-folder-modal</%def>
+        <%def name="title()">Leaving Folder</%def>
+        Are you sure you want to leave "<span id="left-folder-name">folder_name</span>"? This will remove the folder and its contents from all of your devices.
+        <%def name="footer()">
+        <form id="modal-leave-form" method="post">
+                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <input href="#" class="btn btn-danger" type="submit" value="Leave">
+        </form>
         </%def>
     </%modal:modal>
 </%def>

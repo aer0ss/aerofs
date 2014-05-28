@@ -9,7 +9,6 @@ import base64
 import json
 from cgi import escape
 from pyramid.security import authenticated_userid
-
 from pyramid.view import view_config
 
 import aerofs_sp.gen.common_pb2 as common
@@ -306,18 +305,24 @@ def _render_shared_folder_options_link(folder, session_user, privileged):
                 'Actions <span class="caret"></span>'
               '</button>'
               '<ul class="dropdown-menu" role="menu">')
-    manage_link = u'<li><a href="#" class="{}" data-{}="{}" data-{}="{}"' \
-           u'data-{}="{}" data-{}="{}"><span class="glyphicon glyphicon-user"></span> {}</a></li>'.format(
+    manage_link = u'<li><a href="#" class="{}" data-{}="{}" data-{}="{}" data-{}="{}"' \
+           u'data-{}="{}" data-action="manage"><span class="glyphicon glyphicon-user"></span> {}</a></li>'.format(
             _OPEN_MODAL_CLASS,
             _LINK_DATA_SID, escape(id),
             _LINK_DATA_PRIVILEGED, 1 if privileged else 0,
             _LINK_DATA_NAME, escaped_folder_name,
             _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST, escape(urs).replace('"', '&#34;'),
-            "Manage Members" if privileged else "View Members")
+            "Manage Folder" if privileged else "View Members")
+    leave_link = u'<li><a href="#" data-action="leave" class="{}" data-{}="{}" ' \
+           u'data-{}="{}"><span class="glyphicon glyphicon-remove"></span> Leave</a></li>'.format(
+            _OPEN_MODAL_CLASS,
+            _LINK_DATA_SID, escape(id),
+            _LINK_DATA_NAME, escaped_folder_name,
+            )
     actions_end = ('</ul>'
             '</div>')
 
-    return actions_front + manage_link + actions_end
+    return actions_front + manage_link + leave_link + actions_end
 
 
 def to_json(user_permissions_and_state_list, session_user):
@@ -365,6 +370,22 @@ def _pb_permissions_from_json(permission_list):
     for p in permission_list:
         pb.permission.append(common.PBPermission.Value(p))
     return pb
+
+
+@view_config(
+    route_name = 'json.leave_shared_folder',
+    renderer = 'json',
+    permission = 'user',
+    request_method = 'POST'
+)
+def json_leave_shared_folder(request):
+    _ = request.translate
+
+    store_id = _decode_store_id(request.json_body['store_id'])
+
+    sp = get_rpc_stub(request)
+
+    exception2error(sp.leave_shared_folder, store_id, {})
 
 
 @view_config(
