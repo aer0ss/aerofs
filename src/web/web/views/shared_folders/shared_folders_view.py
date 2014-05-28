@@ -10,6 +10,7 @@ import json
 from cgi import escape
 from pyramid.security import authenticated_userid
 from pyramid.view import view_config
+from pyramid.renderers import render
 
 import aerofs_sp.gen.common_pb2 as common
 from web.auth import is_admin
@@ -149,7 +150,7 @@ def json_get_my_shared_folders(request):
     reply = sp.list_user_shared_folders(session_user)
     return _sp_reply2datatables(reply.shared_folder,
         _session_user_privileger,
-        len(reply.shared_folder), echo, session_user)
+        len(reply.shared_folder), echo, session_user, request)
 
 
 def _session_user_privileger(folder, session_user):
@@ -181,7 +182,7 @@ def json_get_user_shared_folders(request):
     reply = sp.list_user_shared_folders(specified_user)
     return _sp_reply2datatables(reply.shared_folder,
         _session_team_privileger,
-        len(reply.shared_folder), echo, authenticated_userid(request))
+        len(reply.shared_folder), echo, authenticated_userid(request), request)
 
 
 @view_config(
@@ -199,14 +200,14 @@ def json_get_org_shared_folders(request):
     sp = util.get_rpc_stub(request)
     reply = sp.list_organization_shared_folders(count, offset)
     return _sp_reply2datatables(reply.shared_folder, _session_team_privileger,
-        reply.total_count, echo, authenticated_userid(request))
+        reply.total_count, echo, authenticated_userid(request), request)
 
 
 def _session_team_privileger(folder, session_user):
     return folder.owned_by_team
 
 
-def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
+def _sp_reply2datatables(folders, privileger, total_count, echo, session_user, request):
     """
     @param privileger a callback function to determine if the session user has
         privileges to modify ACL of the folder
@@ -222,13 +223,12 @@ def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
         members = filter(lambda urs: urs.state == JOINED and MANAGE not in urs.permissions.permission, 
             member_folder.user_permissions_and_state)
 
-
         data.append({
             'name': escape(folder.name),
             'owners': _render_shared_folder_users(owners, session_user),
             'members': _render_shared_folder_users(members, session_user),
             'options': _render_shared_folder_options_link(folder, session_user,
-                privileger(folder, session_user)),
+                privileger(folder, session_user), request),
         })
 
     return {
@@ -286,43 +286,28 @@ def _render_shared_folder_users(user_permissions_and_state_list, session_user):
     return escape(str)
 
 
-def _render_shared_folder_options_link(folder, session_user, privileged):
+def _render_shared_folder_options_link(folder, session_user, privileged, request):
     """
     @param privileged whether the session user has the privilege to modify ACL
     """
     id = _encode_store_id(folder.store_id)
-    urs = to_json(filter(lambda user: user.state == JOINED or user.state == PENDING, folder.user_permissions_and_state), session_user)  
-    escaped_folder_name = escape(folder.name)
+    urs = to_json(filter(lambda user: user.state == JOINED or user.state == PENDING, 
+        folder.user_permissions_and_state), session_user)
 
-    # The data tags must be consistent with the ones in loadModalData() in
-    # shared_folder.mako.
-    # use single quote for data-srps since srps is in JSON which uses double
-    # quotes.
-    #
-    # N.B. need to sub out quotes for proper rendering of the dialog.
-    actions_front = ('<div class="btn-group">'
-              '<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">'
-                'Actions <span class="caret"></span>'
-              '</button>'
-              '<ul class="dropdown-menu" role="menu">')
-    manage_link = u'<li><a href="#" class="{}" data-{}="{}" data-{}="{}" data-{}="{}"' \
-           u'data-{}="{}" data-action="manage"><span class="glyphicon glyphicon-user"></span> {}</a></li>'.format(
-            _OPEN_MODAL_CLASS,
-            _LINK_DATA_SID, escape(id),
-            _LINK_DATA_PRIVILEGED, 1 if privileged else 0,
-            _LINK_DATA_NAME, escaped_folder_name,
-            _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST, escape(urs).replace('"', '&#34;'),
-            "Manage Folder" if privileged else "View Members")
-    leave_link = u'<li><a href="#" data-action="leave" class="{}" data-{}="{}" ' \
-           u'data-{}="{}"><span class="glyphicon glyphicon-remove"></span> Leave</a></li>'.format(
-            _OPEN_MODAL_CLASS,
-            _LINK_DATA_SID, escape(id),
-            _LINK_DATA_NAME, escaped_folder_name,
-            )
-    actions_end = ('</ul>'
-            '</div>')
+    data = {
+        'open_modal_class': _OPEN_MODAL_CLASS,
+        'data_sid': _LINK_DATA_SID,
+        'sid': escape(id),
+        'data_privileged': _LINK_DATA_PRIVILEGED,
+        'is_privileged': 1 if privileged else 0,
+        'data_name': _LINK_DATA_NAME,
+        'folder_name': escape(folder.name),
+        'data_perms': _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST,
+        'perms': escape(urs),
+        'is_member': ''  # TODO: hide leave link if user is not a member of the shared folder
+    }
 
-    return actions_front + manage_link + leave_link + actions_end
+    return render('shared_folder_actions.mako', data, request)
 
 
 def to_json(user_permissions_and_state_list, session_user):
