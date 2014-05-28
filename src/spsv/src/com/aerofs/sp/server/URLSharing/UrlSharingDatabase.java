@@ -126,9 +126,7 @@ public class UrlSharingDatabase extends AbstractSQLDatabase
     private @Nonnull byte[] getBytesColumn(String key, String column)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_US, C_US_KEY + "=?", column)
-        );
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_US, C_US_KEY + "=?", column));
         ps.setString(1, key);
 
         ResultSet rs = ps.executeQuery();
@@ -143,9 +141,7 @@ public class UrlSharingDatabase extends AbstractSQLDatabase
     private @Nonnull String getStringColumn(String key, String column)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_US, C_US_KEY + "=?", column)
-        );
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_US, C_US_KEY + "=?", column));
         ps.setString(1, key);
 
         ResultSet rs = ps.executeQuery();
@@ -155,5 +151,14 @@ public class UrlSharingDatabase extends AbstractSQLDatabase
         } finally {
             rs.close();
         }
+    }
+
+    public void removeRow(@Nonnull String key)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(DBUtil.deleteWhereEquals(T_US, C_US_KEY));
+        ps.setString(1, key);
+
+        if (ps.executeUpdate() == 0) throw new ExNotFound();
     }
 }

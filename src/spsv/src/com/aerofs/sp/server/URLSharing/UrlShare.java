@@ -122,5 +122,11 @@ public class UrlShare
     {
         _f._db.removeExpiresAndSetToken(_key, newToken);
     }
+
+    public void delete()
+            throws SQLException, ExNotFound
+    {
+        _f._db.removeRow(_key);
+    }
 }
 

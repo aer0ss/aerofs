@@ -717,6 +717,15 @@ service SPService {
     //   ExNoPerm if the current user isn't a manager of the containing store
     //
     rpc RemoveUrlExpires(RemoveUrlExpiresCall) returns (Void);
+
+    // Delete a URL
+    //
+    // Required Auth Level: store manager
+    // Throws:
+    //   ExNotFound if the key does not exist
+    //   ExNoPerm if the current user isn't a manager of the containing store
+    //
+    rpc RemoveUrl(RemoveUrlCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1341,4 +1350,8 @@ message GetUrlInfoCall {
 
 message GetUrlInfoReply {
     required PBRestObjectUrl url_info = 1;
+}
+
+message RemoveUrlCall {
+    required string key = 1;
 }

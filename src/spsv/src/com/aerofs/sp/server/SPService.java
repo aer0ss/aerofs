@@ -1535,6 +1535,23 @@ public class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<Void> removeUrl(String key)
+            throws Exception
+    {
+        User requester = _sessionUser.getUser();
+
+        _sqlTrans.begin();
+        UrlShare link = _factUrlShare.create(key);
+        SID sid = link.getSid();
+        SharedFolder sf = _factSharedFolder.create(sid);
+        sf.throwIfNoPrivilegeToChangeACL(requester);
+        link.delete();
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
     public ListenableFuture<Void> setQuota(Long quota)
             throws Exception
     {

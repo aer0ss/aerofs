@@ -219,4 +219,59 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
             // success
         }
     }
+
+    @Test
+    public void removeUrl_shouldRemoveUrl() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // remove the link
+        service.removeUrl(key);
+
+        // try to get the link
+        try {
+            service.getUrlInfo(key);
+            fail();
+        } catch (ExNotFound ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void removeUrl_shouldThrowIfKeyDoesNotExist() throws Exception
+    {
+        try {
+            service.removeUrl(UniqueID.generate().toStringFormal());
+            fail();
+        } catch (ExNotFound ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void removeUrl_shouldThrowIfUserIsNotManager() throws Exception
+    {
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // try to delete the link
+        setSessionUser(editor);
+        try {
+            service.removeUrl(key);
+            fail();
+        } catch (ExNoPerm ignored) {
+            // success
+        }
+    }
 }
