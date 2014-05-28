@@ -12,8 +12,8 @@
         <div id="no-referrer" class="extra-error-info">
             <p>You may not have been able to find the page you were after because of:</p>
             <ol>
-                <li>A mis-typed address</li>
-                <li>An out-of-date bookmark or favorite</li>
+                <li>A mistyped address</li>
+                <li>An old bookmark or favorite</li>
                 <li>A search engine that has an out-of-date listing for us</li>
             </ol>
         </div>
