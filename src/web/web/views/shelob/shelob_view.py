@@ -11,6 +11,12 @@ from oauth import get_new_oauth_token
 log = logging.getLogger(__name__)
 
 
+def get_new_shelob_token(request):
+    client_id = 'aerofs-shelob'
+    client_secret = request.registry.settings["oauth.shelob_client_secret"]
+    return get_new_oauth_token(request, client_id, client_secret)
+
+
 @view_config(
         route_name='files',
         renderer='shelob.mako',
@@ -38,7 +44,7 @@ def json_token(request):
     """
     userid = authenticated_userid(request)
     if userid not in _oauth_token:
-        _oauth_token[userid] = get_new_oauth_token(request)
+        _oauth_token[userid] = get_new_shelob_token(request)
     return {'token': _oauth_token[userid]}
 
 
@@ -53,6 +59,6 @@ def json_new_token(request):
     Fetch a new token for the user, even if one is cached already.
     """
     userid = authenticated_userid(request)
-    _oauth_token[userid] = get_new_oauth_token(request)
+    _oauth_token[userid] = get_new_shelob_token(request)
     return {'token': _oauth_token[userid]}
 
