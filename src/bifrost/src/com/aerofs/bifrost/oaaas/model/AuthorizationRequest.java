@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -87,6 +88,8 @@ public class AuthorizationRequest extends AbstractEntity
 
   @Column(unique = true)
   private String authorizationCode;
+
+  public @Nullable Long expiresInSeconds;
 
   public AuthorizationRequest() {
     super();

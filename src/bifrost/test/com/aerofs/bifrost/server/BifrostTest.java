@@ -53,6 +53,7 @@ public abstract class BifrostTest extends AbstractTest
     public final static String CLIENTNAME = "test-app-name";
     public final static String CLIENTSECRET = "test-app-secret";
     public final static String CLIENTREDIRECT = "http://client.example.com:9000/redirect";
+    public final static String CLIENTSHORTEXPIRYID = "test-app-short-expiry-id";
     public final static String USERNAME = "user";
     public final static String RW_TOKEN = "rwtoken";
     public final static String RO_TOKEN = "rotoken";
@@ -123,16 +124,13 @@ public abstract class BifrostTest extends AbstractTest
         return res;
     }
 
-    /**
-     * Create a client and resource server for testing.
-     * client: use CLIENTID, CLIENTSECRET
-     * resourceserver: use
-     */
     public static void createTestEntities(UserID user, Injector inj)
     {
         ResourceServer rs = createResourceServer(inj);
         Client client = createClient(inj, rs, CLIENTID, CLIENTSECRET, CLIENTNAME,
                 ImmutableSet.of("files.read", "files.write"), 0L);
+        createClient(inj, rs, CLIENTSHORTEXPIRYID, CLIENTSECRET, CLIENTNAME,
+                ImmutableSet.of("files.read", "files.write"), 900L);
 
         createAccessToken(client, inj, RW_TOKEN, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
                 ImmutableSet.of("files.read", "files.write"));

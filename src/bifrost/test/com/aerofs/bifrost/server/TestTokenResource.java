@@ -161,6 +161,90 @@ public class TestTokenResource extends BifrostTest
                 .post(TOKEN_URL);
     }
 
+    @Test
+    public void shouldGetTokenWithClientExpiryIfNoneRequested() throws Exception
+    {
+        String tokenResponse = given()
+                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .formParam("client_id", CLIENTID)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code_type", "device_authorization")
+                .formParam("code", GOOD_NONCE)
+                .post(TOKEN_URL).asString();
+
+        String token = from(tokenResponse).get("access_token");
+        assertNotNull(token);
+
+        assertNotNull(from(tokenResponse).get("expires_in"));
+        long expiresIn = from(tokenResponse).getLong("expires_in");
+        assertEquals(_clientRepository.findByClientId(CLIENTID).getExpireDuration(), expiresIn);
+    }
+
+    @Test
+    public void shouldGetTokenIfRequestedExpiryIsLessThanClientExpiry() throws Exception
+    {
+        long requestedExpiresIn = 86400L;
+
+        String tokenResponse = given()
+                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .formParam("client_id", CLIENTID)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code_type", "device_authorization")
+                .formParam("code", GOOD_NONCE)
+                .formParam("expires_in", requestedExpiresIn)
+                .post(TOKEN_URL).asString();
+
+        String token = from(tokenResponse).get("access_token");
+        assertNotNull(token);
+
+        assertNotNull(from(tokenResponse).get("expires_in"));
+        long expiresIn = from(tokenResponse).getLong("expires_in");
+        assertEquals(requestedExpiresIn, expiresIn);
+    }
+
+    @Test
+    public void shouldGetTokenWithClientExpiryRequested() throws Exception
+    {
+        String authCode = getCodeFromAuthorizationEndpoint("user.read");
+        long requestedExpiresIn = _clientRepository.findByClientId(CLIENTID).getExpireDuration();
+
+        String tokenResponse = given()
+                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .formParam("client_id", CLIENTID)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code_type", "device_authorization")
+                .formParam("code", GOOD_NONCE)
+                .formParam("expires_in", requestedExpiresIn)
+                .post(TOKEN_URL).asString();
+
+        String token = from(tokenResponse).get("access_token");
+        assertNotNull(token);
+
+        assertNotNull(from(tokenResponse).get("expires_in"));
+        long expiresIn = from(tokenResponse).getLong("expires_in");
+        assertEquals(requestedExpiresIn, expiresIn);
+    }
+
+    @Test
+    public void shouldFailToGetTokenIfRequestedExpiryIsLargerThanClientExpiry() throws Exception
+    {
+        String authCode = getCodeFromAuthorizationEndpoint("user.read");
+        long requestedExpiresIn =
+                _clientRepository.findByClientId(CLIENTSHORTEXPIRYID).getExpireDuration() + 9000;
+
+        expect()
+                .statusCode(400)
+        .given()
+                .header("Authorization", buildAuthHeader(CLIENTSHORTEXPIRYID, CLIENTSECRET))
+                .formParam("redirect_uri", CLIENTREDIRECT)
+                .formParam("client_id", CLIENTID)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code_type", "device_authorization")
+                .formParam("code", GOOD_NONCE)
+                .formParam("expires_in", requestedExpiresIn)
+                .post(TOKEN_URL).asString();
+    }
+
     /** Positive test case but using client_secret form-param allowed by OAuth standard */
     @Test
     public void shouldSupportClientSecret() throws Exception

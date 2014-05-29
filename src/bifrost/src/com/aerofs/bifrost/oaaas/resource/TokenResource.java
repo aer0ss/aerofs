@@ -38,6 +38,7 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
 import com.aerofs.oauth.PrincipalFactory;
+import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -220,8 +221,11 @@ public class TokenResource
         AccessToken token = createAccessToken(request, false);
         l.info("created token {} for {}", token.getToken(), token.getClientId());
 
-        AccessTokenResponse response = new AccessTokenResponse(token.getToken(), BEARER,
-                request.getClient().getExpireDuration(), token.getRefreshToken(),
+        AccessTokenResponse response = new AccessTokenResponse(
+                token.getToken(),
+                BEARER,
+                Objects.firstNonNull(request.expiresInSeconds, request.getClient().getExpireDuration()),
+                token.getRefreshToken(),
                 StringUtils.join(token.getScopes(), ','));
 
         return Response.ok().entity(response).build();
@@ -304,6 +308,21 @@ public class TokenResource
         authReq.setClient(client);
         authReq.setGrantedScopes(scopes);
 
+        if (accessTokenRequest.getExpiresInSeconds() != null) {
+            if (client.getExpireDuration() == 0) {
+                // if the client allows unlimited duration, give the requester what he asks for
+                authReq.expiresInSeconds = accessTokenRequest.getExpiresInSeconds();
+            } else if (accessTokenRequest.getExpiresInSeconds() == 0) {
+                // if the requester asks for unlimited duration, give the client maximum
+                authReq.expiresInSeconds = client.getExpireDuration();
+            } else {
+                // otherwise, give the requester what he asks for, up to the client maximum
+                authReq.expiresInSeconds = Math.min(
+                        accessTokenRequest.getExpiresInSeconds(),
+                        client.getExpireDuration());
+            }
+        }
+
         String uri = accessTokenRequest.getRedirectUri();
         if (uri != null && (!uri.equalsIgnoreCase(authReq.getRedirectUri()))) {
             throw new ValidationResponseException(ValidationResponse.REDIRECT_URI_DIFFERENT);
@@ -349,8 +368,10 @@ public class TokenResource
     private AccessToken createAccessToken(AuthorizationRequest request, boolean isImplicitGrant)
     {
         Client client = request.getClient();
-        long expires = client.getExpireDuration() == 0 ?
-                0L : (System.currentTimeMillis() + (1000 * client.getExpireDuration()));
+        long expireDurationSeconds =
+                Objects.firstNonNull(request.expiresInSeconds, client.getExpireDuration());
+        long expiresMilli = expireDurationSeconds == 0 ?
+                0 : System.currentTimeMillis() + (1000 * expireDurationSeconds);
         String refreshToken = (client.isUseRefreshTokens() && !isImplicitGrant) ?
                 newTokenValue() : null;
         AuthenticatedPrincipal principal = request.getPrincipal();
@@ -359,7 +380,7 @@ public class TokenResource
                         newTokenValue(),
                         principal,
                         client,
-                        expires,
+                        expiresMilli,
                         request.getGrantedScopes(),
                         refreshToken)
         );

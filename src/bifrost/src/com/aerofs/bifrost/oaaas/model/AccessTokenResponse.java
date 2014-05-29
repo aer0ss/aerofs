@@ -45,7 +45,7 @@ public class AccessTokenResponse
     public String toString() {
         return "AccessTokenResponse [accessToken=" + accessToken
               + ", tokenType=" + tokenType
-              + ", expiresIn=" + expiresIn
+              + ", expiresInSeconds=" + expiresIn
               + ", refreshToken=" + refreshToken
               + ", scope=" + scope + "]";
     }

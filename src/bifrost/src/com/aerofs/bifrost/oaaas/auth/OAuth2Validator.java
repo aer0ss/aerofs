@@ -76,6 +76,9 @@ public interface OAuth2Validator {
         "The redirect_uri does not equal any of the registered redirect_uri values"),
 
     REDIRECT_URI_DIFFERENT("invalid_request","The redirect_uri does not match the initial authorization request"),
+
+    INVALID_EXPIRES_IN("invalid_request",
+            "The requested expiry cannot exceed the client's configured maximum"),
     
     SCOPE_NOT_VALID("invalid_scope", "The requested scope is invalid, unknown, malformed, " +
         "or exceeds the scope granted by the resource owner."),
