@@ -3,7 +3,7 @@ package com.aerofs.bifrost.server;
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
+import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.jayway.restassured.response.Response;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,14 +36,14 @@ public class TestAuthorizeResource extends BifrostTest
     @Before
     public void setUpTestAuthorizeResource() throws Exception
     {
-        when(_spClient.authorizeMobileDevice(eq(ADMIN_NONCE), anyString())).thenReturn(
-                AuthorizeMobileDeviceReply.newBuilder()
+        when(_spClient.authorizeAPIClient(eq(ADMIN_NONCE), anyString())).thenReturn(
+                AuthorizeAPIClientReply.newBuilder()
                         .setUserId("test1@b.c")
                         .setOrgId("2")
                         .setIsOrgAdmin(true)
                         .build());
 
-        when(_spClient.authorizeMobileDevice(eq(BAD_NONCE), anyString())).thenThrow(
+        when(_spClient.authorizeAPIClient(eq(BAD_NONCE), anyString())).thenThrow(
                 new ExExternalAuthFailure());
     }
 

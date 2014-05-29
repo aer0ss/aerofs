@@ -52,7 +52,7 @@ public class DID2User
     }
 
     /**
-     * Retreive the mapping from the local database.
+     * Retrieve the mapping from the local database.
      * @return null if the mapping doesn't exist locally.
      */
     public @Nullable UserID getFromLocalNullable_(DID did)

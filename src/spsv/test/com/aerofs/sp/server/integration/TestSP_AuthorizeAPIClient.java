@@ -6,7 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
+import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.aerofs.proto.Sp.MobileAccessCode;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.After;
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public class TestSP_AuthorizeDevice extends AbstractSPTest
+public class TestSP_AuthorizeAPIClient extends AbstractSPTest
 {
     private User user;
 
@@ -60,8 +60,8 @@ public class TestSP_AuthorizeDevice extends AbstractSPTest
         MobileAccessCode auth = service.getMobileAccessCode().get();
         sessionUser.remove();
 
-        AuthorizeMobileDeviceReply attrs = service.authorizeMobileDevice(
-                auth.getAccessCode(), "My Test Device").get();
+        AuthorizeAPIClientReply attrs = service.authorizeAPIClient(auth.getAccessCode(),
+                "My Test Device").get();
         String expectedOrg = attrs.getOrgId();
 
         assertNotNull( attrs );
@@ -79,11 +79,10 @@ public class TestSP_AuthorizeDevice extends AbstractSPTest
         MobileAccessCode auth = service.getMobileAccessCode().get();
         sessionUser.remove();
 
-        service.authorizeMobileDevice(auth.getAccessCode(),
-                "My Test Device").get();
+        service.authorizeAPIClient(auth.getAccessCode(), "My Test Device").get();
 
         try {
-            service.authorizeMobileDevice(auth.getAccessCode(), "My Test Device").get();
+            service.authorizeAPIClient(auth.getAccessCode(), "My Test Device").get();
             fail();
         } catch (ExExternalAuthFailure eeaf) { /* expected */ }
     }
@@ -97,7 +96,7 @@ public class TestSP_AuthorizeDevice extends AbstractSPTest
 
         sessionUser.setUser(user);
         try {
-            service.authorizeMobileDevice(auth.getAccessCode(), "My Test Device");
+            service.authorizeAPIClient(auth.getAccessCode(), "My Test Device");
             fail("Expected excepted");
         } catch (ExNoPerm enp) { /* expected */ }
     }
@@ -105,6 +104,6 @@ public class TestSP_AuthorizeDevice extends AbstractSPTest
     @Test(expected = ExExternalAuthFailure.class)
     public void testShouldFailWithBadNonce() throws Exception
     {
-        service.authorizeMobileDevice("Hi mom", "Devices are people too");
+        service.authorizeAPIClient("Hi mom", "Devices are people too");
     }
 }

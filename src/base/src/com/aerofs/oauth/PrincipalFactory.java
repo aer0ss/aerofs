@@ -7,7 +7,7 @@ package com.aerofs.oauth;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
+import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.aerofs.sp.client.SPBlockingClient;
 
 import javax.inject.Inject;
@@ -21,7 +21,7 @@ public class PrincipalFactory
     public AuthenticatedPrincipal authenticate(
             String nonce, String devName, Collection<String> requestedScopes) throws Exception
     {
-        AuthorizeMobileDeviceReply auth = spFactory.create().authorizeMobileDevice(nonce, devName);
+        AuthorizeAPIClientReply auth = spFactory.create().authorizeAPIClient(nonce, devName);
 
         // is this a request for admin privilege; if so, throw if the caller is not allowed
         boolean isAdmin = isAdminRequest(requestedScopes);

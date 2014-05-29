@@ -11,7 +11,7 @@ import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
+import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.google.common.collect.Sets;
 import com.jayway.restassured.response.Response;
 import org.junit.Before;
@@ -45,14 +45,14 @@ public class TestTokenResource extends BifrostTest
     @Before
     public void setUpSPResponses() throws Exception
     {
-        when(_spClient.authorizeMobileDevice(eq(GOOD_NONCE), anyString())).thenReturn(
-                AuthorizeMobileDeviceReply.newBuilder()
+        when(_spClient.authorizeAPIClient(eq(GOOD_NONCE), anyString())).thenReturn(
+                AuthorizeAPIClientReply.newBuilder()
                         .setUserId("test1@b.c")
                         .setOrgId("2")
                         .setIsOrgAdmin(true)
                         .build());
 
-        when(_spClient.authorizeMobileDevice(eq(BAD_NONCE), anyString()))
+        when(_spClient.authorizeAPIClient(eq(BAD_NONCE), anyString()))
                 .thenThrow(new ExBadCredential());
     }
 

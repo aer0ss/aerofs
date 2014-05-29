@@ -602,15 +602,15 @@ service SPService {
     // Required Auth Level: User
     rpc GetMobileAccessCode(Void) returns (MobileAccessCode);
 
-    // Given a valid mobile access code, get the user attributes to be cached
+    // Given a valid API access code, get the user attributes to be cached
     // for the user account. This will implicitly invalidate the access code so it cannot
     // be reused.
     //
-    // The mobile client that will own the access token should submit a name
-    // ("Greg's iPad") along with the authorization request in the deviceName field.
+    // The API client that will own the access token should submit a name
+    // ("Greg's iPad") along with the authorization request in the deviceInfo field.
     //
     // Required Auth Level: None
-    rpc AuthorizeMobileDevice(AuthorizeMobileDeviceCall) returns (AuthorizeMobileDeviceReply);
+    rpc AuthorizeAPIClient(AuthorizeAPIClientCall) returns (AuthorizeAPIClientReply);
 
     // Lists the shared folder information associated with the given list of Store IDs. The
     // caller must be a member of every shared folder.
@@ -1260,30 +1260,36 @@ message SignInUserCall {
 }
 
 message OpenIdSessionNonces {
+    // TODO (WW) replace CamelCase with underscore
     required string sessionNonce = 1;
     required string delegateNonce = 2;
 }
 
 message OpenIdSessionQuery {
+    // TODO (WW) replace CamelCase with underscore
     required string sessionNonce = 1;
 }
 
 message OpenIdSessionAttributes {
+    // TODO (WW) replace CamelCase with underscore
     optional string userId = 1;
     optional string firstName = 2;
     optional string lastName = 3;
 }
 
 message MobileAccessCode {
+    // TODO (WW) replace CamelCase with underscore
     optional string accessCode = 1;
 }
 
-message AuthorizeMobileDeviceCall {
+message AuthorizeAPIClientCall {
+    // TODO (WW) replace CamelCase with underscore
     optional string accessCode = 1;
     optional string deviceName = 2;
 }
 
-message AuthorizeMobileDeviceReply {
+message AuthorizeAPIClientReply {
+    // TODO (WW) replace CamelCase with underscore
     optional string userId = 1;
     optional string orgId = 2;
     optional bool isOrgAdmin = 3;
