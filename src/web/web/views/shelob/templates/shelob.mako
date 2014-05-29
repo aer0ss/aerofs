@@ -13,7 +13,7 @@
     <script src="${request.static_path('web:static/shelob/js/services.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/controllers.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/directives.js')}"></script>
-    <script src="${request.static_path('web:static/shelob/lib/angular-ui/ui-bootstrap-tpls-0.8.0.min.js')}"></script>
+    <script src="${request.static_path('web:static/shelob/lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
     <script src="${request.static_path('web:static/shelob/lib/angular-tree-control.js')}"></script>
     <script src="${request.static_path('web:static/shelob/lib/modernizr.js')}"></script>
 
