@@ -216,6 +216,7 @@ public class UsersResource extends AbstractSpartaResource
             throw new ExNotFound("No such invitation");
         }
 
+        // TODO: extract and reuse code from SPService.joinSharedFolderImpl?
         ImmutableCollection<UserID> affected = sf.setState(user, SharedFolderState.JOINED);
         sf.setExternal(user, toBool(external));
 

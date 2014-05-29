@@ -4,6 +4,8 @@
 
 package com.aerofs.sp.sparta;
 
+import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.BaseParam.Cacert;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
@@ -236,6 +238,14 @@ public class Sparta extends Service
                 VerkehrAdmin admin = factAdmin.create();
                 admin.start();
                 return admin;
+            }
+
+            @Provides @Singleton
+            public AuditClient providesAudit()
+            {
+                AuditClient client = new AuditClient();
+                client.setAuditorClient(AuditorFactory.createUnauthenticated());
+                return client;
             }
         };
     }
