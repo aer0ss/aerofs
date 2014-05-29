@@ -2398,6 +2398,7 @@ public class SPService implements ISPService
         // certificate on Verkehr reconnect.
         _auditClient.event(AuditTopic.DEVICE, "device.signin")
                 .add("user", user.id())
+                .add("device_id", device.id().toStringFormal())
                 .add("ip", _remoteAddress.get())
                 .publish();
 
