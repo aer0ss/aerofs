@@ -52,7 +52,7 @@ enabled and cannot be configured.
 
         <div id="endpoint-options"
             %if not device_authorization_endpoint_enabled:
-                class="hide"
+                style="display: none;"
             %endif
         >
             <hr/>
@@ -63,21 +63,21 @@ enabled and cannot be configured.
             <div class="row">
                 <div class="col-sm-4">
                     <label for="host">Hostname:</label>
-                    <input class="input-block-level" id="host"
+                    <input class="form-control" id="host"
                         oninput="optionsUpdated();"
                         name="host" type="text" class="form-control"
                         value="${device_authorization_endpoint_host}">
                 </div>
                 <div class="col-sm-4">
                     <label for="port">Port:</label>
-                    <input class="input-block-level" id="port"
+                    <input class="form-control" id="port"
                         oninput="optionsUpdated();"
                         name="port" type="text" class="form-control"
                         value="${device_authorization_endpoint_port}">
                 </div>
                 <div class="col-sm-4">
                     <label for="path">Path:</label>
-                    <input class="input-block-level" id="path"
+                    <input class="form-control" id="path"
                         oninput="optionsUpdated();"
                         name="path" type="text" class="form-control"
                         value="${device_authorization_endpoint_path}">
@@ -95,7 +95,7 @@ enabled and cannot be configured.
             </label>
 
             <label for="certificate">Server certificate for SSL (optional):</label>
-            <textarea rows="4" class="input-block-level form-control"
+            <textarea rows="4" class="form-control"
                 id="certificate"
                 name="certificate">${device_authorization_endpoint_certificate}</textarea>
             <div class="help-block">Supply the endpoint server's certificate
@@ -103,7 +103,11 @@ enabled and cannot be configured.
             </div>
         </div>
 
-        <button id="save-btn" class="btn btn-primary">Save</button>
+        <div class="row">
+            <div class="col-sm-6">
+                <button id="save-btn" class="btn btn-primary">Save</button>
+            </div>
+        </div>
     </form>
 </%def>
 
