@@ -1,12 +1,15 @@
-Building OpenJDK 7 for OS X
+Building OpenJDK 8 for OS X
 ===========================
 
 
 Pre-requisites
 --------------
 
-- Mac OS X 10.7 and Xcode 4.5.2 - Does't work on Mavericks
-- Apple's Java 6 to serve as a bootstrap JDK
+- Mac OS X 10.7 and Xcode >=4.5.2 (in particular, we need llvm-gcc)
+  - OpenJDK's configure script requires a gcc backend (rules out clang)
+  - OpenJDK's source uses Apple's Blocks extension for objc (rules out homebrew gcc-4.8)
+  - Takeaway: use llvm-gcc.
+- Oracle's Java 7 to serve as a bootstrap JDK
 
 
 Building
@@ -16,19 +19,30 @@ Instructions are at https://wiki.openjdk.java.net/display/MacOSXPort/Main
 
 # Get the code
 
-    hg clone --pull http://hg.openjdk.java.net/jdk7u/jdk7u openjdk7u
-    cd openjdk7u
+    hg clone --pull http://hg.openjdk.java.net/jdk8u/jdk8u openjdk8u
+    cd openjdk8u
     bash get_source.sh
 
 # Checkout a known release tag
 
-    bash ./make/scripts/hgforest.sh update -c jdk7u60-b04
+    bash ./make/scripts/hgforest.sh update -c jdk8u20-b15
 
 # Build
 
-    unset JAVA_HOME
-    CPATH="/usr/X11/include" LANG=C make ALLOW_DOWNLOADS=true SA_APPLE_BOOT_JAVA=true ALWAYS_PASS_TEST_GAMMA=true ALT_BOOTDIR=`/usr/libexec/java_home -v 1.6` HOTSPOT_BUILD_JOBS=`sysctl -n hw.ncpu`
-
+    # Berkeley DB 5 confuses OpenJDK, so make sure it's not
+    # available in /usr/local/ at configure/build time
+    brew list db > /dev/null
+    if [ $? -eq 0 ] ; then
+        HIDE_BDB=true
+    else
+        HIDE_BDB=false
+    fi
+    $HIDE_BDB && brew unlink db
+    export CC=llvm-gcc
+    export CXX=llvm-g++
+    bash ./configure
+    make JOBS=8 all
+    $HIDE_BDB && brew link db
 
 Packaging
 ---------
@@ -37,7 +51,7 @@ Packaging
 
     git clone https://github.com/aerofs/openjdk-trim.git
     cd openjdk-trim
-    ./jdk-trim osx ../openjdk7u/build/j2sdk-image/ j2sdk-trim
+    ./jdk-trim osx ../openjdk8u/build/macosx-x86_64-normal-server-release/images/j2sdk-image/ j2sdk-trim
 
 # Move trimmed jre to AeroFS main repo
 

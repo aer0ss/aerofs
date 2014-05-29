@@ -1,5 +1,5 @@
 #
-# Instructions to rebuild OpenJDK 7 to be shipped in the Windows clients
+# Instructions to rebuild OpenJDK 8 to be shipped in the Windows clients
 #
 # NB: almost but not quite a readily runnable script (on OSX, assuming
 # all dev tools are installed)
@@ -13,14 +13,14 @@
 
 pushd ~/repos
 
-hg clone --pull http://hg.openjdk.java.net/jdk7u/jdk7u openjdk7u
-pushd openjdk7u
+hg clone --pull http://hg.openjdk.java.net/jdk8u/jdk8u openjdk8u
+pushd openjdk8u
 
 # clone/pull sub-repos
 sh get_source.sh
 
 # put all sub-repos at a known-good release tag
-sh ./make/scripts/hgforest.sh update -c jdk7u40-b62
+sh ./make/scripts/hgforest.sh update -c jdk8u20-b15
 
 # apply Windows-specific patch for File.list
 pushd jdk
@@ -36,17 +36,17 @@ popd
 #        NB: you could conceivably bypass shared folders but I/O
 #        performance would take a serious hit which would significantly
 #        slow down the overall build time
-#     3. launch VS command line
-#     4. go to Z:/openjdk7u
-#     5. run "make"
-#     6. wait ~2h30
+#     3. launch Cygwin terminal
+#     4.   cd  /cygdrive/z/openjdk8u
+#     5    bash ./configure --with-freetype=/cygdrive/c/code/freetype-2.4.7 --with-target-bits=32 --with-boot-jdk=/cygdrive/c/code/jdk1.70-55 && make all
+#     6. wait ~2h
 #     7. profit (assuming nothing broke)
 #########################################################################
 
 # Use Greg's tool to remove unnecessary files (shrink by ~5x)
 git clone https://github.com/aerofs/openjdk-trim.git
 
-./openjdk-trim/jdk-trim win openjdk7u/build/j2sdk-image/ j2sdk-trim
+./openjdk-trim/jdk-trim win openjdk8u/build/j2sdk-image/ j2sdk-trim
 
 # move trimmed jre to AeroFS main repo
 rm -rf aerofs/resource/client/win/jre/

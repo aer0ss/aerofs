@@ -1,4 +1,4 @@
-Building OpenJDK 7 on Windows
+Building OpenJDK 8 on Windows
 =============================
 
 Note (greg): this is an old document that I wrote explaining the steps to make a Windows XP build machine.
