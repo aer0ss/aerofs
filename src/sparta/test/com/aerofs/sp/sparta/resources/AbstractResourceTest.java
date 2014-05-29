@@ -177,7 +177,8 @@ public class AbstractResourceTest extends AbstractBaseTest
         });
 
         ResourceServer rs = createResourceServer(inj);
-        Client client = createClient(rs, inj);
+        Client client = createClient(inj, rs, BifrostTest.CLIENTID, BifrostTest.CLIENTSECRET,
+                BifrostTest.CLIENTNAME, ImmutableSet.of("files.read", "files.write"), 0L);
 
         createAccessToken(client, inj, RW_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
                 ImmutableSet.of("user.read", "acl.read",

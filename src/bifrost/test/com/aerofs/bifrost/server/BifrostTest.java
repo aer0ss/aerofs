@@ -131,7 +131,8 @@ public abstract class BifrostTest extends AbstractTest
     public static void createTestEntities(UserID user, Injector inj)
     {
         ResourceServer rs = createResourceServer(inj);
-        Client client = createClient(rs, inj);
+        Client client = createClient(inj, rs, CLIENTID, CLIENTSECRET, CLIENTNAME,
+                ImmutableSet.of("files.read", "files.write"), 0L);
 
         createAccessToken(client, inj, RW_TOKEN, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
                 ImmutableSet.of("files.read", "files.write"));
@@ -155,20 +156,22 @@ public abstract class BifrostTest extends AbstractTest
         return rs;
     }
 
-    public static Client createClient(ResourceServer rs, Injector inj)
+    public static Client createClient(Injector inj, ResourceServer rs, String clientId,
+            String clientSecret, String clientName, Set<String> scopes, long expires)
     {
         Client client = new Client();
-        client.setClientId(CLIENTID);
-        client.setSecret(CLIENTSECRET);
-        client.setName(CLIENTNAME);
+        client.setClientId(clientId);
+        client.setSecret(clientSecret);
+        client.setName(clientName);
         client.setRedirectUris(ImmutableList.of(CLIENTREDIRECT));
         client.updateTimeStamps();
         client.setContactEmail("test@example.com");
         client.setContactName("Test contact");
         client.setIncludePrincipal(true);
         client.setSkipConsent(false);
-        client.setScopes(ImmutableSet.of("files.read", "files.write"));
+        client.setScopes(scopes);
         client.setResourceServer(rs);
+        client.setExpireDuration(expires);
         inj.getInstance(ClientRepository.class).save(client);
 
         Set<Client> clients = rs.getClients();
