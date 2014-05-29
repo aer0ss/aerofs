@@ -29,5 +29,4 @@
     <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/shelob.css')}"/>
     <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/tree-control.css')}"/>
     <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/tree-control-attribute.css')}"/>
-    <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/glyphicons.css')}"/>
 </%block>

@@ -38,18 +38,16 @@ a.action {
     padding-left: 28px;
     float: right;
 }
-a.action.glyphicons:before {
+a.action.glyphicon {
     color: #888;
+    display: inline-block;
+    font-size: 1.6em;
+    margin-left: -30px;
+    padding-right: 10px;
 }
-a.action.action-manage {
-    margin-top: 2px;
-}
-a.action.action-move {
-    margin-top: 2px;
-}
-a.action.action-delete {
-    margin-top: 4px;
-    margin-left: -4px;
+a.action.glyphicon:hover {
+    color: #222;
+    text-decoration: none;
 }
 .waiting, .waiting * {
     cursor: wait;
