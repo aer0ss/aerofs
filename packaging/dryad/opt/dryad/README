@@ -1,0 +1,47 @@
+Dryad
+=====
+Dryad is the codename for the problem reporting system used by AeroFS. Its only responsibility is to persist the logs posted by the Dryad clients.
+
+In the current implementation, Dryad exposes a REST API. Dryad clients make POST requests to Dryad and Dryad will persist the logs to the local disk.
+
+Installation
+------------
+Dryad is provided as a Debian package aerofs-dryad.deb. It can be installed on Debian-based system by running `sudo dpkg -i aerofs-dryad.deb`.
+
+Setup
+-----
+You may simply run `sudo /opt/dryad/aerofs-dryad-setup` to setup Dryad using the default configuration. Should you choose to do this, please skip to the section Default Configuration.
+
+Alternatively, you may also perform the following steps to customize your Dryad installation.
+
+Note: all of the following steps require root privileges.
+
+- `sudo apt-get install nginx openssl upstart`.
+- `sudo mkdir -p /etc/nginx/certs` and install a certificate for Dryad in this directory.
+  * a script to generate and install self-signed cert is available at `/opt/dryad/aerofs-dryad-generate-and-install-cert`
+- `sudo rm /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default`
+- provide a nginx site configuration for Dryad.
+  * a sample site configuration is available at `/opt/dryad/aerofs-custom`.
+  * Dryad installs a backend configuration to `/etc/nginx/backends-enabled/`, the site configuration should include the backend configuration.
+- `sudo ln -s /lib/init/upstart-job /etc/init.d/dryad`
+- create a data directory where Dryad will persist the logs to. Make sure the user `dryad` has full to the directory.
+  * edit `/opt/dryad/dryad.properties` and set `dryad.storage.directory` to this directory.
+  * Dryad is running on port 4433 for the time being; there is no way to configure this value.
+- `sudo service dryad restart`.
+- `sudo service nginx restart`.
+
+Default configuration
+---------------------
+Running `/opt/dryad/aerofs-dryad-setup` will set Dryad up with the default configuration. The default configuration is as follows:
+- Dryad's properties file is located at `/opt/dryad/dryad.properties`.
+- Dryad's cert and key are installed to `/etc/nginx/certs/`.
+- Logs uploaded from the clients will be saved under `/data`.
+- Dryad is running on port 4433.
+- Nginx runs as a reverse-proxy for Dryad and exposes Dryad on port 443.
+- Dryad uses self-signed key good for 10 years.
+
+Test
+----
+A test script is available at `/opt/dryad/aerofs-dryad-test`. The script makes a REST call to the Dryad server to ensure the server is properly configured.
+
+Note: the test will fail if it succeeded in the past. To prevent that, `rm /data/0`

@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# This script tests the Dryad server configuration by making a POST call to
+# its REST API.
+#
+# Note: since Dryad's REST API doesn't allow overwrite, this test will fail
+# if any of the previous tests succeeded.
+#
+# To prevent that, delete the logs uploaded from previous tests. Using the
+# default configuration, logs are kept at /data/ so we'll need to delete
+# /data/0/00000000000000000000000000000000
+#
+TEMP=$(mktemp)
+echo 'yes' > "$TEMP"
+
+RESULT=$(curl -i -X POST \
+    --insecure \
+    --header "Content-Type:application/octet-stream" \
+    --data-binary "$TEMP" \
+    --silent \
+    --output /dev/null \
+    --write-out "%{http_code}" \
+    https://localhost/v1.0/client/0/00000000000000000000000000000000/test@example.com/00000000000000000000000000000000/logs)
+
+if [ "$RESULT" -ge 200 ] && [ "$RESULT" -lt 300 ] ; then
+    echo "Success!"
+else
+    echo "Failed: $RESULT"
+fi
+
+rm "$TEMP"

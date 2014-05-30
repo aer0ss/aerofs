@@ -1,0 +1,42 @@
+#!/bin/bash
+set -e
+
+if [ "$(whoami)" != "root" ]; then
+    echo "This script requires admin privileges. Please re-run setup with with admin privileges."
+    exit 1
+fi
+
+# Install required packages
+apt-get update
+apt-get install nginx openssl upstart curl
+
+DRYAD_DIR=/opt/dryad
+NGINX_DIR=/etc/nginx
+
+# Install self-signed certs
+"$DRYAD_DIR"/aerofs-dryad-generate-and-install-cert
+
+# Provision Nginx with custom sites
+rm "$NGINX_DIR"/sites-available/default "$NGINX_DIR"/sites-enabled/default || true
+cp "$DRYAD_DIR"/aerofs-custom "$NGINX_DIR"/sites-available
+ln -s "$NGINX_DIR"/sites-available/aerofs-custom "$NGINX_DIR"/sites-enabled
+mkdir -p "$NGINX_DIR"/backends-enabled
+ln -s "$NGINX_DIR"/backends-available/aerofs-dryad "$NGINX_DIR"/backends-enabled
+
+# create the data directory
+mkdir -p /data
+chown dryad:dryad /data
+
+# link to upstart job and restart the services
+ln -s /lib/init/upstart-job /etc/init.d/dryad
+service dryad restart
+service nginx restart
+
+# sleep 1 to ensure the services have restarted before we start testing
+sleep 1
+
+# test
+echo
+echo "> Testing Dryad configuration..."
+echo
+"$DRYAD_DIR"/aerofs-dryad-test

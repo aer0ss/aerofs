@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# this script uses openssl to generate a self-signed cert good for 10 years and
+# installs it to nginx certs directory
+#
+set -e
+
+CERTS_DIR=/etc/nginx/certs
+
+TEMP=$(mktemp -d)
+pushd "$TEMP"
+openssl genrsa -des3 -passout pass:x -out custom.pass.key 2048
+openssl rsa -passin pass:x -in custom.pass.key -out custom.key
+chmod 600 custom.key
+rm custom.pass.key
+openssl req -new -key custom.key -out custom.csr
+openssl x509 -req -days 3650 -in custom.csr -signkey custom.key -out custom.cert
+rm custom.csr
+mkdir -p "$CERTS_DIR"
+mv custom.cert custom.key "$CERTS_DIR"
+popd
+rm -rf "$TEMP"

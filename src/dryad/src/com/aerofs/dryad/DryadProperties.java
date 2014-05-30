@@ -4,6 +4,8 @@
 
 package com.aerofs.dryad;
 
+import com.aerofs.base.config.ConfigurationProperties;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -27,5 +29,7 @@ public class DryadProperties extends Properties
         } finally {
             if (is != null) { is.close(); }
         }
+
+        ConfigurationProperties.setProperties(this);
     }
 }
