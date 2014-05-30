@@ -177,6 +177,51 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
     }
 
     @Test
+    public void updateACL_shouldAllowTeamAdminOfPendingOwnerToUpdateACL()
+            throws Exception
+    {
+        // add USER_3 as owner of the store
+        shareFolder(USER_1, SID_1, USER_3, Permissions.OWNER);
+        clearVerkehrPublish();
+
+        User admin = addAdmin(USER_3);
+
+        // try to edit user 1's ACL entry for store 1 as user 3
+        setSessionUser(admin);
+        service.updateACL(SID_1.toPB(), USER_1.id().getString(),
+                Permissions.EDITOR.toPB(), false);
+
+        setSessionUser(USER_1);
+        GetACLReply reply = service.getACL(0L).get();
+
+        assertACLOnlyContains(getSingleACL(SID_1, reply),
+                new UserAndRole(USER_1, Permissions.EDITOR));
+    }
+
+    @Test
+    public void updateACL_shouldAllowTeamAdminOfLeftOwnerToUpdateACL()
+            throws Exception
+    {
+        // add USER_3 as owner of the store
+        shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.OWNER);
+        leaveSharedFolder(USER_3, SID_1);
+        clearVerkehrPublish();
+
+        User admin = addAdmin(USER_3);
+
+        // try to edit user 1's ACL entry for store 1 as user 3
+        setSessionUser(admin);
+        service.updateACL(SID_1.toPB(), USER_1.id().getString(),
+                Permissions.EDITOR.toPB(), false);
+
+        setSessionUser(USER_1);
+        GetACLReply reply = service.getACL(0L).get();
+
+        assertACLOnlyContains(getSingleACL(SID_1, reply),
+                new UserAndRole(USER_1, Permissions.EDITOR));
+    }
+
+    @Test
     public void updateACL_shouldSendNotificationEmail()
             throws Exception
     {

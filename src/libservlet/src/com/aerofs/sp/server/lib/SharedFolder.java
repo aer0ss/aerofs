@@ -511,7 +511,12 @@ public class SharedFolder
     /**
      * A user has privileges to change ACLs if and only if:
      *  1. the user is the owner of the folder, or
-     *  2. the user is the organization admin of at least one non-pending owner of the folder.
+     *  2. the user is the organization admin of at least one owner of the folder (regardless of
+     *     their state)
+     *
+     * NB: 2 is not immediately obvious from the method name and may not always be desirable
+     * We should audit all callers and determine whether offering two variants (one without 2)
+     * would make sense.
      */
     public void throwIfNoPrivilegeToChangeACL(User user)
             throws SQLException, ExNoPerm, ExNotFound
@@ -523,9 +528,10 @@ public class SharedFolder
         // NB: TeamServer user is treated as an org admin as it can only be setup by an org admin...
         if (user.isAdmin() || user.id().isTeamServerID()) {
             Organization org = user.getOrganization();
-            for (SubjectPermissions srp : _f._db.getJoinedUsersAndRoles(_sid)) {
+            // TODO: move that logic down into DB query
+            for (UserIDRoleAndState srp : _f._db.getAllUsersRolesAndStates(_sid)) {
                 if (srp._permissions.covers(Permission.MANAGE)) {
-                    User member = _f._factUser.create(srp._subject);
+                    User member = _f._factUser.create(srp._userID);
                     if (member.belongsTo(org)) return;
                 }
             }
