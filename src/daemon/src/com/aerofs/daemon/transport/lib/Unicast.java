@@ -156,12 +156,8 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
 
     private void enableChannelAccept(boolean enabled)
     {
-        serverChannel.setReadable(enabled);
-
         ChannelHandler handler = serverBootstrap.getParentHandler();
-        if (handler != null) {
-            ((ShouldKeepAcceptedChannelHandler) handler).enableAccept(enabled);
-        }
+        ((ShouldKeepAcceptedChannelHandler) handler).enableAccept(enabled);
     }
 
     /**

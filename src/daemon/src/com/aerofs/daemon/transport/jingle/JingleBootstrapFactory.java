@@ -15,6 +15,7 @@ import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
+import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -128,6 +129,7 @@ final class JingleBootstrapFactory
     ServerBootstrap newServerBootstrap(final ChannelTeardownHandler serverChannelTeardownHandler)
     {
         ServerBootstrap bootstrap = new ServerBootstrap(new JingleServerChannelFactory(signalThread, channelWorker));
+        bootstrap.setParentHandler(new ShouldKeepAcceptedChannelHandler());
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
