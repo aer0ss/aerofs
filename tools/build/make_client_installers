@@ -281,6 +281,12 @@ function make_osx_packages() {
 
     if $SIGNED ; then
         echo ">> sign app for Mac App Store"
+        # Unlock the keychain, to prevent AFK dev from failing a build.  All
+        # the secrets are available already anyway.
+        SECURE_VOLUME="/Volumes/aerofskeys"
+        OSX_KEYCHAIN_FILE="$SECURE_VOLUME/aerofs.keychain"
+        OSX_KEYCHAIN_PASSPHRASE_FILE="$SECURE_VOLUME/windows/passphrase.txt"
+        security unlock-keychain -p "$(cat $OSX_KEYCHAIN_PASSPHRASE_FILE)" "$OSX_KEYCHAIN_FILE"
         # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
         # for information on signing frameworks
         # Note: We avoid re-codesigning AeroFSFinderExtension because every
