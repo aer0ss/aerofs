@@ -70,6 +70,16 @@ rm -f /data/redis/redis.*
 cp -a aerofs-db-backup/redis.aof /data/redis
 service redis-aof start 1>/dev/null 2>/dev/null
 
+# NOTE: This is not a general solution. Required because mysql.dump only deletes
+# and restores tables that existed when the dump-file was created. This will cause
+# problems when Flyway makes non-idempotent changes to such tables.
+echo ">>> Clearing flyway-managed databases..."
+for db in bifrost aerofs_sp
+do
+    echo ">>>   Drop $db..."
+    echo "drop database \`$db\`; " | mysql
+done
+
 echo ">>> Restoring mysql database..."
 mysql < aerofs-db-backup/mysql.dump
 
