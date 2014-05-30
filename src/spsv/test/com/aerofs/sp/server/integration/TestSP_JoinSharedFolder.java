@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBFolderInvitation;
@@ -21,7 +20,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldJoinFolder() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
         assertVerkehrPublishOnlyContains(USER_1);
         clearVerkehrPublish();
@@ -34,7 +33,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldSendNotificationEmail() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
         joinSharedFolder(USER_2, SID_1);
 
@@ -45,7 +44,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldPassWhenJoinFolderTwice() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
         joinSharedFolder(USER_2, SID_1);
 
         sqlTrans.begin();
@@ -56,6 +55,29 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         clearVerkehrPublish();
         joinSharedFolder(USER_2, SID_1);
         assertVerkehrPublishIsEmpty();
+    }
+
+    @Test
+    public void shouldAllowLeaveAndRejoin() throws Exception
+    {
+        shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
+        joinSharedFolder(USER_2, SID_1);
+        leaveSharedFolder(USER_2, SID_1);
+        clearVerkehrPublish();
+
+        sqlTrans.begin();
+        assertEquals(factSharedFolder.create(SID_1).getStateNullable(USER_2),
+                SharedFolderState.LEFT);
+        sqlTrans.commit();
+
+        joinSharedFolder(USER_2, SID_1);
+
+        assertVerkehrPublishOnlyContains(USER_1, USER_2);
+
+        sqlTrans.begin();
+        assertEquals(factSharedFolder.create(SID_1).getStateNullable(USER_2),
+                SharedFolderState.JOINED);
+        sqlTrans.commit();
     }
 
     @Test
@@ -73,7 +95,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldThrowWhenTryingToJoinWithoutBeingInvited() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
         clearVerkehrPublish();
 
         try {
@@ -88,7 +110,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldIgnoreInvitation() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
         setSessionUser(USER_2);
         PBFolderInvitation inv = service.listPendingFolderInvitations().get().getInvitation(0);
@@ -111,7 +133,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldThrowWhenTryingToIgnoreInvitationWithoutBeingInvited() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
         setSessionUser(USER_3);
         try {
@@ -123,7 +145,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldThrowWhenTryingToIgnoreAlreadyAcceptedInvitation() throws Exception
     {
-        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
         setSessionUser(USER_1);
         try {
