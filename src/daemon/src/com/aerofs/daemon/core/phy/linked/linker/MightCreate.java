@@ -368,22 +368,28 @@ public class MightCreate
      * to check whether the OA and the physical folder match despite the FIDs suggesting they don't.
      * This is important to avoid breaking shared folders on filesystems with ephemeral FIDs.
      *
-     * Regular folders can still be eligible for FID replacement provided the new FID is not
-     * associated with any existing SOID.
+     * Regular folders can still be eligible for FID replacement provided that the new FID is not
+     * associated with any existing SOID (i.e. sourceSOID == null). This condition is required
+     * otherwise handling files and sub-folders under this folder would be a mess.
      */
     private boolean canSafelyReplaceFID(PathCombo pc, @Nullable SOID sourceSOID, OA target,
             boolean dir)
     {
-        if (target.isExpelled()) {
+        if (target.isExpelled() || target.isDirOrAnchor() != dir) {
+            // Don't replace if the target is expelled or the types don't match.
             return false;
 
         } else if (target.isAnchor()) {
-            // if the tag file matches the anchor we can replace the FID
+            // If the tag file matches the anchor we can replace the FID
             return _sfti.isSharedFolderRoot(SID.anchorOID2storeSID(target.soid().oid()),
                     pc._absPath);
 
+        } else if (target.isDir()) {
+            return sourceSOID == null;
+
         } else {
-            return (target.isDirOrAnchor() == dir) && (target.isFile() || sourceSOID == null);
+            checkArgument(target.isFile());
+            return true;
         }
     }
 }
