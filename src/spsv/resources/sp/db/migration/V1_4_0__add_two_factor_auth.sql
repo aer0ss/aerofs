@@ -6,7 +6,7 @@ ALTER TABLE `sp_user` ADD COLUMN `u_two_factor_enforced` BOOLEAN NOT NULL DEFAUL
 -- u_id is the user's email address
 -- secret is the 10-byte, long-term second factor secret used with TOTP
 -- setup_date is the date that this two-factor secret was created
-CREATE TABLE `sp_two_factor_secret` (
+CREATE TABLE IF NOT EXISTS `sp_two_factor_secret` (
     `tf_u_id` VARCHAR(320) NOT NULL,
     `tf_secret` BINARY(10) NOT NULL,
     `tf_setup_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -19,7 +19,7 @@ CREATE TABLE `sp_two_factor_secret` (
 -- u_id is the user's email address
 -- tfr_code is the actual recovery code the user needs to enter, ASCII
 -- tfr_consumed is NULL if the code is still valid; if nonnull, the code was used at this time
-CREATE TABLE `sp_two_factor_recovery` (
+CREATE TABLE IF NOT EXISTS `sp_two_factor_recovery` (
     `tfr_id` INTEGER NOT NULL AUTO_INCREMENT,
     `tfr_u_id` VARCHAR(320) NOT NULL,
     `tfr_code` VARCHAR(11) NOT NULL,
