@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreDeviceLRU;
@@ -25,6 +26,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExDeviceOffline;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -137,7 +139,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             process_(new DigestedMessage(pb, is, ep, userId, null));
         } catch (Exception e) {
             SystemUtil.fatalOnUncheckedException(e);
-            l.warn("process mc: " + Util.e(e, ExDeviceOffline.class, ExBadCredential.class));
+            l.warn("process mc{}: {}", ep.did(), LogUtil.suppress(e, ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class));
         }
     }
 
