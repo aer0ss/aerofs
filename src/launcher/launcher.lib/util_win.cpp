@@ -27,7 +27,7 @@ bool create_jvm(const tstring& approot, JavaVM **pvm, void **penv, void *args)
 {
     typedef jint(JNICALL* PJNI_CreateJavaVM)(JavaVM**, void**, void*);
 
-    tstring jvm_path = approot + _T("\\jre\\bin\\client\\jvm.dll");
+    tstring jvm_path = approot + _T("\\jre\\bin\\server\\jvm.dll");
 
     HINSTANCE jvm = LoadLibraryW((LPCWSTR)jvm_path.c_str());
     if (!jvm) {

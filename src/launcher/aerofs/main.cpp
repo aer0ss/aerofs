@@ -22,6 +22,10 @@ static void show_error(const _TCHAR* details);
 #ifdef _WIN32
 int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+    (void)hInstance;     // unused
+    (void)hPrevInstance; // unused
+    (void)lpCmdLine;     // unused
+    (void)nShowCmd;      // unused
     SetLastError(ERROR_SUCCESS);
 #else
 int main(int argc, char** argv)

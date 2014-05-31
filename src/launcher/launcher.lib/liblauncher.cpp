@@ -70,7 +70,7 @@ bool launcher_get_approot(_TCHAR* approot, size_t approot_len, _TCHAR** perrmsg,
     if (fromOSXBundle) {
         // For aerofs (but not aerofsd) on OS X, approot is in ../Resources/Java relative to the executable
         s_approot = s_approot.substr(0, s_approot.rfind(DIRECTORY_SEPARATOR));
-        s_approot += "/Resources/Java";
+        s_approot += tstring(_T("/Resources/Java"));
     }
 
     // On Windows, we now install AeroFS in a different subfolder for each version
