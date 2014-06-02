@@ -60,8 +60,8 @@ public class ChannelDirectory
     {
         // FIXME(jP): enhancement: better atomicity required here
         ChannelCost cost = new ChannelCost(channel, tp);
-        addChannelCloseFuture(remotePeer, cost, channel);
         channels.put(remotePeer, channel);
+        addChannelCloseFuture(remotePeer, cost, channel);
 
         l.info("register t:d:c {}:{}:{}", tp.id(), remotePeer, channel.getId() );
     }
