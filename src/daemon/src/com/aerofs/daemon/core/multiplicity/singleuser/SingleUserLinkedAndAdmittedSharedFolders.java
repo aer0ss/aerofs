@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Ritual.PBSharedFolder;
@@ -31,15 +32,17 @@ public class SingleUserLinkedAndAdmittedSharedFolders implements IListLinkedAndE
     private final DirectoryService _ds;
     private final IMapSID2SIndex _sid2sidx;
     private final IMapSIndex2SID _sidx2sid;
+    private final CfgRootSID _cfgRootSid;
 
     @Inject
     public SingleUserLinkedAndAdmittedSharedFolders(IStores ss, DirectoryService ds,
-            IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid)
+            IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid, CfgRootSID cfgRootSid)
     {
         _ss = ss;
         _ds = ds;
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
+        _cfgRootSid = cfgRootSid;
     }
 
     @Override
@@ -59,7 +62,7 @@ public class SingleUserLinkedAndAdmittedSharedFolders implements IListLinkedAndE
         } else {
             // In the case that the store isn't a root, use OA of the anchor to the store to compute
             // the name and path of the store.
-            SIndex sidxRoot = _sid2sidx.get_(Cfg.rootSID());
+            SIndex sidxRoot = _sid2sidx.get_(_cfgRootSid.get());
             OA oa = _ds.getOANullable_(new SOID(sidxRoot, SID.storeSID2anchorOID(sid)));
             // We check for oa to be null mainly because of race conditions. For example: consider a
             // user with two devices A and B. If he creates a folder foo in A (and this also
