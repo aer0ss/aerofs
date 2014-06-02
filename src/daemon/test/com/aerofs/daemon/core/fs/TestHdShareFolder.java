@@ -110,6 +110,7 @@ public class TestHdShareFolder extends AbstractTest
         when(sp.signInRemote()).thenReturn(sp);
 
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn("/AeroFS");
+        when(cfgAbsRoots.get(extSID)).thenReturn("/external");
         when(cfgAbsRoots.getNullable(extSID)).thenReturn("/external");
         when(cfgStorageType.get()).thenReturn(StorageType.LINKED);
 
