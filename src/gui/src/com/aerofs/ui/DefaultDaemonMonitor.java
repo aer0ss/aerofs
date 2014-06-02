@@ -87,6 +87,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         Process proc = tryExec(aerofsd);
 
+        l.info("Proc: {}", proc);
+
         IWaiter waiter = null;
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
         try {
@@ -94,11 +96,18 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 // the SanityPoller can stop the daemon before a successful ping
                 if (_stopping) return proc;
 
+                l.info("Not stopping.");
+
                 try {
+                    l.info("Checking if we should throw");
                     throwIfDaemonExits(proc);
                 } catch (ShouldRestart ee) {
+                    l.info("Caught should restart");
                     proc = tryExec(aerofsd);
+                    l.info("New proc: {}", proc);
                 }
+
+                l.info("Getting daemon state");
 
                 switch (getDaemonState()) {
                 case INDEXING:
@@ -140,6 +149,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
     private Process tryExec(String aerofsd) throws ExDaemonFailedToStart
     {
+        l.info("Try Execing: {}", aerofsd);
+
         try {
             return SystemUtil.execBackground(aerofsd, Cfg.absRTRoot());
         } catch (Exception e) {
@@ -411,11 +422,14 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     l.info("daemon restarted");
                     break;
                 } catch (ExUIMessage e) {
+                    l.info("Caught EXUIMessage: {}", e.getMessage(), e);
                     UI.get().show(MessageType.ERROR, e.getMessage());
                     FAIL_TO_LAUNCH.exit();
                 } catch (ExNotSetup e) {
+                    l.info("Caught ExNotSetup", e);
                     CORE_DB_TAMPERING.exit();
                 } catch (Exception e) {
+                    l.info("Caught unexpected exception", e);
                     _fdsRestartFail.logSendAsync("restart daemon", e);
                 }
 
