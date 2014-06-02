@@ -11,7 +11,7 @@ public enum Cat {
     API_UPLOAD("UPLOAD"),
     HOUSEKEEPING("HK"),
     UNLIMITED("UN"),
-    DID2USER("D2U");
+    RESOLVE_USER_ID("RESOLVE");
 
     private final String _name;
 

@@ -22,6 +22,6 @@ public class HdMaxcastMessage implements IEventHandler<EIMaxcastMessage>
     @Override
     public void handle_(EIMaxcastMessage ev, Prio prio)
     {
-        _stack.inputTop().maxcastMessageReceived_(ev._ep, ev.is());
+        _stack.inputTop().onMaxcastMessageReceived_(ev._ep, ev.is());
     }
 }

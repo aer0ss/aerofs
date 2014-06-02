@@ -4,45 +4,25 @@
 
 package com.aerofs.daemon.core.admin;
 
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.CREATION_VALUE;
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.DELETION_VALUE;
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATION_VALUE;
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyCollectionOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
-
-import java.sql.SQLException;
-import java.util.Set;
-
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.UserAndDeviceNames;
+import com.aerofs.daemon.core.activity.ActivityLog;
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.net.DeviceToUserMapper;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.lib.db.IActivityLogDatabase;
-import com.aerofs.base.id.UserID;
-import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
-import com.google.common.collect.ImmutableSet;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import com.aerofs.daemon.core.activity.ActivityLog;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.event.admin.EIGetActivities;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.ActivityLogDatabase;
+import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.daemon.lib.db.UserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -53,18 +33,37 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.base.id.OID;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.Builder;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+import java.sql.SQLException;
+import java.util.Set;
+
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.CREATION_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.DELETION_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATION_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyCollectionOf;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
 
 public class TestHdGetActivities extends AbstractTest
 {
@@ -74,7 +73,7 @@ public class TestHdGetActivities extends AbstractTest
     @Mock CfgLocalUser cfgLocalUser;
     @Mock CfgLocalDID cfgLocalDID;
     @Mock DirectoryService ds;
-    @Mock DID2User d2u;
+    @Mock DeviceToUserMapper d2u;
     @Mock TokenManager tokenManager;
     @Mock Token tk;
     @Mock TCB tcb;
@@ -242,7 +241,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowYourUnknownDeviceAnd2UknonwDevicesOnly()
             throws Exception
     {
-        when(d2u.getFromLocalNullable_(did2)).thenReturn(me);
+        when(d2u.getUserIDForDIDNullable_(did2)).thenReturn(me);
         run(false);
         assertTrue(firstMsg().startsWith("You (on 1 unknown device) and 2 unknown devices renamed"));
     }
@@ -251,7 +250,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowYourAnd2UknonwDevicesOnlyInBriefMode()
             throws Exception
     {
-        when(d2u.getFromLocalNullable_(did2)).thenReturn(me);
+        when(d2u.getUserIDForDIDNullable_(did2)).thenReturn(me);
         run(true);
         assertTrue(firstMsg().startsWith("You and 2 unknown devices renamed"));
     }
@@ -260,8 +259,8 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowYourUnknownDeviceAndUserEmailAndUknonwDevicesOnly()
             throws Exception
     {
-        when(d2u.getFromLocalNullable_(did2)).thenReturn(me);
-        when(d2u.getFromLocalNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
+        when(d2u.getUserIDForDIDNullable_(did2)).thenReturn(me);
+        when(d2u.getUserIDForDIDNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
         run(false);
         assertTrue(firstMsg().startsWith("You (on 1 unknown device) and user@gmail and 1 unknown device renamed"));
     }
@@ -270,8 +269,8 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowYourAndOthersOnlyInBriefMode()
             throws Exception
     {
-        when(d2u.getFromLocalNullable_(did2)).thenReturn(me);
-        when(d2u.getFromLocalNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
+        when(d2u.getUserIDForDIDNullable_(did2)).thenReturn(me);
+        when(d2u.getUserIDForDIDNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
         run(true);
         assertTrue(firstMsg().startsWith("You and others renamed"));
     }
@@ -281,9 +280,8 @@ public class TestHdGetActivities extends AbstractTest
             throws Exception
     {
         addActivity(CREATION_VALUE, mkpath("a"), null, did1);
-        when(d2u.getFromLocalNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
-        when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail")))
-                .thenReturn(new FullName("A", "B"));
+        when(d2u.getUserIDForDIDNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
+        when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail"))).thenReturn(new FullName("A", "B"));
         run(false);
         printResult();
         assertTrue(firstMsg().startsWith("A B added"));
@@ -294,9 +292,8 @@ public class TestHdGetActivities extends AbstractTest
             throws Exception
     {
         addActivity(CREATION_VALUE, mkpath("a"), null, did1);
-        when(d2u.getFromLocalNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
-        when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail")))
-                .thenReturn(new FullName("A", "B"));
+        when(d2u.getUserIDForDIDNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
+        when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail"))).thenReturn(new FullName("A", "B"));
         run(true);
         printResult();
         assertTrue(firstMsg().startsWith("A added"));
@@ -306,9 +303,8 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowFullNameAndUnknownDevicesOnly()
             throws Exception
     {
-        when(d2u.getFromLocalNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
-        when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail")))
-                .thenReturn(new FullName("A", "B"));
+        when(d2u.getUserIDForDIDNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
+        when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail"))).thenReturn(new FullName("A", "B"));
         run(false);
         assertTrue(firstMsg().startsWith("A B and 2 unknown devices renamed"));
     }
@@ -317,9 +313,8 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowFirstNameAndUnknownDevicesOnlyInBriefMode()
             throws Exception
     {
-        when(d2u.getFromLocalNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
-        when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail")))
-                .thenReturn(new FullName("A", "B"));
+        when(d2u.getUserIDForDIDNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
+        when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail"))).thenReturn(new FullName("A", "B"));
         run(true);
         assertTrue(firstMsg().startsWith("A and 2 unknown devices"));
     }
@@ -328,7 +323,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowMyDeviceNames()
             throws Exception
     {
-        when(d2u.getFromLocalNullable_(did2)).thenReturn(me);
+        when(d2u.getUserIDForDIDNullable_(did2)).thenReturn(me);
         when(udndb.getDeviceNameNullable_(did2)).thenReturn("DEV");
         run(false);
         assertTrue(firstMsg().startsWith("You (on DEV) and 2 unknown devices"));
@@ -338,7 +333,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldNotShowMyDeviceNamesInBriefMode()
             throws Exception
     {
-        when(d2u.getFromLocalNullable_(did2)).thenReturn(me);
+        when(d2u.getUserIDForDIDNullable_(did2)).thenReturn(me);
         when(udndb.getDeviceNameNullable_(did2)).thenReturn("DEV");
         run(true);
         assertTrue(firstMsg().startsWith("You and 2 unknown devices"));
@@ -348,7 +343,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldNotShowOtherUsersDeviceNames()
             throws Exception
     {
-        when(d2u.getFromLocalNullable_(did2)).thenReturn(UserID.fromInternal("user@mail"));
+        when(d2u.getUserIDForDIDNullable_(did2)).thenReturn(UserID.fromInternal("user@mail"));
         when(udndb.getDeviceNameNullable_(did2)).thenReturn("DEV");
         run(false);
         assertTrue(!firstMsg().contains("DEV"));

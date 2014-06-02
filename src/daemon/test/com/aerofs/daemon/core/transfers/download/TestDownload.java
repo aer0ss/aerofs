@@ -121,10 +121,10 @@ public class TestDownload extends AbstractDownloadTest
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable
             {
-                doNothing().when(gcr).processReply_(eq(child), anyDM(), anyDC());
+                doNothing().when(gcr).processResponse_(eq(child), anyDM(), anyDC());
                 throw new ExDependsOn(new OCID(parent.oid(), parent.cid()), DependencyType.PARENT);
             }
-        }).when(gcr).processReply_(eq(child), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(child), anyDM(), anyDC());
 
         dl(child).download_();
 
@@ -165,17 +165,17 @@ public class TestDownload extends AbstractDownloadTest
                                 .build(),
                         o2.soid());
             }
-        }).when(gcr).processReply_(eq(o2), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
 
         doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation)
                     throws Throwable
             {
-                doNothing().when(gcr).processReply_(eq(o2), anyDM(), anyDC());
+                doNothing().when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
                 return null;
             }
-        }).when(gcr).processReply_(eq(o1), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(o1), anyDM(), anyDC());
 
         dl(o2).download_();
 
@@ -210,16 +210,16 @@ public class TestDownload extends AbstractDownloadTest
                         .setParentObjectId(p.oid().toPB())
                         .setFlags(0)
                         .build(), o2.soid()))
-                .when(gcr).processReply_(eq(o2), anyDM(), anyDC());
+                .when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
 
         doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable
             {
-                doNothing().when(gcr).processReply_(eq(o2), anyDM(), anyDC());
+                doNothing().when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
                 throw new ExNoComponentWithSpecifiedVersion();
             }
-        }).when(gcr).processReply_(eq(o1), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(o1), anyDM(), anyDC());
 
         dl(o2).download_();
 
@@ -246,10 +246,10 @@ public class TestDownload extends AbstractDownloadTest
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable
             {
-                doNothing().when(gcr).processReply_(eq(socid), anyDM(), anyDC());
+                doNothing().when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
                 throw new ExRestartWithHashComputed("bla");
             }
-        }).when(gcr).processReply_(eq(socid), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
 
         dl(socid).download_();
 
@@ -270,7 +270,7 @@ public class TestDownload extends AbstractDownloadTest
         mockReplies(socid, did1);
 
         doThrow(new ExAborted())
-                .when(gcr).processReply_(eq(socid), anyDM(), anyDC());
+                .when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
 
         try {
             dl(socid).download_();
@@ -295,9 +295,9 @@ public class TestDownload extends AbstractDownloadTest
         mockReplies(parent, did1);
 
         doThrow(new ExDependsOn(new OCID(parent.oid(), parent.cid()), DependencyType.PARENT))
-                .when(gcr).processReply_(eq(child), anyDM(), anyDC());
+                .when(gcr).processResponse_(eq(child), anyDM(), anyDC());
         doThrow(new ExNoComponentWithSpecifiedVersion())
-                .when(gcr).processReply_(eq(parent), anyDM(), anyDC());
+                .when(gcr).processResponse_(eq(parent), anyDM(), anyDC());
 
         try {
             dl(child).download_();
@@ -337,16 +337,16 @@ public class TestDownload extends AbstractDownloadTest
                         .setFlags(0)
                         .build(),
                 o2.soid()))
-                .when(gcr).processReply_(eq(o2), anyDM(), anyDC());
+                .when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
 
         doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable
             {
-                doNothing().when(gcr).processReply_(eq(o2), anyDM(), anyDC());
+                doNothing().when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
                 throw new IOException();
             }
-        }).when(gcr).processReply_(eq(o1), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(o1), anyDM(), anyDC());
 
         try {
             dl(o2).download_();
@@ -378,9 +378,9 @@ public class TestDownload extends AbstractDownloadTest
         mockReplies(parent, did1);
 
         doThrow(new ExDependsOn(new OCID(parent.oid(), parent.cid()), DependencyType.PARENT))
-                .when(gcr).processReply_(eq(child), anyDM(), anyDC());
+                .when(gcr).processResponse_(eq(child), anyDM(), anyDC());
         doThrow(new ExDependsOn(new OCID(child.oid(), child.cid()), DependencyType.PARENT))
-                .when(gcr).processReply_(eq(parent), anyDM(), anyDC());
+                .when(gcr).processResponse_(eq(parent), anyDM(), anyDC());
 
         when(ddr.resolveDeadlock_(anyListOf(DependencyEdge.class), anyDC()))
                 .thenAnswer(new Answer<Boolean>() {
@@ -388,8 +388,8 @@ public class TestDownload extends AbstractDownloadTest
             public Boolean answer(InvocationOnMock invocation) throws Throwable
             {
                 // simulate deadlock resolution...
-                doNothing().when(gcr).processReply_(eq(child), anyDM(), anyDC());
-                doNothing().when(gcr).processReply_(eq(parent), anyDM(), anyDC());
+                doNothing().when(gcr).processResponse_(eq(child), anyDM(), anyDC());
+                doNothing().when(gcr).processResponse_(eq(parent), anyDM(), anyDC());
                 return true;
             }
         });

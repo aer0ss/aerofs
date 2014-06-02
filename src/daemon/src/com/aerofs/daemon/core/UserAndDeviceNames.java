@@ -7,8 +7,10 @@ package com.aerofs.daemon.core;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.net.DID2User;
+import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.core.net.DeviceToUserMapper;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -19,15 +21,11 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.UserID;
-import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
+import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
@@ -82,7 +80,7 @@ public class UserAndDeviceNames
     private final CfgLocalUser _localUser;
     private final TokenManager _tokenManager;
     private final TransManager _tm;
-    private final DID2User _d2u;
+    private final DeviceToUserMapper _d2u;
     private final IUserAndDeviceNameDatabase _udndb;
     private final SPBlockingClient.Factory _factSP;
 
@@ -92,7 +90,7 @@ public class UserAndDeviceNames
 
     @Inject
     public UserAndDeviceNames(CfgLocalUser localUser, TokenManager tokenManager, TransManager tm,
-            DID2User d2u, IUserAndDeviceNameDatabase udndb, InjectableSPBlockingClientFactory factSP)
+            DeviceToUserMapper d2u, IUserAndDeviceNameDatabase udndb, InjectableSPBlockingClientFactory factSP)
     {
         _localUser = localUser;
         _tokenManager = tokenManager;
@@ -184,9 +182,10 @@ public class UserAndDeviceNames
                 _udndb.setDeviceName_(did, di.hasDeviceName() ? di.getDeviceName() : null, t);
                 if (di.hasOwner()) {
                     UserID user = UserID.fromInternal(di.getOwner().getUserEmail());
-                    if (_d2u.getFromLocalNullable_(did) == null) _d2u.addToLocal_(did, user, t);
-                    FullName fn = new FullName(di.getOwner().getFirstName(),
-                            di.getOwner().getLastName());
+                    if (_d2u.getUserIDForDIDNullable_(did) == null) {
+                        _d2u.onUserIDResolved_(did, user, t);
+                    }
+                    FullName fn = new FullName(di.getOwner().getFirstName(), di.getOwner().getLastName());
                     _udndb.setUserName_(user, fn, t);
                 }
             }
@@ -221,7 +220,7 @@ public class UserAndDeviceNames
             Set<DID> unresolved) throws Exception
     {
         for (DID did : dids) {
-            UserID owner = _d2u.getFromLocalNullable_(did);
+            UserID owner = _d2u.getUserIDForDIDNullable_(did);
             if (owner == null) {
                 unresolved.add(did);
                 continue;
@@ -245,40 +244,16 @@ public class UserAndDeviceNames
     }
 
     /**
-     * Get device info for a collection of DIDs
-     * If the local DB is missing information about some devices, a call to SP will be made to
-     * retrieve the missing information.
-     * @return a DID -> DeviceInfo map
-     */
-    public Map<DID, DeviceInfo> getDeviceInfoMap_(Iterable<DID> dids) throws Exception
-    {
-        Map<DID, DeviceInfo> resolved = Maps.newHashMap();
-        Set<DID> unresolved = Sets.newTreeSet();
-        getDeviceInfoMapLocally_(dids, resolved, unresolved);
-
-        if (unresolved.isEmpty()) {
-            return resolved;
-        }
-
-        if (updateLocalDeviceInfo_(Lists.newArrayList(unresolved))) {
-            resolved.clear();
-            getDeviceInfoMapLocally_(dids, resolved, unresolved);
-        }
-
-        return resolved;
-    }
-
-    /**
      * @return userid of the owner of the given {@code did}
      */
     public @Nullable UserID getDeviceOwnerNullable_(DID did)
             throws SQLException, ExProtocolError
     {
-        UserID owner = _d2u.getFromLocalNullable_(did);
+        UserID owner = _d2u.getUserIDForDIDNullable_(did);
 
         // SP call if local DB doesn't have the info
         if (owner == null && updateLocalDeviceInfo_(Lists.<DID>newArrayList(did))) {
-            owner = _d2u.getFromLocalNullable_(did);
+            owner = _d2u.getUserIDForDIDNullable_(did);
         }
 
         return owner;

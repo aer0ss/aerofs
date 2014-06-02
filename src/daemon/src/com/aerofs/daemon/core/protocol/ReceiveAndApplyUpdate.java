@@ -50,7 +50,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SecUtil;
@@ -65,7 +64,7 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
-import com.aerofs.proto.Core.PBGetComReply;
+import com.aerofs.proto.Core.PBGetComponentResponse;
 import com.aerofs.proto.Core.PBMeta;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -91,7 +90,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 
-import static com.aerofs.daemon.core.protocol.GetComponentReply.fromPB;
+import static com.aerofs.daemon.core.protocol.GetComponentResponse.fromPB;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -108,7 +107,7 @@ public class ReceiveAndApplyUpdate
     private ObjectMover _om;
     private IPhysicalStorage _ps;
     private DownloadState _dlState;
-    private ComputeHashCall _computeHashCall;
+    private ComputeHash _computeHash;
     private StoreCreator _sc;
     private IncomingStreams _iss;
     private Aliasing _al;
@@ -120,7 +119,7 @@ public class ReceiveAndApplyUpdate
     @Inject
     public void inject_(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
             Hasher hasher, VersionUpdater vu, ObjectCreator oc, ObjectMover om,
-            IPhysicalStorage ps, DownloadState dlState, ComputeHashCall computeHashCall, StoreCreator sc,
+            IPhysicalStorage ps, DownloadState dlState, ComputeHash computeHash, StoreCreator sc,
             IncomingStreams iss, Aliasing al, BranchDeleter bd, TransManager tm,
             MapAlias2Target alias2target, Analytics analytics)
     {
@@ -133,7 +132,7 @@ public class ReceiveAndApplyUpdate
         _om = om;
         _ps = ps;
         _dlState = dlState;
-        _computeHashCall = computeHashCall;
+        _computeHash = computeHash;
         _sc = sc;
         _iss = iss;
         _al = al;
@@ -355,21 +354,21 @@ public class ReceiveAndApplyUpdate
             Version vRemote, DigestedMessage msg, Token tk)
             throws Exception
     {
-        final PBGetComReply reply = msg.pb().getGetComReply();
+        final PBGetComponentResponse response = msg.pb().getGetComponentResponse();
         final @Nullable ContentHash hRemote;
-        if (reply.hasIsContentSame() && reply.getIsContentSame()) {
+        if (response.hasIsContentSame() && response.getIsContentSame()) {
             // requested remote version has same content as the MASTER version we had when we made
             // the request -> add version to MASTER without any file I/O
             Version vMaster = _nvc.getLocalVersion_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER));
             return new CausalityResult(KIndex.MASTER, vRemote.sub_(vMaster), vMaster, true);
-        } else if (reply.hasHashLength()) {
+        } else if (response.hasHashLength()) {
             l.debug("hash included");
 
             if (msg.streamKey() != null) {
                 hRemote = readContentHashFromStream(msg.streamKey(), msg.is(),
-                        reply.getHashLength(), tk);
+                        response.getHashLength(), tk);
             } else {
-                hRemote = readContentHashFromDatagram(msg.is(), reply.getHashLength());
+                hRemote = readContentHashFromDatagram(msg.is(), response.getHashLength());
             }
         } else {
             l.debug("hash not present");
@@ -424,7 +423,7 @@ public class ReceiveAndApplyUpdate
                 _hasher.computeHash_(kBranch.sokid(), false, tk);
                 // Send a ComputeHashCall to make the remote peer also compute the ContentHash.
                 // This will block for a while until the remote peer computes the hash.
-                _computeHashCall.rpc_(soid, vRemote, msg.did(), tk);
+                _computeHash.issueRequest_(soid, vRemote, msg.did(), tk);
                 // Once the above call returns, throw so Downloads will restart this Download.
                 // The next time through, the peer should send the hash. Since we already
                 // computed the local hash, we can compare them.
@@ -992,7 +991,7 @@ public class ReceiveAndApplyUpdate
             throws SQLException, IOException, ExDependsOn, ExTimeout, ExAborted, ExStreamInvalid,
             ExNoResource, ExOutOfSpace, ExNotFound, DigestException
     {
-        PBGetComReply reply = msg.pb().getGetComReply();
+        PBGetComponentResponse response = msg.pb().getGetComponentResponse();
 
         // Should aliased oid be checked?
         // Since there is no content associated with aliased oid
@@ -1021,8 +1020,8 @@ public class ReceiveAndApplyUpdate
 
         // Write the new content to the prefix file
         // TODO: ideally we'd release the core lock around this entire call
-        @Nonnull ContentHash h = writeContentToPrefixFile_(prefix, msg, reply.getFileTotalLength(),
-                reply.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
+        @Nonnull ContentHash h = writeContentToPrefixFile_(prefix, msg, response.getFileTotalLength(),
+                response.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
 
         if (res._hash != null && !h.equals(res._hash)) {
             l.info("hash mismatch: {} {}", res._hash, h);
@@ -1071,8 +1070,8 @@ public class ReceiveAndApplyUpdate
                         + pf.getLastModificationOrCurrentTime_() + "," + pf.getLength_() + ")");
             }
 
-            assert reply.hasMtime();
-            long replyMTime = reply.getMtime();
+            assert response.hasMtime();
+            long replyMTime = response.getMtime();
             assert replyMTime >= 0 : Joiner.on(' ').join(replyMTime, k, vRemote, wasPresent);
             long mtime = _ps.apply_(prefix, pf, wasPresent, replyMTime, t);
 

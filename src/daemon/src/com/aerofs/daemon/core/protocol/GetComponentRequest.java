@@ -1,67 +1,66 @@
 package com.aerofs.daemon.core.protocol;
 
-import java.sql.SQLException;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.*;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.acl.LocalACL;
-import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
+import com.aerofs.daemon.core.alias.MapAlias2Target;
+import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
-import com.aerofs.daemon.core.net.TransportRoutingLayer;
+import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.RPC;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
+import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
-import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOKID;
+import com.aerofs.proto.Core.PBCore;
+import com.aerofs.proto.Core.PBCore.Type;
+import com.aerofs.proto.Core.PBGetComponentRequest;
+import com.aerofs.proto.Core.PBGetComponentResponse;
+import com.aerofs.proto.Core.PBMeta;
 import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.phy.IPhysicalPrefix;
-import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.Version;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.proto.Core.PBCore;
-import com.aerofs.proto.Core.PBGetComReply;
-import com.aerofs.proto.Core.PBMeta;
-import com.aerofs.proto.Core.PBCore.Type;
-import com.aerofs.proto.Core.PBGetComCall;
-import com.aerofs.proto.Core.PBGetComCall.Builder;
-
 import javax.annotation.Nonnull;
+import java.sql.SQLException;
 
-import static com.aerofs.daemon.core.activity.OutboundEventLogger.*;
+import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_COMPLETION;
+import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_REQUEST;
+import static com.aerofs.daemon.core.activity.OutboundEventLogger.META_REQUEST;
 
 // TODO NAK for this and other primitives
 
 // we split the code for this protocol primitive into classes due to complexity
 
-public class GetComponentCall
+public class GetComponentRequest
 {
-    private static final Logger l = Loggers.getLogger(GetComponentCall.class);
+    private static final Logger l = Loggers.getLogger(GetComponentRequest.class);
 
     private IEmigrantTargetSIDLister _emc;
     private PrefixVersionControl _pvc;
@@ -72,7 +71,7 @@ public class GetComponentCall
     private IPhysicalStorage _ps;
     private LocalACL _lacl;
     private TransportRoutingLayer _trl;
-    private GCCContentSender _contentSender;
+    private ComponentContentSender _contentSender;
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
     private CfgLocalUser _cfgLocalUser;
@@ -83,7 +82,7 @@ public class GetComponentCall
     @Inject
     public void inject_(TransportRoutingLayer trl, LocalACL lacl, IPhysicalStorage ps, OutboundEventLogger oel,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
-            IEmigrantTargetSIDLister emc, GCCContentSender contentSender, MapAlias2Target a2t,
+            IEmigrantTargetSIDLister emc, ComponentContentSender contentSender, MapAlias2Target a2t,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser,
             TransManager tm, RockLog rl)
     {
@@ -118,7 +117,8 @@ public class GetComponentCall
         // NB: we send all local versions to allow the receiver to pick a branch that
         // has ticks we do not have locally (i.e. a branch whose version is not dominated
         // by our local versions)
-        PBGetComCall.Builder bd = PBGetComCall.newBuilder()
+        PBGetComponentRequest.Builder bd = PBGetComponentRequest
+                .newBuilder()
                 .setStoreId(_sidx2sid.getThrows_(socid.sidx()).toPB())
                 .setObjectId(socid.oid().toPB())
                 .setComId(socid.cid().getInt())
@@ -128,10 +128,10 @@ public class GetComponentCall
             setIncrementalDownloadInfo_(socid, bd);
         }
 
-        PBCore call = CoreUtil.newCall(Type.GET_COM_CALL)
-            .setGetComCall(bd).build();
+        PBCore request = CoreProtocolUtil.newRequest(Type.GET_COMPONENT_REQUEST).setGetComponentRequest(
+                bd).build();
 
-        return _rpc.do_(src, call, tk, "gcc " + socid + " " + src);
+        return _rpc.issueRequest_(src, request, tk, "gcc " + socid + " " + src);
     }
 
 
@@ -166,7 +166,7 @@ public class GetComponentCall
         }
     }
 
-    private void setIncrementalDownloadInfo_(SOCID socid, Builder bd)
+    private void setIncrementalDownloadInfo_(SOCID socid, PBGetComponentRequest.Builder bd)
             throws SQLException, ExNotFound
     {
         OA oa = _ds.getOANullable_(socid.soid());
@@ -215,13 +215,13 @@ public class GetComponentCall
         return KIndex.MASTER;
     }
 
-    public void processCall_(DigestedMessage msg)
+    public void processRequest_(DigestedMessage msg)
         throws Exception
     {
-        Util.checkPB(msg.pb().hasGetComCall(), PBGetComCall.class);
-        PBGetComCall pb = msg.pb().getGetComCall();
+        Util.checkPB(msg.pb().hasGetComponentRequest(), PBGetComponentRequest.class);
+        PBGetComponentRequest request = msg.pb().getGetComponentRequest();
 
-        SID sid = new SID(pb.getStoreId());
+        SID sid = new SID(request.getStoreId());
         SIndex sidx = _sid2sidx.getThrows_(sid);
 
         // see Rule 3 in acl.md
@@ -236,8 +236,8 @@ public class GetComponentCall
             throw new ExNoPerm();
         }
 
-        SOCID socid = new SOCID(sidx, new OID(pb.getObjectId()), new CID(pb.getComId()));
-        Version vRemote = Version.fromPB(pb.getLocalVersion());
+        SOCID socid = new SOCID(sidx, new OID(request.getObjectId()), new CID(request.getComId()));
+        Version vRemote = Version.fromPB(request.getLocalVersion());
         SOCKID k = new SOCKID(socid, findBranchNotDominatedBy_(socid, vRemote));
         l.info("gcc for {} {} from {}", k, vRemote, msg.ep());
 
@@ -257,32 +257,40 @@ public class GetComponentCall
             l.debug("r {} >= l {}. Throw ncwsv", vRemote, vLocal);
             throw new ExNoComponentWithSpecifiedVersion();
         }
-        sendReply_(msg, k, vLocal);
+        sendResponse_(msg, k, vLocal);
     }
 
     // Mark it as public only to facilitate testing
-    public void sendReply_(DigestedMessage msg, SOCKID k, Version vLocal)
+    public void sendResponse_(DigestedMessage msg, SOCKID k, Version vLocal)
         throws Exception
     {
         l.debug("send to {} for {}", msg.ep(), k);
 
         _oel.log_(k.cid().isMeta() ? META_REQUEST : CONTENT_REQUEST, k.soid(), msg.did());
 
-        PBCore.Builder bdCore = CoreUtil.newReply(msg.pb());
+        PBCore.Builder bdCore = CoreProtocolUtil.newResponse(msg.pb());
 
-        PBGetComReply.Builder bdReply = PBGetComReply.newBuilder()
-            .setVersion(vLocal.toPB_());
+        PBGetComponentResponse.Builder bdResponse = PBGetComponentResponse
+                .newBuilder()
+                .setVersion(vLocal.toPB_());
 
-        PBGetComCall pbgcc = msg.pb().getGetComCall();
+        PBGetComponentRequest request = msg.pb().getGetComponentRequest();
 
-        ContentHash h = pbgcc.hasHashContent() ? new ContentHash(pbgcc.getHashContent()) : null;
+        ContentHash h = request.hasHashContent() ? new ContentHash(request.getHashContent()) : null;
 
         if (k.cid().isMeta()) {
-            sendMeta_(msg.ep(), k, bdCore, bdReply);
+            sendMeta_(msg.ep(), k, bdCore, bdResponse);
         } else if (k.cid().equals(CID.CONTENT)) {
-            ContentHash th = _contentSender.send_(msg.ep(), k, bdCore, bdReply, vLocal,
-                    pbgcc.getPrefixLength(), Version.fromPB(pbgcc.getPrefixVersion()), h);
-            if (th != null) updateHash_(k.sokid(), th);
+            ContentHash contentHash = _contentSender.send_(
+                    msg.ep(),
+                    k,
+                    bdCore,
+                    bdResponse,
+                    vLocal,
+                    request.getPrefixLength(),
+                    Version.fromPB(request.getPrefixVersion()),
+                    h);
+            if (contentHash != null) updateHash_(k.sokid(), contentHash);
         } else {
             SystemUtil.fatal("unsupported CID: " + k.cid());
         }
@@ -335,7 +343,7 @@ public class GetComponentCall
      *  - skip local permission checking on these devices
      *  - build ancestors for leaf nodes on these devices
      */
-    private void sendMeta_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, PBGetComReply.Builder bdReply)
+    private void sendMeta_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, PBGetComponentResponse.Builder bdResponse)
         throws Exception
     {
         // guaranteed by the caller
@@ -370,9 +378,9 @@ public class GetComponentCall
             bdMeta.addEmigrantTargetAncestorSid(sid.toPB());
         }
 
-        bdReply.setMeta(bdMeta);
+        bdResponse.setMeta(bdMeta);
 
-        _trl.sendUnicast_(ep, bdCore.setGetComReply(bdReply).build());
+        _trl.sendUnicast_(ep, bdCore.setGetComponentResponse(bdResponse).build());
     }
 
     private static PBMeta.Type toPB(OA.Type type)

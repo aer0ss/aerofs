@@ -5,50 +5,45 @@ import "common.proto";
 // Removed reflection -- not needed
 option optimize_for = LITE_RUNTIME;
 
-// All core messages are sent with delimiters
-//
+// TODO (AG): this is broken - re: the following N.B.
+// If the transport cannot chunk for you we will change the transport
+// The upper layer should not worry about chunking
 // N.B. the entire PBCore message must fit in a single packet. split into multiple messages if it
-// can't. see PBGetVersReply.
+// can't. see PBGetVersionsResponse.
 //
 // TODO for maxcast messages, pass the destination store to core and filter out
 // non-member-store request in HdMessage instead of individual msg handlers
-//
 message PBCore {
 
     enum Type {
-
-        // call/reply is for RPC, while request/response is for async,
-        // potentially multiple responses
-
+        // TODO (AG): Add an ERROR response type
+        // TODO (AG): This type is deprecated
+        // Add a GET_COMPONENT_RESPONSE and a COMPUTE_HASH_RESPONSE and remove this
         REPLY = 0;
 
         NEW_UPDATES = 1;
-        GET_VERS_REQ = 2;
-        GET_VERS_RESP = 3;
-        UPDATE_SENDER_FILTER = 4;
-        GET_COM_CALL = 5;
+        UPDATE_SENDER_FILTER = 2;
+        GET_VERSIONS_REQUEST = 3;
+        GET_VERSIONS_RESPONSE = 4;
+        GET_COMPONENT_REQUEST = 5;
         // Tell a peer to compute the hash for the named object+version so it'll be available to
-        // future GetComponentCalls
-        COMPUTE_HASH_CALL = 6;
-        NOP = 7;
+        // future GetComponentRequests
+        COMPUTE_HASH_REQUEST = 6;
+        RESOLVE_USER_ID_REQUEST = 7;
+        RESOLVE_USER_ID_RESPONSE = 8;
     }
 
     required Type type = 1;
-    optional int32 rpcid = 2 [default = 0];
+    optional int32 rpcid = 2 [default = 0]; // TODO (AG): change this to message_id
 
-    // rpc calls
-    optional PBGetComCall get_com_call = 4;
-    optional PBComputeHashCall compute_hash_call = 6;
-
-    // rpc replies
-    optional PBGetComReply get_com_reply = 8;
-    optional PBException exception_reply = 11;
-
-    // non-rpc stuff
-    optional PBNewUpdates new_updates = 13;
-    optional PBGetVersCall get_vers_call = 3;
-    optional PBGetVersReply get_vers_reply = 7;
-    optional PBUpdateSenderFilter update_sender_filter = 12;
+    optional PBNewUpdates new_updates = 3;
+    optional PBUpdateSenderFilter update_sender_filter = 4;
+    optional PBGetVersionsRequest get_versions_request = 5;
+    optional PBGetVersionsResponse get_versions_response = 6;
+    optional PBGetComponentRequest get_component_request = 7;
+    optional PBComputeHashRequest compute_hash_request = 8;
+    optional PBGetComponentResponse get_component_response = 9;
+    optional PBException exception_response = 10;
 }
 
 message PBUpdateSenderFilter {
@@ -61,11 +56,19 @@ message PBNewUpdates {
     required bytes store_id = 1;
 }
 
-message PBGetVersCall {
-    // followed by one or more PBGetVersCallBlock
+// IMPORTANT:
+//
+// this message does _not_ contain repeated
+// PBGetVersionsRequestBlocks so that we can support
+// incremental processing. this allows us to
+// process block at a time and avoid OOMing instead of
+// waiting for the entire protobuf message to be
+// received
+message PBGetVersionsRequest {
+    // followed by one or more PBGetVersionsRequestBlocks
 }
 
-message PBGetVersCallBlock {
+message PBGetVersionsRequestBlock {
     required bytes store_id = 1;
 
     repeated bytes device_id = 2;
@@ -78,11 +81,19 @@ message PBGetVersCallBlock {
     optional bool is_last_block = 6 [default = false];
 }
 
-message PBGetVersReply {
-    // followed by zero or more PBGetVersReplyBlock's
+// IMPORTANT:
+//
+// this message does _not_ contain repeated
+// PBGetVersionsResponseBlocks so that we can support
+// incremental processing. this allows us to
+// process block at a time and avoid OOMing instead of
+// waiting for the entire protobuf message to be
+// received
+message PBGetVersionsResponse {
+    // followed by zero or more PBGetVersionsResponseBlocks
 }
 
-message PBGetVersReplyBlock {
+message PBGetVersionsResponseBlock {
     optional PBStoreHeader store = 1;
 
     // a block without the device_id field set has the same device_id as
@@ -115,7 +126,7 @@ message PBStoreHeader {
     optional uint64 sender_filter_update_seq = 4;
 }
 
-message PBGetComCall {
+message PBGetComponentRequest {
     required bytes store_id = 1;
     required bytes object_id = 2;
     required uint32 com_id = 3;
@@ -131,13 +142,13 @@ message PBGetComCall {
     optional bytes hash_content = 7;
 }
 
-message PBComputeHashCall {
+message PBComputeHashRequest {
     required bytes store_id = 1;
     required bytes object_id = 2;
     required PBVer remote_version = 3;
 }
 
-message PBGetComReply {
+message PBGetComponentResponse {
     required PBVer version = 1;
     repeated PBVer conflict_version = 2;
 
@@ -147,7 +158,7 @@ message PBGetComReply {
     // present only in streams.  gives the total length of the file for which content will stream
     optional uint64 file_total_length = 4;
 
-    // present only for contents. must be equal to the same field in PBGetComCall if not zero.
+    // present only for contents. must be equal to the same field in PBGetComponentRequest if not zero.
     // It represents the length of the file prefix that we are skipping in our file_content
     // That is, the file content length in this is file_total_length - prefix_length.
     optional uint64 prefix_length = 5 [ default = 0 ];
@@ -155,7 +166,7 @@ message PBGetComReply {
     // present only for contents.
     optional uint64 mtime = 6;
 
-    // The length of the hash_content which follows this PBGetComReply, if it exists.
+    // The length of the hash_content which follows this PBGetComponentResponse, if it exists.
     optional uint32 hash_length = 7;
 
     optional bool is_content_same = 8 [default = false];

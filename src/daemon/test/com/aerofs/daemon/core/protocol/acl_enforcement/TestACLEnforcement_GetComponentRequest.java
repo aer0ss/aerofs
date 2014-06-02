@@ -8,7 +8,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
-import com.aerofs.daemon.core.protocol.class_under_test.GetComponentCallWithMocks;
+import com.aerofs.daemon.core.protocol.class_under_test.GetComponentRequestWithMocks;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.SIndex;
@@ -36,10 +36,10 @@ import static org.mockito.Mockito.when;
 /**
  * See acl.md for definitions of ACL enforcement rules.
  */
-public class TestACLEnforcement_GetComponentCall extends AbstractTest
+public class TestACLEnforcement_GetComponentRequest extends AbstractTest
 {
-    GetComponentCallWithMocks caller = new GetComponentCallWithMocks();
-    GetComponentCallWithMocks replier = new GetComponentCallWithMocks();
+    GetComponentRequestWithMocks caller = new GetComponentRequestWithMocks();
+    GetComponentRequestWithMocks replier = new GetComponentRequestWithMocks();
 
     SIndex _sidxViewer = SINDEXES[0];
     SOCID _socid = newSOCKID(_sidxViewer).socid();
@@ -131,7 +131,8 @@ public class TestACLEnforcement_GetComponentCall extends AbstractTest
     private void connectCallerToReplier()
             throws Exception
     {
-        when(caller._rpc.do_(any(DID.class), any(PBCore.class), any(Token.class), anyString()))
+        when(caller._rpc.issueRequest_(any(DID.class), any(PBCore.class), any(Token.class),
+                anyString()))
                 .thenAnswer(new Answer<Object>()
                 {
                     @Override
@@ -139,7 +140,7 @@ public class TestACLEnforcement_GetComponentCall extends AbstractTest
                             throws Throwable
                     {
                         PBCore pb = (PBCore)invocation.getArguments()[1];
-                        replier._gcc.processCall_(newDigestedMessage(caller.user(), pb));
+                        replier._gcc.processRequest_(newDigestedMessage(caller.user(), pb));
                         return null;
                     }
                 });

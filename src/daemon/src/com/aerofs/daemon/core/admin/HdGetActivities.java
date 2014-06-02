@@ -4,16 +4,17 @@
 
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.net.DID2User;
+import com.aerofs.daemon.core.net.DeviceToUserMapper;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
-import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Path;
@@ -22,16 +23,12 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.UserID;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.*;
-import static com.google.common.base.Preconditions.checkState;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -41,6 +38,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
+
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.CREATION_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.DELETION_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATION_VALUE;
+import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
+import static com.google.common.base.Preconditions.checkState;
 
 public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
 {
@@ -53,14 +56,14 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
 
     private final ActivityLog _al;
     private final DirectoryService _ds;
-    private final DID2User _d2u;
+    private final DeviceToUserMapper _d2u;
     private final UserAndDeviceNames _udinfo;
     private final CfgLocalUser _cfgLocalUser;
     private final CfgLocalDID _cfgLocalDID;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public HdGetActivities(ActivityLog al, DirectoryService ds, DID2User d2u,
+    public HdGetActivities(ActivityLog al, DirectoryService ds, DeviceToUserMapper d2u,
             UserAndDeviceNames udinfo, CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID,
             IMapSIndex2SID sidx2sid)
     {
@@ -194,7 +197,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
             }
 
             // resolve device ids to user ids
-            UserID user = _d2u.getFromLocalNullable_(did);
+            UserID user = _d2u.getUserIDForDIDNullable_(did);
             if (user == null) {
                 unresolvedDIDs.add(did);
                 unknownOwnerDevices++;

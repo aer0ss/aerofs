@@ -8,16 +8,16 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.protocol.class_under_test.GetVersCallWithMocks;
-import com.aerofs.daemon.core.protocol.class_under_test.GetVersReplyWithMocks;
+import com.aerofs.daemon.core.protocol.class_under_test.GetVersionsRequestWithMocks;
+import com.aerofs.daemon.core.protocol.class_under_test.GetVersionsResponseWithMocks;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
-import com.aerofs.proto.Core.PBGetVersReply;
-import com.aerofs.proto.Core.PBGetVersReplyBlock;
+import com.aerofs.proto.Core.PBGetVersionsResponse;
+import com.aerofs.proto.Core.PBGetVersionsResponseBlock;
 import com.aerofs.proto.Core.PBStoreHeader;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
@@ -28,7 +28,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.protocol.ProtocolTestUtil.newDigestedMessage;
-import static com.aerofs.daemon.core.protocol.class_under_test.AbstractClassUnderTestWithMocks.*;
+import static com.aerofs.daemon.core.protocol.class_under_test.AbstractClassUnderTestWithMocks.SIDS;
+import static com.aerofs.daemon.core.protocol.class_under_test.AbstractClassUnderTestWithMocks.SINDEXES;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -36,10 +37,10 @@ import static org.mockito.Mockito.when;
 /**
  * See acl.md for definitions of ACL enforcement rules.
  */
-public class TestACLEnforcement_GetVersReply extends AbstractTest
+public class TestACLEnforcement_GetVersionsResponse extends AbstractTest
 {
-    GetVersReplyWithMocks caller = new GetVersReplyWithMocks();
-    GetVersCallWithMocks replier = new GetVersCallWithMocks();
+    GetVersionsResponseWithMocks caller = new GetVersionsResponseWithMocks();
+    GetVersionsRequestWithMocks replier = new GetVersionsRequestWithMocks();
 
     SIndex _sidxViewer = SINDEXES[0];
     SID _sidViewer = SIDS[0];
@@ -78,23 +79,25 @@ public class TestACLEnforcement_GetVersReply extends AbstractTest
     {
         // Unlike other tests in the same package, for this test it is easier to craft a protobuf
         // reply than connecting the caller and the replier.
-        caller._gvr.processReply_(newDigestedMessage(replier.user(), newReply()));
+        caller._gvr.processResponse_(newDigestedMessage(replier.user(), newResponse()));
 
         // verify that the caller writes nothing to the db
         verifyNoMoreInteractions(caller._tm);
     }
 
-    private ByteArrayOutputStream newReply()
+    private ByteArrayOutputStream newResponse()
             throws IOException
     {
         PBCore core = PBCore.newBuilder()
                 .setType(Type.REPLY)
                 .setRpcid(1)
-                .setGetVersReply(PBGetVersReply.newBuilder())
+                .setGetVersionsResponse(PBGetVersionsResponse.newBuilder())
                 .build();
 
-        PBGetVersReplyBlock block = PBGetVersReplyBlock.newBuilder()
-                .setStore(PBStoreHeader.newBuilder()
+        PBGetVersionsResponseBlock block = PBGetVersionsResponseBlock
+                .newBuilder()
+                .setStore(PBStoreHeader
+                        .newBuilder()
                         .setStoreId(_sidViewer.toPB()))
                 .setDeviceId(DID.generate().toPB())
                 .addObjectId(OID.generate().toPB())

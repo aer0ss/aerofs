@@ -9,7 +9,7 @@ import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.core.net.DID2User;
+import com.aerofs.daemon.core.net.DeviceToUserMapper;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
@@ -42,7 +42,7 @@ public class TestUserAndDeviceNames extends AbstractTest
     @Mock CfgLocalUser user;
     @Mock TokenManager tokenManager;
     @Mock TransManager tm;
-    @Mock DID2User d2u;
+    @Mock DeviceToUserMapper d2u;
     @Mock IUserAndDeviceNameDatabase udndb;
     @Mock InjectableSPBlockingClientFactory factSP;
     @Spy UserAndDeviceNames _udn = new UserAndDeviceNames(user, tokenManager, tm, d2u, udndb, factSP);

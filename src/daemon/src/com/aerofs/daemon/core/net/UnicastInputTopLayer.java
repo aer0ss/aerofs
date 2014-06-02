@@ -10,32 +10,26 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.core.CoreDeviceLRU;
-import com.aerofs.daemon.core.CoreUtil;
-import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
-import com.aerofs.daemon.core.protocol.ComputeHashCall;
-import com.aerofs.daemon.core.protocol.GetComponentCall;
-import com.aerofs.daemon.core.protocol.GetVersCall;
-import com.aerofs.daemon.core.protocol.GetVersReply;
+import com.aerofs.daemon.core.protocol.ComputeHash;
+import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
+import com.aerofs.daemon.core.protocol.GetComponentRequest;
+import com.aerofs.daemon.core.protocol.GetVersionsRequest;
+import com.aerofs.daemon.core.protocol.GetVersionsResponse;
 import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.protocol.UpdateSenderFilter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Core.PBCore;
-import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
-import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -46,24 +40,31 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
     public static class Factory
     {
         private final TransportRoutingLayer _trl;
-        private final DID2User _d2u;
+        private final DeviceToUserMapper _d2u;
         private final RPC _rpc;
-        private final GetComponentCall _pgcc;
+        private final GetComponentRequest _pgcc;
         private final NewUpdates _pnu;
-        private final GetVersCall _pgvc;
-        private final GetVersReply _pgvr;
+        private final GetVersionsRequest _pgvc;
+        private final GetVersionsResponse _pgvr;
         private final UpdateSenderFilter _pusf;
-        private final ComputeHashCall _computeHashCall;
+        private final ComputeHash _computeHash;
         private final IncomingStreams _iss;
-        private final CoreDeviceLRU _dlru;
 
         @Inject
-        public Factory(IncomingStreams iss, ComputeHashCall computeHashCall, UpdateSenderFilter pusf,
-                GetVersCall pgvc, GetVersReply pgvr, NewUpdates pnu, GetComponentCall pgcc, RPC rpc,
-                DID2User d2u, TransportRoutingLayer trl, CoreDeviceLRU dlru)
+        public Factory(
+                IncomingStreams iss,
+                ComputeHash computeHash,
+                UpdateSenderFilter pusf,
+                GetVersionsRequest pgvc,
+                GetVersionsResponse pgvr,
+                NewUpdates pnu,
+                GetComponentRequest pgcc,
+                RPC rpc,
+                DeviceToUserMapper d2u,
+                TransportRoutingLayer trl)
         {
             _iss = iss;
-            _computeHashCall = computeHashCall;
+            _computeHash = computeHash;
             _pusf = pusf;
             _pgvc = pgvc;
             _pnu = pnu;
@@ -72,7 +73,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _rpc = rpc;
             _d2u = d2u;
             _trl = trl;
-            _dlru = dlru;
         }
 
         public UnicastInputTopLayer create_()
@@ -83,160 +83,126 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
 
     private final Factory _f;
 
-    // a cache for the DID2UserDatabase to avoid DB lookup on every incoming maxcast message.
-    private final Map<DID, UserID> _d2uCache = Maps.newHashMap();
-
     private UnicastInputTopLayer(Factory f)
     {
         _f = f;
-        _f._dlru.addEvictionListener_(new IDeviceEvictionListener() {
-            @Override
-            public void evicted_(DID did)
-            {
-                _d2uCache.remove(did);
-            }
-        });
     }
 
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc)
     {
-        try {
-            final DID did = pc.ep().did();
+        DID did = pc.ep().did();
 
+        try {
             checkState(!did.equals(Cfg.did()));
 
-            // Note: in the past, the DTLS layer used to call processMappingFromPeer_() upon
-            // successful handshake so that we could save in the db the mapping between did and
-            // user id. However, with the removal of DTLS, this call would have to come from the
-            // transport, which is cumbersome. So we do it here instead.
-            if (_d2uCache.get(did) == null) {
-                _d2uCache.put(did, pc.user());
-                _f._d2u.processMappingFromPeer_(did, pc.user());
-            }
-
+            _f._d2u.onUserIDResolved_(did, pc.user());
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
-            DigestedMessage msg = new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null);
-            process_(msg);
+            processIncomingMessage_(new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null));
         } catch (Exception e) {
+            l.warn("{} fail process uc cause:{}", did, LogUtil.suppress(e, ExDeviceOffline.class, ExBadCredential.class));
             SystemUtil.fatalOnUncheckedException(e);
-            l.warn("process uc: " + Util.e(e, ExDeviceOffline.class, ExBadCredential.class));
         }
     }
 
-    public void maxcastMessageReceived_(Endpoint ep, InputStream is)
+    public void onMaxcastMessageReceived_(Endpoint ep, InputStream is)
     {
+        DID did = ep.did();
+
         try {
-            assert !ep.did().equals(Cfg.did());
+            checkState(!did.equals(Cfg.did()));
 
             PBCore pb = PBCore.parseDelimitedFrom(is);
-            UserID userId = _d2uCache.get(ep.did());
-            if (userId == null) {
-                userId = _f._d2u.getFromLocalNullable_(ep.did());
-                if (userId == null) userId = _f._d2u.getFromPeer_(ep.did());
-                _d2uCache.put(ep.did(), userId);
+            UserID userID = _f._d2u.getUserIDForDIDNullable_(did);
+            if (userID == null) {
+                // FIXME (AG): This should really be a queue of DID -> pending multicast packets
+                // This would ensure that only the first thread waits
+                // Other threads would place their multicast packet into the queue
+                // and when the UserID is resolved the original thread can
+                // process all pending messages
+                userID = _f._d2u.issuePeerToPeerResolveUserIDRequest_(did);
             }
-            process_(new DigestedMessage(pb, is, ep, userId, null));
+
+            processIncomingMessage_(new DigestedMessage(pb, is, ep, userID, null));
         } catch (Exception e) {
+            l.warn("{} fail process mc cause:{}", did, LogUtil.suppress(e, ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class));
             SystemUtil.fatalOnUncheckedException(e);
-            l.warn("process mc{}: {}", ep.did(), LogUtil.suppress(e, ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class));
         }
     }
 
     //
-    // FIXME (AG): pull out process_* into a CoreMessageReactor
+    // FIXME (AG): pull out processIncomingMessage_* into a CoreMessageReactor
+    // FIXME (AG): this wiring is terrible, inverse dep and allow handlers to auto-register?
     //
-
-    private void process_(DigestedMessage msg)
+    private void processIncomingMessage_(DigestedMessage msg)
             throws Exception
     {
-        // [sigh] I hate having to switch _twice_ on the type
-
         switch (msg.pb().getType()) {
-        case GET_COM_CALL:
-            //noinspection fallthrough
-        case COMPUTE_HASH_CALL:
+        case GET_COMPONENT_REQUEST:
             try {
-                processCall_(msg);
+                _f._pgcc.processRequest_(msg);
             } catch (Exception e) {
-                // Don't use Util.e(e) to avoid spamming log files
-                l.warn("process " + CoreUtil.typeString(msg.pb()) + ": " + e);
-                sendErrorReply_(msg, e);
+                sendErrorResponse_(msg, e);
+            }
+            break;
+        case COMPUTE_HASH_REQUEST:
+            try {
+                _f._computeHash.processRequest_(msg);
+            } catch (Exception e) {
+                sendErrorResponse_(msg, e);
             }
             break;
         case REPLY:
-        case GET_VERS_REQ:
-        case GET_VERS_RESP:
-        case NEW_UPDATES:
-        case UPDATE_SENDER_FILTER:
-        case NOP:
-            processNonCall_(msg);
+            _f._rpc.processResponse_(msg);
             break;
-        default:
-            l.warn("unkown msg: " + msg.pb().getType());
-            throw new ExProtocolError(Type.class);
-        }
-    }
-
-    private void processCall_(DigestedMessage msg)
-            throws Exception
-    {
-        switch (msg.pb().getType()) {
-        case GET_COM_CALL:
-            _f._pgcc.processCall_(msg);
+        case GET_VERSIONS_REQUEST:
+            _f._pgvc.processRequest_(msg);
             break;
-        case COMPUTE_HASH_CALL:
-            _f._computeHashCall.processCall_(msg);
-            break;
-        default:
-            // the caller guarantees it never happens
-            throw new AssertionError(msg.pb().getType());
-        }
-    }
-
-    private void sendErrorReply_(DigestedMessage msg, Exception cause)
-            throws Exception
-    {
-        PBCore error = null;
-        try {
-            error = CoreUtil.newErrorReply(msg.pb(), cause);
-        } catch (ExProtocolError e) {
-            // this is a programming error: we shouldn't be creating error replies for non-rpc messages
-            SystemUtil.fatal("fail creating a reply for msg:" + CoreUtil.typeString(msg.pb()));
-        }
-
-        assert error != null;
-        _f._trl.sendUnicast_(msg.ep(), error);
-    }
-
-    // TODO: this wiring is terrible, inverse dep and allow handlers to auto-register?
-    private void processNonCall_(DigestedMessage msg)
-            throws Exception
-    {
-        switch (msg.pb().getType()) {
-        case REPLY:
-            _f._rpc.processReply_(msg);
+        case GET_VERSIONS_RESPONSE:
+            _f._pgvr.processResponse_(msg);
             break;
         case NEW_UPDATES:
             _f._pnu.process_(msg);
             break;
-        case GET_VERS_REQ:
-            _f._pgvc.processCall_(msg);
-            break;
-        case GET_VERS_RESP:
-            _f._pgvr.processReply_(msg);
-            break;
         case UPDATE_SENDER_FILTER:
             _f._pusf.process_(msg);
             break;
-        case NOP:
+        case RESOLVE_USER_ID_REQUEST:
+            _f._d2u.respondToPeerToPeerResolveUserIDResponse_(msg.did());
+            break;
+        case RESOLVE_USER_ID_RESPONSE:
+            // noop - this incoming message results in _d2u being updated in onUnicastDatagramReceived_
             break;
         default:
-            // the caller guarantees it never happens
-            throw new AssertionError(msg.pb().getType());
+            l.warn("{} unknown message type {}", msg.did(), msg.pb().getType());
+            throw new IllegalArgumentException("unhandled protocol type " + msg.pb().getType().name());
         }
     }
 
+    private void sendErrorResponse_(DigestedMessage msg, Exception cause)
+            throws Exception
+    {
+        l.warn("{} fail process msg cause:{}", msg.did(), CoreProtocolUtil.typeString(msg.pb()), cause);
+
+        PBCore error = null;
+        try {
+            error = CoreProtocolUtil.newErrorResponse(msg.pb(), cause);
+        } catch (ExProtocolError e) {
+            // logic error
+            // should not send an error response for non-rpc messages
+            // FIXME (AG): does that mean that we often fail silently? seems bad...
+            SystemUtil.fatal("fail creating a reply for msg:" + CoreProtocolUtil.typeString(msg.pb()));
+        }
+
+        checkState(error != null);
+
+        _f._trl.sendUnicast_(msg.ep(), error);
+    }
+
+    // FIXME (AG): route this into processIncomingMessage_ above
+    // FIXME (AG): have this class handle buffering data into the stream instead of pushing the responsibility to the reactors
+    // FIXME (AG): makes an assumption that the first chunk contains a complete PB message
+    // will ensure that all messages can now be streamed (which is the right thing to do)
     @Override
     public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc)
     {
@@ -249,17 +215,17 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
 
             switch (pb.getType()) {
                 case REPLY:
-                    if (!_f._rpc.processReply_(msg)) _f._iss.end_(key);
+                    if (!_f._rpc.processResponse_(msg)) _f._iss.end_(key);
                     break;
-                case GET_VERS_RESP:
-                    _f._pgvr.processReply_(msg);
+                case GET_VERSIONS_RESPONSE:
+                    _f._pgvr.processResponse_(msg);
                     break;
                 default:
-                    l.warn("unkown msg 4 strm: " + msg.pb().getType());
-                    throw new ExProtocolError(Type.class);
+                    l.warn("{} message with type:{} should not be contained in stream", msg.did(), msg.pb().getType());
+                    throw new IllegalArgumentException("unhandled streamed protocol type " + msg.pb().getType().name());
             }
         } catch (Exception e) {
-            l.warn("process strm head: " + Util.e(e));
+            l.warn("{} fail process stream head cause:{}", LogUtil.suppress(e));
             _f._iss.end_(key);
         }
     }

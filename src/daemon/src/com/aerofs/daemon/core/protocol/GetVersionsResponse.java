@@ -31,8 +31,8 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.proto.Core.PBGetVersReply;
-import com.aerofs.proto.Core.PBGetVersReplyBlock;
+import com.aerofs.proto.Core.PBGetVersionsResponse;
+import com.aerofs.proto.Core.PBGetVersionsResponseBlock;
 import com.aerofs.proto.Core.PBStoreHeader;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -43,9 +43,9 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-public class GetVersReply
+public class GetVersionsResponse
 {
-    private static final Logger l = Loggers.getLogger(GetVersReply.class);
+    private static final Logger l = Loggers.getLogger(GetVersionsResponse.class);
 
     private final IncomingStreams _iss;
     private final UpdateSenderFilter _pusf;
@@ -59,10 +59,17 @@ public class GetVersReply
     private final TokenManager _tokenManager;
 
     @Inject
-    public GetVersReply(TransManager tm, NativeVersionControl nvc,
-            ImmigrantVersionControl ivc, UpdateSenderFilter pusf,
-            IncomingStreams iss, MapSIndex2Store sidx2s, IMapSID2SIndex sid2sidx,
-            IPulledDeviceDatabase pddb, LocalACL lacl, TokenManager tokenManager)
+    public GetVersionsResponse(
+            TransManager tm,
+            NativeVersionControl nvc,
+            ImmigrantVersionControl ivc,
+            UpdateSenderFilter pusf,
+            IncomingStreams iss,
+            MapSIndex2Store sidx2s,
+            IMapSID2SIndex sid2sidx,
+            IPulledDeviceDatabase pddb,
+            LocalACL lacl,
+            TokenManager tokenManager)
     {
         _tm = tm;
         _nvc = nvc;
@@ -76,27 +83,27 @@ public class GetVersReply
         _tokenManager = tokenManager;
     }
 
-    public void processReply_(DigestedMessage msg) throws Exception
+    public void processResponse_(DigestedMessage msg)
+            throws Exception
     {
         try {
-            if (msg.pb().hasExceptionReply()) throw Exceptions.fromPB(msg.pb().getExceptionReply());
-            Util.checkPB(msg.pb().hasGetVersReply(), PBGetVersReply.class);
+            if (msg.pb().hasExceptionResponse()) throw Exceptions.fromPB(msg.pb().getExceptionResponse());
+            Util.checkPB(msg.pb().hasGetVersionsResponse(), PBGetVersionsResponse.class);
 
             if (msg.streamKey() == null) {
-                processAtomicReply_(msg.user(), msg.did(), msg.is());
+                processResponseFromDatagram_(msg.user(), msg.did(), msg.is());
             } else {
-                processStreamReply_(msg.user(), msg.did(), msg.streamKey(), msg.is());
+                processResponseFromStream_(msg.user(), msg.did(), msg.streamKey(), msg.is());
             }
-        } catch (Exception e) {
-            l.info("error processing reply", e);
-            throw e;
         } finally {
             // TODO put this statement into a more general method
-            if (msg.streamKey() != null) _iss.end_(msg.streamKey());
+            if (msg.streamKey() != null) {
+                _iss.end_(msg.streamKey());
+            }
         }
     }
 
-    private class ReplyContext
+    private class ResponseContext
     {
         final UserID _user;
         final DID _from;
@@ -114,9 +121,9 @@ public class GetVersReply
         Version _vKwlgLocal = null;
         Version _vImmKwlgLocal = null;
 
-        ReplyContext(UserID user, DID did)
+        ResponseContext(UserID user, DID did)
         {
-            this._user = user;
+            _user = user;
             _from = did;
         }
 
@@ -145,16 +152,17 @@ public class GetVersReply
             SID sid = new SID(h.getStoreId());
             _sidx = _sid2sidx.getNullable_(sid);
 
-            // store was expelled locally between call and reply...
+            l.info("{} receive gv response for {} {}", _from, sid, _filter);
+
+            // store was expelled locally between request and response
             if (_sidx == null) {
-                l.warn("recv from {} for absent: {} {}", _from, sid,
-                        _sid2sidx.getLocalOrAbsentNullable_(sid));
+                l.warn("{} receive gv response for absent {} {}", _from, sid, _sid2sidx.getLocalOrAbsentNullable_(sid));
                 return false;
             }
 
             // see Rule 2 in acl.md
             if (!_lacl.check_(_user, _sidx, Permissions.EDITOR)) {
-                l.warn("{} on {} has no editor perm for {}", _user, _from, _sidx);
+                l.warn("{} ({}) has no editor perm for {}", _from, _user, _sidx);
                 // Although we return false to indicate that the store should be ignored, _sidx
                 // needs to set to null otherwise later code doesn't properly ignore blocks form
                 // the store. See process_()
@@ -173,7 +181,6 @@ public class GetVersReply
                 _filter = null;
             }
 
-            l.debug("recv from {} for {} {}", _from, _sidx, _filter);
             return true;
         }
 
@@ -194,7 +201,7 @@ public class GetVersReply
             }
         }
 
-        void process_(PBGetVersReplyBlock block, Trans t)
+        void process_(PBGetVersionsResponseBlock block, Trans t)
                 throws SQLException, ExNotFound, ExProtocolError
         {
             if (_sidx == null) {
@@ -202,18 +209,18 @@ public class GetVersReply
                 return;
             }
 
-            _didBlock = processBlock_(_sidx, block, _didBlock, _vKwlgLocal, _vImmKwlgLocal, _from, t);
+            _didBlock = processResponseBlock_(_sidx, block, _didBlock, _vKwlgLocal, _vImmKwlgLocal, _from, t);
         }
     }
 
-    private void processAtomicReply_(UserID user, DID from, InputStream is) throws Exception
+    private void processResponseFromDatagram_(UserID user, DID from, InputStream is) throws Exception
     {
         Trans t = null;
-        ReplyContext cxt = new ReplyContext(user, from);
+        ResponseContext cxt = new ResponseContext(user, from);
 
         try {
             while (true) {
-                PBGetVersReplyBlock block = PBGetVersReplyBlock.parseDelimitedFrom(is);
+                PBGetVersionsResponseBlock block = PBGetVersionsResponseBlock.parseDelimitedFrom(is);
                 if (block.hasStore()) {
                     // commit changes for previous store
                     if (t != null) {
@@ -246,12 +253,12 @@ public class GetVersReply
 
     private static final int MIN_BLOCKS_PER_TX = 100;
 
-    private void processStreamReply_(UserID user, DID from, StreamKey streamKey, InputStream is)
+    private void processResponseFromStream_(UserID user, DID from, StreamKey streamKey, InputStream is)
             throws Exception
     {
         Token tk = null;
-        ReplyContext cxt = new ReplyContext(user, from);
-        Queue<PBGetVersReplyBlock> qblocks = new ArrayDeque<PBGetVersReplyBlock>(MIN_BLOCKS_PER_TX);
+        ResponseContext cxt = new ResponseContext(user, from);
+        Queue<PBGetVersionsResponseBlock> qblocks = new ArrayDeque<PBGetVersionsResponseBlock>(MIN_BLOCKS_PER_TX);
 
         try {
             while (!processStreamChunk_(cxt, qblocks, is)) {
@@ -268,15 +275,15 @@ public class GetVersReply
         }
     }
 
-    private boolean processStreamChunk_(ReplyContext cxt, Queue<PBGetVersReplyBlock> qblocks,
-            InputStream is) throws Exception
+    private boolean processStreamChunk_(ResponseContext cxt, Queue<PBGetVersionsResponseBlock> qblocks, InputStream is)
+            throws Exception
     {
         boolean last = false;
         while (!last && is.available() > 0) {
-            PBGetVersReplyBlock block = PBGetVersReplyBlock.parseDelimitedFrom(is);
+            PBGetVersionsResponseBlock block = PBGetVersionsResponseBlock.parseDelimitedFrom(is);
             if (block.hasStore()) {
                 // commit changes for previous store
-                processStreamBlocks_(cxt, qblocks, true);
+                processReceivedBlocks_(cxt, qblocks, true);
 
                 cxt.newStore_(block.getStore());
             }
@@ -291,7 +298,7 @@ public class GetVersReply
          * MIN_BLOCKS_PER_TX blocks into a single transaction
          */
         if (qblocks.size() >= MIN_BLOCKS_PER_TX || last) {
-            processStreamBlocks_(cxt, qblocks, last);
+            processReceivedBlocks_(cxt, qblocks, last);
         }
 
         return last;
@@ -300,8 +307,8 @@ public class GetVersReply
     /**
      * @param qblocks is a queue of blocks extracted from a chunk. The queue should not be empty
      */
-    private void processStreamBlocks_(ReplyContext cxt, Queue<PBGetVersReplyBlock> qblocks,
-            boolean storeBoundary) throws Exception
+    private void processReceivedBlocks_(ResponseContext cxt, Queue<PBGetVersionsResponseBlock> qblocks, boolean storeBoundary)
+            throws Exception
     {
         assert storeBoundary || !qblocks.isEmpty();
 
@@ -311,7 +318,7 @@ public class GetVersReply
 
             Trans t = _tm.begin_();
             try {
-                PBGetVersReplyBlock block;
+                PBGetVersionsResponseBlock block;
 
                 l.debug("blocks/tx={}", qblocks.size());
                 while (null != (block = qblocks.poll())) {
@@ -334,15 +341,22 @@ public class GetVersReply
     /**
      * @return the current device_id specified in the block
      */
-    private DID processBlock_(SIndex sidx, PBGetVersReplyBlock block, DID didBlock,
-            Version vKwlgLocal, Version vImmKwlgLocal, DID from,
-            Trans t) throws SQLException, ExProtocolError
+    private DID processResponseBlock_(
+            SIndex sidx,
+            PBGetVersionsResponseBlock block,
+            @Nullable DID didBlock,
+            Version vKwlgLocal,
+            Version vImmKwlgLocal,
+            DID from,
+            Trans t)
+            throws SQLException, ExProtocolError
     {
-        Util.checkMatchingSizes(block.getObjectIdCount(), block.getComIdCount(),
-                block.getTickCount());
-
-        Util.checkMatchingSizes(block.getImmigrantObjectIdCount(), block.getImmigrantComIdCount(),
-                block.getImmigrantImmTickCount(), block.getImmigrantDeviceIdCount(),
+        Util.checkMatchingSizes(block.getObjectIdCount(), block.getComIdCount(), block.getTickCount());
+        Util.checkMatchingSizes(
+                block.getImmigrantObjectIdCount(),
+                block.getImmigrantComIdCount(),
+                block.getImmigrantImmTickCount(),
+                block.getImmigrantDeviceIdCount(),
                 block.getImmigrantTickCount());
 
         if (block.hasDeviceId()) didBlock = new DID(block.getDeviceId());
@@ -391,8 +405,7 @@ public class GetVersReply
             _nvc.addKnowledge_(sidx, didBlock, tick, t);
         }
 
-        if (block.hasImmigrantKnowledgeTick() &&
-                block.getImmigrantKnowledgeTick() > vImmKwlgLocal.get_(didBlock).getLong()) {
+        if (block.hasImmigrantKnowledgeTick() && (block.getImmigrantKnowledgeTick() > vImmKwlgLocal.get_(didBlock).getLong())) {
             Tick tick = new Tick(block.getImmigrantKnowledgeTick());
             _ivc.addKnowledge_(sidx, didBlock, tick, t);
         }

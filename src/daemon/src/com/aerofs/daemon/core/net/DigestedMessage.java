@@ -14,7 +14,7 @@ import com.aerofs.proto.Core.PBCore;
 import javax.annotation.Nullable;
 import java.io.InputStream;
 
-import static com.aerofs.daemon.core.CoreUtil.typeString;
+import static com.aerofs.daemon.core.protocol.CoreProtocolUtil.typeString;
 
 /**
  * Represents a partially-processed incoming packet from the network stack

@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.TransportRoutingLayer;
@@ -40,7 +39,7 @@ public class UpdateSenderFilter
 
     public void send_(SIndex sidx, long sfidx, long updateSeq, DID did) throws Exception
     {
-        PBCore pb = CoreUtil.newCore(Type.UPDATE_SENDER_FILTER)
+        PBCore pb = CoreProtocolUtil.newCoreMessage(Type.UPDATE_SENDER_FILTER)
             .setUpdateSenderFilter(PBUpdateSenderFilter.newBuilder()
                     .setStoreId(_sidx2sid.getThrows_(sidx).toPB())
                     .setSenderFilterIndex(sfidx)

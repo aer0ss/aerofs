@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
 import com.aerofs.daemon.core.tc.CoreIMC;

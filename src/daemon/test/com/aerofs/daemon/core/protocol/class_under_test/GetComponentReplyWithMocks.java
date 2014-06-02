@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.net.IncomingStreams;
-import com.aerofs.daemon.core.protocol.GetComponentReply;
+import com.aerofs.daemon.core.protocol.GetComponentResponse;
 import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import org.mockito.InjectMocks;
@@ -29,5 +29,5 @@ public class GetComponentReplyWithMocks extends AbstractClassUnderTestWithMocks
     public @Mock MapAlias2Target _a2t;
     public @Mock IEmigrantDetector _emd;
 
-    public @InjectMocks GetComponentReply _gcr;
+    public @InjectMocks GetComponentResponse _gcr;
 }

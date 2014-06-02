@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.net.device;
+package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;

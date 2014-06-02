@@ -12,7 +12,6 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -110,7 +109,7 @@ public class NewUpdates implements IVersionControlListener
 
         SID sid = _sidx2sid.getThrows_(sidx);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        CoreUtil.newCore(Type.NEW_UPDATES)
+        CoreProtocolUtil.newCoreMessage(Type.NEW_UPDATES)
                 .setNewUpdates(PBNewUpdates.newBuilder()
                         .setStoreId(sid.toPB()))
                 .build()
@@ -119,7 +118,7 @@ public class NewUpdates implements IVersionControlListener
         // TODO: use epidemic propagation instead of maxcast
         // (part of a bigger effort towards a quieter steady-state of AntiEntropy)
         _trl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
-                CoreUtil.NOT_RPC, os);
+                CoreProtocolUtil.NOT_RPC, os);
     }
 
     public void process_(DigestedMessage msg)

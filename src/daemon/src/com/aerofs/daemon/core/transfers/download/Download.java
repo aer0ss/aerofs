@@ -167,14 +167,14 @@ class Download
         protected final DirectoryService _ds;
         protected final Downloads _dls;
         protected final DownloadState _dlstate;
-        protected final GetComponentCall _gcc;
-        protected final GetComponentReply _gcr;
+        protected final GetComponentRequest _gcc;
+        protected final GetComponentResponse _gcr;
         protected final DownloadDeadlockResolver _ddr;
         protected final IMapSIndex2SID _sidx2sid;
 
         @Inject
         protected Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
-                To.Factory factTo, GetComponentCall gcc, GetComponentReply gcr,
+                To.Factory factTo, GetComponentRequest gcc, GetComponentResponse gcr,
                 DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid)
         {
             _ds = ds;
@@ -298,7 +298,7 @@ class Download
         try {
             boolean failed = true;
             try {
-                _f._gcr.processReply_(_socid, msg, cxt);
+                _f._gcr.processResponse_(_socid, msg, cxt);
                 failed = false;
             } finally {
                 l.debug("ended {} from {} {}", _socid, msg.ep(), failed ? "FAILED" : "OK");

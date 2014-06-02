@@ -109,10 +109,10 @@ public class TestAsyncDownload extends AbstractDownloadTest
                     throws Throwable
             {
                 doNothing().when(gcr)
-                        .processReply_(eq(socid), anyDM(), anyDC());
+                        .processResponse_(eq(socid), anyDM(), anyDC());
                 throw new Exception();
             }
-        }).when(gcr).processReply_(eq(socid), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
 
         asyncdl(socid)
                 .do_();
@@ -173,7 +173,7 @@ public class TestAsyncDownload extends AbstractDownloadTest
             {
                 throw did2e.get(dids[idx++]);
             }
-        }).when(gcr).processReply_(eq(socid), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
 
         asyncdl(socid)
                 .do_();
@@ -199,7 +199,7 @@ public class TestAsyncDownload extends AbstractDownloadTest
         mockReplies(socid, did1);
 
         ExOutOfSpace ex = new ExOutOfSpace();
-        doThrow(ex).when(gcr).processReply_(eq(socid), anyDM(), anyDC());
+        doThrow(ex).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
 
         asyncdl(socid)
                 .do_();

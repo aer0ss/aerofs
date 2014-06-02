@@ -2,13 +2,26 @@ package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.CoreUtil;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
+import com.aerofs.daemon.core.net.Metrics;
+import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
+import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
+import com.aerofs.daemon.lib.db.PulledDeviceDatabase;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Version;
+import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
-import com.aerofs.proto.Core.PBGetVersCallBlock;
+import com.aerofs.proto.Core.PBGetVersionsRequestBlock;
+import com.aerofs.testlib.AbstractTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,35 +31,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
-
-import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
-import com.aerofs.daemon.core.net.Metrics;
-import com.aerofs.daemon.core.net.OutgoingStreams;
-import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
-import com.aerofs.daemon.lib.db.PulledDeviceDatabase;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Version;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.proto.Core.PBCore;
-import com.aerofs.testlib.AbstractTest;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-public class TestGetVersCall extends AbstractTest
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+public class TestGetVersionsRequest extends AbstractTest
 {
     private final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
 
     @Mock NativeVersionControl nvc;
     @Mock ImmigrantVersionControl ivc;
     @Mock TransportRoutingLayer trl;
-    @Mock GetVersReply gvr;
+    @Mock GetVersionsResponse gvr;
     @Mock Metrics m;
     @Mock OutgoingStreams oss;
     @Mock MapSIndex2Store sidx2s;
@@ -55,9 +57,9 @@ public class TestGetVersCall extends AbstractTest
             mock(StoreDeletionOperators.class));
 
     // System Under Test
-    @InjectMocks private GetVersCall gvc;
+    @InjectMocks private GetVersionsRequest gvc;
 
-    @Captor private ArgumentCaptor<ByteArrayOutputStream> callCaptor;
+    @Captor private ArgumentCaptor<ByteArrayOutputStream> requestCaptor;
     @Mock private Token tk;
     @Mock private Trans t;
 
@@ -81,7 +83,7 @@ public class TestGetVersCall extends AbstractTest
     public void shouldLoadPBWithFromBaseTrueWhenSIndexAndDIDHaveNotBeenPulled()
             throws Exception
     {
-        // The DID the rpc_ call is intended for
+        // The DID the issueRequest_ call is intended for
         DID didTo = new DID(UniqueID.generate());
         mockEmptyKnowledge();
 
@@ -96,7 +98,7 @@ public class TestGetVersCall extends AbstractTest
     public void shouldLoadPBWithFromBaseFalseWhenSIndexAndDIDHaveBeenPulled()
             throws Exception
     {
-        // The DID the rpc_ call is intended for
+        // The DID the issueRequest_ call is intended for
         DID didTo = new DID(UniqueID.generate());
         mockEmptyKnowledge();
 
@@ -118,18 +120,17 @@ public class TestGetVersCall extends AbstractTest
     }
 
     /**
-     * Run the GetVersCall rpc method and extract the Protobuf from_base flag
-     * @return whether from_base was set to true or false before the call to do_
+     * Run the GetVersionsRequest rpc method and extract the Protobuf from_base flag
+     * @return whether from_base was set to true or false before the call to issueRequest_
      */
     private boolean getFlagFromBaseWhenRunningRPC(DID didTo) throws Exception
     {
-        gvc.request_(sidx, didTo);
+        gvc.issueRequest_(didTo, sidx);
 
-        verify(trl).sendUnicast_(eq(didTo), eq(Integer.toString(Type.GET_VERS_REQ.getNumber())),
-                eq(CoreUtil.NOT_RPC), callCaptor.capture());
+        verify(trl).sendUnicast_(eq(didTo), eq(Integer.toString(Type.GET_VERSIONS_REQUEST.getNumber())), eq(CoreProtocolUtil.NOT_RPC), requestCaptor.capture());
 
-        ByteArrayInputStream is = new ByteArrayInputStream(callCaptor.getValue().toByteArray());
+        ByteArrayInputStream is = new ByteArrayInputStream(requestCaptor.getValue().toByteArray());
         PBCore.parseDelimitedFrom(is);
-        return PBGetVersCallBlock.parseDelimitedFrom(is).getFromBase();
+        return PBGetVersionsRequestBlock.parseDelimitedFrom(is).getFromBase();
     }
 }

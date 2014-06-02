@@ -12,13 +12,13 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.Aliasing;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
+import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -30,16 +30,16 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.proto.Core.PBGetComReply;
+import com.aerofs.proto.Core.PBGetComponentResponse;
 import com.aerofs.proto.Core.PBMeta;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
 
-public class GetComponentReply
+public class GetComponentResponse
 {
-    private static final Logger l = Loggers.getLogger(GetComponentReply.class);
+    private static final Logger l = Loggers.getLogger(GetComponentResponse.class);
 
     private final TransManager _tm;
     private final DirectoryService _ds;
@@ -52,7 +52,7 @@ public class GetComponentReply
     private final IEmigrantDetector _emd;
 
     @Inject
-    public GetComponentReply(TransManager tm, DirectoryService ds, IncomingStreams iss,
+    public GetComponentResponse(TransManager tm, DirectoryService ds, IncomingStreams iss,
             ReceiveAndApplyUpdate ru, MetaDiff mdiff, Aliasing al, MapAlias2Target a2t,
             LocalACL lacl, IEmigrantDetector emd)
     {
@@ -86,15 +86,15 @@ public class GetComponentReply
     }
 
     /**
-     * @param msg the message sent in response to GetComponentCall
+     * @param msg the message sent in response to GetComponentRequest
      */
-    public void processReply_(SOCID socid, DigestedMessage msg, IDownloadContext cxt)
+    public void processResponse_(SOCID socid, DigestedMessage msg, IDownloadContext cxt)
             throws Exception
     {
         try {
-            if (msg.pb().hasExceptionReply()) throw Exceptions.fromPB(msg.pb().getExceptionReply());
-            Util.checkPB(msg.pb().hasGetComReply(), PBGetComReply.class);
-            doProcessReply_(socid, msg, cxt);
+            if (msg.pb().hasExceptionResponse()) throw Exceptions.fromPB(msg.pb().getExceptionResponse());
+            Util.checkPB(msg.pb().hasGetComponentResponse(), PBGetComponentResponse.class);
+            processResponseInternal_(socid, msg, cxt);
         } finally {
             // TODO put this statement into a more general method
             if (msg.streamKey() != null) _iss.end_(msg.streamKey());
@@ -108,10 +108,10 @@ public class GetComponentReply
     // downloading again after the dependency is solved.
     //
 
-    private void doProcessReply_(SOCID socid, DigestedMessage msg, IDownloadContext cxt)
+    private void processResponseInternal_(SOCID socid, DigestedMessage msg, IDownloadContext cxt)
             throws Exception
     {
-        final PBGetComReply pbReply = msg.pb().getGetComReply();
+        final PBGetComponentResponse pbResponse = msg.pb().getGetComponentResponse();
         final CIDType type = CIDType.infer(socid.cid());
 
         /////////////////////////////////////////
@@ -124,10 +124,10 @@ public class GetComponentReply
 
         // TODO check for parent permissions for creation / moving?
 
-        // if permission checking failed, the GetComponentReply is malicious or the
-        // file permission was reduced between GetComponentCall and Reply.
+        // if permission checking failed, the GetComponentResponse is malicious or the
+        // file permission was reduced between GetComponentRequest and GetComponentResponse.
         // TODO notify user about this, and remove from KML the version
-        // specified in the Reply message?
+        // specified in the response message?
 
         OID oidParent = null;  // null for non-meta updates
         int metaDiff;
@@ -142,7 +142,7 @@ public class GetComponentReply
             }
 
         } else {
-            PBMeta meta = pbReply.getMeta();
+            PBMeta meta = pbResponse.getMeta();
             oidParent = new OID(meta.getParentObjectId());
             assert !oidParent.equals(socid.oid()) : "parent " + oidParent + " socid " + socid;
 
@@ -180,10 +180,10 @@ public class GetComponentReply
                 // Process the alias message.
                 assert meta.hasTargetVersion();
                 _al.processAliasMsg_(
-                    socid.soid(),                                        // alias
-                    Version.fromPB(pbReply.getVersion()),                // vRemoteAlias
-                    new SOID(socid.sidx(), new OID(meta.getTargetOid())),// target
-                    Version.fromPB(meta.getTargetVersion()),             // vRemoteTarget
+                    socid.soid(),                                           // alias
+                    Version.fromPB(pbResponse.getVersion()),                // vRemoteAlias
+                    new SOID(socid.sidx(), new OID(meta.getTargetOid())),   // target
+                    Version.fromPB(meta.getTargetVersion()),                // vRemoteTarget
                     oidParent,
                     metaDiff, meta, cxt);
 
@@ -210,7 +210,7 @@ public class GetComponentReply
         /////////////////////////////////////////
         // determine causal relation
 
-        Version vRemote = Version.fromPB(pbReply.getVersion());
+        Version vRemote = Version.fromPB(pbResponse.getVersion());
         ReceiveAndApplyUpdate.CausalityResult cr;
         switch (type) {
         case META:
@@ -246,16 +246,11 @@ public class GetComponentReply
                 t = _tm.begin_();
                 if (metaDiff != 0) {
                     boolean oidsAliasedOnNameConflict =
-                        _ru.applyMeta_(targetBranch.soid(), pbReply.getMeta(),
-                            oidParent,
-                            wasPresent, metaDiff, t,
-                            // for non-alias message create a new version
-                            // on aliasing name conflict.
-                            null,
-                            vRemote,
-                            targetBranch.soid(),
-                            cr,
-                            cxt);
+                        _ru.applyMeta_(targetBranch.soid(), pbResponse.getMeta(), oidParent,
+                                wasPresent, metaDiff, t,
+                                // for non-alias message create a new version
+                                // on aliasing name conflict.
+                                null, vRemote, targetBranch.soid(), cr, cxt);
 
                     // Aliasing objects on name conflicts updates versions and bunch
                     // of stuff (see resolveNameConflictOnNewRemoteObjectByAliasing_()). No further
@@ -295,6 +290,7 @@ public class GetComponentReply
         }
     }
 
+    // FIXME (AG): this same piece of code is repeated in every protocol class - find a way to do the ACL checks in a common place
     private void throwIfSenderHasNoPerm(SIndex sidx, UserID user, Endpoint ep)
             throws SQLException, ExSenderHasNoPerm
     {

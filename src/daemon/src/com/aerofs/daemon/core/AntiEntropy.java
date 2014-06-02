@@ -5,7 +5,7 @@ import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.To;
-import com.aerofs.daemon.core.protocol.GetVersCall;
+import com.aerofs.daemon.core.protocol.GetVersionsRequest;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -48,14 +48,14 @@ public class AntiEntropy
     private static final Logger l = Loggers.getLogger(AntiEntropy.class);
 
     private final CoreScheduler _sched;
-    private final GetVersCall _pgvc;
+    private final GetVersionsRequest _pgvc;
     private final To.Factory _factTo;
     private final MapSIndex2Store _sidx2s;
 
     private final Map<SIndex, Request> _requests = Maps.newHashMap();
 
     @Inject
-    public AntiEntropy(CoreScheduler sched, GetVersCall pgvc, MapSIndex2Store sidx2s, To.Factory factTo)
+    public AntiEntropy(CoreScheduler sched, GetVersionsRequest pgvc, MapSIndex2Store sidx2s, To.Factory factTo)
     {
         _sched = sched;
         _pgvc = pgvc;
@@ -193,7 +193,7 @@ public class AntiEntropy
         private void sendGetVersRequests_(DID did) throws Exception
         {
             l.debug("gv {} to {}", _sidx, did);
-            _pgvc.request_(_sidx, did);
+            _pgvc.issueRequest_(did, _sidx);
             _lastReq.put(did, new ElapsedTimer());
         }
     }

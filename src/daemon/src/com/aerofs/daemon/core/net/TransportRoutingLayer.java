@@ -8,7 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.CoreUtil;
+import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.DevicePresence;
@@ -74,7 +74,7 @@ public class TransportRoutingLayer
     public @Nullable Endpoint sendUnicast_(DID did, PBCore pb)
             throws Exception
     {
-        return sendUnicast_(did, CoreUtil.typeString(pb), pb.getRpcid(), Util.writeDelimited(pb));
+        return sendUnicast_(did, CoreProtocolUtil.typeString(pb), pb.getRpcid(), Util.writeDelimited(pb));
     }
 
     /**
@@ -85,7 +85,7 @@ public class TransportRoutingLayer
     public @Nullable Endpoint sendUnicast_(Endpoint ep, PBCore pb)
             throws Exception
     {
-        return sendUnicast_(ep, CoreUtil.typeString(pb), pb.getRpcid(), Util.writeDelimited(pb)) ? ep : null;
+        return sendUnicast_(ep, CoreProtocolUtil.typeString(pb), pb.getRpcid(), Util.writeDelimited(pb)) ? ep : null;
     }
 
     /**

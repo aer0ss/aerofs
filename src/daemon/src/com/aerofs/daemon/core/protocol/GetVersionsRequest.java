@@ -1,5 +1,65 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.collector.SenderFilters.SenderFilterAndIndex;
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
+import com.aerofs.daemon.core.net.DigestedMessage;
+import com.aerofs.daemon.core.net.IncomingStreams;
+import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
+import com.aerofs.daemon.core.net.Metrics;
+import com.aerofs.daemon.core.net.OutgoingStreams;
+import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.MapSIndex2Contributors;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.core.store.Store;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.daemon.lib.db.ver.ImmigrantTickRow;
+import com.aerofs.daemon.lib.db.ver.NativeTickRow;
+import com.aerofs.lib.Tick;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.Version;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOCKID;
+import com.aerofs.proto.Core.PBCore;
+import com.aerofs.proto.Core.PBCore.Type;
+import com.aerofs.proto.Core.PBGetVersionsRequest;
+import com.aerofs.proto.Core.PBGetVersionsRequestBlock;
+import com.aerofs.proto.Core.PBGetVersionsResponse;
+import com.aerofs.proto.Core.PBGetVersionsResponseBlock;
+import com.aerofs.proto.Core.PBStoreHeader;
+import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.aerofs.sv.client.SVClient;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.protobuf.AbstractMessageLite;
+import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,74 +70,11 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.aerofs.base.C;
-import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.core.acl.LocalACL;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.net.TransportRoutingLayer;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2Contributors;
-import com.aerofs.daemon.core.net.IncomingStreams;
-import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.proto.Core.PBGetVersCallBlock;
-import com.aerofs.proto.Core.PBStoreHeader;
-import com.aerofs.sv.client.SVClient;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import org.slf4j.Logger;
-
-import com.aerofs.daemon.core.CoreUtil;
-import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.collector.SenderFilters.SenderFilterAndIndex;
-import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
-import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.net.Metrics;
-import com.aerofs.daemon.core.net.OutgoingStreams;
-import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
-import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
-import com.aerofs.daemon.lib.db.ver.ImmigrantTickRow;
-import com.aerofs.daemon.lib.db.ver.NativeTickRow;
-import com.aerofs.lib.Tick;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.Version;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.proto.Core.PBCore;
-import com.aerofs.proto.Core.PBCore.Type;
-import com.aerofs.proto.Core.PBGetVersCall;
-import com.aerofs.proto.Core.PBGetVersReply;
-import com.aerofs.proto.Core.PBGetVersReplyBlock;
-import com.aerofs.proto.Transport.PBStream.InvalidationReason;
-import com.google.inject.Inject;
-import com.google.protobuf.AbstractMessageLite;
-
-import javax.annotation.Nullable;
-
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 
-public class GetVersCall
+public class GetVersionsRequest
 {
-    private static final Logger l = Loggers.getLogger(GetVersCall.class);
+    private static final Logger l = Loggers.getLogger(GetVersionsRequest.class);
 
     private static class TickPair {
         Tick _native;
@@ -107,7 +104,7 @@ public class GetVersCall
     private final CfgLocalUser _cfgLocalUser;
 
     @Inject
-    public GetVersCall(IncomingStreams iss, OutgoingStreams oss, Metrics m,
+    public GetVersionsRequest(IncomingStreams iss, OutgoingStreams oss, Metrics m,
             TransportRoutingLayer trl, NativeVersionControl nvc, ImmigrantVersionControl ivc,
             MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb, TokenManager tokenManager,
             DirectoryService ds, TransManager tm, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
@@ -131,26 +128,28 @@ public class GetVersCall
         _cfgLocalUser = cfgLocalUser;
     }
 
-    public void request_(SIndex sidx, DID didTo)
+    public void issueRequest_(DID didTo, SIndex sidx)
         throws Exception
     {
+        l.debug("{} issue gv request for {}", didTo, sidx);
+
         // TODO: pass in a Set<SIndex> and stream multiple blocks...
-        PBGetVersCall.Builder bd = PBGetVersCall.newBuilder();
-        PBCore call = CoreUtil.newCore(Type.GET_VERS_REQ).setGetVersCall(bd).build();
+        PBGetVersionsRequest.Builder bd = PBGetVersionsRequest.newBuilder();
+        PBCore request = CoreProtocolUtil.newCoreMessage(Type.GET_VERSIONS_REQUEST).setGetVersionsRequest(bd).build();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        call.writeDelimitedTo(out);
+        request.writeDelimitedTo(out);
         // we modified the proto to allow streaming calls but the transport doesn't support that yet
         // so for now we send a single block and mark it as final
         // TODO: once transport refactor is done, switch to streaming calls
         makeBlock_(sidx, didTo).setIsLastBlock(true).build().writeDelimitedTo(out);
 
-        _trl.sendUnicast_(didTo, CoreUtil.typeString(call), CoreUtil.NOT_RPC, out);
+        _trl.sendUnicast_(didTo, CoreProtocolUtil.typeString(request), CoreProtocolUtil.NOT_RPC, out);
     }
 
-    private PBGetVersCallBlock.Builder makeBlock_(SIndex sidx, DID didTo) throws SQLException
+    private PBGetVersionsRequestBlock.Builder makeBlock_(SIndex sidx, DID didTo) throws SQLException
     {
-        PBGetVersCallBlock.Builder bd = PBGetVersCallBlock.newBuilder();
+        PBGetVersionsRequestBlock.Builder bd = PBGetVersionsRequestBlock.newBuilder();
         bd.setStoreId(_sidx2sid.get_(sidx).toPB());
 
         Version vKwlgLocalES = _nvc.getKnowledgeExcludeSelf_(sidx);
@@ -181,8 +180,7 @@ public class GetVersCall
         // If Store s has never been pulled from didTo, then we need all
         // object information from BASE onward.
         if (!_pulleddb.contains_(sidx, didTo)) bd.setFromBase(true);
-
-        l.debug("gv for {} to {}: {}", sidx, didTo, _pulleddb.contains_(sidx, didTo));
+        l.debug("{} create gv request block for {}: {}", didTo, sidx, _pulleddb.contains_(sidx, didTo));
 
         return bd;
     }
@@ -195,32 +193,34 @@ public class GetVersCall
         Tick _tickImmKwlgLocalES;  // ZERO if _did == Cfg.did()
     }
 
-    public void processCall_(DigestedMessage msg) throws Exception
+    public void processRequest_(DigestedMessage msg) throws Exception
     {
-        Util.checkPB(msg.pb().hasGetVersCall(), PBGetVersCall.class);
+        Util.checkPB(msg.pb().hasGetVersionsRequest(), PBGetVersionsRequest.class);
 
-        l.debug("process from " + msg.ep());
+        l.debug("{} process incoming gv request over {}", msg.did(), msg.tp());
 
-        PBCore core = CoreUtil.newCore(Type.GET_VERS_RESP)
-                .setGetVersReply(PBGetVersReply.newBuilder().build())
+        PBCore response = CoreProtocolUtil
+                .newCoreMessage(Type.GET_VERSIONS_RESPONSE)
+                .setGetVersionsResponse(PBGetVersionsResponse.newBuilder().build())
                 .build();
-        ByteArrayOutputStream os = write_(null, core);
+        ByteArrayOutputStream os = write_(null, response);
 
         ////////
         // write blocks
 
-        BlockSender sender = new BlockSender(msg.ep(), core.getRpcid(), CoreUtil.typeString(core), os);
+        BlockSender sender = new BlockSender(msg.ep(), response.getRpcid(), CoreProtocolUtil.typeString(response), os);
 
         try {
             if (msg.streamKey() != null) {
                 // NB: this code path should not be taken: streaming calls is not currently possible
-                processStreamCall_(msg.did(), msg.user(), msg.is(), msg.streamKey(), sender);
+                processRequestFromStream_(msg.did(), msg.user(), msg.is(), msg.streamKey(), sender);
             } else {
-                processAtomicCall_(msg.did(), msg.user(), msg.is(), sender);
+                processRequestBlock_(msg.did(), msg.user(), msg.is(), sender);
             }
 
             // EndOfStream marker
-            sender.writeBlock_(PBGetVersReplyBlock.newBuilder()
+            sender.writeBlock_(PBGetVersionsResponseBlock
+                    .newBuilder()
                     .setIsLastBlock(true)
                     .build(), null);
 
@@ -230,13 +230,12 @@ public class GetVersCall
         }
     }
 
-    private void processStreamCall_(DID from, UserID user, InputStream is, StreamKey key,
-            BlockSender sender)
+    private void processRequestFromStream_(DID from, UserID user, InputStream is, StreamKey key, BlockSender sender)
             throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "gv response");
         try {
-            while (processAtomicCall_(from, user, is, sender)) {
+            while (processRequestBlock_(from, user, is, sender)) {
                 is = _iss.recvChunk_(key, tk);
             }
         } finally {
@@ -244,12 +243,12 @@ public class GetVersCall
         }
     }
 
-    private boolean processAtomicCall_(DID from, UserID user, InputStream is, BlockSender sender)
+    private boolean processRequestBlock_(DID from, UserID user, InputStream is, BlockSender sender)
             throws Exception
     {
         while (is.available() > 0) {
-            PBGetVersCallBlock block = PBGetVersCallBlock.parseDelimitedFrom(is);
-            processBlock_(from, user, block, sender);
+            PBGetVersionsRequestBlock block = PBGetVersionsRequestBlock.parseDelimitedFrom(is);
+            processRequestBlock_(from, user, block, sender);
             if (block.getIsLastBlock()) {
                 if (is.available() > 0) throw new ExProtocolError();
                 return false;
@@ -258,43 +257,46 @@ public class GetVersCall
         return true;
     }
 
-    private void processBlock_(DID from, UserID user, PBGetVersCallBlock pb, BlockSender sender)
+    private void processRequestBlock_(DID from, UserID user, PBGetVersionsRequestBlock requestBlock, BlockSender sender)
             throws Exception
     {
-        SID sid = new SID(pb.getStoreId());
+        SID sid = new SID(requestBlock.getStoreId());
         SIndex sidx = _sid2sidx.getNullable_(sid);
 
         // ignore store that is not locally present
         // NB: can't throw because of batching...
         if (sidx == null) {
-            l.warn("gv from {} for absent {} {}", from, sid, _sid2sidx.getLocalOrAbsentNullable_(sid));
+            l.warn("{} gv request for absent {} {}", from, sid, _sid2sidx.getLocalOrAbsentNullable_(sid));
             return;
         }
 
         // see Rule 3 in acl.md
         if (!_lacl.check_(_cfgLocalUser.get(), sidx, Permissions.EDITOR)) {
-            l.info("we have no editor perm for {}", sidx);
+            l.warn("{} we have no editor perm for {}", from, sidx);
             return;
         }
 
         // see Rule 1 in acl.md
         if (!_lacl.check_(user, sidx, Permissions.VIEWER)) {
-            l.warn("{} on {} has no viewer perm for {}", user, from, sidx);
+            l.warn("{} ({}) has no viewer perm for {}", from, user, sidx);
             return;
         }
 
-        l.info("gv from {} for {} {}", from, sidx, pb.getFromBase());
+        l.info("{} receive gv request for {} {}", from, sidx, requestBlock.getFromBase());
 
-        Util.checkMatchingSizes(pb.getDeviceIdCount(), pb.getKnowledgeTickCount(),
-                pb.getDeviceIdCount(), pb.getImmigrantKnowledgeTickCount());
+        Util.checkMatchingSizes(
+                requestBlock.getDeviceIdCount(),
+                requestBlock.getKnowledgeTickCount(),
+                requestBlock.getDeviceIdCount(),
+                requestBlock.getImmigrantKnowledgeTickCount());
 
         Version vKwlgRemote = Version.empty();
         Version vImmKwlgRemote = Version.empty();
         // Load vKwlgRemote and vImmKwlgRemote with the contents of msg
-        for (int i = 0; i < pb.getDeviceIdCount(); i++) {
-            DID did = new DID(pb.getDeviceId(i));
-            long tick = pb.getKnowledgeTick(i);
-            long tickImm = pb.getImmigrantKnowledgeTick(i);
+        for (int i = 0; i < requestBlock.getDeviceIdCount(); i++) {
+            DID did = new DID(requestBlock.getDeviceId(i));
+            long tick = requestBlock.getKnowledgeTick(i);
+            long tickImm = requestBlock.getImmigrantKnowledgeTick(i);
             assert tick != 0 || tickImm != 0;
             if (tick != 0) vKwlgRemote.set_(did, tick);
             if (tickImm != 0) vImmKwlgRemote.set_(did, tickImm);
@@ -322,18 +324,17 @@ public class GetVersCall
             desExcludeRequester.add(de);
         }
 
-        boolean fromBase = pb.getFromBase();
+        boolean fromBase = requestBlock.getFromBase();
         Store s = _sidx2s.getThrows_(sidx);
         SenderFilterAndIndex sfi = s.senderFilters().get_(from, fromBase);
 
-        l.debug("send 2 {} 4 {} l {} r {} fs {}",
-                from, sidx, vKwlgLocalES, vKwlgRemote, (sfi == null ? null : sfi._filter));
+        l.info("{} issue gv response for {} l {} r {} fs {}", from, sidx, vKwlgLocalES, vKwlgRemote, (sfi == null ? null : sfi._filter));
 
         ////////
         // write the header
 
         PBStoreHeader.Builder bd = PBStoreHeader.newBuilder();
-        bd.setStoreId(pb.getStoreId());
+        bd.setStoreId(requestBlock.getStoreId());
         if (sfi != null) {
             bd.setSenderFilter(sfi._filter.toPB())
                 .setSenderFilterIndex(sfi._sfidx.getLong())
@@ -345,7 +346,7 @@ public class GetVersCall
 
         if (!headerSent && sfi != null) {
             // no block sent, need a dummy one to make sure the filter is sent
-            sender.writeBlock_(PBGetVersReplyBlock.newBuilder().setStore(h).build(), null);
+            sender.writeBlock_(PBGetVersionsResponseBlock.newBuilder().setStore(h).build(), null);
         }
     }
 
@@ -354,6 +355,7 @@ public class GetVersCall
      * @return a different stream than os if the old stream is full, and thus a
      * call to flush_() is required.
      */
+    // FIXME(AG): this is a transport failure - this class shouldn't have to care about this
     private ByteArrayOutputStream write_(@Nullable ByteArrayOutputStream os,
             AbstractMessageLite msg) throws IOException
     {
@@ -407,7 +409,7 @@ public class GetVersCall
 
             if (os2 != _os) {
                 if (_stream == null) {
-                    _tk = _tokenManager.acquireThrows_(Cat.SERVER, "GVSendReply");
+                    _tk = _tokenManager.acquireThrows_(Cat.SERVER, "gv response");
                     _stream = _oss.newStream(_ep, _tk);
                 }
 
@@ -451,7 +453,7 @@ public class GetVersCall
         boolean headerSent = false;
 
         for (DeviceEntry de : desExcludeTo) {
-            PBGetVersReplyBlock.Builder bdBlock = PBGetVersReplyBlock
+            PBGetVersionsResponseBlock.Builder bdBlock = PBGetVersionsResponseBlock
                     .newBuilder()
                     .setDeviceId(de._did.toPB());
 
@@ -465,8 +467,7 @@ public class GetVersCall
 
             Tick tickLast = Tick.ZERO;
             SOCID socidLast = null;
-            IDBIterator<NativeTickRow> it_ver = _nvc.getMaxTicks_(sidx, de._did,
-                    de._tickKwlgRemote);
+            IDBIterator<NativeTickRow> it_ver = _nvc.getMaxTicks_(sidx, de._did, de._tickKwlgRemote);
             try {
                 while (it_ver.next_()) {
                     NativeTickRow tr = it_ver.get_();
@@ -485,7 +486,7 @@ public class GetVersCall
                     if (++entryCount == ENTRIES_PER_BLOCK) {
                         sender.writeBlock_(bdBlock.build(), it_ver);
                         headerSent = true;
-                        bdBlock = PBGetVersReplyBlock.newBuilder();
+                        bdBlock = PBGetVersionsResponseBlock.newBuilder();
                         entryCount = 0;
                         if (it_ver.closed_()) {
                             it_ver = _nvc.getMaxTicks_(sidx, de._did, tickLast);
@@ -496,8 +497,7 @@ public class GetVersCall
                 it_ver.close_();
             }
 
-            Tick tickKwlgLocal = de._did.equals(Cfg.did()) ? tickLast :
-                de._tickKwlgLocalES;
+            Tick tickKwlgLocal = de._did.equals(Cfg.did()) ? tickLast : de._tickKwlgLocalES;
             if (tickKwlgLocal.getLong() > de._tickKwlgRemote.getLong()) {
                 bdBlock.setKnowledgeTick(tickKwlgLocal.getLong());
                 hasNonEntryFields = true;
@@ -522,7 +522,7 @@ public class GetVersCall
                     if (++entryCount == ENTRIES_PER_BLOCK) {
                         sender.writeBlock_(bdBlock.build(), it_imm);
                         headerSent = true;
-                        bdBlock = PBGetVersReplyBlock.newBuilder();
+                        bdBlock = PBGetVersionsResponseBlock.newBuilder();
                         entryCount = 0;
                         if (it_imm.closed_()) {
                             it_imm = _ivc.getMaxTicks_(sidx, de._did, immTickLast);
@@ -672,10 +672,10 @@ public class GetVersCall
         assert vAllSocidToDelete.withoutAliasTicks_().isZero_() :
                 vAllSocidToDelete + " " + loggedData;
 
-        // Throw an exception to abort the current GetVersCall response,
+        // Throw an exception to abort the current GetVersionsResponse,
         // but on the next try the db should be fixed.
-        ExAborted e = new ExAborted("GVC dup tick repair. " + loggedData);
-        SVClient.logSendDefectAsync(true, "GVC dup tick repair", e);
+        ExAborted e = new ExAborted("GVR dup tick repair. " + loggedData);
+        SVClient.logSendDefectAsync(true, "GVR dup tick repair", e);
         throw e;
     }
 }

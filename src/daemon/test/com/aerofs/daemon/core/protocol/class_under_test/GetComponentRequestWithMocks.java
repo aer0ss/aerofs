@@ -11,8 +11,8 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.protocol.GCCContentSender;
-import com.aerofs.daemon.core.protocol.GetComponentCall;
+import com.aerofs.daemon.core.protocol.ComponentContentSender;
+import com.aerofs.daemon.core.protocol.GetComponentRequest;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
@@ -24,7 +24,7 @@ import org.mockito.Mock;
 /**
  * This class contains a NewUpdates object with its supporting mock objects
  */
-public class GetComponentCallWithMocks extends AbstractClassUnderTestWithMocks
+public class GetComponentRequestWithMocks extends AbstractClassUnderTestWithMocks
 {
     public @Mock IEmigrantTargetSIDLister _emc;
     public @Mock PrefixVersionControl _pvc;
@@ -41,10 +41,10 @@ public class GetComponentCallWithMocks extends AbstractClassUnderTestWithMocks
     public @Mock UploadState _ulstate;
     public @Mock TokenManager _tokenManager;
 
-    public @InjectMocks GCCContentSender _gccContentSender;
-    public @InjectMocks GetComponentCall _gcc;
+    public @InjectMocks ComponentContentSender _gccContentSender;
+    public @InjectMocks GetComponentRequest _gcc;
 
-    public GetComponentCallWithMocks()
+    public GetComponentRequestWithMocks()
     {
         // Mockito doesn't inject an injected object (_gccContentSender) into another (_gcc).
         // So we do it manually.

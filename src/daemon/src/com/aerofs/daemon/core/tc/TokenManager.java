@@ -121,7 +121,7 @@ public class TokenManager implements IDumpStatMisc
             return Cfg.db().getInt(Key.MAX_API_UPLOADS);
         case HOUSEKEEPING:
             return Cfg.db().getInt(Key.MAX_HOUSEKEEPING_STACKS);
-        case DID2USER:
+        case RESOLVE_USER_ID:
             return Cfg.db().getInt(Key.MAX_D2U_STACKS);
         case UNLIMITED:
             return Integer.MAX_VALUE;

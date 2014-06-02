@@ -1,9 +1,9 @@
-package com.aerofs.daemon.core;
+package com.aerofs.daemon.core.net;
 
-import com.aerofs.daemon.core.net.device.DeviceLRU;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 
+// FIXME (AG): this class is deprecated and should be combined into DeviceLRU to create a single DeviceCache
 /**
  * See CoreQueue for design rationale of this class
  */

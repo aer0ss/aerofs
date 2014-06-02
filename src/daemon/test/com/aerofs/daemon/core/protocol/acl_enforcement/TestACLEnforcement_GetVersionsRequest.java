@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.protocol.acl_enforcement;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.protocol.class_under_test.GetVersCallWithMocks;
+import com.aerofs.daemon.core.protocol.class_under_test.GetVersionsRequestWithMocks;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.SIndex;
@@ -29,10 +29,10 @@ import static org.mockito.Mockito.when;
 /**
  * See acl.md for definitions of ACL enforcement rules.
  */
-public class TestACLEnforcement_GetVersCall extends AbstractTest
+public class TestACLEnforcement_GetVersionsRequest extends AbstractTest
 {
-    GetVersCallWithMocks caller = new GetVersCallWithMocks();
-    GetVersCallWithMocks replier = new GetVersCallWithMocks();
+    GetVersionsRequestWithMocks caller = new GetVersionsRequestWithMocks();
+    GetVersionsRequestWithMocks replier = new GetVersionsRequestWithMocks();
 
     SIndex _sidxViewer = SINDEXES[0];
 
@@ -82,7 +82,7 @@ public class TestACLEnforcement_GetVersCall extends AbstractTest
     {
         connectCallerToReplier();
 
-        caller._gvc.request_(_sidxViewer, DID.generate());
+        caller._gvc.issueRequest_(DID.generate(), _sidxViewer);
 
         // Verify the replier sends no version data. Because the replier always sends a reply, it's
         // easier to verify that the replier doesn't interact with the local version subsystem than
@@ -101,7 +101,7 @@ public class TestACLEnforcement_GetVersCall extends AbstractTest
                     throws Throwable
             {
                 ByteArrayOutputStream os = (ByteArrayOutputStream)invocation.getArguments()[3];
-                replier._gvc.processCall_(newDigestedMessage(caller.user(), os));
+                replier._gvc.processRequest_(newDigestedMessage(caller.user(), os));
                 return null;
             }
         });

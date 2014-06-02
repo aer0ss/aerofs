@@ -8,13 +8,13 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
 import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
 import com.aerofs.daemon.core.protocol.MetaDiff;
-import com.aerofs.daemon.core.protocol.class_under_test.GetComponentCallWithMocks;
+import com.aerofs.daemon.core.protocol.class_under_test.GetComponentRequestWithMocks;
 import com.aerofs.daemon.core.protocol.class_under_test.GetComponentReplyWithMocks;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -26,7 +26,7 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
-import com.aerofs.proto.Core.PBGetComCall;
+import com.aerofs.proto.Core.PBGetComponentRequest;
 import com.aerofs.proto.Core.PBMeta;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.Maps;
@@ -56,9 +56,9 @@ import static org.mockito.Mockito.when;
 /**
  * See acl.md for definitions of ACL enforcement rules.
  */
-public class TestACLEnforcement_GetComponentReply extends AbstractTest
+public class TestACLEnforcement_GetComponentResponse extends AbstractTest
 {
-    GetComponentCallWithMocks replier = new GetComponentCallWithMocks();
+    GetComponentRequestWithMocks replier = new GetComponentRequestWithMocks();
     GetComponentReplyWithMocks caller = new GetComponentReplyWithMocks();
 
     SIndex _sidxViewer = SINDEXES[0];
@@ -100,7 +100,7 @@ public class TestACLEnforcement_GetComponentReply extends AbstractTest
                     throws Throwable
             {
                 PBCore pb = (PBCore)invocation.getArguments()[1];
-                caller._gcr.processReply_(k.socid(), newDigestedMessage(replier.user(), pb),
+                caller._gcr.processResponse_(k.socid(), newDigestedMessage(replier.user(), pb),
                         mock(IDownloadContext.class));
                 return null;
             }
@@ -141,7 +141,7 @@ public class TestACLEnforcement_GetComponentReply extends AbstractTest
                     throws Throwable
             {
                 ByteArrayOutputStream os = (ByteArrayOutputStream)invocation.getArguments()[3];
-                caller._gcr.processReply_(k.socid(), newDigestedMessage(replier.user(), os),
+                caller._gcr.processResponse_(k.socid(), newDigestedMessage(replier.user(), os),
                         mock(IDownloadContext.class));
                 return null;
             }
@@ -173,9 +173,11 @@ public class TestACLEnforcement_GetComponentReply extends AbstractTest
     private void run(SOCKID k)
             throws Exception
     {
-        // compose a GetComCall for gcc.sendReply_() to consume when sending the reply.
-        PBCore call = CoreUtil.newCall(Type.GET_COM_CALL)
-                .setGetComCall(PBGetComCall.newBuilder()
+        // compose a GetComCall for gcc.sendResponse_() to consume when sending the reply.
+        PBCore request = CoreProtocolUtil
+                .newRequest(Type.GET_COMPONENT_REQUEST)
+                .setGetComponentRequest(PBGetComponentRequest
+                        .newBuilder()
                         .setStoreId(replier._sidx2sid.getThrows_(k.sidx()).toPB())
                         .setObjectId(k.oid().toPB())
                         .setComId(k.cid().getInt())
@@ -183,7 +185,7 @@ public class TestACLEnforcement_GetComponentReply extends AbstractTest
                 .build();
 
         try {
-            replier._gcc.sendReply_(newDigestedMessage(caller.user(), call), k, _v);
+            replier._gcc.sendResponse_(newDigestedMessage(caller.user(), request), k, _v);
             fail();
         } catch (ExSenderHasNoPerm ignored) {}
     }

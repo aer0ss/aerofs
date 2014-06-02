@@ -8,7 +8,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.CoreDeviceLRU;
+import com.aerofs.daemon.core.net.CoreDeviceLRU;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.core.net.IUnicastInputLayer;

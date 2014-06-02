@@ -3,7 +3,6 @@ package com.aerofs.daemon.core.protocol;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.CA;
@@ -11,9 +10,9 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.net.Metrics;
-import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
+import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.Cat;
@@ -31,8 +30,7 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Core.PBCore;
-import com.aerofs.proto.Core.PBGetComReply;
-import com.aerofs.proto.Core.PBGetComReply.Builder;
+import com.aerofs.proto.Core.PBGetComponentResponse;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
@@ -54,12 +52,9 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
-/**
- * GCC: GetComponentCall
- */
-public class GCCContentSender
+public class ComponentContentSender
 {
-    private static final Logger l = Loggers.getLogger(GCCContentSender.class);
+    private static final Logger l = Loggers.getLogger(ComponentContentSender.class);
 
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
@@ -110,8 +105,9 @@ public class GCCContentSender
     private final Ongoing _ongoing = new Ongoing();
 
     @Inject
-    public  GCCContentSender(UploadState ulstate, OutgoingStreams oss, TransportRoutingLayer trl, IPhysicalStorage ps,
-            NativeVersionControl nvc, Metrics m, DirectoryService ds, TokenManager tokenManager)
+    public ComponentContentSender(UploadState ulstate, OutgoingStreams oss,
+            TransportRoutingLayer trl, IPhysicalStorage ps, NativeVersionControl nvc, Metrics m,
+            DirectoryService ds, TokenManager tokenManager)
     {
         _ulstate = ulstate;
         _oss = oss;
@@ -132,8 +128,14 @@ public class GCCContentSender
     }
 
     // raw file bytes are appended after BPCore
-    ContentHash send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply, Version vLocal,
-            long prefixLen, Version vPrefix, @Nullable ContentHash remoteHash)
+    ContentHash send_(
+            Endpoint ep,
+            SOCKID k,
+            PBCore.Builder bdCore,
+            PBGetComponentResponse.Builder bdResponse,
+            Version vLocal,
+            long prefixLen, Version vPrefix,
+            @Nullable ContentHash remoteHash)
             throws Exception
     {
         // guaranteed by the caller
@@ -147,20 +149,28 @@ public class GCCContentSender
         IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), k.kidx());
 
         assert mtime >= 0 : Joiner.on(' ').join(k, oa, mtime);
-        bdReply.setMtime(mtime);
+        bdResponse.setMtime(mtime);
 
         try {
-            return send_(ep, k, bdCore, bdReply, vLocal, prefixLen, vPrefix, remoteHash, pf,
-                    fileLength, mtime);
+            return send_(ep, k, bdCore, bdResponse, vLocal, prefixLen, vPrefix, remoteHash, pf, fileLength, mtime);
         } catch (ExUpdateInProgress e) {
             pf.onUnexpectedModification_(mtime);
             throw e;
         }
     }
 
-    private ContentHash send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply,
-            Version vLocal, long prefixLen, Version vPrefix, @Nullable ContentHash remoteHash,
-            IPhysicalFile pf, long fileLength, long mtime)
+    private ContentHash send_(
+            Endpoint ep,
+            SOCKID k,
+            PBCore.Builder bdCore,
+            PBGetComponentResponse.Builder bdResponse,
+            Version vLocal,
+            long prefixLen,
+            Version vPrefix,
+            @Nullable ContentHash remoteHash,
+            IPhysicalFile pf,
+            long fileLength,
+            long mtime)
             throws Exception
     {
         // Send hash if available.
@@ -178,22 +188,22 @@ public class GCCContentSender
         if (h != null) {
             if (remoteHash != null && h.equals(remoteHash)) {
                 contentIsSame = true;
-                bdReply.setIsContentSame(true);
+                bdResponse.setIsContentSame(true);
                 l.info("Content same");
             } else {
                 hashLength = h.toPB().size();
                 l.debug("Sending hash length: {}", hashLength);
                 // TODO: drop hash length on next proto version bump
-                bdReply.setHashLength(hashLength);
+                bdResponse.setHashLength(hashLength);
             }
         }
 
-        PBCore core = bdCore.setGetComReply(bdReply).build();
-        ByteArrayOutputStream os = Util.writeDelimited(core);
+        PBCore response = bdCore.setGetComponentResponse(bdResponse).build();
+        ByteArrayOutputStream os = Util.writeDelimited(response);
         if (os.size() <= _m.getMaxUnicastSize_() && contentIsSame) {
-            sendContentSame_(ep, os, core);
+            sendContentSame_(ep, os, response);
         } else if (os.size() + hashLength + fileLength <= _m.getMaxUnicastSize_()) {
-            return sendSmall_(ep, k, os, core, mtime, fileLength, h, pf);
+            return sendSmall_(ep, k, os, response, mtime, fileLength, h, pf);
         } else {
             long newPrefixLen = vLocal.equals(vPrefix) ? prefixLen : 0;
 
@@ -202,16 +212,19 @@ public class GCCContentSender
 
             // because the original builders have built, we have
             // to create a new builder
-            Builder bd = PBGetComReply.newBuilder()
-                    .mergeFrom(core.getGetComReply())
+            PBGetComponentResponse.Builder bd = PBGetComponentResponse
+                    .newBuilder()
+                    .mergeFrom(response.getGetComponentResponse())
                     .setFileTotalLength(fileLength)
                     .setPrefixLength(newPrefixLen);
             if (h != null) {
                 bd = bd.setHashLength(hashLength);
             }
 
-            os = Util.writeDelimited(PBCore.newBuilder(core)
-                    .setGetComReply(bd).build());
+            os = Util.writeDelimited(PBCore
+                    .newBuilder(response)
+                    .setGetComponentResponse(bd)
+                    .build());
 
             Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "GCRSendBig");
             try {
@@ -223,10 +236,10 @@ public class GCCContentSender
         return null;
     }
 
-    private void sendContentSame_(Endpoint ep, ByteArrayOutputStream os, PBCore reply)
+    private void sendContentSame_(Endpoint ep, ByteArrayOutputStream os, PBCore response)
             throws Exception
     {
-        _trl.sendUnicast_(ep, CoreUtil.typeString(reply), reply.getRpcid(), os);
+        _trl.sendUnicast_(ep, CoreProtocolUtil.typeString(response), response.getRpcid(), os);
     }
 
     private ContentHash sendSmall_(Endpoint ep, SOCKID k, ByteArrayOutputStream os, PBCore reply,
@@ -251,7 +264,7 @@ public class GCCContentSender
                         + pf.getLastModificationOrCurrentTime_() + "," + pf.getLength_() + ")");
             }
 
-            _trl.sendUnicast_(ep, CoreUtil.typeString(reply), reply.getRpcid(), os);
+            _trl.sendUnicast_(ep, CoreProtocolUtil.typeString(reply), reply.getRpcid(), os);
         } finally {
             if (is != null) {
                 is.close();

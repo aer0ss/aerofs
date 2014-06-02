@@ -15,8 +15,8 @@ import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
-import com.aerofs.daemon.core.protocol.GetComponentCall;
-import com.aerofs.daemon.core.protocol.GetComponentReply;
+import com.aerofs.daemon.core.protocol.GetComponentRequest;
+import com.aerofs.daemon.core.protocol.GetComponentResponse;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.dependence.DownloadDeadlockResolver;
@@ -88,7 +88,7 @@ class AsyncDownload extends Download
 
         @Inject
         public Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
-                GetComponentCall gcc, GetComponentReply gcr, To.Factory factTo,
+                GetComponentRequest gcc, GetComponentResponse gcr, To.Factory factTo,
                 NativeVersionControl nvc, DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid)
         {
             super(ds, dlstate, dls, factTo, gcc, gcr, ddr, sidx2sid);
