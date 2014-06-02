@@ -95,5 +95,17 @@
         </form>
         </%def>
     </%modal:modal>
+
+    <%modal:modal>
+        <%def name="id()">destroy-folder-modal</%def>
+        <%def name="title()">Deleting Folder</%def>
+        Are you sure you want to delete "<span id="destroyed-folder-name">folder_name</span>"? This will <strong>delete the folder and all its contents</strong> for you and for <strong>everyone</strong> that the folder is shared with.
+        <%def name="footer()">
+        <form id="modal-destroy-form" method="post">
+                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <input href="#" class="btn btn-danger" type="submit" value="Delete">
+        </form>
+        </%def>
+    </%modal:modal>
 </%def>
 

@@ -364,13 +364,21 @@ def _pb_permissions_from_json(permission_list):
     request_method = 'POST'
 )
 def json_leave_shared_folder(request):
-    _ = request.translate
-
     store_id = _decode_store_id(request.json_body['store_id'])
-
     sp = get_rpc_stub(request)
-
     exception2error(sp.leave_shared_folder, store_id, {})
+
+
+@view_config(
+    route_name = 'json.destroy_shared_folder',
+    renderer = 'json',
+    permission = 'user',
+    request_method = 'POST'
+)
+def json_destroy_shared_folder(request):
+    store_id = _decode_store_id(request.json_body['store_id'])
+    sp = get_rpc_stub(request)
+    exception2error(sp.destroy_shared_folder, store_id, {})
 
 
 @view_config(
@@ -479,8 +487,6 @@ def json_set_shared_folder_perm(request):
     request_method = 'POST'
 )
 def json_delete_shared_folder_perm(request):
-    _ = request.translate
-
     storeid = _decode_store_id(request.json_body['store_id'])
     userid = request.json_body['user_id']
 

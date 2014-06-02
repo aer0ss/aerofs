@@ -1,4 +1,4 @@
-<div class="sf-actions btn-group">
+<div class="sf-actions btn-group pull-right">
   <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
     Actions <span class="caret"></span>
   </button>
@@ -19,6 +19,12 @@
           <img src="${request.static_path('web:static/img/icons/exit.svg')}" onerror="this.onerror=null; this.src='${request.static_path('web:static/img/icons/exit.png')}'"/>
         </span>
           Leave
+      </a>
+    </li>
+    <li>
+      <a href="#" class="${open_modal_class}" data-${data_sid}="${sid}" data-${data_name}="${folder_name}" data-action="destroy">
+        <span class="glyphicon glyphicon-trash"></span> 
+          Delete
       </a>
     </li>
   </ul>

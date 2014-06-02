@@ -103,6 +103,7 @@
             var $link;
             var $manageModal = $('#manage-modal');
             var $leaveModal = $('#leave-folder-modal');
+            var $destroyModal = $('#destroy-folder-modal');
 
             $('.${open_modal_class}').live('click', function () {
                 $link = $(this);
@@ -110,8 +111,11 @@
                 if ($link.data('action') == 'manage') {
                     refreshManageModal();
                 } else if ($link.data('action') == 'leave') {
-                    refreshLeaveModal();
+                    refreshLeaveModal('left');
                     myModal = $leaveModal;
+                } else if ($link.data('action') == 'destroy') {
+                    refreshLeaveModal('destroyed');
+                    myModal = $destroyModal;
                 }
                 myModal.modal('show');
             });
@@ -199,12 +203,14 @@
                 if ($link.data('data-action') == 'manage') {
                     refreshManageModal();
                 } else if ($link.data('data-action') == 'leave') {
-                    refreshLeaveModal()
+                    refreshLeaveModal('left');
+                } else if ($link.data('data-action') == 'destroy') {
+                    refreshLeaveModal('destroyed');
                 }
             }
 
-            function refreshLeaveModal() {
-                $('#left-folder-name').text(modalFolderName());
+            function refreshLeaveModal(folder) {
+                $('#' + folder + '-folder-name').text(modalFolderName());
             }
 
             function refreshManageModal() {
@@ -508,6 +514,28 @@
                    for some reason they won't fire if I do that. :/ */
                 refreshTable();
                 $leaveModal.modal('hide');
+                return false;
+            });
+
+            $('#modal-destroy-form').submit(function(ev){
+                var sid = modalSID();
+                var name = modalFolderName();
+                var permissions = $('#modal-invite-role').data("permissions");
+                $.postJSON(
+                    "${request.route_path('json.destroy_shared_folder')}",
+                    {
+                        permissions: permissions,
+                        store_id: sid,
+                        folder_name: name,
+                        user_id: '${session_user}',
+                    }
+                ).done(function(e) {
+                    showSuccessMessage('You have deleted folder "'+ name +'".');
+                }).fail(showErrorMessageFromResponse);
+                /* Table refresh and modal hiding ought to be inside an .always(), but 
+                   for some reason they won't fire if I do that. :/ */
+                refreshTable();
+                $destroyModal.modal('hide');
                 return false;
             });
 
