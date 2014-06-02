@@ -19,7 +19,8 @@ public class HttpSessionRemoteAddress extends AbstractHttpSession
     public void init(HttpServletRequest req)
             throws IOException
     {
-        String remoteAddress = req.getHeader("X-Forwarded-For");
+        // N.B. our nginx config sets X-Real-IP to $remote_addr
+        String remoteAddress = req.getHeader("X-Real-IP");
         getSession().setAttribute(SESS_ATTR_REMOTE_ADDRESS, remoteAddress);
     }
 
