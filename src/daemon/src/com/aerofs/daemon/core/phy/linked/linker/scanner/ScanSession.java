@@ -433,7 +433,7 @@ class ScanSession
         //
         // In such cases, we MUST NOT add the children of BAR to the deletion buffer. MightCreate
         // will then take care of renaming the old "BAR" to avoid a conflict.
-        if (!oaParent.soid().oid().isRoot() && _f._rh.isNonRepresentable(oaParent)) return;
+        if (!oaParent.soid().oid().isRoot() && _f._rh.isNonRepresentable_(oaParent)) return;
 
         // the caller guarantees that the OA is not null
         SOID soidParent = oaParent.soid();
@@ -454,7 +454,7 @@ class ScanSession
                 // 1. expelled objects
                 // 2. files whose master branch was not succcessfully downloaded yet
                 // 3. non-representable objects
-                if (!(MightDelete.shouldNotDelete(oa) || _f._rh.isNonRepresentable(oa))) {
+                if (!(MightDelete.shouldNotDelete(oa) || _f._rh.isNonRepresentable_(oa))) {
                     l.debug("hold_ on {}", soid);
                     _holder.hold_(soid);
                 }

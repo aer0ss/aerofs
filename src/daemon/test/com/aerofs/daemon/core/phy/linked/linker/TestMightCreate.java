@@ -67,7 +67,7 @@ public class TestMightCreate extends AbstractMightCreateTest
                     public Boolean answer(InvocationOnMock invocation) throws Throwable
                     {
                         return !Sets.intersection((Set<Operation>)invocation.getArguments()[0],
-                                EnumSet.of(Operation.Create, Operation.Replace)).isEmpty();
+                                EnumSet.of(Operation.CREATE, Operation.REPLACE)).isEmpty();
                     }
                 });
 
@@ -176,7 +176,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("f1", fnt));
 
-        verifyOperationExecuted(Operation.Update, soid, soid, "f1");
+        verifyOperationExecuted(Operation.UPDATE, soid, soid, "f1");
     }
 
     @Test
@@ -187,7 +187,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
 
-        verifyOperationExecuted(Operation.Update, soid, soid, "d0");
+        verifyOperationExecuted(Operation.UPDATE, soid, soid, "d0");
     }
 
     @Test
@@ -198,7 +198,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("f1-moved", fnt));
 
-        verifyOperationExecuted(Operation.Update, soid, null, "f1-moved");
+        verifyOperationExecuted(Operation.UPDATE, soid, null, "f1-moved");
     }
 
     @Test
@@ -209,7 +209,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.EXISTING_FOLDER, mightCreate("d0-moved", fnt));
 
-        verifyOperationExecuted(Operation.Update, soid, null, "d0-moved");
+        verifyOperationExecuted(Operation.UPDATE, soid, null, "d0-moved");
     }
 
     @Test
@@ -219,7 +219,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("f0", fnt));
 
-        verifyOperationExecuted(Operation.Create, null, null, "f0");
+        verifyOperationExecuted(Operation.CREATE, null, null, "f0");
     }
 
     @Test
@@ -229,7 +229,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d1", fnt));
 
-        verifyOperationExecuted(Operation.Create, null, null, "d1");
+        verifyOperationExecuted(Operation.CREATE, null, null, "d1");
     }
 
     @Test
@@ -241,7 +241,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("F1", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Create),
+        verifyOperationExecuted(EnumSet.of(Operation.CREATE),
                 null, null, "F1");
     }
 
@@ -254,7 +254,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("D0", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Create),
+        verifyOperationExecuted(EnumSet.of(Operation.CREATE),
                 null, null, "D0");
     }
 
@@ -267,7 +267,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("f1", fnt));
 
-        verifyOperationExecuted(Operation.Replace, null, soid, "f1");
+        verifyOperationExecuted(Operation.REPLACE, null, soid, "f1");
     }
 
     @Test
@@ -280,7 +280,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("f1", fnt2));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Replace), src, soid, "f1");
+        verifyOperationExecuted(EnumSet.of(Operation.REPLACE), src, soid, "f1");
     }
 
     @Test
@@ -292,7 +292,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d0", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Replace),
+        verifyOperationExecuted(EnumSet.of(Operation.REPLACE),
                 null, soid, "d0");
     }
 
@@ -306,7 +306,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("d0", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.UPDATE, Operation.RENAME_TARGET),
                 src, soid, "d0");
     }
 
@@ -320,7 +320,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.UPDATE, Operation.RENAME_TARGET),
                 src, soid, "d0");
     }
 
@@ -333,7 +333,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.CREATE, Operation.RENAME_TARGET),
                 null, soid, "a2");
     }
 
@@ -348,7 +348,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Replace),
+        verifyOperationExecuted(EnumSet.of(Operation.REPLACE),
                 null, soid, "a2");
     }
 
@@ -360,7 +360,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("f2", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RandomizeSourceFID),
+        verifyOperationExecuted(EnumSet.of(Operation.CREATE, Operation.RANDOMIZE_SOURCE_FID),
                 soid, null, "f2");
     }
 
@@ -372,7 +372,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("d2", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RandomizeSourceFID),
+        verifyOperationExecuted(EnumSet.of(Operation.CREATE, Operation.RANDOMIZE_SOURCE_FID),
                 soid, null, "d2");
     }
 
@@ -385,7 +385,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("f1", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.CREATE, Operation.RENAME_TARGET),
                 null, soid, "f1");
     }
 
@@ -398,7 +398,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("d0", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.CREATE, Operation.RENAME_TARGET),
                 null, soid, "d0");
     }
 
@@ -411,7 +411,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d-expelled", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.CREATE, Operation.RENAME_TARGET),
                 null, soid, "d-expelled");
     }
 
@@ -426,7 +426,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.EXISTING_FOLDER, mightCreate("f1", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.UPDATE, Operation.RENAME_TARGET),
                 source, target, "f1");
     }
 
@@ -441,7 +441,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.FILE, mightCreate("d0", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.UPDATE, Operation.RENAME_TARGET),
                 source, target, "d0");
     }
 
@@ -457,7 +457,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         assertEquals(Result.FILE, mightCreate("d0", fnt));
 
         verifyOperationExecuted(
-                EnumSet.of(Operation.Create, Operation.RandomizeSourceFID, Operation.RenameTarget),
+                EnumSet.of(Operation.CREATE, Operation.RANDOMIZE_SOURCE_FID, Operation.RENAME_TARGET),
                 source, target, "d0");
     }
 
@@ -467,7 +467,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID target = ds.resolveNullable_(mkpath("f1"));
         generateFileFnt(target);
 
-        when(rh.isNonRepresentable(oaAt("f1"))).thenReturn(true);
+        when(rh.isNonRepresentable_(oaAt("f1"))).thenReturn(true);
 
         SOID source = ds.resolveNullable_(mkpath("d4"));
         FIDAndType fnt = generateFileFnt(source);
@@ -475,7 +475,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         assertEquals(Result.FILE, mightCreate("f1", fnt));
 
         verifyOperationExecuted(
-                EnumSet.of(Operation.Create, Operation.RandomizeSourceFID, Operation.RenameTarget, Operation.NonRepresentableTarget),
+                EnumSet.of(Operation.CREATE, Operation.RANDOMIZE_SOURCE_FID, Operation.RENAME_TARGET, Operation.NON_REPRESENTABLE_TARGET),
                 source, target, "f1");
     }
 
@@ -490,7 +490,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         assertEquals(Result.EXISTING_FOLDER, mightCreate("d-expelled", fnt));
 
-        verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
+        verifyOperationExecuted(EnumSet.of(Operation.UPDATE, Operation.RENAME_TARGET),
                 source, target, "d-expelled");
     }
 
@@ -501,13 +501,13 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateFileFnt(soid);
         FIDAndType fnt = generateFileFnt();
 
-        when(rh.isNonRepresentable(oaAt("f1"))).thenReturn(true);
+        when(rh.isNonRepresentable_(oaAt("f1"))).thenReturn(true);
 
         assertEquals(Result.FILE, mightCreate("f1", fnt));
 
         verifyOperationExecuted(
-                EnumSet.of(Operation.Create, Operation.RenameTarget,
-                        Operation.NonRepresentableTarget),
+                EnumSet.of(Operation.CREATE, Operation.RENAME_TARGET,
+                        Operation.NON_REPRESENTABLE_TARGET),
                 null, soid, "f1");
     }
 
@@ -518,13 +518,13 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateDirFnt(soid);
         FIDAndType fnt = generateDirFnt();
 
-        when(rh.isNonRepresentable(oaAt("d0"))).thenReturn(true);
+        when(rh.isNonRepresentable_(oaAt("d0"))).thenReturn(true);
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d0", fnt));
 
         verifyOperationExecuted(
-                EnumSet.of(Operation.Create, Operation.RenameTarget,
-                        Operation.NonRepresentableTarget),
+                EnumSet.of(Operation.CREATE, Operation.RENAME_TARGET,
+                        Operation.NON_REPRESENTABLE_TARGET),
                 null, soid, "d0");
     }
 
@@ -560,7 +560,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         when(dr.getFIDAndTypeNullable(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
 
         assertEquals(Result.FILE, mightCreate("F1", fnt));
-        verifyOperationExecuted(EnumSet.of(Operation.Update),
+        verifyOperationExecuted(EnumSet.of(Operation.UPDATE),
                 soid, null, "F1");
     }
 }

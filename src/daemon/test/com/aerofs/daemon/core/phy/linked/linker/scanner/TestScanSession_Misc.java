@@ -322,7 +322,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     {
         mockPhysicalDir(pRoot);
 
-        when(rh.isNonRepresentable(oaFor("d2")))
+        when(rh.isNonRepresentable_(oaFor("d2")))
                 .thenReturn(true);
 
         factSS.create_(root, Collections.singleton(pRoot), true).scan_();
@@ -342,7 +342,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
         mockPhysicalDir(pRoot);
         mockPhysicalDir(Util.join(pRoot, "d2"));
 
-        when(rh.isNonRepresentable(oaFor("d2")))
+        when(rh.isNonRepresentable_(oaFor("d2")))
                 .thenReturn(true);
 
         factSS.create_(root, Collections.singleton(pRoot), true).scan_();

@@ -41,7 +41,7 @@ public class TestMightCreate_SameFIDDiffPathSameType extends AbstractTestMightCr
         shouldRenameFromf1(namef2);
 
         verifyOperationExecuted(
-                EnumSet.of(Operation.Update, Operation.RenameTarget),
+                EnumSet.of(Operation.UPDATE, Operation.RENAME_TARGET),
                 namef2);
     }
 
@@ -53,7 +53,7 @@ public class TestMightCreate_SameFIDDiffPathSameType extends AbstractTestMightCr
     {
         shouldRenameFromf1(namef1.toUpperCase());
 
-        verifyOperationExecuted(Operation.Update, namef1.toUpperCase());
+        verifyOperationExecuted(Operation.UPDATE, namef1.toUpperCase());
     }
 
     /**
@@ -69,7 +69,7 @@ public class TestMightCreate_SameFIDDiffPathSameType extends AbstractTestMightCr
         assertNull(ds.resolveNullable_(mkpath(nameNew)));
         shouldRenameFromf1(nameNew);
 
-        verifyOperationExecuted(Operation.Update, nameNew);
+        verifyOperationExecuted(Operation.UPDATE, nameNew);
     }
 
     private void shouldRenameFromf1(String physicalName) throws Exception

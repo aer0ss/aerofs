@@ -97,7 +97,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
             throws IOException, SQLException
     {
         LinkedFile lf = _s.newFile_(path, kidx,
-                op == PhysicalOp.APPLY ? PathType.Destination : PathType.Source);
+                op == PhysicalOp.APPLY ? PathType.DESTINATION : PathType.SOURCE);
 
         l.debug("move {} -> {} {}", this, lf, op);
 

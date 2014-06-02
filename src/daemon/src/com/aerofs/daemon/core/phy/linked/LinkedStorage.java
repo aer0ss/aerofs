@@ -118,7 +118,7 @@ public class LinkedStorage implements IPhysicalStorage
     @Override
     public IPhysicalFile newFile_(ResolvedPath path, KIndex kidx) throws SQLException
     {
-        return newFile_(path, kidx, PathType.Source);
+        return newFile_(path, kidx, PathType.SOURCE);
     }
 
     LinkedFile newFile_(ResolvedPath path, KIndex kidx, PathType type) throws SQLException
@@ -132,7 +132,7 @@ public class LinkedStorage implements IPhysicalStorage
     @Override
     public IPhysicalFolder newFolder_(ResolvedPath path) throws SQLException
     {
-        return newFolder_(path, PathType.Source);
+        return newFolder_(path, PathType.SOURCE);
     }
 
     LinkedFolder newFolder_(ResolvedPath path, PathType type) throws SQLException
@@ -238,7 +238,7 @@ public class LinkedStorage implements IPhysicalStorage
                 public @Nullable Void apply(@Nullable SOID soid)
                 {
                     try {
-                        bd.add(new NonRepresentableObject(soid, _rh.conflict(soid)));
+                        bd.add(new NonRepresentableObject(soid, _rh.getConflict_(soid)));
                     } catch (SQLException e) {
                         l.error("could not determine conflict status {}", soid, e);
                     }

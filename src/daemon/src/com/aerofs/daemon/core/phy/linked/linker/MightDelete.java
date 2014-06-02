@@ -40,7 +40,7 @@ public class MightDelete
 
         OA oa = _ds.getOA_(soid);
         // must not add object to the deletion buffer if it is not expected to be present
-        if (shouldNotDelete(oa) || _rh.isNonRepresentable(oa)) return;
+        if (shouldNotDelete(oa) || _rh.isNonRepresentable_(oa)) return;
 
         delBuffer.add_(soid);
 

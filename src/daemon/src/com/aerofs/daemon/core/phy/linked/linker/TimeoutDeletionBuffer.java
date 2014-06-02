@@ -357,7 +357,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         if (oa.isFile() && oa.caMasterNullable() == null) return false;
         // likewise, NROs should not appear in the deletion buffer but again we
         // need to be extra defensive about deletions so we double check here
-        if (_rh.isNonRepresentable(oa)) return false;
+        if (_rh.isNonRepresentable_(oa)) return false;
 
         Path path = _ds.resolve_(oa);
         String absRoot = _lrm.absRootAnchor_(path.sid());

@@ -23,7 +23,7 @@ public class TestMightCreate_DiffFIDSamePathSameType extends AbstractTestMightCr
 
         mightCreate("f1");
 
-        verifyOperationExecuted(Operation.Replace, null, soidF1, "f1");
+        verifyOperationExecuted(Operation.REPLACE, null, soidF1, "f1");
     }
 
     @Test
@@ -33,6 +33,6 @@ public class TestMightCreate_DiffFIDSamePathSameType extends AbstractTestMightCr
 
         mightCreate("f5");
 
-        verifyOperationExecuted(Operation.Replace, null, soidF5, "f5");
+        verifyOperationExecuted(Operation.REPLACE, null, soidF5, "f5");
     }
 }

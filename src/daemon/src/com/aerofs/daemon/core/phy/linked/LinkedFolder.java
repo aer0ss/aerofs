@@ -85,7 +85,7 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
             throws IOException, SQLException
     {
         LinkedFolder lf = _s.newFolder_(to,
-                op == PhysicalOp.APPLY ? PathType.Destination : PathType.Source);
+                op == PhysicalOp.APPLY ? PathType.DESTINATION : PathType.SOURCE);
         l.debug("move {} -> {} {}", this, lf, op);
 
         switch (op) {

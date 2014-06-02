@@ -25,7 +25,7 @@ public class TestMightCreate_SameFIDSamePathSameType extends AbstractTestMightCr
     public void shouldUpdate() throws Exception
     {
         mightCreate("f1");
-        verifyOperationExecuted(Operation.Update, "f1");
+        verifyOperationExecuted(Operation.UPDATE, "f1");
     }
 
     @Test

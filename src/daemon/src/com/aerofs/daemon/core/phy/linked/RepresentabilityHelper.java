@@ -86,15 +86,15 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
         _ds = ds;
     }
 
-    public boolean isNonRepresentable(OA oa) throws SQLException
+    public boolean isNonRepresentable_(OA oa) throws SQLException
     {
         return _os.isInvalidFileName(oa.name()) || _nrodb.isNonRepresentable_(oa.soid());
     }
 
     enum PathType
     {
-        Source,         // the path is assumed to be occupied by an existing object
-        Destination     // the path is assumed to be free so that an object may be moved there
+        SOURCE,         // the path is assumed to be occupied by an existing object
+        DESTINATION     // the path is assumed to be free so that an object may be moved there
     }
 
     /**
@@ -119,7 +119,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
         // iterate upwards over path components to find the first non-representable object, if any
         for (int i = elems.length - 1; i >= 0; --i) {
             String component = elems[i];
-            boolean nro = (type == PathType.Source || i < elems.length - 1)
+            boolean nro = (type == PathType.SOURCE || i < elems.length - 1)
                     && _nrodb.isNonRepresentable_(path.soids.get(i));
             if (nro || _os.isInvalidFileName(component)) {
                 // reached first NRO
@@ -201,7 +201,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
             if (soid == null) continue;
             try {
                 OA oa = _ds.getOANullable_(soid);
-                if (oa != null && isNonRepresentable(oa) && !oa.isExpelled()) c.apply(soid);
+                if (oa != null && isNonRepresentable_(oa) && !oa.isExpelled()) c.apply(soid);
             } catch (SQLException e) {
                 l.error("could not determine nro status {}", soid, e);
             }
@@ -401,7 +401,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
      * {@paramref soid}, null if the object with SOID {@paramref soid} is not in conflict with any
      * other objects.
      */
-    public @Nullable OID conflict(SOID soid) throws SQLException
+    public @Nullable OID getConflict_(SOID soid) throws SQLException
     {
         return _nrodb.getConflict_(soid);
     }

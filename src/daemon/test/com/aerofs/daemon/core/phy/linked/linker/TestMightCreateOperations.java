@@ -45,11 +45,11 @@ import static com.aerofs.daemon.core.ds.OA.Type.DIR;
 import static com.aerofs.daemon.core.ds.OA.Type.FILE;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation;
-import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.Create;
-import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.RandomizeSourceFID;
-import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.RenameTarget;
-import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.Replace;
-import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.Update;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.CREATE;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.RANDOMIZE_SOURCE_FID;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.RENAME_TARGET;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.REPLACE;
+import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.UPDATE;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
@@ -182,7 +182,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
     public void shouldCreateNewFile() throws Exception
     {
         FIDAndType fnt = generateFileFnt();
-        op("baz/new", fnt, Create);
+        op("baz/new", fnt, CREATE);
 
         verify(oc).create_(eq(FILE), any(OID.class), soidAt("baz"), eq("new"), eq(MAP), eq(t));
         verifyZeroInteractions(vu, om, delBuffer, sfti);
@@ -192,7 +192,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
     public void shouldCreateNewDir() throws Exception
     {
         FIDAndType fnt = generateDirFnt();
-        op("baz/new", fnt, Create);
+        op("baz/new", fnt, CREATE);
 
         verify(oc).create_(eq(DIR), any(OID.class), soidAt("baz"), eq("new"), eq(MAP), eq(t));
         verify(sfti).getOIDForAnchor_(any(SIndex.class), any(PathCombo.class), eq(t));
@@ -208,7 +208,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         fileModified(path);
 
-        op("foo/bar/hello", fnt, Update);
+        op("foo/bar/hello", fnt, UPDATE);
 
         verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
         verify(delBuffer).remove_(soid);
@@ -222,7 +222,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(path);
         FIDAndType fnt = generateDirFnt(soid);
 
-        op("foo/bar", fnt, Update);
+        op("foo/bar", fnt, UPDATE);
 
         verify(delBuffer).remove_(soid);
         verifyZeroInteractions(oc, om, vu, sfti);
@@ -237,7 +237,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         fileModified(path, "foo/hello2", false);
 
-        op("foo/hello2", fnt, Update);
+        op("foo/hello2", fnt, UPDATE);
 
         verify(imc).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
@@ -253,7 +253,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         fileModified(path, "foo/hello2", true);
 
-        op("foo/hello2", fnt, Update);
+        op("foo/hello2", fnt, UPDATE);
 
         verify(imc).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
         verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
@@ -268,7 +268,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(path);
         FIDAndType fnt = generateDirFnt(soid);
 
-        op("qux", fnt, Update);
+        op("qux", fnt, UPDATE);
 
         verify(imc).move_(eq(soid), soidAt(""), eq("qux"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
@@ -284,7 +284,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         fileModified(path);
 
-        op("foo/bar/hello", fnt, Replace);
+        op("foo/bar/hello", fnt, REPLACE);
 
         verify(ds).setFID_(soid, fnt._fid, t);
         verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
@@ -299,7 +299,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(path);
         FIDAndType fnt = generateDirFnt();
 
-        op("foo/bar", fnt, Replace);
+        op("foo/bar", fnt, REPLACE);
 
         verify(ds).setFID_(soid, fnt._fid, t);
         verify(delBuffer).remove_(soid);
@@ -316,7 +316,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         mockPhyFile(parent, "bar (2)");
         when(mockPhyFile(parent, "bar (3)").exists()).thenReturn(false);
 
-        op("foo/bar", fnt, Create, RenameTarget);
+        op("foo/bar", fnt, CREATE, RENAME_TARGET);
 
         verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (3)"), eq(MAP),
                 eq(false), eq(true), eq(t));
@@ -335,7 +335,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         mockPhyFile(parent, "bar");
         when(mockPhyFile(parent, "bar (2)").exists()).thenReturn(false);
 
-        op("foo/bar", fnt, Create, RenameTarget);
+        op("foo/bar", fnt, CREATE, RENAME_TARGET);
 
         verify(ds).setFID_(eq(soid), any(FID.class), eq(t));
         verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (2)"), eq(MAP),
@@ -351,7 +351,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(path);
         FIDAndType fnt = generateFileFnt(soid);
 
-        op("new", fnt, Create, RandomizeSourceFID);
+        op("new", fnt, CREATE, RANDOMIZE_SOURCE_FID);
 
         verify(ds).setFID_(eq(soid), any(FID.class), eq(t));
         verify(oc).create_(eq(FILE), any(OID.class), soidAt(""), eq("new"), eq(MAP), eq(t));
@@ -367,7 +367,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         SOID target = ds.resolveNullable_(mkpath("baz"));
 
-        op("baz", fnt, Replace);
+        op("baz", fnt, REPLACE);
 
         verify(ds).setFID_(eq(source), any(FID.class), eq(t));
         verify(ds).setFID_(eq(target), eq(fnt._fid), eq(t));
@@ -384,7 +384,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         SOID target = ds.resolveNullable_(mkpath("foo/bar/world"));
 
         mockPhyFile(mockPhyDir(absRootAnchor, "foo", "bar"), "world");
-        op("foo/bar/world", fnt, Replace);
+        op("foo/bar/world", fnt, REPLACE);
 
         verify(ds).setFID_(eq(source), any(FID.class), eq(t));
         verify(ds).setCA_(new SOKID(source, KIndex.MASTER), -1L, 0L, null, t);
@@ -405,7 +405,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         when(sfti.isSharedFolderRoot(sid, absPath)).thenReturn(false);
 
-        op("shared", fnt, Update);
+        op("shared", fnt, UPDATE);
 
         verify(delBuffer).remove_(soid);
         verify(sched).schedule(any(IEvent.class), anyLong());
@@ -426,7 +426,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         when(sfti.isSharedFolderRoot(sid, absPath)).thenReturn(false);
 
-        op("quux", fnt, Update);
+        op("quux", fnt, UPDATE);
 
         verify(imc).move_(eq(soid), soidAt(""), eq("quux"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
@@ -448,7 +448,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         when(sfti.isSharedFolderRoot(sid, absPath)).thenReturn(false);
 
-        op("shared", fnt, Replace);
+        op("shared", fnt, REPLACE);
 
         verify(ds).setFID_(soid, fnt._fid, t);
         verify(delBuffer).remove_(soid);

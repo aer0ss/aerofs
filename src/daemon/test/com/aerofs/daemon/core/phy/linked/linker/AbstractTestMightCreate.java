@@ -115,7 +115,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
                     public Boolean answer(InvocationOnMock invocation) throws Throwable
                     {
                         return !Sets.intersection((Set<Operation>)invocation.getArguments()[0],
-                                EnumSet.of(Operation.Create, Operation.Replace)).isEmpty();
+                                EnumSet.of(Operation.CREATE, Operation.REPLACE)).isEmpty();
                     }
                 });
 

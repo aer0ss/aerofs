@@ -81,7 +81,7 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         } else {
             CA ca = mock(CA.class);
             when(oa.caMasterNullable()).thenReturn(ca);
-            when(rh.isNonRepresentable(oa)).thenReturn(flag == ObjectFlag.NRO);
+            when(rh.isNonRepresentable_(oa)).thenReturn(flag == ObjectFlag.NRO);
         }
         return soid;
     }

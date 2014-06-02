@@ -84,17 +84,17 @@ class MightCreateOperations
     static enum Operation
     {
         // the following "core" operations are mutually exclusive
-        Create,
-        Update,
-        Replace,
+        CREATE,
+        UPDATE,
+        REPLACE,
 
         // the following "flags" can be combined with some of the above ops
-        RenameTarget,
-        NonRepresentableTarget,
-        RandomizeSourceFID;
+        RENAME_TARGET,
+        NON_REPRESENTABLE_TARGET,
+        RANDOMIZE_SOURCE_FID;
 
         static private final EnumSet<Operation> FLAGS =
-                EnumSet.of(RenameTarget, NonRepresentableTarget, RandomizeSourceFID);
+                EnumSet.of(RENAME_TARGET, NON_REPRESENTABLE_TARGET, RANDOMIZE_SOURCE_FID);
         static private final EnumSet<Operation> CORE =
                 EnumSet.complementOf(FLAGS);
 
@@ -138,11 +138,11 @@ class MightCreateOperations
             PathCombo pc, FIDAndType fnt, IDeletionBuffer delBuffer, OIDGenerator og, Trans t)
             throws Exception
     {
-        if (ops.contains(Operation.RandomizeSourceFID)) assignRandomFID_(sourceSOID, t);
+        if (ops.contains(Operation.RANDOMIZE_SOURCE_FID)) assignRandomFID_(sourceSOID, t);
 
-        if (ops.contains(Operation.RenameTarget)) {
+        if (ops.contains(Operation.RENAME_TARGET)) {
             PhysicalOp op = MAP;
-            if (ops.contains(Operation.NonRepresentableTarget)) {
+            if (ops.contains(Operation.NON_REPRESENTABLE_TARGET)) {
                 // when the target is non representable it is guaranteed to still exist and also
                 // guaranteed to NOT appear in the scan, hence:
                 //   1. APPLY the rename to make the object visible again
@@ -154,17 +154,17 @@ class MightCreateOperations
         }
 
         switch (Operation.core(ops)) {
-        case Create:
+        case CREATE:
             createLogicalObject_(pc, fnt._dir, og, t);
             return true;
-        case Update:
+        case UPDATE:
             Preconditions.checkNotNull(sourceSOID);
             SOID m = updateLogicalObject_(sourceSOID, pc, fnt._dir, t);
             // change of SOID indicate migration, in which case the tag file MUST NOT be recreated
             if (m.equals(sourceSOID)) scheduleTagFileFixIfNeeded(sourceSOID, pc);
             delBuffer.remove_(sourceSOID);
             return false;
-        case Replace:
+        case REPLACE:
             Preconditions.checkNotNull(targetSOID);
             replaceObject_(pc, fnt, delBuffer, sourceSOID, targetSOID, t);
             scheduleTagFileFixIfNeeded(targetSOID, pc);

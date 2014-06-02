@@ -193,7 +193,7 @@ public class MightCreate
         Set<Operation> ops = determineUpdateOperation_(pcPhysical, sourceSOID, targetSOID, fnt);
 
         // reduce log volume by ignoring update op on existing object
-        if (!(sourceSOID != null && sourceSOID.equals(targetSOID) && ops.equals(EnumSet.of(Update)))) {
+        if (!(sourceSOID != null && sourceSOID.equals(targetSOID) && ops.equals(EnumSet.of(UPDATE)))) {
             l.info("{} {} {} {}", pcPhysical, ops, sourceSOID, targetSOID);
         }
 
@@ -298,13 +298,13 @@ public class MightCreate
         // TimeoutDeletionBuffer).
         //
         // The only safe way to deal with such corner cases is to rename the NRO
-        if (_rh.isNonRepresentable(targetOA)) {
-            l.info("nro in mc {} {}", targetSOID, _rh.conflict(targetSOID));
+        if (_rh.isNonRepresentable_(targetOA)) {
+            l.info("nro in mc {} {}", targetSOID, _rh.getConflict_(targetSOID));
             return Sets.union(renameTargetAndUpdateSource(sourceSOID, sourceSameType),
-                    EnumSet.of(NonRepresentableTarget));
+                    EnumSet.of(NON_REPRESENTABLE_TARGET));
         }
 
-        if (sourceSameType && targetSOID.equals(sourceSOID)) return EnumSet.of(Update);
+        if (sourceSameType && targetSOID.equals(sourceSOID)) return EnumSet.of(UPDATE);
 
         if (canSafelyReplaceFID(pc, sourceSOID, targetOA, fnt._dir)) {
             // The assertion below is guaranteed by the above code.
@@ -312,7 +312,7 @@ public class MightCreate
             checkArgument(!fnt._fid.equals(targetOA.fid()), "%s %s %s %s %s %s", fnt._fid, fnt._dir,
                     sourceSameType, sourceSOID, targetSOID,
                     sourceOA == null ? null : sourceOA.isDirOrAnchor());
-            return EnumSet.of(Replace);
+            return EnumSet.of(REPLACE);
         }
 
         // The logical object can't simply link to the physical object by replacing the FID.
@@ -321,20 +321,20 @@ public class MightCreate
 
     private static Set<Operation> updateSource(SOID source, boolean sourceSameType)
     {
-        if (source == null) return EnumSet.of(Create);
-        if (sourceSameType) return EnumSet.of(Update);
+        if (source == null) return EnumSet.of(CREATE);
+        if (sourceSameType) return EnumSet.of(UPDATE);
         // same FID, different types
         // This may happen if either:
         //    1) the OS deletes an object and soon reuses the same FID to create a new object
         //       of a different type. This has been observed on a Ubuntu test VM.
         //    2) the filesystems has ephemeral FIDs, such as FAT on Linux.
         // In either case, we need to assign the logical object with a random FID
-        return EnumSet.of(Create, RandomizeSourceFID);
+        return EnumSet.of(CREATE, RANDOMIZE_SOURCE_FID);
     }
 
     private static Set<Operation> renameTargetAndUpdateSource(SOID source, boolean sourceSameType)
     {
-        return Sets.union(EnumSet.of(RenameTarget), updateSource(source, sourceSameType));
+        return Sets.union(EnumSet.of(RENAME_TARGET), updateSource(source, sourceSameType));
     }
 
     /**

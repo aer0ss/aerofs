@@ -37,6 +37,6 @@ public class TestMightCreate_DiffFIDSamePathDiffType extends AbstractTestMightCr
         mightCreate("f2");
 
         verifyOperationExecuted(
-                EnumSet.of(Operation.Create, Operation.RenameTarget), "f2");
+                EnumSet.of(Operation.CREATE, Operation.RENAME_TARGET), "f2");
     }
 }

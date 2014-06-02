@@ -21,7 +21,7 @@ public class TestMightCreate_NoMatching extends AbstractTestMightCreate
     {
         mightCreate("f2 (3)");
 
-        verifyOperationExecuted(Operation.Create, "f2 (3)");
+        verifyOperationExecuted(Operation.CREATE, "f2 (3)");
     }
 
     @Test

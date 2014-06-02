@@ -246,7 +246,7 @@ public abstract class SystemUtil
     public static @Nonnull Process execBackground(String ... cmds) throws IOException
     {
         ProcessBuilder pb = new ProcessBuilder(cmds);
-        l.debug("execBackground: " + pb.command());
+        l.debug("execBackground: {}", pb.command());
 
         Process proc = pb.start();
         proc.getInputStream().close();

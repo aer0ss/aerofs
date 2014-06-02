@@ -67,7 +67,7 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         // Verify the file is created and set the DS to return the correct path
         // The DS now contains an entry for the (fSOID, fFNT._fid)
         // And the path is also stored now in the DS.
-        verifyOperationExecuted(Operation.Create, null, null, fName1);
+        verifyOperationExecuted(Operation.CREATE, null, null, fName1);
 
         assign(fSOID, fFNT._fid);
         when(ds.resolveNullable_(fSOID)).thenReturn(mkpath(fName1));
@@ -86,7 +86,7 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         assign(fSOID, fFNT._fid);
 
         assertEquals(Result.FILE, mightCreate(fName1));
-        verifyOperationExecuted(Operation.Update, fName1);
+        verifyOperationExecuted(Operation.UPDATE, fName1);
         assertEquals(Result.IGNORED, mightCreate(fName2));
 
         // Act as if fName1 is now deleted from file system by setting its FID to null.
@@ -94,7 +94,7 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
 
         assertEquals(Result.FILE, mightCreate(fName2));
 
-        verifyOperationExecuted(Operation.Replace, fSOID, fSOID2, fName2);
+        verifyOperationExecuted(Operation.REPLACE, fSOID, fSOID2, fName2);
     }
 
     @Test
@@ -113,7 +113,7 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         SOID dirSOID = ds.resolveNullable_(mkpath(existingDirName));
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate(nonExistingDirName));
-        verifyOperationExecuted(Operation.Create, nonExistingDirName);
+        verifyOperationExecuted(Operation.CREATE, nonExistingDirName);
 
         // Assign the DirectoryService to return the mkpath
         // as nonExistingDirName was created before existingDirName
@@ -133,12 +133,12 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
 
         assertEquals(Result.IGNORED, mightCreate(nonExistingDirName));
         assertEquals(Result.EXISTING_FOLDER, mightCreate(existingDirName));
-        verifyOperationExecuted(Operation.Update, existingDirName);
+        verifyOperationExecuted(Operation.UPDATE, existingDirName);
 
         // Act as if existingDirName is now deleted from file system by setting its FID to null.
         when(dr.getFIDAndTypeNullable(Util.join(pRoot, existingDirName))).thenReturn(null);
 
         assertEquals(Result.EXISTING_FOLDER, mightCreate(nonExistingDirName));
-        verifyOperationExecuted(Operation.Update, dirSOID, null, nonExistingDirName);
+        verifyOperationExecuted(Operation.UPDATE, dirSOID, null, nonExistingDirName);
     }
 }
