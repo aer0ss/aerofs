@@ -111,10 +111,12 @@ def get_template_kv_pairs():
     d = dict(d, **get_ca_cert_as_dict())
     # Add properties from license file
     d["license_lines"] = u"\n".join([ u"{}={}".format(k, v) for k, v in current_license_info.iteritems() ])
+    for k, v in current_license_info.iteritems():
+        d[k] = v
     return d
 
 def remove_license_expired_flag_file():
-    # This flag file is used by nginx to redirect web acces to a 'linense has
+    # This flag file is used by nginx to redirect web access to a 'license has
     # expired' page.
     f = '/var/aerofs/license-expired-flag'
     if os.path.exists(f): os.remove(f)

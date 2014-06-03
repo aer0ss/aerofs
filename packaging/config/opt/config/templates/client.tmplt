@@ -10,3 +10,5 @@ daemon.oauth.url=https://{{ base_host }}:4433/auth/tokeninfo
 lib.anchor.default_location_windows={{ anchor_default_location_windows }}
 lib.anchor.default_location_linux={{ anchor_default_location_linux }}
 lib.anchor.default_location_osx={{ anchor_default_location_osx }}
+
+customer_id={{ customer_id }}
