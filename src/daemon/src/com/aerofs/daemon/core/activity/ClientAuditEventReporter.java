@@ -368,9 +368,13 @@ public final class ClientAuditEventReporter // this can be final because it's no
             // removal, or if other similar race conditions happen, AND we experience a local DID
             // to user cache miss. In this case we simply leave the destination user key empty in
             // the event.
-            UserID destinationUser = _udinfo.getDeviceOwnerNullable_(destinationDevice);
-            event.embed("destination_user",
-                    destinationUser != null ? destinationUser.getString() : "");
+
+            // TODO (MP) before we can enable this, we need to refactor to deal with db locks.
+            // One does not simply release the core lock while using a DBIterator.
+
+            //UserID destinationUser = _udinfo.getDeviceOwnerNullable_(destinationDevice);
+            //event.embed("destination_user",
+            //        destinationUser != null ? destinationUser.getString() : "");
         } else if (row._dids.size() == 2) {
             // on behalf of mobile device
             DID mdid = otherDevice(row._dids);
