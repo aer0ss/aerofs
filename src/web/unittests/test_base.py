@@ -4,6 +4,7 @@ from pyramid import testing
 from mock import Mock
 from web import util
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
+import web.views as views
 
 
 class TestBase(unittest.TestCase):
@@ -17,6 +18,18 @@ class TestBase(unittest.TestCase):
         os.environ['STRIPE_SECRET_KEY'] = ''
 
         self.config = testing.setUp()
+
+        ### Making the test config more like our real one
+        # Static views
+        self.config.add_static_view('static', 'web:static')
+
+        # Import routes from views
+        for view in views.__all__:
+            self.config.include('{}.{}'.format(views.__name__, view))
+
+        self.config.scan()
+        self.config.commit()
+        ###
 
         # Use a real stub to verify that the callers (i.e. systems under test)
         # provide correct parameters (since the stub serializes all the
