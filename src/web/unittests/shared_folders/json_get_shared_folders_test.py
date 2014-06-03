@@ -67,6 +67,7 @@ class GetSharedFoldersTest(TestBase):
             'iDisplayLength': 10,
             'iDisplayStart': 0
         })
+        request.registry.settings["mako.directories"] = "web.views.shared_folders:templates"
         auth.is_admin = Mock(return_value=True)
         authenticated_userid = Mock(return_value='test@email')
 
@@ -81,6 +82,7 @@ class GetSharedFoldersTest(TestBase):
             'sEcho': 'hoho',
             URL_PARAM_USER: 'some@email'
         })
+        request.registry.settings["mako.directories"] = "web.views.shared_folders:templates"
         auth.is_admin = Mock(return_value=True)
         authenticated_userid = Mock(return_value='test@email')
 
