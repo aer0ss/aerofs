@@ -48,7 +48,7 @@ import java.util.Map;
  * To initiate a peer-to-peer resolution process the user <strong>must</strong>
  * call {@link DeviceToUserMapper#issuePeerToPeerResolveUserIDRequest_(DID)}. On receiving
  * the RESOLVE_USER_ID_REQUEST the user <strong>must</strong> call
- * {@link DeviceToUserMapper#respondToPeerToPeerResolveUserIDResponse_(DID)}.
+ * {@link DeviceToUserMapper#respondToPeerToPeerResolveUserIDRequest_(DID)}.
  */
 public class DeviceToUserMapper
 {
@@ -165,7 +165,7 @@ public class DeviceToUserMapper
     /**
      * Issue a unicast RESOLVE_USER_ID_RESPONSE.
      */
-    public void respondToPeerToPeerResolveUserIDResponse_(DID did)
+    public void respondToPeerToPeerResolveUserIDRequest_(DID did)
             throws Exception
     {
         // FIXME (AG): should I send out via ep?

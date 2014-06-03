@@ -168,7 +168,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _f._pusf.process_(msg);
             break;
         case RESOLVE_USER_ID_REQUEST:
-            _f._d2u.respondToPeerToPeerResolveUserIDResponse_(msg.did());
+            _f._d2u.respondToPeerToPeerResolveUserIDRequest_(msg.did());
             break;
         case RESOLVE_USER_ID_RESPONSE:
             // noop - this incoming message results in _d2u being updated in onUnicastDatagramReceived_
