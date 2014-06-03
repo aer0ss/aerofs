@@ -106,8 +106,9 @@ class AddSharedFolderDialogs
                     throws Exception
             {
                 // Even after clicking shift add, the user is trying to share a folder within
-                // the AeroFS folder.
-                if (path.startsWith(Cfg.absDefaultRootAnchor())) {
+                // the AeroFS folder. We need to check if the client is TS because all folders are
+                // external from the TS point of view, and TS must only call shareExternalFolders.
+                if (!L.isMultiuser() && path.startsWith(Cfg.absDefaultRootAnchor())) {
                     return shareInternalFolder(UIUtil.getPathNullable(path));
                 }
                 return shareExternalFolder(path);
