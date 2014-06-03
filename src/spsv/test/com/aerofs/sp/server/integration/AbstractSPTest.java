@@ -26,6 +26,7 @@ import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.AbstractTestWithDatabase;
 import com.aerofs.sp.server.IdentitySessionManager;
+import com.aerofs.sp.server.JedisRateLimiter;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.URLSharing.UrlShare;
@@ -85,6 +86,7 @@ import java.util.Set;
 import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -174,6 +176,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected SharingRulesFactory sharingRules = new SharingRulesFactory(authenticator,
             factUser, sharedFolderNotificationEmailer);
 
+    @Mock protected JedisRateLimiter rateLimiter;
+
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,
     // - InvitationEmailer, or
@@ -202,6 +206,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         mockInvitationEmailerFactory();
         wireSPService();
         mockLicense();
+        mockRateLimiter();
 
         verkehrPublished = mockAndCaptureVerkehrPublish();
 
@@ -237,6 +242,12 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 .then(RETURNS_MOCKS);
     }
 
+    private void mockRateLimiter()
+    {
+        // false = does not exceed rate limit
+        when(rateLimiter.update((String)anyVararg())).thenReturn(false);
+    }
+
     // Do wiring for SP after its construction
     protected void wireSPService()
     {
@@ -256,7 +267,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     }
 
     /**
-     * Craete a new User object and save it to the db
+     * Create a new User object and save it to the db
      *
      * N.B. SQL transaction is required for this method:
      *

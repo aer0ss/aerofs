@@ -242,6 +242,8 @@ public class SPService implements ISPService
     private final DeviceAuthClient _systemAuthClient =
             new DeviceAuthClient(new DeviceAuthEndpoint());
 
+    private final JedisRateLimiter _rateLimiter;
+
     public SPService(SPDatabase db,
             SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans,
@@ -266,7 +268,8 @@ public class SPService implements ISPService
             SharingRulesFactory sharingRules,
             SharedFolderNotificationEmailer sfnEmailer,
             AsyncEmailSender asyncEmailSender,
-            UrlShare.Factory factUrlShare)
+            UrlShare.Factory factUrlShare,
+            JedisRateLimiter rateLimiter)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -303,6 +306,8 @@ public class SPService implements ISPService
         _commandQueue = commandQueue;
         _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans);
         _analytics = checkNotNull(analytics);
+
+        _rateLimiter = rateLimiter;
     }
 
     /**
@@ -1494,6 +1499,11 @@ public class SPService implements ISPService
     {
         User requester = _sessionUser.getUser();
 
+        if (password != null && _rateLimiter.update(_remoteAddress.get(), key)) {
+            l.warn("rate limiter rejected getUrlInfo for {} from {}", key, _remoteAddress.get());
+            // TODO: reject request in some way
+        }
+
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
         RestObject object = link.getRestObject();
@@ -1611,6 +1621,12 @@ public class SPService implements ISPService
     public ListenableFuture<Void> validateUrlPassword(String key, ByteString password)
             throws Exception
     {
+        if (password != null && _rateLimiter.update(_remoteAddress.get(), key)) {
+            l.warn("rate limiter rejected validateUrlPassword for {} from {}", key,
+                    _remoteAddress.get());
+            // TODO: reject request in some way
+        }
+
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
         link.validatePassword(password.toByteArray());
@@ -2418,6 +2434,11 @@ public class SPService implements ISPService
      */
     private User authByCredentials(String userId, ByteString cred) throws Exception
     {
+        if (_rateLimiter.update(_remoteAddress.get(), userId)) {
+            l.warn("rate limiter rejected credential sign in for {} from {}", userId,
+                    _remoteAddress.get());
+            // TODO: reject request in some way
+        }
         User user = _factUser.createFromExternalID(userId);
         IAuthority authority = _authenticator.authenticateUser(
                 user, cred.toByteArray(), _sqlTrans, CredentialFormat.TEXT);

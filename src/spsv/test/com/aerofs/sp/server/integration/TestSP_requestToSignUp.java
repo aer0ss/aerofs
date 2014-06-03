@@ -77,7 +77,9 @@ public class TestSP_requestToSignUp extends AbstractSPTest
                 authenticator,
                 sharingRules,
                 sharedFolderNotificationEmailer,
-                asyncEmailSender, factUrlShare);
+                asyncEmailSender,
+                factUrlShare,
+                rateLimiter);
         wireSPService();
 
         try {

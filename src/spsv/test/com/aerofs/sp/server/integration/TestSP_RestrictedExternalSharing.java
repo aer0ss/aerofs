@@ -85,7 +85,9 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
                 authenticator,
                 sharedFolderRules,
                 sharedFolderNotificationEmailer,
-                asyncEmailSender, factUrlShare);
+                asyncEmailSender,
+                factUrlShare,
+                rateLimiter);
         wireSPService();
 
         sqlTrans.begin();

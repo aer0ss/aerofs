@@ -147,6 +147,11 @@ public class SPServlet extends AeroServlet
     private final SharingRulesFactory _sfRules =
             new SharingRulesFactory(_authenticator, _factUser, _sfnEmailer);
 
+    private static final int RATE_LIMITER_BURST_SIZE = 10;
+    private static final int RATE_LIMITER_WINDOW = 20000;
+    private final JedisRateLimiter _rateLimiter =
+             new JedisRateLimiter(_jedisTrans, RATE_LIMITER_BURST_SIZE, RATE_LIMITER_WINDOW, "rl");
+
     private final SPService _service = new SPService(_db,
             _sqlTrans,
             _jedisTrans,
@@ -170,7 +175,9 @@ public class SPServlet extends AeroServlet
             _authenticator,
             _sfRules,
             _sfnEmailer,
-            _asyncEmailSender, _factUrlShare);
+            _asyncEmailSender,
+            _factUrlShare,
+            _rateLimiter);
 
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
