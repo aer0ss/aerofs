@@ -4,6 +4,7 @@ import unittest
 def test_suite():
     # import all test modules
     import unittests.accept
+    import unittests.devices
     import unittests.login
     import unittests.misc
     import unittests.payment
@@ -18,6 +19,7 @@ def test_suite():
 
     # add all unit tests
     suite.addTest(unittests.accept.test_suite())
+    suite.addTest(unittests.devices.test_suite())
     suite.addTest(unittests.login.test_suite())
     suite.addTest(unittests.misc.test_suite())
     suite.addTest(unittests.password_reset.test_suite())

@@ -179,7 +179,10 @@ def _pretty_timestamp(polling_interval, timestamp):
         if second_diff < polling_interval:
             return "just now"
         if second_diff < 60:
-            return str(second_diff) + " seconds ago"
+            if second_diff > 1:
+                return str(second_diff) + " seconds ago"
+            else:
+                return "a second ago"
         if second_diff < 120:
             return "a minute ago"
         if second_diff < 3600:
@@ -193,10 +196,19 @@ def _pretty_timestamp(polling_interval, timestamp):
     if day_diff < 7:
         return str(day_diff) + " days ago"
     if day_diff < 31:
-        return str(day_diff / 7) + " weeks ago"
+        if day_diff / 7 > 1:
+            return str(day_diff / 7) + " weeks ago"
+        else:
+            return "a week ago"
     if day_diff < 365:
-        return str(day_diff / 30) + " months ago"
-    return str(day_diff / 365) + " years ago"
+        if day_diff / 30 > 1:
+            return str(day_diff / 30) + " months ago"
+        else:
+            return "a month ago"
+    if day_diff / 365 > 1:
+        return str(day_diff / 365) + " years ago"
+    else:
+        return "a year ago"
 
 
 def _throw_on_devman_error(r):
