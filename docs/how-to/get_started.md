@@ -71,7 +71,7 @@ to your path, with `{version}` replaced by the version of your ruby install.
 
 Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
 
-    brew update && brew upgrade && brew install git python fakeroot ant wget gradle groovy swig qt apt-cacher-ng qemu ruby gpgme dpkg npm && brew install --devel s3cmd
+    brew update && brew upgrade && brew install git python fakeroot ant wget gradle groovy swig qt apt-cacher-ng qemu pigz ruby gpgme dpkg npm && brew install --devel s3cmd
 
     brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb $HOME/repos/aerofs/tools/protobuf.brew/protobuf.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
     
@@ -89,6 +89,7 @@ This step takes a while. It's probably a good time to look around in our [mailin
   * `python` is used by some services and SyncDET (source: the syncdet repo on gerrit), our distributed test harness.  We suggest installing the version from homebrew since it integrates nicely, is reasonably contained, is up-to-date, and keeps you from having to do privilege escalation all the time.
   * `dpkg`, `fakeroot`, `wget` are used to build Debian packages for our servers.  We need a patched version of dpkg, since homebrew and perl modules don't really play well together.
   * `qemu` (which provides `qemu-img`) is used to convert disk images to different formats.
+  * `pigz` is a parallel gzip implementation used to speed up compressing disk images
   * `gradle` is used to build some Java projects.
   * `swig` is used for our native libraries
   * `s3cmd` (developer version required) is used for pushing assets and installers to S3 buckets and cloudfront.  Only the `--devel` version of `s3cmd` supports `--cf-invalidate`
