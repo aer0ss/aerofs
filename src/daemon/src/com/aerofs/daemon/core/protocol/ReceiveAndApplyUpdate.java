@@ -577,7 +577,7 @@ public class ReceiveAndApplyUpdate
      * @return whether OIDs were merged (i.e. one is aliased to the other)
      */
     private boolean resolveNameConflict_(SOID soidRemote, OID parent, PBMeta meta,
-            boolean wasPresent, int metaDiff, Trans t, SOID soidNoNewVersion, Version vRemote,
+            boolean wasPresent, int metaDiff, Trans t, @Nullable SOID soidNoNewVersion, Version vRemote,
             final SOID soidMsg, CausalityResult cr, IDownloadContext cxt)
             throws Exception
     {
@@ -645,8 +645,8 @@ public class ReceiveAndApplyUpdate
         // TODO: 4) if the local object has ticks for the local device?
         if (!wasPresent && meta.getType() != PBMeta.Type.ANCHOR && typeRemote == oaLocal.type()) {
             // Resolving name conflict by aliasing the oids.
-            _al.resolveNameConflictOnNewRemoteObjectByAliasing_(soidRemote, soidLocal, parent,
-                vRemote, meta, soidNoNewVersion, t);
+            _al.resolveNameConflictOnNewRemoteObjectByAliasing_(soidRemote, soidLocal,
+                vRemote, soidNoNewVersion, t);
             return true;
         } else {
             resolveNameConflictByRenaming_(soidRemote, soidLocal, wasPresent, parent, pParent,

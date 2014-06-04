@@ -1,6 +1,7 @@
 package com.aerofs.lib;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -205,17 +206,57 @@ public class Version
     }
 
     /**
+     * @return whether the version vector only contains alias ticks
+     *
+     * NB: return true for empty vector
+     */
+    public boolean isAliasOnly_()
+    {
+        for (Tick t : _map.values()) {
+            if (!t.isAlias()) return false;
+        }
+        return true;
+    }
+
+    /**
+     * @return whether the version vector only contains regular ticks
+     *
+     * NB: return true for empty vector
+     */
+    public boolean isNonAliasOnly_()
+    {
+        for (Tick t : _map.values()) {
+            if (t.isAlias()) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Regular and alias ticks should NEVER be mixed in the same version vector
+     *
+     * @return whether all ticks in the vector belong in the same tick space (non-alias / alias)
+     */
+    public boolean isHomogeneous_()
+    {
+        if (_map.isEmpty()) return true;
+        Iterator<Tick> it = _map.values().iterator();
+        boolean v = it.next().isAlias();
+        while (it.hasNext()) {
+            if (it.next().isAlias() != v) return false;
+        }
+        return true;
+    }
+
+    /**
      * @return a new version object, keeping only this Version's non-alias ticks
      */
-    public Version withoutAliasTicks_()
+    public Version nonAliasTicks_()
     {
         Version ret = empty();
-
         for (Entry<DID, Tick> en : _map.entrySet()) {
             Tick t = en.getValue();
             if (!t.isAlias()) ret.set_(en.getKey(), t);
         }
-
         return ret;
     }
 

@@ -1,5 +1,7 @@
 package com.aerofs.lib;
 
+import static com.google.common.base.Preconditions.checkState;
+
 // TODO extends Long
 public class Tick {
 
@@ -26,7 +28,7 @@ public class Tick {
     public Tick incAlias()
     {
         long l = (_l & 0x1) == 0 ? _l + 1 : _l + 2;
-        assert l % 2 == 1;
+        checkState(l % 2 == 1);
 
         return new Tick(l);
     }
@@ -35,7 +37,7 @@ public class Tick {
     public Tick incNonAlias()
     {
         long l = (_l & 0x1) == 0 ? _l + 2 : _l + 1;
-        assert l % 2 == 0;
+        checkState(l % 2 == 0);
 
         return new Tick(l);
     }

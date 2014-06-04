@@ -70,6 +70,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 
 public class GetVersionsRequest
@@ -297,7 +299,7 @@ public class GetVersionsRequest
             DID did = new DID(requestBlock.getDeviceId(i));
             long tick = requestBlock.getKnowledgeTick(i);
             long tickImm = requestBlock.getImmigrantKnowledgeTick(i);
-            assert tick != 0 || tickImm != 0;
+            checkState(tick != 0 || tickImm != 0);
             if (tick != 0) vKwlgRemote.set_(did, tick);
             if (tickImm != 0) vImmKwlgRemote.set_(did, tickImm);
         }
@@ -319,8 +321,8 @@ public class GetVersionsRequest
             de._tickImmKwlgLocalES = vImmKwlgLocalES.get_(did);
             // local knowledge ticks corresponding to the local device
             // must be zero. The tick of a non-local device _may_ be zero.
-            assert !did.equals(Cfg.did()) || (de._tickKwlgLocalES.equals(Tick.ZERO) &&
-                    de._tickImmKwlgLocalES.equals(Tick.ZERO));
+            checkState(!did.equals(Cfg.did()) || (de._tickKwlgLocalES.equals(Tick.ZERO) &&
+                    de._tickImmKwlgLocalES.equals(Tick.ZERO)));
             desExcludeRequester.add(de);
         }
 
@@ -362,7 +364,7 @@ public class GetVersionsRequest
         int len = msg.getSerializedSize();
         int maxUcastLen = _m.getMaxUnicastSize_();
         // tune down ENTRIES_PER_BLOCK if the assertion fails
-        assert len < maxUcastLen;
+        checkArgument(len < maxUcastLen);
 
         int osLen = os == null ? maxUcastLen : os.size();
 
@@ -574,10 +576,10 @@ public class GetVersionsRequest
                 + " tickLast " + tickLast + " tick " + tick;
 
         // Do not permit decreasing tick order (i.e. enforce monotonic increments)
-        assert !(tickLast.getLong() > tick.getLong()) : loggedData;
+        checkState(!(tickLast.getLong() > tick.getLong()), loggedData);
 
         // We don't permit any duplicate ticks to be of the alias type (odd-valued)
-        assert !tick.isAlias() : loggedData;
+        checkState(!tick.isAlias(), loggedData);
 
         // Get the target (or original) OA for the two SOCIDs to determine whether the DB needs
         // repairing
@@ -590,20 +592,20 @@ public class GetVersionsRequest
         // incorrectly for alias objects (see NativeVersionControl.tickReceived()).
         // We repair these devices' DBs by deleting the tick for the known aliased object.
         if (oa != null && !oa.soid().equals(socid.soid())) {
-            l.warn(oa + " is the target of " + socid);
+            l.warn("{} is the target of {}", oa, socid);
 
             // Assert that oaLast is the target of socid
-            assert oaLast != null && oa.soid().equals(oaLast.soid()) : loggedDataWithOA;
+            checkState(oaLast != null && oa.soid().equals(oaLast.soid()), loggedDataWithOA);
 
             // delete the tick for socid
             deleteDuplicateTick(socid, new SOCID(oa.soid(), socid.cid()), did, tick,
                     loggedDataWithOA);
 
         } else if (oaLast != null && !oaLast.soid().equals(socidLast.soid())) {
-            l.warn(oaLast + " is the target of " + socidLast);
+            l.warn("{} is the target of {}", oaLast, socidLast);
 
             // Assert that oa is the target of socidLast
-            assert oa != null && oa.soid().equals(oaLast.soid()) : loggedDataWithOA;
+            checkState(oa != null && oa.soid().equals(oaLast.soid()), loggedDataWithOA);
 
             // delete the tick for socidLast
             deleteDuplicateTick(socidLast, new SOCID(oaLast.soid(), socidLast.cid()), did, tick,
@@ -623,15 +625,15 @@ public class GetVersionsRequest
             throws SQLException, ExAborted
     {
         // The alias object socid should have no oa
-        assert !_ds.hasOA_(socidToDelete.soid()) : socidToDelete + " " + loggedData;
+        checkState(!_ds.hasOA_(socidToDelete.soid()), "%s %s", socidToDelete, loggedData);
 
         Version vToDelete = Version.of(did, tick);
 
         // Assume that vToDelete is entirely duplicated in the target object's versions.
         // (so it is safe to simply delete it from the alias object (either KML or local))
         Version vAllTarget = _nvc.getAllVersions_(socidTarget);
-        assert vToDelete.isEntirelyShadowedBy_(vAllTarget) : vToDelete + " " + vAllTarget
-                + " " + loggedData;
+        checkState(vToDelete.isEntirelyShadowedBy_(vAllTarget), "%s %s %s",
+                vToDelete, vAllTarget, loggedData);
 
         Trans t = _tm.begin_();
         try {
@@ -645,15 +647,15 @@ public class GetVersionsRequest
                 // vToDelete is not a KML (as it failed the previous branch)
                 // so assert that it is in the local versions of socidToDelete
                 Version vAllLocalVersions = _nvc.getAllLocalVersions_(socidToDelete);
-                assert vToDelete.isEntirelyShadowedBy_(vAllLocalVersions)
-                        : vToDelete + " " + vAllLocalVersions + " " + loggedData;
+                checkState(vToDelete.isEntirelyShadowedBy_(vAllLocalVersions),
+                        "%s %s %s", vToDelete, vAllLocalVersions, loggedData);
 
                 // Assume the branch of the version to delete is MASTER
                 // (otherwise I'm unsure how to resolve this)
                 SOCKID sockidToDelete = new SOCKID(socidTarget);
                 Version vsockidToDelete = _nvc.getLocalVersion_(sockidToDelete);
-                assert vToDelete.isEntirelyShadowedBy_(vsockidToDelete)
-                        : vToDelete + " " + vsockidToDelete + " " + loggedData;
+                checkState(vToDelete.isEntirelyShadowedBy_(vsockidToDelete),
+                        "%s %s %s", vToDelete, vsockidToDelete, loggedData);
 
                 _nvc.deleteLocalVersionPermanently_(sockidToDelete, vToDelete, t);
 
@@ -669,8 +671,7 @@ public class GetVersionsRequest
         // Assert that the given alias object has no non-alias ticks remaining
         // (it's possible to fail here; then need to do a more thorough cleaning of the object)
         Version vAllSocidToDelete = _nvc.getAllVersions_(socidToDelete);
-        assert vAllSocidToDelete.withoutAliasTicks_().isZero_() :
-                vAllSocidToDelete + " " + loggedData;
+        checkState(vAllSocidToDelete.isAliasOnly_(), "%s %s", vAllSocidToDelete, loggedData);
 
         // Throw an exception to abort the current GetVersionsResponse,
         // but on the next try the db should be fixed.

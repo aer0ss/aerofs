@@ -35,6 +35,9 @@ import com.google.inject.Inject;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+
 // TODO: caching
 
 public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
@@ -93,7 +96,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
          */
 
         Tick myKMLTick = getKMLVersion_(k.socid()).get_(myDid);
-        assert !myKMLTick.isAlias() && myKMLTick.getLong() < newTick.getLong();
+        checkState(!myKMLTick.isAlias() && myKMLTick.getLong() < newTick.getLong());
         if (!myKMLTick.equals(Tick.ZERO)) {
             deleteKMLVersion_(k.socid(), Version.of(myDid, myKMLTick), t);
         }
@@ -122,7 +125,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         throws SQLException
     {
         // A non-meta socid should never have an alias tick.
-        assert socid.cid().isMeta() || !tick.isAlias() : ("s " + socid + " d " + did + " t" + tick);
+        checkState(socid.cid().isMeta() || !tick.isAlias(), "s %s d %s t%s", socid, did, tick);
 
         // If the tick is for a non-aliased object, but the socid is aliased,
         // reassign the tick from the socid to its target. This ensures that
@@ -156,7 +159,11 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
     public @Nonnull Version getLocalVersion_(SOCKID k) throws SQLException
     {
-        return _nvdb.getLocalVersion_(k);
+        Version v = _nvdb.getLocalVersion_(k);
+        // NB: local versions should always be homogeneous
+        // however KMLs may very well include a mix of regular and alias ticks
+        checkState(v.isHomogeneous_(), "%s %s", k, v);
+        return v;
     }
 
     public void addLocalVersion_(SOCKID k, Version v, Trans t)
@@ -164,8 +171,10 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_()) return;
 
-        if (l.isDebugEnabled()) l.debug("add local ver " + k + " " + v);
+        l.debug("add local ver {} {}", k, v);
+        checkArgument(v.isHomogeneous_(), "%s %s", k, v);
         _nvdb.addLocalVersion_(k, v, t);
+        // TODO: check homogeneity of result?
         _tlva.get(t).localVersionAdded_(k.socid());
         for (DID did : v.getAll_().keySet()) {
             _sidx2contrib.addContributor_(k.sidx(), did, t);
@@ -179,8 +188,10 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_())  return;
 
-        if (l.isDebugEnabled()) l.debug("del local ver " + k + " " + v);
+        l.debug("del local ver {} {}", k, v);
+        checkArgument(v.isHomogeneous_(), "%s %s", k, v);
         _nvdb.deleteLocalVersion_(k, v, t);
+        // TODO: check homogeneity of result?
         _tlva.get(t).versionDeleted_(k.socid());
     }
 
@@ -193,20 +204,22 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_()) return;
 
-        if (l.isDebugEnabled()) l.debug("del local ver perm " + k + " " + v);
+        l.debug("del local ver perm {} {}", k, v);
+        checkArgument(v.isHomogeneous_(), "%s %s", k, v);
         _nvdb.deleteLocalVersion_(k, v, t);
+        // TODO: check homogeneity of result?
         _tlva.get(t).versionDeletedPermanently_(k.socid());
     }
 
     public void moveAllLocalVersions_(SOCID alias, SOCID target, Trans t) throws SQLException
     {
+        checkArgument(alias.sidx().equals(target.sidx()), "%s %s", alias, target);
         _nvdb.moveAllLocalVersions_(alias, target, t);
 
         _tlva.get(t).localVersionAdded_(target);
         _tlva.get(t).versionDeletedPermanently_(alias);
 
-        // TODO: can sidx of two objects be different?
-        // TODO: listeners (syncstat and activity log)?
+        // TODO: listeners?
     }
 
     public @Nonnull Version getKMLVersion_(SOCID socid) throws SQLException
@@ -215,8 +228,8 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
         // IMPORTANT invariant: KML should not be shadowed by any local version.
         // Here we only test the invariant against the MASTER branch for simplicity
-        assert v.shadowedBy_(getLocalVersion_(new SOCKID(socid))).isZero_() :
-            socid + " " + v + " " + getLocalVersion_(new SOCKID(socid));
+        Version l = getLocalVersion_(new SOCKID(socid));
+        checkState(v.shadowedBy_(l).isZero_(), "%s %s %s", socid, v, l);
 
         return v;
     }
@@ -274,13 +287,13 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_()) return false;
 
-        if (l.isDebugEnabled()) l.debug("add kml ver " + socid + " " + v);
+        l.debug("add kml ver {} {}", socid, v);
 
         if (expensiveAssert) {
             // assert the KML to be added is disjoint from all the versions of socid.
             // the call to getAllVersions is expensive.
-            assert v.sub_(getAllVersions_(socid)).equals(v) :
-                    socid + " " + v + " " + getAllVersions_(socid);
+            Version all = getAllVersions_(socid);
+            checkState(v.sub_(all).equals(v), "%s %s %s", socid, v, all);
         }
 
         _nvdb.addKMLVersion_(socid, v, t);
@@ -296,7 +309,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_()) return;
 
-        if (l.isDebugEnabled()) l.debug("del kml ver " + socid + " " + v);
+        l.debug("del kml ver {} {}", socid, v);
         _nvdb.deleteKMLVersion_(socid, v, t);
         _tlva.get(t).versionDeleted_(socid);
     }
@@ -310,14 +323,16 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_())  return;
 
-        if (l.isDebugEnabled()) l.debug("del kml ver perm " + socid + " " + v);
+        l.debug("del kml ver perm {} {}", socid, v);
         _nvdb.deleteKMLVersion_(socid, v, t);
         _tlva.get(t).versionDeletedPermanently_(socid);
     }
 
     public Version getAllLocalVersions_(SOCID socid) throws SQLException
     {
-        return _nvdb.getAllLocalVersions_(socid);
+        Version v = _nvdb.getAllLocalVersions_(socid);
+        checkState(v.isHomogeneous_());
+        return v;
     }
 
     /**

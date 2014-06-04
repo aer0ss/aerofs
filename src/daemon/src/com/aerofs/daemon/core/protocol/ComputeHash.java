@@ -106,6 +106,9 @@ public class ComputeHash
         SOID soid = new SOID(_sid2sidx.getThrows_(sid), new OID(request.getObjectId()));
 
         Version vRemote = Version.fromPB(request.getRemoteVersion());
+        if (!vRemote.isNonAliasOnly_()) {
+            l.warn("hash request for invalid version {} {}", soid, vRemote);
+        }
 
         for (KIndex kIdx: _ds.getOAThrows_(soid).cas().keySet()) {
             SOCKID k = new SOCKID(soid, CID.CONTENT, kIdx);

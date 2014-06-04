@@ -26,6 +26,8 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Implements aliasing of objects to resolve name conflict.
@@ -113,10 +115,10 @@ public class Aliasing
     private void performAliasing_(SOID alias, Version vAliasMeta, SOID target, Version vTargetMeta,
             Trans t) throws Exception
     {
-        l.debug("Aliasing soids, alias:" + alias + " target: " + target);
+        l.debug("Aliasing soids, alias:{} target:{}", alias, target);
 
-        assert !alias.equals(target);
-        assert alias.sidx().equals(target.sidx());
+        checkArgument(!alias.equals(target));
+        checkArgument(alias.sidx().equals(target.sidx()));
 
         SOCID aliasMeta = new SOCID(alias, CID.META);
         SOCID aliasContent = new SOCID(alias, CID.CONTENT);
@@ -128,7 +130,7 @@ public class Aliasing
         // Only non-aliased ticks from meta-data component of alias object should be moved
         // to target.
         // TODO:FIXME this may lose ticks...
-        vAliasMeta = vAliasMeta.withoutAliasTicks_();
+        vAliasMeta = vAliasMeta.nonAliasTicks_();
 
         // KML version should be updated before merging local version to avoid assertion failures in
         // VersionControl.java.
@@ -145,8 +147,7 @@ public class Aliasing
         // is a CollectorSeq for the alias object then it'll be deleted when the Collector
         // iterates over CollectorSeq numbers since the KML version of alias object
         // will be zero.
-        assert _nvc.getKMLVersion_(aliasMeta).withoutAliasTicks_().isZero_();
-
+        checkState(_nvc.getKMLVersion_(aliasMeta).isAliasOnly_());
 
         dumpVersions_(targetMeta, targetContent, aliasMeta, aliasContent);
     }
@@ -158,8 +159,8 @@ public class Aliasing
     private void performAliasingOnLocallyAvailableObjects_(SOID alias, Version vAliasMeta,
             SOID target, Version vTargetMeta, Trans t) throws Exception
     {
-        assert _ds.hasOA_(alias);
-        assert _ds.hasOA_(target);
+        checkState(_ds.hasOA_(alias));
+        checkState(_ds.hasOA_(target));
 
         performAliasing_(alias, vAliasMeta, target, vTargetMeta, t);
     }
@@ -180,15 +181,15 @@ public class Aliasing
         // on alias are sent via target oid later when sender learns about alias-->target mapping.
         // Drop the message and move non-alias part of KML version of alias to target.
 
-        l.debug("This peer has performed aliasing for alias: " + alias + " to target: " +
-            targetOIDLocal + ". Dropping message.");
+        l.debug("This peer has performed aliasing for alias: {} to target: {}. Dropping message.",
+                alias, targetOIDLocal);
 
         Trans t = _tm.begin_();
         try {
             SOCID target = new SOCID(alias.sidx(), targetOIDLocal, CID.META);
 
             // TODO:FIXME this may lose ticks...
-            Version vKMLAlias = _nvc.getKMLVersion_(alias).withoutAliasTicks_();
+            Version vKMLAlias = _nvc.getKMLVersion_(alias).nonAliasTicks_();
 
             _nvc.deleteKMLVersionPermanently_(alias, vKMLAlias, t);
             Version vAllTarget = _nvc.getAllVersions_(target);
@@ -218,50 +219,27 @@ public class Aliasing
             throws Exception
     {
         // Alias message processing is only for meta-data updates.
-        assert meta.hasTargetVersion();
+        checkArgument(meta.hasTargetVersion());
         SIndex sidx = alias.sidx();
-        assert sidx.equals(target.sidx());
+        checkArgument(sidx.equals(target.sidx()));
 
-        l.info("alias msg, alias: {} vAlias: {} target: {} vTarget: {} p: {}",
-               alias, vRemoteAliasMeta, target, vRemoteTargetMeta, oidParent);
+        l.info("alias msg, alias: {} vAlias: {} target: {} vTarget: {} p: {}", alias,
+                vRemoteAliasMeta, target, vRemoteTargetMeta, oidParent);
 
         Trans t = _tm.begin_();
         Throwable rollbackCause = null;
         try {
             if (!_ds.hasAliasedOA_(target)) {
-                l.info("target not locally present");
-                SOCKID k = new SOCKID(target, CID.META, KIndex.MASTER);
-
-                // Although CausalityResult is only used in applyUpdateMetaAndContent_()
-                // when no name conflict is detected it's necessary to compute it before
-                // applyMeta_().
-                CausalityResult cr = _ru.computeCausalityForMeta_(target, vRemoteTargetMeta,
-                        metaDiff);
-
-                boolean oidsAliasedOnNameConflict = _ru.applyMeta_(target, meta, oidParent,
-                        false, // Since this is a new object to be received, wasPresent is false.
-                        metaDiff, t,
-                        alias, // noNewVersion
-                        vRemoteTargetMeta,
-                        alias,
-                        cr,
-                        cxt);
-
-                // Don't applyUpdate() if a name conflict was detected and
-                // performAliasingOnLocallyAvailableObjects_() was invoked.
-                if (!oidsAliasedOnNameConflict) {
-                    _ru.applyUpdateMetaAndContent_(k, vRemoteTargetMeta, cr, t);
-                }
-                l.debug("Done receiving new target object");
+                fetchTarget_(alias, target, vRemoteTargetMeta, oidParent, metaDiff, meta, cxt, t);
             }
-            assert _ds.hasAliasedOA_(target);
+            checkState(_ds.hasAliasedOA_(target));
 
             // Check whether target is aliased locally, and update target if so.
             target = _a2t.dereferenceAliasedOID_(target);
 
             // Ensure target is not aliased locally.
-            assert _ds.hasOA_(target);
-            assert !_a2t.isAliased_(target);
+            checkState(_ds.hasOA_(target));
+            checkState(!_a2t.isAliased_(target));
             SOCID aliasMeta = new SOCID(alias, CID.META);
             if (_ds.hasAliasedOA_(alias)) {
                 OID targetLocalOID = _a2t.getNullable_(alias);
@@ -309,8 +287,16 @@ public class Aliasing
                 }
 
                 // Move non-alias meta KML version from alias to target.
-                // TODO:FIXME this may lose ticks...
-                Version vKMLAliasMeta = _nvc.getKMLVersion_(aliasMeta).withoutAliasTicks_();
+                // FIXME: this WILL lose any regular tick shadowed by the discarded alias ticks
+                // possible ways to mitigate this issue:
+                //   * rely on the sender of the alias message to provide shadowed ticks
+                //     (through vRemoteTargetMeta)
+                //   * when aliasing, expend an extra regular "merge" tick on the target
+                //     similar to what is done when merging content branches to prevent
+                //     alias ticks from shadowing KMLs
+                //   * separate regular and alias tick spaces
+                //
+                Version vKMLAliasMeta = _nvc.getKMLVersion_(aliasMeta).nonAliasTicks_();
                 _nvc.deleteKMLVersionPermanently_(aliasMeta, vKMLAliasMeta, t);
 
                 SOCID targetMeta = new SOCID(target, CID.META);
@@ -338,15 +324,44 @@ public class Aliasing
         // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
         } catch (Exception e) {
             rollbackCause = e;
-            l.warn("triggered rollback: " + Util.e(rollbackCause));
+            l.warn("triggered rollback: {}", Util.e(rollbackCause));
             throw e;
         } catch (Error e) {
             rollbackCause = e;
-            l.warn("triggered rollback: " + Util.e(rollbackCause));
+            l.warn("triggered rollback: {}", Util.e(rollbackCause));
             throw e;
         } finally {
             t.end_(rollbackCause);
         }
+    }
+
+    private void fetchTarget_(SOID alias, SOID target, Version vRemoteTargetMeta, OID oidParent,
+            int metaDiff, PBMeta meta, IDownloadContext cxt, Trans t)
+            throws Exception
+    {
+        l.info("target not locally present");
+        SOCKID k = new SOCKID(target, CID.META, KIndex.MASTER);
+
+        // Although CausalityResult is only used in applyUpdateMetaAndContent_()
+        // when no name conflict is detected it's necessary to compute it before
+        // applyMeta_().
+        CausalityResult cr = _ru.computeCausalityForMeta_(target, vRemoteTargetMeta, metaDiff);
+
+        boolean oidsAliasedOnNameConflict = _ru.applyMeta_(target, meta, oidParent,
+                false, // Since this is a new object to be received, wasPresent is false.
+                metaDiff, t,
+                alias, // noNewVersion
+                vRemoteTargetMeta,
+                alias,
+                cr,
+                cxt);
+
+        // Don't applyUpdate() if a name conflict was detected and
+        // performAliasingOnLocallyAvailableObjects_() was invoked.
+        if (!oidsAliasedOnNameConflict) {
+            _ru.applyUpdateMetaAndContent_(k, vRemoteTargetMeta, cr, t);
+        }
+        l.debug("Done receiving new target object");
     }
 
     /**
@@ -354,16 +369,15 @@ public class Aliasing
      * This method should be used when a name conflict is detected on processing a new object
      * from a remote peer.
      *
-     * @param meta Meta-data information received from remote peer
      * @param soidNoNewVersion No new version should be created if the resulting
      *        alias matches soidNoNewVersion
      */
     public void resolveNameConflictOnNewRemoteObjectByAliasing_(SOID soidRemote, SOID soidLocal,
-            OID parent, Version vRemote, PBMeta meta, @Nullable SOID soidNoNewVersion, Trans t)
+            Version vRemote, @Nullable SOID soidNoNewVersion, Trans t)
         throws Exception
     {
         l.debug("Resolving name conflict by aliasing conflicting objects.");
-        assert soidRemote.sidx().equals(soidLocal.sidx()) : soidRemote + " " + soidLocal;
+        checkArgument(soidRemote.sidx().equals(soidLocal.sidx()), "%s %s", soidRemote, soidLocal);
 
         Version vLocal = getMasterVersion_(new SOCID(soidLocal, CID.META));
 
@@ -371,7 +385,7 @@ public class Aliasing
 
         boolean targetIsRemote = ar._target.equals(soidRemote);
 
-        l.info("alias:" + ar._alias + " target:" + ar._target + " " + targetIsRemote);
+        l.info("alias:{} target:{} {}", ar._alias, ar._target, targetIsRemote);
 
         Version vAlias, vTarget;
         if (targetIsRemote) {
@@ -385,11 +399,11 @@ public class Aliasing
         performAliasing_(ar._alias, vAlias, ar._target, vTarget, t);
 
         OA oaTarget = _ds.getOA_(ar._target);
-        l.info("target: " + oaTarget);
+        l.info("target: {}", oaTarget);
 
         // Increment local version of the alias object, if required.
         if (!ar._alias.equals(soidNoNewVersion)) {
-            l.info("update alias " + ar._alias);
+            l.info("update alias {}", ar._alias);
             _vu.updateAliased_(new SOCKID(ar._alias, CID.META), t);
         }
     }

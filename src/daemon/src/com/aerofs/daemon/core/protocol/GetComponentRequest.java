@@ -148,12 +148,12 @@ public class GetComponentRequest
 
         // all of its local versions must be alias ticks
         final Version vAllLocal = _nvc.getAllLocalVersions_(socid);
-        assert vAllLocal.withoutAliasTicks_().isZero_() : socid + " " + vAllLocal;
+        assert vAllLocal.isAliasOnly_() : socid + " " + vAllLocal;
 
         final Version vKML = _nvc.getKMLVersion_(socid);
         if (socid.cid().isMeta()) {
             // Aliased meta should only have alias ticks
-            assert vKML.withoutAliasTicks_().isZero_() : socid + " " + vKML;
+            assert vKML.isAliasOnly_() : socid + " " + vKML;
         } else {
             assert (socid.cid().equals(CID.CONTENT)) : socid;
 

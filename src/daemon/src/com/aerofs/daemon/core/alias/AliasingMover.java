@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.SortedMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Helper class for Aliasing.java that helps in moving version vectors, content etc.
@@ -84,27 +85,27 @@ public class AliasingMover
     public void moveKMLVersion_(SOCID alias, SOCID target, Version vAllLocalAlias,
             Version vAllLocalTarget, Trans t) throws SQLException
     {
-        assert !alias.equals(target) : alias;
+        checkArgument(!alias.equals(target), alias);
 
         // TODO:FIXME this may lose ticks...
-        Version vKMLAlias =  _nvc.getKMLVersion_(alias).withoutAliasTicks_();
+        Version vKMLAlias =  _nvc.getKMLVersion_(alias).nonAliasTicks_();
         Version vKMLTarget = _nvc.getKMLVersion_(target);
         Version vKMLAlias_AllLocalTarget = vKMLAlias.sub_(vAllLocalTarget);
         Version vKMLAddToTarget = vKMLAlias_AllLocalTarget.sub_(vKMLTarget);
         _nvc.addKMLVersionAndCollectorSequence_(target, vKMLAddToTarget, t);
 
         // TODO (WW) For debugging only. To be removed
-        l.warn(alias + "->" + target + " " + vAllLocalAlias + " " + vAllLocalTarget + " " +
-            " " + _nvc.getKMLVersion_(target) + " " + vKMLAlias + " " + vKMLTarget + " " +
-                vKMLAlias_AllLocalTarget + " " + vKMLAddToTarget);
+        l.warn("{}->{} {} {} {} {} {} {} {}", alias, target, vAllLocalAlias, vAllLocalTarget,
+                _nvc.getKMLVersion_(target), vKMLAlias, vKMLTarget,
+                vKMLAlias_AllLocalTarget, vKMLAddToTarget);
 
         // Perform the last step, vKMLTarget -= vAllLocalAlias. see method header comment.
         Version vKMLTargetNew = vKMLTarget.add_(vKMLAlias_AllLocalTarget);
-        assert vKMLTargetNew.equals(_nvc.getKMLVersion_(target)) :
-                alias + " " + target + " " + vAllLocalAlias + " " + vAllLocalTarget + " " +
-                vKMLTargetNew + " " + _nvc.getKMLVersion_(target) + " " +
-                vKMLAlias + " " + vKMLTarget + " " + vKMLAlias_AllLocalTarget + " " +
-                vKMLAddToTarget;
+        checkState(vKMLTargetNew.equals(_nvc.getKMLVersion_(target)),
+                "%s %s %s %s %s %s %s %s %s %s",
+                alias, target, vAllLocalAlias, vAllLocalTarget, vKMLTargetNew,
+                _nvc.getKMLVersion_(target), vKMLAlias, vKMLTarget, vKMLAlias_AllLocalTarget,
+                vKMLAddToTarget);
 
         // add_(vAllLocalTarget) is necessary since vAllLocalTarget may reflect the future value,
         // and the current local version of the target may not contain the elements that should be
@@ -125,7 +126,7 @@ public class AliasingMover
     public void moveContent_(SOID aliasObject, SOID targetObject, Trans t)
         throws SQLException, ExNotFound, ExAborted, DigestException, IOException
     {
-        assert aliasObject.sidx().equals(targetObject.sidx());
+        checkArgument(aliasObject.sidx().equals(targetObject.sidx()));
 
         OA oaAlias = _ds.getOANullable_(aliasObject);
         OA oaTarget = _ds.getOA_(targetObject);
@@ -141,7 +142,7 @@ public class AliasingMover
 
         // nothing to do, move along
         if (oaAlias == null) {
-            l.info("remote alias: no content " + aliasObject);
+            l.info("remote alias: no content {}", aliasObject);
             return;
         }
 
@@ -153,7 +154,7 @@ public class AliasingMover
             moveBranches_(alias, target, kidxsAlias, kidxsTarget, t);
         } else {
             // The target object is expelled.
-            l.info("target expelled on " + aliasObject + "->" + targetObject);
+            l.info("target expelled on {}->{}", aliasObject, targetObject);
 
             // Add all the local versions from the alias object as KML version.
             Version vKMLTarget = _nvc.getKMLVersion_(target);
@@ -184,14 +185,14 @@ public class AliasingMover
             Set<KIndex> kidxsTarget, Trans t)
             throws SQLException, ExNotFound, ExAborted, DigestException, IOException
     {
-        assert alias.cid() == CID.CONTENT && target.cid() == CID.CONTENT;
+        checkArgument(alias.cid() == CID.CONTENT && target.cid() == CID.CONTENT);
         if (kidxsAlias.isEmpty()) {
-            l.info("local alias: no content " + alias.soid());
+            l.info("local alias: no content {}", alias.soid());
             return;
         }
         // The alias MASTER branch is handled first to make sure it is moved into the target MASTER
         // branch if the target is empty and that regardless of the branch numbering
-        assert kidxsAlias.contains(KIndex.MASTER) : kidxsAlias;
+        checkArgument(kidxsAlias.contains(KIndex.MASTER), kidxsAlias);
 
         moveBranch_(new SOCKID(alias, KIndex.MASTER), target, kidxsTarget, t);
 
@@ -230,7 +231,7 @@ public class AliasingMover
             KIndex kidxTarget = targetCAs.isEmpty() ? KIndex.MASTER
                     : targetCAs.lastKey().increment();
 
-            l.warn("almov " + alias + "->" + new SOCKID(target, kidxTarget));
+            l.warn("almov {}->{}", alias, new SOCKID(target, kidxTarget));
 
             // Compute hash only if the branch is a non-master branch on the target, since
             // DS.setCA_() requires non-null hashes on these branches. See Hasher for detail.
@@ -299,11 +300,11 @@ public class AliasingMover
         throws Exception
     {
         SIndex sidx = alias.sidx();
-        assert sidx.equals(target.sidx()) : sidx + " " + target.sidx();
+        checkArgument(sidx.equals(target.sidx()), "%s %s", sidx, target.sidx());
 
         OA oaAlias = _ds.getOANullable_(alias);
         if (oaAlias == null) {
-            l.info("remote alias: no children " + alias);
+            l.info("remote alias: no children {}", alias);
             return;
         }
 
@@ -346,8 +347,8 @@ public class AliasingMover
     public void moveMetadataLocalVersion_(SOCID alias, SOCID target, Version vAlias,
             Version vTarget, Trans t) throws SQLException
     {
-        assert alias.cid().isMeta();
-        assert target.cid().isMeta();
+        checkArgument(alias.cid().isMeta());
+        checkArgument(target.cid().isMeta());
 
         // vTarget isn't necessarily version present locally, hence it's necessary to query local
         // target version before merging.
