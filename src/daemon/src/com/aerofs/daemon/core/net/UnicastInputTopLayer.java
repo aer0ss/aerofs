@@ -95,7 +95,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
 
         try {
             checkState(!did.equals(Cfg.did()));
-
             _f._d2u.onUserIDResolved_(did, pc.user());
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
             processIncomingMessage_(new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null));
@@ -115,7 +114,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             PBCore pb = PBCore.parseDelimitedFrom(is);
             UserID userID = _f._d2u.getUserIDForDIDNullable_(did);
             if (userID == null) {
-                // FIXME (AG): This should really be a queue of DID -> pending multicast packets
+                // FIXME (AG): This should be a queue of DID -> pending multicast packets
                 // This would ensure that only the first thread waits
                 // Other threads would place their multicast packet into the queue
                 // and when the UserID is resolved the original thread can

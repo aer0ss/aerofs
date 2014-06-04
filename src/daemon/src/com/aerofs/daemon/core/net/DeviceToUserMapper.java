@@ -117,26 +117,28 @@ public class DeviceToUserMapper
     /**
      * Issue a unicast RESOLVE_USER_ID_REQUEST.
      * <p/>
-     * This creates a TLS-secured unicast connection with the remote
+     * This initiates a TLS-secured unicast connection to the remote
      * device. As a side effect the device's UserID is retrieved. The
-     * current thread pauses until a RESOLVE_USER_ID_RESPONSE is
+     * calling thread pauses until a RESOLVE_USER_ID_RESPONSE is
      * received or the entire process fails (due to a timeout, etc.)
+     * This method is a noop if the DID->UserID mapping exists.
      * <p/>
      * The response <strong>must</strong> be processed using
-     * {@link DeviceToUserMapper#onUserIDResolved_(DID, UserID)} for the local
-     * database to be updated.
+     * {@link DeviceToUserMapper#onUserIDResolved_(DID, UserID)} for the
+     * local persistent store to be updated.
      * <p/>
-     * This method <strong>does not</strong> require a connection
-     * to SP. This makes it ideal for situations where the AeroFS servers
-     * aren't reachable.
-     *
-     * @throws IllegalStateException if the DID->UserID mapping already exists
+     * This method <strong>does not</strong> require access to
+     * the AeroFS servers. This makes it ideal for clients on an
+     * isolated network.
      */
     public UserID issuePeerToPeerResolveUserIDRequest_(DID did)
             throws Exception
     {
-        Preconditions.checkState(_mappingStore.getNullable_(did) == null,
-                "did->user mapping exists d:%s", did);
+        UserID cachedUserID = _mappingCache.get(did);
+        if (cachedUserID != null) {
+            l.trace("{} mapping exists {}->{}", did, did, cachedUserID);
+            return cachedUserID;
+        }
 
         l.info("resolve user d:{}", did);
         _transportRoutingLayer.sendUnicast_(did, CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_REQUEST).build());
@@ -146,7 +148,7 @@ public class DeviceToUserMapper
             TCB tcb = TC.tcb();
             _resolutionWaiters.put(did, tcb);
             try {
-                tk.pause_(Cfg.timeout(), "d2u " + did);
+                tk.pause_(Cfg.timeout(), String.format("d2u %s", did));
             } finally {
                 _resolutionWaiters.remove(did, tcb);
             }
@@ -155,8 +157,8 @@ public class DeviceToUserMapper
         }
 
         // this should always return a non-null value
-        // if the resolution succeeds then the _mappingStore and _mappingCache
-        // have been refreshed
+        // if the resolution succeeds then both
+        // _mappingStore and _mappingCache have been refreshed
         UserID userID = _mappingCache.get(did);
         Preconditions.checkState(userID != null);
         return userID;
@@ -168,58 +170,73 @@ public class DeviceToUserMapper
     public void respondToPeerToPeerResolveUserIDRequest_(DID did)
             throws Exception
     {
-        // FIXME (AG): should I send out via ep?
         _transportRoutingLayer.sendUnicast_(did, CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_RESPONSE).build());
     }
 
     /**
-     * Adds a mapping from DID->UserID.
+     * Creates a mapping from DID->UserID
+     * if one does not already exist. This method
+     * is a noop if a mapping exists.
      * <p/>
      * Callers <strong>must</strong> securely authenticate
-     * the peer before calling this method.
+     * the remote device before calling this method.
      * <p/>
      * This method <strong>starts</strong> a transaction.
      */
     public void onUserIDResolved_(DID did, UserID userID)
             throws SQLException
     {
-        if (_mappingStore.getNullable_(did) == null) {
+        if (!_mappingCache.containsKey(did)) {
             Trans t = _tm.begin_();
             try {
-                setUserIDForDID_(did, userID, t);
+                onUserIdResolvedInternal_(did, userID, t);
                 t.commit_();
             } finally {
                 t.end_();
             }
+        } else {
+            _deviceLRU.addDevice_(did);
         }
 
         wakeResolutionWaiters_(did, userID);
     }
 
     /**
-     * Adds a mapping from DID->UserID.
+     * Creates a mapping from DID->UserID
+     * if one does not already exist. This method
+     * is a noop if a mapping exists.
      * <p/>
      * Callers <strong>must</strong> securely authenticate
-     * the peer before calling this method.
+     * the remote device before calling this method.
      * <p/>
      * This method <strong>does not</strong> start a transaction
      */
     public void onUserIDResolved_(DID did, UserID userID, Trans t)
             throws SQLException
     {
-        if (_mappingStore.getNullable_(did) == null) {
-            setUserIDForDID_(did, userID, t);
+        if (!_mappingCache.containsKey(did)) {
+            onUserIdResolvedInternal_(did, userID, t);
+        } else {
+            _deviceLRU.addDevice_(did);
         }
 
         wakeResolutionWaiters_(did, userID);
     }
 
-    // Set the DID->UserID mapping for both the persistent mapping
-    // store as well as the in-memory cache.
-    private void setUserIDForDID_(DID did, UserID userID, Trans t)
+    // Sets the DID->UserID mapping in the persistent store
+    // if it doesn't exist. Also always updates the in-memory
+    // mapping and device caches.
+    private void onUserIdResolvedInternal_(DID did, UserID userID, Trans t)
             throws SQLException
     {
-        _mappingStore.insert_(did, userID, t);
+        UserID persistedUserID = _mappingStore.getNullable_(did);
+
+        if (persistedUserID == null) {
+            _mappingStore.insert_(did, userID, t);
+        } else {
+            Preconditions.checkState(persistedUserID.equals(userID), "exp:%s act:%s", userID, persistedUserID);
+        }
+
         _mappingCache.put(did, userID);
         _deviceLRU.addDevice_(did);
     }
