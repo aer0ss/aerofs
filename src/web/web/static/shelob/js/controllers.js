@@ -105,11 +105,6 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         name: '',
     };
 
-    // data controlling which object is moused over, and should display action icons
-    $scope.mousedOver = {
-        object: null
-    };
-
     // This is called when a user submits the name for a new folder
     //
     // It should submit an API request to create a folder and update

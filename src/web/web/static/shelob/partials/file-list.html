@@ -50,9 +50,6 @@
       </tr>
 
       <tr ng-repeat="object in objects | orderBy:['-type', 'name']"
-          ng-init="mousedOver.object = null;"
-          ng-mouseenter="mousedOver.object = object"
-          ng-mouseleave="mousedOver.object = null"
           class="object">
         <td class="icon">
           <img ng-if="object.type == 'folder' && !object.is_shared" src="/static/shelob/img/icons/40x40/filetype_folder.png">
@@ -74,12 +71,12 @@
         </td>
         <td class="last-modified">{{object.last_modified | date: 'short'}}</td>
         <td class="actions">
-          <div ng-show="mousedOver.object.id == object.id">
+          <div class="pull-right">
             <div class="btn-group">
               <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                 Actions <span class="caret"></span>
               </button>
-              <ul class="dropdown-menu" role="menu">
+              <ul class="dropdown-menu pull-right" role="menu">
                 <li><a
                    ng-click="startRename(object)"
                    class="edit action action-rename"><span class="glyphicon glyphicon-pencil"></span> Rename</a></li>
