@@ -43,6 +43,9 @@ class _SPServiceWrapper(object):
     def leave_shared_folder(self, sid):
         self._service.leave_shared_folder(sid)
 
+    def destroy_shared_folder(self, sid):
+        self._service.leave_shared_folder(sid)
+
     def list_pending_folder_invitations(self):
         reply = self._service.list_pending_folder_invitations()
         return reply.invitation

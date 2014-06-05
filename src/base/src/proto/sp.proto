@@ -759,6 +759,14 @@ service SPService {
     //   ExBadCredential if the password is incorrect
     //
     rpc ValidateUrlPassword(ValidateUrlPasswordCall) returns (Void);
+
+    // Destroy a shared folder and remove all ACLs for it
+    //
+    // Required Auth Level: store manager
+    //   ExNotFound if the key does not exist
+    //   ExNoPerm if the current user isn't a manager or an admin of a manager
+    //
+    rpc DestroySharedFolder(DestroySharedFolderCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1410,4 +1418,8 @@ message RemoveUrlPasswordCall {
 message ValidateUrlPasswordCall {
     required string key = 1;
     required bytes password = 2;
+}
+
+message DestroySharedFolderCall {
+    required bytes shared_id = 1;
 }

@@ -1636,6 +1636,33 @@ public class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<Void> destroySharedFolder(ByteString sharedId)
+            throws Exception
+    {
+        User caller = _sessionUser.getUser();
+
+        _sqlTrans.begin();
+        SharedFolder sf = _factSharedFolder.create(new SID(sharedId));
+        l.info("{} destroys {}", caller, sf);
+        if (!sf.exists()) throw new ExNotFound("The folder does not exist");
+        if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot leave root folder");
+        sf.throwIfNoPrivilegeToChangeACL(caller);
+        String folderName = sf.getName(caller);
+        ImmutableCollection<UserID> affectedUsers = sf.destroy();
+
+        _auditClient.event(AuditTopic.SHARING, "folder.destroy")
+                .embed("folder", new AuditFolder(sf.id(), folderName))
+                .embed("caller", new AuditCaller(caller.id()))
+                .publish();
+
+        // this must be the last thing in the transaction
+        _aclPublisher.publish_(affectedUsers);
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
     public ListenableFuture<Void> setQuota(Long quota)
             throws Exception
     {
