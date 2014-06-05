@@ -15,6 +15,7 @@ import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
@@ -32,11 +33,12 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
         owner = saveUser();
         editor = saveUser();
         admin.setLevel(AuthorizationLevel.ADMIN);
+        owner.setOrganization(admin.getOrganization(), AuthorizationLevel.USER);
+        editor.setOrganization(admin.getOrganization(), AuthorizationLevel.USER);
         sqlTrans.commit();
 
         sid = SID.generate();
-        shareAndJoinFolder(admin, sid, owner, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
-        shareAndJoinFolder(admin, sid, editor, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(owner, sid, editor, Permissions.allOf(Permission.WRITE));
     }
 
     @Test
@@ -101,6 +103,22 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
             service.destroySharedFolder(SID.generate());
             fail();
         } catch (ExNotFound ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void shouldThrowExNoPermForAdminOfOrgWithNoManagers() throws Exception
+    {
+        sqlTrans.begin();
+        User otherAdmin = saveUser();
+        assertTrue(otherAdmin.isAdmin());
+        sqlTrans.commit();
+        setSessionUser(otherAdmin);
+        try {
+            service.destroySharedFolder(sid);
+            fail();
+        } catch (ExNoPerm ignored) {
             // success
         }
     }
