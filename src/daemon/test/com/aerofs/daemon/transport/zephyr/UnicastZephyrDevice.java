@@ -14,6 +14,7 @@ import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.link.LinkStateService;
+import com.aerofs.daemon.transport.ChannelFactories;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
@@ -32,7 +33,6 @@ import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.daemon.transport.xmpp.signalling.SignallingService;
 import com.aerofs.lib.event.IEvent;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jivesoftware.smack.XMPPConnection;
 
@@ -102,7 +102,7 @@ public final class UnicastZephyrDevice
                 transportStats,
                 new HashedWheelTimer(),
                 mockRockLog.getRockLog(),
-                new NioClientSocketChannelFactory(),
+                ChannelFactories.newClientChannelFactory(),
                 new InetSocketAddress(zephyrHost, zephyrPort),
                 Proxy.NO_PROXY);
 

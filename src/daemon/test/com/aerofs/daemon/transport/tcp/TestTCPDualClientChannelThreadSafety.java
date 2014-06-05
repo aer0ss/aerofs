@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.transport.ChannelFactories;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.TransportLoggerSetup;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -21,8 +22,6 @@ import org.jboss.netty.channel.DefaultChannelPipeline;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -106,7 +105,7 @@ public final class TestTCPDualClientChannelThreadSafety
     {
         l.info("starting setup for {}", device.did);
 
-        device.serverBootstrap = new ServerBootstrap(new NioServerSocketChannelFactory());
+        device.serverBootstrap = new ServerBootstrap(ChannelFactories.newServerChannelFactory());
         device.serverBootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
@@ -129,7 +128,7 @@ public final class TestTCPDualClientChannelThreadSafety
             }
         });
 
-        device.clientBootstrap = new ClientBootstrap(new NioClientSocketChannelFactory());
+        device.clientBootstrap = new ClientBootstrap(ChannelFactories.newClientChannelFactory());
         device.clientBootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override

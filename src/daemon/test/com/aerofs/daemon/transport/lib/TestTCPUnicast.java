@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.C;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.transport.ChannelFactories;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.LoggingRule;
@@ -17,8 +18,6 @@ import com.aerofs.lib.event.Prio;
 import com.google.common.base.Charsets;
 import org.hamcrest.MatcherAssert;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -80,8 +79,8 @@ public final class TestTCPUnicast
         when(localDevice.addressResolver.resolve(otherDevice.did)).thenReturn(otherDevice.listeningAddress);
         when(otherDevice.addressResolver.resolve(localDevice.did)).thenReturn(localDevice.listeningAddress);
 
-        localDevice.start(new NioServerSocketChannelFactory(), new NioClientSocketChannelFactory());
-        otherDevice.start(new NioServerSocketChannelFactory(), new NioClientSocketChannelFactory());
+        localDevice.start(ChannelFactories.newServerChannelFactory(), ChannelFactories.newClientChannelFactory());
+        otherDevice.start(ChannelFactories.newServerChannelFactory(), ChannelFactories.newClientChannelFactory());
 
         l.info("local:{} remote:{}", localDevice.did, otherDevice.did);
     }

@@ -32,8 +32,6 @@ import com.google.common.io.Files;
 import org.jboss.netty.buffer.ChannelBufferFactory;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 import org.junit.rules.ExternalResource;
@@ -50,7 +48,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 import static org.mockito.Mockito.mock;
 
 public final class TransportResource extends ExternalResource
@@ -70,8 +67,8 @@ public final class TransportResource extends ExternalResource
     private final SecureRandom secureRandom = new SecureRandom();
     private final Timer timer = new HashedWheelTimer();
     private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(DaemonParam.QUEUE_LENGTH_DEFAULT);
-    private final ClientSocketChannelFactory clientSocketChannelFactory = new NioClientSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2, 2);
-    private final ServerSocketChannelFactory serverSocketChannelFactory = new NioServerSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), 2);
+    private final ClientSocketChannelFactory clientSocketChannelFactory = ChannelFactories.newClientChannelFactory();
+    private final ServerSocketChannelFactory serverSocketChannelFactory = ChannelFactories.newServerChannelFactory();
     private final TransferStatisticsManager transferStatisticsManager = mock(TransferStatisticsManager.class);
     private final TransportType transportType;
     private final String transportId;
