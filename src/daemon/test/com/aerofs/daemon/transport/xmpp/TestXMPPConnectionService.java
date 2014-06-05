@@ -49,14 +49,14 @@ public final class TestXMPPConnectionService
         TransportLoggerSetup.init();
     }
 
-    private static final long TEST_CONNECT_TIMEOUT = 10000;
+    private static final long TEST_CONNECT_TIMEOUT = 30000;
     private static final int PING_INTERVAL_IN_MS = 1000;
     private static final int MAX_PINGS_BEFORE_DISCONNECTION = 3;
     private static final long INITIAL_CONNECT_RETRY_INTERVAL_IN_MS = 1000;
     private static final long MAX_CONNECT_RETRY_INTERVAL_IN_MS = 10000;
-    private static final int STATE_CHANGE_SLEEP_IN_MS = 10000;
+    private static final int STATE_CHANGE_SLEEP_IN_MS = 20000;
 
-    private static final long ACQUIRE_TIMEOUT = 1000;
+    private static final long ACQUIRE_TIMEOUT = 10000;
     private static final TimeUnit ACQUIRE_TIMEOUT_TIMEUNIT = TimeUnit.MILLISECONDS;
 
     private static final Logger l = LoggerFactory.getLogger(TestXMPPConnectionService.class);
@@ -67,7 +67,7 @@ public final class TestXMPPConnectionService
     private XMPPConnectionService xmppConnectionService;
 
     @Rule
-    public Timeout timeout = new Timeout(20000);
+    public Timeout timeout = new Timeout(60000);
 
     @Rule
     public LoggingRule loggingRule = new LoggingRule(l);
