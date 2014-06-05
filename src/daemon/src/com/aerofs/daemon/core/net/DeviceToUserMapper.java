@@ -140,7 +140,7 @@ public class DeviceToUserMapper
             return cachedUserID;
         }
 
-        l.info("resolve user d:{}", did);
+        l.info("{} send resolve", did);
         _transportRoutingLayer.sendUnicast_(did, CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_REQUEST).build());
 
         Token tk = _tokenManager.acquireThrows_(Cat.RESOLVE_USER_ID, did.toString());
@@ -170,6 +170,8 @@ public class DeviceToUserMapper
     public void respondToPeerToPeerResolveUserIDRequest_(DID did)
             throws Exception
     {
+        l.info("{} respond to resolve", did);
+
         _transportRoutingLayer.sendUnicast_(did, CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_RESPONSE).build());
     }
 
@@ -229,6 +231,8 @@ public class DeviceToUserMapper
     private void onUserIdResolvedInternal_(DID did, UserID userID, Trans t)
             throws SQLException
     {
+        l.debug("{} mapped to {}", did, userID);
+
         UserID persistedUserID = _mappingStore.getNullable_(did);
 
         if (persistedUserID == null) {

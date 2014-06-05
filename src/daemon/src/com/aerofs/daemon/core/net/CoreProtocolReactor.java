@@ -33,9 +33,9 @@ import java.io.InputStream;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class UnicastInputTopLayer implements IUnicastInputLayer
+public class CoreProtocolReactor implements IUnicastInputLayer
 {
-    private static final Logger l = Loggers.getLogger(UnicastInputTopLayer.class);
+    private static final Logger l = Loggers.getLogger(CoreProtocolReactor.class);
 
     public static class Factory
     {
@@ -50,6 +50,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         private final ComputeHash _computeHash;
         private final IncomingStreams _iss;
 
+        // FIXME (AG): this wiring is terrible, inverse dep and allow handlers to auto-register?
         @Inject
         public Factory(
                 IncomingStreams iss,
@@ -75,15 +76,15 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _trl = trl;
         }
 
-        public UnicastInputTopLayer create_()
+        public CoreProtocolReactor create_()
         {
-            return new UnicastInputTopLayer(this);
+            return new CoreProtocolReactor(this);
         }
     }
 
     private final Factory _f;
 
-    private UnicastInputTopLayer(Factory f)
+    private CoreProtocolReactor(Factory f)
     {
         _f = f;
     }
@@ -99,7 +100,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
             processIncomingMessage_(new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null));
         } catch (Exception e) {
-            l.warn("{} fail process uc cause:{}", did, LogUtil.suppress(e, ExDeviceOffline.class, ExBadCredential.class));
+            l.warn("{} fail process uc", did, LogUtil.suppress(e, ExDeviceOffline.class, ExBadCredential.class));
             SystemUtil.fatalOnUncheckedException(e);
         }
     }
@@ -124,15 +125,11 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
 
             processIncomingMessage_(new DigestedMessage(pb, is, ep, userID, null));
         } catch (Exception e) {
-            l.warn("{} fail process mc cause:{}", did, LogUtil.suppress(e, ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class));
+            l.warn("{} fail process mc", did, LogUtil.suppress(e, ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class));
             SystemUtil.fatalOnUncheckedException(e);
         }
     }
 
-    //
-    // FIXME (AG): pull out processIncomingMessage_* into a CoreMessageReactor
-    // FIXME (AG): this wiring is terrible, inverse dep and allow handlers to auto-register?
-    //
     private void processIncomingMessage_(DigestedMessage msg)
             throws Exception
     {
