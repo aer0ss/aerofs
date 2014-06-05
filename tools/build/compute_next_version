@@ -1,0 +1,61 @@
+#!/bin/bash
+set -e -u
+
+# Compute, and then print, the next release version to use.
+# If UNSIGNED is requested, a snapshot id will be generated:
+#   0.<date>.<time>
+#
+# If SIGNED is requested, the max value is found from S3, the
+# build number is incremented, and the result is used.
+#
+
+include include/common ${1}
+
+function DieUsage {
+    echo "usage: $0 [build mode] [signed]" >&2
+    echo " " >&2
+    echo "[build mode]: PUBLIC|PRIVATE " >&2
+    echo "[signed]:     SIGNED|UNSIGNED" >&2
+    echo " " >&2
+    echo "example: $0 PUBLIC SIGNED" >&2
+    exit $ERRBADARGS
+}
+
+[ $# -ne 2 ] && DieUsage
+
+case ${2:-} in
+    SIGNED|UNSIGNED) SIGN_MODE=$2 ;;
+    *) DieUsage ;;
+esac
+
+function compute_next_release_version() {
+    local local_CURRENT_RELEASE_VERSION="$( current_release_version )"
+    [[ $local_CURRENT_RELEASE_VERSION != "" ]] || exit $ERRBADVERSION
+    local local_CURRENT_RELEASE_VERSION_MAJOR_MINOR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/\.[0-9]*$//' )"
+    local local_CURRENT_RELEASE_VERSION_BUILD_NUMBR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/.*\.//' )"
+    local local_LOCAL_VERSION_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
+
+    readonly local_CURRENT_RELEASE_VERSION_STRING
+    readonly local_CURRENT_RELEASE_VERSION
+    readonly local_CURRENT_RELEASE_VERSION_MAJOR_MINOR
+    readonly local_CURRENT_RELEASE_VERSION_BUILD_NUMBR
+    readonly local_LOCAL_VERSION_MAJOR_MINOR
+
+    local local_BUILD_NUMBER=""
+    if [ $local_CURRENT_RELEASE_VERSION_MAJOR_MINOR == $local_LOCAL_VERSION_MAJOR_MINOR ]; then  #FIXME (AG): verify they've actually bumped the number
+        local_BUILD_NUMBER="$( expr $local_CURRENT_RELEASE_VERSION_BUILD_NUMBR \+ 1 )"
+    else
+        local_BUILD_NUMBER=1 # reset build number to 1
+    fi
+
+    readonly RELEASE_VERSION="$local_LOCAL_VERSION_MAJOR_MINOR.$local_BUILD_NUMBER"
+}
+
+if [ "$SIGN_MODE" == "SIGNED" ] ; then
+    compute_next_release_version
+else
+    RELEASE_VERSION=0.$(date +%y%m%d.1%H%M)
+fi
+
+# Print the result so ant can use it:
+echo $RELEASE_VERSION

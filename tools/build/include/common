@@ -285,6 +285,7 @@ function is_ci() {
     fi
     return 1
 }
+
 ###############################################################################
 #
 # Echo the PUBLIC version string in the format of "Version=1.2.3"
@@ -294,85 +295,38 @@ function public_version_file_content() {
     wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PUBLIC}/${CANARY_VER}
 }
 
-###############################################################################
-#
-# Echo the PRIVATE version string in the format of "Version=1.2.3"
-#
-###############################################################################
-function private_version_file_content() {
-    wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PRIVATE}/${CURRENT_VER}
-}
-
 RELEASE_VERSION_REGEX="^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+###############################################################################
+#
+# Exit if the given string is not a properly-formatted version string like "1.2.3"
+#
+###############################################################################
+function check_version_format() {
+    if [[ ! ${1:-} =~ $RELEASE_VERSION_REGEX ]]; then
+        echo "You said ${1} ..." >&2
+        echo "That's a weird release version.  I was expecting something matching:" >&2
+        echo "$RELEASE_VERSION_REGEX" >&2
+        echo "like 0.8.33 or something." >&2
+        exit $ERRBADARGS
+    fi
+}
 
 ###############################################################################
 #
 # Gets the current active version on S3, like "0.4.98"
 #
-# Return the larger of the PUBLIC and PRIVATE version numbers
-#
 ###############################################################################
 function current_release_version() {
     local local_PUBLIC_VERSION_FILE_CONTENT="$( public_version_file_content )"
-    local local_PRIVATE_VERSION_FILE_CONTENT="$( private_version_file_content )"
     local local_PUBLIC_VERSION="$( echo $local_PUBLIC_VERSION_FILE_CONTENT | sed -e 's/.*=//' )"
-    local local_PRIVATE_VERSION="$( echo $local_PRIVATE_VERSION_FILE_CONTENT | sed -e 's/.*=//' )"
-    if [[ ! $local_PUBLIC_VERSION =~ $RELEASE_VERSION_REGEX ||
-          ! $local_PRIVATE_VERSION =~ $RELEASE_VERSION_REGEX ]];
-    then
+    if [[ ! $local_PUBLIC_VERSION =~ $RELEASE_VERSION_REGEX ]] ; then
         echo ""
         exit $ERRBADVERSION
     fi
 
-    # before calculating the max of the public and private versions, run a few
-    # sanity checks on the max_version function
-    [ "$(max_version 1.2.3 1.2.34)" = "1.2.34" ] || exit $ERRTESTFAIL
-    [ "$(max_version 1.2.3 1.2.234)" = "1.2.234" ] || exit $ERRTESTFAIL
-    [ "$(max_version 1.2.3 1.23.3)" = "1.23.3" ] || exit $ERRTESTFAIL
-    [ "$(max_version 1.2.3 1.123.3)" = "1.123.3" ] || exit $ERRTESTFAIL
-    [ "$(max_version 1.2.3 1.1.3)" = "1.2.3" ] || exit $ERRTESTFAIL
-    [ "$(max_version 1.2.3 1.3.3)" = "1.3.3" ] || exit $ERRTESTFAIL
-    [ "$(max_version 1.2.3 0.2.3)" = "1.2.3" ] || exit $ERRTESTFAIL
-    [ "$(max_version 1.2.3 2.2.3)" = "2.2.3" ] || exit $ERRTESTFAIL
-    [ "$(max_version 1.2.3 10.2.3)" = "10.2.3" ] || exit $ERRTESTFAIL
-    max_version $local_PUBLIC_VERSION $local_PRIVATE_VERSION
+    echo "$local_PUBLIC_VERSION"
 }
-
-function max_version() {
-    [[ $# -ge 0 ]] || exit 1
-    python -c "import sys; print max(sys.argv[1:], key=lambda v: map(int, v.split('.')))" $@
-}
-
-
-###############################################################################
-#
-# Checks the current active version on S3 and computes the next logical version.
-#
-###############################################################################
-function compute_next_release_version() {
-    local local_CURRENT_RELEASE_VERSION="$( current_release_version )"
-    [[ $local_CURRENT_RELEASE_VERSION != "" ]] || exit $ERRBADVERSION
-    local local_CURRENT_RELEASE_VERSION_MAJOR_MINOR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/\.[0-9]*$//' )"
-    local local_CURRENT_RELEASE_VERSION_BUILD_NUMBR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/.*\.//' )"
-    local local_LOCAL_VERSION_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
-
-    readonly local_CURRENT_RELEASE_VERSION_STRING
-    readonly local_CURRENT_RELEASE_VERSION
-    readonly local_CURRENT_RELEASE_VERSION_MAJOR_MINOR
-    readonly local_CURRENT_RELEASE_VERSION_BUILD_NUMBR
-    readonly local_LOCAL_VERSION_MAJOR_MINOR
-
-    local local_BUILD_NUMBER=""
-    if [ $local_CURRENT_RELEASE_VERSION_MAJOR_MINOR == $local_LOCAL_VERSION_MAJOR_MINOR ]; then  #FIXME (AG): verify they've actually bumped the number
-        local_BUILD_NUMBER="$( expr $local_CURRENT_RELEASE_VERSION_BUILD_NUMBR \+ 1 )"
-    else
-        local_BUILD_NUMBER=1 # reset build number to 1
-    fi
-
-    readonly RELEASE_VERSION="$local_LOCAL_VERSION_MAJOR_MINOR.$local_BUILD_NUMBER"
-    echo "version: current => [major.minor.build:$local_CURRENT_RELEASE_VERSION] next => [major.minor.build:$RELEASE_VERSION]"
-}
-
 
 # Gets the product names from the labeling file.
 function compute_product_names() {

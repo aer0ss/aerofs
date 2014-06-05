@@ -10,12 +10,7 @@ fi
 # Check version number
 VERSION_TO_PROMOTE="$1"
 
-if [[ ! $VERSION_TO_PROMOTE =~ $RELEASE_VERSION_REGEX ]]; then
-    echo "That's a weird release version.  I was expecting something matching:" >&2
-    echo "$RELEASE_VERSION_REGEX" >&2
-    echo "like 0.8.33 or something." >&2
-    exit $ERRBADARGS
-fi
+check_version_format "$VERSION_TO_PROMOTE"
 
 lock_release_server "promoting $VERSION_TO_PROMOTE to public release"
 kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL <<EOF
