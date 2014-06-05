@@ -37,6 +37,7 @@ import java.util.Set;
 import static com.aerofs.daemon.core.phy.block.BlockStorageSchema.*;
 import static com.aerofs.daemon.core.phy.block.BlockUtil.isOneBlock;
 import static com.aerofs.daemon.core.phy.block.BlockUtil.splitBlocks;
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Maintains mapping between logical object (SOKID) and physical objects (64bit index)
@@ -231,15 +232,12 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private final PreparedStatementWrapper _pswDelFileInfo = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswDelFileInfo = new PreparedStatementWrapper(
+            DBUtil.deleteWhere(T_FileCurr, C_FileCurr_Index + "=?"));
     public void deleteFileInfo_(long fileId, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswDelFileInfo.get();
-            if (ps == null) {
-                _pswDelFileInfo.set(ps = c().prepareStatement(DBUtil.deleteWhere(T_FileCurr,
-                        C_FileCurr_Index + "=?")));
-            }
+            PreparedStatement ps = _pswDelFileInfo.get(c());
             ps.setLong(1, fileId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -248,15 +246,12 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private final PreparedStatementWrapper _pswDelHistFileInfo = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswDelHistFileInfo = new PreparedStatementWrapper(
+            DBUtil.deleteWhere(T_FileHist, C_FileHist_Index + "=? and " + C_FileHist_Ver + "=?"));
     public void deleteHistFileInfo_(long fileId, long ver, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswDelHistFileInfo.get();
-            if (ps == null) {
-                _pswDelHistFileInfo.set(ps = c().prepareStatement(DBUtil.deleteWhere(T_FileHist,
-                        C_FileHist_Index + "=? and " + C_FileHist_Ver + "=?")));
-            }
+            PreparedStatement ps = _pswDelHistFileInfo.get(c());
             ps.setLong(1, fileId);
             ps.setLong(2, ver);
             ps.executeUpdate();
@@ -315,16 +310,13 @@ public class BlockStorageDatabase extends AbstractDatabase
         return dirId;
     }
 
-    private final PreparedStatementWrapper _pswDeleteHistDir = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswDeleteHistDir = new PreparedStatementWrapper(
+            DBUtil.deleteWhere(T_DirHist, C_DirHist_Index + "=?"));
     public void deleteHistDir_(long dirId, Trans t) throws SQLException
     {
         final PreparedStatementWrapper psw = _pswDeleteHistDir;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(DBUtil.deleteWhere(T_DirHist,
-                        C_DirHist_Index + "=?")));
-            }
+            PreparedStatement ps = psw.get(c());
             ps.setLong(1, dirId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -425,22 +417,18 @@ public class BlockStorageDatabase extends AbstractDatabase
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    private PreparedStatementWrapper _pswPrePutBlock = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswPrePutBlock = new PreparedStatementWrapper(
+            _dbcw.insertOrIgnore() + " into " + T_BlockCount + " (" +
+                    C_BlockCount_Hash + ',' + C_BlockCount_Len + ',' +
+                    C_BlockCount_State + ',' + C_BlockCount_Count +
+                    ") VALUES(?,?,?,0)");
     public void prePutBlock_(ContentBlockHash chunk, long length, Trans t) throws SQLException
     {
-        if (l.isDebugEnabled()) l.debug("start chunk upload: " + chunk);
-        assert isOneBlock(chunk);
+        l.debug("start chunk upload: {}", chunk);
+        checkArgument(isOneBlock(chunk));
         PreparedStatementWrapper psw = _pswPrePutBlock;
-        PreparedStatement ps = psw.get();
         try {
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        _dbcw.insertOrIgnore() + " into " + T_BlockCount + " (" +
-                                C_BlockCount_Hash + ',' + C_BlockCount_Len + ',' +
-                                C_BlockCount_State + ',' + C_BlockCount_Count +
-                                ") VALUES(?,?,?,0)"));
-            }
-
+            PreparedStatement ps = psw.get(c());
             ps.setBytes(1, chunk.getBytes());
             ps.setLong(2, length);
             ps.setInt(3, BlockState.STORING.sqlValue());
@@ -451,21 +439,18 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswPostPutBlock = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswPostPutBlock = new PreparedStatementWrapper(
+            "update " + T_BlockCount +
+                    " set " + C_BlockCount_State + "=?" +
+                    " where " + C_BlockCount_Hash + "=?" +
+                    " and " + C_BlockCount_State + "=?");
     public void postPutBlock_(ContentBlockHash chunk, Trans t) throws SQLException
     {
-        if (l.isDebugEnabled()) l.debug("finish chunk upload: " + chunk);
-        assert isOneBlock(chunk);
+        l.debug("finish chunk upload: {}", chunk);
+        checkArgument(isOneBlock(chunk));
         PreparedStatementWrapper psw = _pswPostPutBlock;
-        PreparedStatement ps = psw.get();
         try {
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement("update " + T_BlockCount +
-                        " set " + C_BlockCount_State + "=?" +
-                        " where " + C_BlockCount_Hash + "=?" +
-                        " and " + C_BlockCount_State + "=?"));
-            }
-
+            PreparedStatement ps = psw.get(c());
             ps.setInt(1, BlockState.STORED.sqlValue());
             ps.setBytes(2, chunk.getBytes());
             ps.setInt(3, BlockState.STORING.sqlValue());
@@ -485,21 +470,15 @@ public class BlockStorageDatabase extends AbstractDatabase
         adjustBlockCount_(chunk, -1, t);
     }
 
-    private PreparedStatementWrapper _pswGetChunkState = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswGetChunkState = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_BlockCount, C_BlockCount_Hash + "=?", C_BlockCount_State));
     public BlockState getBlockState_(ContentBlockHash chunk) throws SQLException
     {
         PreparedStatementWrapper psw = _pswGetChunkState;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(DBUtil.selectWhere(T_BlockCount,
-                        C_BlockCount_Hash + "=?",
-                        C_BlockCount_State)));
-            }
-
+            PreparedStatement ps = psw.get(c());
             ps.setBytes(1, chunk.getBytes());
             ResultSet rs = ps.executeQuery();
-
             try {
                 if (!rs.next()) return null;
                 else return BlockState.fromSql(rs.getInt(1));
@@ -513,18 +492,13 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswGetChunkCount = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswGetChunkCount = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_BlockCount, C_BlockCount_Hash + "=?",  C_BlockCount_Count));
     public long getBlockCount_(ContentBlockHash chunk) throws SQLException
     {
         PreparedStatementWrapper psw = _pswGetChunkCount;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(DBUtil.selectWhere(T_BlockCount,
-                        C_BlockCount_Hash + "=?",
-                        C_BlockCount_Count)));
-            }
-
+            PreparedStatement ps = psw.get(c());
             ps.setBytes(1, chunk.getBytes());
             ResultSet rs = ps.executeQuery();
 
@@ -655,17 +629,12 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private final PreparedStatementWrapper _pswAliasFileEntry = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswAliasFileEntry = new PreparedStatementWrapper(
+            DBUtil.updateWhere(T_FileInfo, C_FileInfo_InternalName + "=?", C_FileInfo_InternalName));
     void updateInternalName_(String internalName, String newInternalName, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswAliasFileEntry.get();
-            if (ps == null) {
-                _pswAliasFileEntry.set(ps = c().prepareStatement(DBUtil.updateWhere(T_FileInfo,
-                        C_FileInfo_InternalName + "=?",
-                        C_FileInfo_InternalName)));
-            }
-
+            PreparedStatement ps = _pswAliasFileEntry.get(c());
             ps.setString(1, newInternalName);
             ps.setString(2, internalName);
             Util.verify(ps.executeUpdate() == 1);
@@ -684,18 +653,13 @@ public class BlockStorageDatabase extends AbstractDatabase
      *
      * @return max version number for the given file index, -1 if no matching hist entry found
      */
-    private PreparedStatementWrapper _pswGetMaxVersion = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswGetMaxVersion = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_FileHist, C_FileHist_Index + "=?", "max(" + C_FileHist_Ver + ")"));
     private long getMaxHistVersion(long id) throws SQLException
     {
         PreparedStatementWrapper psw = _pswGetMaxVersion;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        "select max(" + C_FileHist_Ver + ")" +
-                                " from " + T_FileHist +
-                                " where " + C_FileHist_Index + "=?"));
-            }
+            PreparedStatement ps = psw.get(c());
             ps.setLong(1, id);
             ResultSet rs = ps.executeQuery();
             try {
@@ -710,22 +674,14 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswInsertEmptyFileInfo = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswInsertEmptyFileInfo = new PreparedStatementWrapper(
+            DBUtil.insert(T_FileCurr, C_FileCurr_Index, C_FileCurr_Ver, C_FileCurr_Len,
+                    C_FileCurr_Date, C_FileCurr_Chunks));
     private void insertEmptyFileInfo(long id, Trans t) throws SQLException
     {
         PreparedStatementWrapper psw = _pswInsertEmptyFileInfo;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        "INSERT INTO " + T_FileCurr + " ( " +
-                                C_FileCurr_Index + ',' +
-                                C_FileCurr_Ver + ',' +
-                                C_FileCurr_Len + ',' +
-                                C_FileCurr_Date + ',' +
-                                C_FileCurr_Chunks +
-                                " ) VALUES (?,?,?,?,?)"));
-            }
+            PreparedStatement ps = psw.get(c());
             FileInfo info = FileInfo.newDeletedFileInfo(id, DELETED_FILE_DATE);
             ps.setLong(1, info._id);
             ps.setLong(2, getMaxHistVersion(id) + 1);
@@ -768,25 +724,14 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswSaveOldFileInfo = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswSaveOldFileInfo = new PreparedStatementWrapper(
+            DBUtil.insert(T_FileHist, C_FileHist_Index, C_FileHist_Ver, C_FileHist_Parent,
+                    C_FileHist_RealName, C_FileHist_Len, C_FileHist_Date, C_FileHist_Chunks));
     private void saveOldFileInfo_(long dirId, String name, FileInfo info, Trans t) throws SQLException
     {
         PreparedStatementWrapper psw = _pswSaveOldFileInfo;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        "INSERT INTO " + T_FileHist + " (" +
-                                C_FileHist_Index + ',' +
-                                C_FileHist_Ver + ',' +
-                                C_FileHist_Parent + ',' +
-                                C_FileHist_RealName + ',' +
-                                C_FileHist_Len + ',' +
-                                C_FileHist_Date + ',' +
-                                C_FileHist_Chunks + " ) " +
-                                " VALUES (?,?,?,?,?,?,?)"));
-            }
-
+            PreparedStatement ps = psw.get(c());
             ps.setLong(1, info._id);
             ps.setLong(2, info._ver);
             ps.setLong(3, dirId);
@@ -801,22 +746,16 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswWriteNewFileInfo = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswWriteNewFileInfo = new PreparedStatementWrapper(
+            "UPDATE " + T_FileCurr + " SET "
+                    + C_FileCurr_Ver + "=" + C_FileCurr_Ver + "+1, " + C_FileCurr_Len + "=?, "
+                    + C_FileCurr_Date + "=?, " +  C_FileCurr_Chunks + "=?"
+                    + " WHERE " + C_FileCurr_Index + "=?");
     private void writeNewFileInfo_(FileInfo info, Trans t) throws SQLException
     {
         PreparedStatementWrapper psw = _pswWriteNewFileInfo;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        "UPDATE " + T_FileCurr + " SET " +
-                                C_FileCurr_Ver + "=" + C_FileCurr_Ver + "+1, " +
-                                C_FileCurr_Len + "=?, " +
-                                C_FileCurr_Date + "=?, " +
-                                C_FileCurr_Chunks + "=? WHERE " +
-                                C_FileCurr_Index + "=?"));
-            }
-
+            PreparedStatement ps = psw.get(c());
             ps.setLong(1, info._length);
             ps.setLong(2, info._mtime);
             ps.setBytes(3, info._chunks.getBytes());
@@ -903,20 +842,17 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswAdjustBlockCount = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswAdjustBlockCount = new PreparedStatementWrapper(
+            "update " + T_BlockCount + " set "
+                    + C_BlockCount_State + "=?, "
+                    + C_BlockCount_Count + "=" + C_BlockCount_Count + "+?"
+                    + " where " + C_BlockCount_Hash + "=?");
     private void adjustBlockCount_(ContentBlockHash chunk, int delta, Trans t) throws SQLException
     {
         assert isOneBlock(chunk);
         PreparedStatementWrapper psw = _pswAdjustBlockCount;
-        PreparedStatement ps = psw.get();
         try {
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement("update " + T_BlockCount +
-                        " set " + C_BlockCount_State + "=?, " +
-                        C_BlockCount_Count + "=" + C_BlockCount_Count + "+?" +
-                        " where " + C_BlockCount_Hash + "=?"));
-            }
-
+            PreparedStatement ps = psw.get(c());
             ps.setInt(1, BlockState.REFERENCED.sqlValue());
             ps.setInt(2, delta);
             ps.setBytes(3, chunk.getBytes());

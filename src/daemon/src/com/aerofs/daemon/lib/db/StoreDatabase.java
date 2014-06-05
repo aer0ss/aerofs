@@ -35,14 +35,14 @@ public class StoreDatabase extends AbstractDatabase
         super(dbcw.get());
     }
 
-    private PreparedStatement _psGA;
+    private PreparedStatementWrapper _pswGA = new PreparedStatementWrapper(
+            select(T_STORE, C_STORE_SIDX));
     @Override
     public Set<SIndex> getAll_() throws SQLException
     {
         try {
-            if (_psGA == null) _psGA = c().prepareStatement(select(T_STORE, C_STORE_SIDX));
-
-            ResultSet rs = _psGA.executeQuery();
+            PreparedStatement ps = _pswGA.get(c());
+            ResultSet rs = ps.executeQuery();
             try {
                 Set<SIndex> srs = Sets.newTreeSet();
                 while (rs.next()) Util.verify(srs.add(new SIndex(rs.getInt(1))));
@@ -51,19 +51,18 @@ public class StoreDatabase extends AbstractDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            DBUtil.close(_psGA);
-            _psGA = null;
+            _pswGA.close();
             throw detectCorruption(e);
         }
     }
 
-    private PreparedStatementWrapper _pswGN = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswGN = new PreparedStatementWrapper(
+            selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_NAME));
     @Override
     public String getName_(SIndex sidx) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswGN.get(c(), selectWhere(T_STORE, C_STORE_SIDX + "=?",
-                    C_STORE_NAME));
+            PreparedStatement ps = _pswGN.get(c());
             ps.setInt(1, sidx.getInt());
             ResultSet rs = ps.executeQuery();
             try {
@@ -80,13 +79,13 @@ public class StoreDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswGCC = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswGCC = new PreparedStatementWrapper(
+            selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_COLLECTING_CONTENT));
     @Override
     public boolean isCollectingContent_(SIndex sidx) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswGCC.get(c(), selectWhere(T_STORE, C_STORE_SIDX + "=?",
-                        C_STORE_COLLECTING_CONTENT));
+            PreparedStatement ps = _pswGCC.get(c());
             ps.setInt(1, sidx.getInt());
             ResultSet rs = ps.executeQuery();
             try {
@@ -101,14 +100,14 @@ public class StoreDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswSCC = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswSCC = new PreparedStatementWrapper(
+            updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_COLLECTING_CONTENT));
     @Override
     public void setCollectingContent_(SIndex sidx, boolean collectingContent, Trans t)
             throws SQLException
     {
         try {
-            PreparedStatement ps = _pswSCC.get(c(), updateWhere(T_STORE, C_STORE_SIDX + "=?",
-                        C_STORE_COLLECTING_CONTENT));
+            PreparedStatement ps = _pswSCC.get(c());
             ps.setBoolean(1, collectingContent);
             ps.setInt(2, sidx.getInt());
             checkState(ps.executeUpdate() == 1);
@@ -237,33 +236,30 @@ public class StoreDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _psrGC = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _psrGC = new PreparedStatementWrapper(
+            selectWhere(T_SH, C_SH_PARENT_SIDX + "=?", C_SH_SIDX));
     @Override
     public Set<SIndex> getChildren_(SIndex sidx) throws SQLException
     {
-        return getChildrenOrParents_(_psrGC, C_SH_PARENT_SIDX, C_SH_SIDX, sidx);
+        return getChildrenOrParents_(_psrGC, sidx);
     }
 
-    private PreparedStatementWrapper _psrGP = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _psrGP = new PreparedStatementWrapper(
+            selectWhere(T_SH, C_SH_SIDX + "=?", C_SH_PARENT_SIDX));
     @Override
     public Set<SIndex> getParents_(SIndex sidx) throws SQLException
     {
-        return getChildrenOrParents_(_psrGP, C_SH_SIDX, C_SH_PARENT_SIDX, sidx);
+        return getChildrenOrParents_(_psrGP, sidx);
     }
 
-    private Set<SIndex> getChildrenOrParents_(PreparedStatementWrapper psr,
-            String conditionColumn, String resultColumn, SIndex sidx) throws SQLException
+    private Set<SIndex> getChildrenOrParents_(PreparedStatementWrapper psw, SIndex sidx)
+            throws SQLException
     {
         Set<SIndex> children = Sets.newTreeSet();
-
         try {
-            if (psr.get() == null) {
-                psr.set(c().prepareStatement(
-                        selectWhere(T_SH, conditionColumn + "=?", resultColumn)));
-            }
-
-            psr.get().setInt(1, sidx.getInt());
-            ResultSet rs = psr.get().executeQuery();
+            PreparedStatement ps = psw.get(c());
+            ps.setInt(1, sidx.getInt());
+            ResultSet rs = ps.executeQuery();
             try {
                 while (rs.next()) Util.verify(children.add(new SIndex(rs.getInt(1))));
                 return children;
@@ -271,7 +267,7 @@ public class StoreDatabase extends AbstractDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            psr.close();
+            psw.close();
             throw detectCorruption(e);
         }
     }

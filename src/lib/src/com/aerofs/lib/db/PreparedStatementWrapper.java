@@ -11,24 +11,18 @@ import java.sql.SQLException;
 
 public class PreparedStatementWrapper
 {
+    private final String _stmt;
     private @Nullable PreparedStatement _ps;
 
-    public PreparedStatement get()
+    public PreparedStatementWrapper(String stmt)
     {
-        return _ps;
+        _stmt = stmt;
     }
 
-    public PreparedStatement get(Connection c, String stmt) throws SQLException
+    public PreparedStatement get(Connection c) throws SQLException
     {
-        if (_ps == null) {
-            _ps = c.prepareStatement(stmt);
-        }
+        if (_ps == null) _ps = c.prepareStatement(_stmt);
         return _ps;
-    }
-
-    public PreparedStatement set(@Nullable PreparedStatement ps)
-    {
-        return _ps = ps;
     }
 
     public void close()

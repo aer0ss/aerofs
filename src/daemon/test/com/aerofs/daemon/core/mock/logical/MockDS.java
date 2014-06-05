@@ -128,6 +128,7 @@ public class MockDS
             when(_sid2sidx.getNullable_(sid)).thenReturn(sidx);
             when(_sid2sidx.getThrows_(sid)).thenReturn(sidx);
             when(_sid2sidx.get_(sid)).thenReturn(sidx);
+            when(_sid2sidx.getLocalOrAbsentNullable_(sid)).thenReturn(sidx);
         }
         if (_sidx2sid != null) {
             when(_sidx2sid.getNullable_(sidx)).thenReturn(sid);

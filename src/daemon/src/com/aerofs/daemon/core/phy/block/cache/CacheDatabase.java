@@ -13,6 +13,7 @@ import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.db.AbstractDBIterator;
+import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -41,17 +42,13 @@ public class CacheDatabase extends AbstractDatabase
         this(coreDBCW.get());
     }
 
-    private PreparedStatementWrapper _pswGetCacheAccess = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswGetCacheAccess = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_BlockCache, C_BlockCache_Hash + "=?", C_BlockCache_Time));
     public long getCacheAccess(byte[] key) throws SQLException
     {
         PreparedStatementWrapper psw = _pswGetCacheAccess;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        "select " + C_BlockCache_Time +
-                                " from " + T_BlockCache + " where " + C_BlockCache_Hash + "=?"));
-            }
+            PreparedStatement ps = psw.get(c());
             ps.setBytes(1, key);
             ResultSet rs = ps.executeQuery();
             try {
@@ -66,17 +63,14 @@ public class CacheDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswSetCacheAccess = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswSetCacheAccess = new PreparedStatementWrapper(
+            "replace into " + T_BlockCache +
+                    "(" + C_BlockCache_Hash + "," + C_BlockCache_Time + ") VALUES(?,?)");
     public void setCacheAccess(byte[] key, long timestamp, Trans t) throws SQLException
     {
         PreparedStatementWrapper psw = _pswSetCacheAccess;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        "replace into " + T_BlockCache +
-                                "(" + C_BlockCache_Hash + "," + C_BlockCache_Time + ") VALUES(?,?)"));
-            }
+            PreparedStatement ps = psw.get(c());
             ps.setBytes(1, key);
             ps.setLong(2, timestamp);
             ps.executeUpdate();
@@ -86,17 +80,13 @@ public class CacheDatabase extends AbstractDatabase
         }
     }
 
-
-    private PreparedStatementWrapper _pswDeleteCachedEntry = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswDeleteCachedEntry = new PreparedStatementWrapper(
+            DBUtil.deleteWhere(T_BlockCache, C_BlockCache_Hash + "=?"));
     public void deleteCachedEntry(byte[] key, Trans t) throws SQLException
     {
         PreparedStatementWrapper psw = _pswDeleteCachedEntry;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        "delete from " + T_BlockCache + " where " + C_BlockCache_Hash + "=?"));
-            }
+            PreparedStatement ps = psw.get(c());
             ps.setBytes(1, key);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -118,16 +108,14 @@ public class CacheDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswGetSortedAccesses = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswGetSortedAccesses = new PreparedStatementWrapper(
+            "select " + C_BlockCache_Hash + " from " + T_BlockCache
+                    + " order by " + C_BlockCache_Time + " asc");
     public IDBIterator<ContentBlockHash> getSortedCacheAccessesIter() throws SQLException
     {
         PreparedStatementWrapper psw = _pswGetSortedAccesses;
         try {
-            PreparedStatement ps = psw.get();
-            if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement("select " + C_BlockCache_Hash +
-                        " from " + T_BlockCache + " order by " + C_BlockCache_Time + " asc"));
-            }
+            PreparedStatement ps = psw.get(c());
             return new DBIterSortedAccessesRow(ps.executeQuery());
         } catch (SQLException e) {
             psw.close();

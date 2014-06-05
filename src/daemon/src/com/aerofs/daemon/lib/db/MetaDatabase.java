@@ -160,11 +160,13 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private void setOAInt_(SOID soid, String column, int v, PreparedStatementWrapper psw, Trans t)
+    private void setOAInt_(SOID soid, int v, PreparedStatementWrapper psw, Trans t)
             throws SQLException
     {
-        PreparedStatement ps = prepareOAUpdate(psw, column, soid);
+        PreparedStatement ps = psw.get(c());
         ps.setInt(1, v);
+        ps.setInt(2, soid.sidx().getInt());
+        ps.setBytes(3, soid.oid().getBytes());
         Util.verify(ps.executeUpdate() == 1);
     }
 
@@ -195,13 +197,13 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private final PreparedStatementWrapper _pswSOAP = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswSOAP = prepareOAUpdate(C_OA_PARENT);
     @Override
     public void setOAParent_(SIndex sidx, OID oid, OID parent, Trans t)
             throws SQLException, ExAlreadyExist
     {
         try {
-            int n = setOABlob_(_pswSOAP, new SOID(sidx, oid), C_OA_PARENT, parent.getBytes(), t);
+            int n = setOABlob_(_pswSOAP, new SOID(sidx, oid), parent.getBytes(), t);
             Util.verify(n == 1);
         } catch (SQLException e) {
             _pswSOAP.close();
@@ -210,12 +212,12 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private final PreparedStatementWrapper _pswROAOID = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswROAOID = prepareOAUpdate(C_OA_OID);
     @Override
     public void replaceOAOID_(SIndex sidx, OID oidOld, OID oidNew, Trans t)
             throws SQLException, ExAlreadyExist {
         try {
-            int n = setOABlob_(_pswROAOID, new SOID(sidx, oidOld), C_OA_OID, oidNew.getBytes(), t);
+            int n = setOABlob_(_pswROAOID, new SOID(sidx, oidOld), oidNew.getBytes(), t);
             Util.verify(n == 1);
         } catch (SQLException e) {
             _pswROAOID.close();
@@ -224,18 +226,14 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private final PreparedStatementWrapper _pswRPIC = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswRPIC = new PreparedStatementWrapper(
+            DBUtil.updateWhere(T_OA, C_OA_SIDX + "=? and " + C_OA_PARENT +"=?", C_OA_PARENT));
     @Override
     public void replaceParentInChildren_(SIndex sidx, OID oldParent, OID newParent, Trans t)
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement ps = _pswRPIC.get();
-            if (ps == null) {
-                _pswRPIC.set(ps = c().prepareStatement(DBUtil.updateWhere(T_OA,
-                        C_OA_SIDX + "=? and " + C_OA_PARENT +"=?",
-                        C_OA_PARENT)));
-            }
+            PreparedStatement ps = _pswRPIC.get(c());
             ps.setBytes(1, newParent.getBytes());
             ps.setInt(2, sidx.getInt());
             ps.setBytes(3, oldParent.getBytes());
@@ -247,18 +245,14 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private final PreparedStatementWrapper _pswRCA = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswRCA = new PreparedStatementWrapper(
+            DBUtil.updateWhere(T_CA, C_CA_SIDX + "=? and " + C_CA_OID +"=?", C_CA_OID));
     @Override
     public void replaceCA_(SIndex sidx, OID oldParent, OID newParent, Trans t)
             throws SQLException
     {
         try {
-            PreparedStatement ps = _pswRCA.get();
-            if (ps == null) {
-                _pswRCA.set(ps = c().prepareStatement(DBUtil.updateWhere(T_CA,
-                        C_CA_SIDX + "=? and " + C_CA_OID +"=?",
-                        C_CA_OID)));
-            }
+            PreparedStatement ps = _pswRCA.get(c());
             ps.setBytes(1, newParent.getBytes());
             ps.setInt(2, sidx.getInt());
             ps.setBytes(3, oldParent.getBytes());
@@ -269,12 +263,12 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private final PreparedStatementWrapper _pswSOAF = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswSOAF = prepareOAUpdate(C_OA_FLAGS);
     @Override
     public void setOAFlags_(SOID soid, int flags, Trans t) throws SQLException
     {
         try {
-            setOAInt_(soid, C_OA_FLAGS, flags & OA.FLAG_DB_MASK, _pswSOAF, t);
+            setOAInt_(soid, flags & OA.FLAG_DB_MASK, _pswSOAF, t);
         } catch (SQLException e) {
             _pswSOAF.close();
             throw detectCorruption(e);
@@ -334,12 +328,12 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private final PreparedStatementWrapper _pswSFID = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswSFID = prepareOAUpdate(C_OA_FID);
     @Override
     public void setFID_(SOID soid, @Nullable FID fid, Trans t) throws SQLException
     {
         try {
-            int n = setOABlob_(_pswSFID, soid, C_OA_FID, fid == null ? null : fid.getBytes(), t);
+            int n = setOABlob_(_pswSFID, soid, fid == null ? null : fid.getBytes(), t);
             Util.verify(n == 1);
         } catch (SQLException e) {
             _pswSFID.close();
@@ -622,18 +616,11 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private PreparedStatement prepareOAUpdate(PreparedStatementWrapper psw, String column,
-            SOID soid) throws SQLException
+    private static PreparedStatementWrapper prepareOAUpdate(String column)
     {
-        if (psw.get() == null) {
-            psw.set(c().prepareStatement(DBUtil.updateWhere(T_OA,
+        return new PreparedStatementWrapper(DBUtil.updateWhere(T_OA,
                     C_OA_SIDX + "=? and " + C_OA_OID + "=?",
-                    column)));
-        }
-        PreparedStatement ps = psw.get();
-        ps.setInt(2, soid.sidx().getInt());
-        ps.setBytes(3, soid.oid().getBytes());
-        return ps;
+                    column));
     }
 
     /**
@@ -641,23 +628,24 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
      *
      * @param psw PreparedStatement wrapper to be used for the DB update
      * @param soid Object for which to update the blob
-     * @param column name of the column of interest
      * @param blob byte array containing the blob to write
      *
      * The prepared statement will be automatically initialized by this method. The use of a wrapper
      * is necessary as Java does not support passing arguments by reference.
      */
-    private int setOABlob_(PreparedStatementWrapper psw, SOID soid, String column,
+    private int setOABlob_(PreparedStatementWrapper psw, SOID soid,
             @Nullable byte[] blob, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = prepareOAUpdate(psw, column, soid);
+            PreparedStatement ps = psw.get(c());
+            ps.setInt(2, soid.sidx().getInt());
+            ps.setBytes(3, soid.oid().getBytes());
             if (blob == null) {
                 ps.setNull(1, Types.BLOB);
             } else {
                 ps.setBytes(1, blob);
             }
-            int affectedRows = psw.get().executeUpdate();
+            int affectedRows = ps.executeUpdate();
             // NOTE: Silently ignore missing SOID (should we use a boolean return flag instead?)
             assert affectedRows <= 1;
             return affectedRows;

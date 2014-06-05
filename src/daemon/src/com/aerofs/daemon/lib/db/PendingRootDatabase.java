@@ -7,9 +7,11 @@ package com.aerofs.daemon.lib.db;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -37,18 +39,31 @@ public class PendingRootDatabase extends AbstractDatabase
         super(dbcw.get());
     }
 
-    private PreparedStatement _psGetPendingRoots;
+    private final PreparedStatementWrapper _pswGetPendingRoot = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_PENDING_ROOT, C_PENDING_ROOT_SID + "=?", C_PENDING_ROOT_NAME));
+    public @Nullable String getPendingRoot(SID sid) throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswGetPendingRoot.get(c());
+            ps.setBytes(1, sid.getBytes());
+            ResultSet rs = ps.executeQuery();
+            try {
+                return rs.next() ? rs.getString(1) : null;
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            _pswGetPendingRoot.close();
+            throw detectCorruption(e);
+        }
+    }
 
+    private final PreparedStatementWrapper _pswGetPendingRoots = new PreparedStatementWrapper(
+            DBUtil.select(T_PENDING_ROOT, C_PENDING_ROOT_SID, C_PENDING_ROOT_NAME));
     public Map<SID, String> getPendingRoots() throws SQLException
     {
         try {
-            if (_psGetPendingRoots == null) {
-                _psGetPendingRoots = c().prepareStatement(DBUtil.select(T_PENDING_ROOT,
-                        C_PENDING_ROOT_SID, C_PENDING_ROOT_NAME));
-            }
-
-            ResultSet rs = _psGetPendingRoots.executeQuery();
-
+            ResultSet rs = _pswGetPendingRoots.get(c()).executeQuery();
             try {
                 Map<SID, String> m = Maps.newHashMap();
                 while (rs.next()) {
@@ -59,45 +74,36 @@ public class PendingRootDatabase extends AbstractDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            DBUtil.close(_psGetPendingRoots);
-            _psGetPendingRoots = null;
+            _pswGetPendingRoots.close();
             throw detectCorruption(e);
         }
     }
 
-    private PreparedStatement _psAddPendingRoot;
+    private final PreparedStatementWrapper _pswAddPendingRoot = new PreparedStatementWrapper(
+            DBUtil.insert(T_PENDING_ROOT, C_PENDING_ROOT_SID, C_PENDING_ROOT_NAME));
     public void addPendingRoot(SID sid, String name, Trans t) throws SQLException
     {
         try {
-            if (_psAddPendingRoot == null) {
-                _psAddPendingRoot = c().prepareStatement(DBUtil.insert(T_PENDING_ROOT,
-                        C_PENDING_ROOT_SID, C_PENDING_ROOT_NAME));
-            }
-
-            _psAddPendingRoot.setBytes(1, sid.getBytes());
-            _psAddPendingRoot.setString(2, name);
-            _psAddPendingRoot.executeUpdate();
+            PreparedStatement ps = _pswAddPendingRoot.get(c());
+            ps.setBytes(1, sid.getBytes());
+            ps.setString(2, name);
+            ps.executeUpdate();
         } catch (SQLException e) {
-            DBUtil.close(_psAddPendingRoot);
-            _psAddPendingRoot = null;
+            _pswAddPendingRoot.close();
             throw detectCorruption(e);
         }
     }
 
-    private PreparedStatement _psRemovePendingRoot;
+    private final PreparedStatementWrapper _pswRemovePendingRoot = new PreparedStatementWrapper(
+            DBUtil.deleteWhere(T_PENDING_ROOT, C_PENDING_ROOT_SID + "=?"));
     public void removePendingRoot(SID sid, Trans t) throws SQLException
     {
         try {
-            if (_psRemovePendingRoot == null) {
-                _psRemovePendingRoot = c().prepareStatement(DBUtil.deleteWhere(T_PENDING_ROOT,
-                        C_PENDING_ROOT_SID + "=?"));
-            }
-
-            _psRemovePendingRoot.setBytes(1, sid.getBytes());
-            _psRemovePendingRoot.executeUpdate();
+            PreparedStatement ps = _pswRemovePendingRoot.get(c());
+            ps.setBytes(1, sid.getBytes());
+            ps.executeUpdate();
         } catch (SQLException e) {
-            DBUtil.close(_psRemovePendingRoot);
-            _psRemovePendingRoot = null;
+            _pswRemovePendingRoot.close();
             throw detectCorruption(e);
         }
     }

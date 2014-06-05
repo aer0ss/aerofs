@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -43,15 +44,15 @@ public class Path2SIndexResolver
         _prdb = prdb;
     }
 
-    SIndex getSIndex_(Path path) throws SQLException, ExExpelled, ExNotShared
+    SIndex getSIndex_(Path path) throws SQLException, ExExpelled, ExNotShared, ExNotFound
     {
         SIndex sidx;
-        if (_prdb.getPendingRoots().containsKey(path.sid())) {
+        if (_prdb.getPendingRoot(path.sid()) != null) {
             // Unlinked store.
             sidx = getSIndex_(path.sid());
         } else {
             // The store is linked or expelled.
-            SOID soid = _ds.resolveNullable_(path);
+            SOID soid = _ds.resolveThrows_(path);
             OA oa = _ds.getOA_(soid);
             // The path resolves to an anchor if its a non-root store or an expelled store.
             if (oa.isAnchor()) {

@@ -47,17 +47,14 @@ public class CollectorSequenceDatabase extends AbstractDatabase
     }
 
     private IDBIterator<OCIDAndCS> getFromCSImpl_(SIndex sidx, @Nullable CollectorSeq csStart,
-            int limit, PreparedStatementWrapper psw, String sql)
+            int limit, PreparedStatementWrapper psw)
             throws SQLException
     {
         try {
-            PreparedStatement ps = psw.get();
-            if (ps == null) psw.set(ps = c().prepareStatement(sql));
-
+            PreparedStatement ps = psw.get(c());
             ps.setInt(1, sidx.getInt());
             ps.setLong(2, csStart == null ? 0 : csStart.getLong());
             ps.setInt(3, limit);
-
             return new DBIterComWithKML(ps.executeQuery());
         } catch (SQLException e) {
             psw.close();
@@ -65,7 +62,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
         }
     }
 
-    String getCSQuery(@Nullable String extraCondition) {
+    private static String CSQuery(@Nullable String extraCondition) {
         return DBUtil.selectWhere(T_CS,
                 C_CS_SIDX + "=? and " + C_CS_CS + ">?" +
                         (extraCondition == null ? "" : " and " + extraCondition),
@@ -75,23 +72,23 @@ public class CollectorSequenceDatabase extends AbstractDatabase
                 " limit ?";
     }
 
-    private final PreparedStatementWrapper _pswGCS = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswGCS = new PreparedStatementWrapper(CSQuery(null));
     @Override
     public IDBIterator<OCIDAndCS> getCS_(SIndex sidx, @Nullable CollectorSeq csStart, int limit)
         throws SQLException
     {
         // To avoid requiring a temporary b-tree for the "order by CS_CS,"
         // the CS table index was changed to have (sidx, cs, oid, cid)
-        return getFromCSImpl_(sidx, csStart, limit, _pswGCS, getCSQuery(null));
+        return getFromCSImpl_(sidx, csStart, limit, _pswGCS);
     }
 
-    private final PreparedStatementWrapper _pswGMCS = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswGMCS = new PreparedStatementWrapper(
+            CSQuery(C_CS_CID + "=" + CID.META.getInt()));
     @Override
     public IDBIterator<OCIDAndCS> getMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart, int limit)
         throws SQLException
     {
-        return getFromCSImpl_(sidx, csStart, limit, _pswGMCS,
-                getCSQuery(C_CS_CID + "=" + CID.META.getInt()));
+        return getFromCSImpl_(sidx, csStart, limit, _pswGMCS);
     }
 
     private PreparedStatement _psDCS;

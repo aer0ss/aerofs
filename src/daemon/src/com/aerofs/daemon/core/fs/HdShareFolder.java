@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.SubjectPermissionsList;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
@@ -40,6 +41,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.google.common.base.Objects;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -130,12 +132,13 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             if (!ev._path.isEmpty()) throw new ExParentAlreadyShared();
             alreadyShared = true;
             sid = ev._path.sid();
+            // reject unknown SID (failure to do so would lead to crash when determining the name)
+            if (_sid2sidx.getLocalOrAbsentNullable_(sid) == null) throw new ExBadArgs();
             oa = null;
             // Grabing name for external shared folders. If the store is pending, query pending
             // root db else get it thorugh the sharedFolderName util.
-            name = _prdb.getPendingRoots().containsKey(sid)
-                    ? _prdb.getPendingRoots().get(sid)
-                    : sharedFolderName(ev._path, _absRoots);
+            name = Objects.firstNonNull(_prdb.getPendingRoot(sid),
+                    sharedFolderName(ev._path, _absRoots));
         }
 
         //

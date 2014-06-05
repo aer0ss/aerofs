@@ -11,7 +11,6 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
@@ -20,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.phy.linked.db.LinkedStorageSchema.*;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * NRO stands for Non-Representable Object
@@ -37,38 +37,27 @@ public class NRODatabase extends AbstractDatabase
         super(dbcw.get());
     }
 
-    private final PreparedStatementWrapper _pswCheck = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswCheck = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_NRO, C_NRO_SIDX + "=? and " + C_NRO_OID + "=?", "count(*)"));
     public boolean isNonRepresentable_(SOID soid) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswCheck.get();
-            if (ps == null) {
-                _pswCheck.set(ps = c().prepareStatement(DBUtil.selectWhere(T_NRO,
-                        C_NRO_SIDX + "=? and " + C_NRO_OID + "=?",
-                        "count(*)")));
-            }
-
+            PreparedStatement ps = _pswCheck.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
-
             return DBUtil.binaryCount(ps.executeQuery());
         } catch (SQLException e) {
             _pswCheck.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
-    private final PreparedStatementWrapper _pswGetConflict = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswGetConflict = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_NRO, C_NRO_SIDX + "=? and " + C_NRO_OID + "=?", C_NRO_CONFLICT_OID));
     public @Nullable OID getConflict_(SOID soid) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswGetConflict.get();
-            if (ps == null) {
-                _pswGetConflict.set(ps = c().prepareStatement(DBUtil.selectWhere(T_NRO,
-                        C_NRO_SIDX + "=? and " + C_NRO_OID + "=?",
-                        C_NRO_CONFLICT_OID)));
-            }
-
+            PreparedStatement ps = _pswGetConflict.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
 
@@ -81,23 +70,19 @@ public class NRODatabase extends AbstractDatabase
             }
         } catch (SQLException e) {
             _pswGetConflict.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
-    private final PreparedStatementWrapper _pswSet = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswSet = new PreparedStatementWrapper(
+            DBUtil.insert(T_NRO,  C_NRO_SIDX, C_NRO_OID, C_NRO_CONFLICT_OID));
     public void setNonRepresentable_(SOID soid, @Nullable SOID conflict, Trans t) throws SQLException
     {
         try {
             if (conflict != null) {
-                Preconditions.checkState(soid.sidx().equals(conflict.sidx()));
+               checkState(soid.sidx().equals(conflict.sidx()));
             }
-            PreparedStatement ps = _pswSet.get();
-            if (ps == null) {
-                _pswSet.set(ps = c().prepareStatement(DBUtil.insert(T_NRO,
-                        C_NRO_SIDX, C_NRO_OID, C_NRO_CONFLICT_OID)));
-            }
-
+            PreparedStatement ps = _pswSet.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
             ps.setBytes(3, conflict != null ? conflict.oid().getBytes() : null);
@@ -105,41 +90,31 @@ public class NRODatabase extends AbstractDatabase
             Util.verify(ps.executeUpdate() == 1);
         } catch (SQLException e) {
             _pswSet.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
-    private final PreparedStatementWrapper _pswUnset = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswUnset = new PreparedStatementWrapper(
+            DBUtil.deleteWhereEquals(T_NRO, C_NRO_SIDX, C_NRO_OID));
     public void setRepresentable_(SOID soid, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswUnset.get();
-            if (ps == null) {
-                _pswUnset.set(ps = c().prepareStatement(DBUtil.deleteWhereEquals(T_NRO,
-                        C_NRO_SIDX, C_NRO_OID)));
-            }
-
+            PreparedStatement ps = _pswUnset.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
-
             ps.executeUpdate();
         } catch (SQLException e) {
             _pswUnset.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
-    private final PreparedStatementWrapper _pswConflicts = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswConflicts = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_NRO, C_NRO_SIDX + "=? and " + C_NRO_CONFLICT_OID + "=?", C_NRO_OID));
     public IDBIterator<SOID> getConflicts_(final SOID soid) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswConflicts.get();
-            if (ps == null) {
-                _pswConflicts.set(ps = c().prepareStatement(DBUtil.selectWhere(T_NRO,
-                        C_NRO_SIDX + "=? and " + C_NRO_CONFLICT_OID + "=?",
-                        C_NRO_OID)));
-            }
-
+            PreparedStatement ps = _pswConflicts.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
 
@@ -152,21 +127,18 @@ public class NRODatabase extends AbstractDatabase
             };
         } catch (SQLException e) {
             _pswConflicts.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
-    private final PreparedStatementWrapper _pswUpdateConflicts = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswUpdateConflicts = new PreparedStatementWrapper(
+            "update " + T_NRO
+                    + " set " + C_NRO_CONFLICT_OID + "=?"
+                    + " where " + C_NRO_SIDX + "=? and " + C_NRO_CONFLICT_OID + "=?");
     public void updateConflicts_(SOID soid, OID winner, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswUpdateConflicts.get();
-            if (ps == null) {
-                _pswUpdateConflicts.set(ps = c().prepareStatement("update " + T_NRO
-                        + " set " + C_NRO_CONFLICT_OID + "=?"
-                        + " where " + C_NRO_SIDX + "=? and " + C_NRO_CONFLICT_OID + "=?"));
-            }
-
+            PreparedStatement ps = _pswUpdateConflicts.get(c());
             ps.setBytes(1, winner.getBytes());
             ps.setInt(2, soid.sidx().getInt());
             ps.setBytes(3, soid.oid().getBytes());
@@ -174,53 +146,45 @@ public class NRODatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             _pswUpdateConflicts.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
     // for migration
-    private final PreparedStatementWrapper _pswUpdateSIndex = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswUpdateSIndex = new PreparedStatementWrapper(
+            "update " + T_NRO
+                    + " set " + C_NRO_SIDX + "=?"
+                    + " where " + C_NRO_SIDX + "=? and " + C_NRO_OID + "=?");
     public void updateSIndex_(SOID oldSOID, SIndex sidx, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswUpdateSIndex.get();
-            if (ps == null) {
-                _pswUpdateSIndex.set(ps = c().prepareStatement("update " + T_NRO
-                        + " set " + C_NRO_SIDX + "=?"
-                        + " where " + C_NRO_SIDX + "=? and " + C_NRO_OID + "=?"));
-            }
-
+            PreparedStatement ps = _pswUpdateSIndex.get(c());
             ps.setInt(1, sidx.getInt());
             ps.setInt(2, oldSOID.sidx().getInt());
             ps.setBytes(3, oldSOID.oid().getBytes());
-
             ps.executeUpdate();
         } catch (SQLException e) {
             _pswUpdateSIndex.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
     // for aliasing
-    private final PreparedStatementWrapper _pswUpdateOID = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswUpdateOID = new PreparedStatementWrapper(
+            "update " + T_NRO
+                    + " set " + C_NRO_OID + "=?"
+                    + " where " + C_NRO_SIDX + "=? and " + C_NRO_OID + "=?");
     public void updateOID_(SOID oldSOID, OID newOID, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswUpdateOID.get();
-            if (ps == null) {
-                _pswUpdateOID.set(ps = c().prepareStatement("update " + T_NRO
-                        + " set " + C_NRO_OID + "=?"
-                        + " where " + C_NRO_SIDX + "=? and " + C_NRO_OID + "=?"));
-            }
-
+            PreparedStatement ps = _pswUpdateOID.get(c());
             ps.setBytes(1, newOID.getBytes());
             ps.setInt(2, oldSOID.sidx().getInt());
             ps.setBytes(3, oldSOID.oid().getBytes());
-
             ps.executeUpdate();
         } catch (SQLException e) {
             _pswUpdateOID.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

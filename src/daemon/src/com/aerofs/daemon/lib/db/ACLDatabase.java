@@ -116,13 +116,13 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswClearStore = new PreparedStatementWrapper();
+    private PreparedStatementWrapper _pswClearStore = new PreparedStatementWrapper(
+            DBUtil.deleteWhere(T_ACL, C_ACL_SIDX + "=?"));
     @Override
     public void clear_(SIndex sidx, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswClearStore.get(c(), DBUtil.deleteWhere(T_ACL,
-                    C_ACL_SIDX + "=?"));
+            PreparedStatement ps = _pswClearStore.get(c());
             ps.setInt(1, sidx.getInt());
             ps.executeUpdate();
         } catch (SQLException e) {

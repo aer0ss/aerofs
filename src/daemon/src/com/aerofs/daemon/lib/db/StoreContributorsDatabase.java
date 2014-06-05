@@ -26,21 +26,16 @@ public class StoreContributorsDatabase
         super(dbcw.get());
     }
 
-    private final PreparedStatementWrapper _pswAddContrib = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswAddContrib = new PreparedStatementWrapper(
+            DBUtil.insert(T_SC, C_SC_SIDX, C_SC_DID));
     @Override
     public void addContributor_(SIndex sidx, DID did, Trans t)
             throws SQLException
     {
         try {
-            PreparedStatement ps = _pswAddContrib.get();
-            if (ps == null) {
-                _pswAddContrib.set((ps = c().prepareStatement(DBUtil.insert(T_SC, C_SC_SIDX,
-                        C_SC_DID))));
-            }
-
+            PreparedStatement ps = _pswAddContrib.get(c());
             ps.setInt(1, sidx.getInt());
             ps.setBytes(2, did.getBytes());
-
             int n = ps.executeUpdate();
             Util.verify(n == 1);
         } catch (SQLException e) {
@@ -49,19 +44,14 @@ public class StoreContributorsDatabase
         }
     }
 
-    private final PreparedStatementWrapper _pswGetContrib = new PreparedStatementWrapper();
+    private final PreparedStatementWrapper _pswGetContrib = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_SC, C_SC_SIDX + "=?", C_SC_DID));
     @Override
     public Set<DID> getContributors_(SIndex sidx)
             throws SQLException
     {
         try {
-            PreparedStatement ps = _pswGetContrib.get();
-            if (ps == null) {
-                _pswGetContrib.set((ps = c().prepareStatement(DBUtil.selectWhere(T_SC,
-                        C_SC_SIDX + "=?",
-                        C_SC_DID))));
-            }
-
+            PreparedStatement ps = _pswGetContrib.get(c());
             ps.setInt(1, sidx.getInt());
             ResultSet rs = ps.executeQuery();
             Set<DID> dids = Sets.newHashSet();
