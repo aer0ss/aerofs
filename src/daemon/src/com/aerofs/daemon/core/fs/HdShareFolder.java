@@ -136,9 +136,11 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             if (_sid2sidx.getLocalOrAbsentNullable_(sid) == null) throw new ExBadArgs();
             oa = null;
             // Grabing name for external shared folders. If the store is pending, query pending
-            // root db else get it thorugh the sharedFolderName util.
-            name = Objects.firstNonNull(_prdb.getPendingRoot(sid),
-                    sharedFolderName(ev._path, _absRoots));
+            // root db else get it through the sharedFolderName util.
+            name = _prdb.getPendingRoot(sid);
+            if (name == null) {
+                name = sharedFolderName(ev._path, _absRoots);
+            }
         }
 
         //
