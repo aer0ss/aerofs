@@ -12,6 +12,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -57,10 +58,12 @@ public class Aliasing
     private AliasingMover _almv;
     private MapAlias2Target _a2t;
     private TransManager _tm;
+    private CfgLocalDID _localDID;
 
     @Inject
     public void inject_(DirectoryService ds, NativeVersionControl nvc, TransManager tm,
-            VersionUpdater vu, ReceiveAndApplyUpdate ru, AliasingMover almv, MapAlias2Target a2t)
+            VersionUpdater vu, ReceiveAndApplyUpdate ru, AliasingMover almv, MapAlias2Target a2t,
+            CfgLocalDID localDID)
     {
         _ds = ds;
         _nvc = nvc;
@@ -69,6 +72,7 @@ public class Aliasing
         _almv = almv;
         _a2t = a2t;
         _tm = tm;
+        _localDID = localDID;
     }
 
     public static final class AliasAndTarget
@@ -129,7 +133,6 @@ public class Aliasing
 
         // Only non-aliased ticks from meta-data component of alias object should be moved
         // to target.
-        // TODO:FIXME this may lose ticks...
         vAliasMeta = vAliasMeta.nonAliasTicks_();
 
         // KML version should be updated before merging local version to avoid assertion failures in
@@ -188,7 +191,6 @@ public class Aliasing
         try {
             SOCID target = new SOCID(alias.sidx(), targetOIDLocal, CID.META);
 
-            // TODO:FIXME this may lose ticks...
             Version vKMLAlias = _nvc.getKMLVersion_(alias).nonAliasTicks_();
 
             _nvc.deleteKMLVersionPermanently_(alias, vKMLAlias, t);
@@ -287,15 +289,6 @@ public class Aliasing
                 }
 
                 // Move non-alias meta KML version from alias to target.
-                // FIXME: this WILL lose any regular tick shadowed by the discarded alias ticks
-                // possible ways to mitigate this issue:
-                //   * rely on the sender of the alias message to provide shadowed ticks
-                //     (through vRemoteTargetMeta)
-                //   * when aliasing, expend an extra regular "merge" tick on the target
-                //     similar to what is done when merging content branches to prevent
-                //     alias ticks from shadowing KMLs
-                //   * separate regular and alias tick spaces
-                //
                 Version vKMLAliasMeta = _nvc.getKMLVersion_(aliasMeta).nonAliasTicks_();
                 _nvc.deleteKMLVersionPermanently_(aliasMeta, vKMLAliasMeta, t);
 
@@ -405,6 +398,21 @@ public class Aliasing
         if (!ar._alias.equals(soidNoNewVersion)) {
             l.info("update alias {}", ar._alias);
             _vu.updateAliased_(new SOCKID(ar._alias, CID.META), t);
+
+            // If the alias object had a tick from the local device (which can only happen if the
+            // target is the new remote object) we need to generate a "merge" tick in the target
+            // object that is greater than the alias tick created above.
+            //
+            // Failure to do so can result in no-sync as the alias tick may shadow a regular tick
+            // in the KMLs on a remote device. The shadowed ticks would be inadvertently lost when
+            // the remote device later performs aliasing (because regular and alias tick spaces are
+            // interleaved) and because of the way knowledge vectors are used in AntiEntropy, the
+            // missing KML would never be fetched.
+            //
+            // This is similar to the "merge" tick used when deleting/merging content branches.
+            if (targetIsRemote && vAlias.get_(_localDID.get()).getLong() > 0) {
+                _vu.update_(new SOCKID(ar._target, CID.META), t);
+            }
         }
     }
 

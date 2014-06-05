@@ -87,7 +87,6 @@ public class AliasingMover
     {
         checkArgument(!alias.equals(target), alias);
 
-        // TODO:FIXME this may lose ticks...
         Version vKMLAlias =  _nvc.getKMLVersion_(alias).nonAliasTicks_();
         Version vKMLTarget = _nvc.getKMLVersion_(target);
         Version vKMLAlias_AllLocalTarget = vKMLAlias.sub_(vAllLocalTarget);
