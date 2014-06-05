@@ -256,15 +256,21 @@ class _RitualServiceWrapper(object):
         pbpath = self.wait_path(path)
         return self._service.test_get_object_identifier(pbpath)
 
-    def update_acl(self, path, subject, role):
-        pbpath = self.wait_path(path)
+    def update_acl_pbpath(self, pbpath, subject, role):
         permissions = PBPermissions()
         _role_to_pb(permissions, role)
         self._service.update_acl(pbpath, subject, permissions, False)
 
+    def update_acl(self, path, subject, role):
+        pbpath = self.wait_path(path)
+        self.update_acl_pbpath(pbpath, subject, role)
+
+    def delete_acl_pbpath(self, pbpath, subject):
+        self._service.delete_acl(pbpath, subject)
+
     def delete_acl(self, path, subject):
         pbpath = self.wait_path(path)
-        self._service.delete_acl(pbpath, subject)
+        self.delete_acl_pbpath(pbpath, subject)
 
     def list_rev_children(self, path):
         pbpath = convert.absolute_to_pbpath(path)
