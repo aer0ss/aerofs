@@ -11,11 +11,14 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerBossPool;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioWorkerPool;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.ThreadNameDeterminer;
+import org.jboss.netty.util.Timer;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public final class ChannelFactories
@@ -49,7 +52,18 @@ public final class ChannelFactories
 
     public static ClientSocketChannelFactory newClientChannelFactory()
     {
-        NioClientBossPool bossPool = new NioClientBossPool(newCachedThreadPool(), 1, getGlobalTimer(), new ThreadNameDeterminer()
+        ThreadNameDeterminer timerThreadNameDeterminer = new ThreadNameDeterminer()
+        {
+            @Override
+            public String determineThreadName(String currentThreadName, String proposedThreadName)
+                    throws Exception
+            {
+                return "tm" + THREAD_ID_COUNTER.getAndIncrement();
+            }
+        };
+
+        Timer timer = new HashedWheelTimer(Executors.defaultThreadFactory(), timerThreadNameDeterminer, 200, TimeUnit.MILLISECONDS, 512);
+        NioClientBossPool bossPool = new NioClientBossPool(newCachedThreadPool(), 1, timer, new ThreadNameDeterminer()
         {
             @Override
             public String determineThreadName(String current, String proposed)
