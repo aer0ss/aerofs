@@ -48,7 +48,7 @@ public abstract class LogUtil extends BaseLogUtil
         // -- Weird and subtle warning --
         // Daily file rollover requires
         // - triggering policy: when to roll over (i.e., daily)
-        // - rolling pollicy: what to do when the trigger fires
+        // - rolling policy: what to do when the trigger fires
         // and these two need to be linked up to each other reflexively.
         DefaultTimeBasedFileNamingAndTriggeringPolicy<ILoggingEvent> trigger
                 = new DefaultTimeBasedFileNamingAndTriggeringPolicy<ILoggingEvent>();
@@ -105,8 +105,10 @@ public abstract class LogUtil extends BaseLogUtil
 
     private static PatternLayoutEncoder newEncoder(LoggerContext context)
     {
+        // NOTE: to get the log without the classnames:
+        // tail -f ~/.aerofs/daemon.log | awk '{gsub(/ ~.*~/,"")}; 1'
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
-        encoder.setPattern("%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n");
+        encoder.setPattern("%-5level [%date{ISO8601, UTC}] [%-8.8thread] ~%c{0}~: %m%n%xEx");
         encoder.setContext(context);
         encoder.setCharset(BaseUtil.CHARSET_UTF);
         encoder.start();

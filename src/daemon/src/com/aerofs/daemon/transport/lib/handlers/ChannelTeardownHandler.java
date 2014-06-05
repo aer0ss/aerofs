@@ -13,6 +13,7 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IChannelData;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
+import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -102,7 +103,7 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
     {
         DID did = getDID(channel);
         if (did != null) {
-            l.debug("{} teardown {} streams", did, transport.id());
+            l.debug("{} teardown {} streams for {}", did, transport.id(), TransportUtil.hexify(channel));
             TransportProtocolUtil.sessionEnded(new Endpoint(transport, did), sink, streamManager, channelMode.closeOutbound, channelMode.closeInbound);
         }
     }
@@ -122,9 +123,9 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
 
         Channel channel = e.getChannel();
 
-        l.warn("{} closing channel because of uncaught err on {}",
+        l.warn("{} closing {} because of uncaught err on {}",
                 did,
-                channel,
+                TransportUtil.hexify(channel),
                 LogUtil.suppress(
                         cause,
                         ExBadMagicHeader.class,

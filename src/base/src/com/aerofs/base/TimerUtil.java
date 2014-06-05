@@ -6,23 +6,38 @@ package com.aerofs.base;
 
 import com.google.common.base.Preconditions;
 import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.ThreadNameDeterminer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TimerUtil
 {
     private TimerUtil() {}
 
+    private static final AtomicInteger THREAD_ID_COUNTER = new AtomicInteger(0);
+
     private static AtomicInitializer<Timer> GLOBAL_TIMER = new AtomicInitializer<Timer>() {
         @Override
         protected @Nonnull Timer create()
         {
-            return new HashedWheelTimer(200, TimeUnit.MILLISECONDS) {
+            ThreadNameDeterminer determiner = new ThreadNameDeterminer()
+            {
+                @Override
+                public String determineThreadName(String currentThreadName, String proposedThreadName)
+                        throws Exception
+                {
+                    return "tm" + THREAD_ID_COUNTER.getAndIncrement();
+                }
+            };
+
+            return new HashedWheelTimer(Executors.defaultThreadFactory(), determiner, 200, TimeUnit.MILLISECONDS, 512) { // 512 comes from looking at netty defaults
                 @Override
                 public Set<Timeout> stop() {
                     // a Timer cannot be restarted after being stopped

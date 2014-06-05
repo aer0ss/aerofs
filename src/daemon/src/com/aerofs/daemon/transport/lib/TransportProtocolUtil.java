@@ -170,7 +170,7 @@ public abstract class TransportProtocolUtil
             try {
                 alreadyBegun = sm.hasStreamBegun(ep.did(), streamId);
             } catch (ExStreamInvalid e) {
-                l.info("stream " + ep.did() + ':' + streamId + " invalid. send rx abort");
+                l.warn("{} stream {} over {} invalid - send rx abort", ep.did(), streamId, ep.tp());
                 return newAbortIncomingStreamHeader(streamId, e.getReason());
             }
 
@@ -179,7 +179,7 @@ public abstract class TransportProtocolUtil
             try {
                 sink.enqueueThrows(event, Prio.LO);
             } catch (Exception e) {
-                l.warn("can't enqueue chunk. abort stream: " + Util.e(e));
+                l.warn("{} fail enqueue chunk for stream {} over {} cause:{}", ep.did(), streamId, ep.tp(), Util.e(e));
                 sm.removeIncomingStream(ep.did(), streamId);
                 throw e;
             }
@@ -211,7 +211,7 @@ public abstract class TransportProtocolUtil
     }
 
     //
-    // FIXME: attempt to polymorphise this set of control-processing methods!
+    // FIXME: attempt to polymorphize this set of control-processing methods!
     //
 
     /**
@@ -250,17 +250,17 @@ public abstract class TransportProtocolUtil
         StreamID streamId = new StreamID(wireStream.getStreamId());
         switch (wireStream.getType()) {
         case BEGIN_STREAM:
-            l.debug("sender:" + ep + " begins stream:" + streamId);
+            l.debug("{} begin stream {} over {}", ep.did(), streamId, ep.tp());
             sm.newIncomingStream(ep.did(), streamId);
             break;
         case TX_ABORT_STREAM:
-            l.warn("sender:" + ep + " aborted stream:" + streamId + " rsn:" + wireStream.getReason());
+            l.warn("{} aborted sending stream {} over {} rsn:{}", ep.did(), streamId, ep.tp(), wireStream.getReason());
             sm.removeIncomingStream(ep.did(), streamId);
             // it must be the last statement of the case block as it may throw
             sink.enqueueThrows(new EIStreamAborted(ep, streamId, wireStream.getReason()), Prio.LO);
             break;
         case RX_ABORT_STREAM:
-            l.warn("recv'r:" + ep + " aborted stream:" + streamId + " rsn:" + wireStream.getReason());
+            l.warn("{} aborted receiving stream {} over {} rsn:{}", ep.did(), streamId, ep.tp(), wireStream.getReason());
             sm.removeOutgoingStream(streamId);
             // the core will notice that the stream was removed when sending the next chunk
             break;
@@ -306,7 +306,7 @@ public abstract class TransportProtocolUtil
     public static void sessionEnded(Endpoint ep, IBlockingPrioritizedEventSink<IEvent> sink,
             StreamManager sm, boolean outbound, boolean inbound)
     {
-        l.debug("{} closing {} streams ob:{} ib:{}", ep.did(), ep.tp(), outbound, inbound);
+        l.debug("{} closing streams ob:{} ib:{} for {}", ep.did(), outbound, inbound, ep.tp());
 
         if (outbound) {
             sm.removeAllOutgoingStreams(ep.did());
@@ -317,13 +317,13 @@ public abstract class TransportProtocolUtil
 
         try {
             if (inbound) {
-                for (StreamID sid : sm.removeAllIncomingStreams(ep.did())) {
-                    l.info("{} remove in stream sid:{}", ep.did(), sid);
-                    sink.enqueueThrows(new EIStreamAborted(ep, sid, STREAM_NOT_FOUND), Prio.LO);
+                for (StreamID streamID : sm.removeAllIncomingStreams(ep.did())) {
+                    l.info("{} remove incoming stream {} over {}", ep.did(), streamID, ep.tp());
+                    sink.enqueueThrows(new EIStreamAborted(ep, streamID, STREAM_NOT_FOUND), Prio.LO);
                 }
             }
         } catch (ExNoResource e) {
-            l.warn("enqueue sessionEnded: " + Util.e(e));
+            l.warn("{} fail enqueue sessionEnded for {} cause:{}", ep.did(), ep.tp(), Util.e(e));
         }
     }
 

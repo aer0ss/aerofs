@@ -104,7 +104,7 @@ public abstract class XMPPUtilities
 
             int magic = is.readInt();
             if (magic != LibParam.CORE_PROTOCOL_VERSION) {
-                l.warn("magic mismatch d:" + did + " exp:" + LibParam.CORE_PROTOCOL_VERSION + " act:" + magic + " bdy:" + body);
+                l.warn("{} magic mismatch exp:{} act:{} bdy:{}", did, LibParam.CORE_PROTOCOL_VERSION, magic, body);
                 return null;
             }
 

@@ -205,7 +205,7 @@ public class GetVersionsResponse
                 throws SQLException, ExNotFound, ExProtocolError
         {
             if (_sidx == null) {
-                l.debug("ignored block");
+                l.debug("{} ignore gv response block", _from);
                 return;
             }
 

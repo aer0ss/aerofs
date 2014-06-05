@@ -136,7 +136,7 @@ public final class XMPPConnectionService implements ILinkStateListener
         this.initialConnectRetryInterval = initialConnectRetryInterval;
         this.maxConnectRetryInterval = maxConnectRetryInterval;
         this.rocklog = rocklog;
-        this.timer = new Timer(transportId + "-ping-timer", true);
+        this.timer = new Timer(transportId + "-pt", true);
 
         linkStateService.addListener(this, sameThreadExecutor()); // our implementation of onLinkStateChanged is thread-safe
     }
@@ -384,7 +384,7 @@ public final class XMPPConnectionService implements ILinkStateListener
             l.info("connect: use initial delay:{}", initialConnectRetryInterval);
         }
 
-        exponentialRetryNewThread("xsc-" + xscThreadId.getAndIncrement(), initialConnectRetryInterval, maxConnectRetryInterval, new Callable<Void>()
+        exponentialRetryNewThread("x-" + xscThreadId.getAndIncrement(), initialConnectRetryInterval, maxConnectRetryInterval, new Callable<Void>()
         {
             @Override
             public Void call()

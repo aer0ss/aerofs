@@ -55,7 +55,7 @@ final class ARP
     {
         ARPEntry en = arpEntries.get(did);
         if (en != null && en.remoteAddress.isUnresolved()) {
-            throw new IllegalStateException("unresolved addr:" + en.remoteAddress);
+            throw new IllegalStateException("unresolved address " + en.remoteAddress + " for " + did);
         }
         return en;
     }
@@ -84,7 +84,7 @@ final class ARP
         }
 
         if (isNew) {
-            l.info("arp: add: d{} rem:{}", did, prettyPrint(remoteAddress));
+            l.info("{} arp add {}", did, prettyPrint(remoteAddress));
             notifyListeners(did, true);
         }
     }
@@ -105,7 +105,7 @@ final class ARP
         notifyListeners(did, false);
 
         if (oldEntry != null) {
-            l.info("arp: rem: d:{} rem:{}", did, prettyPrint(oldEntry.remoteAddress));
+            l.info("{} arp del {}", did, prettyPrint(oldEntry.remoteAddress));
         }
 
         return oldEntry;

@@ -3,6 +3,8 @@ package com.aerofs.daemon.core.health_check;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.IStartable;
+import com.aerofs.verkehr.common.DefaultUncaughtExceptionHandler;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -92,8 +94,7 @@ public final class HealthCheckService implements IStartable
 
     private static final Logger l = Loggers.getLogger(HealthCheckService.class);
 
-    private final ScheduledExecutorService _healthCheckExecutor = Executors.newScheduledThreadPool(3); // we could even run one, but...
-
+    private final ScheduledExecutorService _healthCheckExecutor;
     private final CoreProgressWatcher _coreProgressWatcher;
     private final DeadlockDetector _deadlockDetector;
     private final DiagnosticsDumper _diagnosticsDumper;
@@ -101,6 +102,14 @@ public final class HealthCheckService implements IStartable
     @Inject
     public HealthCheckService(CoreProgressWatcher coreProgressWatcher, DeadlockDetector deadlockDetector, DiagnosticsDumper diagnosticsDumper)
     {
+        // create our custom thread factory so that we can name threads properly
+        ThreadFactoryBuilder threadFactoryBuilder = new ThreadFactoryBuilder();
+        threadFactoryBuilder.setDaemon(true);
+        threadFactoryBuilder.setNameFormat("hc%d");
+        threadFactoryBuilder.setPriority(Thread.NORM_PRIORITY);
+        threadFactoryBuilder.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
+
+        _healthCheckExecutor = Executors.newScheduledThreadPool(3, threadFactoryBuilder.build());
         _coreProgressWatcher = coreProgressWatcher;
         _deadlockDetector = deadlockDetector;
         _diagnosticsDumper = diagnosticsDumper;

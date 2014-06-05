@@ -116,7 +116,7 @@ public class PulseManager
         _pulsetokens.put(did, tokid);
         _msgids.put(did, msgid);
 
-        l.info("d:{} generate msgpulseid:{} for pulse seq num:{}", did, msgid, tokid);
+        l.info("{} generate pulse id {} for pulse seq num {}", did, msgid, tokid);
 
         return new AddPulseResult(tokid, msgid);
     }
@@ -161,7 +161,7 @@ public class PulseManager
     {
         boolean existed = delInProgressPulse(did);
         if (existed || forcenotify) notifyWatchers_(did);
-        if (existed) l.info("d:{} stopped pulse", did);
+        if (existed) l.info("{} stopped pulse", did);
         return existed;
     }
 
@@ -176,11 +176,11 @@ public class PulseManager
      */
     public synchronized void processIncomingPulseId(DID did, int msgpulseid)
     {
-        l.info("d:{} rcv pulse rep msgpulseid:{}", did, msgpulseid);
+        l.info("{} rcv pulse rep with pulse id {}", did, msgpulseid);
 
         Integer pulseid = getInProgressPulse(did);
         if (pulseid == null) {
-            l.info("d:{} no in-progress pulse; drop pulse rep", did);
+            l.info("{} no in-progress pulse; drop pulse rep", did);
             return;
         }
 
@@ -190,7 +190,7 @@ public class PulseManager
         //
 
         if (pulseid == msgpulseid) {
-            l.info("d:{} matched msgpulseid:{} - del pulse + notify core", did, msgpulseid);
+            l.info("{} matched pulse id {} - del pulse + notify core", did, msgpulseid);
             stopPulse(did, false);
         }
     }
@@ -343,7 +343,7 @@ public class PulseManager
     //  members
     //
 
-    private int _pulsemsgid = Util.rand().nextInt();
+    private int _pulsemsgid = Util.rand().nextInt(Integer.MAX_VALUE);
     private final Set<IPulseDeletionWatcher> _watchers = new HashSet<IPulseDeletionWatcher>();
     private final Map<DID, Integer> _msgids = new HashMap<DID, Integer>(); // msg ids that are still unanswered
     private final Map<DID, Integer> _pulsetokens = new HashMap<DID, Integer>();

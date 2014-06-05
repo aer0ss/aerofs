@@ -639,7 +639,7 @@ public abstract class Util
             final Callable<Void> call,
             final Class<?> ... excludes)
     {
-        ThreadUtil.startDaemonThread("expo.retry." + name, new Runnable()
+        ThreadUtil.startDaemonThread("xpo-" + name, new Runnable()
         {
             @Override
             public void run()

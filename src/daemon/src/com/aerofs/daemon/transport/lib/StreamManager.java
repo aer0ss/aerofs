@@ -88,20 +88,12 @@ public class StreamManager
         return ostrm;
     }
 
-    public OutgoingStream removeOutgoingStreamThrows(StreamID strm)
-        throws ExStreamInvalid
-    {
-        OutgoingStream ostrm = removeOutgoingStream(strm);
-        if (ostrm == null) throw new ExStreamInvalid(InvalidationReason.STREAM_NOT_FOUND);
-        return ostrm;
-    }
-
     public synchronized void removeAllOutgoingStreams(DID did)
     {
         Set<StreamID> sids = _did2sids.remove(did);
         if (sids != null) {
             for (StreamID sid : sids) {
-                l.info("remove ostrm " + sid);
+                l.info("{} remove outgoing stream {}", did, sid);
                 _sid2ostrm.remove(sid);
             }
         }
@@ -124,16 +116,6 @@ public class StreamManager
         if (strms != null && strms.remove(strm) != null && strms.isEmpty()) {
             _did2istrms.remove(did);
         }
-    }
-
-    public synchronized void removeIncomingStreamThrows(DID did, StreamID strm)
-        throws ExStreamInvalid
-    {
-        Map<StreamID, IncomingStream> strms = _did2istrms.get(did);
-        if (strms == null || strms.remove(strm) == null) {
-            throw new ExStreamInvalid(InvalidationReason.STREAM_NOT_FOUND);
-        }
-        if (strms.isEmpty()) _did2istrms.remove(did);
     }
 
     public synchronized Set<StreamID> removeAllIncomingStreams(DID did)

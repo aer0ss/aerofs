@@ -108,7 +108,7 @@ public class TCP implements ITransport, IAddressResolver
     {
         this.dispatcher = new EventDispatcher();
         this.transportEventQueue = new TransportEventQueue(id, this.dispatcher);
-        this.scheduler = new Scheduler(this.transportEventQueue, id + "-sched");
+        this.scheduler = new Scheduler(this.transportEventQueue, id + "-sch");
 
         this.id = id;
         this.pref = pref;

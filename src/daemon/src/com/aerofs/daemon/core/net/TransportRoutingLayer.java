@@ -117,12 +117,12 @@ public class TransportRoutingLayer
     {
         byte[] bs = os.toByteArray();
         if (bs.length > DaemonParam.MAX_UNICAST_MESSAGE_SIZE) {
-            l.warn("packet > max uc size - dropping");
+            l.warn("{} packet too large", ep.did());
             _rockLog.newDefect("net.unicast.overflow").addData("message_size", bs.length).send();
             return false;
         }
 
-        l.debug("{},{} -> {}", type, rpcid, ep);
+        l.debug("{} -> uc {},{} over {}", ep.did(), type, rpcid, ep.tp());
         sendPacketWithFailureCallback_(ep, bs);
 
         return true;
@@ -134,9 +134,9 @@ public class TransportRoutingLayer
     public void sendMaxcast_(SID sid, String type, int rpcid, ByteArrayOutputStream os)
             throws Exception
     {
-        l.debug("mc {},{} -> {}", type, rpcid, sid);
+        l.debug("{} -> mc {},{}", sid, type, rpcid);
 
-        EOMaxcastMessage ev = new EOMaxcastMessage(sid, _mcfs.getNewMCastID_(), os.toByteArray());
+        EOMaxcastMessage ev = new EOMaxcastMessage(sid, _mcfs.getNextMaxcastId(), os.toByteArray());
         for (ITransport tp : _tps.getAll_()) {
             if (!tp.supportsMulticast()) continue;
             tp.q().enqueueThrows(ev, TC.currentThreadPrio());

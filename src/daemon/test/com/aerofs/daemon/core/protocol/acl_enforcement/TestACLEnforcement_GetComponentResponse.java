@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
 import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
 import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.core.protocol.class_under_test.GetComponentRequestWithMocks;
-import com.aerofs.daemon.core.protocol.class_under_test.GetComponentReplyWithMocks;
+import com.aerofs.daemon.core.protocol.class_under_test.GetComponentResponseWithMocks;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.Tick;
@@ -59,7 +59,7 @@ import static org.mockito.Mockito.when;
 public class TestACLEnforcement_GetComponentResponse extends AbstractTest
 {
     GetComponentRequestWithMocks replier = new GetComponentRequestWithMocks();
-    GetComponentReplyWithMocks caller = new GetComponentReplyWithMocks();
+    GetComponentResponseWithMocks caller = new GetComponentResponseWithMocks();
 
     SIndex _sidxViewer = SINDEXES[0];
 

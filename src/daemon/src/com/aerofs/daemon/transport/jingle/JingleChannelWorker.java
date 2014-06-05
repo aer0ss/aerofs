@@ -56,7 +56,7 @@ final class JingleChannelWorker
                 l.info("stopping task runner");
             }
         });
-        ioThread.setName(transportId + "-jcw");
+        ioThread.setName(transportId + "-jw");
         ioThread.setDaemon(true);
         ioThread.setUncaughtExceptionHandler(new UncaughtExceptionHandler()
         {

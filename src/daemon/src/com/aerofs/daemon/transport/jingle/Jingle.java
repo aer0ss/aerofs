@@ -103,7 +103,7 @@ public class Jingle implements ITransport
 
         this.dispatcher = new EventDispatcher();
         this.transportEventQueue = new TransportEventQueue(id, this.dispatcher);
-        this.scheduler = new Scheduler(this.transportEventQueue, id + "-sched");
+        this.scheduler = new Scheduler(this.transportEventQueue, id + "-sch");
 
         this.localdid = localdid;
         this.localjid = JingleUtils.did2jid(this.localdid, xmppServerDomain);

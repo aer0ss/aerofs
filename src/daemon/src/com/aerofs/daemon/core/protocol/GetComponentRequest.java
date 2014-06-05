@@ -218,6 +218,8 @@ public class GetComponentRequest
     public void processRequest_(DigestedMessage msg)
         throws Exception
     {
+        l.debug("{} process incoming gcc request over {}", msg.did(), msg.tp());
+
         Util.checkPB(msg.pb().hasGetComponentRequest(), PBGetComponentRequest.class);
         PBGetComponentRequest request = msg.pb().getGetComponentRequest();
 
@@ -226,20 +228,20 @@ public class GetComponentRequest
 
         // see Rule 3 in acl.md
         if (!_lacl.check_(_cfgLocalUser.get(), sidx, Permissions.EDITOR)) {
-            l.info("we have no editor perm for {}", sidx);
+            l.info("{} we have no editor perm for {}", msg.did(), sidx);
             throw new ExSenderHasNoPerm();
         }
 
         // see Rule 1 in acl.md
         if (!_lacl.check_(msg.user(), sidx, Permissions.VIEWER)) {
-            l.warn("{} on {} has no viewer perm for {}", msg.user(), msg.ep(), sidx);
+            l.warn("{} ({}) has no viewer perm for {}", msg.did(), msg.user(), sidx);
             throw new ExNoPerm();
         }
 
         SOCID socid = new SOCID(sidx, new OID(request.getObjectId()), new CID(request.getComId()));
         Version vRemote = Version.fromPB(request.getLocalVersion());
         SOCKID k = new SOCKID(socid, findBranchNotDominatedBy_(socid, vRemote));
-        l.info("gcc for {} {} from {}", k, vRemote, msg.ep());
+        l.info("{} receive gcc request for {} {} over {}", msg.did(), k, vRemote, msg.tp());
 
         // Give up if the requested SOCKID is not present locally (either meta or content)
         // N.B. An aliased object is reported not present, but we should not throw if the
@@ -248,13 +250,13 @@ public class GetComponentRequest
         // aliased objects?
         if (!_ds.isPresent_(k) &&
                 !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
-            l.debug("{} not present. Throwing", k);
+            l.debug("{} {} not present", msg.did(), k);
             throw new ExNoComponentWithSpecifiedVersion();
         }
 
         Version vLocal = _nvc.getLocalVersion_(k);
         if (vLocal.isDominatedBy_(vRemote)) {
-            l.debug("r {} >= l {}. Throw ncwsv", vRemote, vLocal);
+            l.debug("{} r {} >= l {}", msg.did(), vRemote, vLocal);
             throw new ExNoComponentWithSpecifiedVersion();
         }
         sendResponse_(msg, k, vLocal);
@@ -264,7 +266,7 @@ public class GetComponentRequest
     public void sendResponse_(DigestedMessage msg, SOCKID k, Version vLocal)
         throws Exception
     {
-        l.debug("send to {} for {}", msg.ep(), k);
+        l.debug("{} issue gcc response for {} over {}", msg.did(), k, msg.tp());
 
         _oel.log_(k.cid().isMeta() ? META_REQUEST : CONTENT_REQUEST, k.soid(), msg.did());
 
@@ -367,8 +369,7 @@ public class GetComponentRequest
             bdMeta.setTargetOid(targetOID.toPB());
             Version vTarget = _nvc.getLocalVersion_(new SOCKID(k.sidx(), targetOID, CID.META));
             bdMeta.setTargetVersion(vTarget.toPB_());
-            l.debug("Sending target oid: {} target version: {} alias SOCKID: {}",
-                    targetOID, vTarget, k);
+            l.debug("{} send target oid: {} target version: {} alias SOCKID: {} over {}", ep.did(), targetOID, vTarget, k, ep.tp());
         }
 
         ////////

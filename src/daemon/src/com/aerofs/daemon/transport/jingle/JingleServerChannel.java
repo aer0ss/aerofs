@@ -177,7 +177,7 @@ class JingleServerChannel extends AbstractServerChannel implements IIncomingTunn
             return;
         }
 
-        l.debug("incoming tunnel j:{}", JingleUtils.jid2didNoThrow(jid));
+        l.debug("{} incoming tunnel", JingleUtils.jid2didNoThrow(jid));
 
         JingleClientChannel channel = null;
         try {
@@ -199,7 +199,7 @@ class JingleServerChannel extends AbstractServerChannel implements IIncomingTunn
 
     private void declineTunnel(TunnelSessionClient client, Jid jid, SWIGTYPE_p_cricket__Session session, String cause)
     {
-        l.warn("decline tunnel j:{}", JingleUtils.jid2didNoThrow(jid), cause);
+        l.warn("{} decline tunnel err:{}", JingleUtils.jid2didNoThrow(jid), cause);
         client.DeclineTunnel(session);
     }
 }

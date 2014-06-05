@@ -2,8 +2,8 @@ package com.aerofs.daemon.transport.zephyr;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
+import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeRenegotiation;
@@ -139,7 +139,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler
         checkValid();
 
         if (TransportUtil.isChannelConnected(e.getChannel())) {
-            l.info("{} channel closed - notify listener", this);
+            l.info("{} channel {} closed - notify listener", remotedid, TransportUtil.hexify(channel));
             unicastListener.onDeviceDisconnected(remotedid);
         }
 

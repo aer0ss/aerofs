@@ -89,7 +89,7 @@ public class AntiEntropy
      */
     public void request_(final SIndex sidx, final DID did)
     {
-        l.debug("request pull {} {}", sidx, did);
+        l.debug("{} request pull for {}", did, sidx);
         Request req = _requests.get(sidx);
         if (req == null) {
             start_(sidx);
@@ -192,7 +192,6 @@ public class AntiEntropy
 
         private void sendGetVersRequests_(DID did) throws Exception
         {
-            l.debug("gv {} to {}", _sidx, did);
             _pgvc.issueRequest_(did, _sidx);
             _lastReq.put(did, new ElapsedTimer());
         }

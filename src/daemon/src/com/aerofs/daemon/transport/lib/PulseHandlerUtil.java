@@ -52,7 +52,7 @@ public class PulseHandlerUtil
         AddPulseResult pinf = pm.addInProgressPulse(did, prevtok);
         if (pinf == null) return null;
 
-        l.debug("d:{} msgid:{} tok:{}", did, pinf.msgid(), pinf.tok());
+        l.debug("{} msgid:{} tok:{}", did, pinf.msgid(), pinf.tok());
         return new MakePulseResult(pinf.tok(), newCheckPulse(pinf.msgid()));
     }
 
@@ -67,9 +67,9 @@ public class PulseHandlerUtil
      */
     public static void schedule_(Logger l, IScheduler sched, IPulseEvent ev, long timeout)
     {
-        l.trace("d:{} attempt pulse sched", ev.did());
+        l.trace("{} attempt pulse sched", ev.did());
         sched.schedule(ev, timeout);
-        l.trace("d:{} pulse sched:+{}", ev.did(), timeout);
+        l.trace("{} pulse sched:+{}", ev.did(), timeout);
     }
 
     /**
@@ -120,14 +120,14 @@ public class PulseHandlerUtil
         // stop pulses if no in-progress pulse entry was found (i.e. a reply came)
 
         if (pm.getInProgressPulse(did) == null) {
-            l.info("d:{} in-progress pulse not found; term hd", did);
+            l.info("{} in-progress pulse not found; term hd", did);
             return false;
         }
 
         // kill the connection and restart pulsing
 
         if (!ev.killed_() && (ev.tries_() >= maxfails)) {
-            l.info("d:{} fails > maxfails ({} >= {}) kill conn and resched ev", did, ev.tries_(), maxfails);
+            l.info("{} fails > maxfails ({} >= {}) kill conn and resched ev", did, ev.tries_(), maxfails);
             unicast.disconnect(did, new ExDeviceUnavailable("pulse timed out"));
             ev.markkilled_();
         }

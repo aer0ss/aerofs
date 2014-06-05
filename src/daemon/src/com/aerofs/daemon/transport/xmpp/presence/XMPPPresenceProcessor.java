@@ -76,7 +76,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
                     try {
                         processPresence((Presence)packet);
                     } catch (Exception e) {
-                        l.warn("{}: fail process presence from {}:", transportId, packet.getFrom(), suppress(e, ExFormatError.class));
+                        l.warn("{} fail process presence over {}", packet.getFrom(), transportId, suppress(e, ExFormatError.class));
                     }
                 }
             }
@@ -129,7 +129,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
             return false;
         }
 
-        l.debug("process presence d:{} s:{}", did, sid);
+        l.debug("{} process presence for {} on {}", did, sid, transportId);
 
         if (presence.isAvailable()) {
 
@@ -140,7 +140,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
             }
 
             if (newDid) {
-                l.info("{}: recv online presence d:{}", transportId, did);
+                l.info("{} recv online presence for {} on {}", did, sid, transportId);
                 multicastListener.onDeviceReachable(did);
             }
         } else {
@@ -161,7 +161,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
             }
 
             if (removedDid) {
-                l.info("{}: recv offline presence d:{}", transportId, did);
+                l.info("{} recv offline presence for {} on {}", did, sid, transportId);
                 multicastListener.onDeviceUnreachable(did);
             }
         }

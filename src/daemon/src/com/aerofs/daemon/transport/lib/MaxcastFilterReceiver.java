@@ -22,42 +22,35 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class MaxcastFilterReceiver {
+public class MaxcastFilterReceiver
+{
     private static final Logger l = Loggers.getLogger(MaxcastFilterReceiver.class);
 
-    private final Map<DID, Integer> _didToMaxcastIds;
+    private final Map<DID, Integer> lastReceivedMaxcastId = Maps.newHashMap();
 
-    public MaxcastFilterReceiver()
-    {
-        _didToMaxcastIds = new HashMap<DID, Integer>();
-    }
-
-    public boolean isRedundant(DID did, int mcastid)
+    public boolean isRedundant(DID did, int maxcastId)
     {
         boolean retVal;
 
         synchronized (this) {
-            retVal = isRedundant_(did, mcastid);
+            retVal = isRedundantInternal(did, maxcastId);
         }
 
-        if (l.isDebugEnabled()) {
-            l.debug( ((retVal) ? ("redundant") : ("unique")) + " mc recvd: " + did + " " + mcastid);
-        }
+        l.debug("{} {} mc {}", did, retVal ? "redundant" : "unique", maxcastId);
 
         return retVal;
     }
 
-    private boolean isRedundant_(DID did, int mcastid)
+    private boolean isRedundantInternal(DID did, int maxcastId)
     {
-        assert did != null;
+        Integer previousMaxcastId = lastReceivedMaxcastId.put(did, maxcastId);
 
-        Integer oldmcid = _didToMaxcastIds.put(did, mcastid);
-        if (oldmcid == null || oldmcid.compareTo(mcastid) != 0) {
+        if (previousMaxcastId == null || previousMaxcastId.compareTo(maxcastId) != 0) {
             return false;
         }
 

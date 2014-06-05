@@ -124,7 +124,7 @@ public class NewUpdates implements IVersionControlListener
     public void process_(DigestedMessage msg)
             throws ExNotFound, SQLException, IOException, ExProtocolError
     {
-        l.debug("recv from {}", msg.ep());
+        l.debug("{} process incoming nu over {}", msg.did(), msg.tp());
 
         if (!msg.pb().hasNewUpdates()) throw new ExProtocolError();
         SIndex sidx = _sid2sidx.getThrows_(new SID(msg.pb().getNewUpdates().getStoreId()));
@@ -133,7 +133,7 @@ public class NewUpdates implements IVersionControlListener
         // (unless maxcast messages are signed). therefore this is not a security measure.
         // see more in acl.md.
         if (!_lacl.check_(msg.user(), sidx, Permissions.EDITOR)) {
-            l.warn("{} on {} has no editor perm for {}", msg.user(), msg.ep(), sidx);
+            l.warn("{} ({}) on {} has no editor perm for {}", msg.did(), msg.user(), sidx);
             return;
         }
 

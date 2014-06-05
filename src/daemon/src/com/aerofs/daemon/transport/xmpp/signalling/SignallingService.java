@@ -134,7 +134,7 @@ public final class SignallingService implements ISignallingService, IXMPPConnect
 
             private void logXmppProcessingError(Packet packet, String message, Exception cause)
             {
-                l.warn("fail process {} from {}", message, packet.getFrom(), cause);
+                l.warn("{} fail process {}", packet.getFrom(), message, cause);
             }
         }, new MessageTypeFilter(Message.Type.normal));
 

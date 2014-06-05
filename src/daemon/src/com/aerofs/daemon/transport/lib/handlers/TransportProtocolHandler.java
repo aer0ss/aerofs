@@ -113,14 +113,14 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
         case TRANSPORT_CHECK_PULSE_CALL:
         {
             int pulseid = header.getCheckPulse().getPulseId();
-            l.info("rcv pulse req msgpulseid:{} d:{}", pulseid, endpoint);
+            l.info("{} rcv pulse req with id {} over {}", endpoint.did(), pulseid, endpoint.tp());
             reply = newCheckPulseReply(pulseid);
             break;
         }
         case TRANSPORT_CHECK_PULSE_REPLY:
         {
             int pulseid = header.getCheckPulse().getPulseId();
-            l.info("rcv pulse rep msgpulseid:{} d:{}", pulseid, endpoint);
+            l.info("{} rcv pulse rep with id {} over {}", endpoint.did(), pulseid, endpoint.tp());
             pulseManager.processIncomingPulseId(endpoint.did(), pulseid);
             break;
         }

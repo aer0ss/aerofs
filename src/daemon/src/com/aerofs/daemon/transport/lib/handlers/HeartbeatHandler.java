@@ -5,7 +5,10 @@
 package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.ElapsedTimer;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.IntegerID;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
+import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.proto.Transport.PBHeartbeat;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
@@ -63,15 +66,15 @@ public final class HeartbeatHandler extends SimpleChannelHandler
         unansweredHeartbeatCount++;
     }
 
-    private synchronized void onHeartbeatReceived(int heartbeatId) {
+    private synchronized void onHeartbeatReceived(DID did, Channel channel, int heartbeatId) {
         // we're only interested in resetting the counter
         // if we receive a response to the latest heartbeat sent
         // out in a timely fashion
         if (heartbeatId == lastSentHeartbeatId) {
-            l.debug("received heartbeat id:{} - heartbeat count reset", heartbeatId);
+            l.debug("{} received heartbeat {} over {} - heartbeat count reset", did, heartbeatId, TransportUtil.hexify(channel));
             unansweredHeartbeatCount = 0;
         } else {
-            l.debug("received heartbeat id:{}", heartbeatId);
+            l.debug("{} received heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
         }
     }
 
@@ -110,6 +113,8 @@ public final class HeartbeatHandler extends SimpleChannelHandler
 
         checkState(isHeartbeatMessage(type), "unexpected type:%s", type.name());
 
+        Channel channel = ctx.getChannel();
+        DID did = TransportUtil.getChannelData(channel).getRemoteDID();
         int heartbeatId = msg.getHeader().getHeartbeat().getHeartbeatId();
 
         if (type == Type.HEARTBEAT_CALL) {
@@ -122,10 +127,10 @@ public final class HeartbeatHandler extends SimpleChannelHandler
                             .setHeartbeatId(heartbeatId))
                     .build();
             write(ctx, future(ctx.getChannel()), TransportProtocolUtil.newControl(reply));
-            l.debug("respond to heartbeat id:{}", heartbeatId);
+            l.debug("{} respond to heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
         } else {
             // we've received a heartbeat reply
-            onHeartbeatReceived(heartbeatId);
+            onHeartbeatReceived(did, channel, heartbeatId);
         }
     }
 
@@ -143,13 +148,14 @@ public final class HeartbeatHandler extends SimpleChannelHandler
     private void scheduleHeartbeat(final ChannelHandlerContext ctx, long interval)
     {
         final Channel channel = ctx.getChannel();
+        final DID did = TransportUtil.getChannelData(channel).getRemoteDID();
 
         if (channel.getCloseFuture().isDone()) {
-            l.debug("channel closed - skip heartbeat reschedule");
+            l.debug("{} channel {} closed - skip heartbeat reschedule", did, TransportUtil.hexify(channel));
             return;
         }
 
-        l.debug("schedule heartbeat after {}ms", interval);
+        l.debug("{} schedule heartbeat over {} after {}ms", did, TransportUtil.hexify(channel), interval);
 
         heartbeatTimer.newTimeout(new TimerTask()
         {
@@ -160,8 +166,7 @@ public final class HeartbeatHandler extends SimpleChannelHandler
                 int unansweredHeartbeats = getUnansweredHeartbeatCount();
 
                 if (unansweredHeartbeats >= maxFailedHeartbeats) {
-                    Channels.fireExceptionCaughtLater(channel, new ExHeartbeatTimedOut(
-                            "fail " + maxFailedHeartbeats + " consecutive heartbeats"));
+                    Channels.fireExceptionCaughtLater(channel, new ExHeartbeatTimedOut("fail " + maxFailedHeartbeats + " consecutive heartbeats"));
                     return;
                 }
 
@@ -184,7 +189,7 @@ public final class HeartbeatHandler extends SimpleChannelHandler
 
             private void handleHeartbeatTimeout()
             {
-                int heartbeatId = random.nextInt();
+                int heartbeatId = random.nextInt(Integer.MAX_VALUE);
 
                 PBTPHeader heartbeat = PBTPHeader
                         .newBuilder()
@@ -198,7 +203,7 @@ public final class HeartbeatHandler extends SimpleChannelHandler
 
                 onHeartbeatSent(heartbeatId);
 
-                l.debug("send heartbeat id:{}", heartbeatId);
+                l.debug("{} send heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
             }
         }, interval, TimeUnit.MILLISECONDS);
     }

@@ -10,6 +10,7 @@ import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.IChannelData;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
+import com.aerofs.daemon.transport.lib.TransportUtil;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -74,7 +75,7 @@ public final class CNameVerifiedHandler extends SimpleChannelHandler implements 
         checkState(channel.getAttachment() == null, "attachment %s exists", channel.getAttachment());
 
         if (channel.getCloseFuture().isDone()) {
-            l.warn("{} cname verification complete but {} closed", did, channel);
+            l.warn("{} cname verification complete but {} closed", did, TransportUtil.hexify(channel));
             return;
         }
 
@@ -83,7 +84,7 @@ public final class CNameVerifiedHandler extends SimpleChannelHandler implements 
             checkArgument(did.equals(expected), "fail DID comparison exp:%s act:%s", expected, did);
         }
 
-        l.info("{} connected for duplex tx on {} ", did, channel);
+        l.info("{} connected for duplex tx on {} ", did, TransportUtil.hexify(channel));
         channel.setAttachment(new ChannelData(user, did));
     }
 

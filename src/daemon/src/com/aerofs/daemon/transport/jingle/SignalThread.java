@@ -170,7 +170,7 @@ class SignalThread extends Thread
             @Override
             public void error(Exception e)
             {
-                l.warn("cannot shutdown signal thread");
+                l.warn("fail shutdown st");
             }
         });
 
@@ -188,7 +188,7 @@ class SignalThread extends Thread
             throw new ExTransportUnavailable("signal thread stopped [null tsc]");
         }
 
-        l.info("create tunnel to j:{} ({})", JingleUtils.jid2didNoThrow(to), description);
+        l.info("{} create tunnel ({})", JingleUtils.jid2didNoThrow(to), description);
 
         return tunnelSessionClient.CreateTunnel(to, description);
     }
@@ -286,13 +286,13 @@ class SignalThread extends Thread
 
         slotStateChange.connect(main.xmpp_client());
 
-        l.debug("start main");
+        l.debug("start st main");
 
         // >>>> WHEE...RUNNING >>>>
 
         main.Run(enableJingleLibraryLogging);
 
-        l.debug("end main - start cleanup");
+        l.debug("end st main - start cleanup");
 
         // >>>> WHEE...OHHHH....DONE :( >>>>
 
@@ -463,17 +463,15 @@ class SignalThread extends Thread
                 public void onIncomingTunnel(TunnelSessionClient client, Jid jid, String desc, SWIGTYPE_p_cricket__Session sess)
                 {
                     try {
-                        l.info("handle incoming tunnel j:{}", JingleUtils.jid2didNoThrow(jid));
+                        l.info("{} handle incoming tunnel", JingleUtils.jid2didNoThrow(jid));
 
                         if (incomingTunnelListener != null) {
                             incomingTunnelListener.onIncomingTunnel(client, jid, sess);
                         } else {
-                            l.warn("no listener for incoming tunnel j:{}", JingleUtils.jid2didNoThrow(
-                                    jid));
+                            l.warn("{} no listener for incoming tunnel", JingleUtils.jid2didNoThrow(jid));
                         }
                     } catch (Throwable t) {
-                        l.error("caught throwable while handling incoming tunnel j:{}", JingleUtils.jid2didNoThrow(
-                                jid), t);
+                        l.error("{} fail handle incoming tunnel", JingleUtils.jid2didNoThrow(jid), t);
                         ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
                     }
                 }

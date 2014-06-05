@@ -49,10 +49,10 @@ import java.net.Proxy;
 import java.util.Collection;
 import java.util.Set;
 
-import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
-import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupCommonHandlersAndListeners;
 import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupMulticastHandler;
+import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
+import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode.TWOWAY;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -117,7 +117,7 @@ public final class Zephyr implements ITransport
 
         this.dispatcher = new EventDispatcher();
         this.transportEventQueue = new TransportEventQueue(id, this.dispatcher);
-        this.scheduler = new Scheduler(this.transportEventQueue, id + "-sched");
+        this.scheduler = new Scheduler(this.transportEventQueue, id + "-sch");
 
         this.id = id;
         this.rank = rank;

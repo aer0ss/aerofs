@@ -297,7 +297,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IInc
         SocketAddress remoteAddress = addressResolver.resolve(did);
         final Channel channel = clientBootstrap.connect(remoteAddress).getChannel();
 
-        l.debug("{} created new channel", did);
+        l.debug("{} created new channel {}", did, TransportUtil.hexify(channel));
 
         CNameVerifiedHandler verifiedHandler = channel.getPipeline().get(CNameVerifiedHandler.class);
         verifiedHandler.setExpectedRemoteDID(did);

@@ -18,7 +18,7 @@ import org.mockito.Mock;
 /**
  * This class contains a NewUpdates object with its supporting mock objects
  */
-public class GetComponentReplyWithMocks extends AbstractClassUnderTestWithMocks
+public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMocks
 {
     // For GetComponentReply
     public @Mock DirectoryService _ds;

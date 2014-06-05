@@ -10,7 +10,7 @@ package com.aerofs.daemon.transport;
  */
 public final class TransportThreadGroup
 {
-    private static ThreadGroup _transportThreadGroup = new ThreadGroup("transport");
+    private static ThreadGroup _transportThreadGroup = new ThreadGroup("tp");
 
     public static ThreadGroup get() { return _transportThreadGroup; }
 }

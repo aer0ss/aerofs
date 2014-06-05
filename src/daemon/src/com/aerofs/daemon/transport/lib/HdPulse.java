@@ -63,7 +63,7 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
     {
         DID did = ev.did();
 
-        l.trace("d:{} hd pulse", did);
+        l.trace("{} hd pulse", did);
 
         if (!ph.prepulsechecks_(ev)) return;
 
@@ -74,12 +74,12 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
         try {
             MakePulseResult ret = makepulse_(l, pm, did, prevtok);
             if (ret == null) {
-                l.error("d:{} prevtok:{} no ret", did, printtok(prevtok));
+                l.error("{} prevtok:{} no ret", did, printtok(prevtok));
                 return;
             }
 
             ev.tok_(ret.tok());
-            l.trace("d:{} prevtok:{} tok:{} send pulse", did, printtok(prevtok), ret.tok());
+            l.trace("{} prevtok:{} tok:{} send pulse", did, printtok(prevtok), ret.tok());
 
             uc.send(did, null, Prio.HI, TransportProtocolUtil.newControl(ret.hdr()), null);
 
@@ -94,7 +94,7 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
     private void stopPulse(DID did, ExTransport e)
     {
         pm.delInProgressPulse(did);
-        l.warn("d:{} stop in-progress pulse", did, e);
+        l.info("{} stop in-progress pulse", did, e);
     }
 
     private static String printtok(PulseToken prevtok)

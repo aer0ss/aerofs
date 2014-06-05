@@ -134,10 +134,7 @@ class Multicast implements IMaxcast, ILinkStateListener
         for (NetworkInterface iface : removed) {
             MulticastSocket s = ifaceToMulticastSocket.remove(iface);
             if (s == null) continue;
-
-            l.info("linkStateChanged->mc:rem:");
-            l.info("-> {}", iface);
-
+            l.info("lsc del mc {}", iface);
             close(s);
         }
 
@@ -154,7 +151,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                 MulticastSocket old = ifaceToMulticastSocket.put(iface, s);
                 if (old != null) close(old);
 
-                l.info("linkStateChanged->mc:add:" + iface.getName());
+                l.info("lsc add mc {}", iface.getName());
 
                 new Thread(TransportThreadGroup.get(), new Runnable() {
                     @Override
@@ -162,7 +159,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                     {
                         thdRecv(s);
                     }
-                }, tcp.id() + "-mcast.recv." + iface.getName()).start();
+                }, "m-" + iface.getName()).start();
 
             } catch (IOException e) {
                 l.warn("can't add mcast iface_name:{} inet_addr:{} iface_addr:{}",

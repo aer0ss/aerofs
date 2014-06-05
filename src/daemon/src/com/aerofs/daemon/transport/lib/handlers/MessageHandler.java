@@ -308,7 +308,8 @@ public final class MessageHandler extends SimpleChannelHandler
             }
 
             if (!pendingWritesQueueFlushed.get()) {
-                l.error("write queue not flushed after {} ms", QUEUE_FLUSH_INTERVAL * NUM_QUEUE_FLUSH_WAITS);
+                IChannelData channelData = getChannelData(writeFuture.getChannel());
+                l.error("{} write queue for {} not flushed after {} ms", channelData.getRemoteDID(), TransportUtil.hexify(channel), QUEUE_FLUSH_INTERVAL * NUM_QUEUE_FLUSH_WAITS);
                 channel.close();
                 return; // IMPORTANT: EARLY RETURN
             }
@@ -343,9 +344,9 @@ public final class MessageHandler extends SimpleChannelHandler
                     IChannelData channelData = getChannelData(writeFuture.getChannel());
 
                     if (writeFuture.isSuccess()) {
-                        l.trace("{} wrote {} bytes", channelData.getRemoteDID(), length);
+                        l.trace("{} wrote {} bytes over {}", channelData.getRemoteDID(), length, TransportUtil.hexify(writeFuture.getChannel()));
                     } else {
-                        l.trace("{} fail write of {} bytes on {}", channelData.getRemoteDID(), length, writeFuture.getChannel(), writeFuture.getCause());
+                        l.trace("{} fail write of {} bytes on {}", channelData.getRemoteDID(), length, TransportUtil.hexify(writeFuture.getChannel()), writeFuture.getCause());
                     }
                 }
             });

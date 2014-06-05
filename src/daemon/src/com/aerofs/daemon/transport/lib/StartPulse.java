@@ -42,7 +42,7 @@ public class StartPulse implements IPulseHandler<EOTpStartPulse>
         // stop pulses if the device is offline from the transport's POV
 
         if (!presenceManager.isPotentiallyAvailable(did)) {
-            l.info("d:" + did + " offline during pulse; term pulse");
+            l.info("{} offline during pulse; term pulse", did);
             notifypulsestopped_(did);
             return false;
         }

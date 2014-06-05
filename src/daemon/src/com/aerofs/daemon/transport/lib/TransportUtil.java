@@ -178,4 +178,15 @@ public abstract class TransportUtil
             return null;
         }
     }
+
+    public static String hexify(Channel channel)
+    {
+        return hexify(channel.getId());
+    }
+
+    public static String hexify(int num)
+    {
+        String hex = Integer.toHexString(num);
+        return String.format("0x%1$8s", hex).replace(' ', '0');
+    }
 }

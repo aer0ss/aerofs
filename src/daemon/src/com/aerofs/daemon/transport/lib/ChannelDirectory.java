@@ -63,7 +63,7 @@ public class ChannelDirectory
         channels.put(remotePeer, channel);
         addChannelCloseFuture(remotePeer, cost, channel);
 
-        l.info("register t:d:c {}:{}:{}", tp.id(), remotePeer, channel.getId() );
+        l.info("{} register t:c {}:{}", remotePeer, tp.id(), TransportUtil.hexify(channel));
     }
 
     /**
@@ -116,8 +116,8 @@ public class ChannelDirectory
         }
 
         Channel retval = chooseRandomlyFrom(verified.isEmpty() ? active : verified);
-        l.info("cdir ret c:{}(_/{}) s:{}",
-                retval.getId(), active.size(), TransportUtil.getChannelState(retval).name());
+        l.info("{} cdir ret c:{}(_/{}) s:{}",
+                did, TransportUtil.hexify(retval), active.size(), TransportUtil.getChannelState(retval).name());
         return retval;
     }
 
@@ -128,7 +128,7 @@ public class ChannelDirectory
     {
         // Note: deviceDisconnected is per-transport (at least right now)
         boolean deviceDisconnected = false;
-        l.info("unregister t:d:c {}:{}:{}", tp.id(), remotePeer, channel);
+        l.info("{} unregister t:c {}:{}", remotePeer, tp.id(), TransportUtil.hexify(channel));
 
 
         // The channels monitor is used only to coordinate the remove() and containskey() so we have

@@ -4,24 +4,18 @@ import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import org.slf4j.Logger;
 
-public class MaxcastFilterSender {
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class MaxcastFilterSender
+{
     private static final Logger l = Loggers.getLogger(MaxcastFilterSender.class);
 
-    private int _lastMCasttID;
+    private final AtomicInteger lastMaxcastId = new AtomicInteger(Util.rand().nextInt());
 
-    public MaxcastFilterSender()
+    public int getNextMaxcastId()
     {
-        _lastMCasttID = Util.rand().nextInt();
-    }
-
-    public int getNewMCastID_()
-    {
-        _lastMCasttID++;
-
-        if (l.isDebugEnabled()) {
-            l.debug("generate new mcastid: " + _lastMCasttID);
-        }
-
-        return _lastMCasttID;
+        int nextMaxcastId = lastMaxcastId.incrementAndGet();
+        l.trace("generate new maxcast id {}", nextMaxcastId);
+        return nextMaxcastId;
     }
 }

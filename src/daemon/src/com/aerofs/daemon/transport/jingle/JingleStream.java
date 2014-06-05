@@ -118,7 +118,7 @@ class JingleStream
             throws ExDeviceUnavailable, ExIOFailed
     {
         if (streamClosed) {
-            l.warn("{}: dropping StreamEvent because stream is closed", this);
+            l.warn("{} drop StreamEvent because {} is closed", remotedid, this);
             return;
         }
 
@@ -152,7 +152,7 @@ class JingleStream
         signalThread.assertSignalThread();
 
         if (streamClosed) {
-            l.trace("{}: stream already closed", this);
+            l.trace("{} stream {} already closed", remotedid, this);
             return;
         }
 
@@ -160,12 +160,12 @@ class JingleStream
 
         Throwable closeCause  = this.closeCause == null ? cause : this.closeCause;
 
-        l.info("{}: close stream cause:{}", this, cause.getMessage());
+        l.info("{} close {} cause:{}", remotedid, this, cause.getMessage());
 
         checkState(!objectsDeleted, "%s: C++ objects already deleted", this);
         streamInterface.Close();
 
-        l.debug("{}: drain and fail", this);
+        l.debug("{} drain and fail for {}", remotedid, this);
 
         SendEvent event;
         while ((event = sendQueue.poll()) != null) {
@@ -204,7 +204,7 @@ class JingleStream
             if (writable) write();
 
         } catch (Exception e) {
-            l.warn("{}: fail send packet", this, e);
+            l.warn("{} fail send packet over {} err:{}", remotedid, this, e.getMessage());
             event.getFuture().setFailure(e);
         }
     }
@@ -296,11 +296,11 @@ class JingleStream
         checkState(streamClosed, "%s: stream not closed first", this);
 
         if (objectsDeleted) {
-            l.warn("{}: C++ objects already deleted", this);
+            l.warn("{} C++ objects for {} already deleted", remotedid, this);
             return;
         }
 
-        l.debug("{}: deleting C++ objects", this);
+        l.debug("{} deleting C++ objects for {}", remotedid, this);
 
         streamInterface.delete();
         slotEvent.delete();

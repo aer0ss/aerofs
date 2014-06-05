@@ -25,6 +25,10 @@ import com.google.protobuf.Message;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.aerofs.lib.JsonFormat.prettyPrint;
@@ -42,6 +46,7 @@ final class DiagnosticsDumper implements Runnable
 
     private static final Logger l = Loggers.getLogger(DiagnosticsDumper.class);
 
+    private final String _newline = System.getProperty("line.separator");
     private final Object _locker = new Object();
     private final InjectableCfg _cfg;
     private final CoreQueue _q;
@@ -70,37 +75,48 @@ final class DiagnosticsDumper implements Runnable
     {
         try {
             l.info("run dd");
-            dumpSystemInformation();
-            dumpDiagnostics("uls", _ul); // runs holding the core lock
-            dumpDiagnostics("dls", _dl); // runs holding the core lock
-            dumpDiagnostics("devices", _dp); // runs holding the core lock
-            dumpTransportDiagnostics(); // runs without holding core lock
-            dumpTransportTransferDiagnostics(); // runs without holding core lock
+
+            StringBuilder builder = new StringBuilder(1024);
+            builder.append(_newline);
+
+            dumpSystemInformation(builder);
+            dumpDiagnostics(builder, "uls", _ul); // runs holding the core lock
+            dumpDiagnostics(builder, "dls", _dl); // runs holding the core lock
+            dumpDiagnostics(builder, "devices", _dp); // runs holding the core lock
+            dumpTransportDiagnostics(builder); // runs without holding core lock
+            dumpTransportTransferDiagnostics(builder); // runs without holding core lock
+
+            l.info("diagnostics:{}", builder.toString());
         } catch (Throwable t) {
             l.error("fail dump diagnostics", t);
         }
     }
 
-    private void dumpSystemInformation()
+    private void dumpSystemInformation(StringBuilder builder)
     {
-        l.info("did:{}", _cfg.did());
-        l.info("usr:{}", _cfg.user());
-        l.info("ver:{}", _cfg.ver());
-        l.info("os :{}", OSUtil.getOSName());
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+
+        builder.append("did:").append(_cfg.did()).append(_newline);
+        builder.append("usr:").append(_cfg.user()).append(_newline);
+        builder.append("ver:").append(_cfg.ver()).append(_newline);
+        builder.append("os :").append(OSUtil.getOSName()).append(_newline);
+        builder.append("tz :").append(TimeZone.getDefault().getDisplayName()).append(_newline);
+        builder.append("now:").append(dateFormat.format(new Date())).append(_newline);
     }
 
-    private void dumpDiagnostics(String componentName, IDiagnosable component)
+    private void dumpDiagnostics(StringBuilder builder, String componentName, IDiagnosable component)
     {
-        Message diagnostics = getDiagnostics(component);
+        Message diagnostics = getDiagnostics(builder, component);
 
         if (diagnostics != null) {
-            l.info("{}:{}", componentName, prettyPrint(diagnostics));
+            builder.append(componentName).append(":").append(prettyPrint(diagnostics)).append(
+                    _newline);
         } else {
-            l.warn("{}: failed diagnostics dump", componentName);
+            builder.append(componentName).append(":failed diagnostics dump").append(_newline);
         }
     }
 
-    private @Nullable Message getDiagnostics(final IDiagnosable component)
+    private @Nullable Message getDiagnostics(final StringBuilder builder, final IDiagnosable component)
     {
         final AtomicReference<Message> diagnostics = new AtomicReference<Message>(null);
 
@@ -121,7 +137,8 @@ final class DiagnosticsDumper implements Runnable
                 try {
                     _locker.wait(MAX_DEVICE_DIAGNOSTICS_WAIT_TIME);
                 } catch (InterruptedException e) {
-                    l.warn("interrupted during wait for diagnostics dump from {}", component);
+                    builder.append("interrupted during wait for diagnostics dump from ").append(component).append(
+                            _newline);
                 }
             }
         }
@@ -129,22 +146,22 @@ final class DiagnosticsDumper implements Runnable
         return diagnostics.get();
     }
 
-    private void dumpTransportDiagnostics()
+    private void dumpTransportDiagnostics(StringBuilder builder)
     {
         if (!_tps.started()) {
-            l.warn("transports not started");
+            builder.append("transports not started").append(_newline);
             return;
         }
 
         Message transportDiagnostics = _tps.dumpDiagnostics_();
-        l.info("transports:{}", prettyPrint(transportDiagnostics));
+        builder.append("transports:").append(prettyPrint(transportDiagnostics)).append(_newline);
     }
 
-    private void dumpTransportTransferDiagnostics()
+    private void dumpTransportTransferDiagnostics(StringBuilder builder)
     {
         // print
         TransportTransferDiagnostics transferDiagnostics = _tsm.getAndReset();
-        l.info("transfer:{}", prettyPrint(transferDiagnostics));
+        builder.append("transfer:").append(prettyPrint(transferDiagnostics)).append(_newline);
 
         // send
         // FIXME (AG): add an method called "addAll" that automatically adds all fields

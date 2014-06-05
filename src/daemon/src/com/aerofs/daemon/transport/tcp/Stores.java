@@ -107,7 +107,7 @@ class Stores implements IStores, IDevicePresenceListener
         PerDeviceStoreMembership oldMembership = _memberships.get(did);
         if (oldMembership != null && oldMembership._filterSeqnum == filterInfo.getSequence()) return;
 
-        l.trace("fs from d:" + did);
+        l.trace("{} incoming fs", did);
 
         BFSID filter = new BFSID(filterInfo.getFilter());
         filter.finalize_();
@@ -122,10 +122,7 @@ class Stores implements IStores, IDevicePresenceListener
 
         ImmutableSet<SID> sidsOnline = bd.build();
 
-        if (l.isDebugEnabled()) {
-            l.debug("filter changed {} {} {} old {} {}", did, filter, filterInfo.getSequence(),
-                    (oldMembership == null ? null : oldMembership._filterSeqnum), sidsOnline);
-        }
+        l.debug("{} filter update {} {} old {} {}", did, filter, filterInfo.getSequence(), (oldMembership == null ? null : oldMembership._filterSeqnum), sidsOnline);
 
         PerDeviceStoreMembership newMembership = new PerDeviceStoreMembership(
                 filter,
@@ -169,7 +166,7 @@ class Stores implements IStores, IDevicePresenceListener
 
     private void sendPresence_(DID did, boolean online, Set<SID> sids)
     {
-        l.debug("notify:{} sids:{}", (online ? "online" : "offline"), sids);
+        l.debug("{} notify:{} sids:{}", did, (online ? "online" : "offline"), sids);
 
         // enqueue must not fail because if it does the core will not receive this presence update
 
@@ -196,7 +193,7 @@ class Stores implements IStores, IDevicePresenceListener
     @Override
     public synchronized void updateStores(SID[] addedSids, SID[] removedSids)
     {
-        l.debug("update stores add:{} rem:{}", Arrays.toString(addedSids), Arrays.toString(removedSids));
+        l.debug("update stores add:{} del:{}", Arrays.toString(addedSids), Arrays.toString(removedSids));
 
         Map<SID, int[]> added = updateFilter_(addedSids, removedSids);
 

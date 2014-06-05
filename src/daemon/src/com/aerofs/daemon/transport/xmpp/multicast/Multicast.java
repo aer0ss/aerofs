@@ -194,7 +194,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
 
         checkArgument(JabberID.isMUCAddress(tokens, xmppServerDomain));
 
-        l.debug("recv mc d:{}", did);
+        l.debug("{} recv mc", did);
 
         OutArg<Integer> wirelen = new OutArg<Integer>();
         byte [] bs = XMPPUtilities.decodeBody(did, wirelen, msg.getBody(), maxcastFilterReceiver);

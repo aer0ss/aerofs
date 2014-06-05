@@ -148,7 +148,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
             bindFuture.setSuccess();
             fireChannelBound(this, this.localAddress);
         } catch (Exception e) {
-            l.warn("{}: fail bind", this, e);
+            l.warn("{} fail bind over {}", getRemote(), this, e);
             bindFuture.setFailure(e);
             fireExceptionCaught(this, e);
         }
@@ -164,7 +164,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
         try {
             checkState(jingleStream == null, "previous stream:%s", jingleStream);
             jingleStream = new JingleStream(remoteAddress.getDid(), incoming, signalThread, streamInterface, this);
-            l.trace("{}: set stream:{}", this, jingleStream);
+            l.trace("{} set stream to {}", getRemote(), jingleStream);
         } catch (Throwable t) {
             // first, close the stream if it exists
             // can't rely on the channel to clean it up, because apparently
@@ -186,7 +186,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
     @Override
     public ChannelFuture close()
     {
-        l.info("{}: close channel", this);
+        l.info("{} close chanel over {}", getRemote(), this);
 
         // FIXME (AG): consider closing the stream early
 
@@ -232,7 +232,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
     {
         state.set(ST_CLOSED);
 
-        l.warn("closing channel due to i/o error cause:{}", cause.getMessage());
+        l.warn("{} close channel over {} due to i/o err:{}", getRemote(), this, cause.getMessage());
 
         channelWorker.submitChannelTask(new Runnable()
         {
@@ -248,7 +248,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
     {
         channelWorker.assertThread();
 
-        l.trace("{}: close event received - initiate cleanup", this);
+        l.trace("{} initiate close cleanup for {}", getRemote(), this);
 
         // do not re-handle the close event
         // we cannot use the return value of netty's "setClosed" because
@@ -281,14 +281,14 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
             @Override
             public void run()
             {
-                l.info("{}: closing jingle stream", this);
+                l.info("{} close channel over {}", getRemote(), this);
                 teardownJingleStream(new ExDeviceUnavailable("channel closed"), true);
             }
 
             @Override
             public void error(Exception e)
             {
-                l.error("{}: fail run stream close task on signal thread", JingleClientChannel.this, e);
+                l.error("{} fail run channel close task for {} on st", getRemote(), JingleClientChannel.this);
             }
 
             @Override
@@ -305,7 +305,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
      */
     void onWriteEventReceived(final MessageEvent event)
     {
-        l.trace("{}: send data len:{}", this, ((ChannelBuffer)event.getMessage()).readableBytes());
+        l.trace("{} send {} bytes over {}", getRemote(), ((ChannelBuffer)event.getMessage()).readableBytes(), this);
 
         // don't check isOpen() because that will be tripped early
         // and we want to close the stream in the check below
@@ -342,7 +342,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
             @Override
             public void error(Exception e)
             {
-                l.warn("{}: fail send", this, e);
+                l.warn("{} fail send over {}", getRemote(), this, e);
                 event.getFuture().setFailure(e);
                 onClose(e);
             }
@@ -364,7 +364,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
     @Override
     public void onSignalThreadClosing()
     {
-        l.info("{}: signal thread closing", this);
+        l.info("{} st closing - terminate {}", getRemote(), this);
 
         teardownJingleStream(new ExTransportUnavailable("signal thread closing"), false);
 
@@ -391,7 +391,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
     @Override
     public void onJingleStreamConnected(JingleStream stream)
     {
-        l.info("{}: stream connected", this);
+        l.info("{} channel connected over", getRemote(), this);
 
         boolean connected = state.compareAndSet(ST_OPEN, ST_CONNECTED);
 
@@ -400,7 +400,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
         }
 
         if (!connected) {
-            l.warn("{}: fail mark channel connected: previous state:{}", this, state.get());
+            l.warn("{} fail mark channel connected over {} - previous state:{}", getRemote(), this, state.get());
 
             // FIXME (AG): I terminate connect futures at close, but, really, we need a timeout
             // This is because libjingle doesn't (AFAIK) offer a
@@ -411,7 +411,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
 
             onClose(new IllegalStateException("stream in inconsistent state"));
         } else {
-            l.trace("{}: mark channel connected", this);
+            l.trace("{} mark channel connected over {}", getRemote(), this);
 
             if (connectFuture != null) {
                 connectFuture.setSuccess();
@@ -432,7 +432,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
     public void onIncomingMessage(DID did, final byte[] data)
     {
         if (!isOpen()) {
-            l.warn("{}: drop data - channel not open", this);
+            l.warn("{} drop incoming packet from {}", did, this);
             return;
         }
 
@@ -449,7 +449,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
     @Override
     public void onJingleStreamClosed(JingleStream stream)
     {
-        l.info("{}: stream closed", this);
+        l.info("{} channel over {} closed", getRemote(), this);
 
         onClose(new ExDeviceUnavailable("jingle stream closed"));
     }
@@ -471,10 +471,19 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
         });
     }
 
+    private String getRemote()
+    {
+        JingleAddress remote = remoteAddress;
+        if (remote == null) {
+            return "<UNST>";
+        } else {
+            return remote.getDid().toString();
+        }
+    }
+
     @Override
     public String toString()
     {
-        // FIXME (AG): it's possible that we'll see either null _or_ the jingleStream value because toString can be called from any thread
         return super.toString() + " " + ((jingleStream != null) ? jingleStream.toString() : "nostream");
     }
 }

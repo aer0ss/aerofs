@@ -107,7 +107,7 @@ class JingleClientChannelSink extends AbstractChannelSink
                     StreamInterface streamInterface = signalThread.createTunnel(remoteAddress.getJid(), String.format("%s->%s", channel.getLocalAddress(), channel.getRemoteAddress()));
                     channel.wrapStreamInterface(remoteAddress, false, streamInterface);
 
-                    l.info("connecting to {}", remoteAddress.getDid());
+                    l.info("{} connect", remoteAddress.getDid());
                 } catch (ExTransportUnavailable e) {
                     handleError(e);
                 }
@@ -121,7 +121,7 @@ class JingleClientChannelSink extends AbstractChannelSink
 
             private void handleError(Exception e)
             {
-                l.warn("failed to connect to {} with message {}", remoteAddress.getDid(), e.getMessage());
+                l.warn("{} fail connect err:{}", remoteAddress.getDid(), e.getMessage());
                 future.setFailure(e);
                 channel.onClose(e);
             }
@@ -139,7 +139,7 @@ class JingleClientChannelSink extends AbstractChannelSink
                     throws Exception
             {
                 if (!channel.isConnected()) {
-                    l.warn("failed to connect to {} within {} ms", remoteAddress.getDid(), channelConnectTimeout);
+                    l.warn("{} fail connect within {} ms", remoteAddress.getDid(), channelConnectTimeout);
                     channel.close();
                 }
             }

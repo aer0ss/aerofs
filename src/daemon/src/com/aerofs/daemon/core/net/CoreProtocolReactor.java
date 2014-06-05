@@ -98,7 +98,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
             checkState(!did.equals(Cfg.did()));
             _f._d2u.onUserIDResolved_(did, pc.user());
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
-            processIncomingMessage_(new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null));
+            processIncomingMessage_(new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null), false);
         } catch (Exception e) {
             l.warn("{} fail process uc", did, LogUtil.suppress(e, ExDeviceOffline.class, ExBadCredential.class));
             SystemUtil.fatalOnUncheckedException(e);
@@ -123,16 +123,18 @@ public class CoreProtocolReactor implements IUnicastInputLayer
                 userID = _f._d2u.issuePeerToPeerResolveUserIDRequest_(did);
             }
 
-            processIncomingMessage_(new DigestedMessage(pb, is, ep, userID, null));
+            processIncomingMessage_(new DigestedMessage(pb, is, ep, userID, null), true);
         } catch (Exception e) {
             l.warn("{} fail process mc", did, LogUtil.suppress(e, ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class));
             SystemUtil.fatalOnUncheckedException(e);
         }
     }
 
-    private void processIncomingMessage_(DigestedMessage msg)
+    private void processIncomingMessage_(DigestedMessage msg, boolean isMulticast)
             throws Exception
     {
+        l.debug("{} <- {} {},{} over {}", msg.did(), isMulticast ? "mc" : "uc", CoreProtocolUtil.typeString(msg.pb()), msg.pb().getRpcid(), msg.tp());
+
         switch (msg.pb().getType()) {
         case GET_COMPONENT_REQUEST:
             try {
@@ -208,6 +210,8 @@ public class CoreProtocolReactor implements IUnicastInputLayer
 
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
             DigestedMessage msg = new DigestedMessage(pb, r._is, pc.ep(), pc.user(), key);
+
+            l.debug("{} <- uc {},{} over {} via {}", msg.did(), CoreProtocolUtil.typeString(msg.pb()), msg.pb().getRpcid(), msg.tp(), streamId);
 
             switch (pb.getType()) {
                 case REPLY:

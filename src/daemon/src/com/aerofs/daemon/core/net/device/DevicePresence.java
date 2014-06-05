@@ -90,7 +90,7 @@ public class DevicePresence implements IDiagnosable
 
     public void online_(ITransport tp, DID did, Collection<SIndex> sidcs)
     {
-        l.info("online {}{} 4 {}", did, tp, sidcs);
+        l.info("{} up on {} {}", did, tp, sidcs);
 
         Device dev = _did2dev.get(did);
         if (dev == null) {
@@ -104,7 +104,7 @@ public class DevicePresence implements IDiagnosable
         onlineImpl_(dev, sidcsOnline);
 
         if (!wasFormerlyAvailable && dev.isAvailable_()) {
-            l.info("DPE +{}", did);
+            l.info("{} +DPE", did);
         }
     }
 
@@ -112,7 +112,7 @@ public class DevicePresence implements IDiagnosable
     {
         Device dev = _did2dev.get(did);
         if (dev == null) return;
-        l.info("offline {}{} 4 {}", did, tp, sidcs);
+        l.info("{} dn on {} {}", did, tp, sidcs);
 
         boolean wasFormerlyAvailable = dev.isAvailable_();
 
@@ -127,7 +127,7 @@ public class DevicePresence implements IDiagnosable
             boolean isNowAvailable)
     {
         if (!isNowAvailable && wasFormerlyAvailable) {
-            l.info("DPE -{}", did);
+            l.info("{} -DPE", did);
         }
     }
 
@@ -156,13 +156,13 @@ public class DevicePresence implements IDiagnosable
     {
         Device dev = _did2dev.get(did);
         if (dev == null) {
-            l.info("{}: already offline", did);
+            l.info("{} dn on start pulse", did);
             return;
         }
 
         if (dev.isBeingPulsed_(tp)) return;
 
-        l.info("{}: start pulse", did, tp);
+        l.info("{} start pulse for {}", did, tp);
 
         boolean wasFormerlyAvailable = dev.isAvailable_();
         removeDIDFromStores_(did, dev.pulseStarted_(tp));
@@ -176,7 +176,7 @@ public class DevicePresence implements IDiagnosable
             AbstractEBIMC ev = new EOStartPulse(_tps.getIMCE_(tp), did);
             CoreIMC.enqueueBlocking_(ev, _tokenManager);
         } catch (Exception e) {
-            l.warn("{}: t:{} fail start pulse err:{}", did, tp, Util.e(e));
+            l.warn("{} fail start pulse on {} err:{}", did, tp, Util.e(e));
             pulseStopped_(tp, did);
         }
     }
@@ -185,7 +185,7 @@ public class DevicePresence implements IDiagnosable
     {
         Device dev = _did2dev.get(did);
         if (dev == null) {
-            l.warn("{}: pulse stopped but device not found", did);
+            l.warn("{} pulse stopped but device not found", did);
             return;
         }
 
