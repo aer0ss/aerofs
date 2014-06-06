@@ -81,7 +81,7 @@ public class TestRecentExceptions extends AbstractTest
     public void shouldNoLongerBeRecentAfterIntervalPasses() throws IOException, InterruptedException
     {
         // Open the rex file with a short 10 ms interval
-        RecentExceptions rex = new RecentExceptions(TMP_DIR, 10);
+        RecentExceptions rex = new RecentExceptions(TMP_DIR, 10 * C.SEC);
         rex.clear();
 
         Exception e = new Exception();
@@ -91,7 +91,7 @@ public class TestRecentExceptions extends AbstractTest
         assertTrue(rex.isRecent(e));
 
         // Sleep 1 ms more than the recent interval, check that the exception is no longer recent
-        Thread.sleep(11);
+        Thread.sleep(15 * C.SEC);
         assertFalse(rex.isRecent(e));
     }
 }
