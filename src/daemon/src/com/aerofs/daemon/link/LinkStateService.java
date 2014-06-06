@@ -10,14 +10,11 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
 import com.aerofs.sv.client.SVClient;
-import com.aerofs.swig.driver.Driver;
-import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
+import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
@@ -46,17 +43,28 @@ public class LinkStateService
     private ImmutableSet<NetworkInterface> getActiveInterfaces()
             throws SocketException
     {
-        ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
+        ImmutableSet.Builder<NetworkInterface> interfaceBuilder = ImmutableSet.builder();
+        StringBuilder builder = null;
+
+        if (l.isDebugEnabled()) {
+            builder = new StringBuilder(1024);
+        }
 
         for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces(); e.hasMoreElements();) {
             NetworkInterface iface = e.nextElement();
-            if (isActive(iface)) ifaceBuilder.add(iface);
+            if (isActive(iface, builder)) {
+                interfaceBuilder.add(iface);
+            }
         }
 
-        return ifaceBuilder.build();
+        if (builder != null) {
+            l.debug("ls:ifs:\n" + builder.toString());
+        }
+
+        return interfaceBuilder.build();
     }
 
-    private boolean isActive(NetworkInterface iface)
+    private boolean isActive(NetworkInterface iface, @Nullable StringBuilder builder)
             throws SocketException
     {
         // Can't filter by MAC address, since within a virtual machine
@@ -97,32 +105,33 @@ public class LinkStateService
 
         // This method takes a very long time on some computers. The following three info loggings
         // are to figure out which system call takes most of the time.
-        final String name = iface.getName();
         final boolean isUp = iface.isUp();
         final boolean isLoopback = iface.isLoopback();
         final boolean isVirtual = iface.isVirtual();
 
         // If debug is enabled, generate the debug message
-        StringBuilder sb = new StringBuilder();
-        if (l.isDebugEnabled()) {
-            sb.append(' ').append(name);
+        if (builder != null) {
+            final String name = iface.getName();
+
+            builder.append(' ').append(name);
 
             // The displayName can be different than the name. If they are different,
             // output something like "name[displayName]".
             final String displayName = iface.getDisplayName();
             if (displayName != null && !displayName.equals(name)) {
-                sb.append('[').append(displayName).append(']');
+                builder.append('[').append(displayName).append(']');
             }
 
             // Output the link state. Inclusion of a symbol means the state it represents
             // is true. i.e, if 'u' is present in the message, then u = true, meaning isUp
             // is true.
-            sb.append('(');
-            if (isUp) sb.append('u');
-            if (isLoopback) sb.append('l');
-            if (isVirtual) sb.append('v');
-            if (iface.supportsMulticast()) sb.append('m');
-            sb.append(')');
+            builder.append('(');
+            if (isUp) builder.append('u');
+            if (isLoopback) builder.append('l');
+            if (isVirtual) builder.append('v');
+            if (iface.supportsMulticast()) builder.append('m');
+            builder.append(')');
+            builder.append('\n');
         }
 
         // IMPORTANT: On Mac OS X, disabling an interface via Network Preferences
@@ -130,23 +139,12 @@ public class LinkStateService
         // we would remove IFprev(IPV4, IPV6) and then _readd_ IFnew(IPV6).
         // This caused Multicast::send to attempt to send packets through this
         // interface even though it wasn't 'active'.
-        boolean isActive = false;
+        boolean active = false;
         if (isUp && !isLoopback && !isVirtual) {
-            Enumeration<InetAddress> ias = iface.getInetAddresses();
-            while (ias.hasMoreElements()) {
-                InetAddress address = ias.nextElement();
-                if (address instanceof Inet4Address) {
-                    // it is an IPv4 address
-                    isActive = true;
-                    if (l.isDebugEnabled()) sb.append(':').append(address.getHostAddress());
-                    break;
-                }
-            }
+            active = true;
         }
 
-        if (l.isDebugEnabled()) l.debug("ls:ifs:\n" + sb);
-
-        return isActive;
+        return active;
     }
 
     private void checkLinkState()
@@ -215,10 +213,17 @@ public class LinkStateService
                         checkLinkState();
                     }
 
-                    // Only Windows has a proper implementation of waitForNetworkInterfaceChange.
-                    if (Driver.waitForNetworkInterfaceChange() != DriverConstants.DRIVER_SUCCESS) {
-                        ThreadUtil.sleepUninterruptable(DaemonParam.LINK_STATE_POLLING_INTERVAL);
-                    }
+                    // FIXME (AG): this is inefficient, especially on Windows
+                    // In JDK 6 I noticed that enumerating the network interfaces can
+                    // take a long time, especially on Windows. We switched to an
+                    // alternate Windows-only API to be notified of interface changes,
+                    // but noticed that the daemon sometimes didn't get any notifications
+                    // of network changes. this led to weird bugs where a laptop
+                    // would resume from sleep but AeroFS would still be offline. I
+                    // considered other alternatives, but the lowest-cost starting option
+                    // was to try polling again, and see if the JDK8 implementation
+                    // was faster
+                    ThreadUtil.sleepUninterruptable(DaemonParam.LINK_STATE_POLLING_INTERVAL);
                 }
             }
         });
