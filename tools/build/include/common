@@ -443,4 +443,39 @@ function publish_public_to_s3() {
 ENDCMDS
 }
 
+# Emails team@aerofs.com about this deployment and sends message to Dev Team
+# channel on Hipchat.
+function notify_successful_deployment {
+    echo ">> notifying team of successful deployment via email"
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        echo ' ' | mail -s "[$MODE] $RELEASE_VERSION deployed by $USER" team@aerofs.com
+ENDCMDS
+    echo ">> notifying team of successful deployment via HipChat"
+    echo "$(whoami) pushed $MODE $RELEASE_VERSION" |
+        $(git rev-parse --show-cdup)puppetmaster/modules/hipchat/files/hipchat_room_message -c green -t 6124360a8cd9355ff9b9927b51cea4 -r 93246 -f "Deploy" > /dev/null
+}
+
+# Uploads proguard map file to the servers that need it.
+function upload_map {
+    declare MAP_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}.map"
+    echo "uploading proguard map file to $MAP_SERVER..."
+    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $MAP_SERVER_LOGIN:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
+    echo "uploading proguard map file to $ROCKLOG_SERVER"
+    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $ROCKLOG_SERVER:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
+}
+
+# Tags this release in the codeline.
+#   $1 : public or private (lowercase mode flag)
+#
+function tag_release {
+    case ${1:-} in
+    public|private) prefix=$1 ;;
+    *)              echo "Illegal tag prefix; should be public or private." ; return 1 ;;
+    esac
+
+    echo ">> tagging git release"
+    git tag -a "${prefix}-$RELEASE_VERSION" -m "${prefix}-$RELEASE_VERSION"
+    git push --tags
+}
+
 fi # endif

@@ -35,24 +35,6 @@ if [[ ! $RELEASE_VERSION =~ $RELEASE_VERSION_REGEX ]]; then
     exit $ERRBADVERSION
 fi
 
-# Uploads proguard map file to the servers that need it.
-function upload_map() {
-    declare MAP_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}.map"
-    echo "uploading proguard map file to $MAP_SERVER..."
-    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $MAP_SERVER_LOGIN:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
-    echo "uploading proguard map file to $ROCKLOG_SERVER"
-    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $ROCKLOG_SERVER:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
-}
-
-function upload_packages_to_release_server() {
-    # Upload the immutable artifacts (versioned installers) first, so
-    # incrementing the version moves atomically between consistent states
-    echo ">>> rsyncing packages to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/"
-    rsync --archive --verbose "$PACKAGE_DIR"/* $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/
-    echo ">>> rsyncing version to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/release-versions/$CANARY_VER"
-    rsync --archive --verbose "$PACKAGE_DIR"/$CURRENT_VER $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/release-versions/$CANARY_VER
-}
-
 function upload_packages_to_antivirus_firms() {
     # Upload latest version of script
     kscp $BUILD_SCRIPT_DIR/send_package_to_antivirus_firms.sh $RELEASE_SERVER_LOGIN:
@@ -63,62 +45,30 @@ function upload_packages_to_antivirus_firms() {
 ENDCMDS
 }
 
-# Emails team@aerofs.com about this deployment and sends message to Dev Team
-# channel on Hipchat.
-function notify_successful_deployment() {
-    echo ">> notifying team of successful deployment via email"
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        echo ' ' | mail -s "[$MODE] $RELEASE_VERSION deployed by $USER" team@aerofs.com
-ENDCMDS
-    echo ">> notifying team of successful deployment via HipChat"
-    echo "$(whoami) pushed $MODE $RELEASE_VERSION" |
-        $(git rev-parse --show-cdup)puppetmaster/modules/hipchat/files/hipchat_room_message -c green -t 6124360a8cd9355ff9b9927b51cea4 -r 93246 -f "Deploy" > /dev/null
-}
-
-# Tags this release with an annotated tag so it is easy to checkout a deployed
-# build for debugging.
-function tag_release() {
-    if is_public ; then
-        echo ">> tagging git release"
-        git tag -a "public-$RELEASE_VERSION" -m "public-$RELEASE_VERSION"
-        git push --tags
-    fi
-
-    if is_private ; then
-        echo ">> tagging git release"
-        git tag -a "private-$RELEASE_VERSION" -m "private-$RELEASE_VERSION"
-        git push --tags
-    fi
-}
-
 # main: Run all of the deployment steps
-if is_public ; then
-    echo
-    echo "!!!!!!!!!!!!!!!!!!!!!!!"
-    echo "!! DEPLOY PRODUCTION !!"
-    echo "!!!!!!!!!!!!!!!!!!!!!!!"
-    echo
+if is_private ; then
+    echo "Hey, deploy doesn't do anything for Private mode. See approve_appliance."
+    exit 0
 fi
 
+echo
+echo "!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!! DEPLOY PRODUCTION !!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!"
+echo
 echo '+--------------------------'
 echo '| ' $RELEASE_VERSION $MODE
 echo '+--------------------------'
 
 upload_map
-if is_public ; then
-    call exec_prepublish_checks $MODE $RELEASE_VERSION
-    lock_release_server "deploying $MODE $RELEASE_VERSION"
-    upload_packages_to_release_server
-    upload_packages_to_antivirus_firms
-    publish_public_to_s3 $INSTALLER_DOWNLOAD_BUCKET
-    unlock_release_server
-fi
-# FIXME: tag_release in PRIVATE mode should only be called after testing and upload is complete.
-tag_release
-
-if is_public; then
-    notify_successful_deployment
-fi
+call exec_prepublish_checks $MODE $RELEASE_VERSION
+lock_release_server "deploying $MODE $RELEASE_VERSION"
+upload_packages_to_release_server
+upload_packages_to_antivirus_firms
+publish_public_to_s3 $INSTALLER_DOWNLOAD_BUCKET
+unlock_release_server
+tag_release public
+notify_successful_deployment
 
 echo ">> successfully deployed $MODE release version $RELEASE_VERSION"
 exit 0

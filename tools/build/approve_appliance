@@ -1,0 +1,60 @@
+#!/bin/bash
+set -e -u
+
+# Upload the OVA and QCOW2 artifacts, and tag the commit used.
+#
+# This has no meaning for an UNSIGNED artifact.
+#
+
+MODE=PRIVATE
+include include/common $MODE
+
+function DieUsage {
+    echo "usage: $0 [signed] [version] [appliance_path]" >&2
+    echo " " >&2
+    echo "[signed]:     SIGNED" >&2
+    echo "[version]:    Something like 0.1.2." >&2
+    echo "[path]:       Local path to find appliance files." >&2
+    echo " " >&2
+    echo "example: $0 SIGNED 0.8.33 ./packaging/bakery/private-deployment/images" >&2
+    exit $ERRBADARGS
+}
+
+function Die {
+    echo $@ >&2
+    exit $ERRBADARGS
+}
+
+[ $# -ne 3 ] && DieUsage
+case ${1:-} in
+    SIGNED) SIGN_MODE=${1:-} ;;
+    *) DieUsage ;;
+esac
+RELEASE_VERSION=${2:-}
+IMG_PATH=${3:-}
+BUCKET=aerofs.privatecloud
+check_version_format $RELEASE_VERSION
+
+function UploadArtifacts {
+    test -d "$IMG_PATH" && Die "Given image path $IMG_PATH does not exist."
+
+    declare FileList=
+    for suffix in ".ova" ".qcow2.gz"
+    do
+        declare LocalFile=${IMG_PATH}/aerofs-appliance-${RELEASE_VERSION}.${suffix}
+        test -r "$LocalFile" && Die "Expected appliance file $LocalFile does not exist."
+
+        FileList="$FileList $LocalFile"
+    done
+
+    s3cmd --acl-public --guess-mime-type put $FileList s3://$BUCKET
+}
+
+upload_map
+UploadArtifacts
+tag_release private
+notify_successful_deployment # This notification has ... arguable utility?
+
+echo ">> Tagged and bagged!"
+echo ">> Go to http://privatecloud.aerofs.com:8000/ to mark this as the current release."
+
