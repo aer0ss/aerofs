@@ -36,8 +36,8 @@ import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.oauth.PrincipalFactory;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
+import com.aerofs.oauth.PrincipalFactory;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -131,10 +131,11 @@ public class TokenResource
     public Response deleteToken(@PathParam("token") String token)
     {
         try {
+            l.info("delete token {}", token);
             AccessToken accessToken = accessTokenRepository.findByToken(token);
 
             if (accessToken == null) {
-                l.warn("token not found: {}", token);
+                l.info("token not found: {}", token);
                 return Response.status(Status.NOT_FOUND).build();
             }
 
@@ -155,7 +156,7 @@ public class TokenResource
     public Response deleteAllTokens(@PathParam("owner") String owner)
     {
         try {
-            l.info("Delete all tokens for owner {}", owner);
+            l.info("delete all tokens for owner {}", owner);
             accessTokenRepository.deleteAllTokensByOwner(owner);
             return Response.ok().build();
         } catch (Exception e) {
@@ -171,7 +172,7 @@ public class TokenResource
     public Response deleteAdminTokens(@PathParam("owner") String owner)
     {
         try {
-            l.info("Delete admin tokens for owner {}", owner);
+            l.info("delete admin tokens for owner {}", owner);
             accessTokenRepository.deleteDelegatedTokensByOwner(owner);
             return Response.ok().build();
         } catch (Exception e) {
@@ -194,6 +195,7 @@ public class TokenResource
         String grantType = accessTokenRequest.getGrantType();
         ValidationResponse vr = oAuth2Validator.validate(accessTokenRequest);
         if (!vr.valid()) {
+            l.warn("validation error in create token request: {}", vr.getValue());
             return sendErrorResponse(vr);
         }
         AuthorizationRequest request;
@@ -206,21 +208,23 @@ public class TokenResource
                 return sendErrorResponse(ValidationResponse.UNSUPPORTED_GRANT_TYPE);
             }
         } catch (ValidationResponseException e) {
+            l.warn("validation error in create token request", e.v);
             return sendErrorResponse(e.v);
         }
         if (!request.getClient().isExactMatch(credentials)) {
+            l.warn("invalid client credentials in create token request");
             return Response.status(Response.Status.UNAUTHORIZED)
                     .header(WWW_AUTHENTICATE, BASIC_REALM)
                     .build();
         }
         AccessToken token = createAccessToken(request, false);
+        l.info("created token {} for {}", token.getToken(), token.getClientId());
 
         AccessTokenResponse response = new AccessTokenResponse(token.getToken(), BEARER,
                 request.getClient().getExpireDuration(), token.getRefreshToken(),
                 StringUtils.join(token.getScopes(), ','));
 
         return Response.ok().entity(response).build();
-
     }
 
     /**
