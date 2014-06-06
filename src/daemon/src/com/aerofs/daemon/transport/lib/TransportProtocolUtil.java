@@ -179,7 +179,7 @@ public abstract class TransportProtocolUtil
             try {
                 sink.enqueueThrows(event, Prio.LO);
             } catch (Exception e) {
-                l.warn("{} fail enqueue chunk for stream {} over {} cause:{}", ep.did(), streamId, ep.tp(), Util.e(e));
+                l.warn("{} fail enqueue chunk for stream {} over {} cause:{}", ep.did(), streamId, ep.tp(), e);
                 sm.removeIncomingStream(ep.did(), streamId);
                 throw e;
             }
@@ -323,7 +323,7 @@ public abstract class TransportProtocolUtil
                 }
             }
         } catch (ExNoResource e) {
-            l.warn("{} fail enqueue sessionEnded for {} cause:{}", ep.did(), ep.tp(), Util.e(e));
+            l.warn("{} fail enqueue sessionEnded for {} cause:{}", ep.did(), ep.tp(), e);
         }
     }
 

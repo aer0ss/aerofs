@@ -391,7 +391,7 @@ class JingleClientChannel extends AbstractChannel implements ISignalThreadListen
     @Override
     public void onJingleStreamConnected(JingleStream stream)
     {
-        l.info("{} channel connected over", getRemote(), this);
+        l.info("{} channel connected over {}", getRemote(), this);
 
         boolean connected = state.compareAndSet(ST_OPEN, ST_CONNECTED);
 
