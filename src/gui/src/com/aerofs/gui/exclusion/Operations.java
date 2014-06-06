@@ -1,11 +1,11 @@
 package com.aerofs.gui.exclusion;
 
-import com.aerofs.gui.exclusion.CompExclusionList.FolderData;
-
 import java.util.Set;
+
+import com.aerofs.lib.Path;
 
 public class Operations
 {
-    Set<FolderData> _newlyExcludedFolders;
-    Set<FolderData> _newlyIncludedFolders;
+    Set<Path> _exclude;
+    Set<Path> _include;
 }
