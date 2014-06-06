@@ -13,6 +13,7 @@
         % endif
       </a>
     </li>
+    % if is_member:
     <li>
       <a href="#" class="${open_modal_class}" data-${data_sid}="${sid}" data-${data_name}="${folder_name}" data-action="leave">
         <span class="icon">
@@ -21,6 +22,7 @@
           Leave
       </a>
     </li>
+    % endif
     <li>
       <a href="#" class="${open_modal_class}" data-${data_sid}="${sid}" data-${data_name}="${folder_name}" data-action="destroy">
         <span class="glyphicon glyphicon-trash"></span> 

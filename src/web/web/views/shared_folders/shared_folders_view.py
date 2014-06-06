@@ -150,7 +150,7 @@ def json_get_my_shared_folders(request):
     reply = sp.list_user_shared_folders(session_user)
     return _sp_reply2datatables(reply.shared_folder,
         _session_user_privileger,
-        len(reply.shared_folder), echo, session_user, request)
+        len(reply.shared_folder), echo, session_user, request, True)
 
 
 def _session_user_privileger(folder, session_user):
@@ -207,7 +207,7 @@ def _session_team_privileger(folder, session_user):
     return folder.owned_by_team
 
 
-def _sp_reply2datatables(folders, privileger, total_count, echo, session_user, request):
+def _sp_reply2datatables(folders, privileger, total_count, echo, session_user, request, is_mine=False):
     """
     @param privileger a callback function to determine if the session user has
         privileges to modify ACL of the folder
@@ -228,7 +228,7 @@ def _sp_reply2datatables(folders, privileger, total_count, echo, session_user, r
             'owners': _render_shared_folder_users(owners, session_user),
             'members': _render_shared_folder_users(members, session_user),
             'options': _render_shared_folder_options_link(folder, session_user,
-                privileger(folder, session_user), request),
+                privileger(folder, session_user), request, is_mine),
         })
 
     return {
@@ -286,7 +286,7 @@ def _render_shared_folder_users(user_permissions_and_state_list, session_user):
     return escape(str)
 
 
-def _render_shared_folder_options_link(folder, session_user, privileged, request):
+def _render_shared_folder_options_link(folder, session_user, privileged, request, is_mine):
     """
     @param privileged whether the session user has the privilege to modify ACL
     """
@@ -304,7 +304,7 @@ def _render_shared_folder_options_link(folder, session_user, privileged, request
         'folder_name': escape(folder.name),
         'data_perms': _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST,
         'perms': escape(urs),
-        'is_member': ''  # TODO: hide leave link if user is not a member of the shared folder
+        'is_member': is_mine
     }
 
     return render('shared_folder_actions.mako', data, request)
