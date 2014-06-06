@@ -5,7 +5,7 @@
 package com.aerofs.servlets;
 
 import com.aerofs.lib.ex.ExNotAuthenticated;
-import com.aerofs.sp.server.lib.user.ISessionUser;
+import com.aerofs.sp.server.lib.user.ISession;
 import com.aerofs.sp.server.lib.user.User;
 
 import javax.annotation.Nonnull;
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertFalse;
  * class should be single-threaded, so this isn't a problem. Intended use is in {@code
  * LocalSPServiceReactorCaller}.
  */
-public class MockSessionUser implements ISessionUser
+public class MockSession implements ISession
 {
     private User _user;
 
@@ -50,7 +50,7 @@ public class MockSessionUser implements ISessionUser
     }
 
     @Override
-    public String getSessionID()
+    public String id()
     {
         // Doesn't matter.
         return "";

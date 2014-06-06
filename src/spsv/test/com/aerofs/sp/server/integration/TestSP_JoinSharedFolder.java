@@ -112,7 +112,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     {
         shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
-        setSessionUser(USER_2);
+        setSession(USER_2);
         PBFolderInvitation inv = service.listPendingFolderInvitations().get().getInvitation(0);
         assertEquals(USER_1.id().getString(), inv.getSharer());
         assertEquals(SID_1, new SID(inv.getShareId()));
@@ -123,7 +123,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldThrowWhenTryingToIgnoreInvitationToNonExistingFolder() throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         try {
             service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
@@ -135,7 +135,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     {
         shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
-        setSessionUser(USER_3);
+        setSession(USER_3);
         try {
             service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
@@ -147,7 +147,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     {
         shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
-        setSessionUser(USER_1);
+        setSession(USER_1);
         try {
             service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();

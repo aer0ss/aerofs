@@ -30,13 +30,13 @@ public class TestSP_SetQuota extends AbstractSPTest
         nonadmin.setOrganization(admin.getOrganization(), AuthorizationLevel.USER);
         sqlTrans.commit();
 
-        setSessionUser(admin);
+        setSession(admin);
     }
 
     @Test
     public void shouldEnforceAdminOnlyForSetQuota() throws Exception
     {
-        setSessionUser(nonadmin);
+        setSession(nonadmin);
         try {
             service.setQuota(42L);
             fail();
@@ -48,7 +48,7 @@ public class TestSP_SetQuota extends AbstractSPTest
     @Test
     public void shouldEnforceAdminOnlyForRemoveQuota() throws Exception
     {
-        setSessionUser(nonadmin);
+        setSession(nonadmin);
         try {
             service.removeQuota();
             fail();

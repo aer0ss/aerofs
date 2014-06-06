@@ -32,7 +32,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
 
         // now have the second guy delete the third
 
-        setSessionUser(USER_2);
+        setSession(USER_2);
         service.deleteACL(SID_1.toPB(), USER_3.id().getString()).get();
 
         // expect first, second and third guy all to be notified
@@ -41,7 +41,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
 
         // have the first guy get his acl
 
-        setSessionUser(USER_1);
+        setSession(USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         // this guy has seen _all_ the updates, so he should see an epoch of 4
@@ -53,7 +53,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
 
         // now have the deleted guy get his acl
 
-        setSessionUser(USER_3);
+        setSession(USER_3);
         reply = service.getACL(0L).get();
 
         // only two updates have affected him, so he should have an epoch of 2
@@ -72,7 +72,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
 
         // now attempt to delete someone for whom the role doesn't exist
 
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         try {
             service.deleteACL(SID_1.toPB(), USER_2.id().getString()).get();
@@ -82,7 +82,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
             sqlTrans.handleException();
         }
 
-        setSessionUser(USER_1);
+        setSession(USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         // epoch shouldn't be bumped on a deletion of a person that doesn't exist
@@ -100,7 +100,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         // get the editor to try to delete the owner
-        setSessionUser(USER_2);
+        setSession(USER_2);
 
         try {
             service.deleteACL(SID_1.toPB(), USER_1.id().getString()).get();

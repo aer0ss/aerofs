@@ -49,7 +49,7 @@ public class AbstractSPCertificateBasedTest extends AbstractSPTest
 
         mockCertificateGeneratorAndIncrementSerialNumber();
 
-        setSessionUser(TEST_1_USER);
+        setSession(TEST_1_USER);
     }
 
     @Override

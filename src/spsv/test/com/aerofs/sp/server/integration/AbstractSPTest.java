@@ -17,7 +17,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.proto.Cmd.Command;
-import com.aerofs.servlets.MockSessionUser;
+import com.aerofs.servlets.MockSession;
 import com.aerofs.servlets.SecUtilHelper;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -53,7 +53,7 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
-import com.aerofs.sp.server.lib.session.HttpSessionRemoteAddress;
+import com.aerofs.sp.server.lib.session.RequestRemoteAddress;
 import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
@@ -156,14 +156,14 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected CertificateAuthenticator certificateAuthenticator =
             mock(CertificateAuthenticator.class);
-    @Spy protected HttpSessionRemoteAddress remoteAddress = mock(HttpSessionRemoteAddress.class);
+    @Spy protected RequestRemoteAddress remoteAddress = mock(RequestRemoteAddress.class);
 
     @Spy AsyncEmailSender asyncEmailSender = AsyncEmailSender.create();
 
     @Mock protected InvitationEmailer.Factory factEmailer;
 
-    // To simulate service.signIn(USER, PASSWORD), subclasses can call setSessionUser(UserID)
-    @Spy protected MockSessionUser sessionUser;
+    // To simulate service.signIn(USER, PASSWORD), subclasses can call setSession(UserID)
+    @Spy protected MockSession session;
 
     @Spy protected Authenticator authenticator = AuthenticatorFactory.create();
     @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
@@ -256,7 +256,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         service = new SPService(db,
                 sqlTrans,
                 jedisTrans,
-                sessionUser,
+                session,
                 passwordManagement,
                 certificateAuthenticator,
                 remoteAddress,
@@ -345,9 +345,9 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     }
 
     // TODO (WW) remove this method as it doesn't do much
-    protected void setSessionUser(User user)
+    protected void setSession(User user)
     {
-        sessionUser.setUser(user);
+        session.setUser(user);
     }
 
     protected void mockCertificateGeneratorAndIncrementSerialNumber() throws Exception

@@ -27,7 +27,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         clearVerkehrPublish(); // clear out notifications from sharing
 
         // update ACL for user 3 as user 1
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.updateACL(SID_1.toPB(), USER_3.id().getString(),
                 Permissions.OWNER.toPB(), false);
 
@@ -35,7 +35,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         assertVerkehrPublishOnlyContains(USER_1, USER_3);
 
         // verify user 3 has updated ACL in place
-        setSessionUser(USER_3);
+        setSession(USER_3);
         GetACLReply reply = service.getACL(0L).get();
 
         // epoch for this guy should be 2 (started at 0, added as editor then as owner)
@@ -54,7 +54,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         clearVerkehrPublish(); // clear out notifications from sharing
 
         // update ACL for user 3 as user 1
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.updateACL(SID_1.toPB(), USER_3.id().getString(),
                 Permissions.OWNER.toPB(), false);
 
@@ -77,7 +77,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         clearVerkehrPublish(); // clear out notifications from sharing
 
         // update ACL for user 3 as user 1
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.updateACL(SID_1.toPB(), USER_3.id().getString(),
                 Permissions.OWNER.toPB(), false);
 
@@ -99,7 +99,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         clearVerkehrPublish(); // throw away this notification
 
         // update ACL for user 3 as user 1
-        setSessionUser(USER_1);
+        setSession(USER_1);
         try {
             // should fail with ExNotFound
             service.updateACL(SID_1.toPB(), USER_3.id().getString(),
@@ -114,7 +114,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         assertVerkehrPublishIsEmpty();
 
         // check that user 3 still has no ACLs set in the db
-        setSessionUser(USER_3);
+        setSession(USER_3);
         GetACLReply reply = service.getACL(0L).get();
         assertGetACLReplyIncrementsEpochBy(reply, 0);
         assertEquals(0, reply.getStoreAclCount());
@@ -129,7 +129,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         clearVerkehrPublish(); // throw away these notifications
 
         // try to edit user 1's ACL entry for store 1 as user 3
-        setSessionUser(USER_3);
+        setSession(USER_3);
         try {
             service.updateACL(SID_1.toPB(), USER_1.id().getString(),
                     Permissions.EDITOR.toPB(), false);
@@ -142,7 +142,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         assertVerkehrPublishIsEmpty();
 
         // check that user 3 only has editor permissions
-        setSessionUser(USER_3);
+        setSession(USER_3);
         GetACLReply reply = service.getACL(0L).get();
 
         assertGetACLReplyIncrementsEpochBy(reply, 1);
@@ -162,12 +162,12 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         User admin = addAdmin(USER_3);
 
         // try to edit user 1's ACL entry for store 1 as user 3
-        setSessionUser(admin);
+        setSession(admin);
         service.updateACL(SID_1.toPB(), USER_1.id().getString(),
                 Permissions.EDITOR.toPB(), false);
 
         // switch to USER_3 so we can verify epoch number increments below.
-        setSessionUser(USER_3);
+        setSession(USER_3);
         GetACLReply reply = service.getACL(0L).get();
 
         assertGetACLReplyIncrementsEpochBy(reply, 2);
@@ -187,11 +187,11 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         User admin = addAdmin(USER_3);
 
         // try to edit user 1's ACL entry for store 1 as user 3
-        setSessionUser(admin);
+        setSession(admin);
         service.updateACL(SID_1.toPB(), USER_1.id().getString(),
                 Permissions.EDITOR.toPB(), false);
 
-        setSessionUser(USER_1);
+        setSession(USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         assertACLOnlyContains(getSingleACL(SID_1, reply),
@@ -210,11 +210,11 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         User admin = addAdmin(USER_3);
 
         // try to edit user 1's ACL entry for store 1 as user 3
-        setSessionUser(admin);
+        setSession(admin);
         service.updateACL(SID_1.toPB(), USER_1.id().getString(),
                 Permissions.EDITOR.toPB(), false);
 
-        setSessionUser(USER_1);
+        setSession(USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         assertACLOnlyContains(getSingleACL(SID_1, reply),
@@ -228,7 +228,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         // add USER_3 as owner of the store
         shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.OWNER);
 
-        setSessionUser(USER_3);
+        setSession(USER_3);
         service.updateACL(SID_1.toPB(), USER_1.id().getString(),
                 Permissions.EDITOR.toPB(), false);
 

@@ -79,10 +79,10 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     public void shouldMoveUserToNewOrganizationViaAcceptOrganizationInvitationCall()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         sendInvitation(USER_2);
-        setSessionUser(USER_2);
+        setSession(USER_2);
         acceptFirstInvitation(USER_2);
 
         // Verify user 2 is indeed in the new organization.
@@ -111,10 +111,10 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
             assertEquals(OrganizationID.PRIVATE_ORGANIZATION, adminOrg.id());
             sqlTrans.commit();
 
-            setSessionUser(admin);
+            setSession(admin);
             sendInvitation(accepter);
 
-            setSessionUser(accepter);
+            setSession(accepter);
             acceptOrganizationInvitation(adminOrg, accepter);
 
             // Verify accepter is indeed in the new organization.
@@ -135,7 +135,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     public void inviteToOrganization_shouldThrowExNoPermIfUserIsNotAdmin()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         // set USER_1 as non-admin
         sqlTrans.begin();
@@ -152,7 +152,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     public void inviteToOrganization_shouldThrowExAlreadyInvitedIfUserHasAlreadyBeenInvited()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         sendInvitation(USER_2);
         try {
             sendInvitation(USER_2);
@@ -164,9 +164,9 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     public void acceptOrganizationInvitation_shouldThrowExNotFoundIfUserIsAlreadyAccepted()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         sendInvitation(USER_2);
-        setSessionUser(USER_2);
+        setSession(USER_2);
         Organization org = acceptFirstInvitation(USER_2);
 
         try {
@@ -179,12 +179,12 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     public void acceptOrganizationInvitation_shouldThrowExNotFoundIfUserNotInvitedToTargetOrganization()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         sendInvitation(USER_2);
-        setSessionUser(USER_2);
+        setSession(USER_2);
         Organization org = acceptFirstInvitation(USER_2);
-        setSessionUser(USER_3);
+        setSession(USER_3);
 
         try {
             acceptOrganizationInvitation(org, USER_2);
@@ -197,15 +197,15 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
             throws Exception
     {
         // Make user 1 and admin of a new organization.
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         // User 2 is also an admin, and invites user 1 to thier org.
-        setSessionUser(USER_2);
+        setSession(USER_2);
 
         sendInvitation(USER_1);
 
         // User 1 accept invite to user 2's org.
-        setSessionUser(USER_1);
+        setSession(USER_1);
         acceptFirstInvitation(USER_1);
 
         // Verify user 1 is not an admin in user 2's organization.
@@ -217,10 +217,10 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     public void acceptOrganizationInvitation_shouldThowExNotFoundWhenTryingToAcceptIgnoredInvitation()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         sendInvitation(USER_2);
-        setSessionUser(USER_2);
+        setSession(USER_2);
         Organization org = deleteFirstInvitation();
 
         try {

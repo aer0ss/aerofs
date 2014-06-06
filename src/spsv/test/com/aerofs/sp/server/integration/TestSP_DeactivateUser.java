@@ -81,14 +81,14 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
     @Test(expected = ExNotFound.class)
     public void shouldThowIfUserNotFound() throws Exception
     {
-        setSessionUser(u0);
+        setSession(u0);
         service.deactivateUser("totallynotauser", false);
     }
 
     @Test(expected = ExNoPerm.class)
     public void shouldnotAllowUserToDeactivateOther() throws Exception
     {
-        setSessionUser(u1);
+        setSession(u1);
         service.deactivateUser(u0.id().getString(), false);
     }
 
@@ -99,7 +99,7 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
         u1.setOrganization(saveOrganization(), AuthorizationLevel.ADMIN);
         sqlTrans.commit();
 
-        setSessionUser(u1);
+        setSession(u1);
         try {
             service.deactivateUser(u0.id().getString(), false);
             fail();
@@ -109,7 +109,7 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
     @Test
     public void shouldAllowUserToDeactivateSelf() throws Exception
     {
-        setSessionUser(u0);
+        setSession(u0);
         service.deactivateUser(u0.id().getString(), false);
 
         sqlTrans.begin();
@@ -124,7 +124,7 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
     {
         shareAndJoinFolder(u0, SID.generate(), u1, Permissions.allOf(Permission.WRITE));
 
-        setSessionUser(u0);
+        setSession(u0);
         try {
             service.deactivateUser(u0.id().getString(), false);
             fail();
@@ -138,7 +138,7 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
         u1.setOrganization(u0.getOrganization(), AuthorizationLevel.ADMIN);
         sqlTrans.commit();
 
-        setSessionUser(u1);
+        setSession(u1);
         service.deactivateUser(u0.id().getString(), false);
 
         sqlTrans.begin();
@@ -151,7 +151,7 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
     @Test
     public void shouldAllowDeactivateAndReactivate() throws Exception
     {
-        setSessionUser(u0);
+        setSession(u0);
         service.deactivateUser(u0.id().getString(), false);
 
         sqlTrans.begin();

@@ -103,7 +103,7 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // set org quota
         admin.getOrganization().setQuotaPerUser(100L);
 
-        setSessionUser(admin.getOrganization().getTeamServerUser());
+        setSession(admin.getOrganization().getTeamServerUser());
 
         sqlTrans.commit();
     }

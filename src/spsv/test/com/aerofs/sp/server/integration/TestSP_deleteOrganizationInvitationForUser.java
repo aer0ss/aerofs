@@ -38,7 +38,7 @@ public class TestSP_deleteOrganizationInvitationForUser extends AbstractSPFolder
         }
         sqlTrans.commit();
 
-        setSessionUser(admin);
+        setSession(admin);
         service.inviteToOrganization(user.id().getString());
 
         PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;

@@ -31,7 +31,7 @@ public class TestSP_GetACL extends AbstractSPACLTest
 
         // now have the editor do a getacl call
 
-        setSessionUser(USER_3);
+        setSession(USER_3);
         GetACLReply reply = service.getACL(0L).get();
 
         // epoch for this guy should be 2 (started at 0, added twice as editor)
@@ -87,7 +87,7 @@ public class TestSP_GetACL extends AbstractSPACLTest
         // USER_1 is the session user, hence the empty ACL reply
         assertEquals(service.getACL(0L).get().getStoreAclCount(), 0);
 
-        setSessionUser(USER_3);
+        setSession(USER_3);
         checkACL(USER_3, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
     }
 
@@ -183,7 +183,7 @@ public class TestSP_GetACL extends AbstractSPACLTest
 
     private boolean isExternal(User user, SID sid) throws Exception
     {
-        setSessionUser(user);
+        setSession(user);
         GetACLReply reply = service.getACL(0L).get();
         for (PBStoreACL sacl : reply.getStoreAclList()) {
             if (new SID(sacl.getStoreId()).equals(sid)) return sacl.getExternal();

@@ -24,7 +24,7 @@ public class TestSP_ListOrganizationInvitedUsers extends AbstractSPFolderTest
         admin.setLevel(AuthorizationLevel.ADMIN);
         sqlTrans.commit();
 
-        setSessionUser(admin);
+        setSession(admin);
         service.inviteToOrganization(newUser().id().getString());
         service.inviteToOrganization(newUser().id().getString());
         service.inviteToOrganization(newUser().id().getString());

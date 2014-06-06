@@ -9,9 +9,9 @@ import com.aerofs.lib.ex.ExNotAuthenticated;
 import javax.annotation.Nonnull;
 
 /**
- * This interace is only necessary to enable mocking of the ThreadLocalHttpSessionUser in SPService
+ * This interface is only necessary to enable mocking of the ThreadLocalHttpSessionUser in SPService
  */
-public interface ISessionUser
+public interface ISession
 {
     /**
      * @return the user of this session
@@ -25,6 +25,11 @@ public interface ISessionUser
     boolean exists();
 
     /**
+     * Return whether the current session is authenticated.
+     */
+    // TODO: isAuthenticated();
+
+    /**
      * Set the session user.
      */
     void setUser(User user);
@@ -36,7 +41,7 @@ public interface ISessionUser
     void remove();
 
     /**
-     * Get the tomcat session ID associated with this session user.
+     * Get unique identifier associated with this session.
      */
-    String getSessionID();
+    String id();
 }

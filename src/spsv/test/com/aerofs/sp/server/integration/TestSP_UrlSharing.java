@@ -41,13 +41,13 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
 
         sid = SID.generate();
         shareAndJoinFolder(owner, sid, editor, Permissions.allOf(Permission.WRITE));
-        setSessionUser(owner);
+        setSession(owner);
     }
 
     @Test
     public void createUrl_shouldThrowIfUserIsNotManager() throws Exception
     {
-        setSessionUser(editor);
+        setSession(editor);
         String token = UniqueID.generate().toStringFormal();
 
         try {
@@ -131,7 +131,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
 
         // check that GetUrlInfo fails for an editor
-        setSessionUser(editor);
+        setSession(editor);
         try {
             service.getUrlInfo(key).get();
             fail();
@@ -156,7 +156,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
 
         // check that GetUrlInfo fails for an editor
-        setSessionUser(editor);
+        setSession(editor);
         try {
             service.getUrlInfo(key, ByteString.copyFromUtf8("*******")).get();
             fail();
@@ -181,7 +181,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
 
         // check that GetUrlInfo succeeds for editor with password
-        setSessionUser(editor);
+        setSession(editor);
         service.getUrlInfo(key, ByteString.copyFromUtf8("hunter2")).get();
     }
 
@@ -253,7 +253,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
                 .getUrlInfo();
         String key = createReply.getKey();
 
-        setSessionUser(editor);
+        setSession(editor);
         try {
             service.setUrlExpires(key, 0L, token);
             fail();
@@ -315,7 +315,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
                 .getUrlInfo();
         String key = createReply.getKey();
 
-        setSessionUser(editor);
+        setSession(editor);
         try {
             service.removeUrlExpires(key, token);
             fail();
@@ -370,7 +370,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         String key = createReply.getKey();
 
         // try to delete the link
-        setSessionUser(editor);
+        setSession(editor);
         try {
             service.removeUrl(key);
             fail();
@@ -426,7 +426,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         String key = createReply.getKey();
 
         // try to set the password
-        setSessionUser(editor);
+        setSession(editor);
         ByteString password = ByteString.copyFromUtf8("hunter2");
         String newToken = UniqueID.generate().toStringFormal();
         try {
@@ -472,7 +472,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
 
         // validate the password
-        setSessionUser(editor);
+        setSession(editor);
         service.validateUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
     }
 
@@ -583,7 +583,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         service.setUrlPassword(key, password, newToken);
 
         // try to remove the password
-        setSessionUser(editor);
+        setSession(editor);
         try {
             service.removeUrlPassword(key);
             fail();

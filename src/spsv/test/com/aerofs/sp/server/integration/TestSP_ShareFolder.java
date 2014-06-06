@@ -48,7 +48,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldNotThrowWhenInviteeListEmptyForInternalFolders()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
                 Collections.<PBSubjectPermissions>emptyList(), "", false, false).get();
     }
@@ -57,7 +57,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldNotThrowWhenInviteeListEmptyForExternalFolders()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
                 Collections.<PBSubjectPermissions>emptyList(), "", true, false).get();
     }
@@ -218,7 +218,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         clearVerkehrPublish();
 
         // now let's see what the acls are like
-        setSessionUser(USER_1);
+        setSession(USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         assertGetACLReplyIncrementsEpochBy(reply, 3);

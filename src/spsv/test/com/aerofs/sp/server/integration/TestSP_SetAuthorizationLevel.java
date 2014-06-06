@@ -18,7 +18,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
     @Before
     public void setup()
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
     }
 
     @Test

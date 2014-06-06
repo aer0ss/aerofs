@@ -36,7 +36,7 @@ public class TestSP_RemoveUserFromOrganization extends AbstractSPTest
         sqlTrans.commit();
 
         // Now remove the user from the organization
-        setSessionUser(orgAdmin);
+        setSession(orgAdmin);
         service.removeUserFromOrganization(user.id().getString());
 
         // Check that the user has indeed been removed
@@ -55,7 +55,7 @@ public class TestSP_RemoveUserFromOrganization extends AbstractSPTest
         User orgAdmin = saveUser();
         sqlTrans.commit();
 
-        setSessionUser(orgAdmin);
+        setSession(orgAdmin);
         try {
             service.removeUserFromOrganization("non_existing@user.com");
             fail();
@@ -69,7 +69,7 @@ public class TestSP_RemoveUserFromOrganization extends AbstractSPTest
         User orgAdmin = saveUser();
         sqlTrans.commit();
 
-        setSessionUser(orgAdmin);
+        setSession(orgAdmin);
         try {
             service.removeUserFromOrganization(orgAdmin.id().getString());
             fail();
@@ -93,7 +93,7 @@ public class TestSP_RemoveUserFromOrganization extends AbstractSPTest
         sqlTrans.commit();
 
         // Now let's make user1 try to remove user2. Should throw ExNoPerm
-        setSessionUser(user1);
+        setSession(user1);
         try {
             service.removeUserFromOrganization(user2.id().getString());
             fail();

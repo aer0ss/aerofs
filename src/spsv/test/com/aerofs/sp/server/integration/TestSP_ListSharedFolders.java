@@ -45,7 +45,7 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
                     fail();
                 }
 
-                setSessionUser(sessionUser);
+                setSession(sessionUser);
                 ListSharedFoldersReply reply =
                         service.listSharedFolders(ImmutableList.of(sid.toPB())).get();
 
@@ -66,7 +66,7 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
         SID sid = SID.generate();
         shareAndJoinFolder(sharer, sid, sharee, Permissions.allOf(Permission.WRITE));
 
-        setSessionUser(ts);
+        setSession(ts);
         ListSharedFoldersReply reply =
                 service.listSharedFolders(ImmutableList.of(sid.toPB())).get();
 
@@ -90,7 +90,7 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
         SID sid2 = SID.generate();
         shareFolder(sharer, sid2, otherUser, Permissions.allOf(Permission.WRITE));
 
-        setSessionUser(sessionUser);
+        setSession(sessionUser);
 
         try {
             service.listSharedFolders(ImmutableList.of(sid1.toPB(), sid2.toPB()));
@@ -129,7 +129,7 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
         shareAndJoinFolder(sharer, sid2, leftSharee, Permissions.allOf(Permission.WRITE));
         leaveSharedFolder(leftSharee, sid2);
 
-        setSessionUser(ts);
+        setSession(ts);
 
         try {
             service.listSharedFolders(ImmutableList.of(sid.toPB(), sid2.toPB()));

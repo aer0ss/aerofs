@@ -44,7 +44,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldAllowManagerToDestroySharedFolder() throws Exception
     {
-        setSessionUser(owner);
+        setSession(owner);
         service.destroySharedFolder(sid);
 
         // verify that the store is not found
@@ -59,7 +59,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldAllowAdminToDestroySharedFolder() throws Exception
     {
-        setSessionUser(admin);
+        setSession(admin);
         service.destroySharedFolder(sid);
 
         // verify that the store is not found
@@ -74,7 +74,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldNotAllowEditorToDestroySharedFolder() throws Exception
     {
-        setSessionUser(editor);
+        setSession(editor);
         try {
             service.destroySharedFolder(sid);
             fail();
@@ -86,7 +86,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldNotAllowDestructionOfRootStore() throws Exception
     {
-        setSessionUser(owner);
+        setSession(owner);
         try {
             service.destroySharedFolder(SID.rootSID(owner.id()));
             fail();
@@ -98,7 +98,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     @Test
     public void shouldThrowExNotFoundWhenTryingToDestroyNonExistingSharedFolder() throws Exception
     {
-        setSessionUser(owner);
+        setSession(owner);
         try {
             service.destroySharedFolder(SID.generate());
             fail();
@@ -114,7 +114,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
         User otherAdmin = saveUser();
         assertTrue(otherAdmin.isAdmin());
         sqlTrans.commit();
-        setSessionUser(otherAdmin);
+        setSession(otherAdmin);
         try {
             service.destroySharedFolder(sid);
             fail();

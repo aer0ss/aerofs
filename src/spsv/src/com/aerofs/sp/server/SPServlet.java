@@ -42,12 +42,12 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
-import com.aerofs.sp.server.lib.session.HttpSessionRemoteAddress;
-import com.aerofs.sp.server.lib.session.HttpSessionUser;
+import com.aerofs.sp.server.lib.session.RequestRemoteAddress;
 import com.aerofs.sp.server.lib.session.ThreadLocalHttpSessionProvider;
 import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
+import com.aerofs.sp.server.session.SPSession;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
@@ -92,14 +92,16 @@ public class SPServlet extends AeroServlet
     private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_sqlTrans);
     private final UrlSharingDatabase _usdb = new UrlSharingDatabase(_sqlTrans);
 
+    private final ThreadLocalRequestProvider _requestProvider =
+            new ThreadLocalRequestProvider();
     private final ThreadLocalHttpSessionProvider _sessionProvider =
             new ThreadLocalHttpSessionProvider();
 
+
     private final CertificateGenerator _certgen = new CertificateGenerator();
     private final CertificateAuthenticator _certauth =
-            new CertificateAuthenticator(_sessionProvider);
-    private final HttpSessionRemoteAddress _remoteAddress =
-            new HttpSessionRemoteAddress(_sessionProvider);
+            new CertificateAuthenticator(_requestProvider);
+    private final RequestRemoteAddress _remoteAddress = new RequestRemoteAddress(_requestProvider);
 
     private final Organization.Factory _factOrg = new Organization.Factory();
     private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
@@ -120,7 +122,7 @@ public class SPServlet extends AeroServlet
         _factSharedFolder.inject(_sfdb, _factUser);
     }
 
-    private final HttpSessionUser _sessionUser = new HttpSessionUser(_factUser, _sessionProvider);
+    private final SPSession _session = new SPSession(_factUser, _sessionProvider);
 
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
 
@@ -140,7 +142,7 @@ public class SPServlet extends AeroServlet
     private final JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
 
     private final Analytics _analytics =
-            new Analytics(new SPAnalyticsProperties(_sessionUser));
+            new Analytics(new SPAnalyticsProperties(_session));
     private final InvitationReminderEmailer _invitationReminderEmailer = new InvitationReminderEmailer();
 
     private final SharedFolderNotificationEmailer _sfnEmailer = new SharedFolderNotificationEmailer();
@@ -155,7 +157,7 @@ public class SPServlet extends AeroServlet
     private final SPService _service = new SPService(_db,
             _sqlTrans,
             _jedisTrans,
-            _sessionUser,
+            _session,
             _passwordManagement,
             _certauth,
             _remoteAddress,
@@ -280,9 +282,9 @@ public class SPServlet extends AeroServlet
         //
         if (!_license.isValid()) throw new IOException("the license is invalid");
 
+        // Set up thread-local proxy objects
+        _requestProvider.set(req);
         _sessionProvider.setSession(req.getSession());
-        _certauth.init(req);
-        _remoteAddress.init(req);
 
         // Receive protocol version number.
         int protocol;

@@ -25,7 +25,7 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
     public void setup()
             throws ExNotAuthenticated
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         user = USER_1;
     }
 

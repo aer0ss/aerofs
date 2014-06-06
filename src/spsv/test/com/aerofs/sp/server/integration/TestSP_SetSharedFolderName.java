@@ -30,7 +30,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
         final String originalName = getSharedFolderName(SID_1, USER_1);
 
         // USER_1 renames the folder
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.setSharedFolderName(SID_1.toPB(), NEW_NAME);
 
         // Check that USER_1 has the new name
@@ -46,7 +46,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
     {
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.setSharedFolderName(SID_1.toPB(), "");
     }
 
@@ -54,7 +54,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
     public void shouldThrowIfFolderNotFound()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.setSharedFolderName(SID_1.toPB(), "aaaa");
     }
 
@@ -71,7 +71,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.MANAGE));
 
         // USER_2 renames the folder
-        setSessionUser(USER_2);
+        setSession(USER_2);
         service.setSharedFolderName(SID_1.toPB(), NEW_NAME);
 
         // Check that USER_1 and USER_2 have different names for the folder
@@ -91,7 +91,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
     private String getSharedFolderName(SID sid, User user)
             throws Exception
     {
-        setSessionUser(user);
+        setSession(user);
         List<PBSharedFolder> folders = service.listUserSharedFolders(user.id().getString()).get()
                 .getSharedFolderList();
 

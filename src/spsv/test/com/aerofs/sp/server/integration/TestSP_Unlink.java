@@ -66,7 +66,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         sqlTrans.commit();
 
         // Unlinking should still work.
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.unlinkDevice(did.toPB(), false);
     }
 
@@ -104,7 +104,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Switch to a different user and try to revoke the previous user's device.
-        setSessionUser(TEST_2_USER);
+        setSession(TEST_2_USER);
         service.unlinkDevice(device.id().toPB(), false);
     }
 

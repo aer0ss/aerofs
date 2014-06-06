@@ -34,7 +34,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
     public void shouldThrowExNoPermForNonAdmin()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         // make USER_1 a non-admin
         sqlTrans.begin();
@@ -116,7 +116,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
         admin.setOrganization(USER_2.getOrganization(), AuthorizationLevel.ADMIN);
         sqlTrans.commit();
 
-        setSessionUser(admin);
+        setSession(admin);
         for (PBSharedFolder sf : service.listOrganizationSharedFolders(100, 0)
                 .get().getSharedFolderList()) {
             SID sid = new SID(sf.getStoreId());
@@ -131,7 +131,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         shareAndJoinFolder(USER_1, SID_2, USER_3, Permissions.allOf(Permission.WRITE));
 
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         return service.listOrganizationSharedFolders(100, 0).get().getSharedFolderList();
     }

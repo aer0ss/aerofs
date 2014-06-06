@@ -33,7 +33,7 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @After
     public void teardown()
     {
-        sessionUser.remove();
+        session.remove();
     }
 
     @Test(expected = ExNoPerm.class)
@@ -45,7 +45,7 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @Test
     public void testShouldGenerateAuthNonce() throws Exception
     {
-        sessionUser.setUser(user);
+        session.setUser(user);
 
         MobileAccessCode auth = service.getMobileAccessCode().get();
         assertNotNull( auth );
@@ -56,9 +56,9 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @Test
     public void testShouldAuthDevice() throws Exception
     {
-        sessionUser.setUser(user);
+        session.setUser(user);
         MobileAccessCode auth = service.getMobileAccessCode().get();
-        sessionUser.remove();
+        session.remove();
 
         AuthorizeAPIClientReply attrs = service.authorizeAPIClient(auth.getAccessCode(),
                 "My Test Device").get();
@@ -75,9 +75,9 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @Test
     public void testShouldConsumeNonce() throws Exception
     {
-        sessionUser.setUser(user);
+        session.setUser(user);
         MobileAccessCode auth = service.getMobileAccessCode().get();
-        sessionUser.remove();
+        session.remove();
 
         service.authorizeAPIClient(auth.getAccessCode(), "My Test Device").get();
 
@@ -90,11 +90,11 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @Test
     public void testShouldDisallowSecondSignin() throws Exception
     {
-        sessionUser.setUser(user);
+        session.setUser(user);
         MobileAccessCode auth = service.getMobileAccessCode().get();
-        sessionUser.remove();
+        session.remove();
 
-        sessionUser.setUser(user);
+        session.setUser(user);
         try {
             service.authorizeAPIClient(auth.getAccessCode(), "My Test Device");
             fail("Expected excepted");

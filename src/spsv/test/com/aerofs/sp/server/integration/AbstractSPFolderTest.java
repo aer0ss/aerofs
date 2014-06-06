@@ -41,7 +41,7 @@ public class AbstractSPFolderTest extends AbstractSPTest
         // for backward compat with existing tests, accept invite immediately to update ACLs
         joinSharedFolder(sharee, sid);
         // backward compat
-        setSessionUser(sharer);
+        setSession(sharer);
     }
 
     /**
@@ -71,7 +71,7 @@ public class AbstractSPFolderTest extends AbstractSPTest
             boolean suppressWarnings)
             throws Exception
     {
-        setSessionUser(sharer);
+        setSession(sharer);
         service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, permissions), "", external,
                 suppressWarnings);
     }
@@ -88,21 +88,21 @@ public class AbstractSPFolderTest extends AbstractSPTest
 
     protected void joinSharedFolderImpl(User sharee, SID sid, boolean ext) throws Exception
     {
-        User oldUser = sessionUser.exists() ? sessionUser.getUser() : null;
+        User oldUser = session.exists() ? session.getUser() : null;
 
-        setSessionUser(sharee);
+        setSession(sharee);
         service.joinSharedFolder(sid.toPB(), ext);
 
-        if (oldUser != null) setSessionUser(oldUser);
+        if (oldUser != null) setSession(oldUser);
     }
 
     protected void leaveSharedFolder(User sharee, SID sid) throws Exception
     {
-        User oldUser = sessionUser.exists() ? sessionUser.getUser() : null;
+        User oldUser = session.exists() ? session.getUser() : null;
 
-        setSessionUser(sharee);
+        setSession(sharee);
         service.leaveSharedFolder(sid.toPB());
 
-        if (oldUser != null) setSessionUser(oldUser);
+        if (oldUser != null) setSession(oldUser);
     }
 }

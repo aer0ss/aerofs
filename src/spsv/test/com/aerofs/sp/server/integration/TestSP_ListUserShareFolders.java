@@ -35,7 +35,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     public void shouldThrowExNoPermIfNonAdminQueriesOtherUsers()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.listUserSharedFolders(USER_2.id().getString());
     }
 
@@ -43,7 +43,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     public void shouldThrowExNoPermIfNonAdminQueriesNonExistingUsers()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.listUserSharedFolders("non-existing");
     }
 
@@ -51,7 +51,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     public void shouldThrowExNoPermIfAdminQueriesNonExistingUsers()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.listUserSharedFolders("non-existing");
     }
 
@@ -59,7 +59,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     public void shouldThrowExNoPermIfAdminQueriesUsersInOtherOrg()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         service.listUserSharedFolders(USER_2.id().getString());
     }
 
@@ -113,7 +113,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         admin.setOrganization(USER_2.getOrganization(), AuthorizationLevel.ADMIN);
         sqlTrans.commit();
 
-        setSessionUser(admin);
+        setSession(admin);
         for (PBSharedFolder sf : service.listUserSharedFolders(USER_2.id().getString()).get().getSharedFolderList()) {
             SID sid = new SID(sf.getStoreId());
             if (sid1.equals(sid)) assertFalse(sf.getOwnedByTeam());
@@ -142,7 +142,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         shareAndJoinFolder(USER_2, SID_2, USER_3, Permissions.allOf(Permission.WRITE));
 
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         // add user 2 to the org
         sqlTrans.begin();
@@ -153,7 +153,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     private List<PBSharedFolder> queryOtherUser()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         return service.listUserSharedFolders(USER_2.id().getString()).get().getSharedFolderList();
     }
@@ -161,7 +161,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     private List<PBSharedFolder> queryCurrentUser()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
 
         return service.listUserSharedFolders(USER_1.id().getString()).get().getSharedFolderList();
     }

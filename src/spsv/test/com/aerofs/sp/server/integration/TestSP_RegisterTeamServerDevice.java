@@ -33,7 +33,7 @@ public class TestSP_RegisterTeamServerDevice extends AbstractSPTest
     public void setup()
             throws Exception
     {
-        setSessionUser(USER_1);
+        setSession(USER_1);
         user = USER_1;
 
         sqlTrans.begin();

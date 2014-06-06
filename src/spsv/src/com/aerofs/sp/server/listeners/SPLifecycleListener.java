@@ -6,10 +6,10 @@ import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.SPVerkehrClientFactory;
-import com.aerofs.sp.server.lib.session.HttpSessionUserID;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
+import com.aerofs.sp.server.session.SPSession;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
@@ -112,7 +112,7 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
 
         // If a sign in has occurred for this specific session, update the user session tracker
         // as well.
-        HttpSessionUserID sessionUserID = new HttpSessionUserID(new IHttpSessionProvider()
+        UserID userID = SPSession.getUserIDNullable(new IHttpSessionProvider()
         {
             @Override
             public HttpSession get()
@@ -120,8 +120,6 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
                 return event.getSession();
             }
         });
-
-        UserID userID = sessionUserID.getUserIDNullable();
 
         if (userID != null) {
             _userSessionTracker.signOut(userID, event.getSession().getId());
