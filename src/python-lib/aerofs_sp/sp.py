@@ -30,6 +30,12 @@ class _SPServiceWrapper(object):
         password = actor.aero_password.encode("utf-8")
         self._service.credential_sign_in(user_id, password)
 
+    def provide_second_factor(self, second_factor):
+        return self._service.provide_second_factor(second_factor)
+
+    def provide_backup_code(self, backup_code):
+        return self._service.provide_backup_code(backup_code)
+
     def list_shared_folders(self):
         reply = self._service.get_acl(0)
         sids = [s.store_id for s in reply.store_acl]

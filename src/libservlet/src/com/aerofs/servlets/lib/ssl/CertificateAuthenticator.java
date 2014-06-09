@@ -21,7 +21,7 @@ public class CertificateAuthenticator
     }
 
     /**
-     * Return true when the nginx mutal authentication using certificates is successful. When the
+     * Return true when the nginx mutual authentication using certificates is successful. When the
      * object has not yet been set, return false.
      */
     public boolean isAuthenticated()

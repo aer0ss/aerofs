@@ -348,6 +348,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     protected void setSession(User user)
     {
         session.setUser(user);
+        session.setBasicAuthDate(System.currentTimeMillis());
+        session.setCertificateAuthDate(System.currentTimeMillis());
     }
 
     protected void mockCertificateGeneratorAndIncrementSerialNumber() throws Exception

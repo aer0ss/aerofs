@@ -22,6 +22,12 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
 {
     private User user;
 
+    private void setUser(User user)
+    {
+        session.setUser(user);
+        session.setBasicAuthDate(System.currentTimeMillis());
+    }
+
     @Before
     public void setup() throws Exception
     {
@@ -33,7 +39,7 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @After
     public void teardown()
     {
-        session.remove();
+        session.deauthorize();
     }
 
     @Test(expected = ExNoPerm.class)
@@ -45,7 +51,7 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @Test
     public void testShouldGenerateAuthNonce() throws Exception
     {
-        session.setUser(user);
+        setUser(user);
 
         MobileAccessCode auth = service.getMobileAccessCode().get();
         assertNotNull( auth );
@@ -56,9 +62,9 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @Test
     public void testShouldAuthDevice() throws Exception
     {
-        session.setUser(user);
+        setUser(user);
         MobileAccessCode auth = service.getMobileAccessCode().get();
-        session.remove();
+        session.deauthorize();
 
         AuthorizeAPIClientReply attrs = service.authorizeAPIClient(auth.getAccessCode(),
                 "My Test Device").get();
@@ -75,9 +81,9 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @Test
     public void testShouldConsumeNonce() throws Exception
     {
-        session.setUser(user);
+        setUser(user);
         MobileAccessCode auth = service.getMobileAccessCode().get();
-        session.remove();
+        session.deauthorize();
 
         service.authorizeAPIClient(auth.getAccessCode(), "My Test Device").get();
 
@@ -90,11 +96,11 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @Test
     public void testShouldDisallowSecondSignin() throws Exception
     {
-        session.setUser(user);
+        setUser(user);
         MobileAccessCode auth = service.getMobileAccessCode().get();
-        session.remove();
+        session.deauthorize();
 
-        session.setUser(user);
+        setUser(user);
         try {
             service.authorizeAPIClient(auth.getAccessCode(), "My Test Device");
             fail("Expected excepted");

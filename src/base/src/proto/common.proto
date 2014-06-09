@@ -137,6 +137,10 @@ message PBException {
         // A request rate limit was exceeded by this request, and even if it was valid, we
         // refuse to process it.  Cool your jets.
         RATE_LIMIT_EXCEEDED = 413;
+
+        // A user has proven their identity with one mechanism, but they still
+        // need to provide a second authentication token.
+        SECOND_FACTOR_REQUIRED = 414;
     }
 
     required Type type = 1;

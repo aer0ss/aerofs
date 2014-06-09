@@ -36,19 +36,19 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
     private void updateUserName()
             throws Exception
     {
-        service.setUserPreferences(session.getUser().id().getString(), "New First", "New Last", null, null);
+        service.setUserPreferences(session.getAuthenticatedUserLegacyProvenance().id().getString(), "New First", "New Last", null, null);
     }
 
     private void updateDeviceName()
             throws Exception
     {
-        service.setUserPreferences(session.getUser().id().getString(), null, null, _device.id().toPB(), "New Test Device");
+        service.setUserPreferences(session.getAuthenticatedUserLegacyProvenance().id().getString(), null, null, _device.id().toPB(), "New Test Device");
     }
 
     private void updateUserAndDeviceName()
             throws Exception
     {
-        service.setUserPreferences(session.getUser().id().getString(), "New First", "New Last", _device.id().toPB(), "New Test Device");
+        service.setUserPreferences(session.getAuthenticatedUserLegacyProvenance().id().getString(), "New First", "New Last", _device.id().toPB(), "New Test Device");
     }
 
     //

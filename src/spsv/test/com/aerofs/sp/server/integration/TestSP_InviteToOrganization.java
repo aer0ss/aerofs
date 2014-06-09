@@ -27,6 +27,7 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
     public void setup()
     {
         session.setUser(USER_1);
+        session.setBasicAuthDate(System.currentTimeMillis());
     }
 
     @Test

@@ -5,9 +5,11 @@
 package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExLicenseLimit;
+import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
@@ -20,7 +22,9 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
+import com.aerofs.sp.authentication.TOTP;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.base.ParamFactory;
 import com.aerofs.sp.server.lib.License;
@@ -31,8 +35,10 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.twofactor.RecoveryCode;
 import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
+import com.aerofs.sp.server.lib.session.ISession.Provenance;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -45,6 +51,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -707,16 +715,98 @@ public class User
         return _f._udb.getEnforceSecondFactor(_id);
     }
 
-    public byte[] twoFactorSecret()
+    /**
+     * A function to get the user-dependent set of acceptable provenances for the specified
+     * provenance group.  In particular, this is useful for determining if BASIC authentication is
+     * sufficient for user actions, or if TWO_FACTOR should be required for that user.
+     * @param group The context-specific provenance group
+     * @return the list of acceptable provenances for that context for this user
+     */
+    public ImmutableList<Provenance> sufficientProvenances(ProvenanceGroup group)
+            throws SQLException, ExNotFound
+    {
+        ImmutableList.Builder<Provenance> builder = ImmutableList.builder();
+        switch (group) {
+        case LEGACY:
+            if (shouldEnforceTwoFactor()) {
+                builder.add(Provenance.BASIC_PLUS_SECOND_FACTOR);
+            } else {
+                builder.add(Provenance.BASIC);
+            }
+            builder.add(Provenance.CERTIFICATE);
+            break;
+        default:
+            // Should never be reached; allow no provenances.
+            break;
+        }
+        return builder.build();
+    }
+
+    public static void checkProvenance(User user,
+            ImmutableList<Provenance> authenticatedProvenances, ProvenanceGroup provenanceGroup)
+            throws ExNotAuthenticated, ExSecondFactorRequired, SQLException, ExNotFound
+    {
+        switch (provenanceGroup) {
+        case LEGACY:
+            ImmutableList<Provenance> sufficient = user.sufficientProvenances(ProvenanceGroup.LEGACY);
+            for (Provenance authedProvenance : authenticatedProvenances) {
+                if (sufficient.contains(authedProvenance)) {
+                    l.info("{} included provenance {} which is sufficient for {}",
+                            user.id(), authedProvenance, provenanceGroup);
+                    return;
+                }
+            }
+            l.info("{} lacks provenance to satisfy {}; has {}, needs one of {}",
+                    user.id(), provenanceGroup, authenticatedProvenances, sufficient);
+            // The session lacks an acceptable provenance.  Throw a suitable exception.
+            if (authenticatedProvenances.contains(Provenance.BASIC) &&
+                    sufficient.contains(Provenance.BASIC_PLUS_SECOND_FACTOR) &&
+                    !sufficient.contains(Provenance.BASIC)) {
+                throw new ExSecondFactorRequired();
+            } else {
+                throw new ExNotAuthenticated();
+            }
+        default:
+            // Should never be reached, but privilege systems should fail closed.
+            throw new ExNotAuthenticated();
+        }
+    }
+
+    private byte[] twoFactorSecret()
             throws SQLException, ExNotFound
     {
         return _f._tfdb.secretFor(_id);
     }
 
-    public ImmutableList<RecoveryCode> recoveryCodes()
+    private ImmutableList<RecoveryCode> recoveryCodes()
             throws SQLException, ExNotFound
     {
         return _f._tfdb.recoveryCodesFor(_id);
+    }
+
+    /**
+     * @return true if claimedCode is acceptable, false otherwise
+     */
+    public boolean checkSecondFactor(int claimedCode)
+            throws SQLException, ExNotFound, NoSuchAlgorithmException, InvalidKeyException
+    {
+        return TOTP.check(twoFactorSecret(), claimedCode, 1);
+    }
+
+    public boolean checkBackupCode(String claimedCode)
+            throws SQLException, ExNotFound
+    {
+        ImmutableList<RecoveryCode> codes = recoveryCodes();
+        byte[] claimedCodeBytes = BaseUtil.string2utf(claimedCode);
+        for (RecoveryCode code: codes) {
+            if (!code.isConsumed() && BaseSecUtil.constantTimeIsEqual(claimedCodeBytes,
+                    BaseUtil.string2utf(code.code()))) {
+                // Accept code and mark as used
+                _f._tfdb.markRecoveryCodeUsed(_id, code.code());
+                return true;
+            }
+        }
+        return false;
     }
 
     public byte[] setupTwoFactor()

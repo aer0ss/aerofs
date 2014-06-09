@@ -22,6 +22,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExRateLimitExceeded;
+import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OrganizationID;
@@ -33,7 +34,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
@@ -115,7 +115,6 @@ import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.authentication.IAuthority;
 import com.aerofs.sp.authentication.LocalCredential;
-import com.aerofs.sp.authentication.TOTP;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
@@ -142,9 +141,11 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
+import com.aerofs.sp.server.lib.session.ISession.Provenance;
 import com.aerofs.sp.server.lib.session.RequestRemoteAddress;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.aerofs.sp.server.lib.user.ISession;
+import com.aerofs.sp.server.lib.session.ISession;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -366,11 +367,8 @@ public class SPService implements ISPService
     public PBException encodeError(Throwable e)
     {
         String user;
-        try {
-            user = _session.exists() ? _session.getUser().id().getString() : "user unknown";
-        } catch (ExNotAuthenticated e2) {
-            throw SystemUtil.fatal(e2);
-        }
+        user = _session.isAuthenticated() ? _session.getUserNullable().id().getString()
+                : "user unknown";
 
         l.warn(user + ": " + Util.e(e,
                 ExNoPerm.class,
@@ -394,7 +392,7 @@ public class SPService implements ISPService
             throws ExNoPerm
     {
         // If the user has not signed in throw ExNoPerm. Deters but does not prevent DoS attacks.
-        if (!_session.exists()) {
+        if (!_session.isAuthenticated()) {
             throw new ExNoPerm();
         }
 
@@ -411,7 +409,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         FullName fn = user.getFullName();
 
         GetUserPreferencesReply.Builder reply = GetUserPreferencesReply.newBuilder()
@@ -451,7 +449,7 @@ public class SPService implements ISPService
 
             FullName fullName = FullName.fromExternal(firstName, lastName);
             l.info("{} set full name: {}, session user {}", user, fullName.getString(),
-                    _session.getUser());
+                    _session.getAuthenticatedUserLegacyProvenance());
             user.setName(fullName);
             userNameUpdated = true;
         }
@@ -462,7 +460,7 @@ public class SPService implements ISPService
 
             // TODO (WW) print session user in log headers
             l.info("{} set device name: {}, session user {}", user, deviceName,
-                    _session.getUser());
+                    _session.getAuthenticatedUserLegacyProvenance());
             device.setName(deviceName);
             deviceNameUpdated = true;
         }
@@ -498,7 +496,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
 
         String orgID = user.getOrganization().id().toHexString();
         _sqlTrans.commit();
@@ -521,7 +519,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         user.throwIfNotAdmin();
 
         Organization org = user.getOrganization();
@@ -559,7 +557,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         user.throwIfNotAdmin();
         Organization org = user.getOrganization();
 
@@ -581,7 +579,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         user.throwIfNotAdmin();
 
         ListOrganizationInvitedUsersReply.Builder builder =
@@ -610,7 +608,7 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userID);
         throwIfSessionUserIsNotOrAdminOf(user);
 
-        User sessionUser = _session.getUser();
+        User sessionUser = _session.getAuthenticatedUserLegacyProvenance();
         List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders(),
                 sessionUser.getOrganization(), user);
 
@@ -622,7 +620,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<ListUserDevicesReply> listUserDevices(String userID)
             throws ExNotAuthenticated, ExNoPerm, SQLException, ExFormatError, ExNotFound,
-            ExEmptyEmailAddress
+            ExEmptyEmailAddress, ExSecondFactorRequired
     {
         _sqlTrans.begin();
 
@@ -648,9 +646,9 @@ public class SPService implements ISPService
      * organization
      */
     private void throwIfSessionUserIsNotOrAdminOf(User user)
-            throws ExNoPerm, SQLException, ExNotFound, ExNotAuthenticated
+            throws ExNoPerm, SQLException, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired
     {
-        User currentUser = _session.getUser();
+        User currentUser = _session.getAuthenticatedUserLegacyProvenance();
 
         if (user.equals(currentUser)) return;
 
@@ -772,7 +770,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         User subject = _factUser.createFromExternalID(userIdString);
         AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
 
@@ -815,7 +813,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
 
         List<OrganizationInvitation> invitations = user.getOrganizationInvitations();
 
@@ -848,7 +846,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        final Organization org = _session.getUser().getOrganization();
+        final Organization org = _session.getAuthenticatedUserLegacyProvenance().getOrganization();
 
         final GetOrgPreferencesReply.Builder replyBuilder = GetOrgPreferencesReply.newBuilder()
                 .setOrganizationName(org.getName())
@@ -866,7 +864,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         user.throwIfNotAdmin();
 
         final Organization organization = user.getOrganization();
@@ -907,7 +905,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        AuthorizationLevel level = _session.getUser().getLevel();
+        AuthorizationLevel level = _session.getAuthenticatedUserLegacyProvenance().getLevel();
         _sqlTrans.commit();
 
         return createReply(GetAuthorizationLevelReply.newBuilder().setLevel(level.toPB()).build());
@@ -919,7 +917,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
 
         if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
             throw new ExNoPerm();
@@ -941,7 +939,7 @@ public class SPService implements ISPService
             String osFamily, String osName, String deviceName, List<Interface> interfaces)
             throws Exception
     {
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         Device device = _factDevice.create(deviceId);
 
         throwIfNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
@@ -982,7 +980,7 @@ public class SPService implements ISPService
             String osFamily, String osName)
             throws Exception
     {
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         Device device = _factDevice.create(deviceId);
 
         _sqlTrans.begin();
@@ -1008,7 +1006,7 @@ public class SPService implements ISPService
         if (Strings.isNullOrEmpty(stripeCustomerId)) throw new ExBadArgs();
 
         _sqlTrans.begin();
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         user.throwIfNotAdmin();
         user.getOrganization().setStripeCustomerID(stripeCustomerId);
         _sqlTrans.commit();
@@ -1021,7 +1019,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         user.throwIfNotAdmin();
         user.getOrganization().deleteStripeCustomerID();
         _sqlTrans.commit();
@@ -1093,7 +1091,7 @@ public class SPService implements ISPService
             List<Interface> interfaces)
             throws Exception
     {
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
 
         throwIfNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
                 _remoteAddress.get(), interfaces);
@@ -1164,7 +1162,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME,
-                _session.getUser().id().getString(), null,
+                _session.getAuthenticatedUserLegacyProvenance().id().getString(), null,
                 UserID.fromExternal(userId).getString(), body, null);
 
         _sqlTrans.commit();
@@ -1192,7 +1190,7 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(shareId);
         if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot share root");
 
-        User sharer = _session.getUser();
+        User sharer = _session.getAuthenticatedUserLegacyProvenance();
         List<SubjectPermissions> srps = SubjectPermissionsList.listFromPB(subjectPermissionsList);
 
         l.info("{} shares {} [{}] with {}", sharer, sf, external, srps);
@@ -1261,7 +1259,7 @@ public class SPService implements ISPService
     {
         external = firstNonNull(external, false);
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         _sqlTrans.begin();
@@ -1333,7 +1331,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         l.info(user + " ignore " + sf);
@@ -1360,7 +1358,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         l.info("{} leaves {}", user, sf);
@@ -1403,7 +1401,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         l.info("{} renames {} to {}", user, sf, name);
@@ -1431,7 +1429,7 @@ public class SPService implements ISPService
                 _sqlTrans);
 
         _sqlTrans.begin();
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         requester.throwIfNotTeamServer();
         _sqlTrans.commit();
 
@@ -1458,7 +1456,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         requester.throwIfNotAdmin();
         @Nullable Long quota = requester.getOrganization().getQuotaPerUser();
         _sqlTrans.commit();
@@ -1481,7 +1479,7 @@ public class SPService implements ISPService
             throw new ExBadArgs("invalid soid");
         }
         SharedFolder sf = _factSharedFolder.create(restObject.getSID());
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
 
         _sqlTrans.begin();
         sf.throwIfNoPrivilegeToChangeACL(requester);
@@ -1502,7 +1500,7 @@ public class SPService implements ISPService
     public ListenableFuture<GetUrlInfoReply> getUrlInfo(String key, @Nullable ByteString password)
             throws Exception
     {
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
 
         if (password != null && _rateLimiter.update(_remoteAddress.get(), key)) {
             l.warn("rate limiter rejected getUrlInfo for {} from {}", key, _remoteAddress.get());
@@ -1531,7 +1529,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> setUrlExpires(String key, Long expires, String newToken)
             throws Exception
     {
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
 
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
@@ -1548,7 +1546,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> removeUrlExpires(String key, String newToken)
             throws Exception
     {
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
 
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
@@ -1565,7 +1563,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> removeUrl(String key)
             throws Exception
     {
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
 
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
@@ -1582,7 +1580,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> setUrlPassword(String key, ByteString password, String newToken)
             throws Exception
     {
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
 
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
@@ -1599,7 +1597,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> removeUrlPassword(String key)
             throws Exception
     {
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
 
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
@@ -1634,9 +1632,11 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         if (requester.shouldEnforceTwoFactor()) {
             // TODO: email user
+            User.checkProvenance(requester, _session.getAuthenticatedProvenances(),
+                    ProvenanceGroup.LEGACY);
             requester.disableTwoFactorEnforcement();
         }
         byte[] secret = requester.setupTwoFactor();
@@ -1652,7 +1652,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         // Noop happily unless there's actually a state change happening
         if (enforce != requester.shouldEnforceTwoFactor()) {
             if (enforce) {
@@ -1661,7 +1661,7 @@ public class SPService implements ISPService
                     throw new ExBadArgs("No current two-factor code provided");
                 }
                 // Verify that currentCode matches our expectations for the user's current secret
-                if (!TOTP.check(requester.twoFactorSecret(), currentCode, 1)) {
+                if (!requester.checkSecondFactor(currentCode)) {
                     // TODO: throw something that indicates "bad or missing code"
                     throw new ExBadCredential("Incorrect two-factor auth code");
                 }
@@ -1680,7 +1680,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> destroySharedFolder(ByteString sharedId)
             throws Exception
     {
-        User caller = _session.getUser();
+        User caller = _session.getAuthenticatedUserLegacyProvenance();
 
         _sqlTrans.begin();
         SharedFolder sf = _factSharedFolder.create(new SID(sharedId));
@@ -1709,7 +1709,7 @@ public class SPService implements ISPService
             throws Exception
     {
         // authenticate the user
-        _session.getUser();
+        _session.getAuthenticatedUserLegacyProvenance();
 
         throwOnInvalidEmailAddress(contactEmail);
 
@@ -1735,7 +1735,7 @@ public class SPService implements ISPService
             throws Exception
     {
         ListUrlsForStoreReply.Builder builder = ListUrlsForStoreReply.newBuilder();
-        User caller = _session.getUser();
+        User caller = _session.getAuthenticatedUserLegacyProvenance();
 
         SID sid = sharedId.isValidUtf8() && sharedId.toStringUtf8().equals("root") ?
                 SID.rootSID(caller.id()) : new SID(sharedId);
@@ -1753,11 +1753,67 @@ public class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<Void> provideSecondFactor(Integer currentCode)
+            throws Exception
+    {
+        _sqlTrans.begin();
+        // Verify that this session has specifically the BASIC provenance
+        // (no two factor for certs)
+        if (!_session.getAuthenticatedProvenances().contains(Provenance.BASIC)) {
+            throw new ExNotAuthenticated();
+        }
+        User requester = _session.getUserNullable();
+        boolean exceededRateLimit = _rateLimiter.update(_session.id());
+        if (exceededRateLimit) {
+            l.warn("second factor exceeded ratelimit");
+            throw new ExRateLimitExceeded();
+        } else if (!requester.checkSecondFactor(currentCode)) {
+            // failed, incorrect code
+            l.warn("2fa failed: incorrect code {} for {}", currentCode, requester);
+            // TODO: reject request correctly
+            throw new ExSecondFactorRequired();
+        } else {
+            _session.setSecondFactorAuthDate(System.currentTimeMillis());
+            l.info("{} 2fa login succeeded", requester);
+        }
+        _sqlTrans.commit();
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> provideBackupCode(String backupCode)
+            throws Exception
+    {
+        _sqlTrans.begin();
+        // Verify that this session has specifically the BASIC provenance
+        // (no two factor for certs)
+        if (!_session.getAuthenticatedProvenances().contains(Provenance.BASIC)) {
+            throw new ExNotAuthenticated();
+        }
+        User requester = _session.getUserNullable();
+        boolean exceededRateLimit = _rateLimiter.update(_session.id());
+        if (exceededRateLimit) {
+            l.warn("backup code login attempts exceeded ratelimit");
+            throw new ExRateLimitExceeded();
+        } else if (!requester.checkBackupCode(backupCode)) {
+            // failed, incorrect code
+            l.warn("2fa failed: incorrect backup code {} for {}", backupCode, requester);
+            // TODO: reject request correctly
+            throw new ExSecondFactorRequired();
+        } else {
+            _session.setSecondFactorAuthDate(System.currentTimeMillis());
+            l.info("{} 2fa login with backup code succeeded", requester);
+        }
+        _sqlTrans.commit();
+        return createVoidReply();
+    }
+
+    @Override
     public ListenableFuture<Void> setQuota(Long quota)
             throws Exception
     {
         _sqlTrans.begin();
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         requester.throwIfNotAdmin();
         requester.getOrganization().setQuotaPerUser(quota);
         _sqlTrans.commit();
@@ -1770,7 +1826,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User requester = _session.getUser();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         requester.throwIfNotAdmin();
         requester.getOrganization().setQuotaPerUser(null);
         _sqlTrans.commit();
@@ -1784,7 +1840,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
 
         Collection<PendingSharedFolder> psfs = user.getPendingSharedFolders();
 
@@ -1875,7 +1931,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User inviter = _session.getUser();
+        User inviter = _session.getAuthenticatedUserLegacyProvenance();
         User invitee = _factUser.create(UserID.fromExternal(userIdString));
         Organization org = inviter.getOrganization();
 
@@ -1950,7 +2006,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User accepter = _session.getUser();
+        User accepter = _session.getAuthenticatedUserLegacyProvenance();
 
         Organization orgOld = accepter.getOrganization();
         Organization orgNew = _factOrg.create(orgID);
@@ -1982,11 +2038,11 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<DeleteOrganizationInvitationReply> deleteOrganizationInvitation(
             Integer orgID)
-            throws SQLException, ExNotAuthenticated, ExNotFound
+            throws SQLException, ExNotAuthenticated, ExNotFound, ExSecondFactorRequired
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         Organization org = _factOrg.create(orgID);
         l.info("Delete org invite by " + user);
 
@@ -2005,7 +2061,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         user.throwIfNotAdmin();
 
         Organization org = user.getOrganization();
@@ -2046,7 +2102,7 @@ public class SPService implements ISPService
             throw new ExNoPerm("Removing users isn't supported in private deployment");
         }
 
-        User admin = _session.getUser();
+        User admin = _session.getAuthenticatedUserLegacyProvenance();
         User user = _factUser.createFromExternalID(userId);
 
         if (admin.equals(user)) throw new ExNoPerm("You can't remove yourself from an organization");
@@ -2075,7 +2131,7 @@ public class SPService implements ISPService
             ByteString csr)
             throws Exception
     {
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         Device device = _factDevice.create(deviceId);
 
         // We need two transactions. The first is read only, so no rollback ability needed. In
@@ -2111,7 +2167,7 @@ public class SPService implements ISPService
             ByteString csr)
             throws Exception
     {
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         Device device = _factDevice.create(deviceId);
 
         // We need two transactions. The first is read only, so no rollback ability needed. In
@@ -2179,11 +2235,11 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetStripeDataReply> getStripeData()
-            throws SQLException, ExNoPerm, ExNotFound, ExNotAuthenticated
+            throws SQLException, ExNoPerm, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         user.throwIfNotAdmin();
 
         GetStripeDataReply.Builder builder = GetStripeDataReply.newBuilder()
@@ -2196,9 +2252,9 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
-            throws SQLException, ExNoPerm, ExNotAuthenticated, ExNotFound
+            throws SQLException, ExNoPerm, ExNotAuthenticated, ExNotFound, ExSecondFactorRequired
     {
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         GetACLReply.Builder bd = GetACLReply.newBuilder();
 
         l.info("getACL for {}", user.id());
@@ -2241,7 +2297,7 @@ public class SPService implements ISPService
     {
         suppressWarnings = firstNonNull(suppressWarnings, false);
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         User subject = _factUser.createFromExternalID(subjectString);
         Permissions role = Permissions.fromPB(permissions);
         SharedFolder sf = _factSharedFolder.create(storeId);
@@ -2283,7 +2339,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> deleteACL(final ByteString storeId, String subjectString)
             throws Exception
     {
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         SharedFolder sf = _factSharedFolder.create(storeId);
 
         User subject = _factUser.createFromExternalID(subjectString);
@@ -2307,7 +2363,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> signOut()
             throws Exception
     {
-        _session.remove();
+        _session.deauthorize();
         return createVoidReply();
     }
 
@@ -2349,7 +2405,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User user = _passwordManagement.replacePassword(_session.getUser().id(),
+        User user = _passwordManagement.replacePassword(_session.getAuthenticatedUserLegacyProvenance().id(),
                 old_credentials.toByteArray(), new_credentials.toByteArray());
         _sqlTrans.commit();
 
@@ -2501,6 +2557,8 @@ public class SPService implements ISPService
 
         // Set the session cookie.
         _session.setUser(user);
+        _session.setBasicAuthDate(System.currentTimeMillis());
+
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _session.id());
 
@@ -2508,6 +2566,11 @@ public class SPService implements ISPService
                 .add("user", user.id())
                 .add("authority", authority)
                 .publish();
+
+        _sqlTrans.begin();
+        User.checkProvenance(user, _session.getAuthenticatedProvenances(), ProvenanceGroup.LEGACY);
+        _sqlTrans.commit();
+
         return createVoidReply();
     }
 
@@ -2535,7 +2598,11 @@ public class SPService implements ISPService
     {
         User user = authByCredentials(userId, credentials);
         _session.setUser(user);
+        _session.setBasicAuthDate(System.currentTimeMillis());
         _userTracker.signIn(user.id(), _session.id());
+        _sqlTrans.begin();
+        User.checkProvenance(user, _session.getAuthenticatedProvenances(), ProvenanceGroup.LEGACY);
+        _sqlTrans.commit();
         return createVoidReply();
     }
 
@@ -2590,15 +2657,16 @@ public class SPService implements ISPService
 
         user.throwIfBadCertificate(_certauth, device);
         _session.setUser(user);
+        _session.setCertificateAuthDate(System.currentTimeMillis());
         _userTracker.signIn(user.id(), _session.id());
 
         _sqlTrans.commit();
 
-        // Do not remote this event! It's important!
+        // Do not remove this event! It's important!
         //
         // This audit event is temporarily being used by Bloomberg to identify a device's last
         // known IP address for the purpose of detecting file transfers across network boundaries.
-        // We rely on the ACL Syncronizer to reconnect to SP and sign in using the device
+        // We rely on the ACL Synchronizer to reconnect to SP and sign in using the device
         // certificate on Verkehr reconnect.
         _auditClient.event(AuditTopic.DEVICE, "device.signin")
                 .add("user", user.id())
@@ -2640,24 +2708,24 @@ public class SPService implements ISPService
     {
         // this function requires User-level authentication
         _sqlTrans.begin();
-        boolean userExists = _session.exists() && _session.getUser().exists();
+        boolean userExists = _session.isAuthenticated() && _session.getAuthenticatedUserLegacyProvenance().exists();
         _sqlTrans.commit();
 
         if (!userExists) throw new ExNoPerm("Attempt to create device auth for non-existent user");
-        l.info("Gen mobile access code for {}", _session.getUser().id());
+        l.info("Gen mobile access code for {}", _session.getAuthenticatedUserLegacyProvenance().id());
 
         // Important: recall that IdentitySessionManager speaks seconds, not milliseconds,
         // due to the underlying key-expiration technology.
         int timeoutSec = 180;
 
         _auditClient.event(AuditTopic.DEVICE, "device.mobile.code")
-                .add("user", _session.getUser().id())
+                .add("user", _session.getAuthenticatedUserLegacyProvenance().id())
                 .add("timeout", timeoutSec)
                 .publish();
 
         return createReply(MobileAccessCode.newBuilder()
                 .setAccessCode(_identitySessionManager.createDeviceAuthorizationNonce(
-                        _session.getUser(), 180))
+                        _session.getAuthenticatedUserLegacyProvenance(), 180))
                 .build());
     }
 
@@ -2677,7 +2745,7 @@ public class SPService implements ISPService
             String deviceName)
             throws Exception
     {
-        if (_session.exists()) throw new ExNoPerm("User/device session state conflict");
+        if (_session.isAuthenticated()) throw new ExNoPerm("User/device session state conflict");
 
         User user = _factUser.create(_identitySessionManager.getAuthorizedDevice(nonce));
 
@@ -2762,6 +2830,7 @@ public class SPService implements ISPService
 
         // Set the session cookie.
         _session.setUser(user);
+        _session.setBasicAuthDate(System.currentTimeMillis());
 
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _session.id());
@@ -2770,6 +2839,10 @@ public class SPService implements ISPService
                 .add("user", attrs.getEmail())
                 .add("authority", "OpenId")
                 .publish();
+
+        _sqlTrans.begin();
+        User.checkProvenance(user, _session.getAuthenticatedProvenances(), ProvenanceGroup.LEGACY);
+        _sqlTrans.commit();
 
         return createReply(OpenIdSessionAttributes.newBuilder()
                 .setUserId(attrs.getEmail())
@@ -2815,13 +2888,13 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _session.getUser();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
         Device device = _factDevice.create(deviceId);
         throwIfSessionUserIsNotOrAdminOf(device.getOwner());
 
         // TODO (WW) print session user in log headers
         l.info("{} unlinks {}, erase {}, session user {}", user, device.id().toStringFormal(),
-                erase, _session.getUser());
+                erase, _session.getAuthenticatedUserLegacyProvenance());
 
         unlinkDeviceImplementation(device, erase);
 
@@ -2900,7 +2973,7 @@ public class SPService implements ISPService
         // N.B. verification here is very important.
         _sqlTrans.begin();
         device.throwIfNotFound();
-        device.throwIfNotOwner(_session.getUser());
+        device.throwIfNotOwner(_session.getAuthenticatedUserLegacyProvenance());
         _sqlTrans.commit();
 
         l.info("cmd ack: " + device.id().toStringFormal() + " epoch=" + epoch + " error=" + error);
@@ -2961,7 +3034,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        Set<UserID> sharedUsers = _db.getSharedUsersSet(_session.getUser().id());
+        Set<UserID> sharedUsers = _db.getSharedUsersSet(_session.getAuthenticatedUserLegacyProvenance().id());
 
         GetDeviceInfoReply.Builder builder = GetDeviceInfoReply.newBuilder();
         for (ByteString did : dids) {
@@ -2991,7 +3064,7 @@ public class SPService implements ISPService
     public ListenableFuture<ListSharedFoldersReply> listSharedFolders(List<ByteString> sids)
             throws Exception
     {
-        User sessionUser = _session.getUser();
+        User sessionUser = _session.getAuthenticatedUserLegacyProvenance();
         ImmutableList.Builder<SharedFolder> foldersBuilder = ImmutableList.builder();
 
         _sqlTrans.begin();
@@ -3014,7 +3087,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> addUserToWhitelist(final String userEmail)
             throws Exception
     {
-        User caller = _session.getUser();
+        User caller = _session.getAuthenticatedUserLegacyProvenance();
         User user = _factUser.createFromExternalID(userEmail);
 
         l.debug("{} add {} to whitelist", caller.id().getString(), user.id().getString());
@@ -3035,7 +3108,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> removeUserFromWhitelist(final String userEmail)
             throws Exception
     {
-        User caller = _session.getUser();
+        User caller = _session.getAuthenticatedUserLegacyProvenance();
         User user = _factUser.createFromExternalID(userEmail);
 
         l.debug("{} remove {} from whitelist", caller.id().getString(), user.id().getString());
@@ -3056,7 +3129,7 @@ public class SPService implements ISPService
     public ListenableFuture<ListWhitelistedUsersReply> listWhitelistedUsers()
             throws Exception
     {
-        User caller = _session.getUser();
+        User caller = _session.getAuthenticatedUserLegacyProvenance();
 
         l.debug("list whitelisted users: {}", caller.id().getString());
 
@@ -3076,7 +3149,7 @@ public class SPService implements ISPService
     public ListenableFuture<DeactivateUserReply> deactivateUser(String userId, Boolean eraseDevices)
             throws Exception
     {
-        User caller = _session.getUser();
+        User caller = _session.getAuthenticatedUserLegacyProvenance();
         User user = _factUser.createFromExternalID(userId);
 
         _sqlTrans.begin();

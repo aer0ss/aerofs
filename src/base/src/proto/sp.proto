@@ -798,6 +798,16 @@ service SPService {
     //   ExNoPerm if the current user isn't a manager or an admin of a manager
     //
     rpc ListUrlsForStore(ListUrlsForStoreCall) returns (ListUrlsForStoreReply);
+
+    // Provide second factor to an already-authenticated session.
+    // Requires a half-open session.
+    // After N unsuccessful second factor login attempts, the session is discarded.
+    rpc ProvideSecondFactor(ProvideSecondFactorCall) returns (Void);
+
+    // Provide backup code to act as second factor to an already-authenticated session.
+    // Requires a half-open session.
+    // If this rpc returns success, the code cannot be used again.
+    rpc ProvideBackupCode(ProvideBackupCodeCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1483,3 +1493,10 @@ message ListUrlsForStoreReply {
     repeated PBRestObjectUrl url = 1;
 }
 
+message ProvideSecondFactorCall {
+    required int32 current_code = 1;
+}
+
+message ProvideBackupCodeCall {
+    required string backup_code = 1;
+}

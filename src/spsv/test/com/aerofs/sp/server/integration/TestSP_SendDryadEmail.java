@@ -121,7 +121,7 @@ public class TestSP_SendDryadEmail extends AbstractSPTest
     {
         // N.B. remove does not throw ExNotAuthenticated, so if ExNotAuthenticated is thrown
         //   it must be thrown from sendDryadEmail.
-        session.remove();
+        session.deauthorize();
 
         service.sendDryadEmail(VALID_DRYAD_ID, "replyto@example.com", "My plops don't work!");
     }
