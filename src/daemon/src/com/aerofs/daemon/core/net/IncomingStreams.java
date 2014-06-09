@@ -18,7 +18,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Lists;
@@ -86,7 +85,7 @@ public class IncomingStreams
         @Override
         public String toString()
         {
-            return "istrm " + _pc.ep().tp() + ":" + _pc.ep().did() + " seq:" + _seq;
+            return "istrm " + _pc.ep().tp() + ":" + getDIDFromStream(IncomingStream.this) + " seq:" + _seq;
         }
     }
 
@@ -129,7 +128,7 @@ public class IncomingStreams
         IncomingStream stream = new IncomingStream(pc);
         _map.put(key, stream);
 
-        l.info("create " + stream + ":" + key);
+        l.info("{} create stream {} for key {}", getDIDFromStream(stream), stream, key);
     }
 
     // N.B. the caller must end the stream if timeout happens, otherwise
@@ -175,15 +174,14 @@ public class IncomingStreams
     {
         IncomingStream stream = _map.get(key);
         if (stream == null) {
-            l.warn("recv chunk after end for null stream with key:{}", key);
+            l.warn("{} recv chunk after end for null stream with key", key._did, key);
         } else if (seq != ++stream._seq) {
             if (stream._invalidationReason == null) { // not aborted
-                _fds.logSendAsync("istrm " + stream._pc.ep().tp() +
-                        ":" + key + " expect seq " + stream._seq + " actual " + seq);
+                _fds.logSendAsync("istrm " + stream._pc.ep().tp() + ":" + key + " expect seq " + stream._seq + " actual " + seq);
                 abortAndNotifyReceiver_(key, InvalidationReason.OUT_OF_ORDER); // notify receiver
                 end_(key); // notify lower layers
             } else {
-                l.warn("istrm {} recv chunk after abort seq:{}", stream, seq);
+                l.warn("{} recv chunk for stream {} with key {} after abort seq:{}", getDIDFromStream(stream), stream, key, seq);
             }
         } else {
             try {
@@ -194,7 +192,7 @@ public class IncomingStreams
                 }
                 resume_(stream);
             } catch (IOException e) {
-                l.warn("istrm {} fail chunk.available", stream);
+                l.warn("{} fail process chunk for stream {} with key {} err:{}", getDIDFromStream(stream), stream, key, e.getMessage());
                 abortAndNotifyReceiver_(key, InvalidationReason.INTERNAL_ERROR);
                 end_(key);
             }
@@ -212,9 +210,9 @@ public class IncomingStreams
 
         IncomingStream stream = _map.get(key);
         if (stream == null) {
-            l.warn("abort after end for null stream with key:{}", key);
+            l.warn("{} abort after end for null stream with key {}", key._did, key);
         } else {
-            l.warn("abort {} key:{} rsn:{}", stream, key, reason);
+            l.warn("{} abort stream {} with key {} rsn:{}", getDIDFromStream(stream), stream, key, reason);
             stream._invalidationReason = reason;
             // FIXME (AG): remove this when core streams are reworked
             // _technically_ it's safe to put this into end_ only,
@@ -241,22 +239,21 @@ public class IncomingStreams
         IncomingStream stream = _map.remove(key);
 
         if (stream == null) {
-            l.warn("end called for null stream with key:{}", key);
+            l.warn("{} end called for null stream with key {}", key._did, key);
             return;
         }
 
         try {
-            l.info("end {} key:{}", stream, key);
+            l.info("{} end stream {} with key {}", getDIDFromStream(stream), stream, key);
 
             long _diffTime = stream._timer.elapsed();
-            l.debug("istrm processed:{} time:{}", stream._bytesRead, _diffTime);
+            l.debug("{} processed:{} time:{}", getDIDFromStream(stream), stream._bytesRead, _diffTime);
 
             notifyListenersOfStreamInvalidation_(key);
 
             _stack.output().endIncomingStream_(key._strmid, stream._pc.ep());
         } catch (Exception e) {
-            l.warn("cannot end {} key:{}" ,stream, key, Util.e(e));
-
+            l.warn("{} fail end stream {} with key {}", getDIDFromStream(stream), stream, key, e);
             _ended.put(key, stream);
         }
     }
@@ -266,5 +263,10 @@ public class IncomingStreams
         for (IIncomingStreamChunkListener listener : _listenerList) {
             listener.onStreamInvalidated_(key._did, key._strmid);
         }
+    }
+
+    private static DID getDIDFromStream(IncomingStream stream)
+    {
+        return stream._pc.ep().did();
     }
 }
