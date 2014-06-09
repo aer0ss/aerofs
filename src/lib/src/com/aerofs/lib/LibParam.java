@@ -28,7 +28,7 @@ import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS
  * The subclasses, on the other hand, can have static fields that are dependent on the configuration
  *   subsystem.
  *
- * For more information, Google how Java class loader works regarding static  initializers.
+ * For more information, Google how Java class loader works regarding static initializers.
  */
 public class LibParam extends BaseParam
 {
@@ -222,6 +222,14 @@ public class LibParam extends BaseParam
 
         public static final InetSocketAddress AOF_ADDRESS =
                 InetSocketAddress.createUnresolved("localhost", 6379);
+    }
+
+    public static class LicenseProperties
+    {
+        public static final String VALID_UNTIL = "license_valid_until";
+        public static final String LICENSE_SEATS = "license_seats";
+        public static final String CUSTOMER_ID = "customer_id";
+        public static final String CUSTOMER_NAME = "license_company";
     }
 
     /**

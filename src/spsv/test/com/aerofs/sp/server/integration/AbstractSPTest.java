@@ -141,7 +141,9 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected JedisEpochCommandQueue commandQueue = new JedisEpochCommandQueue(jedisTrans);
 
-    License license = mock(License.class);
+    // Can't use @Spy as User.Factory's constructor needs a spied instance;
+    protected License license = spy(new License());
+
     @Spy protected User.Factory factUser = new User.Factory();
     {
         factUser.inject(udb, oidb, tfdb, factDevice, factOrg,
@@ -224,7 +226,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         sqlTrans.commit();
     }
 
-    private void mockLicense()
+    protected void mockLicense()
     {
         when(license.isValid()).thenReturn(true);
         when(license.seats()).thenReturn(Integer.MAX_VALUE);
@@ -246,6 +248,39 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     {
         // false = does not exceed rate limit
         when(rateLimiter.update((String)anyVararg())).thenReturn(false);
+    }
+
+    // we occasionally need this, #sigh
+    protected void rebuildSPService()
+    {
+        service = new SPService(db,
+                sqlTrans,
+                jedisTrans,
+                sessionUser,
+                passwordManagement,
+                certificateAuthenticator,
+                remoteAddress,
+                factUser,
+                factOrg,
+                factOrgInvite,
+                factDevice,
+                certdb,
+                esdb,
+                factSharedFolder,
+                factEmailer,
+                _deviceRegistrationEmailer,
+                requestToSignUpEmailer,
+                commandQueue,
+                analytics,
+                identitySessionManager,
+                authenticator,
+                sharingRules,
+                sharedFolderNotificationEmailer,
+                asyncEmailSender,
+                factUrlShare,
+                rateLimiter,
+                license);
+        wireSPService();
     }
 
     // Do wiring for SP after its construction

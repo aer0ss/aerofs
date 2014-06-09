@@ -1,6 +1,7 @@
 package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.LibParam.LicenseProperties;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.google.common.base.Optional;
 
@@ -19,6 +20,8 @@ public class License
     // 0 if the license is not present or the format is not supported.
     long _expireTimestamp;
     int _seats;
+    String _customerID;
+    String _customerName;
 
     public License()
     {
@@ -33,7 +36,7 @@ public class License
         // We only accept normal licenses for the time being
         if (!type.isPresent() || !type.get().equals("normal")) return;
 
-        String validUntil = getStringProperty("license_valid_until", "");
+        String validUntil = getStringProperty(LicenseProperties.VALID_UNTIL, "");
 
         try {
             _expireTimestamp = new SimpleDateFormat("yyyy-MM-dd").parse(validUntil).getTime();
@@ -42,13 +45,23 @@ public class License
             // leave _expireTimestamp as zero
         }
 
-        _seats = getIntegerProperty("license_seats", 0);
+        _seats = getIntegerProperty(LicenseProperties.LICENSE_SEATS, 0);
+
+        initCommon();
     }
 
     private void initForPublicDeployment()
     {
         _expireTimestamp = Long.MAX_VALUE;
         _seats = Integer.MAX_VALUE;
+
+        initCommon();
+    }
+
+    private void initCommon()
+    {
+        _customerID = getStringProperty(LicenseProperties.CUSTOMER_ID, "N/A");
+        _customerName = getStringProperty(LicenseProperties.CUSTOMER_NAME, "Unknown");
     }
 
     /**
@@ -72,4 +85,17 @@ public class License
         return _seats;
     }
 
+    /**
+     * Returns a customer identifier that's suitable for display.
+     * N.B. there is no guarantees that the ID is a string representation of a long.
+     */
+    public String customerID()
+    {
+        return _customerID;
+    }
+
+    public String customerName()
+    {
+        return _customerName;
+    }
 }

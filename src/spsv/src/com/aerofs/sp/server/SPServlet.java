@@ -177,7 +177,8 @@ public class SPServlet extends AeroServlet
             _sfnEmailer,
             _asyncEmailSender,
             _factUrlShare,
-            _rateLimiter);
+            _rateLimiter,
+            _license);
 
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 

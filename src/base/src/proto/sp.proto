@@ -767,6 +767,20 @@ service SPService {
     //   ExNoPerm if the current user isn't a manager or an admin of a manager
     //
     rpc DestroySharedFolder(DestroySharedFolderCall) returns (Void);
+
+    // Requests SP to send a notification email to support to report a
+    // problem on the user's behalf.
+    //
+    // The call returns as soon as the e-mail is queued. E-mail is sent
+    // asynchronously and may not succeed; the client is not notified
+    // when the notification e-mail failed.
+    //
+    // Required Auth Level: user
+    // Throws:
+    //   ExInvalidEmailAddress if the contact email address is invalid
+    //   ExFormatError if the Dryad ID is invalid
+    //
+    rpc SendDryadEmail(SendDryadEmailCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1422,4 +1436,10 @@ message ValidateUrlPasswordCall {
 
 message DestroySharedFolderCall {
     required bytes shared_id = 1;
+}
+
+message SendDryadEmailCall {
+    required string dryad_id = 1;
+    required string contact_email = 2;
+    required string description = 3;
 }

@@ -78,7 +78,10 @@ public class BaseParam
     {
         public static final String DASHBOARD_HOST_URL = getStringProperty("base.www.url", "https://www.aerofs.com");
 
-        public static final String SUPPORT_EMAIL_ADDRESS = getStringProperty(
+        // this is non-final because one of the unit tests need to update this value. Due to the
+        // way we misuse static final fields for configuration values everywhere, it is difficult
+        // for a single test to mock a configuration property.
+        public static String SUPPORT_EMAIL_ADDRESS = getStringProperty(
                 "base.www.support_email_address", "support@aerofs.com");
 
         // the marketing Web's location is independent from the URL parameter. It should always

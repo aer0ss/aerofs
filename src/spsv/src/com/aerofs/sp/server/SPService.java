@@ -3,6 +3,7 @@ package com.aerofs.sp.server;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
@@ -25,7 +26,9 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
@@ -123,6 +126,7 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -244,6 +248,8 @@ public class SPService implements ISPService
 
     private final JedisRateLimiter _rateLimiter;
 
+    private final License _license;
+
     public SPService(SPDatabase db,
             SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans,
@@ -269,7 +275,8 @@ public class SPService implements ISPService
             SharedFolderNotificationEmailer sfnEmailer,
             AsyncEmailSender asyncEmailSender,
             UrlShare.Factory factUrlShare,
-            JedisRateLimiter rateLimiter)
+            JedisRateLimiter rateLimiter,
+            License license)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -308,6 +315,7 @@ public class SPService implements ISPService
         _analytics = checkNotNull(analytics);
 
         _rateLimiter = rateLimiter;
+        _license = license;
     }
 
     /**
@@ -1662,6 +1670,32 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
+    public ListenableFuture<Void> sendDryadEmail(String strDryadID,
+            String contactEmail, String description)
+            throws Exception
+    {
+        // authenticate the user
+        _sessionUser.getUser();
+
+        throwOnInvalidEmailAddress(contactEmail);
+
+        // validate the Dryad ID
+        UniqueID dryadID = UniqueID.fromStringFormal(strDryadID);
+
+        String fromName = SPParam.EMAIL_FROM_NAME;
+        String to = WWW.SUPPORT_EMAIL_ADDRESS;
+        String replyTo = contactEmail;
+        String subject = L.brand() + " Problem #" + dryadID.toStringFormal().toUpperCase();
+        String body = "Customer ID: " + _license.customerID() + "\n" +
+                "Customer Name: " + _license.customerName() + "\n" +
+                "Contact Email: " + contactEmail + "\n\n" +
+                description;
+
+        _emailSender.sendPublicEmailFromSupport(fromName, to, replyTo, subject, body, null);
+
+        return createVoidReply();
+    }
+
     @Override
     public ListenableFuture<Void> setQuota(Long quota)
             throws Exception
@@ -1742,7 +1776,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> requestToSignUp(String emailAddress)
             throws Exception
     {
-        if (!Util.isValidEmailAddress(emailAddress)) throw new ExInvalidEmailAddress();
+        throwOnInvalidEmailAddress(emailAddress);
 
         User user = _factUser.createFromExternalID(emailAddress);
 
@@ -3047,5 +3081,11 @@ public class SPService implements ISPService
     {
         if (maxResults > ABSOLUTE_MAX_RESULTS) throw new ExBadArgs("maxResults is too big");
         else if (maxResults < 0) throw new ExBadArgs("maxResults is a negative number");
+    }
+
+    private static void throwOnInvalidEmailAddress(String emailAddress)
+            throws ExInvalidEmailAddress
+    {
+        if (!Util.isValidEmailAddress(emailAddress)) throw new ExInvalidEmailAddress();
     }
 }

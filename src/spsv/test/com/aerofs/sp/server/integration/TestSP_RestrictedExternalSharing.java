@@ -13,7 +13,6 @@ import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.sharing_rules.AbstractExSharingRules.DetailedDescription.Type;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
-import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
@@ -58,37 +57,11 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         setProperties(true, INTERNAL_ADDRESSES);
 
         // Authenticator factory reads and caches property values so we have to construct a new one
-        SharingRulesFactory sharedFolderRules = new SharingRulesFactory(AuthenticatorFactory.create(),
+        sharingRules = new SharingRulesFactory(AuthenticatorFactory.create(),
                 factUser, sharedFolderNotificationEmailer);
 
         // reconstruct SP using the new shared folder rules
-        service = new SPService(db,
-                sqlTrans,
-                jedisTrans,
-                sessionUser,
-                passwordManagement,
-                certificateAuthenticator,
-                remoteAddress,
-                factUser,
-                factOrg,
-                factOrgInvite,
-                factDevice,
-                certdb,
-                esdb,
-                factSharedFolder,
-                factEmailer,
-                _deviceRegistrationEmailer,
-                requestToSignUpEmailer,
-                commandQueue,
-                analytics,
-                identitySessionManager,
-                authenticator,
-                sharedFolderRules,
-                sharedFolderNotificationEmailer,
-                asyncEmailSender,
-                factUrlShare,
-                rateLimiter);
-        wireSPService();
+        rebuildSPService();
 
         sqlTrans.begin();
         saveUser(internalSharer);
