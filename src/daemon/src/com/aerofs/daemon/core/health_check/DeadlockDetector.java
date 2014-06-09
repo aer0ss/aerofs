@@ -48,9 +48,10 @@ final class DeadlockDetector implements Runnable
         l.error("DEADLOCK DETECTED - FML");
 
         ThreadInfo[] deadlockedThreads = _threadMXBean.getThreadInfo(deadlockedTids, true, true);
+        ThreadInfo[] deadlockedThreadsFullStacks = _threadMXBean.getThreadInfo(deadlockedTids, Integer.MAX_VALUE);
         ThreadInfo[] allThreads = _threadMXBean.dumpAllThreads(true, true);
 
-        String threadStacks = constructErrorMessage(deadlockedThreads, allThreads);
+        String threadStacks = constructErrorMessage(deadlockedThreads, deadlockedThreadsFullStacks, allThreads);
         l.error("\n\n==== BEGIN DEADLOCK INFO ====\n{}\n==== END DEADLOCK_INFO ====", threadStacks);
 
         // NOTE: I want to send this in a blocking fashion so
@@ -63,7 +64,7 @@ final class DeadlockDetector implements Runnable
         SystemUtil.fatal("deadlock");
     }
 
-    private String constructErrorMessage(ThreadInfo[] deadlockedThreads, ThreadInfo[] allThreads)
+    private String constructErrorMessage(ThreadInfo[] deadlockedThreads, ThreadInfo[] deadlockedThreadsFullStacks, ThreadInfo[] allThreads)
     {
         StringBuilder builder = new StringBuilder(1024);
 
@@ -72,7 +73,13 @@ final class DeadlockDetector implements Runnable
             builder.append(info.toString()).append("\n");
         }
         builder.append("==== END DEADLOCKED THREADS ====");
+        builder.append("\n").append("\n");
 
+        builder.append("==== BEGIN DEADLOCKED THREADS STACKS ====").append("\n");
+        for (ThreadInfo info : deadlockedThreadsFullStacks) {
+            builder.append(info.toString()).append("\n");
+        }
+        builder.append("==== END DEADLOCKED THREADS STACKS ====");
         builder.append("\n").append("\n");
 
         builder.append("==== BEGIN ALL THREADS ====").append("\n");
