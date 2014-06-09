@@ -14,7 +14,9 @@ import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.proto.Sp.PBRestObjectUrl;
 import com.aerofs.sp.server.URLSharing.UrlSharingDatabase.HashedPasswordAndSalt;
+import com.google.common.collect.Lists;
 import com.lambdaworks.crypto.SCrypt;
 
 import javax.annotation.Nonnull;
@@ -22,6 +24,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
+import java.util.Collection;
 
 /**
  * This class represents a mapping of URL key => (token, SOID, expiry, password)
@@ -69,6 +72,15 @@ public class UrlShare
                     // try again
                 }
             }
+        }
+
+        public @Nonnull Collection<UrlShare> getAllInStore(@Nonnull SID sid)
+                throws SQLException
+        {
+            Collection<String> keys = _db.getKeysInStore(sid);
+            Collection<UrlShare> urlShares = Lists.newArrayListWithCapacity(keys.size());
+            for (String key : keys) urlShares.add(new UrlShare(this, key));
+            return urlShares;
         }
     }
 
@@ -175,6 +187,20 @@ public class UrlShare
     {
         HashedPasswordAndSalt hashedPasswordAndSalt = _f._db.getHashedPasswordAndSalt(_key);
         return (hashedPasswordAndSalt != null);
+    }
+
+    public PBRestObjectUrl toPB()
+            throws SQLException, ExNotFound
+    {
+        PBRestObjectUrl.Builder builder = PBRestObjectUrl.newBuilder()
+                .setKey(_key)
+                .setSoid(getRestObject().toStringFormal())
+                .setCreatedBy(getCreatedBy().getString())
+                .setHasPassword(hasPassword())
+                .setToken(getToken());
+        Long expires = getExpiresNullable();
+        if (expires != null) builder.setExpires(expires);
+        return builder.build();
     }
 }
 

@@ -790,6 +790,14 @@ service SPService {
     // Enable or disable two-factor enforcement for the session's user.
     // Required Auth Level: user
     rpc SetTwoFactorEnforcement(SetTwoFactorEnforcementCall) returns (Void);
+
+    // List all urls for any objects in the given store
+    //
+    // Required Auth Level: store manager
+    //   ExNotFound if the store does not exist
+    //   ExNoPerm if the current user isn't a manager or an admin of a manager
+    //
+    rpc ListUrlsForStore(ListUrlsForStoreCall) returns (ListUrlsForStoreReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1465,4 +1473,11 @@ message SetupTwoFactorReply {
 message SetTwoFactorEnforcementCall {
     required bool enforce = 1;
     optional int32 current_code = 2;
+
+message ListUrlsForStoreCall {
+    required bytes shared_id = 1;
+}
+
+message ListUrlsForStoreReply {
+    repeated PBRestObjectUrl url = 1;
 }
