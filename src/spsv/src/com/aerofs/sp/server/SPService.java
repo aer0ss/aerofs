@@ -42,7 +42,6 @@ import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
-import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Common.PBPermissions;
@@ -82,6 +81,7 @@ import com.aerofs.proto.Sp.ListOrganizationMembersReply.PBUserAndLevel;
 import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListSharedFoldersReply;
+import com.aerofs.proto.Sp.ListUrlsForStoreReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
 import com.aerofs.proto.Sp.ListWhitelistedUsersReply;
@@ -1482,16 +1482,10 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         sf.throwIfNoPrivilegeToChangeACL(requester);
         UrlShare link = _factUrlShare.save(restObject, token, requester.id());
+        PBRestObjectUrl pbRestObjectUrl = link.toPB();
         _sqlTrans.commit();
 
-        return createReply(CreateUrlReply.newBuilder()
-                .setUrlInfo(PBRestObjectUrl.newBuilder()
-                        .setKey(link.getKey())
-                        .setSoid(restObject.toStringFormal())
-                        .setToken(token)
-                        .setHasPassword(false)
-                        .setCreatedBy(requester.id().getString()))
-                .build());
+        return createReply(CreateUrlReply.newBuilder().setUrlInfo(pbRestObjectUrl).build());
     }
 
     public ListenableFuture<GetUrlInfoReply> getUrlInfo(String key)
@@ -1523,20 +1517,10 @@ public class SPService implements ISPService
                 link.validatePassword(password.toByteArray());
             }
         }
-        String token = link.getToken();
-        @Nullable Long expires = link.getExpiresNullable();
-        UserID createdBy = link.getCreatedBy();
+        PBRestObjectUrl pbRestObjectUrl = link.toPB();
         _sqlTrans.commit();
 
-        PBRestObjectUrl.Builder objectBuilder = PBRestObjectUrl.newBuilder()
-                .setKey(key)
-                .setSoid(object.toStringFormal())
-                .setCreatedBy(createdBy.getString())
-                .setHasPassword(hasPassword)
-                .setToken(token);
-        if (expires != null) objectBuilder.setExpires(expires);
-
-        return createReply(GetUrlInfoReply.newBuilder().setUrlInfo(objectBuilder).build());
+        return createReply(GetUrlInfoReply.newBuilder().setUrlInfo(pbRestObjectUrl).build());
     }
 
     @Override
@@ -1740,6 +1724,25 @@ public class SPService implements ISPService
         _emailSender.sendPublicEmailFromSupport(fromName, to, replyTo, subject, body, null);
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<ListUrlsForStoreReply> listUrlsForStore(ByteString sharedId)
+            throws Exception
+    {
+        ListUrlsForStoreReply.Builder builder = ListUrlsForStoreReply.newBuilder();
+        User caller = _session.getUser();
+
+        _sqlTrans.begin();
+        SharedFolder sf = _factSharedFolder.create(new SID(sharedId));
+        if (!sf.exists()) throw new ExNotFound("The folder does not exist");
+        sf.throwIfNoPrivilegeToChangeACL(caller);
+        for (UrlShare url : _factUrlShare.getAllInStore(sf.id())) {
+            builder.addUrl(url.toPB());
+        }
+        _sqlTrans.commit();
+
+        return createReply(builder.build());
     }
 
     @Override

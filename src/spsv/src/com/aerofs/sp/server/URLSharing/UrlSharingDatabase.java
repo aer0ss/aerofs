@@ -12,6 +12,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
+import com.google.common.collect.Lists;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -21,6 +22,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Collection;
+import java.util.List;
 
 import static com.aerofs.sp.server.lib.SPSchema.C_US_CREATED_BY;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_EXPIRES;
@@ -226,4 +229,21 @@ public class UrlSharingDatabase extends AbstractSQLDatabase
         if (hash != null && salt != null) return new HashedPasswordAndSalt(hash, salt);
         throw new IllegalStateException("hash and salt must both be present or both be null");
     }
+
+    public @Nonnull Collection<String> getKeysInStore(@Nonnull SID sid)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_US, C_US_SID + "=?", C_US_KEY));
+        ps.setBytes(1, sid.getBytes());
+
+        List<String> keys = Lists.newArrayList();
+        ResultSet rs = ps.executeQuery();
+        try {
+            while (rs.next()) keys.add(rs.getString(1));
+            return keys;
+        } finally {
+            rs.close();
+        }
+    }
+
 }
