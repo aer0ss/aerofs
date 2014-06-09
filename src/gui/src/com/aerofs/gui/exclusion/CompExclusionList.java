@@ -4,6 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
+import com.aerofs.gui.common.SeparatorRenderer;
 import com.aerofs.lib.Path;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.ui.IUI.MessageType;
@@ -12,20 +13,18 @@ import com.aerofs.ui.UIUtil;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.eclipse.jface.layout.TableColumnLayout;
-import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.slf4j.Logger;
@@ -40,7 +39,7 @@ public class CompExclusionList extends Composite
     private static final Logger l = Loggers.getLogger(GUI.class);
     public static final String FOLDER_DATA = "FOLDER_DATA";
 
-    TableViewer _v;
+    Table _table;
     Model _m;
 
     public CompExclusionList(Composite parent)
@@ -48,7 +47,10 @@ public class CompExclusionList extends Composite
         super(parent, SWT.NONE);
         setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        _v = new TableViewer(this,SWT.BORDER);
+        _table = new Table(this, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.H_SCROLL);
+       _table.addListener(SWT.EraseItem, new SeparatorRenderer(getDisplay(),_table,
+                FOLDER_DATA));
+       _table.addListener(SWT.Resize, new SelectiveSyncTableResizeListener());
         createTableColumns();
         try {
             _m = getPrevSyncedAndExpelledFolders();
@@ -60,51 +62,40 @@ public class CompExclusionList extends Composite
 
     private void createTableColumns()
     {
-        TableColumnLayout tableColumnLayout = new TableColumnLayout();
-        // Column for checkbox.
-        TableColumn checkboxColumn = new TableColumn(_v.getTable(), SWT.NONE);
-        checkboxColumn.pack();
-        // Set weight to be 0 but minimum width to be the packed width of the column so that it
-        // occupies only the space it needs.
-        tableColumnLayout.setColumnData(checkboxColumn, new ColumnWeightData(0,
-                checkboxColumn.getWidth(), true));
-        // Column for folder icon.
-        TableColumn folderIcnColumn = new TableColumn(_v.getTable(), SWT.NONE);
-        folderIcnColumn.pack();
-        tableColumnLayout.setColumnData(folderIcnColumn, new ColumnWeightData(0,
-                folderIcnColumn.getWidth(), true));
-        // Column for folder name.
-        TableColumn folderNameColumn = new TableColumn(_v.getTable(), SWT.FILL);
-        folderNameColumn.pack();
-        // Set weight to be 100 so it fills up the rest of the space.
-        tableColumnLayout.setColumnData(folderNameColumn, new ColumnWeightData(100,
-                folderNameColumn.getWidth(), true));
-        setLayout(tableColumnLayout);
-    }
+        // We require this column because of space issues on Windows. Somehow inserting a checkbox
+        // in the first (column 0) column makes the column right align. To solve that add a dummy
+        // column at the beginning and then checkbox in the second column.
+        TableColumn spaceColumn = new TableColumn(_table, SWT.NONE);
+        // This column i.e. column 1 will hold the checkbox.
+        TableColumn checkboxColumn = new TableColumn(_table, SWT.NONE);
+        // This column will i.e. column 2 will hold the folder icon and name.
+        TableColumn folderNameIcnColumn = new TableColumn(_table, SWT.FILL);
+        // Again this is because of Windows magic. Need to hardcode the widths.
+        spaceColumn.setWidth(10);
+        checkboxColumn.setWidth(30);
 
-    private void customizeEditorRow(TableEditor editor, Control w, boolean grabHorizontal)
-    {
-        editor.grabHorizontal = grabHorizontal;
-        editor.minimumWidth = w.getSize().x;
-        editor.horizontalAlignment = SWT.LEFT;
+        spaceColumn.setResizable(true);
+        checkboxColumn.setResizable(true);
+        folderNameIcnColumn.setResizable(true);
+        folderNameIcnColumn.pack();
     }
 
     private void addSeparatorToTable(TableItem item, String separatorText)
     {
-        FontData separatorFontData = new FontData();
-        separatorFontData.setStyle(SWT.BOLD);
-        item.setFont(new Font(getDisplay(), separatorFontData));
-        item.setBackground(getDisplay().getSystemColor(SWT.COLOR_GRAY));
+        item.setData(FOLDER_DATA, null);
+        item.setFont(GUIUtil.makeBold(item.getFont()));
         item.setText(2, separatorText);
     }
 
     private void addFolderToTableItem(TableItem item, FolderData currentFolder, TableEditor editor)
     {
-        final Button button = GUIUtil.createButton(_v.getTable(), SWT.CHECK);
+        item.setData(FOLDER_DATA, currentFolder);
+        final Button button = GUIUtil.createButton(_table, SWT.CHECK);
         button.pack();
-
-        customizeEditorRow(editor, button, true);
-        editor.setEditor(button, item, 0);
+        editor.setColumn(1);
+        editor.horizontalAlignment = SWT.LEFT;
+        editor.minimumWidth = button.getSize().x;
+        editor.setEditor(button, item, 1);
 
         button.setSelection((!_m._alreadyExcluded.contains(currentFolder)));
         // Associating data with button so that when we retrieve checked buttons, we can get
@@ -114,7 +105,7 @@ public class CompExclusionList extends Composite
         button.setData(FOLDER_DATA, currentFolder);
         button.addSelectionListener(new SelectiveSyncSelectionAdapter(button, currentFolder));
         // Not a big fan of hardcoding column numbers but life is hard.
-        item.setImage(1, Images.get(Images.ICON_SHARED_FOLDER));
+        item.setImage(2, Images.get(Images.ICON_SHARED_FOLDER));
         item.setText(2, currentFolder._name);
     }
 
@@ -183,8 +174,8 @@ public class CompExclusionList extends Composite
         List<Object> tableContent = getTableContent();
 
         for (Object elem: tableContent) {
-            TableItem ti = new TableItem(_v.getTable(), SWT.NONE);
-            TableEditor editor = new TableEditor(_v.getTable());
+            TableItem ti = new TableItem(_table, SWT.FILL);
+            TableEditor editor = new TableEditor(_table);
 
             if (elem instanceof FolderData) {
                 final FolderData currentFolder = (FolderData)elem;
@@ -290,7 +281,7 @@ public class CompExclusionList extends Composite
 
         HashSet<FolderData> allCheckedFolders = Sets.newHashSet();
 
-        for(Control control: _v.getTable().getChildren()) {
+        for(Control control: _table.getChildren()) {
             if (control instanceof Button) {
                 Button checkBox = (Button)control;
                 if (checkBox.getSelection()) {
@@ -314,5 +305,23 @@ public class CompExclusionList extends Composite
         ops._newlyExcludedFolders.removeAll(allCheckedFolders);
 
         return ops;
+    }
+
+    /**
+     * This class is needed to properly resize the Selective Sync dialog box. This will help the
+     * last column (the column for folder name and icons) to fill the space that remains after
+     * adding the dummy space column and checkbox column.
+     */
+    private class SelectiveSyncTableResizeListener implements Listener
+    {
+        @Override
+        public void handleEvent(Event event) {
+            Table table = (Table)event.widget;
+            int widthForLastColumn = table.getClientArea().width;
+            for(int i = 0; i < table.getColumnCount() - 1; i++) {
+                widthForLastColumn -= table.getColumn(i).getWidth();
+            }
+            table.getColumn(table.getColumnCount() - 1).setWidth(widthForLastColumn);
+        }
     }
 }

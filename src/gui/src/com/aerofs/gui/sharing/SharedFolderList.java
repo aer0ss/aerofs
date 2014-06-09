@@ -10,6 +10,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
+import com.aerofs.gui.common.SeparatorRenderer;
 import com.aerofs.gui.TaskDialog;
 import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.sharing.AddSharedFolderDialogs.IShareNewFolderCallback;
@@ -31,14 +32,14 @@ import com.google.common.util.concurrent.Futures;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.slf4j.Logger;
@@ -124,7 +125,16 @@ class SharedFolderList extends Composite
                 openSelectedFolder();
             }
         });
-
+        // Listener to draw the separator. A simple setBackground will not work on Windows. So we
+        // have to use GC to draw the background for the separator.
+        _table.addListener(SWT.EraseItem, new SeparatorRenderer(getDisplay(), _table, PATH_DATA));
+        // Windows happened again. To make the highlight and separator background resize properly
+        // we need this listener again.
+        _table.addListener(SWT.MeasureItem, new Listener() {
+            public void handleEvent(Event event) {
+                event.width = _table.getClientArea().width;
+            }
+        });
         // tooltip is the absPath, which only make sense for Linked storage
         if (Cfg.storageType() == StorageType.LINKED) {
             new TableToolTip(_table, ABS_PATH_DATA);
@@ -372,19 +382,13 @@ class SharedFolderList extends Composite
 
     private void addSeparatorToDisplayTable(TableItem ti, String separatorText)
     {
-
         ti.setText(separatorText);
         // Setting ABS_PATH_DATA to empty string because the TableToolTip shouldn't display anything
         // for separators.
         ti.setData(ABS_PATH_DATA, null);
         ti.setData(PATH_DATA, null);
-
-        // Make the text bold, the background gray.
-        FontData separatorFontData = new FontData();
-        separatorFontData.setStyle(SWT.BOLD);
-
-        ti.setFont(new Font(getDisplay(), separatorFontData));
-        ti.setBackground(getDisplay().getSystemColor(SWT.COLOR_GRAY));
+        // Make the text bold.
+        ti.setFont(GUIUtil.makeBold(ti.getFont()));
     }
 
     /**
@@ -435,6 +439,7 @@ class SharedFolderList extends Composite
         }
         return tableContents;
     }
+
     /**
      * Populate the view with the given shared folder list.
      * We want the shared folder list to contain all internal folders first (sorted alphabetically),
@@ -474,7 +479,6 @@ class SharedFolderList extends Composite
 
         _memberList.setFolder(selectedPath(), selectedName());
     }
-
 
     private void leave(final Path path, String defaultName)
     {
