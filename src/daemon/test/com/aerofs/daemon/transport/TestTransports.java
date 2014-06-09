@@ -333,7 +333,7 @@ public final class TestTransports
             throws Exception
     {
         final Semaphore availableSemaphore = new Semaphore(0);
-        final Semaphore unavailableSempahore = new Semaphore(0);
+        final Semaphore unavailableSemaphore = new Semaphore(0);
         final Semaphore packetReceivedSemaphore = new Semaphore(0);
 
         // start by sending a single packet
@@ -355,7 +355,7 @@ public final class TestTransports
         addUnicastPacketListener(transport1, packetReceivedSemaphore);
         addUnicastPacketListener(transport2, packetReceivedSemaphore);
         addUnicastPacketListener(transport3, packetReceivedSemaphore);
-        addDeviceAvailabilityListener(transport0, otherDIDs, availableSemaphore, unavailableSempahore);
+        addDeviceAvailabilityListener(transport0, otherDIDs, availableSemaphore, unavailableSemaphore);
 
         // wait for all peers to come online
         availableSemaphore.acquire(otherDIDs.size());
@@ -372,7 +372,7 @@ public final class TestTransports
         transport0.pauseSyncing();
 
         // wait until all devices go offline
-        unavailableSempahore.acquire(otherDIDs.size());
+        unavailableSemaphore.acquire(otherDIDs.size());
 
         // now, try again to send a packet to each peer (they should fail)
         for (DID did : otherDIDs) {

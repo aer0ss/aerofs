@@ -408,14 +408,14 @@ public final class TestXMPPConnectionService
         linkStateService.markLinksUp();
         assertThatServiceConnected(listener);
 
-        // give it enought time to ping and then disconnect
+        // give it enough time to ping and then disconnect
         xmppConnectionService.ping();
         assertThatServiceDisconnected(listener, PING_INTERVAL_IN_MS * (MAX_PINGS_BEFORE_DISCONNECTION + 1));
 
         // and then, enough time to reconnect
         assertThatServiceConnected(listener, (MAX_CONNECT_RETRY_INTERVAL_IN_MS * 2) + STATE_CHANGE_SLEEP_IN_MS);
 
-        // and then, verify that everything's A-OK
+        // and then, verify that everything is A-OK
         assertThat(pingsSent.get(), equalTo(MAX_PINGS_BEFORE_DISCONNECTION));
         assertThat(connectionAttemptsMade.get(), equalTo(2));
     }

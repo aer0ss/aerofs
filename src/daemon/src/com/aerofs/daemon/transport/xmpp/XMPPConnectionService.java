@@ -89,7 +89,7 @@ public final class XMPPConnectionService implements ILinkStateListener
 
     // FIXME (AG): the right thing is not to leak connection outside at all!
     private volatile XMPPConnection connection = null; // protect via this (volatile so that connection() can work properly)
-    private volatile boolean linkUp = false;
+    private boolean linkUp = false;
 
     private final RockLog rocklog;
     private final DID localdid;
@@ -143,6 +143,8 @@ public final class XMPPConnectionService implements ILinkStateListener
 
     public void start()
     {
+        // TODO: the AtomicBoolean here is ineffective at guarding the caller;
+        // might as well just synchronize on this for start and stop.
         if (!running.compareAndSet(false, true)) {
             return;
         }
@@ -245,13 +247,9 @@ public final class XMPPConnectionService implements ILinkStateListener
              return;
         }
 
-        XMPPConnection connectionToCheck;
-        boolean connected;
-        synchronized (this) {
-            connectionToCheck = connection;
-            connected = (connectionToCheck != null && connectionToCheck.isConnected());
-            // can't set connection to null if !up because disconnection handler won't run
-        }
+        XMPPConnection connectionToCheck = connection;
+        boolean connected = (connectionToCheck != null && connectionToCheck.isConnected());
+        // can't set connection to null if !up because disconnection handler won't run
 
         if (wasUp && !linkUp && connected) {
             safeDisconnect(connectionToCheck);
@@ -390,11 +388,6 @@ public final class XMPPConnectionService implements ILinkStateListener
             public Void call()
                     throws Exception
             {
-                if (!running.get()) {
-                    l.info("service shut down - terminating connect");
-                    return terminateConnectionAttempt();
-                }
-
                 outstandingPings.clear();
 
                 if (initialDelay) {
@@ -405,13 +398,29 @@ public final class XMPPConnectionService implements ILinkStateListener
                 l.debug("connecting");
 
                 try {
-                    if (!linkUp) {
-                        l.debug("link down - terminating connect");
-                    } else {
-                        synchronized (XMPPConnectionService.this) { connectInternal(); }
+                    // linkUp is only modified in a synchronized context. It would be nice to avoid
+                    // using a monitor here, but it's necessary.
+                    // t0: find that linkUp is false
+                    // t1: link is connected! onLinkStateChanged is called
+                    // t1: set linkUp true
+                    // t1: call connect
+                    // t1: connectionInProgress is true; bail out.
+                    // t0: set connectionInProgress to false; bail out.
+                    // result: linkUp true, xmpp not connected, nobody is trying to connect. :(
+
+                    // running is modified in a non-synchronized context but this is effectively
+                    // okay since we don't stop() transports.
+                    synchronized (XMPPConnectionService.this) {
+                        if (!running.get()) {
+                            l.info("service shut down - terminating connect");
+                        } else if (!linkUp) {
+                            l.debug("link down - terminating connect");
+                        } else {
+                            connectInternal();
+                        }
+                        return terminateConnectionAttempt();
                     }
 
-                    return terminateConnectionAttempt();
                 } catch (IllegalStateException e) {
                     // this is what smack throws if we
                     // attempt to send a message and the system
@@ -590,11 +599,7 @@ public final class XMPPConnectionService implements ILinkStateListener
                         return;
                     }
 
-                    if (linkUp) {
-                        connect(true);
-                    } else {
-                        l.info("link down - not attempting reconnect");
-                    }
+                    connect(true);
                 }
             }
 
