@@ -134,12 +134,12 @@ public abstract class SystemUtil
      */
     static Error fatalWithReturn(final ExFatal e)
     {
-        Throwable cause = e.getCause();
+        Throwable fatalCause = e.getCause() != null ? e.getCause() : e;
 
-        l.error("FATAL: message:{} fatal-caller:{}", cause.getMessage(), Util.e(e));
+        l.error("FATAL: fatal-caller:{} fatal-stack:", e.getMessage(), fatalCause);
 
-        if (cause instanceof ExDBCorrupted) {
-            ExDBCorrupted corrupted = (ExDBCorrupted) cause;
+        if (fatalCause instanceof ExDBCorrupted) {
+            ExDBCorrupted corrupted = (ExDBCorrupted) fatalCause;
             new RockLog().newDefect("sqlite.corrupt")
                     .setMessage(corrupted._integrityCheckResult)
                     .send();
