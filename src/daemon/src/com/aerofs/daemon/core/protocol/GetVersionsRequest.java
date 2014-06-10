@@ -235,7 +235,7 @@ public class GetVersionsRequest
     private void processRequestFromStream_(DID from, UserID user, InputStream is, StreamKey key, BlockSender sender)
             throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "gv response");
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "GetVersReq(" + from + ")");
         try {
             while (processRequestBlock_(from, user, is, sender)) {
                 is = _iss.recvChunk_(key, tk);
@@ -411,7 +411,7 @@ public class GetVersionsRequest
 
             if (os2 != _os) {
                 if (_stream == null) {
-                    _tk = _tokenManager.acquireThrows_(Cat.SERVER, "gv response");
+                    _tk = _tokenManager.acquireThrows_(Cat.SERVER, "SendVersion(" + _rpcid  + ", " + _ep + ")");
                     _stream = _oss.newStream(_ep, _tk);
                 }
 

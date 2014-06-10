@@ -207,8 +207,8 @@ public class ComponentContentSender
         } else {
             long newPrefixLen = vLocal.equals(vPrefix) ? prefixLen : 0;
 
-            l.debug("recved prefix len " + prefixLen + " v "+ vPrefix + ". local " + vLocal +
-                    " newLen " + newPrefixLen);
+            l.debug("recved prefix len {} v {}. local {} newLen {}",
+                    prefixLen, vPrefix, vLocal, newPrefixLen);
 
             // because the original builders have built, we have
             // to create a new builder
@@ -226,7 +226,7 @@ public class ComponentContentSender
                     .setGetComponentResponse(bd)
                     .build());
 
-            Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "GCRSendBig");
+            Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "SendContent(" + k + ", " + ep + ")");
             try {
                 return sendBig_(ep, k, os, newPrefixLen, tk, mtime, fileLength, h, pf);
             } finally {
@@ -280,7 +280,7 @@ public class ComponentContentSender
             @Nullable ContentHash hash, IPhysicalFile pf)
             throws Exception
     {
-        l.debug("sendBig_: os.size() = " + os.size());
+        l.debug("sendBig_: os.size() = {}", os.size());
         checkState(prefixLen >= 0);
 
         final OutgoingStream outgoing = _oss.newStream(ep, tk);
