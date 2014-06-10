@@ -88,6 +88,24 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void createUrl_shouldThrowExBadArgsIfSoidIsAlias() throws Exception
+    {
+        try {
+            service.createUrl("root", UniqueID.generate().toStringFormal());
+            fail();
+        } catch (ExBadArgs ignored) {
+            // success
+        }
+
+        try {
+            service.createUrl("appdata", UniqueID.generate().toStringFormal());
+            fail();
+        } catch (ExBadArgs ignored) {
+            // success
+        }
+    }
+
+    @Test
     public void getUrlInfo_shouldGetUrlInfo() throws Exception
     {
         String token = UniqueID.generate().toStringFormal();

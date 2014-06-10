@@ -1476,6 +1476,9 @@ public class SPService implements ISPService
         } catch (IllegalArgumentException e) {
             throw new ExBadArgs("invalid soid");
         }
+        if (restObject.getSID() == null || restObject.getOID() == null) {
+            throw new ExBadArgs("invalid soid");
+        }
         SharedFolder sf = _factSharedFolder.create(restObject.getSID());
         User requester = _session.getUser();
 

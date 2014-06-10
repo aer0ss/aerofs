@@ -16,6 +16,7 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.PBRestObjectUrl;
 import com.aerofs.sp.server.URLSharing.UrlSharingDatabase.HashedPasswordAndSalt;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.lambdaworks.crypto.SCrypt;
 
@@ -62,6 +63,8 @@ public class UrlShare
                 @Nonnull UserID createdBy)
                 throws SQLException
         {
+            Preconditions.checkArgument(restObject.getSID() != null);
+            Preconditions.checkArgument(restObject.getOID() != null);
             while (true) {
                 String key = generateKey();
                 try {
