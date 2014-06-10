@@ -10,11 +10,9 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.OID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.proto.Sp.ListUrlsForStoreReply;
 import com.aerofs.proto.Sp.PBRestObjectUrl;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
@@ -591,66 +589,6 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
             fail();
         } catch (ExNoPerm ignored) {
             // success
-        }
-    }
-
-    @Test
-    public void listUrlsForStore_shouldThrowIfUserIsNotManager() throws Exception
-    {
-        setSessionUser(editor);
-        try {
-            service.listUrlsForStore(sid);
-            fail();
-        } catch (ExNoPerm ignored) {
-            // success
-        }
-    }
-
-    @Test
-    public void listUrlsForStore_shouldThrowIfStoreDoesNotExist() throws Exception
-    {
-        try {
-            service.listUrlsForStore(SID.generate());
-            fail();
-        } catch (ExNotFound ignored) {
-            // success
-        }
-    }
-
-    @Test
-    public void listUrlsForStore_shouldListUrlsForStore() throws Exception
-    {
-        // create three links in the store
-        RestObject ro1 = new RestObject(sid, OID.generate());
-        RestObject ro2 = new RestObject(sid, OID.generate());
-        String token1 = UniqueID.generate().toStringFormal();
-        String token2 = UniqueID.generate().toStringFormal();
-        String token3 = UniqueID.generate().toStringFormal();
-        service.createUrl(ro1.toStringFormal(), token1);
-        service.createUrl(ro2.toStringFormal(), token2);
-        service.createUrl(ro2.toStringFormal(), token3);
-
-        // create one link in a different store
-        SID otherSid = SID.generate();
-        shareAndJoinFolder(owner, otherSid, editor, Permissions.allOf(Permission.WRITE));
-        RestObject ro3 = new RestObject(otherSid);
-        String token4 = UniqueID.generate().toStringFormal();
-        service.createUrl(ro3.toStringFormal(), token4);
-
-        // list Urls
-        ListUrlsForStoreReply reply = service.listUrlsForStore(sid.toPB()).get();
-        assertEquals(3, reply.getUrlCount());
-        for (PBRestObjectUrl url : reply.getUrlList()) {
-            if (token1.equals(url.getToken())) {
-                assertEquals(ro1.toStringFormal(), url.getSoid());
-            } else if (token2.equals(url.getToken())) {
-                assertEquals(ro2.toStringFormal(), url.getSoid());
-            } else if (token3.equals(url.getToken())) {
-                assertEquals(ro2.toStringFormal(), url.getSoid());
-            }
-            if (token4.equals(url.getToken()) || ro3.toStringFormal().equals(url.getSoid())) {
-                fail();
-            }
         }
     }
 }
