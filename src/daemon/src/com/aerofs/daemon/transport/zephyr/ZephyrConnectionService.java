@@ -190,29 +190,41 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             unicastListener.onUnicastUnavailable();
         }
 
-        final Set<InetAddress> removedAddresses = newHashSet();
-        for (NetworkInterface networkInterface : removed) {
-            Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
-            while (addresses.hasMoreElements()) {
-                removedAddresses.add(addresses.nextElement());
+        Predicate<Entry<DID, Channel>> channelsToDisconnectFilter;
+
+        if (!current.isEmpty()) {
+            final Set<InetAddress> removedAddresses = newHashSet();
+
+            for (NetworkInterface networkInterface : removed) {
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    removedAddresses.add(addresses.nextElement());
+                }
             }
+
+            l.debug("removed addresses:{}", removedAddresses);
+
+            // only remove the channels with a local address
+            // that matches one belonging to the removed interface
+            channelsToDisconnectFilter = new Predicate<Entry<DID, Channel>>()
+            {
+                @Override
+                public boolean apply(@Nullable Entry<DID, Channel> entry)
+                {
+                    InetAddress address = ((InetSocketAddress) checkNotNull(entry).getValue().getLocalAddress()).getAddress();
+                    l.trace("local address:{}", address);
+                    return removedAddresses.contains(address);
+                }
+            };
+
+        } else {
+            // all interfaces went down
+            // remove all the channels
+            channelsToDisconnectFilter = TRUE_FILTER;
         }
 
-        l.trace("removed addresses:{}", removedAddresses);
-
-        Predicate<Entry<DID, Channel>> allChannelsFilter = new Predicate<Entry<DID, Channel>>()
-        {
-            @Override
-            public boolean apply(@Nullable Entry<DID, Channel> entry)
-            {
-                InetAddress address = ((InetSocketAddress) checkNotNull(entry).getValue().getLocalAddress()).getAddress();
-                l.info("local address:{}", address);
-                return removedAddresses.contains(address);
-            }
-        };
-
         synchronized (this) {
-            disconnectChannels(allChannelsFilter, new ExTransportUnavailable("link down"));
+            disconnectChannels(channelsToDisconnectFilter, new ExTransportUnavailable("link down"));
         }
     }
 

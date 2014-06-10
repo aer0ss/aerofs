@@ -128,6 +128,8 @@ final class ZephyrClientHandler extends SimpleChannelHandler
     {
         checkValid();
 
+        l.info("{} disconnect", remotedid);
+
         ZephyrClientPipelineFactory.getMessageHandler(channel).setDisconnectReason(cause);
         channel.close();
     }

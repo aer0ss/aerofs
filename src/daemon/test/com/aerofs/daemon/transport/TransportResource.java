@@ -74,6 +74,8 @@ public final class TransportResource extends ExternalResource
     private final String transportId;
     private final MockCA mockCA;
     private final MockRockLog mockRockLog;
+    private final InetSocketAddress zephyrAddress;
+    private final InetSocketAddress xrayAddress;
 
     private DID did;
     private ITransport transport;
@@ -81,7 +83,7 @@ public final class TransportResource extends ExternalResource
     private TransportReader transportReader;
     private boolean readerSet;
 
-    public TransportResource(TransportType transportType, MockCA mockCA, MockRockLog mockRockLog)
+    public TransportResource(TransportType transportType, MockCA mockCA, MockRockLog mockRockLog, InetSocketAddress zephyrAddress, InetSocketAddress xrayAddress)
     {
         l.info("seed:{}", seed);
 
@@ -91,6 +93,8 @@ public final class TransportResource extends ExternalResource
         this.transportId = String.format("%s-%d", this.transportType.getId(), Math.abs(random.nextInt()));
         this.mockCA = mockCA;
         this.mockRockLog = mockRockLog;
+        this.zephyrAddress = zephyrAddress;
+        this.xrayAddress = xrayAddress;
     }
 
     @Override
@@ -137,7 +141,9 @@ public final class TransportResource extends ExternalResource
                 90 * C.SEC,
                 3,
                 10 * C.SEC,
-                InetSocketAddress.createUnresolved("zephyr.aerofs.com", 443),
+                zephyrAddress,
+                10 * C.SEC,
+                xrayAddress,
                 Proxy.NO_PROXY,
                 timer,
                 outgoingEventSink,

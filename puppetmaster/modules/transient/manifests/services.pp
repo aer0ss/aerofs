@@ -57,6 +57,12 @@ class transient::services {
     }
 
     # --------------
+    # XRay
+    # --------------
+
+    include xray
+
+    # --------------
     # Zephyr
     # --------------
 

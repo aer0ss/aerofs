@@ -59,9 +59,11 @@ public class ZephyrServer implements IIOEventHandler
 
     public void init() throws IOException
     {
-        InetSocketAddress isa = new InetSocketAddress(_host, _port);
-
         try {
+            _d.init();
+
+            InetSocketAddress isa = new InetSocketAddress(_host, _port);
+
             _srvsoc = ServerSocketChannel.open();
             _srvsoc.configureBlocking(false);
             _srvsoc.socket().setReuseAddress(true);
@@ -73,9 +75,14 @@ public class ZephyrServer implements IIOEventHandler
             _inited = true;
         } catch (IOException e) {
             l.error("z: srv sock setup fail err:{}", e);
-            terminate();
+            stop();
             throw e;
         }
+    }
+
+    public void start()
+    {
+        _d.run();
     }
 
     //
@@ -98,7 +105,7 @@ public class ZephyrServer implements IIOEventHandler
         } catch (IOException e) {
             String err = "z: srv:[" + _host + ":" + _port + "]:fail on acc";
             l.error("{}:{}", err, e);
-            terminate();
+            stop();
             throw new FatalIOEventHandlerException(err, e);
         }
 
@@ -108,7 +115,7 @@ public class ZephyrServer implements IIOEventHandler
         // (Note: getRemoteSocketAddress() returns null if socket is not connected)
         if (!sc.socket().isConnected()) {
             l.error("Server socket {}: can't accept non-connected socket", sc.socket().toString());
-            terminate();
+            stop();
             throw new FatalIOEventHandlerException("Accept passed non-connected socket");
         }
 
@@ -157,7 +164,7 @@ public class ZephyrServer implements IIOEventHandler
         l.debug("z: acc hdl fin:" + System.currentTimeMillis());
     }
 
-    public void terminate()
+    public void stop()
     {
         closeChannel(_srvsoc);
 
@@ -181,6 +188,7 @@ public class ZephyrServer implements IIOEventHandler
         }
 
         _idToKey.clear();
+        _d.shutdown();
     }
 
     //

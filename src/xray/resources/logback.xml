@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+    <appender name="LOGFILE" class="ch.qos.logback.core.FileAppender">
+        <File>/var/log/aerofs/xray.log</File>
+        <Append>true</Append>
+        <encoder>
+            <pattern>%d{HHmmss.SSS}%-0.1p %t, %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="LOGFILE" />
+    </appender>
+
+    <logger name="com.aerofs.xray.server.XRay" level="INFO"/>
+
+    <root level="WARN">
+        <appender-ref ref="ASYNC"/>
+    </root>
+</configuration>

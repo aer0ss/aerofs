@@ -37,6 +37,7 @@ PACKAGES= \
 	verification \
 	verkehr \
 	web \
+	xray \
 	zephyr \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})

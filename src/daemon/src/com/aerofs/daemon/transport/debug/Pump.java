@@ -178,6 +178,8 @@ public final class Pump implements IProgram
                 DaemonParam.MAX_FAILED_HEARTBEATS,
                 DaemonParam.Zephyr.HANDSHAKE_TIMEOUT,
                 BaseParam.Zephyr.SERVER_ADDRESS,
+                DaemonParam.XRay.HANDSHAKE_TIMEOUT,
+                BaseParam.XRay.SERVER_ADDRESS,
                 Proxy.NO_PROXY,
                 timer,
                 incomingEventSink,

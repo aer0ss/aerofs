@@ -12,6 +12,8 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.xray.server.XRayServer;
+import com.aerofs.zephyr.server.ZephyrServer;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -29,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
@@ -64,7 +67,7 @@ public final class TestTransports
     @Parameters
     public static Collection<Object[]> transports()
     {
-        Object[][] data = new Object[][]{{TransportType.LANTCP}, {TransportType.ZEPHYR}}; // jingle cannot be tested in-process
+        Object[][] data = new Object[][]{{TransportType.LANTCP}, {TransportType.ZEPHYR}, {TransportType.XRAYRS}}; // jingle cannot be tested in-process
         return Arrays.asList(data);
     }
 
@@ -77,6 +80,12 @@ public final class TestTransports
 
     // for all tests
     private final TransportType transportType;
+    private final InetSocketAddress zephyrAddress;
+    private final InetSocketAddress xrayAddress;
+
+    // servers
+    private ZephyrServer zephyr;
+    private XRayServer xray;
 
     // for the stream tests
     private TransportDigestStreamSender streamSender;
@@ -93,19 +102,53 @@ public final class TestTransports
     {
         SecureRandom secureRandom = new SecureRandom();
 
+        zephyrAddress = InetSocketAddress.createUnresolved("localhost", secureRandom.nextInt(10000) + 5000);
+        xrayAddress = InetSocketAddress.createUnresolved("localhost", secureRandom.nextInt(10000) + 5000);
+
         MockCA mockCA = new MockCA(String.format("testca-%d@arrowfs.org", Math.abs(secureRandom.nextInt())), secureRandom);
         MockRockLog mockRockLog = new MockRockLog();
 
         this.transportType = transportType;
-        this.transport0 = new TransportResource(transportType, mockCA, mockRockLog);
-        this.transport1 = new TransportResource(transportType, mockCA, mockRockLog);
-        this.transport2 = new TransportResource(transportType, mockCA, mockRockLog);
-        this.transport3 = new TransportResource(transportType, mockCA, mockRockLog);
+        this.transport0 = new TransportResource(transportType, mockCA, mockRockLog, zephyrAddress, xrayAddress);
+        this.transport1 = new TransportResource(transportType, mockCA, mockRockLog, zephyrAddress, xrayAddress);
+        this.transport2 = new TransportResource(transportType, mockCA, mockRockLog, zephyrAddress, xrayAddress);
+        this.transport3 = new TransportResource(transportType, mockCA, mockRockLog, zephyrAddress, xrayAddress);
     }
 
     @Before
     public void setup()
+            throws Exception
     {
+        // start up zephyr
+        zephyr = new ZephyrServer(zephyrAddress.getHostName(), (short) zephyrAddress.getPort(), new com.aerofs.zephyr.server.core.Dispatcher());
+        zephyr.init();
+
+        Thread zephyrRunner = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                zephyr.start();
+            }
+        });
+        zephyrRunner.setName("zephyr");
+        zephyrRunner.start();
+
+        // start up xray
+        xray = new XRayServer(xrayAddress.getHostName(), (short) xrayAddress.getPort(), new com.aerofs.xray.server.core.Dispatcher());
+        xray.init();
+        Thread xrayRunner = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                xray.start();
+            }
+        });
+        xrayRunner.setName("xray");
+        xrayRunner.start();
+
+        // start the individual client transports
         l.info("RUNNING END-TO-END TRANSPORT TEST FOR {} T0:{} D0:{}, T1:{} D1:{}, T2:{} D2:{}, T3:{} D3:{}",
                 transportType,
                 transport0.getTransport().id(),
@@ -122,6 +165,14 @@ public final class TestTransports
     public void teardown()
     {
         l.info("ENDING END-TO-END TRANSPORT TEST FOR {}", transportType);
+
+        if (zephyr != null) {
+            zephyr.stop();
+        }
+
+        if (xray != null) {
+            xray.stop();
+        }
 
         if (streamSender != null) {
             streamSender.stop();
@@ -341,6 +392,7 @@ public final class TestTransports
         // this will force the following to happen:
         // peer0 ---> peer1
         // peer0 ---> peer2
+        // peer0 ---> peer3
 
         SID sharedStore = SID.generate();
 
@@ -377,7 +429,6 @@ public final class TestTransports
         // now, try again to send a packet to each peer (they should fail)
         for (DID did : otherDIDs) {
             assertSendBlockingFailed(transport0, did);
-
         }
 
         // OK, now, lets resume sync

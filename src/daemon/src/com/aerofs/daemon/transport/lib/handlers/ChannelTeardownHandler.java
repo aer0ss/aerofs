@@ -123,7 +123,7 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
 
         Channel channel = e.getChannel();
 
-        l.warn("{} closing {} because of uncaught err on {}",
+        l.warn("{} closing {} because of uncaught err",
                 did,
                 TransportUtil.hexify(channel),
                 LogUtil.suppress(

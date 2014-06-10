@@ -33,14 +33,10 @@ public class Zephyr
         // run zephyr
 
         try {
-            Dispatcher d = new Dispatcher();
-            d.init();
-
             l.info("zephyr: {}:{}", host, port);
-            ZephyrServer z = new ZephyrServer(host, port, d);
+            ZephyrServer z = new ZephyrServer(host, port, new Dispatcher());
             z.init();
-
-            d.run(); // blocking run
+            z.start(); // blocking run
         } catch (IOException e) {
             l.error("zephyr fail run on {}:{} err:{}", host, port, e);
         }
