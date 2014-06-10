@@ -28,6 +28,7 @@ import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeRenegotiation;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -52,7 +53,6 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -65,7 +65,6 @@ import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
@@ -74,10 +73,10 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
  */
 final class ZephyrConnectionService implements ILinkStateListener, IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener
 {
-    private static final Predicate<Entry<DID,Channel>> TRUE_FILTER = new Predicate<Entry<DID, Channel>>()
+    private static final Predicate<Channel> TRUE_FILTER = new Predicate<Channel>()
     {
         @Override
-        public boolean apply(@Nullable Entry<DID, Channel> entry)
+        public boolean apply(@Nullable Channel channel)
         {
             return true;
         }
@@ -190,7 +189,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             unicastListener.onUnicastUnavailable();
         }
 
-        Predicate<Entry<DID, Channel>> channelsToDisconnectFilter;
+        Predicate<Channel> channelsToDisconnectFilter;
 
         if (!current.isEmpty()) {
             final Set<InetAddress> removedAddresses = newHashSet();
@@ -206,12 +205,12 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
             // only remove the channels with a local address
             // that matches one belonging to the removed interface
-            channelsToDisconnectFilter = new Predicate<Entry<DID, Channel>>()
+            channelsToDisconnectFilter = new Predicate<Channel>()
             {
                 @Override
-                public boolean apply(@Nullable Entry<DID, Channel> entry)
+                public boolean apply(@Nullable Channel entry)
                 {
-                    InetAddress address = ((InetSocketAddress) checkNotNull(entry).getValue().getLocalAddress()).getAddress();
+                    InetAddress address = ((InetSocketAddress) checkNotNull(entry).getLocalAddress()).getAddress();
                     l.trace("local address:{}", address);
                     return removedAddresses.contains(address);
                 }
@@ -313,11 +312,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
                 Channel closedChannel = future.getChannel();
                 boolean removed = channels.remove(did, closedChannel);
-                if (removed) {
-                    l.info("{} remove channel", did);
-                } else {
-                    l.warn("{} already removed channel", did);
-                }
+                l.info("{} {} channel", did, (removed ? "remove" : "already removed"));
             }
         });
 
@@ -331,12 +326,11 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         disconnectChannel(did, cause);
     }
 
-    private void disconnectChannels(Predicate<Map.Entry<DID, Channel>> filter, Exception cause)
+    private void disconnectChannels(Predicate<Channel> filter, Exception cause)
     {
-        Map<DID, Channel> channelsCopy = newHashMap(channels); // copy to prevent ConcurrentModificationException
-        for (Map.Entry<DID, Channel> entry : channelsCopy.entrySet()) {
-            if (filter.apply(entry)) {
-                disconnectChannel(entry.getKey(), cause);
+        for (Channel channel : channels.values()) {
+            if (filter.apply(channel)) {
+                getZephyrClient(channel).disconnect(cause);
             }
         }
     }
@@ -348,7 +342,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             l.warn("{} disconnect ignored - no channel", did);
             return;
         }
-
         getZephyrClient(channel).disconnect(cause);
     }
 
@@ -431,12 +424,12 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         // hasn't completed, then you're going to be sitting around waiting for
         // timeouts. Instead, why not just close you right now?
 
-        Predicate<Map.Entry<DID, Channel>> handshakeIncompletePredicate = new Predicate<Entry<DID, Channel>>()
+        Predicate<Channel> handshakeIncompletePredicate = new Predicate<Channel>()
         {
             @Override
-            public boolean apply(@Nullable Entry<DID, Channel> entry)
+            public boolean apply(@Nullable Channel entry)
             {
-                ZephyrClientHandler zephyrClient = getZephyrClient(checkNotNull(entry).getValue());
+                ZephyrClientHandler zephyrClient = getZephyrClient(checkNotNull(entry));
                 return (!zephyrClient.hasHandshakeCompleted()); // keep alive if you've completed handshaking
             }
         };
