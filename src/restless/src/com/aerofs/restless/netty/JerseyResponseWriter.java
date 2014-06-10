@@ -26,6 +26,8 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,6 +36,8 @@ import java.util.Map;
 
 class JerseyResponseWriter implements ContainerResponseWriter
 {
+    private final static Logger l = LoggerFactory.getLogger(JerseyResponseWriter.class);
+
     private final Configuration _config;
 
     private final Channel _channel;
@@ -60,6 +64,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
             @Override
             public void operationComplete(ChannelFuture cf)
             {
+                l.debug("response trailer {} {} {}", _channel, cf.isSuccess(), _keepAlive);
                 if (cf.isSuccess()) {
                     cf = cf.getChannel().write(EMPTY);
                     if (!_keepAlive) cf.addListener(CLOSE);

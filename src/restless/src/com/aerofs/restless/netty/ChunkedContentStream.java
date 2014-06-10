@@ -10,12 +10,16 @@ import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
 import org.jboss.netty.handler.stream.ChunkedInput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ChunkedInput for ContentStream
  */
 class ChunkedContentStream implements ChunkedInput
 {
+    private final static Logger l = LoggerFactory.getLogger(ChunkedContentStream.class);
+
     private final ContentStream _stream;
 
     ChunkedContentStream(ContentStream stream)
@@ -34,6 +38,7 @@ class ChunkedContentStream implements ChunkedInput
     {
         ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
         _stream.writeChunk(new ChannelBufferOutputStream(buffer));
+        l.debug("streaming chunk {}", buffer.readableBytes());
         return new DefaultHttpChunk(buffer);
     }
 
