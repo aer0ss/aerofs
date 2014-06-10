@@ -1715,6 +1715,7 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
+    @Override
     public ListenableFuture<Void> sendDryadEmail(String strDryadID,
             String contactEmail, String description)
             throws Exception
