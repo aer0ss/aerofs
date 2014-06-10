@@ -26,7 +26,7 @@ import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A base clas for Netty clients with auto-reconnection capability
+ * A base class for Netty clients with auto-reconnection capability
  */
 public abstract class AbstractNettyReconnectingClient
 {
@@ -53,6 +53,10 @@ public abstract class AbstractNettyReconnectingClient
             if (cf.isSuccess()) {
                 l.info("{} open", AbstractNettyReconnectingClient.this);
                 _reconnectDelay = MIN_RETRY_DELAY;
+            } else {
+                l.warn("{} failed to connect", AbstractNettyReconnectingClient.this,
+                        BaseLogUtil.suppress(cf.getCause(),
+                                ConnectException.class, ClosedChannelException.class));
             }
         }
     };
@@ -87,7 +91,7 @@ public abstract class AbstractNettyReconnectingClient
     public ChannelFuture connect()
     {
         _bootstrap.setPipelineFactory(pipelineFactory());
-        // NB: create a new InetSocketAddress on every connnection, otherwise failure to resolve
+        // NB: create a new InetSocketAddress on every connection, otherwise failure to resolve
         // DNS on the first connection will prevent any future connection form ever succeeding
         return _bootstrap.connect(new InetSocketAddress(_host, _port));
     }
@@ -128,7 +132,7 @@ public abstract class AbstractNettyReconnectingClient
 
     private void scheduleReconnect(Throwable e)
     {
-        l.warn("{} auto-reconnect in {}s", this, _reconnectDelay,
+        l.warn("{} schedule reconnect in {}s", this, _reconnectDelay,
                 BaseLogUtil.suppress(e, ConnectException.class, ClosedChannelException.class));
 
         _timer.newTimeout(new TimerTask() {
@@ -136,9 +140,10 @@ public abstract class AbstractNettyReconnectingClient
             public void run(Timeout timeout) throws Exception
             {
                 if (_closeRequested) {
-                    l.info("REST tunnel closed");
+                    l.info("{} closed", this);
                     _running = false;
                 } else {
+                    l.debug("{} reconnect", this);
                     tryConnect();
                 }
             }
