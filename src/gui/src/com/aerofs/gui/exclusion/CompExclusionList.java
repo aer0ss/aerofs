@@ -4,14 +4,14 @@ import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
-import com.aerofs.gui.common.SeparatorRenderer;
+import com.aerofs.gui.common.BackgroundRenderer;
 import com.aerofs.lib.Path;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
-import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
@@ -29,15 +29,16 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.slf4j.Logger;
 
-import java.util.Collections;
-import java.util.HashSet;
+import java.io.File;
+import java.util.Collection;
 import java.util.List;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.Set;
 
 public class CompExclusionList extends Composite
 {
     private static final Logger l = Loggers.getLogger(GUI.class);
-    public static final String FOLDER_DATA = "FOLDER_DATA";
+    public static final String PATH_DATA = "PATH_DATA";
 
     Table _table;
     Model _m;
@@ -46,11 +47,10 @@ public class CompExclusionList extends Composite
     {
         super(parent, SWT.NONE);
         setLayout(new FillLayout(SWT.HORIZONTAL));
-
-        _table = new Table(this, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.H_SCROLL);
-       _table.addListener(SWT.EraseItem, new SeparatorRenderer(getDisplay(),_table,
-                FOLDER_DATA));
-       _table.addListener(SWT.Resize, new SelectiveSyncTableResizeListener());
+        _table = new Table(this, SWT.BORDER);
+        _table.setFocus();
+        _table.addListener(SWT.EraseItem, new BackgroundRenderer(_table, PATH_DATA, true));
+        _table.addListener(SWT.Resize, new SelectiveSyncTableResizeListener());
         createTableColumns();
         try {
             _m = getPrevSyncedAndExpelledFolders();
@@ -67,7 +67,7 @@ public class CompExclusionList extends Composite
         // column at the beginning and then checkbox in the second column.
         TableColumn spaceColumn = new TableColumn(_table, SWT.NONE);
         // This column i.e. column 1 will hold the checkbox.
-        TableColumn checkboxColumn = new TableColumn(_table, SWT.NONE);
+        TableColumn checkboxColumn = new TableColumn(_table, SWT.LEFT);
         // This column will i.e. column 2 will hold the folder icon and name.
         TableColumn folderNameIcnColumn = new TableColumn(_table, SWT.FILL);
         // Again this is because of Windows magic. Need to hardcode the widths.
@@ -82,31 +82,35 @@ public class CompExclusionList extends Composite
 
     private void addSeparatorToTable(TableItem item, String separatorText)
     {
-        item.setData(FOLDER_DATA, null);
+        item.setData(PATH_DATA, null);
         item.setFont(GUIUtil.makeBold(item.getFont()));
         item.setText(2, separatorText);
     }
 
-    private void addFolderToTableItem(TableItem item, FolderData currentFolder, TableEditor editor)
+    private void addFolderToTableItem(final TableItem item, Path currentPath, TableEditor editor)
     {
-        item.setData(FOLDER_DATA, currentFolder);
+        // Setting item data to distinguish between separator and folders.
+        item.setData(PATH_DATA, currentPath);
         final Button button = GUIUtil.createButton(_table, SWT.CHECK);
+        button.setBackground(_table.getBackground());
         button.pack();
-        editor.setColumn(1);
         editor.horizontalAlignment = SWT.LEFT;
         editor.minimumWidth = button.getSize().x;
         editor.setEditor(button, item, 1);
-
-        button.setSelection((!_m._alreadyExcluded.contains(currentFolder)));
+        button.setSelection((!_m._alreadyExcluded.contains(currentPath)));
         // Associating data with button so that when we retrieve checked buttons, we can get
         // data about the folder which we are going to include. Since the control is not a CheckBox
         // table viewer or tree viewer it is not very easy to get state of the checkbox from
         // TableItems.
-        button.setData(FOLDER_DATA, currentFolder);
-        button.addSelectionListener(new SelectiveSyncSelectionAdapter(button, currentFolder));
+        button.setData(PATH_DATA, currentPath);
+        FolderData folderData = _m._external.containsKey(currentPath) ?
+                _m._external.get(currentPath) : _m._internal.get(currentPath);
+        button.addSelectionListener(new SelectiveSyncSelectionAdapter(button, currentPath,
+                folderData, _m._external));
         // Not a big fan of hardcoding column numbers but life is hard.
-        item.setImage(2, Images.get(Images.ICON_SHARED_FOLDER));
-        item.setText(2, currentFolder._name);
+        item.setImage(2, folderData._isShared ? Images.get(Images.ICON_SHARED_FOLDER) :
+                Images.get(Images.ICON_FOLDER));
+        item.setText(2, folderData._name);
     }
 
     private List<Object> getTableContent()
@@ -115,13 +119,13 @@ public class CompExclusionList extends Composite
 
         List<Object> tableContents = Lists.newArrayList();
 
-        for(FolderData folder: _m._internal) {
-            tableContents.add(folder);
+        for(Path path: _m._internal.keySet()) {
+            tableContents.add(path);
         }
         if (needSeparator) {
             tableContents.add("Folders outside your AeroFS folder");
-            for(FolderData folder: _m._external) {
-                tableContents.add(folder);
+            for(Path path: _m._external.keySet()) {
+                tableContents.add(path);
             }
         }
         return tableContents;
@@ -130,131 +134,107 @@ public class CompExclusionList extends Composite
     private class SelectiveSyncSelectionAdapter extends SelectionAdapter
     {
         private final Button _button;
-        private final FolderData _currentFolder;
+        private final Path  _currentPath;
+        private final FolderData _folderData;
+        private final Map<Path, FolderData> _external;
 
-        public SelectiveSyncSelectionAdapter(Button button, FolderData currentFolder)
+        public SelectiveSyncSelectionAdapter(Button button, Path currentPath, FolderData folderData,
+                Map<Path, FolderData> external)
         {
             _button = button;
-            _currentFolder = currentFolder;
+            _currentPath = currentPath;
+            _folderData = folderData;
+            _external = external;
         }
 
         @Override
         public void widgetSelected(SelectionEvent e)
         {
-            // Show dialog box only if: 1. The checkbox is selected, 2. The selected folder is
-            // an external folder, 3. The selected folder belongs to the excluded list (the last one
-            // prevents the dialog box from opening if we uncheck and check an external folder, because
-            // without clicking "OK" no unlinking has actually been done.
-            if (_button.getSelection() && _currentFolder._path.toPB().getElemCount() == 0 &&
-                    _m._alreadyExcluded.contains(_currentFolder)) {
+            // Show dialog box only if:
+            // 1. The checkbox is selected
+            // 2. The selected folder is an external folder
+            // 3. The selected folder belongs to the excluded list. This prevents the dialog box
+            // from opening if we uncheck and check an external folder, because without clicking
+            // "OK" no unlinking has actually been done.
+            if (_button.getSelection() && _currentPath.toPB().getElemCount() == 0 &&
+                    _m._alreadyExcluded.contains(_currentPath)) {
                 DirectoryDialog dlg = new DirectoryDialog(getShell(), SWT.SHEET);
                 dlg.setMessage("Select a location to sync this folder into");
-                String path = dlg.open();
+                String absPath = dlg.open();
 
-                if (path == null || !GUI.get().ask(getShell(), MessageType.QUESTION,
-                        "Are you sure you want to sync " + _currentFolder._name +
-                                " to:\n\n" + path + "?")) {
-                    _button.setSelection(false);
-                    return;
+                if( absPath != null) {
+                    File f = new File(absPath);
+                    // Extracting the last name of the location chosen to sync into.
+                    // If user decides to share / or C:/, we need to get the Absolute Path.
+                    // I know I am being ridiculous but life is a vampire of sorts.
+                    String syncingDirName = f.getName().length() > 0 ? f.getName() :
+                            f.getAbsolutePath();
+                    if (GUI.get().ask(getShell(), MessageType.QUESTION, "You are choosing to sync "+
+                            _folderData._name + " to:\n\n" + absPath + "\n\nThis will start syncing" +
+                            " everything within " + syncingDirName + ". " +
+                            "Do you still want to continue?")) {
+                        _external.put(_currentPath, new FolderData(_folderData._name,
+                                _folderData._isShared, _folderData._isInternal, absPath));
+                        return;
+                    }
                 }
-                _currentFolder._absPath = path;
+                _button.setSelection(false);
             }
         }
     }
 
     /**
-     * This function populates the selective sync dialog. It:
-     * 1. Creates 3 columns, one each for a checkbox, folder icon and folder name.
-     * 2. Creates the total number of table items which is total # of folders + a separator.
-     * 3. Populates the table by first inserting all internal folders, then a separator and then
-     * external folders.
+     * This function populates the selective sync dialog. It populates the table by first inserting
+     * all internal folders, then a separator and then external folders.
      */
     private void fill()
     {
         List<Object> tableContent = getTableContent();
 
         for (Object elem: tableContent) {
-            TableItem ti = new TableItem(_table, SWT.FILL);
+            TableItem ti = new TableItem(_table, SWT.NONE);
             TableEditor editor = new TableEditor(_table);
-
-            if (elem instanceof FolderData) {
-                final FolderData currentFolder = (FolderData)elem;
-                addFolderToTableItem(ti, currentFolder, editor);
+            if (elem instanceof Path) {
+                final Path currentPath = (Path)elem;
+                addFolderToTableItem(ti, currentPath, editor);
             } else if (elem instanceof String) {
                 addSeparatorToTable(ti, (String) elem);
             }
         }
     }
 
-    class FolderData implements Comparable<FolderData> {
-       public Path _path;
-       public String _name;
-       public String _absPath;
-
-       FolderData(Path path, String name, String absPath) {
-           _path = path;
-           _name = name;
-           _absPath = absPath;
-       }
-
-        @Override
-        public boolean equals(Object ob) {
-            return (this == ob) || (ob instanceof FolderData
-                                            && Objects.equal(_path, ((FolderData)ob)._path));
-        }
-
-        @Override
-        public int hashCode() {
-            return _path.hashCode();
-        }
-
-
-        @Override
-        public int compareTo(FolderData folderData)
-        {
-            return this._name.compareTo(folderData._name);
-        }
-    }
-
-    static boolean isInternalFolder(FolderData folder) {
-        return folder._path.toPB().getElemCount() > 0;
-    }
-
     /**
      * A private model class that maintains a set of:
      * 1. Set of already excluded folders.
-     * 2. Set of all internal folders
-     * 3. Set of all external folders.
+     * 2. Map of all internal folders
+     * 3. Map of all external folders.
      */
     private static class Model
     {
-        HashSet<FolderData> _alreadyExcluded;
-        // These are Tree sets because we need them to be ordered.
-        TreeSet<FolderData> _internal;
-        TreeSet<FolderData> _external;
+        Set<Path> _alreadyExcluded;
+        // These are Tree maps because we need them to be ordered.
+        Map<Path, FolderData> _internal;
+        Map<Path, FolderData> _external;
     }
 
     Model getPrevSyncedAndExpelledFolders() throws Exception
     {
         Model m = new Model();
         m._alreadyExcluded = Sets.newHashSet();
-        m._internal = Sets.newTreeSet();
-        m._external = Sets.newTreeSet();
 
-        for (PBSharedFolder sharedFolder: UIGlobals.ritual().listSharedFolders().getSharedFolderList()){
-            Path path = Path.fromPB(sharedFolder.getPath());
-            FolderData folderData = new FolderData(path, sharedFolder.getName(),
-                    UIUtil.absPathNullable(path));
-            // If the folder is not admitted(or linked) then add to the excluded list.
-            if (!sharedFolder.getAdmittedOrLinked()) {
-                m._alreadyExcluded.add(folderData);
-            }
-            if (sharedFolder.getPath().getElemCount() > 0) {
-                m._internal.add(folderData);
-            } else {
-                m._external.add(folderData);
-            }
-        }
+        List<PBSharedFolder> sharedFolders = UIGlobals.ritual()
+                .listSharedFolders()
+                .getSharedFolderList();
+
+        Collection<PBSharedFolder> internalStores =
+                UIUtil.filterStoresIntoInternalOrExternal(sharedFolders, true);
+        Collection<PBSharedFolder> externalStores =
+                UIUtil.filterStoresIntoInternalOrExternal(sharedFolders, false);
+
+        m._internal = SharedFolderToFolderDataConverter.getAllInternalFolders(internalStores);
+        m._external = SharedFolderToFolderDataConverter.resolveStoresToPathFolderDataMap(
+                externalStores);
+        m._alreadyExcluded = SharedFolderToFolderDataConverter.getAllExcludedFolders(sharedFolders);
         return m;
     }
 
@@ -262,49 +242,46 @@ public class CompExclusionList extends Composite
      * This function returns a operations object that contains which folders are to be selectively
      * synced.
      *
-     * Folders in the excluded set = (Set of all folders - Set of excluded
-     * folders when we populated the list) - Set of all checked folders
-     * This will avoid trying to exclude an already excluded folder.
-     *
-     * Folders in included list = (Set of all checked folders - Set of excluded
+     *  Folders in the newly included list = (Set of all checked folders (Intersect) Set of excluded
      * folders when we populated the list)
-     * This will avoid including any folders that have already been included
+     * This will avoid including any folders that have already been included.
+     *
+     * Folders in the newly excluded set = (Set of all  unchecked folders - Set of excluded folders
+     * when we populated the list)
+     * This will avoid trying to exclude an already excluded folder.
      */
-    Operations getOperations()
+    SelectivelySyncedFolders computeSelectivelySyncedFolders()
     {
-        Operations ops = new Operations();
+        SelectivelySyncedFolders ssf = new SelectivelySyncedFolders();
         if (_m == null) {
-            ops._newlyExcludedFolders = Collections.emptySet();
-            ops._newlyIncludedFolders = Collections.emptySet();
-            return ops;
+            ssf._newlyExcludedFolders = Maps.newHashMap();
+            ssf._newlyIncludedFolders = Maps.newHashMap();
+            return ssf;
         }
 
-        HashSet<FolderData> allCheckedFolders = Sets.newHashSet();
+        Map<Path, FolderData> allFolders = Maps.newHashMap(_m._internal);
+        allFolders.putAll(_m._external);
+
+        Map<Path, FolderData> allCheckedFolders = Maps.newHashMap();
+        Map<Path, FolderData> allUnCheckedFolders = Maps.newHashMap();
 
         for(Control control: _table.getChildren()) {
             if (control instanceof Button) {
                 Button checkBox = (Button)control;
+                Path path = (Path)checkBox.getData(PATH_DATA);
                 if (checkBox.getSelection()) {
-                    FolderData folderData = (FolderData)checkBox.getData(FOLDER_DATA);
-                    allCheckedFolders.add(folderData);
+                    allCheckedFolders.put(path, allFolders.get(path));
+                } else {
+                    allUnCheckedFolders.put(path, allFolders.get(path));
                 }
             }
         }
-        HashSet<FolderData> newlyCheckedFolders =
-                Sets.newHashSet(allCheckedFolders);
-        newlyCheckedFolders.retainAll(_m._alreadyExcluded);
+        ssf._newlyIncludedFolders = Maps.newHashMap(allCheckedFolders);
+        ssf._newlyIncludedFolders.keySet().retainAll(_m._alreadyExcluded);
 
-        ops._newlyIncludedFolders = Sets.newHashSet(newlyCheckedFolders);
-
-        ops._newlyExcludedFolders = Sets.newHashSet();
-        // Add all folders.
-        ops._newlyExcludedFolders.addAll(_m._internal);
-        ops._newlyExcludedFolders.addAll(_m._external);
-
-        ops._newlyExcludedFolders.removeAll(_m._alreadyExcluded);
-        ops._newlyExcludedFolders.removeAll(allCheckedFolders);
-
-        return ops;
+        ssf._newlyExcludedFolders = Maps.newHashMap(allUnCheckedFolders);
+        ssf._newlyExcludedFolders.keySet().removeAll(_m._alreadyExcluded);
+        return ssf;
     }
 
     /**

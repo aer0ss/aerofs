@@ -10,8 +10,8 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
-import com.aerofs.gui.common.SeparatorRenderer;
 import com.aerofs.gui.TaskDialog;
+import com.aerofs.gui.common.BackgroundRenderer;
 import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.sharing.AddSharedFolderDialogs.IShareNewFolderCallback;
 import com.aerofs.labeling.L;
@@ -20,6 +20,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.ui.IUI.MessageType;
@@ -48,10 +49,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -80,10 +78,8 @@ class SharedFolderList extends Composite
     private static final String ABS_PATH_DATA = "AbsPath";
 
     private static final String OPEN_UNLINKED_FOLDERS_MSG = "This folder cannot be opened because " +
-            "it is not currently syncing to this device. To sync it to this device, " +
-            "please select it in the Selective Sync Dialog under the Advanced tab in " +
-            "Preferences.\n\nYou can still share this folder with others without syncing.";
-
+            "it is not currently syncing to this device. You can still share this folder or " +
+            " change its permissions without syncing.";
 
     SharedFolderList(Composite composite, int style)
     {
@@ -105,7 +101,7 @@ class SharedFolderList extends Composite
         Composite c = DlgManageSharedFolders.newTableWrapper(this, 1);
         c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
-        _table = new Table(c, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.H_SCROLL);
+        _table = new Table(c, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
         _table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         _table.addSelectionListener(new SelectionAdapter()
         {
@@ -126,15 +122,21 @@ class SharedFolderList extends Composite
             }
         });
         // Listener to draw the separator. A simple setBackground will not work on Windows. So we
-        // have to use GC to draw the background for the separator.
-        _table.addListener(SWT.EraseItem, new SeparatorRenderer(getDisplay(), _table, PATH_DATA));
-        // Windows happened again. To make the highlight and separator background resize properly
-        // we need this listener again.
-        _table.addListener(SWT.MeasureItem, new Listener() {
-            public void handleEvent(Event event) {
-                event.width = _table.getClientArea().width;
-            }
-        });
+        // have to use GC to draw the background for the separator. Have to pass in the composite
+        // here so that the gray background is drawn according to width of sash.
+        _table.addListener(SWT.EraseItem, new BackgroundRenderer(composite, PATH_DATA, false));
+        if (!OSUtil.isLinux()) {
+            // Not attaching this listener on linux because it makes the scroll bars disappear and
+            // they only come back after resizing the sashForm. There is prolly some better way to
+            // to do this without using the if. TODO: Abhishek
+            _table.addListener(SWT.MeasureItem, new Listener()
+            {
+                public void handleEvent(Event event)
+                {
+                    event.width = _table.getClientArea().width;
+                }
+            });
+        }
         // tooltip is the absPath, which only make sense for Linked storage
         if (Cfg.storageType() == StorageType.LINKED) {
             new TableToolTip(_table, ABS_PATH_DATA);
@@ -219,9 +221,18 @@ class SharedFolderList extends Composite
         try {
             final Path path = selectedPath();
             GUI askToSyncGui = new GUI();
-            //askToSyncGui.
-            if (askToSyncGui.ask(getShell(), MessageType.INFO, OPEN_UNLINKED_FOLDERS_MSG,
-                    "Open Selective Sync Dialog",
+
+            // We want to display this only if the shared folder is not at the top level of folders
+            // within AeroFS. For example this message should be displayed if the shared folder is
+            // AeroFS/foo/bar but shouldn't be displayed if the shared folder is AeroFS/foo. When
+            // the user tries to open bar, we let him know that he needs to sync foo for that to
+            // happen.
+            String pathHelpInfo = "\n\nTo sync this folder on this device, please select " +
+                    (path.toPB().getElemCount() > 1 ? (path.toPB().getElem(0) + " ") : "it ") +
+                    "in the Selective Sync dialog under the Advanced tab in Preferences." ;
+            String askMsg = OPEN_UNLINKED_FOLDERS_MSG + pathHelpInfo;
+
+            if (askToSyncGui.ask(getShell(), MessageType.INFO, askMsg, "Open Selective Sync Dialog",
                     "Not Now")) {
                 new DlgExclusion(getShell()).openDialog();
                 refreshAsync(new Runnable()
@@ -230,7 +241,7 @@ class SharedFolderList extends Composite
                     public void run()
                     {
                         // This makes sure that the same folder is selected in the table
-                        // after refresing it.
+                        // after refreshing it.
                         select(path);
                         _memberList.setFolder(path, selectedName());
                     }
@@ -331,8 +342,7 @@ class SharedFolderList extends Composite
                         setLoading(false);
                         ErrorMessages.show(getShell(), e, "Failed to retrieve shared folders.");
                     }
-                }, new GUIExecutor(SharedFolderList.this)
-        );
+                }, new GUIExecutor(SharedFolderList.this));
     }
 
     /**
@@ -391,35 +401,6 @@ class SharedFolderList extends Composite
         ti.setFont(GUIUtil.makeBold(ti.getFont()));
     }
 
-    /**
-     * Given a collection of PBSharedFolders, gets internal or external folders depending upon
-     * the boolean value passed in.
-     */
-    private Collection<PBSharedFolder> filterStoresIntoInternalOrExternal(
-            Collection<PBSharedFolder> folders,
-            boolean isInternal)
-    {
-        List<PBSharedFolder> filteredStores = new ArrayList<PBSharedFolder>();
-
-        for (PBSharedFolder folder : folders) {
-            // Path.getElemCount is 0 for external folders and > 0 for internal folders.
-            if ((folder.getPath().getElemCount() > 0) == isInternal) {
-                filteredStores.add(folder);
-            }
-        }
-        // Sort the shared folders based on their names.
-        Collections.sort(filteredStores, new Comparator<PBSharedFolder>()
-        {
-            @Override
-            public int compare(PBSharedFolder o1, PBSharedFolder o2)
-            {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
-
-        return filteredStores;
-    }
-
     private List<Object> getTableContent(Collection<PBSharedFolder> internalStores,
             Collection<PBSharedFolder> externalStores)
     {
@@ -449,12 +430,10 @@ class SharedFolderList extends Composite
     private void fill(List<PBSharedFolder> sharedFolders)
     {
         // Split the shared folders into internal and external shared folders
-        Collection<PBSharedFolder> internalStores = filterStoresIntoInternalOrExternal(
-                sharedFolders,
-                true);
-        Collection<PBSharedFolder> externalStores = filterStoresIntoInternalOrExternal(
-                sharedFolders,
-                false);
+        Collection<PBSharedFolder> internalStores = UIUtil.filterStoresIntoInternalOrExternal(
+                sharedFolders, true);
+        Collection<PBSharedFolder> externalStores = UIUtil.filterStoresIntoInternalOrExternal(
+                sharedFolders, false);
 
         List<Object> tableContent = getTableContent(internalStores, externalStores);
 

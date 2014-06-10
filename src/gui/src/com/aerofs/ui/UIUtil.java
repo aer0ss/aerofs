@@ -33,8 +33,6 @@ import com.aerofs.ui.launch_tasks.ULTRtrootMigration;
 import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToMigrate;
 import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToReloadCfg;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
@@ -43,8 +41,11 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -402,27 +403,31 @@ public class UIUtil
     }
 
     /**
-     * Maps a collection of PBSharedFolders to Paths, resolves the shared folder names, and sorts
-     * the Paths by shared folder names.
-     *
-     * TODO (AT): there's no good reason why these shared folder specific utility methods are here.
-     * We should pull these out of UIUtil and into a different util/helper class.
+     * Given a collection of PBSharedFolders, gets internal or external folders depending upon
+     * the boolean value passed in.
      */
-    public static Collection<Entry<String, Path>> getPathsSortedByName(
-            Collection<PBSharedFolder> folders)
+    public static Collection<PBSharedFolder> filterStoresIntoInternalOrExternal(
+            Collection<PBSharedFolder> folders, boolean isInternal)
     {
-        // use a tree multimap because the names may conflicts and we want the entries sorted.
-        Multimap<String, Path> multimap = TreeMultimap.create();
+        List<PBSharedFolder> filteredStores = new ArrayList<PBSharedFolder>();
 
         for (PBSharedFolder folder : folders) {
-
-            if (folder.getAdmittedOrLinked()) {
-                Path path = Path.fromPB(folder.getPath());
-                String name = sharedFolderName(path, folder.getName());
-                multimap.put(name, path);
+            // Path.getElemCount is 0 for external folders and > 0 for internal folders.
+            if ((folder.getPath().getElemCount() > 0) == isInternal) {
+                filteredStores.add(folder);
             }
         }
-        return multimap.entries();
+        // Sort the shared folders based on their names.
+        Collections.sort(filteredStores, new Comparator<PBSharedFolder>()
+        {
+            @Override
+            public int compare(PBSharedFolder o1, PBSharedFolder o2)
+            {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+
+        return filteredStores;
     }
 
     /**

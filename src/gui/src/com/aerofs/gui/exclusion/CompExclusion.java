@@ -5,7 +5,6 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.exclusion.CompExclusionList.FolderData;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
@@ -25,6 +24,8 @@ import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
+
+import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -69,25 +70,25 @@ public class CompExclusion extends Composite
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                Operations ops = _lstExclusion.getOperations();
+                SelectivelySyncedFolders ssf = _lstExclusion.computeSelectivelySyncedFolders();
 
                 // Find reasons to exit early so we don't set busy state nor spawn a new thread to
                 // do no works. Reasons to exit early include no changes, or the user cancels
                 // after we show a warning.
 
                 // no changes
-                if (ops._newlyIncludedFolders.isEmpty() && ops._newlyExcludedFolders.isEmpty()) {
+                if (ssf._newlyIncludedFolders.isEmpty() && ssf._newlyExcludedFolders.isEmpty()) {
                     getShell().close();
                     return;
                 }
 
                 // warn user before we exclude folders, and exits if the user cancels
-                if (!ops._newlyExcludedFolders.isEmpty() &&
+                if (!ssf._newlyExcludedFolders.isEmpty() &&
                         !GUI.get().ask(getShell(), MessageType.WARN, _strWarning)) return;
 
                 setBusyState(true);
                 GUI.get().safeWork(_lstExclusion,
-                        new SetExclusionTask(UIGlobals.ritualClientProvider(), ops));
+                        new SetExclusionTask(UIGlobals.ritualClientProvider(), ssf));
             }
         });
 
@@ -159,12 +160,12 @@ public class CompExclusion extends Composite
         // or disconnect in between calls, and if the channel is not disconnected, we'll just
         // get the cached client anyway.
         private final IRitualClientProvider _ritual;
-        private final Operations _ops;
+        private final SelectivelySyncedFolders _ssf;
 
-        public SetExclusionTask(IRitualClientProvider ritual, Operations ops)
+        public SetExclusionTask(IRitualClientProvider ritual, SelectivelySyncedFolders ssf)
         {
             _ritual = ritual;
-            _ops = ops;
+            _ssf = ssf;
         }
 
         @Override
@@ -172,23 +173,21 @@ public class CompExclusion extends Composite
                 throws Exception
         {
            // N.B. per GUI.safeWork()'s contract, this method is called on a new task thread
-            for (FolderData folderData : _ops._newlyExcludedFolders) {
-                Path path = folderData._path;
-                if (CompExclusionList.isInternalFolder(folderData)) {
+            for (Path path : _ssf._newlyExcludedFolders.keySet()) {
+                if (_ssf._newlyExcludedFolders.get(path)._isInternal) {
                     _ritual.getBlockingClient().excludeFolder(path.toPB());
                 } else {
                     _ritual.getBlockingClient().unlinkRoot(path.sid());
                }
             }
-            for (FolderData folderData : _ops._newlyIncludedFolders) {
-                Path path = folderData._path;
-                if(CompExclusionList.isInternalFolder(folderData)) {
-                    _ritual.getBlockingClient().includeFolder(path.toPB());
+            for (Entry<Path, FolderData> included : _ssf._newlyIncludedFolders.entrySet()) {
+                if(included.getValue()._isInternal) {
+                    _ritual.getBlockingClient().includeFolder(included.getKey().toPB());
                 }
                 else {
-                    _ritual.getBlockingClient().linkRoot(folderData._absPath, path.toPB().getSid()  );
+                    _ritual.getBlockingClient().linkRoot(included.getValue()._absPath,
+                            included.getKey().toPB().getSid());
                 }
-
             }
         }
 
