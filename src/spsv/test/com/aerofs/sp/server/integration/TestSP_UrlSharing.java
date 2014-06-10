@@ -671,4 +671,20 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
             }
         }
     }
+
+    @Test
+    public void listUrlsForStore_shouldListUrlsForRoot() throws Exception
+    {
+        SID root = SID.rootSID(owner.id());
+        OID oid = OID.generate();
+        String soid = root.toStringFormal() + oid.toStringFormal();
+        String token = UniqueID.generate().toStringFormal();
+        service.createUrl(soid, token);
+
+        ListUrlsForStoreReply reply = service.listUrlsForStore(ByteString.copyFromUtf8("root"))
+                .get();
+
+        assertEquals(1, reply.getUrlCount());
+        assertEquals(soid, reply.getUrl(0).getSoid());
+    }
 }

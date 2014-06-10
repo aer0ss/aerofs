@@ -1736,8 +1736,11 @@ public class SPService implements ISPService
         ListUrlsForStoreReply.Builder builder = ListUrlsForStoreReply.newBuilder();
         User caller = _session.getUser();
 
+        SID sid = sharedId.isValidUtf8() && sharedId.toStringUtf8().equals("root") ?
+                SID.rootSID(caller.id()) : new SID(sharedId);
+
         _sqlTrans.begin();
-        SharedFolder sf = _factSharedFolder.create(new SID(sharedId));
+        SharedFolder sf = _factSharedFolder.create(sid);
         if (!sf.exists()) throw new ExNotFound("The folder does not exist");
         sf.throwIfNoPrivilegeToChangeACL(caller);
         for (UrlShare url : _factUrlShare.getAllInStore(sf.id())) {
