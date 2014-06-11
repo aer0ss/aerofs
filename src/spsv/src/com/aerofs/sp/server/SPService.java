@@ -21,6 +21,7 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.ExRateLimitExceeded;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OrganizationID;
@@ -1505,7 +1506,7 @@ public class SPService implements ISPService
 
         if (password != null && _rateLimiter.update(_remoteAddress.get(), key)) {
             l.warn("rate limiter rejected getUrlInfo for {} from {}", key, _remoteAddress.get());
-            // TODO: reject request in some way
+            throw new ExRateLimitExceeded();
         }
 
         _sqlTrans.begin();
@@ -1618,7 +1619,7 @@ public class SPService implements ISPService
         if (password != null && _rateLimiter.update(_remoteAddress.get(), key)) {
             l.warn("rate limiter rejected validateUrlPassword for {} from {}", key,
                     _remoteAddress.get());
-            // TODO: reject request in some way
+            throw new ExRateLimitExceeded();
         }
 
         _sqlTrans.begin();
@@ -2551,7 +2552,7 @@ public class SPService implements ISPService
         if (_rateLimiter.update(_remoteAddress.get(), userId)) {
             l.warn("rate limiter rejected credential sign in for {} from {}", userId,
                     _remoteAddress.get());
-            // TODO: reject request in some way
+            throw new ExRateLimitExceeded();
         }
         User user = _factUser.createFromExternalID(userId);
         IAuthority authority = _authenticator.authenticateUser(

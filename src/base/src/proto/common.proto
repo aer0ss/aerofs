@@ -133,6 +133,10 @@ message PBException {
         // An operation failed because the current software license does not
         // permit the action to be taken
         LICENSE_LIMIT = 412;
+
+        // A request rate limit was exceeded by this request, and even if it was valid, we
+        // refuse to process it.  Cool your jets.
+        RATE_LIMIT_EXCEEDED = 413;
     }
 
     required Type type = 1;
