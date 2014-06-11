@@ -74,7 +74,7 @@
 
     <script>
         $(document).ready(function() {
-            disableEsapingFromModal($('div.modal'));
+            disableEscapingFromModal($('div.modal'));
         });
 
         function promptShutdown(onSuccess) {

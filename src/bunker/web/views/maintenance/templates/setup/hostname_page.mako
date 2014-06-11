@@ -90,7 +90,7 @@
     <script src="${request.static_path('web:static/js/purl.js')}"></script>
     <script>
         $(document).ready(function() {
-            disableEsapingFromModal($('div.modal'));
+            disableEscapingFromModal($('div.modal'));
             populateAndFocusHostname();
         });
 

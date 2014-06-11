@@ -74,7 +74,7 @@ ${common.render_previous_button()}
         $(document).ready(function() {
             initializeProgressModal();
             ## Disalbe esaping from all modals
-            disableEsapingFromModal($('div.modal'));
+            disableEscapingFromModal($('div.modal'));
             initializeModals();
         });
 

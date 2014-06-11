@@ -69,7 +69,7 @@
 
     <script>
         $(document).ready(function() {
-            disableEsapingFromModal($('div.modal'));
+            disableEscapingFromModal($('div.modal'));
             initializeProgressModal();
             $('#backup-file').change(onBackupFileChange);
         });
