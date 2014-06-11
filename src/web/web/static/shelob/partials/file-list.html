@@ -4,73 +4,86 @@
     <button type="button" class="btn btn-default" id="new-folder" ng-click="newFolder.hidden=false">New Folder</button>
   </div>
 
-  <ul class="breadcrumb">
-      <li ng-if="currentFolder.id == 'root'" class="active">My Files</li>
-      <li ng-if="currentFolder.id != 'root'"><a href="#/root">My Files</a></li>
+  <div class="row">
+    <ul class="breadcrumb">
+        <li ng-if="currentFolder.id == 'root'" class="active">My Files</li>
+        <li ng-if="currentFolder.id != 'root'"><a href="#/root">My Files</a></li>
 
-      <li ng-repeat="folder in breadcrumbs">
-        <a href="#/{{folder.id}}">{{folder.name}}</a>
-      </li>
+        <li ng-repeat="folder in breadcrumbs">
+          <a href="#/{{folder.id}}">{{folder.name}}</a>
+        </li>
 
-      <li ng-if="currentFolder.id != 'root'" class="active">
-        {{currentFolder.name}}
-      </li>
-  </ul>
+        <li ng-if="currentFolder.id != 'root'" class="active">
+          {{currentFolder.name}}
+        </li>
+    </ul>
+  </div>
 </div>
 
-<table class="table table-hover" id="file-list">
-  <thead>
-    <tr>
-      <th></th>
-      <th>Name</th>
-      <th>Last Modified</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr ng-if="!newFolder.hidden" id="new-folder">
-        <td class="icon"><img src="/static/shelob/img/icons/40x40/filetype_folder.png"></td>
-        <td class="name">
-          <input in-place-edit
-            type="text"
-            ng-model="newFolder.name"
-            focus-on="!newFolder.hidden"
-            on-submit="submitNewFolder()"
-            on-cancel="cancelNewFolder()"
-            ng-disabled="outstandingRequests > 0"
-          />
-        </td>
-        <td class="last-modified">--</td>
-        <td class="actions"></td>
-      </tr>
+<div id="file-list">
+  <div class="row file-list-head">
+    <div class="col-sm-6">
+      <div class="icon">&nbsp;
+      </div>
+      <div class="name">
+        Name
+      </div>
+    </div>
+    <div class="col-sm-3 last-modified">
+      Last modified
+    </div>
+    <div class="col-sm-3 actions">
+    </div>
+  </div>
+  <div class="file-list-body">
+      <div class="my-row row" ng-if="!newFolder.hidden" id="new-folder">
+        <div class="col-sm-6">
+          <div class="icon"><img src="/static/shelob/img/icons/40x40/filetype_folder.png"></div>
+          <div class="name">
+            <input in-place-edit
+              type="text"
+              ng-model="newFolder.name"
+              focus-on="!newFolder.hidden"
+              on-submit="submitNewFolder()"
+              on-cancel="cancelNewFolder()"
+              ng-disabled="outstandingRequests > 0"
+            />
+          </div>
+        </div>
+        <div class="col-sm-3 last-modified">--</div>
+        <div class="col-sm-3 actions"></div>
+      </div>
 
-      <tr ng-if="!objects.length">
-        <td class="icon"></td>
-        <td colspan="3">No files found</td>
-      </tr>
+      <div class="my-row row" ng-if="!objects.length">
+        <div class="col-sm-12">
+          <div class='icon'>&nbsp;</div>
+          No files found
+        </div>
+      </div>
 
-      <tr ng-repeat="object in objects | orderBy:['-type', 'name']"
-          class="object">
-        <td class="icon">
-          <img ng-if="object.type == 'folder' && !object.is_shared" src="/static/shelob/img/icons/40x40/filetype_folder.png">
-          <img ng-if="object.type == 'folder' && object.is_shared" src="/static/shelob/img/icons/40x40/filetype_shared_folder.png">
-          <div ng-if="object.type == 'file'" aero-icon data-mime-type={{object.mime_type}}></div>
-        </td>
-        <td class="name">
-          <a ng-if="object.type === 'folder'" ng-hide="object.edit" ng-href="#/{{object.id}}">{{object.name}}</a>
-          <a ng-if="object.type === 'file' && object.size > 0" ng-hide="object.edit" ng-click="download(object.id)">{{object.name}}</a>
-          <span ng-if="object.type === 'file' && (object.size === undefined || object.size === null || object.size === 0 || object.size === -1)">{{object.name}}</span>
-          <input in-place-edit
-                 ng-show="object.edit"
-                 type="text"
-                 ng-model="object.newName"
-                 focus-on="object.edit"
-                 on-submit="submitRename(object)"
-                 on-cancel="cancelRename(object)"
-                 ng-disabled="outstandingRequests > 0"/>
-        </td>
-        <td class="last-modified">{{object.last_modified | date: 'short'}}</td>
-        <td class="actions">
+      <div class="my-row row" ng-repeat="object in objects | orderBy:['-type', 'name']">
+        <div class="col-sm-6">
+          <div class="icon">
+            <img ng-if="object.type == 'folder' && !object.is_shared" src="/static/shelob/img/icons/40x40/filetype_folder.png">
+            <img ng-if="object.type == 'folder' && object.is_shared" src="/static/shelob/img/icons/40x40/filetype_shared_folder.png">
+            <div ng-if="object.type == 'file'" aero-icon data-mime-type={{object.mime_type}}></div>
+          </div>
+          <div class="name">
+            <a ng-if="object.type === 'folder'" ng-hide="object.edit" ng-href="#/{{object.id}}">{{object.name}}</a>
+            <a ng-if="object.type === 'file' && object.size > 0" ng-hide="object.edit" ng-click="download(object.id)">{{object.name}}</a>
+            <span ng-if="object.type === 'file' && (object.size === undefined || object.size === null || object.size === 0 || object.size === -1)">{{object.name}}</span>
+            <input in-place-edit
+                   ng-show="object.edit"
+                   type="text"
+                   ng-model="object.newName"
+                   focus-on="object.edit"
+                   on-submit="submitRename(object)"
+                   on-cancel="cancelRename(object)"
+                   ng-disabled="outstandingRequests > 0"/>
+          </div>
+        </div>
+        <div class="col-sm-3 last-modified">{{object.last_modified | date: 'short'}}</div>
+        <div class="col-sm-3 actions">
           <div class="pull-right">
             <div class="btn-group">
               <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
@@ -92,8 +105,8 @@
               </ul>
             </div>
           </div>
-        </td>
+        </div>
       </tr>
 
-  </tbody>
-</table>
+  </div>
+</div>
