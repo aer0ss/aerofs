@@ -89,6 +89,7 @@ public class AuthorizationRequest extends AbstractEntity
   @Column(unique = true)
   private String authorizationCode;
 
+  @Transient
   public @Nullable Long expiresInSeconds;
 
   public AuthorizationRequest() {
