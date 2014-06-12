@@ -78,7 +78,7 @@ class SharedFolderToFolderDataConverter
         Map<Path, FolderData> internalStores = resolveStoresToPathFolderDataMap(stores);
 
         // Sort them folders based on name.
-        TreeMap<Path, FolderData> allInternal = Maps.newTreeMap(new Comparator<Object>()
+        Map<Path, FolderData> allInternal = new TreeMap<Path, FolderData>(new Comparator<Object>()
         {
             @Override
             public int compare(Object o, Object o2)
