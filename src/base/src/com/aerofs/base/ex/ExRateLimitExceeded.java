@@ -4,6 +4,7 @@
 
 package com.aerofs.base.ex;
 
+import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
 public class ExRateLimitExceeded extends AbstractExWirable
@@ -19,5 +20,10 @@ public class ExRateLimitExceeded extends AbstractExWirable
     public ExRateLimitExceeded()
     {
         super();
+    }
+
+    public ExRateLimitExceeded(PBException pb)
+    {
+        super(pb);
     }
 }
