@@ -230,7 +230,7 @@ EOD1
     </body>
 </html>
 EOD2
-    DoEcho "$(date): Updated file://$(PWD)/$htfile"
+    DoEcho "$(date): Updated file://${PWD}/$htfile"
 }
 
 function ScanDir
