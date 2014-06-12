@@ -27,8 +27,8 @@ public class TestSP_SendDryadEmail extends AbstractSPTest
     // used to back up default support email address.
     private String _supportEmail;
 
-    private static final String VALID_DRYAD_ID = "0000DEADBEEF00000000DEADBEEF0000";
-    private static final String INVALID_DRYAD_ID = "DEADBEEF";
+    private static final String VALID_DRYAD_ID = "0000deadbeef00000000deadbeef0000";
+    private static final String INVALID_DRYAD_ID = "deadbeef";
 
     private void setupOnSiteProperties()
             throws Exception
@@ -85,7 +85,7 @@ public class TestSP_SendDryadEmail extends AbstractSPTest
 
         verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(eq("AeroFS"),
                 eq("support@aerofs.com"), eq("replyto@example.com"),
-                eq("AeroFS Problem #0000DEADBEEF00000000DEADBEEF0000"), eq("Customer ID: N/A\n" +
+                eq("AeroFS Problem #0000deadbeef00000000deadbeef0000"), eq("Customer ID: N/A\n" +
                         "Customer Name: Unknown\n" +
                         "Contact Email: replyto@example.com\n\n" +
                         "My plops don't work!"), isNull(String.class)
@@ -104,7 +104,7 @@ public class TestSP_SendDryadEmail extends AbstractSPTest
                 eq("AeroFS"),
                 eq("support@myplops.com"),
                 eq("replyto@example.com"),
-                eq("AeroFS Problem #0000DEADBEEF00000000DEADBEEF0000"),
+                eq("AeroFS Problem #0000deadbeef00000000deadbeef0000"),
                 eq("Customer ID: 9001\n" +
                         "Customer Name: MyPlops Inc.\n" +
                         "Contact Email: replyto@example.com\n\n" +

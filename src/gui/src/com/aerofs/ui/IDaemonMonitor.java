@@ -49,6 +49,11 @@ public interface IDaemonMonitor
             return Cfg.useDM() ? _defaultMonitor : _noopMonitor;
         }
 
+        public static IDaemonMonitor getNoop()
+        {
+            return _noopMonitor;
+        }
+
         /**
          * A 'Null' implementation of IDaemonMonitor which does nothing.
          */

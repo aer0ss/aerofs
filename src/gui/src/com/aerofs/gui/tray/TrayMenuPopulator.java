@@ -15,7 +15,6 @@ import com.aerofs.gui.misc.DlgAbout;
 import com.aerofs.gui.misc.DlgDefect;
 import com.aerofs.gui.transport_diagnostics.DlgTransportDiagnostics;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.S;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.UI;
@@ -90,7 +89,7 @@ public class TrayMenuPopulator
 
     public void addHelpMenuItems()
     {
-        if (!PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
+        if (UIGlobals.defectReporter().isAvailable()) {
             addMenuItem(S.REPORT_A_PROBLEM, new AbstractListener(null)
             {
                 @Override

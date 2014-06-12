@@ -13,6 +13,7 @@ import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.rocklog.RockLog;
+import com.aerofs.ui.defect.DefectReporter;
 import com.aerofs.ui.update.Updater;
 
 import javax.annotation.Nonnull;
@@ -72,6 +73,7 @@ public final class UIGlobals
     private static final UIScheduler s_sched = new UIScheduler();
     private static final Analytics s_analytics = new Analytics(new DesktopAnalyticsProperties());
     private static final RockLog s_rockLog = new RockLog();
+    private static final DefectReporter s_defect = new DefectReporter(s_ritualProvider, dm());
 
     public static void initialize_(boolean createShellextService)
     {
@@ -111,4 +113,6 @@ public final class UIGlobals
     public static Analytics analytics() { return s_analytics; }
 
     public static RockLog rockLog() { return s_rockLog; }
+
+    public static DefectReporter defectReporter() { return s_defect; }
 }

@@ -1,7 +1,6 @@
 package com.aerofs.gui.misc;
 
 import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
@@ -12,7 +11,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.shell.CmdDefect;
+import com.aerofs.ui.defect.DefectReporter;
 import com.aerofs.ui.UIGlobals;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -32,14 +31,11 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.sql.SQLException;
 
 public class DlgDefect extends AeroFSJFaceDialog
 {
-    private static final Logger l = Loggers.getLogger(DlgDefect.class);
     private Text _txtEmailAddress;
     private Text _txtComment;
     private Button _sendDiagnosticData;
@@ -231,13 +227,7 @@ public class DlgDefect extends AeroFSJFaceDialog
             @Override
             public void run()
             {
-                try {
-                    Cfg.db().set(Key.CONTACT_EMAIL, contactEmail);
-                } catch (SQLException e) {
-                    l.warn("set contact email, ignored: " + Util.e(e));
-                }
-
-                CmdDefect.sendDefect(UIGlobals.ritual(), msg, dumpDaemonStatus);
+                UIGlobals.defectReporter().sendDefect(contactEmail, msg, dumpDaemonStatus);
             }
         });
     }

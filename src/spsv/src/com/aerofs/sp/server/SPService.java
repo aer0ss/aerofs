@@ -1719,7 +1719,7 @@ public class SPService implements ISPService
         String fromName = SPParam.EMAIL_FROM_NAME;
         String to = WWW.SUPPORT_EMAIL_ADDRESS;
         String replyTo = contactEmail;
-        String subject = L.brand() + " Problem #" + dryadID.toStringFormal().toUpperCase();
+        String subject = L.brand() + " Problem #" + dryadID.toStringFormal();
         String body = "Customer ID: " + _license.customerID() + "\n" +
                 "Customer Name: " + _license.customerName() + "\n" +
                 "Contact Email: " + contactEmail + "\n\n" +

@@ -10,7 +10,6 @@ import com.aerofs.cli.CLI;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
@@ -22,7 +21,9 @@ import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.hidden.CmdDstat;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.ui.IDaemonMonitor;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.defect.DefectReporter;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -45,6 +46,8 @@ public class ShProgram implements IProgram, ICallback
 
     private final RitualClientProvider _ritualProvider =
             new RitualClientProvider(ChannelFactories.getClientChannelFactory());
+    public final DefectReporter _defectReporter =
+            new DefectReporter(_ritualProvider, IDaemonMonitor.Factory.getNoop());
 
     private Path _pwd;
     private SPBlockingClient _sp;
@@ -142,8 +145,7 @@ public class ShProgram implements IProgram, ICallback
         _runner.addCommand_(new CmdDstat());
         _runner.addCommand_(new CmdSeed());
 
-        // Only available on HC
-        if (!PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) _runner.addCommand_(new CmdDefect());
+        if (_defectReporter.isAvailable()) _runner.addCommand_(new CmdDefect());
     }
 
     // return the abolute path. path can be null to represent pwd
