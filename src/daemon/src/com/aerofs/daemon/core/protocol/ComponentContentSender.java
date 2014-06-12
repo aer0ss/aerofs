@@ -289,10 +289,15 @@ public class ComponentContentSender
 
         MessageDigest md = hash == null ? SecUtil.newMessageDigest() : null;
         if (md != null && prefixLen > 0) {
-            TCB tcb = prefixLen > 4 * C.KB ? tk.pseudoPause_("rehash") : null;
+            TCB tcb = prefixLen > 4 * C.KB ? tk.pseudoPause_("rehash " + k + " " + prefixLen) : null;
             try {
-                ByteStreams.copy(ByteStreams.limit(pf.newInputStream_(), prefixLen),
-                        new DigestOutputStream(ByteStreams.nullOutputStream(), md));
+                InputStream is = pf.newInputStream_();
+                try {
+                    ByteStreams.copy(ByteStreams.limit(is, prefixLen),
+                            new DigestOutputStream(ByteStreams.nullOutputStream(), md));
+                } finally {
+                    is.close();
+                }
             } finally {
                 if (tcb != null) tcb.pseudoResumed_();
             }

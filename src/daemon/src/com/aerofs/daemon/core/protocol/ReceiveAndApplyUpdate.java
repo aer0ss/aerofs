@@ -805,7 +805,7 @@ public class ReceiveAndApplyUpdate
             throws IOException, ExAborted
     {
         // do not release core lock if the prefix is small
-        TCB tcb = prefixLength > 4 * C.KB ? tk.pseudoPause_("rehash") : null;
+        TCB tcb = prefixLength > 4 * C.KB ? tk.pseudoPause_("rehash " + prefixLength) : null;
         try {
             // re-hash prefix. this is not great because it stalls the download
             // an alternative would be to hash the prefix in a different thread
