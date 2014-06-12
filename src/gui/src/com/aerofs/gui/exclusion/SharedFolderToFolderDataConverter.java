@@ -77,14 +77,16 @@ class SharedFolderToFolderDataConverter
         Map<Path, FolderData> topLevelInternalFolders = getTopLevelInternalFolders();
         Map<Path, FolderData> internalStores = resolveStoresToPathFolderDataMap(stores);
 
-        // Sort them folders based on name.
-        Map<Path, FolderData> allInternal = new TreeMap<Path, FolderData>(new Comparator<Object>()
+        // The <Path, Path, FolderData> forces the typed parameters explicitly. This is needed
+        // because of an OpenJDK6 type inference More details found here:
+        // https://code.google.com/p/guava-libraries/issues/detail?id=635 and
+        // https://bugs.openjdk.java.net/browse/JDK-6569074
+        Map<Path, FolderData> allInternal =
+                Maps.<Path, Path, FolderData>newTreeMap(new Comparator<Path>()
         {
             @Override
-            public int compare(Object o, Object o2)
+            public int compare(Path p1, Path p2)
             {
-                Path p1 = (Path)o;
-                Path p2 = (Path)o2;
                 return p1.last().compareTo(p2.last());
             }
         });
