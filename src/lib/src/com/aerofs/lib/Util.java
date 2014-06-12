@@ -6,6 +6,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.ex.ExRateLimitExceeded;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.lib.FileUtil.FileName;
@@ -97,6 +98,7 @@ public abstract class Util
                         .put(Type.UI_MESSAGE, ExUIMessage.class)
                         .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
                         .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
+                        .put(Type.RATE_LIMIT_EXCEEDED, ExRateLimitExceeded.class)
 
                         // exceptions used by shared folder rules
                         .put(Type.SHARING_RULES_WARNINGS, ExSharingRulesWarning.class)
