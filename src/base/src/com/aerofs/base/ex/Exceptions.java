@@ -45,6 +45,7 @@ public class Exceptions
         _types.put(Type.CANNOT_RESET_PASSWORD, ExCannotResetPassword.class);
         _types.put(Type.EXTERNAL_AUTH_FAILURE, ExExternalAuthFailure.class);
         _types.put(Type.LICENSE_LIMIT,       ExLicenseLimit.class);
+        _types.put(Type.RATE_LIMIT_EXCEEDED, ExRateLimitExceeded.class);
         _types.put(Type.SECOND_FACTOR_REQUIRED, ExSecondFactorRequired.class);
     }
 

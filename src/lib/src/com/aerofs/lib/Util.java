@@ -99,8 +99,6 @@ public abstract class Util
                         .put(Type.UI_MESSAGE, ExUIMessage.class)
                         .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
                         .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
-                        .put(Type.RATE_LIMIT_EXCEEDED, ExRateLimitExceeded.class)
-                        .put(Type.SECOND_FACTOR_REQUIRED, ExSecondFactorRequired.class)
 
                         // exceptions used by shared folder rules
                         .put(Type.SHARING_RULES_WARNINGS, ExSharingRulesWarning.class)
