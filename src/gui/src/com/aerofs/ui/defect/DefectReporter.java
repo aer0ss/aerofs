@@ -52,7 +52,7 @@ public class DefectReporter
     public boolean isAvailable()
     {
         // either we are in hybrid cloud, or (we are in private cloud and dryad is enabled).
-        return !PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT || isDryadEnabled();
+        return PrivateDeploymentConfig.isHybridDeployment() || isDryadEnabled();
     }
 
     public void sendDefect(@Nullable String contactEmail, String message, boolean dumpFileNames)
@@ -108,7 +108,7 @@ public class DefectReporter
                     getDaemonStatus(), dumpFileNames);
         } catch (Exception e) {
             // suppress the error in private cloud deployments, because SV will not be set
-            if (!PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
+            if (PrivateDeploymentConfig.isHybridDeployment()) {
                 throw e;
             }
         }

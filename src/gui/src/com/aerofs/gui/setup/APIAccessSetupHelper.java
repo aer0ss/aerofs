@@ -28,7 +28,7 @@ public class APIAccessSetupHelper
 
     public APIAccessSetupHelper()
     {
-        _showAPIAccess = !PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
+        _showAPIAccess = PrivateDeploymentConfig.isHybridDeployment();
     }
 
     public void createCheckbox(Composite parent)

@@ -15,7 +15,7 @@ public class CfgEnabledTransports
 
     public boolean isJingleEnabled()
     {
-        return Cfg.useJingle() && !PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
+        return Cfg.useJingle() && PrivateDeploymentConfig.isHybridDeployment();
     }
 
     public boolean isZephyrEnabled()

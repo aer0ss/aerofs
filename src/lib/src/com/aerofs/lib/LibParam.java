@@ -476,5 +476,12 @@ public class LibParam extends BaseParam
         public static final String                      CONFIG_SERVICE_URL =
                 getStringProperty(                      PROPERTY_CONFIG_SERVICE_URL,
                                                         "");
+
+        // N.B. it's important the following is a function instead of a cached value because we
+        // update the value of IS_PRIVATE_DEPLOYMENT in automated tests.
+        public static boolean isHybridDeployment()
+        {
+            return !IS_PRIVATE_DEPLOYMENT;
+        }
     }
 }

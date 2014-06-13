@@ -424,7 +424,7 @@ public abstract class Updater
 
     private static URLConnection newUpdaterConnection(URL url) throws IOException
     {
-        boolean shouldVerifyHostnamesFromAWS = !PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
+        boolean shouldVerifyHostnamesFromAWS = PrivateDeploymentConfig.isHybridDeployment();
         boolean shouldUseEnterpriseCert = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
 
         return newUpdaterConnectionImpl(url, shouldVerifyHostnamesFromAWS, shouldUseEnterpriseCert);
