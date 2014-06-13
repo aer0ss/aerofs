@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <jni.h>
-#include <vector>
+
 #include "../launcher.lib/liblauncher.h"
 #include "../common/util.h"
 
@@ -9,8 +9,6 @@
 #else
 #include <signal.h>      /* for signal(3).  We need to ignore SIGPIPE. */
 #endif
-
-using namespace std;
 
 static void show_error(const _TCHAR* details);
 
@@ -33,8 +31,8 @@ int main(int argc, char* argv[])
     // SIGPIPE if we want to be able to print any debugging information
     signal(SIGPIPE, SIG_IGN);
 #endif
-    if (argc < 2) {
-        _tprintf(_T("Usage: %s <RTROOT> [JVM_ARGS]\n"), argv[0]);
+    if (argc != 2) {
+        _tprintf(_T("Usage: %s <RTROOT>\n"), argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -64,18 +62,8 @@ int main(int argc, char* argv[])
     // N.B. the GUI/CLI always pass us an absolute path, so we needn't worry about
     // expanding argv[1] == "DEFAULT" to the platform's usual rtroot location.
     tstring heap_dump_option_string = tstring(_T("-XX:HeapDumpPath=")) + tstring(argv[1]);
-    // Vector to hold the args we want to pass to the JVM.
-    vector<_TCHAR*> args;
-    args.push_back(const_cast<_TCHAR*>(heap_dump_option_string.c_str()));
-    // If we have optional JVM arguments then push them into the vector.
-    for (int i = 2; i < argc; i ++) {
-        args.push_back(argv[i]);
-    }
-    args.push_back(argv[1]);
-    args.push_back(_T("daemon"));
-    args.push_back(NULL);
-
-    bool vm_created = launcher_create_jvm(approot, &args[0], &jvm, &env, &errmsg);
+    _TCHAR* args[] = {const_cast<_TCHAR*>(heap_dump_option_string.c_str()), argv[1], _T("daemon"), NULL};
+    bool vm_created = launcher_create_jvm(approot, args, &jvm, &env, &errmsg);
 
     if (!vm_created) {
         _sprintf(msg, sizeof(msg), _T("%s:\n%s"), _T("JVM creation failed"), errmsg);

@@ -4,7 +4,6 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.LaunchArgs;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
@@ -52,15 +51,12 @@ public class DryadUploadService
     private final String _rtroot;
     private final ExecutorService _executor;
     private final IDaemonMonitor _dm;
-    private final LaunchArgs _launchArgs;
 
-    public DryadUploadService(String rtroot, ExecutorService executor, IDaemonMonitor dm,
-            LaunchArgs launchArgs)
+    public DryadUploadService(String rtroot, ExecutorService executor, IDaemonMonitor dm)
     {
         _rtroot = rtroot;
         _executor = executor;
         _dm = dm;
-        _launchArgs = launchArgs;
     }
 
     public void submit(String dryadID, String customerID)
@@ -70,9 +66,9 @@ public class DryadUploadService
 
     public static class Factory
     {
-        public static DryadUploadService create(String rtroot, LaunchArgs launchArgs)
+        public static DryadUploadService create(String rtroot)
         {
-            return new DryadUploadService(rtroot, new DryadExecutor(), UIGlobals.dm(), launchArgs);
+            return new DryadUploadService(rtroot, new DryadExecutor(), UIGlobals.dm());
         }
     }
 
@@ -225,7 +221,7 @@ public class DryadUploadService
                 }
 
                 if (file.getName().equals(LibParam.CORE_DATABASE)) {
-                    _dm.start(_launchArgs);
+                    _dm.start();
                 }
             }
         }

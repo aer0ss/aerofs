@@ -4,7 +4,6 @@
 //
 package com.aerofs.gui;
 
-import com.aerofs.LaunchArgs;
 import com.aerofs.controller.SPBadCredentialListener;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
@@ -47,24 +46,16 @@ public class GUIProgram implements IProgram
             }
             throw linkError;
         }
-        // These are the launch time optional JVM args that can be passed on to the daemon.
-        LaunchArgs launchArgs = new LaunchArgs();
-        // process application arguments
-        for (String arg : args) {
-            processArgument(arg);
-            // JVM arguments.
-            if (arg.startsWith("-X")) {
-               launchArgs.addArg(arg);
-            }
 
-        }
+        // process application arguments
+        for (String arg : args) processArgument(arg);
 
         UIGlobals.initialize_(true);
         SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
 
         GUI gui = new GUI();
         UI.set(gui);
-        gui.scheduleLaunch(rtRoot, launchArgs);
+        gui.scheduleLaunch(rtRoot);
         gui.enterMainLoop_();
     }
 

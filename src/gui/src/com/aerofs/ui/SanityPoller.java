@@ -4,7 +4,6 @@
 
 package com.aerofs.ui;
 
-import com.aerofs.LaunchArgs;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.cli.CLI;
@@ -48,12 +47,10 @@ public class SanityPoller
     private Thread _t = null;
     private volatile boolean _stopping = false;
 
-    private volatile LaunchArgs _launchArgs;
     private volatile boolean _ignoreDiskFullErrors; // for users to suppress error notifications
 
-    public void start(LaunchArgs launchArgs)
+    public void start()
     {
-        _launchArgs = launchArgs;
         // start must be idempotent to handle launch->setup backtracking
         if (_t != null) return;
 
@@ -319,7 +316,7 @@ public class SanityPoller
     private void restartDaemon()
     {
         try {
-            UIGlobals.dm().start(_launchArgs);  // restart the daemon
+            UIGlobals.dm().start();  // restart the daemon
         } catch (Exception e1) {
             UI.get().show(MessageType.ERROR,
                     "An error occured while starting up " + L.product() +

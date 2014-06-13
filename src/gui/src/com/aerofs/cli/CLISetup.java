@@ -1,6 +1,5 @@
 package com.aerofs.cli;
 
-import com.aerofs.LaunchArgs;
 import com.aerofs.controller.Setup;
 import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.base.BaseParam.WWW;
@@ -28,12 +27,12 @@ public class CLISetup
 
     private SetupModel _model = null;
 
-    CLISetup(CLI cli, String rtRoot, LaunchArgs launchArgs) throws Exception
+    CLISetup(CLI cli, String rtRoot) throws Exception
     {
         String defaultRootAnchor = Setup.getDefaultAnchorRoot();
         String defaultDeviceName = Setup.getDefaultDeviceName();
 
-        _model = new SetupModel(rtRoot, launchArgs)
+        _model = new SetupModel(rtRoot)
                 .setSignInActor(LibParam.OpenId.enabled() ?
                         new OpenIdCLIActor(cli) : new CredentialActor());
 

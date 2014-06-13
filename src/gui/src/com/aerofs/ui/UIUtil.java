@@ -1,6 +1,5 @@
 package com.aerofs.ui;
 
-import com.aerofs.LaunchArgs;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
@@ -149,28 +148,26 @@ public class UIUtil
      *
      * FIXME(AT) despite what the method signature states and suggests, preLaunch isn't executed
      * before Launcher.launch().
-     *  @param preLaunch a runnable that will be executed in the UI thread
+     *
+     * @param preLaunch a runnable that will be executed in the UI thread
      * @param postLaunch a runnable that will be executed in the UI thread, iff the launch succeeds
-     * @param launchArgs
      */
-    public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch,
-            LaunchArgs launchArgs)
+    public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch)
     {
         // N.B. migrateRtroot _must_ be done before we run launchImpl because launchImpl needs
         // the rtroot to be able to determine whether we need to run setup.
         migrateRtroot(rtRoot);
 
-        launchImpl(rtRoot, preLaunch, postLaunch, launchArgs);
+        launchImpl(rtRoot, preLaunch, postLaunch);
     }
 
-    private static void launchImpl(String rtRoot, Runnable preLaunch, Runnable postLaunch,
-            LaunchArgs launchArgs)
+    private static void launchImpl(String rtRoot, Runnable preLaunch, Runnable postLaunch)
     {
         try {
             if (needsSetup()) {
-                setup(rtRoot, preLaunch, postLaunch, launchArgs);
+                setup(rtRoot, preLaunch, postLaunch);
             } else {
-                scheduleLaunch(rtRoot, preLaunch, postLaunch, launchArgs);
+                scheduleLaunch(rtRoot, preLaunch, postLaunch);
             }
         } catch (ExLaunchAborted e) {
             // User clicked on cancel, exit without error messages
@@ -238,23 +235,22 @@ public class UIUtil
         }
     }
 
-    private static void scheduleLaunch(final String rtRoot, Runnable preLaunch,
-            final Runnable postLaunch, final LaunchArgs launchArgs)
+    private static void scheduleLaunch(final String rtRoot, Runnable preLaunch, final Runnable postLaunch)
     {
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
         ThreadUtil.startDaemonThread("launcher-worker", new Runnable() {
             @Override
             public void run()
             {
-                if (launchInWorkerThread(launchArgs)) {
-                    finishLaunch(postLaunch, launchArgs);
+                if (launchInWorkerThread()) {
+                    finishLaunch(postLaunch);
                 } else {
                     // we get there if the user choose to reinstall due to a tampered/corrupted DB
                     UI.get().asyncExec(new Runnable() {
                         @Override
                         public void run()
                         {
-                            launchImpl(rtRoot, null, postLaunch, launchArgs);
+                            launchImpl(rtRoot, null, postLaunch);
                         }
                     });
                 }
@@ -262,10 +258,10 @@ public class UIUtil
         });
     }
 
-    private static boolean launchInWorkerThread(LaunchArgs launchArg)
+    private static boolean launchInWorkerThread()
     {
         try {
-            Launcher.launch(false, launchArg);
+            Launcher.launch(false);
         } catch (ExNotSetup e) {
             return false;
         } catch (Exception e) {
@@ -275,8 +271,7 @@ public class UIUtil
         return true;
     }
 
-    private static void setup(String rtRoot, Runnable preLaunch, Runnable postLaunch,
-            LaunchArgs launchArgs)
+    private static void setup(String rtRoot, Runnable preLaunch, Runnable postLaunch)
             throws Exception
     {
         if (OSUtil.isOSX()) {
@@ -289,7 +284,7 @@ public class UIUtil
         }
 
         UI.get().preSetupUpdateCheck_();
-        UI.get().setup_(rtRoot, launchArgs);
+        UI.get().setup_(rtRoot);
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
 
         if (shouldShowTutorial()) {
@@ -304,7 +299,7 @@ public class UIUtil
             // TODO (GS): Needs a similar class for CLI, too
         }
 
-        finishLaunch(postLaunch, launchArgs);
+        finishLaunch(postLaunch);
 
         Runnable onClick = null;
 
@@ -334,7 +329,7 @@ public class UIUtil
                 LAUNCH_ERROR_STRING + ": " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e));
     }
 
-    private static void finishLaunch(Runnable postLaunch, LaunchArgs launchArgs)
+    private static void finishLaunch(Runnable postLaunch)
     {
         if (!L.isMultiuser()) {
             // Starts the service that displays notifications when files are updated
@@ -344,7 +339,7 @@ public class UIUtil
         // Start the service that displays Bad Password notifications
         // This should not be run before setup is completed, otherwise it will
         // trigger update password dialogs during setup.
-        new RetypePasswordDialogDisplayer(launchArgs);
+        new RetypePasswordDialogDisplayer();
 
         if (postLaunch != null) UI.get().asyncExec(postLaunch);
     }

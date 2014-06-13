@@ -1,6 +1,5 @@
 package com.aerofs.cli;
 
-import com.aerofs.LaunchArgs;
 import com.aerofs.base.id.UserID;
 import com.aerofs.controller.CredentialUtil;
 import com.aerofs.lib.OutArg;
@@ -304,19 +303,19 @@ public class CLI implements IUI {
     }
 
     @Override
-    public void setup_(String rtRoot, LaunchArgs launchArgs) throws Exception
+    public void setup_(String rtRoot) throws Exception
     {
-        new CLISetup(this, rtRoot, launchArgs);
+        new CLISetup(this, rtRoot);
     }
 
-    public void scheduleLaunch(final String rtRoot, final LaunchArgs launchArgs)
+    public void scheduleLaunch(final String rtRoot)
     {
         asyncExec(new Runnable()
         {
             @Override
             public void run()
             {
-                UIUtil.launch(rtRoot, null, null, launchArgs);
+                UIUtil.launch(rtRoot, null, null);
             }
         });
     }
@@ -469,13 +468,13 @@ public class CLI implements IUI {
     }
 
     @Override
-    public void retypePassword(LaunchArgs launchArgs) throws ExNoConsole
+    public void retypePassword() throws ExNoConsole
     {
         while (true) {
             String passwd = new String(askPasswd(S.PASSWORD_HAS_CHANGED));
             try {
                 CredentialUtil.updateStoredPassword(UserID.fromExternal(Cfg.user().getString()),
-                        passwd.toCharArray(), launchArgs);
+                        passwd.toCharArray());
                 break;
             } catch (ExBadCredential ebc) {
                 ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
