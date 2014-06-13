@@ -939,8 +939,11 @@ public class SPService implements ISPService
             String osFamily, String osName, String deviceName, List<Interface> interfaces)
             throws Exception
     {
+        _sqlTrans.begin();
+
         User user = _session.getAuthenticatedUserLegacyProvenance();
         Device device = _factDevice.create(deviceId);
+        _sqlTrans.commit();
 
         throwIfNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
                 _remoteAddress.get(), interfaces);
@@ -949,7 +952,6 @@ public class SPService implements ISPService
                 user);
 
         _sqlTrans.begin();
-
         RegisterDeviceReply reply = saveDeviceAndCertificate(device, user, osFamily, osName,
                 deviceName, cert);
 
@@ -980,10 +982,10 @@ public class SPService implements ISPService
             String osFamily, String osName)
             throws Exception
     {
+        _sqlTrans.begin();
+
         User user = _session.getAuthenticatedUserLegacyProvenance();
         Device device = _factDevice.create(deviceId);
-
-        _sqlTrans.begin();
 
         if (!device.exists()) {
             // This is to fix problems with some early Alpha testers whose devices are not in
@@ -1091,18 +1093,18 @@ public class SPService implements ISPService
             List<Interface> interfaces)
             throws Exception
     {
+        _sqlTrans.begin();
+
         User user = _session.getAuthenticatedUserLegacyProvenance();
 
         throwIfNotAuthorizedToRegisterDevice(user.id(), osFamily, osName, deviceName,
                 _remoteAddress.get(), interfaces);
 
-        // We need two transactions. The first is read only, so no rollback ability needed. In
-        // between the transaction we make an RPC call.
-        _sqlTrans.begin();
-
         user.throwIfNotAdmin();
         User tsUser = user.getOrganization().getTeamServerUser();
 
+        // We need two transactions. The first is read only, so no rollback ability needed. In
+        // between the transaction we make an RPC call.
         _sqlTrans.commit();
 
         // This should not be part of a transaction because it involves an RPC call
@@ -1190,12 +1192,12 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(shareId);
         if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot share root");
 
-        User sharer = _session.getAuthenticatedUserLegacyProvenance();
         List<SubjectPermissions> srps = SubjectPermissionsList.listFromPB(subjectPermissionsList);
 
+        _sqlTrans.begin();
+        User sharer = _session.getAuthenticatedUserLegacyProvenance();
         l.info("{} shares {} [{}] with {}", sharer, sf, external, srps);
 
-        _sqlTrans.begin();
         ISharingRules rules = _sharingRules.create(sharer);
 
         List<AuditableEvent> events = Lists.newArrayList();
@@ -1258,11 +1260,11 @@ public class SPService implements ISPService
             throws Exception
     {
         external = firstNonNull(external, false);
-
-        User user = _session.getAuthenticatedUserLegacyProvenance();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
+
         joinSharedFolderImpl(external, user, sf);
 
         Permissions perm = sf.getPermissionsNullable(user);
@@ -1479,9 +1481,8 @@ public class SPService implements ISPService
             throw new ExBadArgs("invalid soid");
         }
         SharedFolder sf = _factSharedFolder.create(restObject.getSID());
-        User requester = _session.getAuthenticatedUserLegacyProvenance();
-
         _sqlTrans.begin();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         sf.throwIfNoPrivilegeToChangeACL(requester);
         UrlShare link = _factUrlShare.save(restObject, token, requester.id());
         PBRestObjectUrl pbRestObjectUrl = link.toPB();
@@ -1500,6 +1501,7 @@ public class SPService implements ISPService
     public ListenableFuture<GetUrlInfoReply> getUrlInfo(String key, @Nullable ByteString password)
             throws Exception
     {
+        _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserLegacyProvenance();
 
         if (password != null && _rateLimiter.update(_remoteAddress.get(), key)) {
@@ -1507,7 +1509,6 @@ public class SPService implements ISPService
             throw new ExRateLimitExceeded();
         }
 
-        _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
         RestObject object = link.getRestObject();
         boolean hasPassword = link.hasPassword();
@@ -1529,9 +1530,8 @@ public class SPService implements ISPService
     public ListenableFuture<Void> setUrlExpires(String key, Long expires, String newToken)
             throws Exception
     {
-        User requester = _session.getAuthenticatedUserLegacyProvenance();
-
         _sqlTrans.begin();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         UrlShare link = _factUrlShare.create(key);
         SID sid = link.getSid();
         SharedFolder sf = _factSharedFolder.create(sid);
@@ -1546,9 +1546,8 @@ public class SPService implements ISPService
     public ListenableFuture<Void> removeUrlExpires(String key, String newToken)
             throws Exception
     {
-        User requester = _session.getAuthenticatedUserLegacyProvenance();
-
         _sqlTrans.begin();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         UrlShare link = _factUrlShare.create(key);
         SID sid = link.getSid();
         SharedFolder sf = _factSharedFolder.create(sid);
@@ -1563,9 +1562,8 @@ public class SPService implements ISPService
     public ListenableFuture<Void> removeUrl(String key)
             throws Exception
     {
-        User requester = _session.getAuthenticatedUserLegacyProvenance();
-
         _sqlTrans.begin();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         UrlShare link = _factUrlShare.create(key);
         SID sid = link.getSid();
         SharedFolder sf = _factSharedFolder.create(sid);
@@ -1580,9 +1578,8 @@ public class SPService implements ISPService
     public ListenableFuture<Void> setUrlPassword(String key, ByteString password, String newToken)
             throws Exception
     {
-        User requester = _session.getAuthenticatedUserLegacyProvenance();
-
         _sqlTrans.begin();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         UrlShare link = _factUrlShare.create(key);
         SID sid = link.getSid();
         SharedFolder sf = _factSharedFolder.create(sid);
@@ -1597,9 +1594,8 @@ public class SPService implements ISPService
     public ListenableFuture<Void> removeUrlPassword(String key)
             throws Exception
     {
-        User requester = _session.getAuthenticatedUserLegacyProvenance();
-
         _sqlTrans.begin();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
         UrlShare link = _factUrlShare.create(key);
         SID sid = link.getSid();
         SharedFolder sf = _factSharedFolder.create(sid);
@@ -1680,9 +1676,8 @@ public class SPService implements ISPService
     public ListenableFuture<Void> destroySharedFolder(ByteString sharedId)
             throws Exception
     {
-        User caller = _session.getAuthenticatedUserLegacyProvenance();
-
         _sqlTrans.begin();
+        User caller = _session.getAuthenticatedUserLegacyProvenance();
         SharedFolder sf = _factSharedFolder.create(new SID(sharedId));
         l.info("{} destroys {}", caller, sf);
         if (!sf.exists()) throw new ExNotFound("The folder does not exist");
@@ -1708,8 +1703,10 @@ public class SPService implements ISPService
             String contactEmail, String description)
             throws Exception
     {
+        _sqlTrans.begin();
         // authenticate the user
         _session.getAuthenticatedUserLegacyProvenance();
+        _sqlTrans.commit();
 
         throwOnInvalidEmailAddress(contactEmail);
 
@@ -1735,12 +1732,12 @@ public class SPService implements ISPService
             throws Exception
     {
         ListUrlsForStoreReply.Builder builder = ListUrlsForStoreReply.newBuilder();
+        _sqlTrans.begin();
         User caller = _session.getAuthenticatedUserLegacyProvenance();
 
         SID sid = sharedId.isValidUtf8() && sharedId.toStringUtf8().equals("root") ?
                 SID.rootSID(caller.id()) : new SID(sharedId);
 
-        _sqlTrans.begin();
         SharedFolder sf = _factSharedFolder.create(sid);
         if (!sf.exists()) throw new ExNotFound("The folder does not exist");
         sf.throwIfNoPrivilegeToChangeACL(caller);
@@ -2131,12 +2128,11 @@ public class SPService implements ISPService
             ByteString csr)
             throws Exception
     {
-        User user = _session.getAuthenticatedUserLegacyProvenance();
-        Device device = _factDevice.create(deviceId);
-
         // We need two transactions. The first is read only, so no rollback ability needed. In
         // between the transaction we make an RPC call.
         _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
+        Device device = _factDevice.create(deviceId);
         if (!device.exists()) {
             throw new ExNotFound("No device " + device + " exists for " + user);
         }
@@ -2167,12 +2163,11 @@ public class SPService implements ISPService
             ByteString csr)
             throws Exception
     {
-        User user = _session.getAuthenticatedUserLegacyProvenance();
-        Device device = _factDevice.create(deviceId);
-
         // We need two transactions. The first is read only, so no rollback ability needed. In
         // between the transaction we make an RPC call.
         _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
+        Device device = _factDevice.create(deviceId);
         user.throwIfNotAdmin();
         User tsUser = user.getOrganization().getTeamServerUser();
         if (!device.exists()) {
@@ -2254,12 +2249,11 @@ public class SPService implements ISPService
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
             throws SQLException, ExNoPerm, ExNotAuthenticated, ExNotFound, ExSecondFactorRequired
     {
+        _sqlTrans.begin();
         User user = _session.getAuthenticatedUserLegacyProvenance();
         GetACLReply.Builder bd = GetACLReply.newBuilder();
 
         l.info("getACL for {}", user.id());
-
-        _sqlTrans.begin();
 
         long serverEpoch = user.getACLEpoch();
         if (serverEpoch == epoch) {
@@ -2297,7 +2291,6 @@ public class SPService implements ISPService
     {
         suppressWarnings = firstNonNull(suppressWarnings, false);
 
-        User user = _session.getAuthenticatedUserLegacyProvenance();
         User subject = _factUser.createFromExternalID(subjectString);
         Permissions role = Permissions.fromPB(permissions);
         SharedFolder sf = _factSharedFolder.create(storeId);
@@ -2307,6 +2300,7 @@ public class SPService implements ISPService
         // notification that is newer than what it should be (i.e. we skip an update
 
         _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
 
         Permissions oldPermissions = sf.getPermissionsNullable(subject);
         if (oldPermissions != role) {
@@ -2339,13 +2333,13 @@ public class SPService implements ISPService
     public ListenableFuture<Void> deleteACL(final ByteString storeId, String subjectString)
             throws Exception
     {
+        _sqlTrans.begin();
         User user = _session.getAuthenticatedUserLegacyProvenance();
         SharedFolder sf = _factSharedFolder.create(storeId);
 
         User subject = _factUser.createFromExternalID(subjectString);
 
 
-        _sqlTrans.begin();
         sf.throwIfNoPrivilegeToChangeACL(user);
 
         auditSharing(sf, user, "folder.permission.delete")
@@ -2708,24 +2702,24 @@ public class SPService implements ISPService
     {
         // this function requires User-level authentication
         _sqlTrans.begin();
-        boolean userExists = _session.isAuthenticated() && _session.getAuthenticatedUserLegacyProvenance().exists();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
+        boolean userExists = _session.isAuthenticated() && user.exists();
         _sqlTrans.commit();
 
         if (!userExists) throw new ExNoPerm("Attempt to create device auth for non-existent user");
-        l.info("Gen mobile access code for {}", _session.getAuthenticatedUserLegacyProvenance().id());
+        l.info("Gen mobile access code for {}", user.id());
 
         // Important: recall that IdentitySessionManager speaks seconds, not milliseconds,
         // due to the underlying key-expiration technology.
         int timeoutSec = 180;
 
         _auditClient.event(AuditTopic.DEVICE, "device.mobile.code")
-                .add("user", _session.getAuthenticatedUserLegacyProvenance().id())
+                .add("user", user.id())
                 .add("timeout", timeoutSec)
                 .publish();
 
         return createReply(MobileAccessCode.newBuilder()
-                .setAccessCode(_identitySessionManager.createDeviceAuthorizationNonce(
-                        _session.getAuthenticatedUserLegacyProvenance(), 180))
+                .setAccessCode(_identitySessionManager.createDeviceAuthorizationNonce(user, 180))
                 .build());
     }
 
@@ -3064,10 +3058,10 @@ public class SPService implements ISPService
     public ListenableFuture<ListSharedFoldersReply> listSharedFolders(List<ByteString> sids)
             throws Exception
     {
+        _sqlTrans.begin();
         User sessionUser = _session.getAuthenticatedUserLegacyProvenance();
         ImmutableList.Builder<SharedFolder> foldersBuilder = ImmutableList.builder();
 
-        _sqlTrans.begin();
         for (ByteString sid : sids) {
             SharedFolder folder = _factSharedFolder.create(sid);
             if (folder.getPermissionsNullable(sessionUser) == null) throw new ExNoPerm();
@@ -3087,12 +3081,11 @@ public class SPService implements ISPService
     public ListenableFuture<Void> addUserToWhitelist(final String userEmail)
             throws Exception
     {
+        _sqlTrans.begin();
         User caller = _session.getAuthenticatedUserLegacyProvenance();
         User user = _factUser.createFromExternalID(userEmail);
 
         l.debug("{} add {} to whitelist", caller.id().getString(), user.id().getString());
-
-        _sqlTrans.begin();
 
         caller.throwIfNotAdmin();  // throws ExNoPerm
         user.throwIfNotFound();  // throws ExNotFound
@@ -3108,12 +3101,12 @@ public class SPService implements ISPService
     public ListenableFuture<Void> removeUserFromWhitelist(final String userEmail)
             throws Exception
     {
+        _sqlTrans.begin();
+
         User caller = _session.getAuthenticatedUserLegacyProvenance();
         User user = _factUser.createFromExternalID(userEmail);
 
         l.debug("{} remove {} from whitelist", caller.id().getString(), user.id().getString());
-
-        _sqlTrans.begin();
 
         caller.throwIfNotAdmin();  // throws ExNoPerm
         user.throwIfNotFound();  // throws ExNotFound
@@ -3129,13 +3122,13 @@ public class SPService implements ISPService
     public ListenableFuture<ListWhitelistedUsersReply> listWhitelistedUsers()
             throws Exception
     {
+        _sqlTrans.begin();
         User caller = _session.getAuthenticatedUserLegacyProvenance();
 
         l.debug("list whitelisted users: {}", caller.id().getString());
 
         ListWhitelistedUsersReply.Builder builder = ListWhitelistedUsersReply.newBuilder();
 
-        _sqlTrans.begin();
         caller.throwIfNotAdmin();  // throws ExNoPerm
         for (User user : caller.getOrganization().listWhitelistedUsers()) {
             builder.addUser(user2pb(user)).build();
@@ -3149,10 +3142,10 @@ public class SPService implements ISPService
     public ListenableFuture<DeactivateUserReply> deactivateUser(String userId, Boolean eraseDevices)
             throws Exception
     {
+        _sqlTrans.begin();
         User caller = _session.getAuthenticatedUserLegacyProvenance();
         User user = _factUser.createFromExternalID(userId);
 
-        _sqlTrans.begin();
         Organization org = user.getOrganization();
 
         UserManagement.deactivateByAdmin(caller, user, eraseDevices, _commandDispatcher, _aclPublisher);
