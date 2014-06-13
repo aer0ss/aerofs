@@ -13,7 +13,8 @@
 ## N.B. maintenance_layout.mako uses the same layout
 <div class="row">
     ## Left navigation bar
-    <div class="col-sm-3">
+    ## Gets subsumed by top menu on mobile
+    <div class="col-sm-3 hidden-xs">
         %if is_admin(request):
             ${render_left_navigation_for_admin()}
         %else:
@@ -28,36 +29,96 @@
 </div>
 
 <%block name="top_navigation_bar_mobile">
-    <%navigation:marketing_links/>
-    <li class="divider"></li>
-    %if is_private_deployment(request.registry.settings):
-        <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
-    %endif
-    <li><a href="${request.route_path('settings')}">Settings</a></li>
-    <li><a href="${request.route_path('logout')}">Sign out</a></li>
+    <div class="visible-xs">
+        <div class="btn-group pull-right">
+            <a href="#" class="btn btn-default dropdown-toggle"
+                    data-toggle="dropdown">
+                <span class="glyphicon glyphicon-th-list"></span> Menu
+            </a>
+            <ul class="dropdown-menu">
+                <%navigation:marketing_links/>
+                <li class="divider"></li>
+                %if is_private_deployment(request.registry.settings):
+                    <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
+                %endif
+                <li><a href="${request.route_path('settings')}">Settings</a></li>
+                <li><a href="${request.route_path('logout')}">Sign out</a></li>
+                <li class="divider"></li>
+                ## Left navigation bar
+                %if is_admin(request):
+                    ${render_left_navigation_for_admin()}
+                %else:
+                    ${render_left_navigation_for_nonadmin()}
+                %endif
+            </ul>
+        </div>
+        <div class="btn-group pull-right">
+            <a href="#" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                Install <b class="caret"></b>
+            </a>
+            % if is_admin(request):
+                ${render_download_links(True)}
+            % else:
+                ${render_download_links(False)}
+            % endif
+        </div>
+    </div>
+</%block>
+
+<%block name="top_navigation_bar_tablet">
+    <div class="hidden-lg hidden-xs">
+        <div class="btn-group pull-right">
+            <a href="#" class="btn btn-default dropdown-toggle"
+                    data-toggle="dropdown">
+                <span class="glyphicon glyphicon-th-list"></span> Menu
+            </a>
+            <ul class="dropdown-menu">
+                <%navigation:marketing_links/>
+                <li class="divider"></li>
+                %if is_private_deployment(request.registry.settings):
+                    <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
+                %endif
+                <li><a href="${request.route_path('settings')}">Settings</a></li>
+                <li><a href="${request.route_path('logout')}">Sign out</a></li>
+            </ul>
+        </div>
+        <div class="btn-group pull-right">
+            <a href="#" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                ${render_download_text()} <b class="caret"></b>
+            </a>
+            % if is_admin(request):
+                ${render_download_links(True)}
+            % else:
+                ${render_download_links(False)}
+            % endif
+        </div>
+    </div>
 </%block>
 
 <%block name="top_navigation_bar_desktop">
-    <%navigation:marketing_links/>
-    <li class="pull-right dropdown">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            ${authenticated_userid(request)} <b class="caret"></b>
-        </a>
-        <ul class="dropdown-menu">
-            ## Remember to update top_navigation_bar_mobile() when adding items
-            %if is_private_deployment(request.registry.settings):
-                <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
-            %endif
-            <li><a href="${request.route_path('settings')}">Settings</a></li>
-            <li><a href="${request.route_path('logout')}">Sign out</a></li>
-        </ul>
-    </li>
-
-    % if is_admin(request):
-        ${render_download_links(True)}
-    % else:
-        ${render_download_links(False)}
-    % endif
+        <%navigation:marketing_links/>
+        <li class="pull-right dropdown visible-lg">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                ${authenticated_userid(request)} <b class="caret"></b>
+            </a>
+            <ul class="dropdown-menu">
+                ## Remember to update top_navigation_bar_mobile() when adding items
+                %if is_private_deployment(request.registry.settings):
+                    <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
+                %endif
+                <li><a href="${request.route_path('settings')}">Settings</a></li>
+                <li><a href="${request.route_path('logout')}">Sign out</a></li>
+            </ul>
+        <li class="pull-right dropdown visible-lg">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                ${render_download_text()} <b class="caret"></b>
+            </a>
+            % if is_admin(request):
+                ${render_download_links(True)}
+            % else:
+                ${render_download_links(False)}
+            % endif
+        </li>
 </%block>
 
 <%def name="home_url()">
@@ -65,39 +126,34 @@
 </%def>
 
 <%def name="render_download_links(admin)">
-    <li class="pull-right dropdown">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            ${render_download_text()} <b class="caret"></b>
-        </a>
-        <ul class="dropdown-menu">
-            <li><a href="${request.route_path('download')}">
-                AeroFS Desktop
+    <ul class="dropdown-menu">
+        <li><a href="${request.route_path('download')}">
+            AeroFS Desktop
+        </a></li>
+
+        <%
+            settings = request.registry.settings
+            prop = 'web.disable_download_mobile_client'
+
+            ## the intended default behaviour is to _display_ the item
+            ## so this value is true iff everything points to true
+            disable_download_mobile_client = \
+                is_private_deployment(settings) \
+                and prop in settings \
+                and str2bool(settings[prop])
+        %>
+        %if not disable_download_mobile_client:
+            <li><a href="${request.route_path('add_mobile_device')}">
+                Mobile Apps
             </a></li>
+        %endif
 
-            <%
-                settings = request.registry.settings
-                prop = 'web.disable_download_mobile_client'
-
-                ## the intended default behaviour is to _display_ the item
-                ## so this value is true iff everything points to true
-                disable_download_mobile_client = \
-                    is_private_deployment(settings) \
-                    and prop in settings \
-                    and str2bool(settings[prop])
-            %>
-            %if not disable_download_mobile_client:
-                <li><a href="${request.route_path('add_mobile_device')}">
-                    Mobile Apps
-                </a></li>
-            %endif
-
-            %if admin:
-                <li><a href="${request.route_path('download_team_server')}">
-                    Team Server
-                </a></li>
-            %endif
-        </ul>
-    </li>
+        %if admin:
+            <li><a href="${request.route_path('download_team_server')}">
+                Team Server
+            </a></li>
+        %endif
+    </ul>
 </%def>
 
 <%def name="render_download_text()">

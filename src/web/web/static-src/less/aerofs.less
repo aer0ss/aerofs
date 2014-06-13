@@ -104,11 +104,27 @@ footer {
   }
 }
 
-.top-nav > li + li {
+.top-nav > li + li, .top-nav .btn-group {
   // Pull down all but the first item (i.e. the logo) in the top nav bar
   margin-top: 19px;
   font-weight: 700;
   font-size: 18px;
+}
+
+.top-nav .btn-group {
+  margin-left: 8px;
+}
+
+/* hack to get around limitations of bootstrap navbar styles and
+how our templates inherit the top nav */
+@media (max-width: 1200px) {
+  .nav .marketing-link {
+    display: none;
+  }
+
+  .nav .dropdown-menu .marketing-link {
+    display: block;
+  }
 }
 
 .top-nav-wrapper {

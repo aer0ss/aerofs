@@ -1,8 +1,8 @@
 ## A couple of links to public marketing pages used in the top navigation bar of
 ## the other pages.
 <%def name="marketing_links()">
-    <li><a href="http://support.aerofs.com" target="_blank">Support</a></li>
-    <li><a href="http://blog.aerofs.com" target="_blank">Blog</a></li>
+    <li class="marketing-link"><a href="http://support.aerofs.com" target="_blank">Support</a></li>
+    <li class="marketing-link"><a href="http://blog.aerofs.com" target="_blank">Blog</a></li>
 </%def>
 
 ## Render a link menu for navigation bars

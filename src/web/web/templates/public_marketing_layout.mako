@@ -40,6 +40,10 @@
         <li><a style="font-weight: normal; color: #222">1-800-656-AERO</a></li>
 </%block>
 
+<%block name="top_navigation_bar_tablet">
+    <%top_navigation_bar_mobile()/>
+</%block>
+
 <%block name="top_navigation_bar_desktop">
     <%
         if not request.matched_route:

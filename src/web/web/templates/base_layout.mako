@@ -124,26 +124,15 @@
         ## Horizontal navigation bar
         <div class="container top-nav-wrapper">
             <div class="row">
-                <div class="col-sm-12 visible-lg" id="top-nav-span">
+                <div class="col-sm-12" id="top-nav-span">
                     <ul class="nav nav-pills top-nav">
                         <li><a href="${self.home_url()}">
                             <img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/>
                         </a></li>
                         <%block name="top_navigation_bar_desktop"/>
+                        <%block name="top_navigation_bar_tablet"/>
+                        <%block name="top_navigation_bar_mobile"/>
                     </ul>
-                </div>
-
-                <div class="col-sm-12 hidden-lg" style="margin-top: 14px">
-                    <a href="${self.home_url()}"><img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/></a>
-                    <div class="btn-group pull-right hidden-lg">
-                        <a href="#" class="btn btn-default dropdown-toggle"
-                                data-toggle="dropdown">
-                            <span class="glyphicon glyphicon-th-list"></span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <%block name="top_navigation_bar_mobile"/>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>
