@@ -6,6 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.aerofs.proto.Sp.MobileAccessCode;
 import com.aerofs.sp.server.lib.user.User;
@@ -42,7 +43,7 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
         session.deauthorize();
     }
 
-    @Test(expected = ExNoPerm.class)
+    @Test(expected = ExNotAuthenticated.class)
     public void testShouldFailIfNotSignedIn() throws Exception
     {
         service.getMobileAccessCode().get();
