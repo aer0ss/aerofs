@@ -61,7 +61,7 @@
         </div>
       </div>
 
-      <div class="my-row row" ng-repeat="object in objects | orderBy:['-type', 'name']">
+      <div class="my-row row object" ng-repeat="object in objects | orderBy:['-type', 'name']">
         <div class="col-sm-6">
           <div class="icon">
             <img ng-if="object.type == 'folder' && !object.is_shared" src="/static/shelob/img/icons/40x40/filetype_folder.png">
