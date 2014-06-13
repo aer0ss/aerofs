@@ -265,7 +265,7 @@ public final class SVClient
 
     //-------------------------------------------------------------------------
     //
-    // THE MOTHER OF THEM ALL: doLogSendDefect(11-arg version)
+    // THE MOTHER OF THEM ALL: doLogSendDefect(10-arg version)
     //
     //-------------------------------------------------------------------------
 

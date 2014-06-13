@@ -15,7 +15,6 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ex.ExAborted;

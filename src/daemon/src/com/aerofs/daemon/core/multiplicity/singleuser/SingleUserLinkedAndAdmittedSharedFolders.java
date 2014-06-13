@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;

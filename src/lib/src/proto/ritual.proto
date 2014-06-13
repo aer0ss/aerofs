@@ -222,6 +222,8 @@ service RitualService {
     rpc TestResumeLinker(Void) returns(Void);
 
     // Send a defect log to SV
+    //
+    // Used by a syncdet test to verify that we can send defect log to SV.
     rpc TestLogSendDefect(Void) returns(Void);
 
     rpc TestGetAliasObject(TestGetAliasObjectCall) returns(TestGetAliasObjectReply);

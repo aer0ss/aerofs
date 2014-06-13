@@ -14,7 +14,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.sql.SQLException;
-import java.text.MessageFormat;
 import java.util.Map;
 
 import javax.mail.MessagingException;

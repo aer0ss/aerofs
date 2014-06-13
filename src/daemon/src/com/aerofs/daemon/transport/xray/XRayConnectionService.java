@@ -53,7 +53,6 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Proxy;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;

@@ -5,12 +5,10 @@
 package com.aerofs.gui.common;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Table;
 
 /**
  * A class that renders the table items background in the Shared Folder and Selective Sync Dialog.

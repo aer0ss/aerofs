@@ -6,7 +6,6 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.IntegerID;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.proto.Transport.PBHeartbeat;

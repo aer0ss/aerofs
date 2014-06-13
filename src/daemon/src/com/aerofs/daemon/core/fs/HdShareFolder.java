@@ -41,7 +41,6 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.google.common.base.Objects;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 

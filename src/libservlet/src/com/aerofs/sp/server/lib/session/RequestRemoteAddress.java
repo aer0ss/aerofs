@@ -6,9 +6,6 @@ package com.aerofs.sp.server.lib.session;
 
 import com.aerofs.sp.server.IRequestProvider;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-
 public class RequestRemoteAddress
 {
     private final IRequestProvider _request;

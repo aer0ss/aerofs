@@ -11,7 +11,6 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.ui.defect.DefectReporter;
 import com.aerofs.ui.UIGlobals;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
