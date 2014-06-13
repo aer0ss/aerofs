@@ -1,4 +1,6 @@
 #!/bin/bash
+chown dryad:dryad /var/log/dryad -R
+
 echo
-echo '> please read `/opt/dryad/README` for setup instructions.'
+echo "> please read /opt/dryad/README for setup instructions."
 echo

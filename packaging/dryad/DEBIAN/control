@@ -1,0 +1,7 @@
+Package: aerofs-dryad
+Section: java
+Priority: required
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS dryad package.
+Architecture: all
+Depends: default-jdk (>= 1.6), nginx, nginx-common (>= 1.3.9), openssl, upstart, curl

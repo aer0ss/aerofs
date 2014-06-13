@@ -6,10 +6,6 @@ if [ "$(whoami)" != "root" ]; then
     exit 1
 fi
 
-# Install required packages
-apt-get update
-apt-get install nginx openssl upstart curl
-
 DRYAD_DIR=/opt/dryad
 NGINX_DIR=/etc/nginx
 

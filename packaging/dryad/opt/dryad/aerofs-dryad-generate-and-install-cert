@@ -5,7 +5,15 @@
 #
 set -e
 
+# the generated certificates will be installed here.
+#
+# nginx will pick up the certificates and serves the site with this identity.
 CERTS_DIR=/etc/nginx/certs
+
+echo
+echo "> We are going to generate and install a self-signed certificate."
+echo "> Please provide the following information to generate a certificate."
+echo
 
 TEMP=$(mktemp -d)
 pushd "$TEMP"
