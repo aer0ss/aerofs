@@ -206,7 +206,6 @@ This step requires a running local prod. In addition, you need to be on the VPN 
 
     cd $HOME/repos/aerofs/
     ant -Dmode=PRIVATE -Dproduct=CLIENT -Ddir.out=approot clean setupenv build_client
-    mkdir ~/rtroot
     approot/run ~/rtroot/user1 gui
 
 The `-Dmode=PRIVATE` flag points the client to your private environment. Specify `-Dmode=PUBLIC` to build clients for the public production environment (discouraged). `-Ddir.out=approot` puts classes in the appropriate place for local development.
@@ -243,7 +242,9 @@ You'll need to install some dependencies, then run `make watch` and hopefully ne
 
 ## Sign up accounts in local prod
 
-For easy signup you can use signup tool:
+Go to the URL `https://unified.syncfs.com` to create the first admin account.
+
+Or, you can use the signup script:
 
     ~/repos/aerofs/tools/signup.sh -u TEST_USER_NAME@aerofs.com
 
