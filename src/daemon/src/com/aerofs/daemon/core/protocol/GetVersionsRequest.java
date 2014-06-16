@@ -195,7 +195,8 @@ public class GetVersionsRequest
         Tick _tickImmKwlgLocalES;  // ZERO if _did == Cfg.did()
     }
 
-    public void processRequest_(DigestedMessage msg) throws Exception
+    public void processRequest_(DigestedMessage msg)
+            throws Exception
     {
         Util.checkPB(msg.pb().hasGetVersionsRequest(), PBGetVersionsRequest.class);
 
@@ -221,12 +222,10 @@ public class GetVersionsRequest
             }
 
             // EndOfStream marker
-            sender.writeBlock_(PBGetVersionsResponseBlock
-                    .newBuilder()
-                    .setIsLastBlock(true)
-                    .build(), null);
-
+            sender.writeBlock_(PBGetVersionsResponseBlock.newBuilder().setIsLastBlock(true).build(), null);
             sender.done_();
+        } catch (Exception e) {
+            sender.abort_(e);
         } finally {
             sender.doFinally_();
         }
@@ -392,6 +391,7 @@ public class GetVersionsRequest
         private OutgoingStream _stream;     // null for atomic messages
         private Token _tk;                  // null for atomic messages
         private boolean _streamOkay;        // invalid for atomic messages
+        private @Nullable Throwable _cause; // the reason why a block could not be sent
 
         BlockSender(Endpoint ep, int rpcid, String msgType, ByteArrayOutputStream os)
         {
@@ -440,11 +440,23 @@ public class GetVersionsRequest
         void doFinally_()
         {
             if (_stream != null) {
-                if (_streamOkay) _stream.end_();
-                else _stream.abort_(InvalidationReason.INTERNAL_ERROR);
+                if (_streamOkay) {
+                    l.trace("{} finish sending blocks over {}", _ep.did(), _ep.tp());
+                    _stream.end_();
+                } else {
+                    l.warn("{} abort sending blocks over {} err:{}", _ep.did(), _ep.tp(), _cause != null ? _cause : "unknown");
+                    _stream.abort_(InvalidationReason.INTERNAL_ERROR);
+                }
             }
 
-            if (_tk != null) _tk.reclaim_();
+            if (_tk != null) {
+                _tk.reclaim_();
+            }
+        }
+
+        public void abort_(Throwable cause)
+        {
+            _cause = cause;
         }
     }
 

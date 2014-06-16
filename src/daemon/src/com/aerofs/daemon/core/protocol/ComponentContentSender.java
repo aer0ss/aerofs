@@ -350,6 +350,7 @@ public class ComponentContentSender
             _ulstate.progress_(k.socid(), ep, len, len);
 
         } catch (Exception e) {
+            l.warn("{} fail send chunk over {} err:{}", ep.did(), ep.tp(), e.getMessage());
             InvalidationReason reason = (e instanceof ExUpdateInProgress) ?
                     InvalidationReason.UPDATE_IN_PROGRESS : InvalidationReason.INTERNAL_ERROR;
             outgoing.abort_(reason);
