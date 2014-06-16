@@ -225,8 +225,6 @@ def _throw_on_devman_error(r):
     request_method='POST'
 )
 def json_rename_device(request):
-    _ = request.translate
-
     user = request.params[URL_PARAM_USER]
     device_id = _get_device_id_from_request(request, 'rename')
     device_name = request.params[_URL_PARAM_DEVICE_NAME]
@@ -243,8 +241,6 @@ def json_rename_device(request):
     request_method='POST'
 )
 def json_unlink_device(request):
-    _ = request.translate
-
     device_id = _get_device_id_from_request(request, 'unlink')
 
     sp = get_rpc_stub(request)
@@ -260,8 +256,6 @@ def json_unlink_device(request):
     request_method='POST'
 )
 def json_erase_device(request):
-    _ = request.translate
-
     device_id = _get_device_id_from_request(request, 'erase')
 
     sp = get_rpc_stub(request)

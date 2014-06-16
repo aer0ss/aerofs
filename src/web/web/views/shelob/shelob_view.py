@@ -1,9 +1,7 @@
 import logging
 
 from pyramid.view import view_config
-from pyramid.response import Response
 from pyramid.security import authenticated_userid
-import requests
 
 from oauth import get_new_oauth_token
 

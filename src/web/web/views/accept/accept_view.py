@@ -22,8 +22,6 @@ URL_PARAM_JOINED_TEAM_NAME = 'new_team'
     renderer='accept.mako'
 )
 def accept(request):
-    _ = request.translate
-
     return _accept_page_template_variables(request)
 
 @view_config(
@@ -106,8 +104,6 @@ def accept_team_invitation(request):
     request_method = 'POST'
 )
 def ignore_team_invitation(request):
-    _ = request.translate
-
     org_id = int(request.params[URL_PARAM_ORG_ID])
     sp = get_rpc_stub(request)
     stripe_data = sp.delete_organization_invitation(org_id).stripe_data
@@ -120,8 +116,6 @@ def ignore_team_invitation(request):
     request_method = 'POST'
 )
 def accept_folder_invitation(request):
-    _ = request.translate
-
     share_id = request.params[URL_PARAM_SHARE_ID].decode('hex')
     sp = get_rpc_stub(request)
     sp.join_shared_folder(share_id, None)
@@ -133,8 +127,6 @@ def accept_folder_invitation(request):
     request_method = 'POST'
 )
 def ignore_folder_invitation(request):
-    _ = request.translate
-
     share_id = request.params[URL_PARAM_SHARE_ID].decode('hex')
     sp = get_rpc_stub(request)
 

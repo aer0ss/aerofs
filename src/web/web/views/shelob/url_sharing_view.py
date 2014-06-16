@@ -3,9 +3,6 @@ import time
 
 from aerofs_sp.gen.common_pb2 import PBException
 from pyramid.view import view_config
-from pyramid.response import Response
-from pyramid.security import authenticated_userid
-import requests
 
 from oauth import get_new_oauth_token, delete_oauth_token
 from web import error

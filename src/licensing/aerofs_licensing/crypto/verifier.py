@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import gpgme
 from util import find_gpg_executable, get_licensing_key, gpg_public_homedir
-from io import BytesIO
 
 def verify_with_aerofs_licensing_pubkey(input_flo, output_flo, gpg_homedir=None):
     homedir = gpg_homedir or gpg_public_homedir

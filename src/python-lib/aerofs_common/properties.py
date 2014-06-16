@@ -98,12 +98,8 @@ class Properties(object):
             if not line: continue
             # Skip lines which are comments
             if line[0] == '#': continue
-            # Some flags
-            escaped=False
             # Position of first separation char
             sepidx = -1
-            # A flag for performing wspace re check
-            flag = 0
             # Check for valid space separation
             # First obtain the max index to which we
             # can search.
@@ -111,7 +107,6 @@ class Properties(object):
             if m:
                 first, last = m.span()
                 start, end = 0, first
-                flag = 1
                 wspacere = re.compile(r'(?<![\\\=\:])(\s)')
             else:
                 if self.othercharre2.search(line):
@@ -220,12 +215,8 @@ class Properties(object):
 
     def load(self, stream):
         """ Load properties from an open file stream """
-
-        try:
-            lines = stream.readlines()
-            self.__parse(lines)
-        except IOError, e:
-            raise
+        lines = stream.readlines()
+        self.__parse(lines)
 
     def getProperty(self, key):
         """ Return a property for the given key """
@@ -261,18 +252,15 @@ class Properties(object):
         if out.mode[0] != 'w':
             raise ValueError,'Steam should be opened in write mode!'
 
-        try:
-            out.write(''.join(('#',header,'\n')))
-            # Write timestamp
-            tstamp = time.strftime('%a %b %d %H:%M:%S %Z %Y', time.localtime())
-            out.write(''.join(('#',tstamp,'\n')))
-            # Write properties from the pristine dictionary
-            for prop, val in self._origprops.items():
-                out.write(''.join((prop,'=',self.escape(val),'\n')))
+        out.write(''.join(('#',header,'\n')))
+        # Write timestamp
+        tstamp = time.strftime('%a %b %d %H:%M:%S %Z %Y', time.localtime())
+        out.write(''.join(('#',tstamp,'\n')))
+        # Write properties from the pristine dictionary
+        for prop, val in self._origprops.items():
+            out.write(''.join((prop,'=',self.escape(val),'\n')))
 
-            out.close()
-        except IOError, e:
-            raise
+        out.close()
 
     def getPropertyDict(self):
         return self._props

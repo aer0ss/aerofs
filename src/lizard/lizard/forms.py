@@ -2,7 +2,7 @@ import datetime
 
 from flask.ext.wtf import Form
 from flask_wtf.file import FileField, FileRequired
-from wtforms import TextField, PasswordField, HiddenField, BooleanField, \
+from wtforms import TextField, PasswordField, BooleanField, \
         IntegerField, DateField, SelectField, TextAreaField
 from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo
 

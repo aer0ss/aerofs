@@ -1,6 +1,4 @@
 from StringIO import StringIO
-from io import BytesIO
-import csv
 import datetime
 import tarfile
 
@@ -118,7 +116,7 @@ def upload_bundle():
             customer_id = row["ID"]
             seats = row["Seats"]
             expiry_date = datetime.datetime.strptime(row["Expiry Date"], "%Y-%m-%d")
-            issue_date = row["Issue Date"]
+            #issue_date = row["Issue Date"] # Present, but unused
             is_trial = row["Trial"].lower() == "true"
             allow_audit = row["Allow Audit"].lower() == "true"
             filename = row["Filename"]

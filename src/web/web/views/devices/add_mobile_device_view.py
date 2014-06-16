@@ -7,8 +7,7 @@ import qrcode
 from pyramid.view import view_config
 from pyramid.response import Response
 
-from web.util import *
-
+from web.util import get_rpc_stub
 
 log = logging.getLogger(__name__)
 

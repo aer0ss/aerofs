@@ -39,8 +39,6 @@ URL_PARAM_PHONE = 'phone'
     permission=NO_PERMISSION_REQUIRED,
 )
 def signup(request):
-    _ = request.translate
-
     code = request.params.get(URL_PARAM_SIGNUP_CODE)
 
     if not code: raise HTTPBadRequest()
@@ -93,8 +91,6 @@ def signup_code_not_found(request):
     permission=NO_PERMISSION_REQUIRED
 )
 def json_signup(request):
-    _ = request.translate
-
     code = markupsafe.escape(request.params[URL_PARAM_SIGNUP_CODE])
     email_address = markupsafe.escape(request.params[URL_PARAM_EMAIL])
     first_name = markupsafe.escape(request.params[URL_PARAM_FIRST_NAME])

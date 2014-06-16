@@ -1,5 +1,4 @@
 import os
-import logging
 
 from flask import Flask
 from flask.ext.login import LoginManager

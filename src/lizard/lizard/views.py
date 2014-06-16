@@ -2,7 +2,6 @@ import base64
 import datetime
 import os
 import json
-import time
 import urllib
 
 from flask import Blueprint, current_app, render_template, flash, redirect, request, url_for, Response
@@ -10,7 +9,6 @@ from flask.ext import scrypt, login
 import itsdangerous
 from itsdangerous import TimestampSigner
 import markupsafe
-from sqlalchemy import desc
 
 from lizard import analytics_client, db, login_manager
 from . import appliance, emails, forms, models
