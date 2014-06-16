@@ -20,8 +20,6 @@ import javax.ws.rs.core.Response;
 @Path("/healthcheck")
 public class HealthCheckResource
 {
-    private static final Logger l = LoggerFactory.getLogger(HealthCheckResource.class);
-
     @Inject
     private SessionFactory sessionFactory;
 

@@ -6,8 +6,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.ex.ExRateLimitExceeded;
-import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.lib.FileUtil.FileName;

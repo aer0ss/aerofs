@@ -11,7 +11,6 @@ import static com.jayway.restassured.RestAssured.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
-@SuppressWarnings("unchecked")
 public class TestOrganizationsResource extends AbstractResourceTest
 {
     private final String RESOURCE_BASE = "/v1.2/organizations";

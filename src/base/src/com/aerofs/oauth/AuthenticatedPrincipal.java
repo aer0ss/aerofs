@@ -58,10 +58,10 @@ public class AuthenticatedPrincipal implements Serializable, Principal
     // FIXME: make this go away
     public AuthenticatedPrincipal(String username) {
         this.name = username;
-        this.attributes = Maps.<String, String>newHashMap();
+        this.attributes = Maps.newHashMap();
         // useless junk:
-        this.roles = Lists.<String>newArrayList();
-        this.groups = Lists.<String>newArrayList();
+        this.roles = Lists.newArrayList();
+        this.groups = Lists.newArrayList();
     }
 
     /**
@@ -91,7 +91,7 @@ public class AuthenticatedPrincipal implements Serializable, Principal
 
     @Override
     public String toString() {
-        return getClass().getName() + " [name=" + name + ", roles=" + roles + ", attributes=" + attributes + "]";
+        return getClass().getName() + " [name=" + name + ", roles=" + roles + ", groups=" + groups + ",attributes=" + attributes + "]";
     }
 
     /**

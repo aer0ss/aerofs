@@ -36,7 +36,7 @@ public class OAuthScopeParsingUtil
     public static void validateSingleScope(String scope)
         throws ExFormatError
     {
-        qualifedScopeFromString(scope);
+        qualifiedScopeFromString(scope);
     }
 
     /**
@@ -67,7 +67,7 @@ public class OAuthScopeParsingUtil
         for (String string : strings)
         {
             try {
-                qualifiedScope = qualifedScopeFromString(string);
+                qualifiedScope = qualifiedScopeFromString(string);
             } catch (ExFormatError exFormatError) {
                 continue;
             }
@@ -85,11 +85,10 @@ public class OAuthScopeParsingUtil
         return parsed;
     }
 
-    private static QualifiedScope qualifedScopeFromString(String string)
+    private static QualifiedScope qualifiedScopeFromString(String string)
             throws ExFormatError
     {
         Scope scope;
-        RestObject object;
         String[] s = string.split(":");
         scope = Scope.fromName(s[0]);
         if (scope == null) throw new ExFormatError("unknown scope type: " + s[0]);

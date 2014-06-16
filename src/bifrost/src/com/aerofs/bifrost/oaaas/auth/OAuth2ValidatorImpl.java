@@ -57,9 +57,6 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
     GRANT_TYPES.add(GRANT_TYPE_REFRESH_TOKEN);
   }
 
-  @Inject
-  private ClientRepository clientRepository;
-
   @Override
   public ValidationResponse validate(AuthorizationRequest authorizationRequest) {
     try {

@@ -11,8 +11,6 @@ import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.sparta.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -30,8 +28,6 @@ import java.sql.SQLException;
 @Transactional
 public class OrganizationsResource extends AbstractSpartaResource
 {
-    private static Logger l = LoggerFactory.getLogger(OrganizationsResource.class);
-
     @Since("1.2")
     @GET
     @Path("/{orgid}")

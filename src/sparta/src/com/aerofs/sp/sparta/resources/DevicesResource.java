@@ -10,9 +10,7 @@ import com.aerofs.rest.util.IAuthToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
-import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.sparta.Transactional;
-import com.google.inject.Inject;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -26,14 +24,6 @@ import java.sql.SQLException;
 @Transactional
 public class DevicesResource
 {
-    private final Device.Factory _factDevice;
-
-    @Inject
-    public DevicesResource(Device.Factory factDevice)
-    {
-        _factDevice = factDevice;
-    }
-
     @Since("1.1")
     @GET
     public Response list(@Auth IAuthToken token) throws SQLException

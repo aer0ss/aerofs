@@ -3,6 +3,7 @@ package com.aerofs.lib.os;
 import com.aerofs.lib.SystemUtil.ExitCode;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public abstract class OSUtil
@@ -69,10 +70,9 @@ public abstract class OSUtil
                 // executable.  The first four bytes of an ELF header are "\x7fELF", the fifth is:
                 // 0x01 for 32-bit binaries
                 // 0x02 for 64-bit binaries
-                FileInputStream f = new FileInputStream("/proc/self/exe");
-                byte[] b = new byte[5];
-                int read = f.read(b);
-                if (read != 5 || b[0] != 0x7f || b[1] != 0x45 || b[2] != 0x4c || b[3] != 0x46 ) {
+
+                byte[] b = readHeader();
+                if (b.length != 5 || b[0] != 0x7f || b[1] != 0x45 || b[2] != 0x4c || b[3] != 0x46 ) {
                     System.err.println(
                             "Couldn't detect architecture: missing or corrupted ELF header?");
                 } else {
@@ -110,6 +110,19 @@ public abstract class OSUtil
         // If we didn't figure out the architecture, die loudly
         if (_arch == null) {
             ExitCode.FAIL_TO_DETECT_ARCH.exit();
+        }
+    }
+
+    private static byte[] readHeader() throws IOException
+    {
+        FileInputStream f = null;
+        try {
+            byte[] b = new byte[5];
+            f = new FileInputStream("/proc/self/exe");
+            if (f.read(b) != 5) { return new byte[0]; };
+            return b;
+        } finally {
+            if (f != null) f.close();
         }
     }
 

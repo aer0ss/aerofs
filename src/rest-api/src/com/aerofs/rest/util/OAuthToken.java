@@ -14,8 +14,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
 import com.aerofs.oauth.Scope;
 import com.aerofs.oauth.VerifyTokenResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Map;
@@ -25,8 +23,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class OAuthToken implements IUserAuthToken
 {
-    private final static Logger l = LoggerFactory.getLogger(OAuthToken.class);
-
     private final UserID user;
     private final UserID issuer;
     private final DID did;

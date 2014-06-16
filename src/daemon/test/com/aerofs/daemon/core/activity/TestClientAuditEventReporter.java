@@ -178,8 +178,7 @@ public final class TestClientAuditEventReporter
                 _sidxToSid,
                 _al,
                 _auditorClient,
-                _auditDatabase,
-                _udinfo);
+                _auditDatabase);
     }
 
     @Test

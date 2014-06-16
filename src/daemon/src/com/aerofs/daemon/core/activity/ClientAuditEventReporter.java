@@ -74,7 +74,6 @@ public final class ClientAuditEventReporter // this can be final because it's no
     private final Scheduler _scheduler;
     private final TransManager _tm;
     private final IAuditDatabase _auditDatabase;
-    private final UserAndDeviceNames _udinfo;
     private final ActivityLog _activityLog;
     private final IMapSIndex2SID _sidxTosid;
     private final SimpleDateFormat _dateFormat;
@@ -146,8 +145,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
             IMapSIndex2SID sidxTosid,
             ActivityLog activityLog,
             IAuditorClient auditorClient,
-            IAuditDatabase auditDatabase,
-            UserAndDeviceNames udinfo)
+            IAuditDatabase auditDatabase)
     {
         _localdid = localdid.get();
         _hexEncodedLocalDid = localdid.get().toStringFormal();
@@ -155,7 +153,6 @@ public final class ClientAuditEventReporter // this can be final because it's no
         _scheduler = scheduler;
         _tm = tm;
         _auditDatabase = auditDatabase;
-        _udinfo = udinfo;
         _activityLog = activityLog;
         _sidxTosid = sidxTosid;
         _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");

@@ -7,7 +7,6 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
-import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 
 /**

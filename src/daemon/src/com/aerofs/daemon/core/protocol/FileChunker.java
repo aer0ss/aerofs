@@ -4,11 +4,9 @@
 
 package com.aerofs.daemon.core.protocol;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.google.common.collect.Queues;
-import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,8 +20,6 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class FileChunker
 {
-    private final static Logger l = Loggers.getLogger(FileChunker.class);
-
     static final int QUEUE_SIZE_WINDOWS = 128; // See comment below
 
     private final IPhysicalFile _file;
