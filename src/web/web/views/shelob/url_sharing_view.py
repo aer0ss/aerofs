@@ -103,7 +103,7 @@ def set_url_expires(request):
         PBException.NOT_FOUND: "The link does not exist or has expired",
     }).url_info.token
     delete_oauth_token(request, old_token)
-    reply = exception2error(get_rpc_stub(request).set_url_expires, (key, expires_abs_milli, new_token), {
+    exception2error(get_rpc_stub(request).set_url_expires, (key, expires_abs_milli, new_token), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
         PBException.NO_PERM: "The user is not an owner of the shared folder",
     })
@@ -126,7 +126,7 @@ def remove_url_expires(request):
         PBException.NOT_FOUND: "The link does not exist or has expired",
     }).url_info.token
     delete_oauth_token(request, old_token)
-    reply = exception2error(get_rpc_stub(request).remove_url_expires, (key, new_token), {
+    exception2error(get_rpc_stub(request).remove_url_expires, (key, new_token), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
         PBException.NO_PERM: "The user is not an owner of the shared folder",
     })
@@ -148,7 +148,7 @@ def remove_url(request):
         PBException.NOT_FOUND: "The link does not exist or has expired",
     }).url_info.token
     delete_oauth_token(request, old_token)
-    reply = exception2error(get_rpc_stub(request).remove_url, (key,), {
+    exception2error(get_rpc_stub(request).remove_url, (key,), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
         PBException.NO_PERM: "The user is not an owner of the shared folder",
     })
@@ -193,7 +193,7 @@ def remove_url_password(request):
     key = request.POST.get("key")
     if key is None:
         error.error('missing "key" param')
-    reply = exception2error(get_rpc_stub(request).remove_url_password, (key,), {
+    exception2error(get_rpc_stub(request).remove_url_password, (key,), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
         PBException.NO_PERM: "The user is not an owner of the shared folder",
     })
