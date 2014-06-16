@@ -4,12 +4,12 @@
   ~ Copyright (c) Air Computing Inc., 2013.
   -->
 
-<configuration>
+<configuration scan="true">
     <appender name="LOGFILE" class="ch.qos.logback.core.FileAppender">
         <File>/var/log/bifrost/bifrost.log</File>
         <Append>true</Append>
         <encoder>
-            <pattern>%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n</pattern>
+            <pattern>%-5level [%date{ISO8601, UTC}] [%-8.8thread] ~%c{0}~: %m%n%xEx</pattern>
         </encoder>
     </appender>
 

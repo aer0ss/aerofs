@@ -9,7 +9,7 @@
         <File>/var/log/auditor/auditor.log</File>
         <Append>true</Append>
         <encoder>
-            <pattern>%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n</pattern>
+            <pattern>%-5level [%date{ISO8601, UTC}] [%-8.8thread] %c{0}: %m%n%xEx</pattern>
         </encoder>
     </appender>
 

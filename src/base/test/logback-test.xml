@@ -28,7 +28,7 @@
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%d [%thread] %level %logger - %m%n</pattern>
+            <pattern>%-5level [%date{ISO8601, UTC}] [%-8.8thread] %c{0}: %m%n%xEx</pattern>
         </encoder>
     </appender>
 

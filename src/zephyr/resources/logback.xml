@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<configuration>
+<configuration scan="true">
     <appender name="LOGFILE" class="ch.qos.logback.core.FileAppender">
         <File>/var/log/zephyr/zephyr.log</File>
         <Append>true</Append>
         <encoder>
-            <pattern>%d{HHmmss.SSS}%-0.1p %t, %m%n</pattern>
+            <pattern>%-5level [%date{ISO8601, UTC}] [%-8.8thread] %c{0}: %m%n%xEx</pattern>
         </encoder>
     </appender>
 
