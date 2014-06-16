@@ -58,7 +58,7 @@ public class LinkStateService
         }
 
         if (builder != null) {
-            l.debug("ls:ifs:\n" + builder.toString());
+            l.debug("ls:ifs:" + builder.toString());
         }
 
         return interfaceBuilder.build();
@@ -131,7 +131,6 @@ public class LinkStateService
             if (isVirtual) builder.append('v');
             if (iface.supportsMulticast()) builder.append('m');
             builder.append(')');
-            builder.append('\n');
         }
 
         // IMPORTANT: On Mac OS X, disabling an interface via Network Preferences
