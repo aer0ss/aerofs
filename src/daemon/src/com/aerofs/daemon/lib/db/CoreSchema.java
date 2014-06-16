@@ -220,10 +220,10 @@ public class CoreSchema implements ISchema
             C_SPQ_TYPE      = "spq_t",
             C_SPQ_NAME      = "spq_n",
 
-            // pending external folders
-            T_PENDING_ROOT      = "pr",
-            C_PENDING_ROOT_SID  = "pr_s",
-            C_PENDING_ROOT_NAME = "pr_n",
+            // unlinked external folders
+            T_UNLINKED_ROOT = "pr",
+            C_UNLINKED_ROOT_SID = "pr_s",
+            C_UNLINKED_ROOT_NAME = "pr_n",
 
             // DID-to-User mapping
             T_D2U            = "d",
@@ -535,7 +535,7 @@ public class CoreSchema implements ISchema
         createActivityLogTables(s, dbcw);
         createSyncStatusPushQueueTable(s, dbcw);
         createUpdateQueueTable(s, dbcw);
-        createPendingRootTable(s, dbcw);
+        createUnlinkedRootTable(s, dbcw);
         createStoreContributorsTable(s, dbcw);
     }
 
@@ -626,11 +626,11 @@ public class CoreSchema implements ISchema
                 ")");
     }
 
-    public static void createPendingRootTable(Statement s, IDBCW dbcw) throws SQLException
+    public static void createUnlinkedRootTable(Statement s, IDBCW dbcw) throws SQLException
     {
-        s.executeUpdate("create table if not exists " + T_PENDING_ROOT + "(" +
-                C_PENDING_ROOT_SID + dbcw.uniqueIdType() + " not null primary key," +
-                C_PENDING_ROOT_NAME + " text not null" +
+        s.executeUpdate("create table if not exists " + T_UNLINKED_ROOT + "(" +
+                C_UNLINKED_ROOT_SID + dbcw.uniqueIdType() + " not null primary key," +
+                C_UNLINKED_ROOT_NAME + " text not null" +
                 ")" + dbcw.charSet());
     }
 

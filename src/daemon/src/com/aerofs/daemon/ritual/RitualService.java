@@ -42,6 +42,7 @@ import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
+import com.aerofs.daemon.event.fs.EIListUnlinkedRoots;
 import com.aerofs.daemon.event.fs.EIUnlinkRoot;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
@@ -53,7 +54,6 @@ import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.fs.EIImportFile;
 import com.aerofs.daemon.event.fs.EILinkRoot;
 import com.aerofs.daemon.event.fs.EIListNonRepresentableObjects;
-import com.aerofs.daemon.event.fs.EIListPendingRoots;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
@@ -86,14 +86,14 @@ import com.aerofs.proto.Ritual.IRitualService;
 import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListExcludedFoldersReply;
 import com.aerofs.proto.Ritual.ListNonRepresentableObjectsReply;
-import com.aerofs.proto.Ritual.ListPendingRootsReply;
-import com.aerofs.proto.Ritual.ListPendingRootsReply.PendingRoot;
+import com.aerofs.proto.Ritual.ListUnlinkedRootsReply;
+import com.aerofs.proto.Ritual.ListUnlinkedRootsReply.UnlinkedRoot;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
 import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
-import com.aerofs.proto.Ritual.ListUserRootsReply;
 import com.aerofs.proto.Ritual.ListUserRootsReply.UserRoot;
+import com.aerofs.proto.Ritual.ListUserRootsReply;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
@@ -173,13 +173,13 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<ListPendingRootsReply> listPendingRoots() throws Exception
+    public ListenableFuture<ListUnlinkedRootsReply> listUnlinkedRoots() throws Exception
     {
-        EIListPendingRoots ev = new EIListPendingRoots(Core.imce());
+        EIListUnlinkedRoots ev = new EIListUnlinkedRoots(Core.imce());
         ev.execute(PRIO);
-        ListPendingRootsReply.Builder bd = ListPendingRootsReply.newBuilder();
-        for (Entry<SID, String> e : ev.pending().entrySet()) {
-            bd.addRoot(PendingRoot.newBuilder()
+        ListUnlinkedRootsReply.Builder bd = ListUnlinkedRootsReply.newBuilder();
+        for (Entry<SID, String> e : ev.unlinked().entrySet()) {
+            bd.addRoot(UnlinkedRoot.newBuilder()
                     .setSid(e.getKey().toPB())
                     .setName(e.getValue()));
         }

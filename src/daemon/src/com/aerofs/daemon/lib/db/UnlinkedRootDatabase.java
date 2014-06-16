@@ -25,26 +25,26 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
  * the user to provide a per-device path at which the shared folder will be "linked".
  *
  * When the ACL subsystem learns about a new shared folder, it will either be auto-joined or placed
- * in this database if the "external" flag is set. The UI can then query the list of pending roots
+ * in this database if the "external" flag is set. The UI can then query the list of unlinked roots
  * and "link" each of them to a physical location at the user's request.
  *
- * As the name indicates, this database only hold pending roots. External shared folders should be
+ * As the name indicates, this database only hold unlinked roots. External shared folders should be
  * removed from it when linked.
  */
-public class PendingRootDatabase extends AbstractDatabase
+public class UnlinkedRootDatabase extends AbstractDatabase
 {
     @Inject
-    public PendingRootDatabase(CoreDBCW dbcw)
+    public UnlinkedRootDatabase(CoreDBCW dbcw)
     {
         super(dbcw.get());
     }
 
-    private final PreparedStatementWrapper _pswGetPendingRoot = new PreparedStatementWrapper(
-            DBUtil.selectWhere(T_PENDING_ROOT, C_PENDING_ROOT_SID + "=?", C_PENDING_ROOT_NAME));
-    public @Nullable String getPendingRoot(SID sid) throws SQLException
+    private final PreparedStatementWrapper _pswGetUnlinkedRoot = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_UNLINKED_ROOT, C_UNLINKED_ROOT_SID + "=?", C_UNLINKED_ROOT_NAME));
+    public @Nullable String getUnlinkedRoot(SID sid) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswGetPendingRoot.get(c());
+            PreparedStatement ps = _pswGetUnlinkedRoot.get(c());
             ps.setBytes(1, sid.getBytes());
             ResultSet rs = ps.executeQuery();
             try {
@@ -53,17 +53,17 @@ public class PendingRootDatabase extends AbstractDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _pswGetPendingRoot.close();
+            _pswGetUnlinkedRoot.close();
             throw detectCorruption(e);
         }
     }
 
-    private final PreparedStatementWrapper _pswGetPendingRoots = new PreparedStatementWrapper(
-            DBUtil.select(T_PENDING_ROOT, C_PENDING_ROOT_SID, C_PENDING_ROOT_NAME));
-    public Map<SID, String> getPendingRoots() throws SQLException
+    private final PreparedStatementWrapper _pswGetUnlinkedRoots = new PreparedStatementWrapper(
+            DBUtil.select(T_UNLINKED_ROOT, C_UNLINKED_ROOT_SID, C_UNLINKED_ROOT_NAME));
+    public Map<SID, String> getUnlinkedRoots() throws SQLException
     {
         try {
-            ResultSet rs = _pswGetPendingRoots.get(c()).executeQuery();
+            ResultSet rs = _pswGetUnlinkedRoots.get(c()).executeQuery();
             try {
                 Map<SID, String> m = Maps.newHashMap();
                 while (rs.next()) {
@@ -74,36 +74,36 @@ public class PendingRootDatabase extends AbstractDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _pswGetPendingRoots.close();
+            _pswGetUnlinkedRoots.close();
             throw detectCorruption(e);
         }
     }
 
-    private final PreparedStatementWrapper _pswAddPendingRoot = new PreparedStatementWrapper(
-            DBUtil.insert(T_PENDING_ROOT, C_PENDING_ROOT_SID, C_PENDING_ROOT_NAME));
-    public void addPendingRoot(SID sid, String name, Trans t) throws SQLException
+    private final PreparedStatementWrapper _pswAddUnlinkedRoot = new PreparedStatementWrapper(
+            DBUtil.insert(T_UNLINKED_ROOT, C_UNLINKED_ROOT_SID, C_UNLINKED_ROOT_NAME));
+    public void addUnlinkedRoot(SID sid, String name, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswAddPendingRoot.get(c());
+            PreparedStatement ps = _pswAddUnlinkedRoot.get(c());
             ps.setBytes(1, sid.getBytes());
             ps.setString(2, name);
             ps.executeUpdate();
         } catch (SQLException e) {
-            _pswAddPendingRoot.close();
+            _pswAddUnlinkedRoot.close();
             throw detectCorruption(e);
         }
     }
 
-    private final PreparedStatementWrapper _pswRemovePendingRoot = new PreparedStatementWrapper(
-            DBUtil.deleteWhere(T_PENDING_ROOT, C_PENDING_ROOT_SID + "=?"));
-    public void removePendingRoot(SID sid, Trans t) throws SQLException
+    private final PreparedStatementWrapper _pswRemoveUnlinkedRoot = new PreparedStatementWrapper(
+            DBUtil.deleteWhere(T_UNLINKED_ROOT, C_UNLINKED_ROOT_SID + "=?"));
+    public void removeUnlinkedRoot(SID sid, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswRemovePendingRoot.get(c());
+            PreparedStatement ps = _pswRemoveUnlinkedRoot.get(c());
             ps.setBytes(1, sid.getBytes());
             ps.executeUpdate();
         } catch (SQLException e) {
-            _pswRemovePendingRoot.close();
+            _pswRemoveUnlinkedRoot.close();
             throw detectCorruption(e);
         }
     }

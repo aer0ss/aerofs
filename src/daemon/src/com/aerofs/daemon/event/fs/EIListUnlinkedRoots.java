@@ -10,22 +10,22 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 
 import java.util.Map;
 
-public class EIListPendingRoots extends AbstractEBIMC
+public class EIListUnlinkedRoots extends AbstractEBIMC
 {
-    private Map<SID, String> _pending;
+    private Map<SID, String> _unlinked;
 
-    public EIListPendingRoots(IIMCExecutor imce)
+    public EIListUnlinkedRoots(IIMCExecutor imce)
     {
         super(imce);
     }
 
-    public void setResult(Map<SID, String> pending)
+    public void setResult(Map<SID, String> unlinked)
     {
-        _pending = pending;
+        _unlinked = unlinked;
     }
 
-    public Map<SID, String> pending()
+    public Map<SID, String> unlinked()
     {
-        return _pending;
+        return _unlinked;
     }
 }

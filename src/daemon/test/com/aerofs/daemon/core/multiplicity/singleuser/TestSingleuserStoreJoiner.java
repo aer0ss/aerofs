@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeleter;
-import com.aerofs.daemon.lib.db.PendingRootDatabase;
+import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
@@ -51,7 +51,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     @Mock RitualNotificationServer rns;
     @Mock SharedFolderAutoUpdater lod;
     @Mock IMapSIndex2SID sidx2sid;
-    @Mock PendingRootDatabase prdb;
+    @Mock UnlinkedRootDatabase urdb;
     @Mock RitualNotifier _ritualNotifier;
 
     @InjectMocks SingleuserStoreJoiner ssj;
@@ -83,7 +83,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     {
         ssj.joinStore_(rootSidx, rootSID, "test", false, t);
 
-        verifyZeroInteractions(oc, od, os, sd, lod, rns, prdb);
+        verifyZeroInteractions(oc, od, os, sd, lod, rns, urdb);
     }
 
     @Test
@@ -93,7 +93,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
         ssj.joinStore_(sidx, sid, "test", true, t);
 
         verify(lod).removeLeaveCommandsFromQueue_(sid, t);
-        verify(prdb).addPendingRoot(sid, "test", t);
+        verify(urdb).addUnlinkedRoot(sid, "test", t);
 
         verifyZeroInteractions(oc, od, os, sd);
     }
@@ -106,7 +106,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
 
         verify(lod).removeLeaveCommandsFromQueue_(sid, t);
         verifyAnchorCreated(sid, "test");
-        verifyZeroInteractions(od, os, sd, prdb);
+        verifyZeroInteractions(od, os, sd, urdb);
     }
 
     @Test
@@ -119,7 +119,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
         verify(lod).removeLeaveCommandsFromQueue_(sid, t);
         verifyAnchorCreated(sid, "*test");
 
-        verifyZeroInteractions(od, os, sd, prdb);
+        verifyZeroInteractions(od, os, sd, urdb);
     }
 
     @Test
@@ -127,7 +127,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     {
         ssj.leaveStore_(rootSidx, rootSID, t);
 
-        verifyZeroInteractions(oc, od, os, sd, lod, rns, prdb);
+        verifyZeroInteractions(oc, od, os, sd, lod, rns, urdb);
     }
 
     @Test
@@ -145,7 +145,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
 
         ssj.leaveStore_(sidx, sid, t);
 
-        verify(prdb).removePendingRoot(sid, t);
+        verify(urdb).removeUnlinkedRoot(sid, t);
         verify(od).delete_(soid, PhysicalOp.APPLY, t);
     }
 
@@ -160,7 +160,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
 
         ssj.leaveStore_(sidx, sid, t);
 
-        verify(prdb).removePendingRoot(sid, t);
+        verify(urdb).removeUnlinkedRoot(sid, t);
         verify(sd).deleteRootStore_(sidx, PhysicalOp.APPLY, t);
     }
 }

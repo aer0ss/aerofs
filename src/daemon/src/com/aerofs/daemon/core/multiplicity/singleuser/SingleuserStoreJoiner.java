@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.store.AbstractStoreJoiner;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
-import com.aerofs.daemon.lib.db.PendingRootDatabase;
+import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgRootSID;
@@ -37,13 +37,13 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
     private final RitualNotificationServer _rns;
     private final SharedFolderAutoUpdater _lod;
     private final IMapSIndex2SID _sidx2sid;
-    private final PendingRootDatabase _prdb;
+    private final UnlinkedRootDatabase _urdb;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
             SharedFolderAutoUpdater lod, StoreDeleter sd, IMapSIndex2SID sidx2sid,
-            PendingRootDatabase prdb)
+            UnlinkedRootDatabase urdb)
     {
         super(ds, os, oc, od);
         _sd = sd;
@@ -52,7 +52,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
         _rns = rns;
         _lod = lod;
         _sidx2sid = sidx2sid;
-        _prdb = prdb;
+        _urdb = urdb;
     }
 
     @Override
@@ -70,7 +70,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
         // external folders are not auto-joined (user interaction is needed)
         if (external) {
             l.info("pending {} {}", sid, folderName);
-            _prdb.addPendingRoot(sid, folderName, t);
+            _urdb.addUnlinkedRoot(sid, folderName, t);
             _rns.getRitualNotifier().sendNotification(newSharedFolderPendingNotification());
             return;
         }
@@ -98,8 +98,8 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
 
         l.info("leaving share: " + sidx + " " + sid);
 
-        // remove any pending external root
-        _prdb.removePendingRoot(sid, t);
+        // remove any unlinked external root
+        _urdb.removeUnlinkedRoot(sid, t);
 
         // delete any existing anchor (even expelled ones)
         Collection<SIndex> sidxs = _stores.getAll_();

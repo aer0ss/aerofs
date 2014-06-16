@@ -12,11 +12,11 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class DPUTCreatePendingRootTable implements IDaemonPostUpdateTask
+public class DPUTCreateUnlinkedRootTable implements IDaemonPostUpdateTask
 {
     private final IDBCW _dcbw;
 
-    public DPUTCreatePendingRootTable(CoreDBCW dbcw)
+    public DPUTCreateUnlinkedRootTable(CoreDBCW dbcw)
     {
         _dcbw = dbcw.get();
     }
@@ -28,7 +28,7 @@ public class DPUTCreatePendingRootTable implements IDaemonPostUpdateTask
             @Override
             public void run_(Statement s)throws SQLException
             {
-                CoreSchema.createPendingRootTable(s, _dcbw);
+                CoreSchema.createUnlinkedRootTable(s, _dcbw);
             }
         });
     }

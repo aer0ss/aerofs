@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.lib.db.PendingRootDatabase;
+import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -32,22 +32,22 @@ public class Path2SIndexResolver
     private final IMapSID2SIndex _sid2sidx;
     private final TransManager _tm;
     private final DirectoryService _ds;
-    private final PendingRootDatabase _prdb;
+    private final UnlinkedRootDatabase _urdb;
 
     @Inject
     public Path2SIndexResolver(IMapSID2SIndex sid2sidx, TransManager tm, DirectoryService ds,
-            PendingRootDatabase prdb)
+            UnlinkedRootDatabase urdb)
     {
         _sid2sidx = sid2sidx;
         _tm = tm;
         _ds = ds;
-        _prdb = prdb;
+        _urdb = urdb;
     }
 
     SIndex getSIndex_(Path path) throws SQLException, ExExpelled, ExNotShared, ExNotFound
     {
         SIndex sidx;
-        if (_prdb.getPendingRoot(path.sid()) != null) {
+        if (_urdb.getUnlinkedRoot(path.sid()) != null) {
             // Unlinked store.
             sidx = getSIndex_(path.sid());
         } else {

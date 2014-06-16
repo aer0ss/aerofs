@@ -11,7 +11,7 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;
 
 /**
- * Handler class for LinkRoot. This is used exclusively for linking pending/unlinked external
+ * Handler class for LinkRoot. This is used exclusively for linking unlinked external
  * shared folder. It is different from creating an external shared folder.
  */
 public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>

@@ -9,7 +9,7 @@ public class EIUnlinkRoot extends AbstractEBIMC
     public final SID _sid;
 
     /**
-     * Set an external folder to be a pending root.
+     * Set an external folder to be a unlinked root.
      */
     public EIUnlinkRoot(SID sid)
     {

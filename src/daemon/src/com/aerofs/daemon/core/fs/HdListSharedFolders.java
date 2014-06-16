@@ -5,7 +5,7 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.db.PendingRootDatabase;
+import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
@@ -32,16 +32,16 @@ public class HdListSharedFolders extends AbstractHdIMC<EIListSharedFolders>
 {
     private final IMapSIndex2SID _sidx2sid;
     private final LocalACL _lacl;
-    private final PendingRootDatabase _prdb;
+    private final UnlinkedRootDatabase _urdb;
     private final IListLinkedAndExpelledSharedFolders _llesf;
 
     @Inject
-    public HdListSharedFolders(IMapSIndex2SID sidx2sid, LocalACL lacl, PendingRootDatabase prdb,
+    public HdListSharedFolders(IMapSIndex2SID sidx2sid, LocalACL lacl, UnlinkedRootDatabase urdb,
             IListLinkedAndExpelledSharedFolders llesf)
     {
         _sidx2sid = sidx2sid;
         _lacl = lacl;
-        _prdb = prdb;
+        _urdb = urdb;
         _llesf = llesf;
     }
 
@@ -57,14 +57,14 @@ public class HdListSharedFolders extends AbstractHdIMC<EIListSharedFolders>
         Collection<PBSharedFolder> sharedFolders =
                 Lists.newArrayListWithCapacity(accessibleStores.size());
 
-        Map<SID, String> pendingRoots = _prdb.getPendingRoots();
+        Map<SID, String> unlinkedRoots = _urdb.getUnlinkedRoots();
 
         for (SIndex sidx : accessibleStores) {
             SID sid = _sidx2sid.getLocalOrAbsent_(sidx);
             // The accessible stores will also include the user root which is not really a shared
             // folder. So filter it.
             if (!sid.isUserRoot()) {
-                PBSharedFolder sharedFolder = getSharedFolder(sidx, sid, pendingRoots);
+                PBSharedFolder sharedFolder = getSharedFolder(sidx, sid, unlinkedRoots);
                 if (sharedFolder != null) {
                     sharedFolders.add(sharedFolder);
                 }

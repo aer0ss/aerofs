@@ -105,8 +105,8 @@ class _RitualServiceWrapper(object):
     def link_root(self, path, sid):
         self._service.link_root(path, sid)
 
-    def list_pending_roots(self):
-        return self._service.list_pending_roots().root
+    def list_unlinked_roots(self):
+        return self._service.list_unlinked_roots().root
 
     def share_folder(self, path, acl={}, note=""):
         """

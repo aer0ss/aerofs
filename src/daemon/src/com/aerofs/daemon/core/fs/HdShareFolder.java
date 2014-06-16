@@ -26,7 +26,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.db.PendingRootDatabase;
+import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -73,7 +73,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final DescendantStores _dss;
     private final ACLSynchronizer _aclsync;
     private final SPBlockingClient.Factory _factSP;
-    private final PendingRootDatabase _prdb;
+    private final UnlinkedRootDatabase _urdb;
     private final CfgAbsRoots _absRoots;
 
     @Inject
@@ -81,7 +81,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             IPhysicalStorage ps, DirectoryService ds, ImmigrantCreator imc, ObjectMover om,
             ObjectDeleter od, IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss,
             ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP,
-            CfgAbsRoots cfgAbsRoots, PendingRootDatabase prdb)
+            CfgAbsRoots cfgAbsRoots, UnlinkedRootDatabase urdb)
     {
         _ss = ss;
         _tokenManager = tokenManager;
@@ -97,7 +97,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _aclsync = aclsync;
         _factSP = factSP;
         _absRoots = cfgAbsRoots;
-        _prdb = prdb;
+        _urdb = urdb;
     }
 
     @Override
@@ -134,9 +134,9 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             // reject unknown SID (failure to do so would lead to crash when determining the name)
             if (_sid2sidx.getLocalOrAbsentNullable_(sid) == null) throw new ExBadArgs();
             oa = null;
-            // Grabing name for external shared folders. If the store is pending, query pending
+            // Grabbing name for external shared folders. If the store is unlinked, query unlinked
             // root db else get it through the sharedFolderName util.
-            name = _prdb.getPendingRoot(sid);
+            name = _urdb.getUnlinkedRoot(sid);
             if (name == null) {
                 name = sharedFolderName(ev._path, _absRoots);
             }

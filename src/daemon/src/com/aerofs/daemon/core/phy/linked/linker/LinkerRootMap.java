@@ -9,7 +9,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedPath;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
-import com.aerofs.daemon.lib.db.PendingRootDatabase;
+import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
@@ -51,7 +51,7 @@ public class LinkerRootMap
     private final IOSUtil _os;
     private final InjectableFile.Factory _factFile;
     private final CfgAbsRoots _cfgAbsRoots;
-    private final PendingRootDatabase _prdb;
+    private final UnlinkedRootDatabase _urdb;
     private final RitualNotificationServer _rns;
     private final SharedFolderTagFileAndIcon _sfti;
 
@@ -75,11 +75,11 @@ public class LinkerRootMap
 
     @Inject
     public LinkerRootMap(IOSUtil os, InjectableFile.Factory factFile, CfgAbsRoots cfgAbsRoots,
-            SharedFolderTagFileAndIcon sfti, PendingRootDatabase prdb, RitualNotificationServer rns)
+            SharedFolderTagFileAndIcon sfti, UnlinkedRootDatabase urdb, RitualNotificationServer rns)
     {
         _os = os;
         _factFile = factFile;
-        _prdb = prdb;
+        _urdb = urdb;
         _sfti = sfti;
         _cfgAbsRoots = cfgAbsRoots;
         _rns = rns;
@@ -158,7 +158,7 @@ public class LinkerRootMap
         if (e != null) throw e;
         _sfti.addTagFileAndIconIn(sid, absRoot, t);
         _cfgAbsRoots.add(sid, absRoot);
-        _prdb.removePendingRoot(sid, t);
+        _urdb.removeUnlinkedRoot(sid, t);
 
         t.addListener_(new AbstractTransListener()
         {

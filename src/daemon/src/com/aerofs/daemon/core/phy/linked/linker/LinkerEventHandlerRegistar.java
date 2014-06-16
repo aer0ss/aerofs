@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.phy.linked.linker.event.EIMightDeleteNotification;
 import com.aerofs.daemon.core.phy.linked.linker.event.EITestPauseOrResumeLinker;
 import com.aerofs.daemon.event.fs.EICreateRoot;
 import com.aerofs.daemon.event.fs.EILinkRoot;
-import com.aerofs.daemon.event.fs.EIListPendingRoots;
+import com.aerofs.daemon.event.fs.EIListUnlinkedRoots;
 import com.aerofs.daemon.event.fs.EIUnlinkRoot;
 import com.google.inject.Inject;
 
@@ -19,7 +19,7 @@ public class LinkerEventHandlerRegistar implements ICoreEventHandlerRegistrar
 {
     private final HdCreateRoot _hdCreateRoot;
     private final HdLinkRoot _hdLinkRoot;
-    private final HdListPendingRoots _hdListPendingRoots;
+    private final HdListUnlinkedRoots _hdListUnlinkedRoots;
     private final HdMightCreateNotification _hdMightCreate;
     private final HdMightDeleteNotification _hdMightDelete;
     private final HdTestPauseOrResumeLinker _hdTestPauseResume;
@@ -27,13 +27,13 @@ public class LinkerEventHandlerRegistar implements ICoreEventHandlerRegistrar
 
     @Inject
     public LinkerEventHandlerRegistar(HdCreateRoot hdCreateRoot,  HdLinkRoot hdLinkRoot,
-            HdListPendingRoots hdListPendingRoots, HdTestPauseOrResumeLinker pauseResume,
+            HdListUnlinkedRoots hdListUnlinkedRoots, HdTestPauseOrResumeLinker pauseResume,
             HdMightCreateNotification mcn, HdMightDeleteNotification mdn,
             HdUnlinkRoot hdUnlinkRoot)
     {
         _hdCreateRoot = hdCreateRoot;
         _hdLinkRoot = hdLinkRoot;
-        _hdListPendingRoots = hdListPendingRoots;
+        _hdListUnlinkedRoots = hdListUnlinkedRoots;
         _hdMightCreate = mcn;
         _hdMightDelete = mdn;
         _hdTestPauseResume = pauseResume;
@@ -46,7 +46,7 @@ public class LinkerEventHandlerRegistar implements ICoreEventHandlerRegistrar
         disp
                 .setHandler_(EICreateRoot.class, _hdCreateRoot)
                 .setHandler_(EILinkRoot.class, _hdLinkRoot)
-                .setHandler_(EIListPendingRoots.class, _hdListPendingRoots)
+                .setHandler_(EIListUnlinkedRoots.class, _hdListUnlinkedRoots)
                 .setHandler_(EIMightCreateNotification.class, _hdMightCreate)
                 .setHandler_(EIMightDeleteNotification.class, _hdMightDelete)
                 .setHandler_(EITestPauseOrResumeLinker.class, _hdTestPauseResume)

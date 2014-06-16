@@ -59,7 +59,7 @@ public class DaemonPostUpdateTasks
             new DPUTFixExpelledAlias(dbcw),
             new DPUTPerPhyRootAuxRoot(),
             new DPUTCreateCAIndex(dbcw),
-            new DPUTCreatePendingRootTable(dbcw),
+            new DPUTCreateUnlinkedRootTable(dbcw),
             new DPUTAddStoreNameColumn(dbcw),
             new DPUTAddContributorsTable(dbcw),
             null,  // used to be DPUTCleanupGhostKML
