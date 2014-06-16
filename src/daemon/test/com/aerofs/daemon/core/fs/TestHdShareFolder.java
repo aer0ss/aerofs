@@ -29,6 +29,7 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIShareFolder;
+import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
@@ -87,6 +88,7 @@ public class TestHdShareFolder extends AbstractTest
     @Mock CfgLocalUser cfgLocalUser;
     @Mock CfgAbsRoots cfgAbsRoots;
     @Mock CfgStorageType cfgStorageType;
+    @Mock UnlinkedRootDatabase urdb;
 
     @InjectMocks HdShareFolder hd;
 
