@@ -166,7 +166,7 @@ public class Main
                 } else {
                     msg = "Unable to launch: configuration error. Please verify that your " +
                           L.brand() + " Appliance is reachable on the required ports (see " +
-                          "http://ae.ro/1bent79 for details). Contact your systems administrator " +
+                          "http://ae.ro/1kH9UgV for details). Contact your systems administrator " +
                           "if the problem persists.";
                 }
 

@@ -23,7 +23,7 @@ public class GUIProgram implements IProgram
             L.product() +
                     " cannot launch because the Microsoft Visual " +
                     "C++ 2010 redistributable package is not installed. Please go to the " +
-                    "following URL to download and install it:\n\nhttp://ae.ro/msvc2010";
+                    "following URL to download and install it:\n\nhttp://ae.ro/msvcpp2010";
 
     private static final String WINDOWS_MISSING_MSVC_DLL_EXCEPTION_MESSAGE =
             "aerofsd.dll could not load because MSVC 2010 redistributables are missing";
