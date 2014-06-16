@@ -535,7 +535,7 @@ service SPService {
     // Throws:
     //   ExEmptyEmailAddress if the user id is empty
     //   ExBadCredential if username/password combination is incorrect
-    rpc CredentialSignIn(SignInUserCall) returns (Void);
+    rpc CredentialSignIn(SignInUserCall) returns (SignInUserReply);
 
     // Validate the given username/credential pair without signing the user in.
     //
@@ -559,7 +559,7 @@ service SPService {
     //   ExBadCredential if username/password combination is incorrect, or in the case of the Team
     //                   Server, if they have not signed in successfully using mutual
     //                   authentication.
-    rpc SignInUser(SignInUserCall) returns (Void);
+    rpc SignInUser(SignInUserCall) returns (SignInUserReply);
 
     // Sign in a device using an existing device certificate.
     //
@@ -1308,6 +1308,11 @@ message SignInUserCall {
     required bytes credential = 2;
 }
 
+message SignInUserReply {
+    // optional for backwards-compatibility with Void reply
+    optional bool need_second_factor = 1;
+}
+
 message OpenIdSessionNonces {
     // TODO (WW) replace CamelCase with underscore
     required string sessionNonce = 1;
@@ -1324,6 +1329,7 @@ message OpenIdSessionAttributes {
     optional string userId = 1;
     optional string firstName = 2;
     optional string lastName = 3;
+    optional bool need_second_factor = 4;
 }
 
 message MobileAccessCode {

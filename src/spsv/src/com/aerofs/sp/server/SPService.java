@@ -102,6 +102,7 @@ import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.proto.Sp.SetupTwoFactorReply;
+import com.aerofs.proto.Sp.SignInUserReply;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -2537,7 +2538,7 @@ public class SPService implements ISPService
      * @throws ExBadCredential if username/password combination is incorrect
      */
     @Override
-    public ListenableFuture<Void> signInUser(String userId, ByteString credentials)
+    public ListenableFuture<SignInUserReply> signInUser(String userId, ByteString credentials)
             throws Exception
     {
         User user = _factUser.createFromExternalID(userId);
@@ -2562,10 +2563,13 @@ public class SPService implements ISPService
                 .publish();
 
         _sqlTrans.begin();
-        User.checkProvenance(user, _session.getAuthenticatedProvenances(), ProvenanceGroup.LEGACY);
+        boolean enforceTwoFactor = user.shouldEnforceTwoFactor();
+        boolean needSecondFactor = enforceTwoFactor && !_session.getAuthenticatedProvenances()
+                .contains(Provenance.BASIC_PLUS_SECOND_FACTOR);
         _sqlTrans.commit();
 
-        return createVoidReply();
+        return createReply(
+                SignInUserReply.newBuilder().setNeedSecondFactor(needSecondFactor).build());
     }
 
     /**
@@ -2587,7 +2591,7 @@ public class SPService implements ISPService
      * @throws ExBadCredential if username/credential combination is incorrect
      */
     @Override
-    public ListenableFuture<Void> credentialSignIn(String userId, ByteString credentials)
+    public ListenableFuture<SignInUserReply> credentialSignIn(String userId, ByteString credentials)
             throws Exception
     {
         User user = authByCredentials(userId, credentials);
@@ -2595,9 +2599,12 @@ public class SPService implements ISPService
         _session.setBasicAuthDate(System.currentTimeMillis());
         _userTracker.signIn(user.id(), _session.id());
         _sqlTrans.begin();
-        User.checkProvenance(user, _session.getAuthenticatedProvenances(), ProvenanceGroup.LEGACY);
+        boolean enforceTwoFactor = user.shouldEnforceTwoFactor();
+        boolean needSecondFactor = enforceTwoFactor && !_session.getAuthenticatedProvenances()
+                .contains(Provenance.BASIC_PLUS_SECOND_FACTOR);
         _sqlTrans.commit();
-        return createVoidReply();
+        return createReply(
+                SignInUserReply.newBuilder().setNeedSecondFactor(needSecondFactor).build());
     }
 
     /**
@@ -2819,12 +2826,17 @@ public class SPService implements ISPService
             // notify TS of user creation (for root store auto-join)
             _aclPublisher.publish_(user.getOrganization().id().toTeamServerUserID());
         }
+        boolean enforceSecondFactor = user.shouldEnforceTwoFactor();
         _sqlTrans.commit();
         l.info("SI (OpenID): " + user.toString());
 
         // Set the session cookie.
         _session.setUser(user);
         _session.setBasicAuthDate(System.currentTimeMillis());
+
+        // Check if the user will need to provide a second factor to use this session
+        boolean needSecondFactor = enforceSecondFactor && !_session.getAuthenticatedProvenances()
+                .contains(Provenance.BASIC_PLUS_SECOND_FACTOR);
 
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _session.id());
@@ -2834,14 +2846,11 @@ public class SPService implements ISPService
                 .add("authority", "OpenId")
                 .publish();
 
-        _sqlTrans.begin();
-        User.checkProvenance(user, _session.getAuthenticatedProvenances(), ProvenanceGroup.LEGACY);
-        _sqlTrans.commit();
-
         return createReply(OpenIdSessionAttributes.newBuilder()
                 .setUserId(attrs.getEmail())
                 .setFirstName(attrs.getFirstName())
                 .setLastName(attrs.getLastName())
+                .setNeedSecondFactor(needSecondFactor)
                 .build());
     }
 
