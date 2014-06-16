@@ -1,13 +1,16 @@
 import logging
 
+from pyramid.httpexceptions import HTTPFound
+from pyramid.security import remember
+
+from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
+from aerofs_sp.connection import SyncConnectionService
+
 # N.B. This parameter is also used in aerofs.js. Remember to update this and all
 # other references to this parameter when modifying handling of the next parameter.
-from pyramid.httpexceptions import HTTPFound
-
 URL_PARAM_NEXT = 'next'
 
 log = logging.getLogger(__name__)
-
 
 def get_next_url(request, default_route):
     """
@@ -47,3 +50,35 @@ def redirect_to_next_page(request, headers, default_route):
     redirect = resolve_next_url(request, default_route)
     log.debug("login redirect to {}".format(redirect))
     return HTTPFound(location=redirect, headers=headers)
+
+def log_in_user(request, login_func, stay_signed_in=False, **kw_args):
+    """
+    Attempts to log in to SP using login_func(**kw_args)
+
+    login_func must be a callable that takes the request context, an SP RPC
+    stub, and any additional keyword args passed to this function, like
+    userid/cred or session_nonce.  It should perform the appropriate login call
+    and return a tuple of (authenticated_userid, need_second_factor).
+
+    Returns a set of headers to create a session for the user.
+    Could potentially throw any protobuf exception that SP throws.
+    """
+
+    # ignore any session data that may be saved
+    settings = request.registry.settings
+    con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
+    sp = SPServiceRpcStub(con)
+
+    # Log in using the login_func provided
+    second_factor_needed = False
+    userid, second_factor_needed = login_func(request, sp, **kw_args)
+
+    if stay_signed_in:
+        log.debug("Extending session")
+        sp.extend_session()
+
+    # Save the cookies in the session, for reuse in future requests
+    request.session['sp_cookies'] = con._session.cookies
+    request.session['team_id'] = sp.get_organization_id().org_id
+
+    return remember(request, userid), second_factor_needed

@@ -1,20 +1,38 @@
 import logging
 from pyramid import url
 from pyramid.httpexceptions import HTTPFound
-from pyramid.security import remember, NO_PERMISSION_REQUIRED
+from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
 
-from web.login_util import resolve_next_url
+from web.login_util import resolve_next_url, log_in_user
 from web.util import flash_error
 from web.views.login.login_view import DEFAULT_DASHBOARD_NEXT
 
 log = logging.getLogger(__name__)
 
 _SESSION_KEY_NEXT = 'openid_login_next'
+
+def _sp_openid_get_session_attrs(request, sp_rpc_stub, **kw_args):
+    """Inner function for log_in_user; see login_util.py"""
+    session_nonce = kw_args['sp_session_nonce']
+    attrs = sp_rpc_stub.open_id_get_session_attributes(session_nonce)
+    if len(attrs.userId) == 0:
+        log.error('Session nonce is not logged in: ' + session_nonce)
+        settings = request.registry.settings
+        support_email = settings.get('base.www.support_email_address', 'support@aerofs.com')
+        flash_error(request, request.translate("An error occurred processing your"
+            " authentication request. Please try again, or contact {support_email}"
+            " if the problem persists.", {'support_email': support_email}))
+        raise ExceptionReply('Authentication error')
+    userid = attrs.userId
+    need_second_factor = attrs.HasField('need_second_factor') and attrs.need_second_factor
+    log.debug('OpenID login succeeded for {}{}'.format(userid,
+        ", need second factor" if need_second_factor else ""))
+    return userid, need_second_factor
 
 def _begin_sp_auth(request):
     """
@@ -41,42 +59,6 @@ def _begin_sp_auth(request):
     return _url
 
 
-def _get_sp_auth(request, stay_signed_in):
-    """
-    Ask SP to authenticate our session using our approved session nonce.
-    Could potentially throw any protobuf exception that SP throws.
-    @return the headers remember() returns
-    """
-    settings = request.registry.settings
-    con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
-    sp = SPServiceRpcStub(con)
-
-    session_nonce = request.session['sp_session_nonce']
-
-    attrs = sp.open_id_get_session_attributes(session_nonce)
-
-    if len(attrs.userId) == 0:
-        log.error('Session nonce is not logged in: ' + session_nonce)
-        support_email = settings.get('base.www.support_email_address', 'support@aerofs.com')
-        flash_error(request, request.translate("An error occurred processing your"
-            " authentication request. Please try again, or contact {support_email}"
-            " if the problem persists.", {'support_email': support_email}))
-        raise ExceptionReply('Authentication error')
-
-    login = attrs.userId
-    log.debug('SP auth returned ' + login)
-
-    if stay_signed_in:
-        log.debug("Extending session")
-        sp.extend_session()
-
-    # TOOD (WW) consolidate how we save authorization data in the session
-    # TODO (WW) move common code between login_view.py and openid.py to login_util.py
-    request.session['sp_cookies'] = con._session.cookies
-    request.session['team_id'] = sp.get_organization_id().org_id
-
-    return remember(request, login)
-
 @view_config(
     route_name = 'login_openid_begin',
     permission=NO_PERMISSION_REQUIRED,
@@ -87,6 +69,7 @@ def login_openid(request):
     Return the identity request url.
     """
     identity_url = _begin_sp_auth(request)
+    log.debug("begin openid: redirecting to {}".format(identity_url))
     return HTTPFound(location=identity_url)
 
 @view_config(
@@ -97,7 +80,9 @@ def login_openid_complete(request):
     """
     Complete the signin procedure with SP.
     """
-    headers = _get_sp_auth(request=request, stay_signed_in=True)
+    session_nonce = request.session['sp_session_nonce']
+    headers, second_factor_needed = log_in_user(request, _sp_openid_get_session_attrs,
+            stay_signed_in=True, sp_session_nonce=session_nonce)
     # Note: this logic is very similar to login_util.py:redirect_to_next_page()
     redirect = request.session[_SESSION_KEY_NEXT]
     log.debug("openid login redirect to {}".format(redirect))

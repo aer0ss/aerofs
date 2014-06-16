@@ -2,17 +2,15 @@ import logging
 
 from pyramid import url
 from pyramid.httpexceptions import HTTPFound
-from pyramid.security import remember, forget, NO_PERMISSION_REQUIRED
+from pyramid.security import forget, NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 from aerofs_common.exception import ExceptionReply
 
 from aerofs_sp.gen.common_pb2 import PBException
-from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
-from aerofs_sp.connection import SyncConnectionService
 import requests
 from web.util import flash_error, get_rpc_stub, is_private_deployment
 
-from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page
+from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page, log_in_user
 
 DEFAULT_DASHBOARD_NEXT = 'dashboard_home'
 
@@ -42,16 +40,16 @@ def _do_login(request):
     _ = request.translate
 
     # Remember to normalize the email address.
-    login = request.params[URL_PARAM_EMAIL]
+    userid = request.params[URL_PARAM_EMAIL]
     password = request.params[URL_PARAM_PASSWORD].encode("utf-8")
     stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
     try:
         try:
-            headers = _log_in_user(request, login, password, stay_signed_in)
+            headers, second_factor_required = log_in_user(request, _sp_cred_signin, userid=userid, password=password, stay_signed_in=stay_signed_in)
             return redirect_to_next_page(request, headers, DEFAULT_DASHBOARD_NEXT)
         except ExceptionReply as e:
             if e.get_type() == PBException.BAD_CREDENTIAL:
-                log.warn(login + " attempts to login w/ bad password")
+                log.warn(userid + " attempts to login w/ bad password")
                 flash_error(request, _("Email or password is incorrect."))
             elif e.get_type() == PBException.EMPTY_EMAIL_ADDRESS:
                 flash_error(request, _("The email address cannot be empty."))
@@ -64,7 +62,6 @@ def _do_login(request):
         flash_error(request, _("An error occurred processing your request." +
                 " Please try again later. Contact " + support_email + " if the" +
                 " problem persists."))
-
 
 @view_config(
     route_name='login',
@@ -137,10 +134,10 @@ def login_for_tests_json_view(request):
     This method always return a valid JSON document (both for success and errors)
     """
     try:
-        login = request.params[URL_PARAM_EMAIL]
+        userid = request.params[URL_PARAM_EMAIL]
         password = request.params[URL_PARAM_PASSWORD].encode("utf-8")
         try:
-            headers = _log_in_user(request, login, password, False)
+            headers, second_factor_needed = log_in_user(request, _sp_cred_signin, userid=userid, password=password)
             request.response.headerlist.extend(headers)
             return {'ok': True}
         except ExceptionReply as e:
@@ -155,35 +152,22 @@ def login_for_tests_json_view(request):
         return {'error': '500', 'message': 'internal server error'}
 
 
-def _log_in_user(request, login, creds, stay_signed_in):
+def _sp_cred_signin(request, sp_rpc_stub, **kw_args):
     """
-    Logs in the given user with the given credentials and returns a
-    set of headers to create a session for the user. Could potentially throw any
-    protobuf exception that SP throws.
+    Inner function for use with login_util.log_in_user.
 
-    creds is expected to be converted to bytes (we are using utf8)
+    userid is a string
+    password is expected to be converted to bytes (we are using utf8)
     """
-    if not isinstance(creds, bytes):
+    userid = kw_args['userid']
+    password = kw_args['password']
+    if not isinstance(password, bytes):
         raise TypeError("credentials require encoding")
-
-    # ignore any session data that may be saved
-    settings = request.registry.settings
-    con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
-    sp = SPServiceRpcStub(con)
-
-    sp.credential_sign_in(login, creds)
-
-    if stay_signed_in:
-        log.debug("Extending session")
-        sp.extend_session()
-
-    # TOOD (WW) consolidate how we save authorization data in the session
-    # TODO (WW) move common code between login_view.py and openid.py to login_util.py
-    request.session['sp_cookies'] = con._session.cookies
-    request.session['team_id'] = sp.get_organization_id().org_id
-
-    return remember(request, login)
-
+    result = sp_rpc_stub.credential_sign_in(userid, password)
+    need_second_factor = result.HasField('need_second_factor') and result.need_second_factor
+    log.debug('Credential login succeeded for {}{}'.format(userid,
+        ", need second factor" if need_second_factor else ""))
+    return userid, need_second_factor
 
 @view_config(
     route_name='logout',
@@ -194,7 +178,6 @@ def logout_view(request):
         location=request.route_path('login'),
         headers=logout(request)
     )
-
 
 def logout(request):
     sp = get_rpc_stub(request)
