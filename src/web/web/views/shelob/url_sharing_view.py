@@ -208,7 +208,8 @@ def list_urls_for_store(request):
     sid = request.params.get("sid")
     if sid is None:
         error.error('missing "sid" param')
-    reply = exception2error(get_rpc_stub(request).list_urls_for_store, (sid.encode('utf-8'),), {
+    sid_bytes = 'root'.encode('utf-8') if sid == 'root' else sid.decode('hex')
+    reply = exception2error(get_rpc_stub(request).list_urls_for_store, (sid_bytes,), {
         PBException.NOT_FOUND: "The shared folder does not exist",
         PBException.NO_PERM: "The user is not amanager of the shared folder",
     })
