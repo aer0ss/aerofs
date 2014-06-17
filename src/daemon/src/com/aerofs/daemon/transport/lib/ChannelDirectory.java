@@ -38,6 +38,14 @@ import java.util.Set;
  * Next Pass: One instance of ChannelDirectory to serve all instances of Unicast.
  *
  * Next next pass: make best-channel-available decisions from here.
+ *
+ * FIXME: The ChannelDirectory should have a pruning service that looks for redundant channels
+ * and asks them to stop being channels. The goal is to improve efficiency when multiple callers
+ * wind up creating multiple channels to a single Device.
+ *
+ * TODO: Think about a random cost factor being added to volunteer channels; the goal is to make
+ * sure we don't consider two channel instances for the same device _exactly_ equal. Doing so
+ * lets us do an intelligent job pruning later.
  */
 public class ChannelDirectory
 {
@@ -62,6 +70,10 @@ public class ChannelDirectory
 
     /**
      * Register a channel instance for the given remote peer.
+     *
+     * Do not hold a lock on the channels monitor here; the close future might be called
+     * synchronously, which will try to lock something elsewhere. The channels lock should always
+     * be the last one taken.
      */
     public void register(Channel channel, DID remotePeer)
     {
@@ -106,19 +118,18 @@ public class ChannelDirectory
      * Return any Channel that is active for the given DID.
      * <p/>
      * If no Channel instances exist for the given DID, this will attempt to create one.
+     * <p/>
+     * NOTE: This method does not strictly guarantee a transition from zero channels to exactly 1.
+     * In other words, if multiple threads call here simultaneously it is possible that each
+     * thread will create a new channel and add it to the directory. The final result is that you
+     * may have N channels after chooseActiveChannel() completes.
      */
     public ChannelFuture chooseActiveChannel(DID did)
             throws ExTransportUnavailable, ExDeviceUnavailable
     {
-        // Sucks to acquire the monitor solely for the zero-to-one transition. Use atomics?
-        ImmutableSet<Channel> active;
-        synchronized (channels) {
-            if (!channels.containsKey(did)) {
-                return createChannel(did);
-            }
-            active = ImmutableSet.copyOf(channels.get(did));
-        }
-        return new SucceededChannelFuture(chooseFrom(active, did));
+        ImmutableSet<Channel> active = getSnapshot(did);
+        return active.isEmpty() ?
+            createChannel(did) : new SucceededChannelFuture(chooseFrom(active, did));
     }
 
     private Channel chooseFrom(ImmutableSet<Channel> active, DID did)
@@ -198,6 +209,9 @@ public class ChannelDirectory
     /**
      * FIXME: I don't like this method. It only exists due to reuseChannels, which in turn is
      * only used to whitebox some unit test stuff. Usage within this class can be inlined.
+     *
+     * NOTE: This should not be called with the channels monitor held. Creating a channel may
+     * involve a long chain of events that includes reaching back to the Presence notifiers...
      */
     ChannelFuture createChannel(DID did) throws ExTransportUnavailable, ExDeviceUnavailable
     {
