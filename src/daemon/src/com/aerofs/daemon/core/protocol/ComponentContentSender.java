@@ -192,7 +192,7 @@ public class ComponentContentSender
                 l.info("Content same");
             } else {
                 hashLength = h.toPB().size();
-                l.debug("Sending hash length: {}", hashLength);
+                l.info("Sending hash: {}", h);
                 // TODO: drop hash length on next proto version bump
                 bdResponse.setHashLength(hashLength);
             }
@@ -207,8 +207,10 @@ public class ComponentContentSender
         } else {
             long newPrefixLen = vLocal.equals(vPrefix) ? prefixLen : 0;
 
-            l.debug("recved prefix len {} v {}. local {} newLen {}",
-                    prefixLen, vPrefix, vLocal, newPrefixLen);
+            if (prefixLen != 0) {
+                l.info("recved prefix len {} v {}. local {} newLen {}",
+                        prefixLen, vPrefix, vLocal, newPrefixLen);
+            }
 
             // because the original builders have built, we have
             // to create a new builder

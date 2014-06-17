@@ -178,7 +178,7 @@ public class GetComponentRequest
         ContentHash h = oa.caMasterNullable() != null ? _ds.getCAHash_(branch.sokid()) : null;
         if (h != null) {
             bd.setHashContent(h.toPB());
-            l.info("advertise hash in gcc {}", socid);
+            l.info("advertise hash in gcc {} {}", socid, h);
         }
 
         // TODO (DF): is this a reasonable usage of IPhysicalStorage?
@@ -188,7 +188,7 @@ public class GetComponentRequest
         if (len == 0) return;
 
         Version vPre = _pvc.getPrefixVersion_(branch.soid(), branch.kidx());
-        l.debug("prefix ver {} len {}", vPre, len);
+        l.info("prefix ver {} len {}", vPre, len);
 
         bd.setPrefixLength(len);
         bd.setPrefixVersion(vPre.toPB_());
@@ -282,7 +282,7 @@ public class GetComponentRequest
 
         if (k.cid().isMeta()) {
             sendMeta_(msg.ep(), k, bdCore, bdResponse);
-        } else if (k.cid().equals(CID.CONTENT)) {
+        } else if (k.cid().isContent()) {
             ContentHash contentHash = _contentSender.send_(
                     msg.ep(),
                     k,

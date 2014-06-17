@@ -225,7 +225,7 @@ class Download
             // must not break out of context when re-trying an object after resolving a dependency
             DID did = _cxt.did != null ? _cxt.did : _from.pick_();
 
-            l.info("fetch {} {}", _socid, _cxt);
+            l.info("{} fetch {} {}", did, _socid, _cxt);
 
             if (fetchComponent_(did)) return did;
         }
@@ -266,7 +266,7 @@ class Download
             _cxt.chain.push(_socid);
             _cxt.resolved.add(_socid);
 
-            l.debug("gcr {} from {}", _socid, msg.did());
+            l.debug("{} gcr {}", msg.did(), _socid);
 
             ok = processReply_(msg, _cxt);
             return ok;
@@ -301,7 +301,7 @@ class Download
                 _f._gcr.processResponse_(_socid, msg, cxt);
                 failed = false;
             } finally {
-                l.debug("ended {} from {} {}", _socid, msg.ep(), failed ? "FAILED" : "OK");
+                l.debug("{} ended {} {} over {}", msg.did(), _socid, failed ? "FAILED" : "OK", msg.tp());
                 _f._dlstate.ended_(_socid, msg.ep(), failed);
             }
             return true;
@@ -316,7 +316,7 @@ class Download
                     ((ExProcessReplyFailed)ex._e)._e instanceof ExNoComponentWithSpecifiedVersion) {
                     // this exception indicate that the local version of the dependency dominates
                     // the remote one, therefore we can proceed with name conflict resolution
-                    l.warn("local {} dominates that of {}", dst, cxt.did);
+                    l.warn("{} local {} dominates remote", cxt.did, dst);
                     cxt.resolved.add(dst);
                 } else {
                     throw ex;
