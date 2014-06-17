@@ -105,10 +105,8 @@ public abstract class LogUtil extends BaseLogUtil
 
     private static PatternLayoutEncoder newEncoder(LoggerContext context)
     {
-        // NOTE: to get the log without the classnames:
-        // tail -f ~/.aerofs/daemon.log | awk '{gsub(/ ~.*~/,"")}; 1'
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
-        encoder.setPattern("%-5level [%date{ISO8601, UTC}] [%-8.8thread] ~%c{0}~: %m%n%xEx");
+        encoder.setPattern("%-5level [%date{ISO8601, UTC}] [%-8.8thread] %c{0}: %m%n%xEx");
         encoder.setContext(context);
         encoder.setCharset(BaseUtil.CHARSET_UTF);
         encoder.start();
