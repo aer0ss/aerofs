@@ -39,7 +39,8 @@ def resolve_next_url(request, default_route):
 
 def redirect_to_next_page(request, headers, default_route):
     """
-    Resolve the next URL from the request and redirect to the URL.
+    Resolve the next URL from the request and redirect to the URL, or redirect to
+    a two-factor auth page, if additional authentication is needed.
 
     Note: this logic is very similar to openid.py:login_openid_complete().
     Remmember to update that function when updating this one.
@@ -79,6 +80,5 @@ def log_in_user(request, login_func, stay_signed_in=False, **kw_args):
 
     # Save the cookies in the session, for reuse in future requests
     request.session['sp_cookies'] = con._session.cookies
-    request.session['team_id'] = sp.get_organization_id().org_id
 
     return remember(request, userid), second_factor_needed

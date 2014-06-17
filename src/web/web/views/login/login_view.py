@@ -10,13 +10,15 @@ from aerofs_sp.gen.common_pb2 import PBException
 import requests
 from web.util import flash_error, get_rpc_stub, is_private_deployment
 
-from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page, log_in_user
+from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page, \
+        log_in_user, resolve_next_url
 
 DEFAULT_DASHBOARD_NEXT = 'dashboard_home'
 
 URL_PARAM_EMAIL = 'email'
 URL_PARAM_PASSWORD = 'password'
 URL_PARAM_REMEMBER_ME = 'remember_me'
+URL_PARAM_CODE = 'code'
 
 log = logging.getLogger(__name__)
 
@@ -151,6 +153,87 @@ def login_for_tests_json_view(request):
         request.response.status = 500
         return {'error': '500', 'message': 'internal server error'}
 
+@view_config(
+    route_name='login_second_factor',
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='login_second_factor.mako',
+    request_method='GET',
+)
+def login_second_factor_get(request):
+    """
+    Allow the user to attempt to provide a second factor for their login.
+    """
+    return {
+            'url_param_code': URL_PARAM_CODE,
+    }
+
+@view_config(
+    route_name='login_second_factor',
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='login_second_factor.mako',
+    request_method='POST',
+)
+def login_second_factor_post(request):
+    _ = request.translate
+    code = int(request.POST.get(URL_PARAM_CODE), 10)
+    sp = get_rpc_stub(request)
+    # Verify second factor correctness.
+    # If correct, redirect to next
+    # If incorrect, flash message and redirect to self
+    try:
+        result = sp.provide_second_factor(code)
+    except ExceptionReply as e:
+        log.info("SP rejected attempt to provide second factor: {}".format(e.get_type_name()))
+        if e.get_type_name() == "SECOND_FACTOR_REQUIRED":
+            flash_error(request, _("That authentication code was invalid"))
+        elif e.get_type_name() == "NOT_AUTHENTICATED":
+            # TODO: send user to basic login page
+            flash_error(request, _("You need to log in first"))
+        elif e.get_type_name() == "NOT_FOUND":
+            flash_error(request, _("You're not enrolled in two-factor auth."))
+        else:
+            flash_error(request, _("An unexpected error occured"))
+        return HTTPFound(request.url)
+    return HTTPFound(resolve_next_url(request, DEFAULT_DASHBOARD_NEXT))
+
+@view_config(
+    route_name='login_backup_code',
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='login_backup_code.mako',
+    request_method='GET',
+)
+def login_backup_code_get(request):
+    """
+    Allow the user to attempt to provide a two-factor backup code for their login.
+    """
+    return {
+            'url_param_code': URL_PARAM_CODE,
+    }
+
+@view_config(
+    route_name='login_backup_code',
+    permission=NO_PERMISSION_REQUIRED,
+    renderer='login_backup_code.mako',
+    request_method='POST',
+)
+def login_backup_code_post(request):
+    _ = request.translate
+    code = request.POST.get(URL_PARAM_CODE)
+    sp = get_rpc_stub(request)
+    try:
+        result = sp.provide_backup_code(code)
+    except ExceptionReply as e:
+        log.info("SP rejected attempt to provide backup code: {}".format(e.get_type_name()))
+        if e.get_type_name() == "SECOND_FACTOR_REQUIRED":
+            flash_error(request, _("That backup code was invalid or has already been used"))
+        elif e.get_type_name() == "NOT_AUTHENTICATED":
+            flash_error(request, _("You need to provide your first factor before your second"))
+        elif e.get_type_name() == "NOT_FOUND":
+            flash_error(request, _("You're not enrolled in two-factor auth."))
+        else:
+            flash_error(request, _("An unexpected error occured"))
+        return HTTPFound(request.url)
+    return HTTPFound(resolve_next_url(request, DEFAULT_DASHBOARD_NEXT))
 
 def _sp_cred_signin(request, sp_rpc_stub, **kw_args):
     """

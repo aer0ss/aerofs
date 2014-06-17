@@ -44,13 +44,18 @@ def get_principals(authed_userid, request):
     """
     try:
         level = get_rpc_stub(request).get_authorization_level().level
-    except Exception:
-        # SP may throw ExNotAuthenticated because the web session and SP's
-        # session are maintained separately. In which case, we can safely
-        # assume the web user has no permissions to access any resource. If
-        # additional permission is required, the user will be redirected to
-        # login via error_view.forbidden_view().
+    except Exception as e:
+        # SP may throw an exception here.  We return no additional principals.
+        # The pyramid view may be okay with anonymous viewing, or it may require
+        # a valid user session.  If the latter, it might want to know what kind
+        # of failure this was, so it can give a useful redirect to either /login
+        # or /login_second_factor or whatnot.
+
+        # Since there appears to be no way to cleanly pass this along for just
+        # the duration of the request, we do a messy thing and stick the
+        # exception in the request object so we can access it later if needed.
         log.warn('invalid SP session')
+        request.hack_sp_exception = e
         return []
 
     request.session[_SESSION_KEY_IS_ADMIN] = level == ADMIN

@@ -26,8 +26,7 @@ def not_found_view(request):
 )
 def forbidden_view(request):
     log.error("forbidden view for " + request.path)
-    return force_login(request, 'login')
-
+    return force_login(request)
 
 @view_config(
     context=Exception,

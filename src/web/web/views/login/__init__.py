@@ -5,3 +5,5 @@ def includeme(config):
     config.add_route('login', 'login')
     config.add_route('logout', 'logout')
     config.add_route('login_for_tests.json', 'login_for_tests.json')
+    config.add_route('login_second_factor', 'login_second_factor')
+    config.add_route('login_backup_code', 'login_backup_code')

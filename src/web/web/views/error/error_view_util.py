@@ -1,11 +1,14 @@
 import logging
+
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from aerofs_common.exception import ExceptionReply
+
 from web.login_util import URL_PARAM_NEXT
 
 log = logging.getLogger(__name__)
 
 
-def force_login(request, login_route):
+def force_login(request):
 
     log.warn("request to login (xhr={})".format(request.is_xhr))
 
@@ -18,6 +21,15 @@ def force_login(request, login_route):
     # TODO (WW) the browser should cache forbidden errors and automatically
     # redirect to login page. Also see datatables.js:forceLogout().
     if request.is_xhr: return HTTPForbidden()
+
+    # Most auth failures should get sent to login, but if you have already
+    # logged in, you'll get a SECOND_FACTOR_REQUIRED exception, and you should
+    # skip /login and go straight to /login_second_factor.
+    login_route = 'login'
+    if hasattr(request, 'hack_sp_exception'):
+        if isinstance(request.hack_sp_exception, ExceptionReply):
+            if request.hack_sp_exception.get_type_name() == "SECOND_FACTOR_REQUIRED":
+                login_route = 'login_second_factor'
 
     # path_qs: the request path without host but with query string
     #
