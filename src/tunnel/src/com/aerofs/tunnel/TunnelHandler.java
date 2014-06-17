@@ -262,8 +262,15 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             l.warn("tunnel beat missed {}", this);
             e.getChannel().close();
         } else if (e.getState() == IdleState.WRITER_IDLE) {
-            l.debug("tunnel beat send {}", this);
-            e.getChannel().write(BEAT);
+            if (_addr == null) {
+                l.warn("cname handshake timeout {}", this);
+                // cname handshake not completed in 30s, nothing
+                // good can possibly come out of this...
+                e.getChannel().close();
+            } else {
+                l.debug("tunnel beat send {}", this);
+                e.getChannel().write(BEAT);
+            }
         }
     }
 
