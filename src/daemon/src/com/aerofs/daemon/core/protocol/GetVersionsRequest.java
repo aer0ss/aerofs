@@ -223,11 +223,11 @@ public class GetVersionsRequest
 
             // EndOfStream marker
             sender.writeBlock_(PBGetVersionsResponseBlock.newBuilder().setIsLastBlock(true).build(), null);
-            sender.done_();
+            sender.markSuccessful_();
         } catch (Exception e) {
-            sender.abort_(e);
+            sender.markFailed_(e);
         } finally {
-            sender.doFinally_();
+            sender.cleanup_();
         }
     }
 
@@ -424,7 +424,7 @@ public class GetVersionsRequest
         /**
          * called after the last block has been sent
          */
-        void done_() throws Exception
+        void markSuccessful_() throws Exception
         {
             if (_stream == null) {
                 _trl.sendUnicast_(_ep, _msgType, _rpcid, _os);
@@ -437,7 +437,7 @@ public class GetVersionsRequest
         /**
          * called in a finally block that ends the life cycle of 'this' object
          */
-        void doFinally_()
+        void cleanup_()
         {
             if (_stream != null) {
                 if (_streamOkay) {
@@ -454,7 +454,7 @@ public class GetVersionsRequest
             }
         }
 
-        public void abort_(Throwable cause)
+        public void markFailed_(Throwable cause)
         {
             _cause = cause;
         }
