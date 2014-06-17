@@ -275,6 +275,33 @@ public class ComponentContentSender
         return md != null ? new ContentHash(md.digest()) : null;
     }
 
+    private @Nullable MessageDigest createDigestIfNeeded_(SOCKID k, long prefixLen, Token tk,
+            @Nullable ContentHash hash, IPhysicalFile pf) throws Exception
+    {
+        // no need to rehash if we already have a content hash in the db
+        if (hash != null) return null;
+
+        // see definition of PREFIX_REHASH_MAX_LENGTH for rationale of rehash limit on prefix length
+        if (prefixLen >= DaemonParam.PREFIX_REHASH_MAX_LENGTH) return null;
+
+        MessageDigest md = SecUtil.newMessageDigest();
+        if (prefixLen == 0) return md;
+
+        TCB tcb = prefixLen > 4 * C.KB ? tk.pseudoPause_("rehash " + k + " " + prefixLen) : null;
+        try {
+            InputStream is = pf.newInputStream_();
+            try {
+                ByteStreams.copy(ByteStreams.limit(is, prefixLen),
+                        new DigestOutputStream(ByteStreams.nullOutputStream(), md));
+            } finally {
+                is.close();
+            }
+        } finally {
+            if (tcb != null) tcb.pseudoResumed_();
+        }
+        return md;
+    }
+
     // TODO: ideally that whole method could run wo/ core lock being held
     // depends on: network refactor, rework upload progress notifications
     private ContentHash sendBig_(Endpoint ep, SOCKID k, ByteArrayOutputStream os,
@@ -289,21 +316,7 @@ public class ComponentContentSender
         final FileChunker chunker = new FileChunker(pf, mtime, len, prefixLen,
                 _m.getMaxUnicastSize_(), OSUtil.isWindows());
 
-        MessageDigest md = hash == null ? SecUtil.newMessageDigest() : null;
-        if (md != null && prefixLen > 0) {
-            TCB tcb = prefixLen > 4 * C.KB ? tk.pseudoPause_("rehash " + k + " " + prefixLen) : null;
-            try {
-                InputStream is = pf.newInputStream_();
-                try {
-                    ByteStreams.copy(ByteStreams.limit(is, prefixLen),
-                            new DigestOutputStream(ByteStreams.nullOutputStream(), md));
-                } finally {
-                    is.close();
-                }
-            } finally {
-                if (tcb != null) tcb.pseudoResumed_();
-            }
-        }
+        @Nullable MessageDigest md = createDigestIfNeeded_(k, prefixLen, tk, hash, pf);
 
         Object ongoing = _ongoing.start(k);
         try {

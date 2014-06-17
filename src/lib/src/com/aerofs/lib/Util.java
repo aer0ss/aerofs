@@ -740,22 +740,6 @@ public abstract class Util
     }
 
     /**
-     * @return the total number of bytes read
-     */
-    public static long copy(InputStream is, OutputStream os) throws IOException
-    {
-        byte[] buf = new byte[LibParam.FILE_BUF_SIZE];
-        long total = 0;
-        int len;
-        while ((len = is.read(buf)) > 0) {
-            os.write(buf, 0, len);
-            os.flush();
-            total += len;
-        }
-        return total;
-    }
-
-    /**
      * Concatenate all the elements into one string, separated with File.separator
      */
     public static String join(String ... elems)

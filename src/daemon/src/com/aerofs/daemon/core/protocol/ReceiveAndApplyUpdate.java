@@ -77,10 +77,8 @@ import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.security.DigestException;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
@@ -778,7 +776,7 @@ public class ReceiveAndApplyUpdate
             return new PrefixDownloadStream(prefix.newOutputStream_(false));
         }
 
-        if (KIndex.MASTER.equals(k.kidx())) {
+        if (k.kidx().isMaster()) {
             // if vPrefixOld != vRemote, the prefix version must be updated in the
             // persistent store (see above).
             Version vPrefixOld = _pvc.getPrefixVersion_(k.soid(), k.kidx());
@@ -800,6 +798,11 @@ public class ReceiveAndApplyUpdate
 
         checkState(prefix.getLength_() == prefixLength,
                 "Prefix length mismatch {} {}", prefixLength, prefix.getLength_());
+
+        // see definition of PREFIX_REHASH_MAX_LENGTH for rationale
+        if (prefixLength > DaemonParam.PREFIX_REHASH_MAX_LENGTH) {
+            return new PrefixDownloadStream(prefix.newOutputStream_(true), new NullDigest());
+        }
 
         MessageDigest md = SecUtil.newMessageDigest();
         if (prefixLength > 0) hashPrefix_(prefix, prefixLength, md, tk);
@@ -853,45 +856,7 @@ public class ReceiveAndApplyUpdate
         return null;
     }
 
-    private class PrefixDownloadStream extends DigestOutputStream
-    {
-        private ContentHash h;
-        public PrefixDownloadStream(OutputStream stream)
-        {
-            this(stream, SecUtil.newMessageDigest());
-        }
-
-        public PrefixDownloadStream(OutputStream stream, MessageDigest md)
-        {
-            super(stream, md);
-        }
-
-        public ContentHash digest()
-        {
-            if (h == null) h = new ContentHash(digest.digest());
-            return h;
-        }
-
-        @Override
-        public void close() throws IOException
-        {
-            super.flush();
-            // we want to be extra sure that the file is synced to the disk and no write operation
-            // is languishing in a kernel buffer for two reasons:
-            //   * if the transaction commits we have to serve this file to other peers and it
-            //     would be terribly uncool to serve a corrupted/partially synced copy
-            //   * once the contents are written we adjust the file's mtime and if we allow a
-            //     race between write() and utimes() we will end up with a timestamp mismatch
-            //     between db and filesystem that cause spurious updates later on, thereby
-            //     wasting CPU and bandwidth and causing extreme confusion for the end user.
-            if (out instanceof FileOutputStream) {
-                ((FileOutputStream)out).getChannel().force(true);
-            }
-            super.close();
-        }
-    }
-
-    private @Nonnull ContentHash writeContentToPrefixFile_(IPhysicalPrefix prefix, DigestedMessage msg,
+    private @Nullable ContentHash writeContentToPrefixFile_(IPhysicalPrefix prefix, DigestedMessage msg,
             final long totalFileLength, final long prefixLength, SOCKID k,
             Version vRemote, @Nullable KIndex matchingLocalBranch, Token tk)
             throws ExOutOfSpace, ExNotFound, ExStreamInvalid, ExAborted, ExNoResource, ExTimeout,
@@ -922,7 +887,7 @@ public class ReceiveAndApplyUpdate
                         // release core lock to avoid blocking while copying a large prefix
                         TCB tcb = tk.pseudoPause_("cp-prefix");
                         try {
-                            Util.copy(is, prefixStream);
+                            ByteStreams.copy(is, prefixStream);
                         } finally {
                             tcb.pseudoResumed_();
                         }
@@ -1026,10 +991,10 @@ public class ReceiveAndApplyUpdate
 
         // Write the new content to the prefix file
         // TODO: ideally we'd release the core lock around this entire call
-        @Nonnull ContentHash h = writeContentToPrefixFile_(prefix, msg, response.getFileTotalLength(),
+        @Nullable ContentHash h = writeContentToPrefixFile_(prefix, msg, response.getFileTotalLength(),
                 response.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
 
-        if (res._hash != null && !h.equals(res._hash)) {
+        if (res._hash != null && h != null && !h.equals(res._hash)) {
             l.info("hash mismatch: {} {}", res._hash, h);
             // hash mismatch can be caused by data corruption on either end of the transfer or
             // inside the transport. Whatever the case may be, we simply can't commit the change.
