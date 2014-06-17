@@ -22,6 +22,7 @@ import org.jboss.netty.channel.SucceededChannelFuture;
 import org.slf4j.Logger;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -61,8 +62,7 @@ public class ChannelDirectory
     private final SortedSetMultimap<DID, Channel> channels = Multimaps.synchronizedSortedSetMultimap(
             TreeMultimap.<DID, Channel>create());
 
-    // No public constructor
-    ChannelDirectory(ITransport tp, IUnicastConnector channelCreator)
+    public ChannelDirectory(ITransport tp, IUnicastConnector channelCreator)
     {
         this.tp = tp;
         this.channelCreator = channelCreator;
@@ -102,6 +102,26 @@ public class ChannelDirectory
     {
         synchronized (channels) {
             return ImmutableSet.copyOf(channels.get(did));
+        }
+    }
+
+    /**
+     * Return an immutable copy of all channels known to this transport.
+     */
+    public ImmutableSet<Channel> getAllChannels()
+    {
+        synchronized (channels) {
+            return ImmutableSet.copyOf(channels.values());
+        }
+    }
+
+    /**
+     * Return an immutable copy of all entries (DID->Channel) known for this transport.
+     */
+    public ImmutableSet<Map.Entry<DID, Channel>> getAllEntries()
+    {
+        synchronized (channels) {
+            return ImmutableSet.copyOf(channels.entries());
         }
     }
 

@@ -156,6 +156,7 @@ public final class Zephyr implements ITransport
                 zephyrHandshakeTimeout,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory,
+                this,
                 presenceService,
                 linkStateService,
                 signallingService,

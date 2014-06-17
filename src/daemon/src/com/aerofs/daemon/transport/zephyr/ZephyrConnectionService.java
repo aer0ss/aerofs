@@ -9,7 +9,11 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExTransport;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
+import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.lib.ChannelDirectory;
+import com.aerofs.daemon.transport.lib.IUnicastConnector;
 import com.aerofs.daemon.transport.lib.IUnicastInternal;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -19,6 +23,7 @@ import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.signalling.ISignallingService;
 import com.aerofs.daemon.transport.xmpp.signalling.ISignallingServiceListener;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Diagnostics.ChannelState;
 import com.aerofs.proto.Diagnostics.ZephyrChannel;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
@@ -32,7 +37,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -54,7 +58,6 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
@@ -71,7 +74,7 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 /**
  * Creates and manages connections to a Zephyr relay server
  */
-final class ZephyrConnectionService implements ILinkStateListener, IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener
+final class ZephyrConnectionService implements ILinkStateListener, IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener, IUnicastConnector
 {
     private static final Predicate<Channel> TRUE_FILTER = new Predicate<Channel>()
     {
@@ -88,13 +91,12 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     private final LinkStateService linkStateService;
     private final ISignallingService signallingService;
     private final IUnicastListener unicastListener;
+    private final ChannelDirectory directory;
 
     private final InetSocketAddress zephyrAddress;
     private final ClientBootstrap bootstrap;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
-
-    private final ConcurrentMap<DID, Channel> channels = Maps.newConcurrentMap();
 
     ZephyrConnectionService(
             UserID localid,
@@ -104,6 +106,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             long zephyrHandshakeTimeout,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
+            ITransport transport,
             IUnicastListener unicastListener,
             LinkStateService linkStateService,
             ISignallingService signallingService,
@@ -141,6 +144,8 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         this.linkStateService = linkStateService;
         this.signallingService = signallingService;
         this.unicastListener = unicastListener;
+        this.directory = new ChannelDirectory(transport, this);
+        directory.setUnicastListener(unicastListener);
     }
 
     //
@@ -227,46 +232,15 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         }
     }
 
-    private void connect(DID did)
+    // TODO(jP): I'm a little frightened here, the implementation of this used to be synchronized.
+    // But it _used_ to do some state coordination on a local DID:channel map.
+    @Override
+    public ChannelFuture newChannel(DID did)
+            throws ExTransportUnavailable, ExDeviceUnavailable
     {
         if (!running.get()) {
             l.warn("{} ignore connect - connection service stopped", did);
-            return;
-        }
-
-        try {
-            l.info("{} connect", did);
-
-            Channel channel = getChannel(did);
-            if (channel != null) {
-                if (getZephyrClient(channel).hasHandshakeCompleted()) {
-                    // apparently the channel connected, but for some reason the
-                    // upper layer doesn't think otherwise; this means that the channel
-                    // isn't in a good state
-                    disconnectChannel(did, new ExDeviceUnavailable("triggered by local reconnect"));
-                } else {
-                    // we're still in the process of handshaking - let's give it a
-                    // chance. at any rate, if we fail to complete in time we'll get a
-                    // timeout and it'll all be good
-                    l.warn("{} ignore connect - handshake in progress", did);
-                    return;
-                }
-            }
-
-            newChannel(did);
-        } catch (Exception e) {
-            l.error("{} fail connect err:", did, e);
-            if (getChannel(did) != null) {
-                disconnectChannel(did, e);
-            }
-        }
-    }
-
-    private void newChannel(final DID did)
-    {
-        if (channels.containsKey(did)) { // can happen if the close future hasn't run yet
-            l.warn("{} remove old channel for connect", did);
-            removeChannel(did);
+            return null;
         }
 
         l.trace("{} create channel", did);
@@ -278,45 +252,11 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         // set up the ZephyrClientHandler
         getZephyrClient(channel).init(did, channel);
 
-        // now add the channel (IMPORTANT: do the add before setting up the close future)
-        // we do this because we don't want to fail in an operation and then add the failed
-        // channel to the map
-        // FIXME (AG): I'm not sure the logic here is correct
-        addChannel(did, channel);
-
         // now, connect
-        channel.connect(zephyrAddress);
-
-        // and, finally, set up the close future
-        channel.getCloseFuture().addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture future)
-                    throws Exception
-            {
-                l.debug("{} close future triggered", did);
-
-                // IMPORTANT: I remove the channel _without_ holding a lock
-                // on ZephyrConnectionService to prevent a deadlock.
-                //
-                // All operations in ZephyrConnectionService hold a lock
-                // on 'this' before modifying state. When close() is called on
-                // a channel, it is generally an _IO thread_ that handles the
-                // close and trips the close future. This can trigger a
-                // deadlock if the close future attempts to grab a lock on
-                // 'this' as well.
-                //
-                // Our close future simply has to remove a reference to the
-                // closed channel, so we can get away with doing an unprotected (key, value)
-                // remove
-
-                Channel closedChannel = future.getChannel();
-                boolean removed = channels.remove(did, closedChannel);
-                l.info("{} {} channel", did, (removed ? "remove" : "already removed"));
-            }
-        });
+        ChannelFuture connectFuture = channel.connect(zephyrAddress);
 
         l.trace("{} connecting on created channel", did);
+        return connectFuture;
     }
 
     @Override
@@ -328,7 +268,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
     private void disconnectChannels(Predicate<Channel> filter, Exception cause)
     {
-        for (Channel channel : channels.values()) {
+        for (Channel channel : directory.getAllChannels()) {
             if (filter.apply(channel)) {
                 getZephyrClient(channel).disconnect(cause);
             }
@@ -351,10 +291,19 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         l.trace("{} send cke:{}", did, cke);
 
         Channel channel;
-        synchronized (this) { // FIXME (AG): move all of this logic into connect
-            channel = getChannel(did);
-            if (channel == null) connect(did);
-            channel = getChannel(did); // FIXME (AG): this sucks
+        try {
+            synchronized (this) {
+                // DirectoryChannel does not require outside synchronization. However, it
+                // allows for more than one channel being created (if multiple threads arrive at
+                // the zero-available state simultaneously). Zephyr does not want more than one
+                // channel instance per DID, so we give the channel directory a stronger guarantee.
+                // Lock ordering is important: always lock this first. ChannelDirectory will not
+                // reach back to the Unicast infrastructure with the ChannelDirectory monitor held.
+                channel = directory.chooseActiveChannel(did).getChannel();
+            }
+        } catch (ExTransport ex) {
+            l.warn("{} z: channel failed", did, LogUtil.suppress(ex));
+            return null;
         }
 
         if (channel == null) { // can happen because the upper layer hasn't yet been notified of a disconnection
@@ -393,18 +342,10 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
     private @Nullable Channel getChannel(DID did)
     {
-        return channels.get(did);
-    }
+        ImmutableSet<Channel> snapshot = directory.getSnapshot(did);
+        checkState(snapshot.isEmpty() || (snapshot.size() == 1), "multiple z channels happen?");
 
-    private void addChannel(DID did, Channel channel)
-    {
-        Channel previous = channels.put(did, channel);
-        checkState(previous == null, "" + did + " overwrote existing channel zi[ol" + (previous == null ? "null" : getZephyrClient(previous)) + " new:" + getZephyrClient(channel) + "]");
-    }
-
-    private @Nullable Channel removeChannel(DID did)
-    {
-        return channels.remove(did);
+        return snapshot.isEmpty() ? null : snapshot.iterator().next();
     }
 
     //
@@ -496,17 +437,16 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     private void consumeHandshake(DID did, ZephyrHandshake handshake)
             throws ExDeviceUnavailable, ExHandshakeFailed, ExHandshakeRenegotiation
     {
-        Channel channel = getChannel(did);
-        if (channel == null) { // haven't connected yet, so attempt to do so
-            newChannel(did);
+        // synchronization is not required by ChannelDirectory except that it allows multiple
+        // peer channels for one Device. synchronization here guards the zero-to-one transition.
+        Preconditions.checkArgument(Thread.holdsLock(this), "improper synchronization");
 
-            channel = getChannel(did); // check if the connect failed
-            if (channel == null) {
-                throw new ExDeviceUnavailable("cannot reach " + did);
-            }
+        try {
+            Channel channel = directory.chooseActiveChannel(did).getChannel();
+            getZephyrClient(channel).consumeHandshake(handshake);
+        } catch (ExTransportUnavailable exTransportUnavailable) {
+            throw new ExDeviceUnavailable("cannot reach " + did);
         }
-
-        getZephyrClient(channel).consumeHandshake(handshake);
     }
 
     @Override
@@ -545,9 +485,10 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
     public synchronized Collection<ZephyrDevice> getDeviceDiagnostics()
     {
-        Collection<ZephyrDevice> devices = Lists.newArrayListWithCapacity(channels.size());
+        Set<Map.Entry<DID, Channel>> entries = directory.getAllEntries();
+        Collection<ZephyrDevice> devices = Lists.newArrayListWithExpectedSize(entries.size());
 
-        for (Map.Entry<DID, Channel> entry : channels.entrySet()) {
+        for (Map.Entry<DID, Channel> entry : entries) {
             DID did = entry.getKey();
             Channel channel = entry.getValue();
 

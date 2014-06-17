@@ -20,6 +20,7 @@ import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
 import com.aerofs.daemon.transport.PrivateKeyProvider;
 import com.aerofs.daemon.transport.TransportReader;
+import com.aerofs.daemon.transport.lib.ChannelDirectory;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.SemaphoreTriggeringListener;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -94,6 +95,7 @@ public final class UnicastZephyrDevice
                 10 * C.SEC,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory,
+                transport,
                 unicastListener,
                 linkStateService,
                 signallingService,
