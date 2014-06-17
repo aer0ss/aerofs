@@ -9,7 +9,7 @@
         <File>/var/log/bifrost/bifrost.log</File>
         <Append>true</Append>
         <encoder>
-            <pattern>%-5level [%date{ISO8601, UTC}] [%-8.8thread] ~%c{0}~: %m%n%xEx</pattern>
+            <pattern>%-5level [%date{ISO8601, UTC}] [%-8.8thread] %c{0}: %m%n%xEx</pattern>
         </encoder>
     </appender>
 
