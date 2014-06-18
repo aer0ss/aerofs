@@ -10,7 +10,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="lib" />
     <orderEntry type="module" module-name="restless" />
-    <orderEntry type="module" module-name="rest-api" />
     <orderEntry type="library" name="logback" level="project" />
     <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
   </component>
