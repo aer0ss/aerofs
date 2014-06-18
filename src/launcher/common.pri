@@ -49,8 +49,3 @@ win32 {
     INCLUDEPATH += "$$(JAVA_HOME)/include" \
                    "$$(JAVA_HOME)/include/win32"
 }
-
-# force a release build to avoid accidental deployment of a debug build
-# (not that it matters, just better to avoid it)
-CONFIG -= debug
-CONFIG += release

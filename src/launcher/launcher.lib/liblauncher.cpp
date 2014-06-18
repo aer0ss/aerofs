@@ -427,7 +427,7 @@ bool get_executable_path(tstring& path, tstring& errmsg)
     }
     // Append null terminator to path
     c_path[path_len] = '\0';
-    path = tstring(path);
+    path = tstring(c_path);
     return true;
 #undef MAX_PATH
 #endif
