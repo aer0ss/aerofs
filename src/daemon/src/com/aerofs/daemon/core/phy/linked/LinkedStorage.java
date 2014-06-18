@@ -1,57 +1,55 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
-
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.daemon.core.phy.IPhysicalPrefix;
+import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
+import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
+import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
+import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.cfg.CfgStoragePolicy;
+import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.phy.IPhysicalPrefix;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
-import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
-import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
-import com.aerofs.daemon.lib.db.AbstractTransListener;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.LibParam.AuxFolder;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.id.SOKID;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.google.inject.Inject;
-
 import javax.annotation.Nullable;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
 
 public class LinkedStorage implements IPhysicalStorage
 {
@@ -264,7 +262,7 @@ public class LinkedStorage implements IPhysicalStorage
     public long apply_(IPhysicalPrefix prefix, IPhysicalFile file, boolean wasPresent, long mtime,
             Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug("apply " + prefix + "->" + file);
+        l.debug("apply {} -> {}", prefix, file);
 
         final LinkedFile f = (LinkedFile) file;
         final LinkedPrefix p = (LinkedPrefix) prefix;

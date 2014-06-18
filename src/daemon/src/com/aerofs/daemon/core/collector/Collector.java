@@ -1,46 +1,44 @@
 package com.aerofs.daemon.core.collector;
 
+import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.CoreExponentialRetry;
+import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.ex.ExWrapped;
+import com.aerofs.daemon.core.tc.ITokenReclamationListener;
+import com.aerofs.daemon.core.transfers.download.Downloads;
+import com.aerofs.daemon.core.transfers.download.ExUnsatisfiedDependency;
+import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
+import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
+import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
+import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.bf.BFOID;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.id.OCID;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.sched.ExponentialRetry;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import org.slf4j.Logger;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
 import java.util.Set;
-
-import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.transfers.download.Downloads;
-import com.aerofs.daemon.core.transfers.download.ExUnsatisfiedDependency;
-import com.aerofs.daemon.core.ex.ExWrapped;
-import com.aerofs.daemon.lib.db.AbstractTransListener;
-import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
-import com.aerofs.lib.id.OCID;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
-import org.slf4j.Logger;
-
-import com.aerofs.daemon.core.CoreExponentialRetry;
-import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
-import com.aerofs.daemon.core.tc.ITokenReclamationListener;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.sched.ExponentialRetry;
-import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
-import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.base.C;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.bf.BFOID;
-import com.aerofs.lib.id.SOCID;
-import com.google.inject.Inject;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.concurrent.Callable;
 
 import static com.google.common.base.Preconditions.checkState;
 
