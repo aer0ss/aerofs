@@ -199,7 +199,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 
     private ZephyrClientHandler newZephyrClientHandler(IOStatsHandler ioStatsHandler, ZephyrProtocolHandler zephyrProtocolHandler)
     {
-        return new ZephyrClientHandler(unicastListener, ioStatsHandler, zephyrProtocolHandler);
+        return new ZephyrClientHandler(ioStatsHandler, zephyrProtocolHandler);
     }
 
     /**

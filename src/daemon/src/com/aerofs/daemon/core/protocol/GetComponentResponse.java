@@ -276,7 +276,7 @@ public class GetComponentResponse
             _ru.applyUpdateMetaAndContent_(targetBranch, vRemote, cr, t);
 
             t.commit_();
-            l.warn(socid + " ok " + msg.ep());
+            l.info("{} ok {}", msg.ep(), socid);
 
         // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
         } catch (Exception e) {

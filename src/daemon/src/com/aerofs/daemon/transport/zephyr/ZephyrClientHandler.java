@@ -23,7 +23,6 @@ final class ZephyrClientHandler extends SimpleChannelHandler
 {
     private static final Logger l = Loggers.getLogger(ZephyrClientHandler.class);
 
-    private final IUnicastListener unicastListener;
     private final IOStatsHandler ioStatsHandler;
     private final ZephyrProtocolHandler zephyrProtocolHandler;
 
@@ -34,9 +33,8 @@ final class ZephyrClientHandler extends SimpleChannelHandler
     /**
      * @param zephyrProtocolHandler this is the instance of {@link ZephyrProtocolHandler} used in this pipeline
      */
-    ZephyrClientHandler(IUnicastListener unicastListener, IOStatsHandler ioStatsHandler, ZephyrProtocolHandler zephyrProtocolHandler)
+    ZephyrClientHandler(IOStatsHandler ioStatsHandler, ZephyrProtocolHandler zephyrProtocolHandler)
     {
-        this.unicastListener = unicastListener;
         this.ioStatsHandler = ioStatsHandler;
         this.zephyrProtocolHandler = zephyrProtocolHandler;
     }
@@ -139,11 +137,6 @@ final class ZephyrClientHandler extends SimpleChannelHandler
             throws Exception
     {
         checkValid();
-
-        if (TransportUtil.isChannelConnected(e.getChannel())) {
-            l.info("{} channel {} closed - notify listener", remotedid, TransportUtil.hexify(channel));
-            unicastListener.onDeviceDisconnected(remotedid);
-        }
 
         super.channelClosed(ctx, e);
     }
