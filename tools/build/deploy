@@ -35,6 +35,15 @@ if [[ ! $RELEASE_VERSION =~ $RELEASE_VERSION_REGEX ]]; then
     exit $ERRBADVERSION
 fi
 
+function upload_packages_to_release_server() {
+    # Upload the immutable artifacts (versioned installers) first, so
+    # incrementing the version moves atomically between consistent states
+    echo ">>> rsyncing packages to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/"
+    rsync --archive --verbose "$PACKAGE_DIR"/* $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/
+    echo ">>> rsyncing version to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/release-versions/$CANARY_VER"
+    rsync --archive --verbose "$PACKAGE_DIR"/$CURRENT_VER $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/release-versions/$CANARY_VER
+}
+
 function upload_packages_to_antivirus_firms() {
     # Upload latest version of script
     kscp $BUILD_SCRIPT_DIR/send_package_to_antivirus_firms.sh $RELEASE_SERVER_LOGIN:
