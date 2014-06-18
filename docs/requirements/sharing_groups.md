@@ -1,12 +1,53 @@
 # AeroFS Sharing Groups
 
+[//]: <> (6/18 - v2, first draft w/ use cases)
 [//]: <> (v1, initial draft. Based on conversation w/ prospect)
+
+## Use Cases
+
+- admin can invite a group instead of inviting individual users.
+- users can share folders with a group instead of inviting individual users.
+- users can join a folder as soon as they join a group, and leave a folder as soon as they leave a folder.
+
+## Groups
+- groups can come from AeroFS users, including admin.
+- groups can come from from an external system like LDAP.
+
+## Admin
+- admin can create, modify, delete a group.
+- admin can share, and unshare folders with groups.
+- admin can set permissions to a group for a given shared folder.
+- admin can add, remove a user to a group.
+
+## User
+- user can create a group.
+- user can modify, delete a group she created.
+- user can share and unshare a folder she is an owner of, with a group.
+- user can set permissions in a folder she is an owner of, to a group.
+- user can add, remove a user to a group she created.
+
+## Group Modification
+- a user that joins a group should join the folders this group has access to.
+- a user that leaves a group should leave the folders this group has access to.
+
+## Permission Precedence
+- if a user belongs to a group that shares a folder, the user has access to this folder from another share, and permissions differ between the two shares, user permission on the folder is the highest of the two. e.g.: a user joins a group that is Viewer on a folder, and is also Editor on this folder. User has an Editor permission on the folder.
+
+## Organizations
+- groups cannot cross organizations.
+
+
+
+***
+## historical requirements (Jon Pile)
+
 
 ActiveDirectory (and other LDAP identity servers) provide generalized support for defining and managing groups. Users may belong to many overlapping groups, such as "the finance team", "West Coast personnel", and "Left-handed Albanian potato farmers".
 
 When a customer deploys AeroFS and uses their existing AD infrastructure, they would like to leverage the work they have already put in to defining and maintaining these groups. This is believed to be more acute in larger deployments, and those with more highly-structured LDAP records.
 
 Admins would like to create folders and assign them to teams or distribution lists.
+Users would like to enter team names instead of individual names.
 
 ## Entities
 
