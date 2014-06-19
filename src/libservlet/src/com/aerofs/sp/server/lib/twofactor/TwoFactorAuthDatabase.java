@@ -105,9 +105,9 @@ public class TwoFactorAuthDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(DBUtil.updateWhere(T_TWO_FACTOR_RECOVERY,
                 C_TF_RECOVERY_USER_ID + "=? AND " + C_TF_RECOVERY_CODE + "=?",
                 C_TF_RECOVERY_CODE_USE_DATE));
-        java.util.Date timestamp = new java.util.Date();
-        java.sql.Date now = new java.sql.Date(timestamp.getTime());
-        ps.setDate(1, now);
+        java.util.Date now = new java.util.Date();
+        java.sql.Timestamp timestamp = new java.sql.Timestamp(now.getTime());
+        ps.setTimestamp(1, timestamp);
 
         ps.setString(2, user.getString());
         ps.setString(3, code);
