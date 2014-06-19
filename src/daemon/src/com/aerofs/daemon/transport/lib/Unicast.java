@@ -187,15 +187,9 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IUni
     {
         l.info("{} disconnect", did, LogUtil.suppress(cause));
 
-        // IMPORTANT: we do _not_ want to remove all the channels
-        // for the DID here. This is because the close future handlers
-        // use the presence of the DID, Channel pair in the map
-        // to determine whether to notify listeners of a disconnection
-        // or not
-        // NOTE: Well, we could use the removeAll() in multimap, and _then_ close the channels;
-        // same number of state transitions and arguably safer. FIXME(jP): prove this.
-        Set<Channel> active = directory.getSnapshot(did);
-        for (Channel channel : active) {
+        // detach all the channels for this device (this will cause a presence down event).
+        // Then make sure we close any of the detached channel instances.
+        for (Channel channel : directory.detach(did)) {
             channel.getPipeline().get(MessageHandler.class).setDisconnectReason(cause);
             channel.close();
         }

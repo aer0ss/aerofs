@@ -232,8 +232,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         }
     }
 
-    // TODO(jP): I'm a little frightened here, the implementation of this used to be synchronized.
-    // But it _used_ to do some state coordination on a local DID:channel map.
     @Override
     public ChannelFuture newChannel(DID did)
             throws ExTransportUnavailable, ExDeviceUnavailable
@@ -260,10 +258,13 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     }
 
     @Override
-    public synchronized void disconnect(DID did, Exception cause)
+    public void disconnect(DID did, Exception cause)
     {
         l.info("{} disconnect cause:{}", did, cause.getMessage());
-        disconnectChannel(did, cause);
+
+        for (Channel c : directory.detach(did)) {
+            getZephyrClient(c).disconnect(cause);
+        }
     }
 
     private void disconnectChannels(Predicate<Channel> filter, Exception cause)
@@ -273,16 +274,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                 getZephyrClient(channel).disconnect(cause);
             }
         }
-    }
-
-    private void disconnectChannel(DID did, Exception cause)
-    {
-        Channel channel = getChannel(did);
-        if (channel == null) {
-            l.warn("{} disconnect ignored - no channel", did);
-            return;
-        }
-        getZephyrClient(channel).disconnect(cause);
     }
 
     @Override
@@ -359,7 +350,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     }
 
     @Override
-    public synchronized void signallingServiceDisconnected()
+    public void signallingServiceDisconnected()
     {
         // close anyone who hasn't completed their signalling. If your signalling
         // hasn't completed, then you're going to be sitting around waiting for
@@ -375,6 +366,8 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             }
         };
 
+        // FIXME: Can this be a source of deadlock? disconnectChannels holds 'this' but might need
+        // to signal the PresenceService. Are there any remaining cases that run the other way?
         synchronized (this) {
             disconnectChannels(handshakeIncompletePredicate, new ExTransportUnavailable("signalling service disconnected"));
         }
@@ -409,6 +402,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         // 1) Since notifications are sent via the netty I/O thread, it's possible to get the following order: disconnected, connected
         // 2) I'm not comfortable automatically initiating a connection on your behalf
 
+        // TODO: I suspect this 'synchronized' can be made unnecessary...
         synchronized (this) {
             try {
                 try {
@@ -425,11 +419,12 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                     // doing this allows us to avoid an expensive handshake timeout
                     // on the remote peer and multiple additional roundtrips
                     rockLog.newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION).send();
-                    disconnectChannel(did, new IllegalStateException("attempted renegotiation of zephyr channel to " + did, e));
+                    disconnect(did, new IllegalStateException("attempted renegotiation of zephyr channel to " + did, e));
                     consumeHandshake(did, handshake);
                 }
             } catch (Exception e) {
-                disconnectChannel(did, new ExDeviceUnavailable("fail to process signalling message from " + did, e));
+                disconnect(did, new ExDeviceUnavailable("fail to process signalling message from " + did, e)
+                );
             }
         }
     }
@@ -450,10 +445,10 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     }
 
     @Override
-    public synchronized void sendSignallingMessageFailed(DID did, byte[] failedmsg, Exception cause)
+    public void sendSignallingMessageFailed(DID did, byte[] failedmsg, Exception cause)
     {
         l.warn("{} ->sig fail err:{}", did, cause.getMessage());
-        disconnectChannel(did, new ExDeviceUnavailable("failed to send zephyr handshake to " + did, cause));
+        disconnect(did, new ExDeviceUnavailable("failed to send zephyr handshake to " + did, cause));
     }
 
     //
@@ -470,7 +465,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
         if (!running.get()) {
             l.warn("{} ->sig ignored - connection service stopped", did);
-            disconnectChannel(did, new ExDeviceUnavailable("connection service stopped"));
+            disconnect(did, new ExDeviceUnavailable("connection service stopped"));
             return;
         }
 

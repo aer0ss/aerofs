@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
 
 /**
  * Presence: The New Hotness.
@@ -150,6 +151,23 @@ public class ChannelDirectory
         ImmutableSet<Channel> active = getSnapshot(did);
         return active.isEmpty() ?
             createChannel(did) : new SucceededChannelFuture(chooseFrom(active, did));
+    }
+
+    /**
+     * Synchronously remove all channels known for the given Device. This returns the set of
+     * removed channels; the set may be empty if the device was already offline.
+     *
+     * This method causes Device Presence update if the device was online.
+     *
+     * NOTE: It is the caller's responsibility to dispose of the channels (close them) correctly!
+     */
+    public SortedSet<Channel> detach(DID did)
+    {
+        SortedSet<Channel> detached = channels.removeAll(did);
+        if (!detached.isEmpty()) {
+            unicastListener.onDeviceDisconnected(did);
+        }
+        return detached;
     }
 
     private Channel chooseFrom(ImmutableSet<Channel> active, DID did)
