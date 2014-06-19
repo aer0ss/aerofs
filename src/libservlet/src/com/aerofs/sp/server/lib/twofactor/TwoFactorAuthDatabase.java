@@ -87,7 +87,7 @@ public class TwoFactorAuthDatabase extends AbstractSQLDatabase
         ResultSet rs = ps.executeQuery();
         try {
             while (rs.next()) {
-                RecoveryCode r = new RecoveryCode(rs.getString(1), rs.getDate(2));
+                RecoveryCode r = new RecoveryCode(rs.getString(1), rs.getTimestamp(2));
                 builder.add(r);
             }
         } finally {

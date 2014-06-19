@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.lib.twofactor;
 
+import com.aerofs.proto.Sp.GetBackupCodesReply.BackupCode;
 import com.google.common.base.Preconditions;
 
 import javax.annotation.Nullable;
@@ -38,5 +39,14 @@ public class RecoveryCode
     {
         Preconditions.checkState(_useDate != null);
         return _useDate;
+    }
+
+    public BackupCode toPB() {
+        BackupCode.Builder codeBuilder = BackupCode.newBuilder();
+        codeBuilder.setCode(_code);
+        if (isConsumed()) {
+            codeBuilder.setDateUsed(useDate().getTime());
+        }
+        return codeBuilder.build();
     }
 }

@@ -808,6 +808,9 @@ service SPService {
     // Requires a half-open session.
     // If this rpc returns success, the code cannot be used again.
     rpc ProvideBackupCode(ProvideBackupCodeCall) returns (Void);
+
+    // Fetch a user's current set of backup codes
+    rpc GetBackupCodes(Void) returns (GetBackupCodesReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1505,4 +1508,12 @@ message ProvideSecondFactorCall {
 
 message ProvideBackupCodeCall {
     required string backup_code = 1;
+}
+
+message GetBackupCodesReply {
+    message BackupCode {
+        required string code = 1;
+        optional uint64 date_used = 2; // timestamp in "milliseconds since the epoch"
+    }
+    repeated BackupCode codes = 1;
 }

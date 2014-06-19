@@ -778,7 +778,7 @@ public class User
         return _f._tfdb.secretFor(_id);
     }
 
-    private ImmutableList<RecoveryCode> recoveryCodes()
+    public ImmutableList<RecoveryCode> recoveryCodes()
             throws SQLException, ExNotFound
     {
         return _f._tfdb.recoveryCodesFor(_id);

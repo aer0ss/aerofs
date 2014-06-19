@@ -61,6 +61,8 @@ import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
+import com.aerofs.proto.Sp.GetBackupCodesReply;
+import com.aerofs.proto.Sp.GetBackupCodesReply.BackupCode;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
@@ -145,6 +147,7 @@ import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.session.ISession.Provenance;
 import com.aerofs.sp.server.lib.session.RequestRemoteAddress;
+import com.aerofs.sp.server.lib.twofactor.RecoveryCode;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.session.ISession;
 import com.aerofs.sp.server.lib.user.User;
@@ -1804,6 +1807,20 @@ public class SPService implements ISPService
         }
         _sqlTrans.commit();
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<GetBackupCodesReply> getBackupCodes()
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User requester = _session.getAuthenticatedUserLegacyProvenance();
+        GetBackupCodesReply.Builder builder = GetBackupCodesReply.newBuilder();
+        for (RecoveryCode code : requester.recoveryCodes()) {
+            builder.addCodes(code.toPB());
+        }
+        _sqlTrans.commit();
+        return createReply(builder.build());
     }
 
     @Override
