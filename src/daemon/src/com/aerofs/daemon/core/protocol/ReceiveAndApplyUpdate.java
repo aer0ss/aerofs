@@ -354,13 +354,26 @@ public class ReceiveAndApplyUpdate
             Version vRemote, DigestedMessage msg, Token tk)
             throws Exception
     {
+        OA remoteOA = _ds.getOAThrows_(soid);
+        List<KIndex> kidcsDel = Lists.newArrayList();
+
         final PBGetComponentResponse response = msg.pb().getGetComponentResponse();
         final @Nullable ContentHash hRemote;
         if (response.hasIsContentSame() && response.getIsContentSame()) {
             // requested remote version has same content as the MASTER version we had when we made
             // the request -> add version to MASTER without any file I/O
             Version vMaster = _nvc.getLocalVersion_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER));
-            return new CausalityResult(KIndex.MASTER, vRemote.sub_(vMaster), vMaster, true);
+
+            // cleanup branches dominated by remote
+            for (KIndex kidx : remoteOA.cas().keySet()) {
+                if (kidx.isMaster()) continue;
+                Version vBranch = _nvc.getLocalVersion_(new SOCKID(soid, CID.CONTENT, kidx));
+                if (vBranch.isDominatedBy_(vRemote)) {
+                    kidcsDel.add(kidx);
+                }
+            }
+            return new CausalityResult(KIndex.MASTER, vRemote.sub_(vMaster), kidcsDel, false, null,
+                    vMaster, true);
         } else if (response.hasHashLength()) {
             l.debug("hash included");
 
@@ -378,9 +391,6 @@ public class ReceiveAndApplyUpdate
         Version vAddLocal = Version.copyOf(vRemote);
         KIndex kidxApply = null;
         @Nullable Version vApply = null;
-        List<KIndex> kidcsDel = Lists.newArrayList();
-
-        OA remoteOA = _ds.getOAThrows_(soid);
 
         // MASTER branch should be considered first for application of update as opposed
         // to conflict branches when possible (see "@@" below).
@@ -389,7 +399,7 @@ public class ReceiveAndApplyUpdate
             SOCKID kBranch = new SOCKID(soid, CID.CONTENT, kidx);
             Version vBranch = _nvc.getLocalVersion_(kBranch);
 
-            if (l.isDebugEnabled()) l.debug(kBranch + " l " + vBranch);
+            l.debug("{} l {}", kBranch, vBranch);
 
             if (vRemote.isDominatedBy_(vBranch)) {
                 // The local version is newer or the same as the remote version
@@ -432,7 +442,7 @@ public class ReceiveAndApplyUpdate
 
             //noinspection StatementWithEmptyBody
             if (isRemoteDominating || isContentSame_(kBranch, hRemote, tk)) {
-                l.debug("content is the same! " + isRemoteDominating + " " + hRemote);
+                l.debug("content is the same! {} {}", isRemoteDominating, hRemote);
                 if (kidxApply == null) {
                     // @@ see comments above
                     kidxApply = kidx;
@@ -446,9 +456,7 @@ public class ReceiveAndApplyUpdate
                 // it's a conflict. do nothing but move on to the next branch
             }
 
-            if (l.isDebugEnabled()) {
-                l.debug("kidx: " + kidx.getInt() + " vAddLocal: " + vAddLocal);
-            }
+            l.debug("kidx: {} vAddLocal: {}", kidx.getInt(), vAddLocal);
         }
 
         if (kidxApply == null)  {
@@ -467,9 +475,7 @@ public class ReceiveAndApplyUpdate
         // of version arithmetic.
         vAddLocal = vAddLocal.sub_(vApply);
 
-        if (l.isDebugEnabled()) {
-            l.debug("Final vAddLocal: " + vAddLocal + " kApply: " + kidxApply);
-        }
+        l.debug("Final vAddLocal: {}, kApply: {}", vAddLocal, kidxApply);
         return new CausalityResult(kidxApply, vAddLocal, kidcsDel, false, hRemote, vApply);
     }
 
