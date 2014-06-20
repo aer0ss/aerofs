@@ -1,11 +1,27 @@
 package com.aerofs.daemon.rest;
 
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.bifrost.server.BifrostTest;
+import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
+import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.lib.id.SOID;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import static com.jayway.restassured.RestAssured.expect;
 import static com.jayway.restassured.RestAssured.given;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 public class TestAuth extends AbstractRestTest
 {
@@ -140,6 +156,32 @@ public class TestAuth extends AbstractRestTest
                 .statusCode(200)
         .when()
                 .get("/v1.2/folders/" + object("d1").toStringFormal());
+    }
+
+    @Test
+    public void shouldGetAppDataFolder() throws Exception
+    {
+        when(oc.create_(eq(Type.DIR), any(SOID.class), anyString(), eq(PhysicalOp.APPLY), eq(t)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable
+                    {
+                        Object[] args = invocation.getArguments();
+                        SOID p = (SOID)args[1];
+                        String name = (String)args[2];
+                        ResolvedPath pathParent = ds.resolve_(p);
+                        MockDSDir parent = mds.cd(pathParent);
+                        if (parent.hasChild(name)) throw new ExAlreadyExist();
+                        MockDSDir d = parent.dir(name);
+                        return d.soid();
+                    }
+                });
+
+        givenTokenWithScopes(ImmutableSet.of("files.appdata"))
+        .expect()
+                .statusCode(200)
+        .when()
+                .get("/v1.2/folders/appdata");
     }
 
     @Test

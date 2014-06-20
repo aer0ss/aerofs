@@ -525,6 +525,11 @@ public class MockDS
             return o instanceof MockDSAnchor ? ((MockDSAnchor)o)._root : (MockDSDir)o;
         }
 
+        public boolean hasChild(String name)
+        {
+            return _children.containsKey(name);
+        }
+
         public MockDSObject child(String name)
         {
             MockDSObject o = _children.get(name);

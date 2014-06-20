@@ -28,6 +28,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.sql.SQLException;
 
+import static com.aerofs.daemon.rest.util.RestObjectResolver.appDataPath;
 import static com.google.common.base.Preconditions.checkArgument;
 
 public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends AbstractHdIMC<T>
@@ -55,12 +56,12 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
             throws SQLException
     {
         checkArgument(scope == Scope.READ_FILES || scope == Scope.WRITE_FILES);
-        if (!token.scopes.containsKey(scope)) return false;
-        if ((scope == Scope.READ_FILES && token.hasUnrestrictedPermission(Scope.READ_FILES)) ||
-            (scope == Scope.WRITE_FILES && token.hasUnrestrictedPermission(Scope.WRITE_FILES)))
-        {
+        if (token.hasPermission(Scope.APPDATA) && path.isUnderOrEqual(appDataPath(token))) {
             return true;
         }
+        if (!token.scopes.containsKey(scope)) return false;
+        if (token.hasUnrestrictedPermission(scope)) return true;
+
         OA oa;
         for (RestObject object : token.scopes.get(scope)) {
             try {

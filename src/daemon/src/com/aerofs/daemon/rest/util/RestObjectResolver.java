@@ -151,6 +151,7 @@ public class RestObjectResolver
             t.commit_();
             return soid;
         } catch (Exception e) {
+            l.error("failed to create appdata", e);
             throw new ExNotFound("Failed to create appdata");
         } finally {
             t.end_();
