@@ -8,6 +8,9 @@ import com.google.gson.GsonBuilder;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
@@ -23,16 +26,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 
 /**
  * HTTP-based endpoint version detection
  *      - GET /version on the given channel
  *      - expect a JSON-serialized {@link Version} object in the response
  */
-public class EndpointVersionDetector
+public class EndpointVersionDetector implements ChannelPipelineFactory
 {
     private final Gson _gson = new GsonBuilder()
             .create();
+
+    @Override
+    public ChannelPipeline getPipeline()
+    {
+        ChannelPipeline p = Channels.pipeline();
+        p.addLast("http", new HttpClientCodec());
+        p.addLast("aggregator", new HttpChunkAggregator(128));
+        p.addLast("handler", new Handler());
+        return p;
+    }
 
     /**
      * Asynchronous endpoint version detection
@@ -42,24 +57,14 @@ public class EndpointVersionDetector
      */
     ListenableFuture<Version> detectHighestSupportedVersion(Channel c)
     {
-        final SettableFuture<Version> future = SettableFuture.create();
-
-        c.getPipeline().addLast("http", new HttpClientCodec());
-        c.getPipeline().addLast("aggregator", new HttpChunkAggregator(128));
-        c.getPipeline().addLast("handler", new Handler(future));
-
+        Handler h = (Handler)checkNotNull(c.getPipeline().get("handler"));
         c.write(new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/version"));
-        return future;
+        return h._future;
     }
 
     private class Handler extends SimpleChannelUpstreamHandler
     {
-        private final SettableFuture<Version> _future;
-
-        Handler(SettableFuture<Version> future)
-        {
-            _future = future;
-        }
+        private final SettableFuture<Version> _future = SettableFuture.create();
 
         @Override
         public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) throws IOException

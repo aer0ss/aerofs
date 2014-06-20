@@ -14,6 +14,7 @@ import com.aerofs.havre.proxy.HttpProxyServer;
 import com.aerofs.havre.tunnel.EndpointVersionDetector;
 import com.aerofs.havre.tunnel.TunnelEndpointConnector;
 import com.aerofs.oauth.TokenVerifier;
+import com.aerofs.tunnel.ITunnelConnectionListener;
 import com.aerofs.tunnel.TunnelServer;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -52,16 +53,17 @@ public class Havre
 
     private final HttpProxyServer _proxy;
     private final TunnelServer _tunnel;
+    private final TunnelEndpointConnector _endpointConnector;
 
     public Havre(final UserID user, DID did, @Nullable IPrivateKeyProvider proxyKey,
             IPrivateKeyProvider tunnelKey, ICertificateProvider cacert, Timer timer,
             TokenVerifier verifier)
     {
-        TunnelEndpointConnector c = new TunnelEndpointConnector(new EndpointVersionDetector());
+        _endpointConnector = new TunnelEndpointConnector(new EndpointVersionDetector());
         _tunnel = new TunnelServer(new InetSocketAddress(TUNNEL_HOST, TUNNEL_PORT),
-                tunnelKey, cacert, user, did, timer, c);
+                tunnelKey, cacert, user, did, timer, _endpointConnector);
         _proxy = new HttpProxyServer(new InetSocketAddress(PROXY_HOST, PROXY_PORT),
-                proxyKey, timer, new OAuthAuthenticator(verifier), c);
+                proxyKey, timer, new OAuthAuthenticator(verifier), _endpointConnector);
     }
 
     public void start()
@@ -76,6 +78,11 @@ public class Havre
     {
         _proxy.stop();
         _tunnel.stop();
+    }
+
+    public void setTunnelConnectionListener(ITunnelConnectionListener listener)
+    {
+        _endpointConnector.setListener(listener);
     }
 
     public int getProxyPort()

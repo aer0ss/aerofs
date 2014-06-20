@@ -70,6 +70,9 @@ import com.aerofs.oauth.VerifyTokenResponse;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
+import com.aerofs.tunnel.ITunnelConnectionListener;
+import com.aerofs.tunnel.TunnelAddress;
+import com.aerofs.tunnel.TunnelHandler;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.SettableFuture;
@@ -458,10 +461,26 @@ public class AbstractRestTest extends AbstractTest
 
             l.info("REST gateway at {}", RestAssured.port);
 
+            // waiter for connection establishment
+            final SettableFuture<Void> future = SettableFuture.create();
+            havre.setTunnelConnectionListener(new ITunnelConnectionListener() {
+                @Override
+                public void tunnelOpen(TunnelAddress addr, TunnelHandler handler)
+                {
+                    future.set(null);
+                }
+
+                @Override
+                public void tunnelClosed(TunnelAddress addr, TunnelHandler handler) {}
+            });
+
             // open tunnel between gateway and rest service
             tunnel = new RestTunnelClient(localUser, localDID, getGlobalTimer(),
                     clientSslEngineFactory, service);
             tunnel.start().awaitUninterruptibly();
+
+            // wait for connection to be established on gateway side (version handshake)
+            future.get();
         }
     }
 

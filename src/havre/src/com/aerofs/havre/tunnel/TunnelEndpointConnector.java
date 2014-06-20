@@ -48,6 +48,8 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     private final EndpointVersionDetector _detector;
     private final Map<UserID, UserDevices> _endpointsByUser = Maps.newHashMap();
 
+    private ITunnelConnectionListener _listener;
+
     private static class UserDevice implements Comparable<UserDevice>
     {
         public final DID did;
@@ -145,6 +147,11 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
         _detector = detector;
     }
 
+    public void setListener(ITunnelConnectionListener listener)
+    {
+        _listener = listener;
+    }
+
     @Override
     public synchronized @Nullable Channel connect(AuthenticatedPrincipal principal, DID did,
             boolean strictMatch, @Nullable Version minVersion, ChannelPipeline pipeline)
@@ -162,7 +169,7 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     @Override
     public synchronized void tunnelOpen(final TunnelAddress addr, final TunnelHandler handler)
     {
-        final Channel c = handler.newVirtualChannel(Channels.pipeline());
+        final Channel c = handler.newVirtualChannel(_detector.getPipeline());
         Futures.addCallback(_detector.detectHighestSupportedVersion(c),
                 new FutureCallback<Version>() {
                     @Override
@@ -192,6 +199,7 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
             _endpointsByUser.put(addr.user, connectedDevices);
         }
         connectedDevices.put_(addr.did, handler, version);
+        if (_listener != null) _listener.tunnelOpen(addr, handler);
     }
 
     @Override
@@ -199,7 +207,10 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     {
         l.info("tunnel closed {} {}", addr, handler);
         UserDevices connectedDevices = _endpointsByUser.get(addr.user);
-        if (connectedDevices != null) connectedDevices.remove_(addr.did, handler);
+        if (connectedDevices != null) {
+            connectedDevices.remove_(addr.did, handler);
+            if (_listener != null) _listener.tunnelClosed(addr, handler);
+        }
     }
 
     private @Nullable TunnelHandler getEndpoint(AuthenticatedPrincipal principal, DID did,
