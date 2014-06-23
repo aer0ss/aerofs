@@ -29,7 +29,7 @@ def forbidden_view(request):
     log.error("forbidden view for " + request.path)
 
     response = _attempt_license_shasum_login(request)
-    return response if response else force_login(request, 'login')
+    return response if response else force_login(request)
 
 
 def _attempt_license_shasum_login(request):
