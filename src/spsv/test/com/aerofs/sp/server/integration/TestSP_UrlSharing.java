@@ -206,6 +206,27 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void getUrlInfo_shouldGetUrlInfoIfAnonProvidesCorrectPassword() throws Exception
+    {
+
+        // create the link
+        String token = UniqueID.generate().toStringFormal();
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the password
+        String newToken = UniqueID.generate().toStringFormal();
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+
+        // check that GetUrlInfo succeeds with password and no session user
+        service.signOut();
+        service.getUrlInfo(key, ByteString.copyFromUtf8("hunter2")).get();
+    }
+
+    @Test
     public void getUrlInfo_shouldGetUrlInfoIfManagerProvidesNoPassword() throws Exception
     {
         // create the link

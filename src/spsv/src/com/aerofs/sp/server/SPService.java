@@ -41,6 +41,7 @@ import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBException;
@@ -62,7 +63,6 @@ import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetBackupCodesReply;
-import com.aerofs.proto.Sp.GetBackupCodesReply.BackupCode;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
@@ -144,12 +144,12 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
-import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
+import com.aerofs.sp.server.lib.session.ISession;
 import com.aerofs.sp.server.lib.session.ISession.Provenance;
+import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.session.RequestRemoteAddress;
 import com.aerofs.sp.server.lib.twofactor.RecoveryCode;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.aerofs.sp.server.lib.session.ISession;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -1505,8 +1505,8 @@ public class SPService implements ISPService
     public ListenableFuture<GetUrlInfoReply> getUrlInfo(String key, @Nullable ByteString password)
             throws Exception
     {
+        l.debug("getUrlInfo {}", key);
         _sqlTrans.begin();
-        User requester = _session.getAuthenticatedUserLegacyProvenance();
 
         if (password != null && _rateLimiter.update(_remoteAddress.get(), key)) {
             l.warn("rate limiter rejected getUrlInfo for {} from {}", key, _remoteAddress.get());
@@ -1518,8 +1518,15 @@ public class SPService implements ISPService
         boolean hasPassword = link.hasPassword();
         if (hasPassword) {
             try {
+                User requester = _session.getAuthenticatedUserLegacyProvenance();
                 _factSharedFolder.create(object.getSID()).throwIfNoPrivilegeToChangeACL(requester);
-            } catch (ExNoPerm ignored) {
+                l.info("getUrlInfo {} is admin/manager; not checking pwd", key);
+            } catch (ExNoPerm e) {
+                l.info("getUrlInfo {} not admin/manager; checking pwd", key, LogUtil.suppress(e));
+                if (password == null) throw new ExBadCredential();
+                link.validatePassword(password.toByteArray());
+            } catch (ExNotAuthenticated e) {
+                l.info("getUrlInfo {} not admin/manager; checking pwd", key, LogUtil.suppress(e));
                 if (password == null) throw new ExBadCredential();
                 link.validatePassword(password.toByteArray());
             }
