@@ -417,7 +417,8 @@ public class SPService implements ISPService
         GetUserPreferencesReply.Builder reply = GetUserPreferencesReply.newBuilder()
                 .setFirstName(fn._first)
                 .setLastName(fn._last)
-                .setSignupDate(user.getSignupDate());
+                .setSignupDate(user.getSignupDate())
+                .setTwoFactorEnforced(user.shouldEnforceTwoFactor());
 
         if (deviceId != null) {
             // Some early Alpha testers don't have their device information in the database.

@@ -981,6 +981,7 @@ message GetUserPreferencesReply {
     required string last_name = 2;
     optional string device_name = 3; // absent if did wasn't specified
     optional uint64 signup_date = 4;
+    optional bool two_factor_enforced = 5;
 }
 
 message SetUserPreferencesCall {
