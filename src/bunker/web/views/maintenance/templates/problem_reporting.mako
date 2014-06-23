@@ -7,6 +7,9 @@
 <%def name="support_url()">
     https://support.aerofs.com/hc/en-us/articles/202258960
 </%def>
+<%def name="support_url2()">
+    https://support.aerofs.com/hc/en-us/articles/202375834
+</%def>
 
 <h2>Problem reporting</h2>
 
@@ -37,7 +40,7 @@
     <div class="checkbox">
         <label>
             <input type="radio" name="option" value="on-site">
-            Report problems to an <a href="${support_url()}">on-site server</a>
+            Report problems to an <a href="${support_url2()}">on-site server</a>
             <div id="on-site-options" hidden>
                 ## the p tag is used as a hack to increase margin between the
                 ## label and the on-site options
