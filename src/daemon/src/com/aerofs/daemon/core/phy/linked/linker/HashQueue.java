@@ -203,21 +203,21 @@ public class HashQueue implements IVersionControlListener
                 return;
             }
 
+            final boolean same = newHash.equals(h);
+
             // send rocklog defects to gather information about frequency of linker-induced
             // hashing, size distribution of affected file and benefit (or lack thereof) of
-            // going through the toruble of hashing content to prevent spurious updates
-            _rl.newDefect("mcn.hash")
-                    .addData("soid", soid)
+            // going through the trouble of hashing content to prevent spurious updates
+            _rl.newDefect("mcn.hash." + (same ? "same" : "change"))
+                    .addData("soid", soid.toString())
                     .addData("length", length)
                     .addData("db_mtime", ca.mtime())
-                    .addData("db_hash", h)
                     .addData("fs_mtime", mtime)
-                    .addData("fs_hash", newHash)
                     .send();
 
             // update CA as originally planned, leveraging content hash to hopefully avoid
             // spurious updates (as experience by some users at BB)
-            if (newHash.equals(h)) {
+            if (same) {
                 l.info("mtime-only change {} {} {}", soid, ca.mtime(), mtime);
                 _ds.setCA_(sokid, length, mtime, newHash, t);
             } else {
