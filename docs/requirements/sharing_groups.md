@@ -5,61 +5,58 @@
 
 ## Use Cases
 
-- admin can invite a group instead of inviting individual users.
-- users can share folders with a group instead of inviting individual users.
-- users can join a folder as soon as they join a group, and leave a folder as soon as they leave a folder.
+- Admin can invite a group instead of inviting individual users.
+- Users can share folders with a group instead of inviting individual users.
+- Users can join a folder as soon as they join a group, and leave a folder as soon as they leave a folder.
 
 ## Groups
-- groups can come from AeroFS users, including admin.
-- groups can come from from an external system like LDAP.
+- Groups can come from AeroFS users, including admin.
+- Groups can come from from an external system like LDAP.
 
 ## Admin
-- admin can create, modify, delete a group.
-- admin can share, and unshare folders with groups.
-- admin can set permissions to a group for a given shared folder.
-- admin can add, remove a user to a group.
+- Admin can create, modify, delete a group.
+- Admin can share, and unshare folders with groups.
+- Admin can set permissions to a group for a given shared folder.
+- Admin can add, remove a user to a group.
 
 ## User
-- user can create a group.
-- user can modify, delete a group she created.
-- user can share and unshare a folder she is an owner of, with a group.
-- user can set permissions in a folder she is an owner of, to a group.
-- user can add, remove a user to a group she created.
+- User can create a group.
+- User can modify, delete a group she created.
+- User can share and unshare a folder she is an owner of, with a group.
+- User can set permissions in a folder she is an owner of, to a group.
+- User can add, remove a user to a group she created.
 
 ## Group Modification
-- a user that joins a group should join the folders this group has access to.
-- a user that leaves a group should leave the folders this group has access to.
+- A user that joins a group should join the folders this group has access to.
+- A user that leaves a group should leave the folders this group has access to.
 
 ## Permission Precedence
-- if a user belongs to a group that shares a folder, the user has access to this folder from another share, and permissions differ between the two shares, user permission on the folder is the highest of the two. e.g.: a user joins a group that is Viewer on a folder, and is also Editor on this folder. User has an Editor permission on the folder.
+- If a user belongs to a group that shares a folder, the user has access to this folder from another share, and permissions differ between the two shares, user permission on the folder is the highest of the two. e.g.: a user joins a group that is Viewer on a folder, and is also Editor on this folder. User has an Editor permission on the folder.
 
 ## Organizations
-- groups cannot cross organizations.
-
-
+- Groups cannot cross organizations.
 
 ***
-## historical requirements (Jon Pile)
 
+# Historical requirements
+By Jon Pile
 
 ActiveDirectory (and other LDAP identity servers) provide generalized support for defining and managing groups. Users may belong to many overlapping groups, such as "the finance team", "West Coast personnel", and "Left-handed Albanian potato farmers".
 
 When a customer deploys AeroFS and uses their existing AD infrastructure, they would like to leverage the work they have already put in to defining and maintaining these groups. This is believed to be more acute in larger deployments, and those with more highly-structured LDAP records.
 
-Admins would like to create folders and assign them to teams or distribution lists.
-Users would like to enter team names instead of individual names.
+Admins would like to create folders and assign them to teams or distribution lists. Users would like to enter team names instead of individual names.
 
 ## Entities
 
 The Group Association is a new relational object consisting of:
 
- - Unique identifier (opaque, internal only)
- - LDAP group name
- - AeroFS Shared Folder name
- - Default role {Owner, Publisher, Viewer}
+ - Unique identifier (opaque, internal only).
+ - LDAP group name.
+ - AeroFS Shared Folder name.
+ - Default role `{Owner, Publisher, Viewer}`.
 
 It must be possible to iterate the set of users last affected by a given Group Association. (This may be thought of as part of the shared-folder membership or as a list of users in the Group Association).
-
 
 ## Sharing
 
@@ -92,7 +89,6 @@ Further, this implies the service can iterate the users whose membership is the 
 `REQ` An Organization Admin can request an immediate reconciliation via the web admin UI.
 
 `REQ` Deleting a Group Association or changing the default role will result in immediate reconciliation - all users belonging to the LDAP group will be removed from the associated shared folder.
-
 
 ## Administration
 
