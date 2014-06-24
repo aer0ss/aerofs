@@ -1,8 +1,11 @@
 import logging
 import time
 
+from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.common_pb2 import PBException
+from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.view import view_config
+from pyramid.security import NO_PERMISSION_REQUIRED
 
 from oauth import get_new_oauth_token, delete_oauth_token
 from web import error
@@ -65,14 +68,21 @@ def create_url(request):
 @view_config(
         route_name='get_url',
         renderer='json',
-        request_method='GET',
+        permission=NO_PERMISSION_REQUIRED,
 )
 def get_url(request):
     key = request.matchdict['key']
-    reply = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-    })
-    # TODO: deal with passwords
+    password = request.POST.get('password')
+    if password is not None:
+        password = password.encode('utf-8')
+    try:
+        reply = exception2error(get_rpc_stub(request).get_url_info, (key, password), {
+            PBException.NOT_FOUND: "The link does not exist or has expired",
+        })
+    except ExceptionReply as e:
+        if e.get_type() == PBException.BAD_CREDENTIAL:
+            return HTTPUnauthorized()
+        raise e
     return _pb_rest_object_url_to_dict(reply.url_info)
 
 
