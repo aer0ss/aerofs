@@ -20,10 +20,14 @@ class transient::services {
     #include stun
 
     # --------------
-    # Devman
+    # Charlie
     # --------------
 
-    include devman
+    include charlie
+    file{"/opt/charlie/config.py":
+        source => "puppet:///modules/charlie/config.py",
+        require => Package["aerofs-charlie"],
+    }
 
     # --------------
     # Servlets
@@ -114,8 +118,8 @@ class transient::services {
     # Sanity
     # --------------
 
-    file {"/opt/sanity/probes/devman.sh":
-        source => "puppet:///modules/transient/probes/devman.sh",
+    file {"/opt/sanity/probes/charlie.sh":
+        source => "puppet:///modules/transient/probes/charlie.sh",
         require => Package["aerofs-sanity"],
     }
 

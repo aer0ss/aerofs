@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Set log folder permissions
+LOG_DIR=/var/log/charlie
+chown charlie:charlie $LOG_DIR -R
+
+# Prepare virtualenv
+PYTHONENV=/opt/charlie/pythonenv
+rm -rf $PYTHONENV
+virtualenv $PYTHONENV
+$PYTHONENV/bin/pip install --find-links file:///opt/charlie/sdist   \
+                           --no-index                               \
+                           --log $LOG_DIR/charlie.install.log       \
+                           --requirement /opt/charlie/requirements.txt

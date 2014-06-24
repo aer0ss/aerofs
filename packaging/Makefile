@@ -13,6 +13,7 @@ PACKAGES= \
 	bunker \
 	ca-server \
 	ca-tools \
+	charlie \
 	cmd-server \
 	cmd-tools \
 	config \
