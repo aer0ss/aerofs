@@ -13,10 +13,11 @@ from web.util import get_rpc_stub
 log = logging.getLogger(__name__)
 
 
-def _get_new_zelda_token(request, expires_in):
+def _get_new_zelda_token(request, expires_in, soid):
     client_id = 'aerofs-zelda'
     client_secret = request.registry.settings["oauth.zelda_client_secret"]
-    return get_new_oauth_token(request, client_id, client_secret, expires_in)
+    scopes = ['files.read:' + soid]
+    return get_new_oauth_token(request, client_id, client_secret, expires_in, scopes)
 
 
 def _abs_milli_to_delta_seconds(abs_milli):
@@ -51,7 +52,7 @@ def create_url(request):
     soid = request.POST.get("soid")
     if soid is None:
         error.error('missing "soid" param')
-    token = _get_new_zelda_token(request, 0)  # N.B. 0 means no expiry
+    token = _get_new_zelda_token(request, 0, soid)  # N.B. 0 means no expiry
     reply = exception2error(get_rpc_stub(request).create_url, (soid, token), {
         PBException.BAD_ARGS: "The SOID provided was invalid",
         PBException.NO_PERM: "You are not an owner of the shared folder",
@@ -95,10 +96,12 @@ def set_url_expires(request):
         expires_abs_milli = _delta_seconds_to_abs_milli(int(expires))
     except ValueError:
         error.error('"expires" param must be a valid number')
-    new_token = _get_new_zelda_token(request, int(expires))
-    old_token = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
+    url_info = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
-    }).url_info.token
+    }).url_info
+    old_token = url_info.token
+    soid = url_info.soid
+    new_token = _get_new_zelda_token(request, int(expires), soid)
     delete_oauth_token(request, old_token)
     exception2error(get_rpc_stub(request).set_url_expires, (key, expires_abs_milli, new_token), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
@@ -118,10 +121,12 @@ def remove_url_expires(request):
     key = request.POST.get("key")
     if key is None:
         error.error('missing "key" param')
-    new_token = _get_new_zelda_token(request, 0)
-    old_token = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
+    url_info = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
-    }).url_info.token
+    }).url_info
+    old_token = url_info.token
+    soid = url_info.soid
+    new_token = _get_new_zelda_token(request, 0, soid)
     delete_oauth_token(request, old_token)
     exception2error(get_rpc_stub(request).remove_url_expires, (key, new_token), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
@@ -170,7 +175,8 @@ def set_url_password(request):
     reply = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
     })
-    new_token = _get_new_zelda_token(request, _abs_milli_to_delta_seconds(reply.url_info.expires))
+    old_expires = _abs_milli_to_delta_seconds(reply.url_info.expires)
+    new_token = _get_new_zelda_token(request, old_expires, reply.url_info.soid)
     delete_oauth_token(request, reply.url_info.token)
     reply = exception2error(get_rpc_stub(request).set_url_password, (key, password, new_token), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
