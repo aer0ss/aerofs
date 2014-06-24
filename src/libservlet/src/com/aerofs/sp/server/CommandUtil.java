@@ -10,9 +10,7 @@ import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Cmd.UploadLogsArgs;
 
 /**
- * This class currently hosts the command serialization / deserialization logic. This may not be
- * the best way to do this, but it's done this way for now. We can refactor this into better
- * classes when we have more methods.
+ * The intention of this class is to capture _all_ command serialization / deserialization logic.
  */
 public class CommandUtil
 {
@@ -25,8 +23,9 @@ public class CommandUtil
         return String.valueOf(type.getNumber());
     }
 
+    // OBSOLETE command
     // pre: both dryadID and customerID are sanitized
-    public static String createUploadLogsCommandMessage(String dryadID, String customerID)
+    public static String createUploadLogsCommandMessageDeprecated(String dryadID, String customerID)
     {
         return createCommandMessage(CommandType.UPLOAD_LOGS) + ":" + dryadID + ":" + customerID;
     }
@@ -45,13 +44,14 @@ public class CommandUtil
 
         switch (type) {
         // parse args for individual types here if any args are expected
-        case UPLOAD_LOGS:   return parseUploadLogsArgs(builder, args);
+        case UPLOAD_LOGS:   return parseUploadLogsArgsDeprecated(builder, args);
         default:            return builder.build();
         }
     }
 
-    // pre: args is the output of createUploadLogsCommandMessage()
-    private static Command parseUploadLogsArgs(Builder builder, String args)
+    // OBSOLETE command
+    // pre: args is the output of createUploadLogsCommandMessageDeprecated()
+    private static Command parseUploadLogsArgsDeprecated(Builder builder, String args)
     {
         String[] fields = args.split(":");
 

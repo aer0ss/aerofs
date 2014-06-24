@@ -55,6 +55,9 @@ enum CommandType {
     // needed to pace out consecutive sampling requests.
     LOG_THREADS = 9;
 
+    // OBSOLETE
+    // This call has been rolled out to production, but no one used it to the best of our knowledge.
+    //
     // Upload client-side logs to Dryad persistence endpoint.
     UPLOAD_LOGS = 10;
 
@@ -72,6 +75,7 @@ message Command {
     optional UploadLogsArgs upload_logs_args = 3;
 }
 
+// OBSOLETE
 message UploadLogsArgs {
     required string dryad_id = 1;
     required string customer_id = 2;

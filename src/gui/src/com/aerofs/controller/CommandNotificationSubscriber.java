@@ -36,7 +36,6 @@ import com.aerofs.ui.UnlinkUtil;
 import com.aerofs.verkehr.client.wire.ConnectionListener;
 import com.aerofs.verkehr.client.wire.UpdateListener;
 import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -88,19 +87,16 @@ public final class CommandNotificationSubscriber
 
     private final IScheduler _scheduler;
     private final ExponentialRetry _exponential;
-    private final DryadUploadService _uploader;
     private final VerkehrPubSubClient _verkehrPubSubClient;
     private final String _topic;
 
     public CommandNotificationSubscriber(
             ClientSocketChannelFactory clientChannelFactory,
             IScheduler scheduler,
-            DryadUploadService uploader,
             DID localDevice)
     {
         _scheduler = scheduler;
         _exponential = new ExponentialRetry(scheduler);
-        _uploader = uploader;
         _verkehrPubSubClient = VerkehrPubSubClient.create(
                 Verkehr.HOST,
                 Verkehr.PROTOBUF_PORT,
@@ -338,7 +334,7 @@ public final class CommandNotificationSubscriber
                     logThreads();
                     break;
                 case UPLOAD_LOGS:
-                    uploadLogs(command);
+                    // obsolete command, no-op
                     break;
                 case OBSOLETE_WAS_CLEAN_SSS_DATABASE:
                     // obsoleted command, do no-op
@@ -461,16 +457,6 @@ public final class CommandNotificationSubscriber
 
         // Log threads for the daemon process
         UIGlobals.ritual().logThreads();
-    }
-
-    private void uploadLogs(Command command) throws Exception
-    {
-        Preconditions.checkArgument(command.hasUploadLogsArgs());
-
-        final String dryadID = command.getUploadLogsArgs().getDryadId();
-        final String customerID = command.getUploadLogsArgs().getCustomerId();
-
-        _uploader.submit(dryadID, customerID);
     }
 
     private static class CommandFailed extends Exception

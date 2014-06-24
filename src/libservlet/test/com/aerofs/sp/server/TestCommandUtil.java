@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import static com.aerofs.sp.server.CommandUtil.createCommandFromMessage;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
-import static com.aerofs.sp.server.CommandUtil.createUploadLogsCommandMessage;
+import static com.aerofs.sp.server.CommandUtil.createUploadLogsCommandMessageDeprecated;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -19,8 +19,12 @@ import static org.junit.Assert.assertTrue;
  */
 public class TestCommandUtil
 {
+    /**
+     * Originally, in the first version, the commands are of the format "0" where 0 is the
+     * ordinal of the command type.
+     */
     @Test
-    public void shouldDeserializeFirstEditionCommands()
+    public void shouldDeserializeFirstVersionCommands()
     {
         // this is a bit exhaustive but it's the only way to cover backward compatibility
         Object[][] testCases = {
@@ -45,6 +49,9 @@ public class TestCommandUtil
         }
     }
 
+    /**
+     * Covers the latest serialization / deserialization formats
+     */
     @Test
     public void shouldDeserializeSimpleSerializedCommandMessages()
     {
@@ -69,6 +76,9 @@ public class TestCommandUtil
         }
     }
 
+    /**
+     * This command message is obsoleted, but we keep this test for legacy purpose.
+     */
     @Test
     public void shouldDeserializeUploadLogsCommandMessage()
     {
@@ -76,7 +86,7 @@ public class TestCommandUtil
         String customerID = "31415926585";
         String expectedMessage = "10:" + dryadID + ":" + customerID;
 
-        String message = createUploadLogsCommandMessage(dryadID, customerID);
+        String message = createUploadLogsCommandMessageDeprecated(dryadID, customerID);
         assertEquals(expectedMessage, message);
 
         Command command = createCommandFromMessage(message, 0);
