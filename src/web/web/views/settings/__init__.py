@@ -1,14 +1,13 @@
-from web.util import add_routes
-
-
 def includeme(config):
     config.add_route('access_tokens', 'apps')
     config.add_route('app_authorization', 'authorize')
 
-    additional_routes = [
-        'settings',
-        'json_send_password_reset_email',
-        'json_set_full_name',
-        'json_delete_access_token',
-    ]
-    add_routes(config, additional_routes)
+    config.add_route('settings', 'settings')
+    config.add_route('two_factor_settings', 'settings/two_factor_authentication')
+    config.add_route('two_factor_intro', 'settings/two_factor_authentication/intro')
+    config.add_route('two_factor_setup', 'settings/two_factor_authentication/setup')
+    config.add_route('two_factor_disable', 'settings/two_factor_authentication/disable')
+    config.add_route('two_factor_download_backup_codes', 'settings/two_factor_authentication/backup_codes')
+    config.add_route('json_send_password_reset_email','json_send_password_reset_email')
+    config.add_route('json_set_full_name','json_set_full_name')
+    config.add_route('json_delete_access_token','json_delete_access_token')

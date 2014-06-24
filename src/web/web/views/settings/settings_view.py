@@ -20,9 +20,9 @@ def settings(request):
         'first_name': reply.first_name,
         'last_name': reply.last_name,
         'signup_date': reply.signup_date,
-        'userid': authenticated_userid(request)
+        'userid': authenticated_userid(request),
+        'two_factor_enforced': reply.two_factor_enforced,
     }
-
 
 @view_config(
     route_name='json_send_password_reset_email',
