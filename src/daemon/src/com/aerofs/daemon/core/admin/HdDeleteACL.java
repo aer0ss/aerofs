@@ -26,7 +26,9 @@ public class HdDeleteACL extends AbstractHdIMC<EIDeleteACL>
     protected void handleThrows_(EIDeleteACL ev, Prio prio)
             throws Exception
     {
+        l.info("Deleting acl for store with path: {}", ev._path);
         _analytics.track(SimpleEvents.KICKOUT);
         _aclsync.delete_(_sru.getSIndex_(ev._path), ev._subject);
+        l.info("Deleted acl for store with path: {}", ev._path);
     }
 }

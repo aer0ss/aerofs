@@ -229,7 +229,8 @@ class SharedFolderList extends Composite
             // happen.
             String pathHelpInfo = "\n\nTo sync this folder on this device, please select " +
                     (path.toPB().getElemCount() > 1 ? (path.toPB().getElem(0) + " ") : "it ") +
-                    "in the Selective Sync dialog under the Advanced tab in Preferences." ;
+                    "in the Selective Sync dialog. You can sync this folder at anytime by clicking " +
+                    "the AeroFS icon and going to Preferences... > Advanced... > Selective Sync...";
             String askMsg = OPEN_UNLINKED_FOLDERS_MSG + pathHelpInfo;
 
             if (askToSyncGui.ask(getShell(), MessageType.INFO, askMsg, "Open Selective Sync Dialog",

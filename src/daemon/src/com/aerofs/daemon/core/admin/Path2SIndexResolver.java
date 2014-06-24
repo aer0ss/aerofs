@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -18,6 +19,7 @@ import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import java.sql.SQLException;
 
@@ -29,6 +31,8 @@ import java.sql.SQLException;
  */
 public class Path2SIndexResolver
 {
+    private static final Logger l = Loggers.getLogger(Path2SIndexResolver.class);
+
     private final IMapSID2SIndex _sid2sidx;
     private final TransManager _tm;
     private final DirectoryService _ds;
@@ -63,6 +67,7 @@ public class Path2SIndexResolver
                 sidx = soid.sidx();
             }
         }
+        l.debug("SIndex for path: {} is {}", path , sidx);
         return sidx;
     }
 

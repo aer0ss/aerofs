@@ -22,7 +22,9 @@ public class HdUpdateACL extends AbstractHdIMC<EIUpdateACL>
     protected void handleThrows_(EIUpdateACL ev, Prio prio)
             throws Exception
     {
+        l.info("Updating acl for store with path: {}", ev._path);
         _aclsync.update_(_sru.getSIndex_(ev._path), ev._subject, ev._permissions,
                 ev._suppressSharedFolderRulesWarnings);
+        l.info("Updated acl for store with path: {}", ev._path);
     }
 }
