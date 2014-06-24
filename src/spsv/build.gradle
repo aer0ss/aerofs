@@ -1,0 +1,33 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-sp'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+            exclude 'com/aerofs/sv**'
+        }
+    }
+    test {
+        java {
+            srcDir 'test'
+            exclude 'com/aerofs/sv**'
+        }
+    }
+}
+
+evaluationDependsOn(':src/libservlet')
+
+dependencies {
+    compile 'com.googlecode.json-simple:json-simple:1.1'
+    compile 'commons-codec:commons-codec:1.6'
+    compile name:'dyuproject-util-1.1'
+    compile project(':src/libservlet')
+    testCompile name:'rest-assured-1.8.1'
+    testCompile restAssuredDependencies
+    testCompile 'org.mortbay.jetty:jetty:6.1.14'
+    testCompile project(':src/libservlet').sourceSets.test.runtimeClasspath
+}

@@ -18,6 +18,11 @@ SERVICE_ARGS="server verkehr.yml"
 OPT=$OUTPUT_DIR/opt/verkehr
 INIT=$OUTPUT_DIR/etc/init
 
+# tweak postinst to load verkehr sysctl config
+cat << EOF >> $OUTPUT_DIR/DEBIAN/postinst
+invoke-rc.d procps start
+EOF
+
 # tweak upstart config
 cat << EOF >> $INIT/verkehr.conf
 # Set a high ulimit for no files to allow a huge # of users to connect

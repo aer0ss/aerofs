@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="chronicle">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../resource/server/lib/chronicle-2.0.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/server/lib/lang-6.1.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

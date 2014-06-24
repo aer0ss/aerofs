@@ -129,6 +129,7 @@ subprojects {
         ignoreFailures = true
         environment sharedLibrarySearchPathVariable, "${libraryPath}"
         jvmArgs "-Djava.library.path=${libraryPath}"
+        systemProperties.put "junit.mysqlSpSchemaPath", "${rootDir}/src/spsv/resources/sp/db/migration"
         maxHeapSize '512m'
         exclude '**/Abstract*Test*'
         testLogging.showStandardStreams = true
