@@ -7,8 +7,6 @@
     <thead>
       <tr>
         <th>Name</th>
-        <th>Most recent activity</th>
-        <th>IP address</th>
         <th></th>
       </tr>
     </thead>
@@ -53,22 +51,6 @@
                         </a>
                     </span>
                 </form>
-            </td>
-            <td>
-                %if last_seen_nullable:
-                    %if device_id in last_seen_nullable:
-                        ${last_seen_nullable[device_id]['time']}
-                    %else:
-                        <span data-toggle="tooltip" class="last_seen_not_registered_label muted">N/A</span>
-                    %endif
-                %else:
-                    <span data-toggle="tooltip" class="last_seen_service_down_label muted">N/A</span>
-                %endif
-            </td>
-            <td>
-                %if last_seen_nullable and device_id in last_seen_nullable:
-                    ${last_seen_nullable[device_id]['ip']}
-                %endif
             </td>
             <td>
                 <a href="#"
