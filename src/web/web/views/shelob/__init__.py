@@ -17,3 +17,4 @@ def includeme(config):
     ]
     add_routes(config, routes)
     config.add_route('get_url', 'l/{key}')
+    config.add_route('get_url_info', 'url_info/{key}')

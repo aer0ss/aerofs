@@ -64,6 +64,12 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
         }
     );
 
+    $httpBackend.whenGET(/^\/list_urls_for_store\?sid=(.*)?$/).respond(
+        {
+            urls: []
+        }
+    );
+
     // mock out the /json_token backend service
     $httpBackend.whenGET('/json_token').respond(
         {token: 'tokentokentoken'}

@@ -1,0 +1,132 @@
+<div class="col-sm-12">
+    <div class="object row">
+        <div class="col-xs-12 col-sm-7 col-md-6">
+          <div class="icon">
+            <img ng-if="object.type == 'folder' && !object.is_shared" src="/static/shelob/img/icons/40x40/filetype_folder.png">
+            <img ng-if="object.type == 'folder' && object.is_shared" src="/static/shelob/img/icons/40x40/filetype_shared_folder.png">
+            <div ng-if="object.type == 'file'" aero-icon data-mime-type={{object.mime_type}}></div>
+          </div>
+          <div class="name">
+            <a ng-if="object.type === 'folder'" ng-hide="object.edit" ng-href="#/{{object.id}}">{{object.name}}</a>
+            <a ng-if="object.type === 'file' && object.size > 0" ng-hide="object.edit" ng-click="download(object.id)">{{object.name}}</a>
+            <span ng-if="object.type === 'file' && (object.size === undefined || object.size === null || object.size === 0 || object.size === -1)">{{object.name}}</span>
+            <input in-place-edit
+                   ng-show="object.edit"
+                   type="text"
+                   ng-model="object.newName"
+                   focus-on="object.edit"
+                   on-submit="submitRename(object)"
+                   on-cancel="cancelRename(object)"
+                   ng-disabled="outstandingRequests > 0"/>
+          </div>
+        </div>
+        <div class="col-xs-2 size">
+          {{object.size|humanBytes}}
+        </div>
+        <div class="col-md-2 col-xs-5 hidden-sm last-modified">
+          {{object.last_modified | date: 'short'}}
+        </div>
+        <div class="col-xs-1 link-status">
+          <a ng-show="object.links.length > 0" ng-click="toggleLink(object)" title="Link settings">
+            <span class="glyphicon glyphicon-link"></span> 
+            <span class="extra-settings-icons">
+              <span ng-show="object.links[0].expires.value" class="glyphicon glyphicon-time"></span> 
+              <span ng-show="object.links[0].has_password" class="glyphicon glyphicon-lock"></span>
+            </span>
+          </a>
+        </div>
+        <div class="col-md-1 col-sm-2 col-xs-4 actions">
+            <div class="pull-right">
+                <div class="btn-group">
+                  <button type="button" class="btn btn-plain dropdown-toggle" data-toggle="dropdown">
+                    Actions <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu pull-right" role="menu">
+                    <li><a
+                       ng-click="showLink(object)"
+                       class="edit action action-link">
+                        <span class="glyphicon glyphicon-link"></span> 
+                        <span ng-hide="object.links.length > 0">Create Link</span>
+                        <span ng-show="object.links.length > 0">Link Settings</span>
+                    </a></li>
+                    <li><a
+                       ng-click="startRename(object)"
+                       class="edit action action-rename"><span class="glyphicon glyphicon-pencil"></span> Rename</a></li>
+                    <li><a
+                       ng-click="startMove(object)"
+                       class="redo action action-move"><span class="glyphicon glyphicon-arrow-right"></span> Move</a></li>
+                    <li><a ng-href="/shared_folders" ng-show="object.is_shared"
+                       class="action action-manage"><span class="glyphicon glyphicon-share"></span> Manage Sharing</a></li>
+                    <li class="divider"></li>
+                    <li><a
+                       ng-click="startDelete(object)"
+                       class="remove_2 action action-delete"><span class="glyphicon glyphicon-trash"></span> Delete</a></li>
+                  </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-sm-12">
+  <div class="link row" ng-show="object.showingLinks && !object.links.length">
+    <div class="col-sm-6">
+      <div class="icon">&nbsp;</div>
+      <span class="glyphicon glyphicon-refresh spinner"></span>
+    </div>
+  </div>
+</div>
+
+<div class="col-sm-12">
+<div ng-show="object.showingLinks">
+    <div ng-repeat="link in object.links">
+        <div class="link row">
+            <div class="col-sm-3 the-link" ng-hide="link.copying">
+              <span class="glyphicon glyphicon-link"></span> <span class="extra-settings-icons"><span ng-show="link.expires.value" class="glyphicon glyphicon-time" title="Has expiration time"></span> <span ng-show="link.has_password" class="glyphicon glyphicon-lock" title="Password protected"></span></span> 
+              Link to 
+              <span ng-if="object.type === 'folder'">folder</span>
+              <span ng-if="object.type === 'file'">file</span>: 
+            </div>
+            <div class="col-sm-7 the-link" ng-hide="link.copying">
+              <a class="url" title="Copy link to clipboard" ng-show="!link.copying" ng-click="toggleCopying(link)">
+                {{hostname}}/l/{{link.key}}
+              </a>
+            </div>
+            <div class="col-sm-3" ng-show="link.copying">
+              <div class="help-block">
+                Hit <span ng-hide="isMac">ctrl-c</span> <span ng-show="isMac">&#8984;-c</span> to copy
+              </div>
+            </div>
+            <div class="col-sm-7" ng-show="link.copying">
+              <form class="form-inline" method="post">
+                <div class="the-link">
+                  <input in-place-edit
+                    type="text"
+                    class="form-control"
+                    value="{{hostname}}/l/{{link.key}}"
+                    focus-on="link.copying"
+                    readonly
+                    />
+                    <button ng-click="toggleCopying(link)" type="button" class="close" aria-hidden="true">&times;</button>
+                </div>
+              </form>
+            </div>
+            <div class="col-sm-2 options">
+              <div class="btn-group pull-right">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                  Options <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu pull-right" role="menu">
+                  <li ng-hide="link.has_password"><a ng-click="showPasswordModal(link)">Add Password</a></li>
+                  <li ng-show="link.has_password"><a ng-click="removePassword(link)">Remove Password</a></li>
+                  <li ng-hide="link.expires.value"><a ng-click="showExpirationModal(link)">Add Expiration Time</a></li>
+                  <li ng-show="link.expires.value"><a ng-click="showExpirationModal(link)">Expires: {{link.expires.text}}</a></li>
+                  <li class="divider"></li>
+                  <li><a ng-click="deleteLink(object, link)"><span class="glyphicon glyphicon-trash"></span> Delete Link</a></li>
+                </ul>
+              </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

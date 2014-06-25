@@ -3,20 +3,42 @@
     float: left;
 }
 
+.btn-plain, .btn-plain:active, .btn-group.open .dropdown-toggle.btn-plain {
+    background: none;
+    box-shadow: none;
+}
+
 .my-row, .file-list-head {
     border-bottom: 1pt solid #ddd;
-    padding: 5px 0;
+    padding-top: 5px;
 }
 
 .my-row:hover {
     background: #f9f9f9;
 }
 
-.my-row .name, .my-row .last-modified {
+.my-row .name, .my-row .last-modified, .my-row .link-status, .my-row .size {
     padding-top: 10px;
 }
+
 .my-row .actions {
     padding-top: 2px;
+}
+
+.my-row .actions, .link .options {
+    padding-right: 0;
+}
+
+.name {
+    word-wrap: break-word;
+}
+
+.object {
+    margin-bottom: 8px;
+}
+
+.link {
+    margin-bottom: 5px;
 }
 
 .file-list-head {
@@ -31,6 +53,15 @@
 }
 .breadcrumb li {
     padding-bottom: 6px;
+}
+
+.link-status a {
+    color: #bbb;
+}
+
+.link-status a:hover {
+    color: #2a6496;
+    text-decoration: none;
 }
 
 #actions {
@@ -51,4 +82,69 @@ a {
 
 .waiting, .waiting * {
     cursor: wait;
+}
+
+.link .the-link, .spinner {
+    word-wrap: break-word;
+    padding-bottom: 5px;
+}
+.the-link .form-control {
+    width: 80%;
+}
+
+.the-link .close {
+    float: none;
+}
+
+.the-link a, .the-link a:hover {
+    color: #333;
+    background: #ddd;
+    width: 100%;
+}
+
+.the-link a:hover {
+    background: #b3d4fd; /* default mac highlight color */
+    text-decoration: none;
+}
+
+.extra-settings-icons {
+    font-size: .6em;
+    margin-left: -4px;
+    margin-right: 4px;
+}
+
+.the-link .extra-settings-icons {
+    color: #bbb;
+}
+
+.the-link .url {
+    color: black;
+}
+
+.url {
+    height: 1.5em;
+    display: inline-block;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.spinner {
+    color: #bbb;
+    font-size: 1em;
+    width: 1em;
+    height: 1em;
+    padding: .1px 0;
+    -webkit-animation: spin 1s infinite linear;
+    -moz-animation: spin 1s infinite linear;
+}
+
+@-webkit-keyframes spin {
+    0%  {-webkit-transform: rotate(0deg);}
+    100% {-webkit-transform: rotate(360deg);}
+}
+
+.password .close {
+    margin-top: -30px;
 }

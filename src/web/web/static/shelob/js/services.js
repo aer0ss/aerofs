@@ -84,8 +84,10 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
         function _request(config) {
             var deferred = $q.defer();
 
-            // get an OAuth token and make call
-            Token.get().then(function (token) {
+            /* Two arguments: a token and an optional boolean
+            that will stop the function from retrying fetching a token 
+            from the Token service */
+            var doStuffWithToken = function (token, doNotRetry) {
                 config.headers.Authorization = 'Bearer ' + token;
                 config.url = API_LOCATION + '/api/v1.2' + config.path;
                 // if data is an array buffer, send the bytes directly. Otherwise, allow
@@ -101,20 +103,11 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
                         deferred.resolve({data: data, headers: headers});
                     })
                     .error(function (response, status) {
-                        if (status == 401) {
+                        if (status == 401 && !doNotRetry) {
                             // if the call got 401, the token may have expired, so try a new one
                             Token.getNew().then(function (token) {
-                                config.headers.Authorization = 'Bearer ' + token;
-                                OutstandingRequestCounter.push();
-                                $http(config)
-                                    .success(function (data, status, headers) {
-                                        // if the call succeeds, return the data
-                                        deferred.resolve({data: data, headers: headers});
-                                    })
-                                    .error(function (data, status) {
-                                        // if the call fails with the new token, stop trying and return the status code
-                                        deferred.reject({data: data, status: status});
-                                    }).finally(OutstandingRequestCounter.pop);
+                                /* Do not retry if the second attempt fails */
+                                doStuffWithToken(token, true);
                             }, function (status) {
                                 // this is called if getting a new token fails
                                 // consider this an internal server error and return a 500
@@ -122,14 +115,24 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
                             });
                         } else {
                             // if the call failed with anything other than 401, return the error code
+                            // Also, if doNotRetry is true (because we explicitly passed in a token),
+                            // this could be a 401 error
                             deferred.reject({data: response, status: status});
                         }
                     }).finally(OutstandingRequestCounter.pop);
-            }, function (status) {
-                // this is called if Token.get() fails
-                // consider this an internal server error and return 500
-                deferred.reject({status: 500});
-            });
+            };
+
+            // get an OAuth token and make call
+            if (config.headers.token) {
+                doStuffWithToken(config.headers.token, true);
+            } else {
+                $log.debug('No token provided manually.');
+                Token.get().then(doStuffWithToken, function (status) {
+                    // this is called if Token.get() fails
+                    // consider this an internal server error and return 500
+                    deferred.reject({status: 500});
+                });
+            }
             return deferred.promise;
         }
 

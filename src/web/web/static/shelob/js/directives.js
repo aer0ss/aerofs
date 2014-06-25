@@ -208,3 +208,25 @@ getFilename = function(mimeType) {
         return 'filetype_generic.png';
     }
 };
+
+// Generates a file/folder row for an object.
+// Uses different templates to render with depending on whether this is 
+// a My Files admin page or a linkshare page
+shelobDirectives.directive('ngFileRow', function(){
+    return {
+        restrict: 'A',
+        scope: false,
+        templateUrl: function(tElement, tAttrs) {
+            /* Is this a link sharing page?
+            Note: if linkshare page path changes from /l/<whatever>, this will break.
+            See url_sharing_view.py for more details! */
+            var pathList = window.location.pathname.split('/');
+            if (pathList.length > 1 && pathList[1] === "l") {
+                template = 'link-share';
+            } else {
+                template = 'my-files';
+            }
+            return '/static/shelob/partials/file-row-' + template + '.html';
+        }
+    };
+});

@@ -1,11 +1,14 @@
 import logging
 import time
+import json
+from datetime import datetime
 
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.common_pb2 import PBException
 from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.view import view_config
-from pyramid.security import NO_PERMISSION_REQUIRED
+from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid
+import requests
 
 from oauth import get_new_oauth_token, delete_oauth_token
 from web import error
@@ -66,7 +69,7 @@ def _pb_rest_object_url_to_dict(pb):
         request_method='POST',
 )
 def create_url(request):
-    soid = request.POST.get("soid")
+    soid = request.json_body.get("soid")
     if soid is None:
         error.error('missing "soid" param')
     token = _get_new_zelda_token(request, 0, soid)  # N.B. 0 means no expiry
@@ -89,12 +92,22 @@ def create_url(request):
 
 @view_config(
         route_name='get_url',
-        renderer='json',
+        renderer='linkshare.mako',
         permission=NO_PERMISSION_REQUIRED,
 )
 def get_url(request):
     key = request.matchdict['key']
-    password = request.POST.get('password')
+    return {'key': key}
+
+
+@view_config(
+        route_name='get_url_info',
+        renderer='json',
+        permission=NO_PERMISSION_REQUIRED,
+)
+def get_url_info(request):
+    key = request.matchdict['key']
+    password = request.json_body.get('password')
     if password is not None:
         password = password.encode('utf-8')
     try:
@@ -121,8 +134,8 @@ def set_url_expires(request):
     """
     expires: url duration in seconds (number of seconds until expiry)
     """
-    key = request.POST.get("key")
-    expires = request.POST.get("expires")
+    key = request.json_body.get("key")
+    expires = request.json_body.get("expires")
     if key is None:
         error.error('missing "key" param')
     if expires is None:
@@ -159,7 +172,7 @@ def set_url_expires(request):
         request_method='POST',
 )
 def remove_url_expires(request):
-    key = request.POST.get("key")
+    key = request.json_body.get("key")
     if key is None:
         error.error('missing "key" param')
     url_info = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
@@ -189,7 +202,7 @@ def remove_url_expires(request):
         request_method='POST',
 )
 def remove_url(request):
-    key = request.POST.get("key")
+    key = request.json_body.get("key")
     if key is None:
         error.error('missing "key" param')
     old_token = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
@@ -216,8 +229,8 @@ def remove_url(request):
         request_method='POST',
 )
 def set_url_password(request):
-    key = request.POST.get("key")
-    password = request.POST.get("password")
+    key = request.json_body.get("key")
+    password = request.json_body.get("password")
     if key is None:
         error.error('missing "key" param')
     if password is None:
@@ -249,7 +262,7 @@ def set_url_password(request):
         request_method='POST',
 )
 def remove_url_password(request):
-    key = request.POST.get("key")
+    key = request.json_body.get("key")
     if key is None:
         error.error('missing "key" param')
     exception2error(get_rpc_stub(request).remove_url_password, (key,), {

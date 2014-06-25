@@ -55,6 +55,7 @@ describe('Shelob Controllers', function() {
 
             $httpBackend.whenGET('/json_token').respond('token');
             $httpBackend.whenGET('/json_new_token').respond('newtoken');
+            $httpBackend.whenGET('/list_urls_for_store?sid=root').respond({ urls: []});
         }));
 
         beforeEach(function() {

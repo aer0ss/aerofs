@@ -1,13 +1,17 @@
+<div ng-show="currentFolder || isSingleObject">
+
 <div id="breadcrumb-and-actions">
-  <div id="actions">
+  <div id="actions" ng-hide="share">
     <span aero-file-upload class="btn btn-primary" id="upload-file"></span>
     <button type="button" class="btn btn-default" id="new-folder" ng-click="newFolder.hidden=false">New Folder</button>
   </div>
 
-  <div class="row">
+  <div class="row" ng-hide="isSingleObject">
+    <h2 ng-show="share">Download files from folder</h2>
     <ul class="breadcrumb">
-        <li ng-if="currentFolder.id == 'root'" class="active">My Files</li>
-        <li ng-if="currentFolder.id != 'root'"><a href="#/root">My Files</a></li>
+        <li ng-if="currentFolder.id == 'root' && share" class="active">Download files from folder</li>
+        <li ng-if="currentFolder.id == 'root' && share === undefined" class="active">My Files</li>
+        <li ng-if="currentFolder.id != 'root' && share === undefined"><a href="#/root">My Files</a></li>
 
         <li ng-repeat="folder in breadcrumbs">
           <a href="#/{{folder.id}}">{{folder.name}}</a>
@@ -18,26 +22,40 @@
         </li>
     </ul>
   </div>
+  <div class="row" ng-show="isSingleObject">
+    <h2>Download file</h2>
+  </div>
 </div>
 
 <div id="file-list">
-  <div class="row file-list-head">
-    <div class="col-sm-6">
-      <div class="icon">&nbsp;
+  <div class="file-list-head row">
+      <div class="hidden-xs">
+        <div ng-class="{
+                'col-xs-8': share,
+                'col-xs-12': !share,
+                'col-sm-7': !share,
+                'col-md-6': !share}">
+          <div class="icon">&nbsp;
+          </div>
+          <div class="name">
+            Name
+          </div>
+        </div>
+        <div ng-class="{
+                'col-xs-4': share,
+                'col-xs-2': !share,
+                'col-sm-2': !share}">
+          Size
+        </div>
+        <div ng-if="!share" class="col-md-4 last-modified hidden-sm">
+          Last modified
+        </div>
       </div>
-      <div class="name">
-        Name
-      </div>
-    </div>
-    <div class="col-sm-3 last-modified">
-      Last modified
-    </div>
-    <div class="col-sm-3 actions">
-    </div>
   </div>
   <div class="file-list-body">
+    
       <div class="my-row row" ng-if="!newFolder.hidden" id="new-folder">
-        <div class="col-sm-6">
+        <div class="col-md-6 col-sm-7 col-xs-12">
           <div class="icon"><img src="/static/shelob/img/icons/40x40/filetype_folder.png"></div>
           <div class="name">
             <input in-place-edit
@@ -50,8 +68,6 @@
             />
           </div>
         </div>
-        <div class="col-sm-3 last-modified">--</div>
-        <div class="col-sm-3 actions"></div>
       </div>
 
       <div class="my-row row" ng-if="!objects.length">
@@ -61,52 +77,76 @@
         </div>
       </div>
 
-      <div class="my-row row object" ng-repeat="object in objects | orderBy:['-type', 'name']">
-        <div class="col-sm-6">
-          <div class="icon">
-            <img ng-if="object.type == 'folder' && !object.is_shared" src="/static/shelob/img/icons/40x40/filetype_folder.png">
-            <img ng-if="object.type == 'folder' && object.is_shared" src="/static/shelob/img/icons/40x40/filetype_shared_folder.png">
-            <div ng-if="object.type == 'file'" aero-icon data-mime-type={{object.mime_type}}></div>
-          </div>
-          <div class="name">
-            <a ng-if="object.type === 'folder'" ng-hide="object.edit" ng-href="#/{{object.id}}">{{object.name}}</a>
-            <a ng-if="object.type === 'file' && object.size > 0" ng-hide="object.edit" ng-click="download(object.id)">{{object.name}}</a>
-            <span ng-if="object.type === 'file' && (object.size === undefined || object.size === null || object.size === 0 || object.size === -1)">{{object.name}}</span>
-            <input in-place-edit
-                   ng-show="object.edit"
-                   type="text"
-                   ng-model="object.newName"
-                   focus-on="object.edit"
-                   on-submit="submitRename(object)"
-                   on-cancel="cancelRename(object)"
-                   ng-disabled="outstandingRequests > 0"/>
-          </div>
-        </div>
-        <div class="col-sm-3 last-modified">{{object.last_modified | date: 'short'}}</div>
-        <div class="col-sm-3 actions">
-          <div class="pull-right">
-            <div class="btn-group">
-              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                Actions <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu pull-right" role="menu">
-                <li><a
-                   ng-click="startRename(object)"
-                   class="edit action action-rename"><span class="glyphicon glyphicon-pencil"></span> Rename</a></li>
-                <li><a
-                   ng-click="startMove(object)"
-                   class="redo action action-move"><span class="glyphicon glyphicon-arrow-right"></span> Move</a></li>
-                <li><a ng-href="/shared_folders" ng-show="object.is_shared"
-                   class="action action-manage"><span class="glyphicon glyphicon-share"></span> Manage Sharing</a></li>
-                <li class="divider"></li>
-                <li><a
-                   ng-click="startDelete(object)"
-                   class="remove_2 action action-delete"><span class="glyphicon glyphicon-trash"></span> Delete</a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </tr>
+      <div class="my-row row" ng-repeat="object in objects | orderBy:['-type', 'name']">
+        <div ng-file-row template-type="my-files"></div>
+      </div>
 
   </div>
+</div>
+
+<div id="expiry-modal" class="modal fade">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Link Expiration Date</h4>
+      </div>
+      <div class="modal-body">
+        <form class="form-inline" role="form" method="post">
+          <div class="form-group">
+            <span class="control-label">
+            Expires: </span>
+            <select class="form-control" 
+                    name="expiration" 
+                    ng-model="activeLink.expires" 
+                    ng-options="option.text for option in activeLink.expiration_options track by option.value">
+            </select>
+          </div>
+        </form>
+        <div ng-show="activeLink.expires.value === -1">
+          <div class="input-group date datepicker no-padding" data-date-format="yyyy-mm-dd">
+            <input class="form-control" size="16" type="text">
+            <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
+          </div>
+          <p class="help-block">Custom expiration dates expire at 23:59:59 UTC.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" ng-click='resetOption(activeLink, "expiration")' data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" ng-click="changeExpiration(activeLink)">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="password-modal" class="modal fade">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Link Password</h4>
+      </div>
+      <div class="modal-body">
+        <div class="password">
+          <form class="form-inline" role="form" method="post">
+            <div class="form-group">
+              <span class="control-label">Password: </span>
+              <input class="form-control"
+                    type="text"
+                    ng-model="activeLink.password"
+                    placeholder="None"
+                    ng-model="object.newName"
+                    size="8"/>
+            </div>
+          </form>
+          <button ng-show="link.password" ng-click="removePassword(link)" type="button" class="close" aria-hidden="true">&times;</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" ng-click='resetOption(activeLink, "password")' data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" ng-click="submitPassword(activeLink)">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
