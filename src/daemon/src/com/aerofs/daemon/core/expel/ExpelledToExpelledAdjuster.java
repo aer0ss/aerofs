@@ -8,6 +8,6 @@ import com.aerofs.lib.id.SOID;
 class ExpelledToExpelledAdjuster implements IExpulsionAdjuster
 {
     @Override
-    public void adjust_(ResolvedPath pathOld, SOID soid, boolean emigrate, PhysicalOp op, Trans t)
+    public void adjust_(ResolvedPath pathOld, SOID soid, PhysicalOp op, Trans t)
     { }
 }

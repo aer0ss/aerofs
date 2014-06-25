@@ -334,7 +334,7 @@ public class AliasingMover
             String newChildName = _ds.generateConflictFreeFileName_(targetPath, childName);
             boolean updateVersion = !newChildName.equals(childName);
 
-            _om.moveInSameStore_(child, target.oid(), childName, PhysicalOp.APPLY, false,
+            _om.moveInSameStore_(child, target.oid(), childName, PhysicalOp.APPLY,
                     updateVersion, t);
         }
     }

@@ -37,12 +37,9 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     }
 
     @Override
-    public void adjust_(ResolvedPath pathOld, final SOID soidRoot,
-            boolean emigrate, final PhysicalOp op, final Trans t)
+    public void adjust_(ResolvedPath pathOld, final SOID soidRoot, final PhysicalOp op, final Trans t)
             throws Exception
     {
-        checkArgument(!emigrate);
-
         // must recreate the *new* tree
         // otherwise we may try to create physical object under the trash folder
         // which would fail and result in the apparition of nro which would be

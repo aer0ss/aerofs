@@ -156,7 +156,5 @@ public class ObjectCreator
                 assert oa.isFile();
             }
         }
-
-        if (expelled && oa.isFile()) _ex.fileExpelled_(soid);
     }
 }

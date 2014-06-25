@@ -32,13 +32,15 @@ public class ObjectMover
     }
 
     /**
-      * TODO avoid moving a directory to a subdir of itself, or moving root dir
-      * @param emigrate whether the move results from emigration
-      */
+     *
+     */
     public void moveInSameStore_(final SOID soid, OID oidParent, String name, PhysicalOp op,
-            boolean emigrate, boolean updateVersion, Trans t)
+            boolean updateVersion, Trans t)
             throws Exception
     {
+        checkArgument(!soid.oid().isRoot());
+        checkArgument(!soid.oid().isTrash());
+
         // The caller must guarantee the local existence of the object and its new parent
         OA oaOld = _ds.getOA_(soid);
         OA oaParent = _ds.getOA_(new SOID(soid.sidx(), oidParent));
@@ -54,6 +56,6 @@ public class ObjectMover
             _vu.update_(k, t);
         }
 
-        _expulsion.objectMoved_(pOld, soid, emigrate, op, t);
+        _expulsion.objectMoved_(pOld, soid, op, t);
     }
 }

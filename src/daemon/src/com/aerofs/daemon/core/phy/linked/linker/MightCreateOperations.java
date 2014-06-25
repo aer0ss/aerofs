@@ -280,7 +280,7 @@ class MightCreateOperations
         }
 
         // rename the logical object
-        _om.moveInSameStore_(oa.soid(), oa.parent(), name, op, false, true, t);
+        _om.moveInSameStore_(oa.soid(), oa.parent(), name, op, true, t);
     }
 
     /**

@@ -56,7 +56,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 
     @Override
     public void adjust_(ResolvedPath pOld, final SOID soidRoot,
-            final boolean emigrate, final PhysicalOp op, final Trans t)
+            final PhysicalOp op, final Trans t)
             throws Exception
     {
         l.info("adm->exp {} {} {}", soidRoot, pOld, op);
@@ -82,7 +82,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                     Version vKMLAdd = Version.empty();
                     for (KIndex kidx : oa.cas().keySet()) {
                         SOCKID k = new SOCKID(socid, kidx);
-                        if (!emigrate) _ps.newFile_(pathOld, kidx).delete_(op, t);
+                        _ps.newFile_(pathOld, kidx).delete_(op, t);
                         Version vBranch = _nvc.getLocalVersion_(k);
                         vKMLAdd = vKMLAdd.add_(vBranch);
                         _nvc.deleteLocalVersion_(k, vBranch, t);
@@ -96,8 +96,6 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                     _nvc.addKMLVersionNoAssert_(socid, vKMLAdd.sub_(vKMLOld), t);
 
                     _pvc.deleteAllPrefixVersions_(socid.soid(), t);
-
-                    _expulsion.fileExpelled_(oa.soid());
                     return null;
 
                 case DIR:
@@ -105,7 +103,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                     return oldExpelled ? null : pathOld;
 
                 case ANCHOR:
-                    if (!oldExpelled && !emigrate) {
+                    if (!oldExpelled) {
                         // delete the anchored store
                         SIndex sidx = _sid2sidx.get_(SID.anchorOID2storeSID(oa.soid().oid()));
                         _sd.removeParentStoreReference_(sidx, oa.soid().sidx(), pathOld, op, t);

@@ -24,7 +24,7 @@ public class ObjectDeleter
             throws Exception
     {
         String name = soid.oid().toStringFormal();
-        _om.moveInSameStore_(soid, OID.TRASH, name, op, false, true, t);
+        _om.moveInSameStore_(soid, OID.TRASH, name, op, true, t);
     }
 
     /**
@@ -40,6 +40,6 @@ public class ObjectDeleter
             throws Exception
     {
         String name = EmigrantUtil.getDeletedObjectName_(soid, sidEmigrantTarget);
-        _om.moveInSameStore_(soid, OID.TRASH, name, op, true, true, t);
+        _om.moveInSameStore_(soid, OID.TRASH, name, op, true, t);
     }
 }

@@ -292,7 +292,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         do {
             pathTemp = path.removeLast().append(Util.nextFileName(pathTemp.last()));
         } while (_ds.resolveNullable_(pathTemp) != null);
-        _om.moveInSameStore_(soid, oidParent, pathTemp.last(), NOP, false, false, t);
+        _om.moveInSameStore_(soid, oidParent, pathTemp.last(), NOP, false, t);
 
         // Step 2: create the new store with a derived SID
         createNewStore(soid, oidParent, sid, path, t);
@@ -324,7 +324,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             // before starting the conversion process
             checkState(oaAnchor.isExpelled(), "%s", oaAnchor);
             // move anchor to appropriate path (does not affect physical objects)
-            _om.moveInSameStore_(oaAnchor.soid(), oidParent, path.last(), MAP, false, true, t);
+            _om.moveInSameStore_(oaAnchor.soid(), oidParent, path.last(), MAP, true, t);
         } else {
             // create anchor, root and trash, ...
             _oc.createMeta_(ANCHOR, soidAnchor, oidParent, path.last(), 0, MAP, true, true, t);

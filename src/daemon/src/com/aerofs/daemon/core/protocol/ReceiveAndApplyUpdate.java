@@ -525,7 +525,7 @@ public class ReceiveAndApplyUpdate
                     resolveParentConflictIfRemoteParentIsLocallyNestedUnderChild_(soid.sidx(),
                             soid.oid(), oidParent, t);
 
-                    _om.moveInSameStore_(soid, oidParent, meta.getName(), PhysicalOp.APPLY, false,
+                    _om.moveInSameStore_(soid, oidParent, meta.getName(), PhysicalOp.APPLY,
                             false, t);
                 }
             }
@@ -564,7 +564,7 @@ public class ReceiveAndApplyUpdate
                     pathChild.removeLast(), pathRemoteParent.last());
 
             _om.moveInSameStore_(soidRemoteParent, oaChild.parent(), newRemoteParentName,
-                    PhysicalOp.APPLY, false, true, t);
+                    PhysicalOp.APPLY, true, t);
         }
     }
 
@@ -621,7 +621,7 @@ public class ReceiveAndApplyUpdate
                 newName = Util.nextFileName(newName);
             }
 
-            _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, false, t);
+            _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, t);
             applyMeta_(soidRemote, meta, parent, wasPresent, metaDiff, t, soidNoNewVersion,
                     vRemote, soidMsg, cr, cxt);
             return false;
@@ -690,7 +690,7 @@ public class ReceiveAndApplyUpdate
         } else {
             // remote wins
             l.debug("change local name");
-            _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, true, t);
+            _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, true, t);
             applyMeta_(soidRemote, meta, parent, wasPresent, metaDiff, t, null,
                     vRemote, soidMsg, cr, cxt);
         }

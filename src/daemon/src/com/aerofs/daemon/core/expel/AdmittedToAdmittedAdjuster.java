@@ -29,12 +29,9 @@ class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
     }
 
     @Override
-    public void adjust_(ResolvedPath pathOld, SOID soid,
-            boolean emigrate, PhysicalOp op, Trans t)
+    public void adjust_(ResolvedPath pathOld, SOID soid, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
-        checkArgument(!emigrate);
-
         OA oa = _ds.getOA_(soid);
         ResolvedPath pNew = _ds.resolve_(oa);
         if (oa.isFile()) {

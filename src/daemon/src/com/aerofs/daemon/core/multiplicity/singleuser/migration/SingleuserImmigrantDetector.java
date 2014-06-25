@@ -82,7 +82,8 @@ public class SingleuserImmigrantDetector extends ImmigrantDetector
         }
 
         SID sid = _sidx2sid.get_(oaTo.soid().sidx());
-        _od.deleteAndEmigrate_(oaFrom.soid(), op, sid, t);
+        // NB: the immigrate* methods have already moved the physical object, hence the NOP
+        _od.deleteAndEmigrate_(oaFrom.soid(), PhysicalOp.NOP, sid, t);
 
         // TODO notify with a MOVE or DELETE+CREATE event?
 

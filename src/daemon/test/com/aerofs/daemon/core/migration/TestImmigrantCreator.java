@@ -192,7 +192,7 @@ public class TestImmigrantCreator extends AbstractTest
                     soidToRootParent.oid(), toRootName, op, true, t);
         } else {
             verify(om).moveInSameStore_(soidToRoot, soidToRootParent.oid(), toRootName,
-                    op, false, true, t);
+                    op, true, t);
         }
     }
 

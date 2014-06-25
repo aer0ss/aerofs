@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.IPhysicalStorage.NonRepresentableObject;
@@ -41,11 +42,10 @@ public class HdListNonRepresentableObjects extends AbstractHdIMC<EIListNonRepres
         ImmutableList.Builder<PBNonRepresentableObject> bd = ImmutableList.builder();
 
         for (NonRepresentableObject nro : _ps.listNonRepresentableObjects_()) {
-            ResolvedPath path = _ds.resolveNullable_(nro.soid);
-            // there was a bug LinkedStorage that prevented NROs from being deleted
-            // in reaction to a local deletion of the parent folder so we have to
-            // ignore any leftover NRO that do not correspond to existing objects
-            if (path == null || path.isInTrash()) continue;
+            OA oa = _ds.getOANullable_(nro.soid);
+            // NROs that are pending cleanup (i.e. in logical StagingArea) should be ignored
+            if (oa == null || oa.isExpelled()) continue;
+            ResolvedPath path = _ds.resolve_(oa);
             bd.add(PBNonRepresentableObject.newBuilder()
                     .setPath(path.toPB())
                     .setReason(reason(path, nro.conflict))

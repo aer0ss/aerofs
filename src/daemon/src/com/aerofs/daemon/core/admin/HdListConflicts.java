@@ -37,6 +37,8 @@ public class HdListConflicts extends AbstractHdIMC<EIListConflicts>
             while (iter.next_()) {
                 SOKID sokid = iter.get_();
                 OA oa = _ds.getOA_(sokid.soid());
+                // objects that are pending cleanup (i.e. in logical staging area) should be ignored
+                if (oa.isExpelled()) continue;
                 Path path = _ds.resolve_(oa);
                 Integer n = conflicts.get(path);
                 conflicts.put(path, n == null ? 1 : n + 1);

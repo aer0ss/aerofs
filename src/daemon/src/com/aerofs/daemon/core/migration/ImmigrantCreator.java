@@ -91,7 +91,7 @@ public class ImmigrantCreator
             throws Exception
     {
         if (soidToParent.sidx().equals(soid.sidx())) {
-            _om.moveInSameStore_(soid, soidToParent.oid(), toName, op, false, true, t);
+            _om.moveInSameStore_(soid, soidToParent.oid(), toName, op, true, t);
             return soid;
         } else {
             return createImmigrantRecursively_(_ds.resolve_(soid).parent(), soid, soidToParent,
@@ -186,7 +186,7 @@ public class ImmigrantCreator
                     checkState(typeTo == oaToExisting.type());
                     checkState(oaFrom.isExpelled() || oaToExisting.isExpelled(),
                             oaFrom + " " + oaToExisting);
-                    _om.moveInSameStore_(soidTo, soidToParent.oid(), name, op, false, true, t);
+                    _om.moveInSameStore_(soidTo, soidToParent.oid(), name, op, true, t);
                 }
 
                 // remove the tag file from the destination to gracefully handle both MAP and APPLY
@@ -227,6 +227,10 @@ public class ImmigrantCreator
                     // NB: to properly leave the store we must not keep track of the emigration
                     _od.delete_(oaFrom.soid(), realOp, t);
                 } else {
+                    // NOP is used for files as their content has already been moved as required
+                    // in the prefix walk and we don't want to mistakenly delete them when the
+                    // migration doesn't change the physical path (i.e. sharing)
+                    if (oaFrom.isFile()) realOp = PhysicalOp.NOP;
                     _od.deleteAndEmigrate_(oaFrom.soid(), realOp, _sid, t);
                 }
             }

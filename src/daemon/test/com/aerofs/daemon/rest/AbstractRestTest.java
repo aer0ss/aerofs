@@ -427,7 +427,7 @@ public class AbstractRestTest extends AbstractTest
                         String toName = (String)invocation.getArguments()[2];
                         PhysicalOp op = (PhysicalOp)invocation.getArguments()[3];
                         if (soidToParent.sidx().equals(soid.sidx())) {
-                            om.moveInSameStore_(soid, soidToParent.oid(), toName, op, false, true,
+                            om.moveInSameStore_(soid, soidToParent.oid(), toName, op, true,
                                     t);
                             return soid;
                         } else {

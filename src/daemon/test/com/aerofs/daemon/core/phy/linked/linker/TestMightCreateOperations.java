@@ -319,7 +319,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         op("foo/bar", fnt, CREATE, RENAME_TARGET);
 
         verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (3)"), eq(MAP),
-                eq(false), eq(true), eq(t));
+                eq(true), eq(t));
         verify(oc).create_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(MAP), eq(t));
         verifyZeroInteractions(delBuffer, vu, sfti);
     }
@@ -339,7 +339,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(ds).setFID_(eq(soid), any(FID.class), eq(t));
         verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (2)"), eq(MAP),
-                eq(false), eq(true), eq(t));
+                eq(true), eq(t));
         verify(oc).create_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(MAP), eq(t));
         verifyZeroInteractions(delBuffer, vu, sfti);
     }

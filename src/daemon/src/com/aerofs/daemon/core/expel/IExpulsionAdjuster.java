@@ -17,9 +17,7 @@ interface IExpulsionAdjuster
      * @param pathOld the old path of the object before movement. if the adjustment is not caused
      * by movement, it should be identical to the new path.
      * @param soid the id of the object being moved
-     * @param emigrate whether the call is caused by emigration. If true, the migration code
-     * will take care of disposal of file contents.
      */
-    void adjust_(ResolvedPath pathOld, SOID soid, boolean emigrate, PhysicalOp op, Trans t)
+    void adjust_(ResolvedPath pathOld, SOID soid, PhysicalOp op, Trans t)
             throws Exception;
 }

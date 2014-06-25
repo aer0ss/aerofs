@@ -110,8 +110,7 @@ public class Expulsion
      * name changing alone doesn't affect expulsion state, the method should still be called to
      * rename physical objects. See {@link IExpulsionAdjuster}.
      */
-    public void objectMoved_(ResolvedPath pathOld, SOID soid,
-            boolean emigrate, PhysicalOp op, Trans t)
+    public void objectMoved_(ResolvedPath pathOld, SOID soid, PhysicalOp op, Trans t)
             throws Exception
     {
         OA oa = _ds.getOA_(soid);
@@ -120,7 +119,7 @@ public class Expulsion
         boolean nowExpelled = oa.isExpelled();
 
         getAdjuster(wasExpelled, nowExpelled)
-                .adjust_(pathOld, oa.soid(), emigrate, op, t);
+                .adjust_(pathOld, oa.soid(), op, t);
     }
 
     /**
@@ -162,7 +161,7 @@ public class Expulsion
 
         ResolvedPath path = _ds.resolve_(oa);
         getAdjuster(wasExpelled, nowExpelled)
-                .adjust_(path, oa.soid(), false, PhysicalOp.APPLY, t);
+                .adjust_(path, oa.soid(), PhysicalOp.APPLY, t);
     }
 
     /**
@@ -203,34 +202,6 @@ public class Expulsion
     public IDBIterator<SOID> getExpelledObjects_() throws SQLException
     {
         return _exdb.getExpelledObjects_();
-    }
-
-    /**
-     * called when expelled flag is set to the file
-     *
-     * the caller must update the KML versions of this object on its own
-     */
-    public void fileExpelled_(SOID soid) throws SQLException
-    {
-        // TODO right now this method is called from two places. Ideally the call from createMeta
-        // should be removed. Afterward, we can move expel/admitFile() to the caller's classes.
-
-        assert _ds.getOA_(soid).isFile();
-
-        /*
-         * Intentionally, do not delete DIDs for soid's stored in the pddb;
-         * only do it upon file admission.
-         * Consider the contrary: the soid's file is to be expelled, so the
-         * local peer does not want to download it again, thus the peer does
-         * not need the full history of BFOIDs to download an old version of
-         * the file. The rest of the files in the store are not necessarily
-         * expelled and only need the latest BFOIDs, so should "remember"
-         * the DIDs from which they have pulled filters and knowledge.
-         */
-
-        /*
-         * o del from cs, dl, pre, etc
-         */
     }
 
     // Because huge amount of files may be admitted at once, we batch store operations for these
