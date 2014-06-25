@@ -4,6 +4,7 @@
 
 package com.aerofs.command.server.resources;
 
+import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Cmd.Command;
@@ -56,6 +57,6 @@ public final class QueueResource
                 .setEpoch(epoch.get())
                 .setType(_type)
                 .build();
-        _verkehr.publish(_did.toStringFormal(), command.toByteArray()).get();
+        _verkehr.publish(Topics.getCMDTopic(_did.toStringFormal(), true), command.toByteArray()).get();
     }
 }
