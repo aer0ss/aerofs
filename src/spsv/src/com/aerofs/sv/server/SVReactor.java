@@ -283,7 +283,7 @@ public class SVReactor
         int eom = desc.indexOf(LibParam.END_OF_DEFECT_MESSAGE);
         String msg =  eom >= 0 ? desc.substring(0, eom) : desc;
 
-        String title = String.format("%s Problem #%d from %s(v%s)",
+        String title = String.format("%s Problem #%d from %s (v%s)",
                 L.brand(), id, userID, version);
         String body = msg + "\n\n" +
                 "contact email: " + contactEmail + "\n" +
