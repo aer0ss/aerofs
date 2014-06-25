@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -89,6 +90,6 @@ public class CommandDispatcher
         assert epoch != null;
 
         Command command = CommandUtil.createCommandFromMessage(commandMessage, epoch.get());
-        _verkehrClient.publish(did.toStringFormal(), command.toByteArray()).get();
+        _verkehrClient.publish(Topics.getCMDTopic(did.toStringFormal(), true), command.toByteArray()).get();
     }
 }
