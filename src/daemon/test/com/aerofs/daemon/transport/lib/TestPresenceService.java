@@ -63,33 +63,6 @@ public final class TestPresenceService
     }
 
     @Test
-    public void shouldNotifyDeviceOnlineIfDeviceBecomesReachableOnMulticastAndNoUnicastConnectionExists()
-            throws Exception
-    {
-        final Set<DID> didsAlreadyPresent = newHashSet();
-        presenceService.addListener(new IDevicePresenceListener()
-        {
-            @Override
-            public void onDevicePresenceChanged(DID did, boolean isOnline)
-            {
-                assertThat(isOnline, equalTo(true));
-                assertThat(didsAlreadyPresent.add(did), equalTo(true));
-            }
-        });
-
-        // notify the same DID multiple times
-        presenceService.onDeviceReachable(DID_0);
-        presenceService.onDeviceReachable(DID_0);
-        // notify this DID only once
-        presenceService.onDeviceReachable(DID_1);
-
-        assertThat(didsAlreadyPresent, containsInAnyOrder(DID_0, DID_1));
-
-        assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(true));
-        assertThat(presenceService.isPotentiallyAvailable(DID_1), equalTo(true));
-    }
-
-    @Test
     public void shouldNotifyDeviceOnlineIfDeviceUnreachableOnMulticastAndBecomesConnectedOnUnicast()
         throws Exception
     {
@@ -108,79 +81,7 @@ public final class TestPresenceService
         assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(true));
     }
 
-    @Test
-    public void shouldNotNotifyDeviceOfflineIfMulticastServiceBecomesUnavailableAndUnicastConnectionExists()
-            throws Exception
-    {
-        presenceService.onDeviceReachable(DID_0);
-        presenceService.onDeviceConnected(DID_0);
 
-        IDevicePresenceListener listener = mock(IDevicePresenceListener.class);
-        presenceService.addListener(listener);
-
-        presenceService.onMulticastUnavailable();
-        verifyNoMoreInteractions(listener);
-
-        assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(true));
-    }
-
-    @Test
-    public void shouldNotNotifyDeviceOfflineIfDeviceBecomesUnreachableOnMulticastAndUnicastConnectionExists()
-            throws Exception
-    {
-        presenceService.onDeviceReachable(DID_0);
-        presenceService.onDeviceConnected(DID_0);
-
-        IDevicePresenceListener listener = mock(IDevicePresenceListener.class);
-        presenceService.addListener(listener);
-
-        presenceService.onDeviceUnreachable(DID_0);
-        verifyNoMoreInteractions(listener);
-
-        assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(true));
-    }
-
-    @Test
-    public void shouldNotifyDeviceOfflineIfMulticastBecomesUnavailableAndNoUnicastConnectionExists()
-            throws Exception
-    {
-        presenceService.onDeviceReachable(DID_0);
-
-        presenceService.addListener(new IDevicePresenceListener()
-        {
-            @Override
-            public void onDevicePresenceChanged(DID did, boolean isOnline)
-            {
-                assertThat(did, equalTo(DID_0));
-                assertThat(isOnline, equalTo(false));
-            }
-        });
-
-        presenceService.onMulticastUnavailable();
-
-        assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(false));
-    }
-
-    @Test
-    public void shouldNotifyDeviceOfflineIfDeviceBecomesUnreachableOnMulticastAndNoUnicastConnectionExists()
-            throws Exception
-    {
-        presenceService.onDeviceReachable(DID_0);
-
-        presenceService.addListener(new IDevicePresenceListener()
-        {
-            @Override
-            public void onDevicePresenceChanged(DID did, boolean isOnline)
-            {
-                assertThat(did, equalTo(DID_0));
-                assertThat(isOnline, equalTo(false));
-            }
-        });
-
-        presenceService.onDeviceUnreachable(DID_0);
-
-        assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(false));
-    }
 
     @Test
     public void shouldNotifyDeviceOfflineIfDeviceBecomesDisconnectedFromUnicastAndIsNotReachableOnMulticast()
@@ -204,52 +105,6 @@ public final class TestPresenceService
     }
 
     @Test
-    public void shouldNotNotifyDeviceOfflineIfDeviceBecomesDisconnectedFromUnicastAndIsReachableOnMulticast()
-            throws Exception
-    {
-        presenceService.onDeviceReachable(DID_0);
-        presenceService.onDeviceConnected(DID_0);
-
-        IDevicePresenceListener listener = mock(IDevicePresenceListener.class);
-        presenceService.addListener(listener);
-        verifyNoMoreInteractions(listener);
-
-        presenceService.onDeviceDisconnected(DID_0);
-
-        assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(true));
-    }
-
-    @Test
-    public void shouldNotNotifyDeviceOnlineIfDeviceBecomesReachableOnMulticastAndUnicastConnectionExists()
-            throws Exception
-    {
-        presenceService.onDeviceConnected(DID_0);
-
-        IDevicePresenceListener listener = mock(IDevicePresenceListener.class);
-        presenceService.addListener(listener);
-        verifyNoMoreInteractions(listener);
-
-        presenceService.onDeviceReachable(DID_0);
-
-        assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(true));
-    }
-
-    @Test
-    public void shouldNotNotifyDeviceOnlineIfDeviceConnectsOnUnicastAndIsAlreadyReachableOnMulticast()
-            throws Exception
-    {
-        presenceService.onDeviceReachable(DID_0);
-
-        IDevicePresenceListener listener = mock(IDevicePresenceListener.class);
-        presenceService.addListener(listener);
-        verifyNoMoreInteractions(listener);
-
-        presenceService.onDeviceConnected(DID_0);
-
-        assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(true));
-    }
-
-    @Test
     public void shouldNotifyDeviceOnlineOnlyWhenPresenceConvertsFromOfflineToOnline() // i.e. presence notifications are edge-triggered
             throws Exception
     {
@@ -266,7 +121,6 @@ public final class TestPresenceService
             }
         });
 
-        presenceService.onDeviceReachable(DID_0);
         // NOTE: some of the transport components _may_ report connection twice
         presenceService.onDeviceConnected(DID_0);
         presenceService.onDeviceConnected(DID_0);
@@ -275,33 +129,16 @@ public final class TestPresenceService
     }
 
     @Test
-    public void shouldOnlyReportDevicesWithoutBothUnicastAndMulticastAsOfflineWhenMulticastServiceBecomesUnavailable()
-            throws Exception
-    {
-        presenceService.onDeviceConnected(DID_0);
-        presenceService.onDeviceReachable(DID_1);
-        presenceService.onDeviceConnected(DID_1);
-        presenceService.onDeviceReachable(DID_2);
-
-        IDevicePresenceListener presenceListener = mock(IDevicePresenceListener.class);
-        presenceService.addListener(presenceListener);
-
-        presenceService.onMulticastUnavailable();
-
-        verify(presenceListener).onDevicePresenceChanged(DID_2, false);
-        verifyNoMoreInteractions(presenceListener);
-    }
-
-    @Test
     public void shouldReturnCorrectSetOfOnlineDevices() {
-        presenceService.onDeviceReachable(DID_0);
         presenceService.onDeviceConnected(DID_0);
         presenceService.onDeviceConnected(DID_1);
         presenceService.onDeviceConnected(DID_2);
         presenceService.onDeviceConnected(DID_3);
-        presenceService.onDeviceUnreachable(DID_2);
         presenceService.onDeviceDisconnected(DID_1);
 
-        assertThat(presenceService.allPotentiallyAvailable(), containsInAnyOrder(DID_0, DID_2, DID_3));
+        assertThat("did0", presenceService.isPotentiallyAvailable(DID_0));
+        assertThat("did1", !presenceService.isPotentiallyAvailable(DID_1));
+        assertThat("did2", presenceService.isPotentiallyAvailable(DID_2));
+        assertThat("did3", presenceService.isPotentiallyAvailable(DID_3));
     }
 }

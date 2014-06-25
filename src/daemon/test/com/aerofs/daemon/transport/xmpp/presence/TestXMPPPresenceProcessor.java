@@ -210,6 +210,9 @@ public final class TestXMPPPresenceProcessor
     public void shouldNotifyMulticastListenerOnlyOnceButSendMultipleNotificationsToTheCoreEveryTimeADeviceJoinsAMUCRoom()
             throws Exception
     {
+        // mark the device online so presence notifications are sent:
+        presenceProcessor.onDevicePresenceChanged(DID_0, true);
+
         beInTheMoment(DID_0, SID_0);
         beInTheMoment(DID_0, SID_1);
 
@@ -221,9 +224,77 @@ public final class TestXMPPPresenceProcessor
     }
 
     @Test
+    public void shouldSendNotificationsAfterUnicastComesOnline() throws Exception
+    {
+        beInTheMoment(DID_0, SID_0);
+        beInTheMoment(DID_0, SID_1);
+
+        verify(multicastListener, times(1)).onDeviceReachable(DID_0);
+        Multimap<DID, SID> squashedPresence = squashAndGetAllPendingCoreNotifications(true);
+        assertThat("unexpected notification", squashedPresence.isEmpty());
+
+        presenceProcessor.onDevicePresenceChanged(DID_0, true);
+
+        squashedPresence = squashAndGetAllPendingCoreNotifications(true);
+        assertThat(squashedPresence.containsKey(DID_0), equalTo(true));
+        assertThat(squashedPresence.get(DID_0), containsInAnyOrder(SID_0, SID_1));
+    }
+
+    @Test
+    public void shouldSendIncrementalNotificationsIfUnicastAlreadyOnline() throws Exception
+    {
+        presenceProcessor.onDevicePresenceChanged(DID_0, true);
+
+        beInTheMoment(DID_0, SID_0);
+        assertThat(squashAndGetAllPendingCoreNotifications(true).get(DID_0), containsInAnyOrder(SID_0));
+
+        beInTheMoment(DID_0, SID_1);
+        assertThat(squashAndGetAllPendingCoreNotifications(true).get(DID_0), containsInAnyOrder(SID_1));
+
+        leaveTheMoment(DID_0, SID_0);
+        assertThat(squashAndGetAllPendingCoreNotifications(false).get(DID_0), containsInAnyOrder(SID_0));
+
+        presenceProcessor.onDevicePresenceChanged(DID_0, false);
+        assertThat(squashAndGetAllPendingCoreNotifications(false).get(DID_0), containsInAnyOrder(SID_1));
+    }
+
+    @Test
+    public void shouldSendOfflineNotificationsForAllStores() throws Exception
+    {
+        presenceProcessor.onDevicePresenceChanged(DID_0, true);
+
+        beInTheMoment(DID_0, SID_0);
+        beInTheMoment(DID_0, SID_1);
+
+        assertThat(squashAndGetAllPendingCoreNotifications(true).get(DID_0), containsInAnyOrder(SID_0, SID_1));
+
+        presenceProcessor.onDevicePresenceChanged(DID_0, false);
+        assertThat(squashAndGetAllPendingCoreNotifications(false).get(DID_0), containsInAnyOrder(SID_0, SID_1));
+    }
+
+    @Test
+    public void shouldNotSendOfflineNotificationsForOfflineDevices() throws Exception
+    {
+        presenceProcessor.onDevicePresenceChanged(DID_0, true);
+        beInTheMoment(DID_0, SID_0);
+        beInTheMoment(DID_0, SID_1);
+        assertThat(squashAndGetAllPendingCoreNotifications(true).get(DID_0), containsInAnyOrder(SID_0, SID_1));
+
+        presenceProcessor.onDevicePresenceChanged(DID_0, false);
+        assertThat(squashAndGetAllPendingCoreNotifications(false).get(DID_0), containsInAnyOrder(SID_0, SID_1));
+
+        leaveTheMoment(DID_0, SID_0);
+        leaveTheMoment(DID_0, SID_1);
+        assertThat("no offline events", squashAndGetAllPendingCoreNotifications(false).isEmpty());
+    }
+
+    @Test
     public void shouldNotifyMulticastListenerOnlyOnceButSendMultipleNotificationsToTheCoreEveryTimeADeviceLeavesAMUCRoom()
             throws Exception
     {
+        // mark the device online so presence notifications are sent:
+        presenceProcessor.onDevicePresenceChanged(DID_0, true);
+
         beInTheMoment(DID_0, SID_0);
         beInTheMoment(DID_0, SID_1);
 
@@ -242,5 +313,25 @@ public final class TestXMPPPresenceProcessor
         Multimap<DID, SID> squashedPresence = squashAndGetAllPendingCoreNotifications(false);
         assertThat(squashedPresence.containsKey(DID_0), equalTo(true));
         assertThat(squashedPresence.get(DID_0), containsInAnyOrder(SID_0, SID_1));
+    }
+
+    @Test
+    public void shouldSendNotificationsForRelevantStoresOnly() throws Exception
+    {
+        leaveTheMoment(DID_0, SID_0);
+        beInTheMoment(DID_0, SID_0);
+        beInTheMoment(DID_0, SID_1);
+
+        // mark the device online so presence notifications are sent:
+        presenceProcessor.onDevicePresenceChanged(DID_0, true);
+
+        // drain all notifications related to the device coming online
+        drainOutgoingEventQueue();
+
+        leaveTheMoment(DID_0, SID_1);
+
+        Multimap<DID, SID> squashedPresence = squashAndGetAllPendingCoreNotifications(false);
+        assertThat(squashedPresence.size(), equalTo(1));
+        assertThat(squashedPresence.get(DID_0), containsInAnyOrder(SID_1));
     }
 }

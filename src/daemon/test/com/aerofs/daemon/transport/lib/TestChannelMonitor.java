@@ -23,16 +23,18 @@ import org.mockito.stubbing.Answer;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class TestChannelPreallocator extends AbstractTest
+public class TestChannelMonitor extends AbstractTest
 {
     DID did;
     ChannelDirectory directory;
@@ -57,18 +59,16 @@ public class TestChannelPreallocator extends AbstractTest
                 lastFuture = new DefaultChannelFuture(mock(Channel.class), true);
                 return lastFuture;
             }
-        }).when(directory).chooseActiveChannel(did);
+        }).when(directory).chooseActiveChannel(any(DID.class));
     }
 
     @Test
     public void shouldConnectIfPresent() throws Exception
     {
-        ChannelPreallocator alloc = new ChannelPreallocator(presence, directory, timer);
+        ChannelMonitor alloc = new ChannelMonitor(directory, timer);
         ArgumentCaptor<TimerTask> timerTask = ArgumentCaptor.forClass(TimerTask.class);
 
-        doReturn(true).when(presence).isPotentiallyAvailable(did);
-
-        alloc.onDevicePresenceChanged(did, true);
+        alloc.onDeviceReachable(did);
 
         verify(directory, times(1)).chooseActiveChannel(did);
 
@@ -84,16 +84,14 @@ public class TestChannelPreallocator extends AbstractTest
     @Test
     public void shouldNotConnectIfNotPresent() throws Exception
     {
-        ChannelPreallocator alloc = new ChannelPreallocator(presence, directory, timer);
+        ChannelMonitor alloc = new ChannelMonitor(directory, timer);
         ArgumentCaptor<TimerTask> timerTask = ArgumentCaptor.forClass(TimerTask.class);
 
-        doReturn(true).when(presence).isPotentiallyAvailable(did);
-
-        alloc.onDevicePresenceChanged(did, true);
+        alloc.onDeviceReachable(did);
         verify(directory, times(1)).chooseActiveChannel(did);
 
         // Okay, initial attempt was ok; make the device not potentially available and frob the timer
-        doReturn(false).when(presence).isPotentiallyAvailable(did);
+        alloc.onDeviceUnreachable(did);
 
         // finishing the future causes a reschedule; grab the timer task and call it now.
         lastFuture.setFailure(mock(Exception.class));
@@ -107,16 +105,43 @@ public class TestChannelPreallocator extends AbstractTest
     @Test
     public void shouldNotRetryAfterSuccess() throws Exception
     {
-        ChannelPreallocator alloc = new ChannelPreallocator(presence, directory, timer);
-        ArgumentCaptor<TimerTask> timerTask = ArgumentCaptor.forClass(TimerTask.class);
-        doReturn(true).when(presence).isPotentiallyAvailable(did);
+        ChannelMonitor monitor = new ChannelMonitor(directory, timer);
 
-        alloc.onDevicePresenceChanged(did, true);
+        monitor.onDeviceReachable(did);
         verify(directory, times(1)).chooseActiveChannel(did);
 
         // finishing the future causes a reschedule; grab the timer task and call it now.
         lastFuture.setSuccess();
         verifyNoMoreInteractions(timer);
         verifyNoMoreInteractions(directory);
+    }
+
+    @Test
+    public void shouldScheduleReconnectWhenGoingOffline() throws Exception
+    {
+        ChannelMonitor monitor = new ChannelMonitor(directory, timer);
+        ArgumentCaptor<TimerTask> timerTask = ArgumentCaptor.forClass(TimerTask.class);
+
+        monitor.onDevicePresenceChanged(did, false);
+        verify(timer, times(1)).newTimeout(timerTask.capture(), anyLong(), Matchers.<TimeUnit>any());
+        monitor.onDevicePresenceChanged(did, true);
+    }
+
+    @Test
+    public void shouldReturnCorrectSet() throws Exception
+    {
+        DID did0 = new DID("91200100000000000000000000000100");
+        DID did1 = new DID("91200100000000000000000000000111");
+        DID did2 = new DID("91200100000000000000000000000222");
+        DID did3 = new DID("91200100000000000000000000000333");
+
+        ChannelMonitor monitor = new ChannelMonitor(directory, timer);
+        monitor.onDeviceReachable(did0);
+        monitor.onDeviceReachable(did1);
+        monitor.onDeviceReachable(did2);
+        monitor.onDeviceReachable(did3);
+        monitor.onDeviceUnreachable(did1);
+
+        assertThat(monitor.allReachableDevices(), containsInAnyOrder(did0, did2, did3));
     }
 }

@@ -16,7 +16,7 @@ import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.ChannelPreallocator;
+import com.aerofs.daemon.transport.lib.ChannelMonitor;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IAddressResolver;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -89,6 +89,7 @@ public class TCP implements ITransport, IAddressResolver
     private final StreamManager streamManager = new StreamManager();
     private final PulseManager pulseManager = new PulseManager();
     private final PresenceService presenceService = new PresenceService();
+    private final ChannelMonitor monitor;
 
     public TCP(
             UserID localUser,
@@ -153,20 +154,21 @@ public class TCP implements ITransport, IAddressResolver
 
         // presence hookups
         unicast.setUnicastListener(presenceService);
-        multicast.setListener(presenceService);
+        monitor = new ChannelMonitor(unicast.getDirectory(), timer);
+        multicast.setListener(monitor);
         presenceService.addListener(new DevicePresenceListener(id, unicast, pulseManager, rockLog));
         presenceService.addListener(stores);
-        presenceService.addListener(new ChannelPreallocator(
-                presenceService, unicast.getDirectory(), TimerUtil.getGlobalTimer()));
+        presenceService.addListener(monitor);
+
         arp.addListener(new IARPListener()
         {
             @Override
             public void onARPEntryChange(DID did, boolean added)
             {
                 if (added) {
-                    presenceService.onDeviceReachable(did);
+                    monitor.onDeviceReachable(did);
                 } else {
-                    presenceService.onDeviceUnreachable(did);
+                    monitor.onDeviceUnreachable(did);
                 }
             }
         });

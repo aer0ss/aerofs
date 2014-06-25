@@ -144,11 +144,6 @@ final class XRayClientHandler extends SimpleChannelHandler
     {
         checkValid();
 
-        if (TransportUtil.isChannelConnected(e.getChannel())) {
-            l.info("{} channel {} closed - notify listener", remotedid, TransportUtil.hexify(channel));
-            unicastListener.onDeviceDisconnected(remotedid);
-        }
-
         super.channelClosed(ctx, e);
     }
 

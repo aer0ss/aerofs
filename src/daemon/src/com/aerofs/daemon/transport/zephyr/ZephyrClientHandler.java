@@ -2,8 +2,6 @@ package com.aerofs.daemon.transport.zephyr;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.lib.IUnicastListener;
-import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeRenegotiation;

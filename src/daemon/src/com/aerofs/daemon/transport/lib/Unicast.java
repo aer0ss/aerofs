@@ -168,11 +168,6 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IUni
         checkNotNull(directory);
         directory.register(channel, did);
 
-        // if we've paused syncing or have stopped the system, disconnect
-        // NOTE: I do this after setting the close future above so that
-        // all the presence and cleanup logic is reused
-        // I realize that this means that extra work is done, but it's safer than
-        // trying to replicate the necessary steps
         if (!isServiceAvailable()) {
             channel.close();
         }

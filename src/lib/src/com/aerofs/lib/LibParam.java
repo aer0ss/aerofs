@@ -163,6 +163,9 @@ public class LibParam extends BaseParam
     {
         public static final long HEARTBEAT_TIMEOUT = 1 * C.MIN; // heartbeats can timeout under load
         public static final long HEARTBEAT_INTERVAL = 5 * C.MIN;
+
+        public static final long CHANNEL_RECONNECT_INITIAL_DELAY = 1 * C.SEC;
+        public static final long CHANNEL_RECONNECT_MAX_DELAY = 30 * C.SEC;
     }
 
     public static class PostUpdate

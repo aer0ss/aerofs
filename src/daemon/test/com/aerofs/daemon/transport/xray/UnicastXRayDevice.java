@@ -96,6 +96,7 @@ public final class UnicastXRayDevice
                 10 * C.SEC,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory,
+                transport,
                 unicastListener,
                 linkStateService,
                 signallingService,

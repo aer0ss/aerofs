@@ -23,32 +23,24 @@ import static com.google.common.collect.Sets.newHashSet;
  *     <li>Transitions from potentially available -> unavailable.</li>
  * </ul>
  * <br/>
- * Implements the presence rules outlined in "docs/design/transport/transport_presence_service_design.md".
  */
-public final class PresenceService implements IMulticastListener, IUnicastListener, IDevicePresenceService
+public final class PresenceService implements IUnicastListener, IDevicePresenceService
 {
     private static final Logger l = Loggers.getLogger(PresenceService.class);
 
     private final List<IDevicePresenceListener> listeners = newArrayList();
     private final Set<DID> onlineOnUnicast = newHashSet();
-    private final Set<DID> onlineOnMulticast = newHashSet();
 
     public synchronized void addListener(IDevicePresenceListener listener)
     {
         listeners.add(listener);
     }
 
+    // FIXME: remove this!! only used by PulseManager and tests
     @Override
     public synchronized boolean isPotentiallyAvailable(DID did)
     {
-        return onlineOnMulticast.contains(did) || onlineOnUnicast.contains(did);
-    }
-
-    public synchronized Set<DID> allPotentiallyAvailable()
-    {
-        Set<DID> potentiallyAvailablePeers = newHashSet(onlineOnMulticast);
-        potentiallyAvailablePeers.addAll(onlineOnUnicast);
-        return potentiallyAvailablePeers;
+        return onlineOnUnicast.contains(did);
     }
 
     @Override
@@ -66,8 +58,7 @@ public final class PresenceService implements IMulticastListener, IUnicastListen
     @Override
     public synchronized void onDeviceConnected(DID did)
     {
-        boolean added = onlineOnUnicast.add(did);
-        if (added && !onlineOnMulticast.contains(did)) {
+        if (onlineOnUnicast.add(did)) {
             notifyDevicePresence(did, true);
         }
     }
@@ -75,53 +66,7 @@ public final class PresenceService implements IMulticastListener, IUnicastListen
     @Override
     public synchronized void onDeviceDisconnected(DID did)
     {
-        boolean removed = onlineOnUnicast.remove(did);
-
-        // if the multicast service goes offline we delay
-        // notifying anyone of presence changes until the unicast
-        // connection goes offline as well. now that the
-        // unicast connection is offline, it's time to clear
-        // our state and notify everyone that the device is truly offline
-
-        if (removed && !onlineOnMulticast.contains(did)) {
-            notifyDevicePresence(did, false);
-        }
-    }
-
-    @Override
-    public synchronized void onMulticastReady()
-    {
-        // noop
-    }
-
-    @Override
-    public synchronized void onMulticastUnavailable()
-    {
-        Set<DID> wasOnlineOnMulticast = newHashSet(onlineOnMulticast);
-        onlineOnMulticast.clear();
-
-        for (DID did : wasOnlineOnMulticast) {
-            // FIXME (AG): I worry that during the listener callback the listener will remove itself from onlineOnUnicast
-            if (!onlineOnUnicast.contains(did)) {
-                notifyDevicePresence(did, false);
-            }
-        }
-    }
-
-    @Override
-    public synchronized void onDeviceReachable(DID did)
-    {
-        boolean added = onlineOnMulticast.add(did);
-        if (added && !onlineOnUnicast.contains(did)) {
-            notifyDevicePresence(did, true);
-        }
-    }
-
-    @Override
-    public synchronized void onDeviceUnreachable(DID did)
-    {
-        boolean removed = onlineOnMulticast.remove(did);
-        if (removed && !onlineOnUnicast.contains(did)) {
+        if (onlineOnUnicast.remove(did)) {
             notifyDevicePresence(did, false);
         }
     }

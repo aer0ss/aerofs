@@ -14,6 +14,7 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.lib.ChannelMonitor;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
@@ -36,6 +37,7 @@ import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
 import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
 import com.aerofs.rocklog.RockLog;
+import com.google.common.collect.Sets;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 import org.jivesoftware.smack.SASLAuthentication;
@@ -79,6 +81,7 @@ public final class Zephyr implements ITransport
     private final ZephyrConnectionService zephyrConnectionService;
 
     private final TransportStats transportStats = new TransportStats();
+    private final ChannelMonitor monitor;
 
     private boolean multicastEnabled = false;
 
@@ -141,8 +144,6 @@ public final class Zephyr implements ITransport
         this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
         this.presenceService = new PresenceService();
 
-        XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, outgoingEventSink, presenceService);
-        presenceService.addListener(xmppPresenceProcessor);
 
         SignallingService signallingService = new SignallingService(id, xmppServerDomain, xmppConnectionService);
         TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager);
@@ -169,7 +170,12 @@ public final class Zephyr implements ITransport
                 this.zephyrAddress,
                 proxy);
 
+        this.monitor = new ChannelMonitor(zephyrConnectionService.getDirectory(), timer);
+
+        XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, outgoingEventSink, monitor);
+        presenceService.addListener(xmppPresenceProcessor);
         presenceService.addListener(new DevicePresenceListener(id, zephyrConnectionService, pulseManager, rockLog));
+        presenceService.addListener(monitor);
 
         // WARNING: it is very important that XMPPPresenceProcessor listen to XMPPConnectionService
         // _before_ Multicast. The reason is that Multicast will join the chat rooms and this will trigger
@@ -307,7 +313,7 @@ public final class Zephyr implements ITransport
         // devices
 
         // get all devices available to the presence service
-        Set<DID> availableDevices = presenceService.allPotentiallyAvailable();
+        Set<DID> availableDevices = Sets.newHashSet(monitor.allReachableDevices());
 
         // get all devices for which we have connections
         Collection<ZephyrDevice> connectedDevices = zephyrConnectionService.getDeviceDiagnostics();
@@ -315,7 +321,6 @@ public final class Zephyr implements ITransport
         // remove all devices that we know for which we have connections
         for (ZephyrDevice device : connectedDevices) {
             availableDevices.remove(new DID(device.getDid()));
-
         }
 
         // add these 'empty' devices first

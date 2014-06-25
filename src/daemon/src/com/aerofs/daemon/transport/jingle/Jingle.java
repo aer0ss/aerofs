@@ -13,7 +13,7 @@ import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.ChannelPreallocator;
+import com.aerofs.daemon.transport.lib.ChannelMonitor;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
@@ -74,6 +74,7 @@ public class Jingle implements ITransport
     private final Multicast multicast;
     private final XMPPConnectionService xmppConnectionService;
     private final Unicast unicast;
+    private final ChannelMonitor monitor;
 
     public Jingle(
             UserID localUser,
@@ -162,14 +163,16 @@ public class Jingle implements ITransport
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
 
         // process presence messages that come via XMPP
-        XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, this.outgoingEventSink, presenceService); // notify presence service whenever device comes online/offline on multicast
+        this.monitor = new ChannelMonitor(unicast.getDirectory(), TimerUtil.getGlobalTimer());
+        XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, this.outgoingEventSink, monitor); // notify presence service whenever device comes online/offline on multicast
 
         // presence service wiring
         signalThread.setUnicastListener(presenceService); // presence service is notified whenever signal thread goes up/down
         unicast.setUnicastListener(presenceService); // presence service is notified whenever a device connects/disconnects to unicast
-        presenceService.addListener(new DevicePresenceListener(this.id, unicast, pulseManager, rockLog)); // shut down pulsing and disconnect everyone when they go offline
-        presenceService.addListener(new ChannelPreallocator(presenceService, unicast.getDirectory(), TimerUtil.getGlobalTimer())); // try connecting when we hear of a device
+        presenceService.addListener(
+                new DevicePresenceListener(this.id, unicast, pulseManager, rockLog)); // shut down pulsing and disconnect everyone when they go offline
         presenceService.addListener(xmppPresenceProcessor); // send any final offline presence to the core when people go offline
+        presenceService.addListener(monitor);
 
         // multicast
         this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver, xmppConnectionService, this, this.outgoingEventSink);
@@ -299,7 +302,7 @@ public class Jingle implements ITransport
 
         // presence
 
-        Set<DID> available = presenceService.allPotentiallyAvailable();
+        Set<DID> available = monitor.allReachableDevices();
         for (DID did : available) {
             JingleDevice.Builder deviceBuilder = JingleDevice
                     .newBuilder()

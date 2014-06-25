@@ -331,14 +331,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         return channel; // this is the channel used to send the packets
     }
 
-    private @Nullable Channel getChannel(DID did)
-    {
-        ImmutableSet<Channel> snapshot = directory.getSnapshot(did);
-        checkState(snapshot.isEmpty() || (snapshot.size() == 1), "multiple z channels happen?");
-
-        return snapshot.isEmpty() ? null : snapshot.iterator().next();
-    }
-
     //
     // ISignallingServiceListener methods
     //
@@ -423,8 +415,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                     consumeHandshake(did, handshake);
                 }
             } catch (Exception e) {
-                disconnect(did, new ExDeviceUnavailable("fail to process signalling message from " + did, e)
-                );
+                disconnect(did, new ExDeviceUnavailable("fail to process signalling message from " + did, e));
             }
         }
     }
@@ -538,4 +529,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             }
         }
     }
+
+    public ChannelDirectory getDirectory() { return directory; }
 }
