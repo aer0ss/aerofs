@@ -1,5 +1,6 @@
 package com.aerofs.lib.db;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -9,6 +10,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.db.dbcw.MySQLDBCW;
 import com.aerofs.lib.db.dbcw.SQLiteDBCW;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class DBUtil
 {
@@ -260,5 +263,16 @@ public class DBUtil
         int count = rs.getInt(1);
         assert !rs.next();
         return count;
+    }
+
+    public static long generatedId(PreparedStatement ps) throws SQLException
+    {
+        ResultSet rs = ps.getGeneratedKeys();
+        try {
+            checkState(rs.next());
+            return rs.getLong(1);
+        } finally {
+            rs.close();
+        }
     }
 }

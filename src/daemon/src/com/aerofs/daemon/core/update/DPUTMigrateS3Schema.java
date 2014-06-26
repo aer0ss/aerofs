@@ -10,6 +10,7 @@ import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.collect.Maps;
 
@@ -236,18 +237,9 @@ public class DPUTMigrateS3Schema implements IDaemonPostUpdateTask
                 ps.executeUpdate();
 
                 // retrieve generated index
-                ResultSet grs = ps.getGeneratedKeys();
-                try {
-                    if (!grs.next()) {
-                        throw new SQLException("did not get index");
-                    } else {
-                        long newIdx = grs.getLong(1);
-                        if (newIdx != oldIdx) diff.put(oldIdx, newIdx);
-                        max = newIdx;
-                    }
-                } finally {
-                    grs.close();
-                }
+                long newIdx = DBUtil.generatedId(ps);
+                if (newIdx != oldIdx) diff.put(oldIdx, newIdx);
+                max = newIdx;
             }
         } finally {
             rs.close();

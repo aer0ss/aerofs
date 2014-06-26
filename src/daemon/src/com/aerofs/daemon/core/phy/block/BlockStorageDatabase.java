@@ -571,16 +571,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             ps.setLong(1, parent);
             ps.setString(2, name);
             ps.executeUpdate();
-            ResultSet rs = ps.getGeneratedKeys();
-            try {
-                if (!rs.next()) {
-                    throw new SQLException("did not get index");
-                } else {
-                    return rs.getLong(1);
-                }
-            } finally {
-                rs.close();
-            }
+            return DBUtil.generatedId(ps);
         } catch (SQLException e) {
             _psCreateChildHistDir = null;
             DBUtil.close(ps);
@@ -609,19 +600,9 @@ public class BlockStorageDatabase extends AbstractDatabase
             ps.setString(1, iname);
             ps.executeUpdate();
 
-            ResultSet rs = ps.getGeneratedKeys();
-            try {
-                if (rs.next()) {
-                    long id = rs.getLong(1);
-                    insertEmptyFileInfo(id, t);
-                    return id;
-                } else {
-                    throw new SQLException("did not get index");
-                }
-            } finally {
-                rs.close();
-            }
-
+            long id = DBUtil.generatedId(ps);
+            insertEmptyFileInfo(id, t);
+            return id;
         } catch (SQLException e) {
             _psCreateFileEntry = null;
             DBUtil.close(ps);
