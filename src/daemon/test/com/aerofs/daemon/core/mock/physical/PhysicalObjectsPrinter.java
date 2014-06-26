@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import java.io.File;
 
 /**
- * See MockPhysicalDir for usage
+ * See {@link MockPhysicalTree} for usage
  */
 public class PhysicalObjectsPrinter
 {

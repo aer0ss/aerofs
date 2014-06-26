@@ -65,12 +65,13 @@ public class FlatLinkedStorage extends LinkedStorage
             SharedFolderTagFileAndIcon sfti,
             LocalACL lacl,
             IOSUtil os,
+            LinkedStagingArea sa,
             LinkedRevProvider revProvider,
             RockLog rl,
             CoreScheduler sched)
     {
         super(factFile, factFIDMan, lrm, os, dr, rh, stores, sidx2sid, cfgAbsRoots,
-                cfgStoragePolicy, il, sfti, revProvider, rl, sched);
+                cfgStoragePolicy, il, sfti, sa, revProvider, rl, sched);
         _os = os;
         _lacl = lacl;
         _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.USERS_DIR));

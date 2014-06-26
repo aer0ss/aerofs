@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.linked.linker.scanner;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.first_launch.ScanProgressReporter;
+import com.aerofs.daemon.core.mock.physical.MockPhysicalTree;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.core.phy.linked.linker.MightCreate;
 import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.core.mock.logical.MockRoot;
-import com.aerofs.daemon.core.mock.physical.MockPhysicalDir;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
@@ -55,7 +55,7 @@ public abstract class AbstractTestScanSession extends AbstractTest
         this.pRoot = pRoot;
     }
 
-    protected abstract MockPhysicalDir createMockPhysicalFileSystem();
+    protected abstract MockPhysicalTree createMockPhysicalFileSystem();
 
     protected abstract MockRoot createMockLogicalFileSystem();
 
@@ -64,7 +64,7 @@ public abstract class AbstractTestScanSession extends AbstractTest
     @Before
     public void setup() throws Exception
     {
-        MockPhysicalDir phyRoot = createMockPhysicalFileSystem();
+        MockPhysicalTree phyRoot = createMockPhysicalFileSystem();
         MockRoot logicRoot = createMockLogicalFileSystem();
 
 

@@ -123,6 +123,9 @@ class BlockStorage implements IPhysicalStorage
         for (IBlockStorageInitable i : _initables) i.init_(_bsb);
     }
 
+    @Override
+    public void start_() {}
+
     private void initializeBlockStorage()
             throws IOException
     {

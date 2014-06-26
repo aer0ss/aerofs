@@ -181,7 +181,7 @@ public class TestLinkedStorage extends AbstractTest
 
         storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
                 mock(IOSUtil.class), mock(InjectableDriver.class), rh, stores, sidx2sid,
-                cfgAbsRoots, cfgStoragePolicy, il, null,
+                cfgAbsRoots, cfgStoragePolicy, il, null, mock(LinkedStagingArea.class),
                 new LinkedRevProvider(lrm, factFile, new LinkedRevProvider.TimeSource()),
                 mock(RockLog.class), mock(CoreScheduler.class));
 

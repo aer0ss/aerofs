@@ -5,14 +5,13 @@
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
+import com.aerofs.daemon.core.mock.physical.MockPhysicalTree;
 import com.aerofs.daemon.core.phy.linked.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
 import com.aerofs.daemon.core.mock.logical.MockDir;
 import com.aerofs.daemon.core.mock.logical.MockFile;
 import com.aerofs.daemon.core.mock.logical.MockRoot;
-import com.aerofs.daemon.core.mock.physical.MockPhysicalDir;
-import com.aerofs.daemon.core.mock.physical.MockPhysicalFile;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOID;
@@ -23,6 +22,8 @@ import org.mockito.stubbing.Answer;
 
 import java.util.Set;
 
+import static com.aerofs.daemon.core.mock.physical.MockPhysicalTree.dir;
+import static com.aerofs.daemon.core.mock.physical.MockPhysicalTree.file;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -43,17 +44,17 @@ public class TestScanSession_ThresholdExceeded extends AbstractTestScanSession
     }
 
     @Override
-    protected MockPhysicalDir createMockPhysicalFileSystem()
+    protected MockPhysicalTree createMockPhysicalFileSystem()
     {
-        MockPhysicalFile[] mockedFiles = new MockPhysicalFile[NUMBER_OF_FILES];
+        MockPhysicalTree[] mockedFiles = new MockPhysicalTree[NUMBER_OF_FILES];
         for (int i = 0; i < NUMBER_OF_FILES; i++) {
-            mockedFiles[i] = new MockPhysicalFile("f.1." + i);
+            mockedFiles[i] = file("f.1." + i);
         }
 
-        return new MockPhysicalDir(
+        return dir(
                 "root",
-                    new MockPhysicalDir("dir1", mockedFiles),
-                    new MockPhysicalDir("dir2")
+                    dir("dir1", mockedFiles),
+                    dir("dir2")
                 );
     }
 

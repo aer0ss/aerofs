@@ -6,14 +6,13 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
+import com.aerofs.daemon.core.mock.physical.MockPhysicalTree;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter.AcceptAll;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.mock.logical.MockDir;
 import com.aerofs.daemon.core.mock.logical.MockFile;
 import com.aerofs.daemon.core.mock.logical.MockRoot;
-import com.aerofs.daemon.core.mock.physical.MockPhysicalDir;
-import com.aerofs.daemon.core.mock.physical.MockPhysicalFile;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -44,6 +43,8 @@ import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.Set;
 
+import static com.aerofs.daemon.core.mock.physical.MockPhysicalTree.dir;
+import static com.aerofs.daemon.core.mock.physical.MockPhysicalTree.file;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 import static org.mockito.Mockito.*;
 
@@ -74,16 +75,16 @@ public abstract class AbstractTestMightCreate extends AbstractTest
 
     MightCreate mc;
 
-    MockPhysicalDir osRoot =
-            new MockPhysicalDir("root",
-                    new MockPhysicalFile("f1"),
-                    new MockPhysicalFile("F1"),
-                    new MockPhysicalFile("f2"),
-                    new MockPhysicalFile("f2 (3)"),
-                    new MockPhysicalDir("d3"),
-                    new MockPhysicalDir("d4"),
-                    new MockPhysicalFile("ignored"),
-                    new MockPhysicalFile("f5")
+    MockPhysicalTree osRoot =
+            dir("root",
+                    file("f1"),
+                    file("F1"),
+                    file("f2"),
+                    file("f2 (3)"),
+                    dir("d3"),
+                    dir("d4"),
+                    file("ignored"),
+                    file("f5")
             );
 
     MockRoot logicRoot =

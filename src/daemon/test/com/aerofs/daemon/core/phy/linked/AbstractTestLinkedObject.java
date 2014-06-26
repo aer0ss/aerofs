@@ -120,6 +120,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
                 mock(IOSUtil.class), mock(InjectableDriver.class), rh,
                 mock(IStores.class), mock(IMapSIndex2SID.class), mock(CfgAbsRoots.class),
                 mock(CfgStoragePolicy.class), il, mock(SharedFolderTagFileAndIcon.class),
+                mock(LinkedStagingArea.class),
                 mock(LinkedRevProvider.class), mock(RockLog.class), mock(CoreScheduler.class));
 
 

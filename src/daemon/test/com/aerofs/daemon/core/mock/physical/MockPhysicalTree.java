@@ -11,8 +11,13 @@ import com.aerofs.lib.injectable.InjectableFile.Factory;
 
 import javax.annotation.Nullable;
 import org.mockito.Mockito;
+
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -20,19 +25,43 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
 /**
- * See MockPhysicalDir for usage
+ * This class mocks InjectableFiles and wires the factory accordingly. Usage:
+ *
+ *  MockPhysicalTree root =
+ *          dir("root",
+ *              file("f1"),
+ *              dir("d2",
+ *                  file("f2.1"),
+ *                  dir("d2.2")
+ *              )
+ *          );
+ *
+ *     InjectableFile.Factory factFile = mock(InjectableFile.Factory.class);
+ *     root.mock(fact);
+ *     PhysicalObjectsPrinter.printRecursively(fact.create("root"));
+ *
+ * This will prints:
+ *
+ *     root/
+ *     root/f1
+ *     root/d2/
+ *     root/d2/f2.1
+ *     root/d2/d2.2/
+ *
+ * Note that directories with be printed with a trailing slash.
  */
-public abstract class AbstractMockPhysicalObject
+public class MockPhysicalTree
 {
     private final String _name;
-    private final @Nullable AbstractMockPhysicalObject[] _children;
+    private final @Nullable MockPhysicalTree[] _children;
 
     /**
      * @param children the list of children, null for files
      */
-    protected AbstractMockPhysicalObject(String name, AbstractMockPhysicalObject[] children)
+    private MockPhysicalTree(String name, MockPhysicalTree[] children)
     {
         _name = name;
         _children = children;
@@ -46,8 +75,28 @@ public abstract class AbstractMockPhysicalObject
     public void mock(Factory fact, @Nullable InjectableDriver dr) throws IOException, ExNotFound
     {
         // mock the factory's default behavior.
-        when(fact.create(any(String.class))).then(Mockito.RETURNS_MOCKS);
-        when(fact.create(any(String.class), any(String.class))).then(Mockito.RETURNS_MOCKS);
+        doAnswer(new Answer<InjectableFile>() {
+            @Override
+            public InjectableFile answer(InvocationOnMock invocation)
+            {
+                InjectableFile f = Mockito.mock(InjectableFile.class);
+                when(f.getAbsolutePath()).thenReturn((String)invocation.getArguments()[0]);
+                when(f.exists()).thenReturn(false);
+                return f;
+            }
+        }).when(fact).create(anyString());
+        doAnswer(new Answer<InjectableFile>() {
+            @Override
+            public InjectableFile answer(InvocationOnMock invocation)
+            {
+                InjectableFile f = Mockito.mock(InjectableFile.class);
+                String parent = (String)invocation.getArguments()[0];
+                String name = (String)invocation.getArguments()[1];
+                when(f.getAbsolutePath()).thenReturn(Util.join(parent, name));
+                when(f.exists()).thenReturn(false);
+                return f;
+            }
+        }).when(fact).create(anyString(), anyString());
 
         mockRecursively(fact, dr, null);
     }
@@ -76,10 +125,12 @@ public abstract class AbstractMockPhysicalObject
         when(f.getParentFile()).thenReturn(fParent);
         when(f.getPath()).thenReturn(path);
         when(f.getParent()).thenReturn(pathParent);
+        when(f.getAbsolutePath()).thenReturn(path);
 
         // mock factory methods
-        when(fact.create(path)).thenReturn(f);
-        when(fact.create(pathParent, _name)).thenReturn(f);
+        doReturn(f).when(fact).create(path);
+        doReturn(f).when(fact).create(pathParent, _name);
+        doReturn(f).when(fact).create(parent, _name);
 
         if (_children != null) {
             InjectableFile[] children = new InjectableFile[_children.length];
@@ -127,5 +178,15 @@ public abstract class AbstractMockPhysicalObject
                 return ret.toArray(new InjectableFile[0]);
             }
         });
+    }
+
+    public static MockPhysicalTree dir(String name, MockPhysicalTree... children)
+    {
+        return new MockPhysicalTree(name, children);
+    }
+
+    public static MockPhysicalTree file(String name)
+    {
+        return new MockPhysicalTree(name, null);
     }
 }

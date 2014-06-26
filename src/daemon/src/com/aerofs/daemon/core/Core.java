@@ -257,6 +257,7 @@ public class Core implements IModule
 
         // rest of the system
 
+        _ps.start_();
         _linker.start_();
         _vk.start();
         _quota.start_();

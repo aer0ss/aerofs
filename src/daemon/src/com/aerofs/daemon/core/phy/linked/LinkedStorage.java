@@ -26,6 +26,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -71,6 +72,7 @@ public class LinkedStorage implements IPhysicalStorage
     protected final CfgAbsRoots _cfgAbsRoots;
     private final IStores _stores;
     protected final IMapSIndex2SID _sidx2sid;
+    private final LinkedStagingArea _sa;
     private final LinkedRevProvider _revProvider;
     final RepresentabilityHelper _rh;
     private final RockLog _rl;
@@ -97,6 +99,7 @@ public class LinkedStorage implements IPhysicalStorage
             CfgStoragePolicy cfgStoragePolicy,
             IgnoreList il,
             SharedFolderTagFileAndIcon sfti,
+            LinkedStagingArea sa,
             LinkedRevProvider revProvider,
             RockLog rl,
             CoreScheduler sched)
@@ -113,6 +116,7 @@ public class LinkedStorage implements IPhysicalStorage
         _stores = stores;
         _sidx2sid = sidx2sid;
         _cfgAbsRoots = cfgAbsRoots;
+        _sa = sa;
         _revProvider = revProvider;
         _rl = rl;
         _sched = sched;
@@ -122,6 +126,12 @@ public class LinkedStorage implements IPhysicalStorage
     public void init_() throws IOException, SQLException
     {
         _revProvider.startCleaner_();
+    }
+
+    @Override
+    public void start_()
+    {
+        _sa.start_();
     }
 
     @Override
@@ -188,6 +198,7 @@ public class LinkedStorage implements IPhysicalStorage
         String absAuxRoot = auxRootForStore_(sidx);
         deleteFiles_(absAuxRoot, LibParam.AuxFolder.CONFLICT, prefix);
         deleteFiles_(absAuxRoot, LibParam.AuxFolder.PREFIX, prefix);
+        // FIXME: nros, ...
 
         // Unlink external store/root.
         LinkerRoot lr = _lrm.get_(sid);
@@ -263,7 +274,10 @@ public class LinkedStorage implements IPhysicalStorage
     public PhysicalOp deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
             throws SQLException, IOException
     {
-        return op;
+        if (op != PhysicalOp.APPLY) return op;
+        String absPath = _rh.getPhysicalPath_(path, PathType.SOURCE).physical;
+        _sa.stageDeletion_(absPath, _tlUseHistory.get(t) ? path : Path.root(path.sid()), t);
+        return PhysicalOp.MAP;
     }
 
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException

@@ -105,13 +105,15 @@ public class LibParam extends BaseParam
         return SEED_FILE_NAME + "." + sid.toStringFormal();
     }
 
+    // TODO: move this inside com.aerofs.daemon.core.phy
     public static enum AuxFolder
     {
         PREFIX("p"),
         CONFLICT("c"),
         HISTORY("h"),
         PROBE("probe"),
-        NON_REPRESENTABLE("nro");
+        NON_REPRESENTABLE("nro"),
+        STAGING_AREA("sa");
 
         /**
          * the base name of the auxiliary folder

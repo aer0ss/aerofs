@@ -66,6 +66,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
             throws Exception
     {
         l.info("adm->exp {} {} {}", soidRoot, pOld, op);
+        checkArgument(!soidRoot.oid().isRoot());
         OA oa = _ds.getOA_(soidRoot);
         ResolvedPath path = _ds.resolve_(oa);
 

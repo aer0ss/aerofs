@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -20,7 +21,7 @@ import javax.annotation.Nullable;
  * This interface is the main access point of the physical storage layer. See
  * docs/design/physical_storage_class_diagram.pptx for a high-level class diagram.
  */
-public interface IPhysicalStorage
+public interface IPhysicalStorage extends IStartable
 {
     IPhysicalFile newFile_(ResolvedPath path, KIndex kidx) throws SQLException;
 

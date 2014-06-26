@@ -31,10 +31,10 @@ import static com.google.common.base.Preconditions.checkState;
  * in the DB is empty (NB: not null) and merely indicates in which physical
  * root the staged folder resides.
  */
-public class StagingAreaDatabase extends AbstractDatabase
+public class LinkedStagingAreaDatabase extends AbstractDatabase
 {
     @Inject
-    public StagingAreaDatabase(CoreDBCW dbcw)
+    public LinkedStagingAreaDatabase(CoreDBCW dbcw)
     {
         super(dbcw.get());
     }

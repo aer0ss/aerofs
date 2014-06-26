@@ -6,12 +6,11 @@ package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
+import com.aerofs.daemon.core.mock.physical.MockPhysicalTree;
 import com.aerofs.daemon.core.phy.linked.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
 import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
 import com.aerofs.daemon.core.mock.logical.*;
-import com.aerofs.daemon.core.mock.physical.MockPhysicalDir;
-import com.aerofs.daemon.core.mock.physical.MockPhysicalFile;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -30,6 +29,8 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.aerofs.daemon.core.mock.physical.MockPhysicalTree.dir;
+import static com.aerofs.daemon.core.mock.physical.MockPhysicalTree.file;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
@@ -46,17 +47,17 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     }
 
     @Override
-    protected MockPhysicalDir createMockPhysicalFileSystem()
+    protected MockPhysicalTree createMockPhysicalFileSystem()
     {
-        return new MockPhysicalDir("foo",
-                new MockPhysicalDir("bar",
-                    new MockPhysicalFile("f1"),
-                    new MockPhysicalDir("d2",
-                        new MockPhysicalFile("f2.1"),
-                        new MockPhysicalDir("d2.2"),
-                        new MockPhysicalDir("d2.3")
+        return dir("foo",
+                dir("bar",
+                    file("f1"),
+                    dir("d2",
+                        file("f2.1"),
+                        dir("d2.2"),
+                        dir("d2.3")
                     ),
-                    new MockPhysicalDir("a3")
+                    dir("a3")
                 )
             );
     }
