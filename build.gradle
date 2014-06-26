@@ -7,7 +7,7 @@ ext {
     commonResourcesDir = "${rootDir}/resource/common"
     serverResourcesDir = "${rootDir}/resource/server"
 
-    // declare, but do not define the directories in which 
+    // declare, but do not define the directories in which
     // OS-specific jars and native libraries are stored
     clientOSDependentResourcesDirs = []
 
@@ -46,10 +46,13 @@ if (os.contains('windows')) {
     clientOSDependentResourcesDirs = ["${clientResourcesDir}/osx", "${clientResourcesDir}/osx/lib"]
 } else {
     String arch = System.getProperty("os.arch").toLowerCase();
-    if (arch.equals("x86_64")) {
+    if (arch.equals("amd64")) {
         arch = "amd64"
-    } else {
+    } else if (arch.equals("i386")) {
         arch = "i386"
+    } else {
+        println "unsupported arch ${arch}"
+        System.exit(1)
     }
 
     sharedLibrarySearchPathVariable = 'LD_LIBRARY_PATH'
@@ -121,9 +124,11 @@ subprojects {
     //-------------------------------------------------------------------------
 
     test {
+        def libraryPath = clientOSDependentResourcesDirs.join(System.getProperty("path.separator"))
+
         ignoreFailures = true
-        environment sharedLibrarySearchPathVariable, clientOSDependentResourcesDirs[0]
-        jvmArgs "-Djava.library.path=${clientOSDependentResourcesDirs[0]}"
+        environment sharedLibrarySearchPathVariable, "${libraryPath}"
+        jvmArgs "-Djava.library.path=${libraryPath}"
         maxHeapSize '512m'
         exclude '**/Abstract*Test*'
         testLogging.showStandardStreams = true
