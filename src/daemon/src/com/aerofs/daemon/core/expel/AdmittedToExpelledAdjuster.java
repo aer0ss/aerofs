@@ -10,7 +10,8 @@ import com.aerofs.daemon.core.expel.Expulsion.IExpulsionListener;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Version;
@@ -21,12 +22,16 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Arrays;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 {
@@ -38,12 +43,13 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
     private final IPhysicalStorage _ps;
     private final Expulsion _expulsion;
     private final StoreDeleter _sd;
-    private final IMapSID2SIndex _sid2sidx;
+    private final IMapSIndex2SID _sidx2sid;
+    private final IStores _ss;
 
     @Inject
     public AdmittedToExpelledAdjuster(StoreDeleter sd, Expulsion expulsion,
             IPhysicalStorage ps, NativeVersionControl nvc, PrefixVersionControl pvc,
-            DirectoryService ds, IMapSID2SIndex sid2sidx)
+            DirectoryService ds, IMapSIndex2SID sidx2sid, IStores ss)
     {
         _sd = sd;
         _expulsion = expulsion;
@@ -51,15 +57,84 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
         _nvc = nvc;
         _pvc = pvc;
         _ds = ds;
-        _sid2sidx = sid2sidx;
+        _ss = ss;
+        _sidx2sid = sidx2sid;
     }
 
     @Override
-    public void adjust_(ResolvedPath pOld, final SOID soidRoot,
-            final PhysicalOp op, final Trans t)
+    public void adjust_(ResolvedPath pOld, final SOID soidRoot, PhysicalOp op, final Trans t)
             throws Exception
     {
         l.info("adm->exp {} {} {}", soidRoot, pOld, op);
+        ResolvedPath path = _ds.resolve_(soidRoot);
+
+        // must perform store bookkeeping outside of the subtree walk to preserve
+        // externally-observable behavior when the cleanup is done incrementally
+        for (SIndex sidx : _ss.getChildren_(soidRoot.sidx())) {
+            SID sid = _sidx2sid.get_(sidx);
+            SOID anchor = new SOID(soidRoot.sidx(), SID.storeSID2anchorOID(sid));
+
+            // check whether the anchor is in the affected subtree
+            ResolvedPath anchorPath = _ds.resolve_(anchor);
+            if (!anchorPath.isUnderOrEqual(path)) continue;
+
+            // can't use OA.isExpelled as the expelled flag is already set on soidRoot
+            if (isExpelled_(anchorPath, soidRoot)) continue;
+
+            expelAnchor_(sidx, anchor, oldChildPath(pOld, path, anchorPath), op, t);
+        }
+
+        cleanup_(soidRoot, pOld, op, t);
+    }
+
+    /**
+     * Check for presence of an expelled object in a given path, below a given root object
+     */
+    private boolean isExpelled_(ResolvedPath path, SOID soidRoot) throws SQLException
+    {
+        int i = path.soids.indexOf(soidRoot);
+        checkArgument(i != -1);
+        while (++i < path.soids.size()) {
+            if (_ds.getOA_(path.soids.get(i)).isSelfExpelled()) return true;
+        }
+        return false;
+    }
+
+    private void expelAnchor_(SIndex sidx, SOID anchor, ResolvedPath pathOld, PhysicalOp op, Trans t)
+            throws Exception
+    {
+        checkArgument(anchor.equals(pathOld.soid()));
+        _sd.removeParentStoreReference_(sidx, anchor.sidx(), pathOld, op, t);
+
+        for (IExpulsionListener l : _expulsion.listeners_()) {
+            l.anchorExpelled_(anchor, t);
+        }
+    }
+
+    /**
+     * Construct the old path to a child object, given the old and new path to a parent and new
+     * path to the child.
+     */
+    private ResolvedPath oldChildPath(ResolvedPath oldParent, ResolvedPath newParent,
+            ResolvedPath newChild)
+    {
+        return new ResolvedPath(oldParent.sid(),
+                ImmutableList.<SOID>builder()
+                        .addAll(oldParent.soids)
+                        .addAll(newChild.soids
+                                .subList(newParent.soids.size(), newChild.soids.size()))
+                        .build(),
+                ImmutableList.<String>builder()
+                        .add(oldParent.elements())
+                        .addAll(Arrays.asList(newChild.elements())
+                                .subList(newParent.elements().length, newChild.elements().length))
+                        .build());
+    }
+
+    private void cleanup_(final SOID soidRoot, ResolvedPath pOld, final PhysicalOp op,
+            final Trans t)
+            throws Exception
+    {
         _ds.walk_(soidRoot, pOld, new IObjectWalker<ResolvedPath>() {
             @Override
             public @Nullable ResolvedPath prefixWalk_(ResolvedPath pOldParent, OA oa)
@@ -72,10 +147,8 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 
                 switch (oa.type()) {
                 case FILE:
-
-                    // because users can't expel non-folder files, and because the walk doesn't
-                    // enter a folder if the folder has been expelled (see the DIR case), we should
-                    // never walk on a file which has been expelled before.
+                    // explicit expulsion is only allowed at folder granularity, and the walk doesn't
+                    // enter expelled folders, so we should never walk an expelled file.
                     assert !oldExpelled;
 
                     SOCID socid = new SOCID(oa.soid(), CID.CONTENT);
@@ -103,12 +176,6 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                     return oldExpelled ? null : pathOld;
 
                 case ANCHOR:
-                    if (!oldExpelled) {
-                        // delete the anchored store
-                        SIndex sidx = _sid2sidx.get_(SID.anchorOID2storeSID(oa.soid().oid()));
-                        _sd.removeParentStoreReference_(sidx, oa.soid().sidx(), pathOld, op, t);
-                        _ps.newFolder_(pathOld).delete_(op, t);
-                    }
                     return null;
 
                 default:
@@ -126,15 +193,11 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 
                 if (oldExpelled) return;
 
-                if (oa.isDir()) {
+                if (oa.isDirOrAnchor()) {
                     ResolvedPath pathOld = isRoot ? pOldParent : pOldParent.join(oa);
                     // have to do it in postfixWalk rather than prefixWalk because otherwise child
                     // objects under the folder would prevent us from deleting the folder.
                     _ps.newFolder_(pathOld).delete_(op, t);
-                }
-
-                for (IExpulsionListener l : _expulsion.listeners_()) {
-                    l.objectExpelled_(oa.soid(), t);
                 }
             }
         });

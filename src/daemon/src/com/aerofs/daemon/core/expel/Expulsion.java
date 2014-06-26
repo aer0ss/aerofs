@@ -62,8 +62,7 @@ public class Expulsion
 
     public static interface IExpulsionListener
     {
-        public void objectExpelled_(SOID soid, Trans t) throws SQLException;
-        public void objectAdmitted_(SOID soid, Trans t) throws SQLException;
+        public void anchorExpelled_(SOID soid, Trans t) throws SQLException;
     }
 
     @Inject

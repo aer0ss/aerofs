@@ -157,11 +157,7 @@ class SharedFolderAutoUpdater extends DirectoryServiceAdapter implements IExpuls
     }
 
     @Override
-    public void objectAdmitted_(SOID soid, Trans t)
-    {}
-
-    @Override
-    public void objectExpelled_(SOID soid, Trans t) throws SQLException
+    public void anchorExpelled_(SOID soid, Trans t) throws SQLException
     {
         if (!(soid.oid().isAnchor() && _ds.isDeleted_(_ds.getOA_(soid)))) return;
 

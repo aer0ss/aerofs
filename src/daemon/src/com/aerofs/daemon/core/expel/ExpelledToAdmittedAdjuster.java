@@ -58,10 +58,6 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                 // object doesn't change
                 if (oa.isSelfExpelled()) return null;
 
-                for (IExpulsionListener l : _expulsion.listeners_()) {
-                    l.objectAdmitted_(oa.soid(), t);
-                }
-
                 switch (oa.type()) {
                 case FILE:
                     _imd.detectAndPerformImmigration_(oa, op, t);
