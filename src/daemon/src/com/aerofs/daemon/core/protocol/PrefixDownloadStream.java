@@ -29,7 +29,10 @@ class PrefixDownloadStream extends DigestOutputStream
 
     public @Nullable  ContentHash digest()
     {
-        if (h == null) h = new ContentHash(digest.digest());
+        if (h == null) {
+            byte[] d = digest.digest();
+            if (d != null) h = new ContentHash(d);
+        }
         return h;
     }
 
