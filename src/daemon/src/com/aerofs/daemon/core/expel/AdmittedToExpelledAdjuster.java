@@ -66,7 +66,8 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
             throws Exception
     {
         l.info("adm->exp {} {} {}", soidRoot, pOld, op);
-        ResolvedPath path = _ds.resolve_(soidRoot);
+        OA oa = _ds.getOA_(soidRoot);
+        ResolvedPath path = _ds.resolve_(oa);
 
         // must perform store bookkeeping outside of the subtree walk to preserve
         // externally-observable behavior when the cleanup is done incrementally
@@ -84,6 +85,10 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
             expelAnchor_(sidx, anchor, oldChildPath(pOld, path, anchorPath), op, t);
         }
 
+        // atomic recursive deletion of physical objects, if applicable
+        if (oa.isDirOrAnchor()) {
+            op = _ps.deleteFolderRecursively_(pOld, op, t);
+        }
         cleanup_(soidRoot, pOld, op, t);
     }
 

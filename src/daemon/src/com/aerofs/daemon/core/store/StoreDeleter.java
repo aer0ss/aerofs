@@ -145,7 +145,7 @@ public class StoreDeleter
     }
 
     private void deletePhysicalObjectsRecursively_(final SOID soidRoot, ResolvedPath pathOldRoot,
-            final PhysicalOp op, final Trans t)
+            PhysicalOp requestedOp, final Trans t)
             throws Exception
     {
         OA oa = _ds.getOA_(soidRoot);
@@ -156,6 +156,9 @@ public class StoreDeleter
         // be expelled before this code is called so the inherited
         // expulsion flag would always be true...
         if (oa.isSelfExpelled()) return;
+
+        // atomic recursive deletion of physical objects, if applicable
+        final PhysicalOp op = _ps.deleteFolderRecursively_(pathOldRoot, requestedOp, t);
 
         _ds.walk_(soidRoot, pathOldRoot, new IObjectWalker<ResolvedPath>() {
             @Override

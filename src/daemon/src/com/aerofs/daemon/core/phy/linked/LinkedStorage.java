@@ -259,6 +259,13 @@ public class LinkedStorage implements IPhysicalStorage
         return bd.build();
     }
 
+    @Override
+    public PhysicalOp deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+            throws SQLException, IOException
+    {
+        return op;
+    }
+
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException
     {
         _sfti.addTagFileAndIconIn(sid, path, t);

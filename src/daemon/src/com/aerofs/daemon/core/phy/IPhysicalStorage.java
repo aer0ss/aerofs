@@ -92,4 +92,14 @@ public interface IPhysicalStorage
      */
     ImmutableCollection<NonRepresentableObject> listNonRepresentableObjects_()
             throws IOException, SQLException;
+
+    /**
+     * For incremental expulsion, storage backends that can be accessed without going
+     * through the daemon (i.e. LINKED storage) MUST offer a way to recursively delete
+     * folders in a way that *appears* atomic to the outside world.
+     *
+     * @return physical operation to use for incremental cleanup
+     */
+    PhysicalOp deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+            throws SQLException, IOException;
 }

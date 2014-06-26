@@ -289,6 +289,13 @@ class BlockStorage implements IPhysicalStorage
         return ImmutableList.<NonRepresentableObject>builder().build();
     }
 
+    @Override
+    public PhysicalOp deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+            throws SQLException, IOException
+    {
+        return op;
+    }
+
     /**
      * TODO: cleaning blocks is currently ad-hoc - improve this model.
      *
