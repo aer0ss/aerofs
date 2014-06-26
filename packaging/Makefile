@@ -18,7 +18,6 @@ PACKAGES= \
 	cmd-tools \
 	config \
 	db-backup \
-	devman \
 	dryad \
 	havre \
 	identity \

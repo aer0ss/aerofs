@@ -85,12 +85,6 @@ def team_server_devices(request):
 
 
 def _devices(request, devices, mobile_devices, user, page_heading, are_team_servers):
-    try:
-        last_seen_nullable = _get_last_seen(_get_devman_url(request.registry.settings), devices)
-    except Exception as e:
-        log.error('get_last_seen failed. use null values: {}'.format(e))
-        last_seen_nullable = None
-
     return {
         'url_param_user': URL_PARAM_USER,
         'url_param_device_id': _URL_PARAM_DEVICE_ID,
@@ -101,63 +95,8 @@ def _devices(request, devices, mobile_devices, user, page_heading, are_team_serv
         'user': user,
         'devices': devices,
         'mobile_devices': mobile_devices,
-        # The value is None if the devman service throws
-        'last_seen_nullable': last_seen_nullable,
         'are_team_servers': are_team_servers,
     }
-
-
-# See aerofs/src/devman/README.txt for the API spec
-_devman_polling_interval = None
-
-
-def _get_devman_url(settings):
-    # In private deployment, we get the URL from the configuration service. In prod, use the
-    # default.
-    return settings.get("base.devman.url", "http://sp.aerofs.com:9020")
-
-
-def _get_devman_polling_interval(devman_url):
-    """
-    Return the polling interval of the devman service.
-    """
-    global _devman_polling_interval
-    if not _devman_polling_interval:
-        r = requests.get(devman_url + '/polling_interval')
-        _throw_on_devman_error(r)
-        _devman_polling_interval = int(r.text)
-    return _devman_polling_interval
-
-
-def _get_last_seen(devman_url, devices):
-    """
-    Call the devman service to retrieve last seen time and location for the list of
-    devices.
-    @return a dict of:
-
-        { "<device_id>": { "time": "Just Now", "ip": "1.2.3.4" }, ... }
-
-        Devices that haven't been seen before are abscent from the map.
-    """
-
-    ret = {}
-    for device in devices:
-        did = device.device_id.encode('hex')
-        r = requests.get(devman_url + '/devices/' + did)
-        # The device is never seen. skip
-        if r.status_code == 404:
-            continue
-
-        _throw_on_devman_error(r)
-
-        json = r.json()
-        ret[did] = {
-            'time': _pretty_timestamp(_get_devman_polling_interval(devman_url),
-                                      json['last_seen_time'] / 1000),
-            'ip': json['ip_address']
-        }
-
-    return ret
 
 
 def _pretty_timestamp(polling_interval, timestamp):
@@ -209,13 +148,6 @@ def _pretty_timestamp(polling_interval, timestamp):
         return str(day_diff / 365) + " years ago"
     else:
         return "a year ago"
-
-
-def _throw_on_devman_error(r):
-    if not r.ok:
-        msg = 'devman returns {}: {}'.format(r.status_code, r.text)
-        log.error(msg)
-        raise HTTPInternalServerError(msg)
 
 
 @view_config(

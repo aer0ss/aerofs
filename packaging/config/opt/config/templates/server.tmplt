@@ -4,7 +4,6 @@ base.configuration.initialized={{ configuration_initialized }}
 bootstrap.tasks.configuration_service_url=https://localhost:5436/
 
 base.ca.url=http://localhost:1029/prod
-base.devman.url=http://localhost:9020
 
 sp.redis.address=localhost:6379
 
