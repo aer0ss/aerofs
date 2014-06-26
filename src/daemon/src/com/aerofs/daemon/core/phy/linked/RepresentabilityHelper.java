@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
 import com.aerofs.daemon.core.notification.Notifications;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
 import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
@@ -335,9 +336,12 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
      *
      * @param o deleted physical object
      */
-    void updateNonRepresentableObjectsOnDeletion_(AbstractLinkedObject o, Trans t) throws SQLException
+    void updateNonRepresentableObjectsOnDeletion_(AbstractLinkedObject o, PhysicalOp op, Trans t)
+            throws SQLException
     {
         if (o._path.isRepresentable()) {
+            // do not attempt to pick a new winner upon NOP deletion
+            if (op == PhysicalOp.NOP) return;
             // do not attempt to pick a new winner if the physical spot is still occupied
             if (o._f.exists()) return;
             updateConflictsOnDeletion_(o.soid(), o._path, t);

@@ -95,7 +95,7 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
             _s.move_(this, lf, t);
             // fallthrough
         case MAP:
-            _s.onDeletion_(this, t);
+            _s.onDeletion_(this, op, t);
             _fidm.physicalObjectMoved_(lf._fidm, t);
             break;
         default:
@@ -123,14 +123,14 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
             if (_f.exists() && !_s._il.isIgnored(_f.getName())) applyDeletion_(t);
             // fallthrough
         case MAP:
-            _s.onDeletion_(this, t);
-            _fidm.physicalObjectDeleted_(t);
             break;
         default:
             assert op == PhysicalOp.NOP;
-            // always reset FID to avoid violating FID consistency invariants
-            _fidm.physicalObjectDeleted_(t);
         }
+        // some NRO update required even when NOP deleting
+        _s.onDeletion_(this, op, t);
+        // always reset FID to avoid violating FID consistency invariants
+        _fidm.physicalObjectDeleted_(t);
     }
 
     private void applyDeletion_(Trans t) throws SQLException, IOException

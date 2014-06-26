@@ -355,9 +355,10 @@ public class LinkedStorage implements IPhysicalStorage
                 && _lrm.isPhysicallyEquivalent_(from.virtual, to.virtual);
     }
 
-    void onDeletion_(AbstractLinkedObject o, Trans t) throws SQLException, IOException
+    void onDeletion_(AbstractLinkedObject o, PhysicalOp op, Trans t)
+            throws SQLException, IOException
     {
-        _rh.updateNonRepresentableObjectsOnDeletion_(o, t);
+        _rh.updateNonRepresentableObjectsOnDeletion_(o, op, t);
     }
 
     void onUnexpectedModification_(IPhysicalFile pf, long expected) throws IOException
