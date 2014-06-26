@@ -17,28 +17,39 @@ class Configuration(object):
                 r.status_code))
         return r.text
 
-    def server_properties(self):
-        """
-        Fetches the 'server' configuration from the config server and returns a
-        dictionary of the config's key-value pairs.
-        """
+    def _parse_props(self, text):
         configuration = {}
-        url = "{}/server".format(self.base_url)
-        text = self._get(url)
-
         sio = StringIO(text)
         try:
             props = properties.Properties()
             props.load(sio)
         finally:
             sio.close()
-
         for key in props.propertyNames():
             value = props.getProperty(key)
             # Convert unicode strings returned from props to ascii. This is
             # required as client code uses ascii as keys to query properties.
             configuration[key.replace(b'\0', "")] = value.replace(b'\0', "")
+        return configuration
 
+    def client_properties(self):
+        """
+        Fetches the 'client' configuration from the config server and returns a
+        dictionary of the config's key-value pairs.
+        """
+        url = "{}/client".format(self.base_url)
+        text = self._get(url)
+        configuration = self._parse_props(text)
+        return configuration
+
+    def server_properties(self):
+        """
+        Fetches the 'server' configuration from the config server and returns a
+        dictionary of the config's key-value pairs.
+        """
+        url = "{}/server".format(self.base_url)
+        text = self._get(url)
+        configuration = self._parse_props(text)
         # Exclude the browser key to avoid keeping it around in the python
         # process's memory, in case a stacktrace somewhere winds up doing a
         # state dump and exposing the SSL key
