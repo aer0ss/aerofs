@@ -68,8 +68,8 @@ public class TestDirectoryService_Expulsion extends AbstractTest
         final AbstractPathResolver pr = new SingleuserPathResolver(sss, ds, sm, sm);
 
         ds.inject_(mdb, mock(MapAlias2Target.class), mock(TransManager.class),
-                mock(IMapSID2SIndex.class), mock(FrequentDefectSender.class),
-                mock(StoreDeletionOperators.class), pr, mock(CfgStorageType.class));
+                mock(IMapSID2SIndex.class),
+                mock(StoreDeletionOperators.class), pr);
     }
 
     @After

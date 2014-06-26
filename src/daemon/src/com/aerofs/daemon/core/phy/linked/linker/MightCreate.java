@@ -168,6 +168,15 @@ public class MightCreate
         @Nullable SOID sourceSOID = _ds.getSOIDNullable_(fnt._fid);
         @Nullable SOID targetSOID = _ds.resolveNullable_(pcPhysical._path);
 
+        // FID<->SOID mapping cleared asynchronously for expelled objects
+        if (sourceSOID != null) {
+            if (_ds.getOA_(sourceSOID).isExpelled()) {
+                l.info("{} -> {} expelled", fnt._fid, sourceSOID);
+                _ds.unsetFID_(sourceSOID, t);
+                sourceSOID = null;
+            }
+        }
+
         @Nonnull  Path targetPath = pcPhysical._path;
         @Nullable Path sourcePath = sourceSOID != null ? _ds.resolveNullable_(sourceSOID) : null;
 

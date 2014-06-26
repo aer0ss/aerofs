@@ -20,12 +20,8 @@ import com.aerofs.daemon.lib.LRUCache.IDataReader;
 import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.*;
@@ -53,40 +49,15 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
 {
     private static final Logger l = Loggers.getLogger(DirectoryService.class);
 
-    private CfgStorageType _storageType;
     private IMetaDatabase _mdb;
     private MapAlias2Target _alias2target;
     private IMapSID2SIndex _sid2sidx;
-    private FrequentDefectSender _fds;
     private AbstractPathResolver _pathResolver;
 
     private DBCache<Path, SOID> _cacheDS;
     private DBCache<SOID, OA> _cacheOA;
 
     private final List<IDirectoryServiceListener> _listeners = Lists.newArrayList();
-
-    TransLocal<PreCommitFIDConsistencyVerifier> _fidConsistencyVerifier
-            = new TransLocal<PreCommitFIDConsistencyVerifier>()
-    {
-        @Override
-        protected PreCommitFIDConsistencyVerifier initialValue(Trans t)
-        {
-            assert _fds != null;
-            PreCommitFIDConsistencyVerifier verifier
-                    = new PreCommitFIDConsistencyVerifier(DirectoryServiceImpl.this, _fds);
-            // TODO (MJ) this is a hack to support non-linked storage, which doesn't want to
-            // verify consistency of FIDs. For non-linked storage, memory is wasted and cpu cycles
-            // burned unnecessarily, but at least the consistency will never be verified.
-            // TODO(HB) Ideally either:
-            //  * all FID-related logic should be extruded from DS and moved to LinkedStorage
-            //  * the concept of FID should be refactored to encompass non-linked storage
-            // On a related note, FID consistency verification is not scalable when transactions
-            // involve large number of objects and its very existence is indicative of deeper
-            // design issues.
-            if (_storageType.get() == StorageType.LINKED) t.addListener_(verifier);
-            return verifier;
-        }
-    };
 
     @Override
     public void addListener_(IDirectoryServiceListener listener)
@@ -96,15 +67,12 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
 
     @Inject
     public void inject_(IMetaDatabase mdb, MapAlias2Target alias2target,
-            TransManager tm, IMapSID2SIndex sid2sidx, FrequentDefectSender fds,
-            StoreDeletionOperators storeDeletionOperators, AbstractPathResolver pathResolver,
-            CfgStorageType storageType)
+            TransManager tm, IMapSID2SIndex sid2sidx,
+            StoreDeletionOperators storeDeletionOperators, AbstractPathResolver pathResolver)
     {
-        _storageType = storageType;
         _mdb = mdb;
         _alias2target = alias2target;
         _sid2sidx = sid2sidx;
-        _fds = fds;
         _pathResolver = pathResolver;
 
         _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
@@ -275,8 +243,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         for (IDirectoryServiceListener listener : _listeners) {
             listener.objectContentCreated_(new SOKID(soid, kidx), path, t);
         }
-
-        _fidConsistencyVerifier.get(t).verifyAtCommitTime(soid);
     }
 
     @Override
@@ -289,8 +255,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         for (IDirectoryServiceListener listener : _listeners) {
             listener.objectContentDeleted_(new SOKID(soid, kidx), path, t);
         }
-
-        _fidConsistencyVerifier.get(t).verifyAtCommitTime(soid);
     }
 
     /**
@@ -502,8 +466,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         assert !soid.oid().isRoot();
         _mdb.setFID_(soid, fid, t);
         _cacheOA.invalidate_(soid);
-
-        _fidConsistencyVerifier.get(t).verifyAtCommitTime(soid);
     }
 
     /**
@@ -529,8 +491,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         for (IDirectoryServiceListener listener : _listeners) {
             listener.objectContentModified_(sokid, path, t);
         }
-
-        _fidConsistencyVerifier.get(t).verifyAtCommitTime(sokid.soid());
     }
 
     /**

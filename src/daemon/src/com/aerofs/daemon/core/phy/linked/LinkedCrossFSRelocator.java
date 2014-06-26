@@ -98,30 +98,29 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
             public void postfixWalk_(ResolvedPath oldParent, OA oa)
                     throws IOException, SQLException
             {
-                // Root objects have null FIDs
-                if (!oa.soid().oid().isRoot() && oa.fid() != null) {
-                    ResolvedPath path = oldParent.join(oa);
-                    LinkedPath lp = _rh.getPhysicalPath_(path, PathType.SOURCE);
-                    FID newFID = null;
-                    try {
-                        newFID = _dr.getFID(lp.physical);
-                    } catch (Exception e) {
-                        l.warn("could not get fid for {}", lp.physical, BaseLogUtil.suppress(e));
-                    }
+                if (oa.isExpelled() || oa.soid().oid().isRoot() || oa.fid() == null) return;
 
-                    if (newFID == null) {
-                        // could not get FID for any reason
-                        // the actual relocation went fine so aborting and rolling back now
-                        // would be a pretty terrible thing to do. Assign a random FID that
-                        // is guaranteed not to conflict with any real FID and let the scanner
-                        // resolve things
-                        newFID = new FID(UniqueID.generate().getBytes());
-                    }
-
-                    byte[] bytesFID = Arrays.copyOf(newFID.getBytes(), _dr.getFIDLength() + 1);
-                    l.info("update fid {} {} {}", oa.soid(), oa.fid(), newFID);
-                    _ds.setFID_(oa.soid(), new FID(bytesFID), t);
+                ResolvedPath path = oldParent.join(oa);
+                LinkedPath lp = _rh.getPhysicalPath_(path, PathType.SOURCE);
+                FID newFID = null;
+                try {
+                    newFID = _dr.getFID(lp.physical);
+                } catch (Exception e) {
+                    l.warn("could not get fid for {}", lp.physical, BaseLogUtil.suppress(e));
                 }
+
+                if (newFID == null) {
+                    // could not get FID for any reason
+                    // the actual relocation went fine so aborting and rolling back now
+                    // would be a pretty terrible thing to do. Assign a random FID that
+                    // is guaranteed not to conflict with any real FID and let the scanner
+                    // resolve things
+                    newFID = new FID(UniqueID.generate().getBytes());
+                }
+
+                byte[] bytesFID = Arrays.copyOf(newFID.getBytes(), _dr.getFIDLength() + 1);
+                l.info("update fid {} {} {}", oa.soid(), oa.fid(), newFID);
+                _ds.setFID_(oa.soid(), new FID(bytesFID), t);
             }
         });
 

@@ -23,7 +23,7 @@ import static com.google.common.base.Preconditions.checkState;
  * NB: make sure not to use stale OAs (e.g. after performing a move, an expulsion, or
  * releasing the core lock).
  *
- * Do NOT cache OAs. DirectoryService maintains a cache and will invalidate it corectly
+ * Do NOT cache OAs. DirectoryService maintains a cache and will invalidate it correctly
  * when changes are made
  */
 public class OA
@@ -242,24 +242,13 @@ public class OA
     }
 
     /**
-     * @return true iff the nullability of _fid is consistent with the set of content attributes
-     * or the expulsion state (if this is a folder)
-     */
-    public boolean fidIsConsistentWithCAsOrExpulsion()
-    {
-        if (isFile()) {
-            return (_fid == null) == cas().isEmpty();
-        } else {
-            return (_fid == null) == isExpelled();
-        }
-    }
-
-    /**
      * @return may be null if it's not a linked file or it's not present
      */
     @Nullable public FID fid()
     {
-        checkState(fidIsConsistentWithCAsOrExpulsion());
-        return _fid;
+        // incremental expulsion must preserve externally observable behavior
+        // so we always return a null FID for expelled objects, even though
+        // the DB may still contain a stale FID
+        return isExpelled() ? null : _fid;
     }
 }
