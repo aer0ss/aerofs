@@ -38,10 +38,6 @@ public class CoreExecutor implements Executor
     @Override
     public void execute(final @Nonnull Runnable runnable)
     {
-        // FIXME (DF): this assertion as-is is too strong to keep - ritual calls
-        //             trigger it, and other things we haven't looked at may also
-        //checkState(!_tc.isCoreThread(), "enqueuing from core thread:%s", Thread.currentThread());
-
         AbstractEBSelfHandling event = new AbstractEBSelfHandling()
         {
             @Override
@@ -51,7 +47,12 @@ public class CoreExecutor implements Executor
             }
         };
 
-        if (holdsCoreLock()) { // FIXME (AG): I feel dirty doing this
+        // FIXME (AG): I feel dirty doing this
+        //
+        // this check assumes deep knowledge of how locking
+        // in the core works specifically, that the core queue
+        // lock is the core lock
+        if (holdsCoreLock()) {
             boolean added = _coreQueue.enqueue_(event, Prio.LO);
             Preconditions.checkState(added);
         } else {
@@ -61,6 +62,6 @@ public class CoreExecutor implements Executor
 
     private boolean holdsCoreLock()
     {
-        return Thread.holdsLock(_coreQueue.getLock());
+        return _coreQueue.getLock().isHeldByCurrentThread();
     }
 }
