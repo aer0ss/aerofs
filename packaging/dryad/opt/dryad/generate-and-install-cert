@@ -5,10 +5,20 @@
 #
 set -e
 
-# the generated certificates will be installed here.
-#
-# nginx will pick up the certificates and serves the site with this identity.
-CERTS_DIR=/etc/nginx/certs
+usage()
+{
+    echo "usage: $(basename $0) <filename> <dest_dir>"
+    exit 1
+}
+
+if [ $# -ne 2 ] ; then
+    usage
+fi
+
+# the generated key and cert will use this name
+FILENAME="$1"
+# the generated key and cert files will go here
+DEST_DIR="$2"
 
 echo
 echo "> We are going to generate and install a self-signed certificate."
@@ -19,12 +29,19 @@ TEMP=$(mktemp -d)
 pushd "$TEMP"
 openssl genrsa -des3 -passout pass:x -out custom.pass.key 2048
 openssl rsa -passin pass:x -in custom.pass.key -out custom.key
-chmod 600 custom.key
+chmod 400 custom.key
 rm custom.pass.key
 openssl req -new -key custom.key -out custom.csr
 openssl x509 -req -days 3650 -in custom.csr -signkey custom.key -out custom.cert
+chmod 400 custom.cert
 rm custom.csr
-mkdir -p "$CERTS_DIR"
-mv custom.cert custom.key "$CERTS_DIR"
+
+if [ ! -d "$DEST_DIR" ] ; then
+    mkdir -p "$DEST_DIR"
+    chmod 500 "$DEST_DIR"
+fi
+
+mv custom.cert "$DEST_DIR"/"$FILENAME".cert
+mv custom.key "$DEST_DIR"/"$FILENAME".key
 popd
 rm -rf "$TEMP"

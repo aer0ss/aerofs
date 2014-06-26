@@ -3,13 +3,24 @@
 # This script tests the Dryad server configuration by making a POST call to
 # its REST API.
 #
-# Note: since Dryad's REST API doesn't allow overwrite, this test will fail
-# if any of the previous tests succeeded.
+# Note that it will attempt to delete the logs uploaded from the previous
+# tests.
 #
-# To prevent that, delete the logs uploaded from previous tests. Using the
-# default configuration, logs are kept at /data/ so we'll need to delete
-# /data/0/00000000000000000000000000000000
-#
+set -e
+
+usage()
+{
+    echo "usage: $(basename $0)"
+    exit 1
+}
+
+if [ $# -ne 0 ] ; then
+    usage
+fi
+
+# Delete the logs uploaded by previous tests
+rm -rf /data/0/00000000000000000000000000000000
+
 TEMP=$(mktemp)
 echo 'yes' > "$TEMP"
 

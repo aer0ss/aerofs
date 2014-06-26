@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# sets up the nginx configuration for a reverse-proxy
+#
+set -e
+
+usage()
+{
+    echo "usage: $(basename $0) <site_file> <backend_file>"
+    exit 1
+}
+
+if [ $# -ne 2 ] ; then
+    usage
+fi
+
+source $(dirname $0)/aerofs-dryad-common
+checkPrivilege
+
+SITE_FILE="$1"
+BACKEND_FILE="$2"
+
+rm -f "$NGINX_DIR"/sites-available/default "$NGINX_DIR"/sites-enabled/default
+cp "$SITE_FILE" "$NGINX_DIR"/sites-available/aerofs-custom
+mkdir -p "$NGINX_DIR"/backends-enabled "$NGINX_DIR"/backends-available
+cp "$BACKEND_FILE" "$NGINX_DIR"/backends-available/aerofs-dryad
+ln -snf "$NGINX_DIR"/sites-available/aerofs-custom "$NGINX_DIR"/sites-enabled
+ln -snf "$NGINX_DIR"/backends-available/aerofs-dryad "$NGINX_DIR"/backends-enabled

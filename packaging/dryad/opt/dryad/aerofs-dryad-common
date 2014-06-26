@@ -1,0 +1,10 @@
+#!/bin/bash
+NGINX_DIR=/etc/nginx
+
+checkPrivilege()
+{
+    if [ "$(whoami)" != "root" ] ; then
+        echo "This script requires root privileges. Please re-run this script with root privileges."
+        exit 1
+    fi
+}

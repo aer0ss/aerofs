@@ -43,5 +43,3 @@ Running `/opt/dryad/aerofs-dryad-setup` will set Dryad up with the default confi
 Test
 ----
 A test script is available at `/opt/dryad/aerofs-dryad-test`. The script makes a REST call to the Dryad server to ensure the server is properly configured.
-
-Note: the test will fail if it succeeded in the past. To prevent that, `rm /data/0`
