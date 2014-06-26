@@ -18,7 +18,12 @@ public class LinkedStorageSchema implements ISchema
             T_NRO               = "nro",
             C_NRO_SIDX          = "nro_s",
             C_NRO_OID           = "nro_o",
-            C_NRO_CONFLICT_OID  = "nro_c";      // non-null if representation conflict
+            C_NRO_CONFLICT_OID  = "nro_c",      // non-null if representation conflict
+
+            // Physical Staging Area
+            T_PSA               = "psa",
+            C_PSA_ID            = "psa_i",      // auto-inc unique id of entry
+            C_PSA_PATH          = "psa_p";      // old path, if null files will not go to history
 
     @Override
     public void create_(Statement s, IDBCW dbcw) throws SQLException
@@ -34,6 +39,17 @@ public class LinkedStorageSchema implements ISchema
         // which allow a new "winner" to be efficiently selected whenever the representable
         // object is deleted/renamed
         s.executeUpdate(DBUtil.createIndex(T_NRO, 0, C_NRO_SIDX, C_NRO_CONFLICT_OID));
+
+        createPhysicalStagingAreaTable_(s, dbcw);
+    }
+
+    public static void createPhysicalStagingAreaTable_(Statement s, IDBCW dbcw)
+            throws SQLException
+    {
+        s.executeUpdate("create table " + T_PSA + "("
+                + C_PSA_ID + " integer primary key" + dbcw.autoIncrement() + ","
+                + C_PSA_PATH + " text"
+                + ")" + dbcw.charSet());
     }
 
     @Override
