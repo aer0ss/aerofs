@@ -18,12 +18,12 @@ import java.util.concurrent.Executor;
  * events on the core thread. When {@link CoreExecutor#execute(Runnable)} is
  * invoked, the current thread wraps the given {@link Runnable} in
  * a self-handling event and enqueues it onto the core queue.
- * The enqueue is:
- * <ul>
- *     <li>Blocking if the core lock is not held. In this case the current thread
- *         waits until the event can be successfully placed on the core queue.</li>
- *     <li>Not blocking if the core lock is not held.</li>
- * </ul>
+ *
+ * MUST NOT be called from a core thread
+ *
+ * The enqueue is blocking. Because the same lock is currently used to control
+ * access to the core queue and the core DB, the calling thread may be blocked
+ * for a while.
  */
 public class CoreExecutor implements Executor
 {
@@ -38,30 +38,12 @@ public class CoreExecutor implements Executor
     @Override
     public void execute(final @Nonnull Runnable runnable)
     {
-        AbstractEBSelfHandling event = new AbstractEBSelfHandling()
-        {
+        _coreQueue.enqueueBlocking(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
                 runnable.run();
             }
-        };
-
-        // FIXME (AG): I feel dirty doing this
-        //
-        // this check assumes deep knowledge of how locking
-        // in the core works specifically, that the core queue
-        // lock is the core lock
-        if (holdsCoreLock()) {
-            boolean added = _coreQueue.enqueue_(event, Prio.LO);
-            Preconditions.checkState(added);
-        } else {
-            _coreQueue.enqueueBlocking(event, Prio.LO);
-        }
-    }
-
-    private boolean holdsCoreLock()
-    {
-        return _coreQueue.getLock().isHeldByCurrentThread();
+        }, Prio.LO);
     }
 }
