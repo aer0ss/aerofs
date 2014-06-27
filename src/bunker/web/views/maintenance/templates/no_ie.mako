@@ -3,12 +3,13 @@
 <%def name="scripts()">
     <script type="text/javascript">
         window.onload = function() {
-            // Verified that this works with IE7-10
-            if ($.browser.msie) {
-                alert('Sorry, appliance setup pages do not currently support IE.' +
-                  ' Once the appliance is set up, your users will be able to use' +
-                  ' IE for self-service administration.');
+            if (navigator.userAgent.indexOf("MSIE ") != -1 ||
+                !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
+                alert('Sorry, but our appliance setup pages do not currently support Internet Explorer.' +
+                  ' Please use a different browser for setup.\n\n' +
+                  'Once the appliance is set up, your users will be able to use' +
+                  ' Internet Explorer for self-service administration.');
             }
-        }
+        };
     </script>
 </%def>
