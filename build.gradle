@@ -133,6 +133,19 @@ subprojects {
         exclude '**/Abstract*Test*'
         testLogging.showStandardStreams = true
         outputs.upToDateWhen { false }
+
+        // have to explicitly specify the system properties
+        // that will be propagated to the test jvm
+
+        def mysqlPath = System.getProperty('junit.mysqlPath')
+        if (mysqlPath != null) {
+            systemProperty 'junit.mysqlPath', mysqlPath
+        }
+
+        def enableLogging = System.getProperty('junit.enable_logging')
+        if (enableLogging != null) {
+            systemProperty 'junit.enable_logging', enableLogging
+        }
     }
 
     //-------------------------------------------------------------------------
