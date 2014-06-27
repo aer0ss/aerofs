@@ -1671,6 +1671,9 @@ public class SPService implements ISPService
                     // TODO: throw something that indicates "bad or missing code"
                     throw new ExBadCredential("Incorrect two-factor auth code");
                 }
+                // Mark this session as logged in with their second factor
+                // (they have just proven that they possess the proper code)
+                _session.setSecondFactorAuthDate(System.currentTimeMillis());
                 requester.enableTwoFactorEnforcement();
                 // TODO: email user
             } else {
