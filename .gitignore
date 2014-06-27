@@ -15,3 +15,4 @@ src/web/web/static/css/compiled/*
 *.pyc
 src/web/web/static/js/compiled/
 src/web/web/static/css/compiled/
+src/web/web/static/installers
