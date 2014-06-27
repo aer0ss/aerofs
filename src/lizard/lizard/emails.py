@@ -70,7 +70,7 @@ def _license_available_email_for(admin, company):
             "dashboard_url": dashboard_url,
             "virtualbox_url": "https://www.virtualbox.org/wiki/Downloads",
             "migrating_to_private_url": "https://support.aerofs.com/entries/22978949",
-            "implementation_video_url": "https://aerofs.com/product/deployment/private-cloud",
+            "implementation_video_url": "http://ae.ro/privateCloudVideo",
             "faqs_url": "https://support.aerofs.com/forums/20877659-Getting-Started-with-Private-Cloud",
     }
     text_body = render_template("emails/license_ready_email.txt", **template_args)
