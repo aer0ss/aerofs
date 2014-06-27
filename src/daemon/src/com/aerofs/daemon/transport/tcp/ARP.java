@@ -5,28 +5,22 @@ import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.IMulticastListener;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.aerofs.daemon.transport.lib.TransportUtil.prettyPrint;
 import static com.google.common.collect.Maps.newConcurrentMap;
-import static com.google.common.collect.Maps.newHashMap;
-import static com.google.common.collect.Sets.newCopyOnWriteArraySet;
 
+// TODO: A new IP will override any previously-known IP, which sucks; bad data displaces good. Make this a multimap.
 final class ARP
 {
     interface IARPVisitor
     {
         void visit(DID did, ARPEntry arp);
-    }
-
-    interface IARPListener
-    {
-        void onARPEntryChange(DID did, boolean added);
     }
 
     static class ARPEntry
@@ -42,104 +36,66 @@ final class ARP
     }
 
     private static final Logger l = Loggers.getLogger(ARP.class);
-
+    private final IMulticastListener presenceService;
     private final Map<DID, ARPEntry> arpEntries = newConcurrentMap();
-    private final CopyOnWriteArraySet<IARPListener> listeners = newCopyOnWriteArraySet();
 
-    void addListener(IARPListener listener)
-    {
-        listeners.add(listener);
-    }
-
-    synchronized @Nullable ARPEntry get(DID did)
-    {
-        ARPEntry en = arpEntries.get(did);
-        if (en != null && en.remoteAddress.isUnresolved()) {
-            throw new IllegalStateException("unresolved address " + en.remoteAddress + " for " + did);
-        }
-        return en;
-    }
+    ARP(IMulticastListener multicast) {this.presenceService = multicast;}
 
     /**
      * @throws ExDeviceUnavailable if there is no routing information for this peer
      */
-    ARPEntry getThrows(DID did)
-        throws ExDeviceUnavailable
+    ARPEntry getThrows(DID did) throws ExDeviceUnavailable
     {
-        ARPEntry en = get(did);
+        ARPEntry en = arpEntries.get(did);
         if (en == null) throw new ExDeviceUnavailable("no arp entry for " + did);
         return en;
     }
 
     /**
-     * this overwrites old entries.
+     * This overwrites old entries.
      */
     void put(DID did, InetSocketAddress remoteAddress)
     {
-        boolean isNew;
-        synchronized (this) {
-            ElapsedTimer timer = new ElapsedTimer();
-            ARPEntry oldEntry = arpEntries.put(did, new ARPEntry(remoteAddress, timer));
-            isNew = (oldEntry == null);
-        }
-
-        if (isNew) {
-            l.info("{} arp add {}", did, prettyPrint(remoteAddress));
-            notifyListeners(did, true);
-        }
+        ARPEntry oldEntry = arpEntries.put(did, new ARPEntry(remoteAddress, new ElapsedTimer()));
+        if (oldEntry == null) l.info("{} arp add {}", did, prettyPrint(remoteAddress));
+        presenceService.onDeviceReachable(did);
     }
 
     /**
      * Removes an {@link ARPEntry}
      *
-     * @param did {@link DID} of the peer whose <code>ARPEntry </code> should be removed
-     * @return null if there was no entry
+     * @param did {@link com.aerofs.base.id.DID} of the peer whose ARPEntry should be removed
      */
-    @Nullable ARPEntry remove(DID did)
+    void remove(DID did)
     {
-        ARPEntry oldEntry;
-        synchronized (this) {
-            oldEntry = arpEntries.remove(did);
-        }
-
-        notifyListeners(did, false);
-
-        if (oldEntry != null) {
-            l.info("{} arp del {}", did, prettyPrint(oldEntry.remoteAddress));
-        }
-
-        return oldEntry;
+        ARPEntry oldEntry = arpEntries.remove(did);
+        if (oldEntry != null) l.info("{} arp del {}", did, prettyPrint(oldEntry.remoteAddress));
+        presenceService.onDeviceUnreachable(did);
     }
 
     boolean exists(DID did)
     {
-        return get(did) != null;
+        return arpEntries.containsKey(did);
     }
 
     void visitARPEntries(IARPVisitor v)
     {
-        Map<DID, ARPEntry> arpEntries;
-        synchronized (this) {
-            arpEntries = newHashMap(this.arpEntries);
-        }
+        Map<DID, ARPEntry> snapshot;
+        synchronized (arpEntries) { snapshot = ImmutableMap.copyOf(this.arpEntries); }
 
-        for (Map.Entry<DID, ARPEntry> e : arpEntries.entrySet()) {
+        for (Map.Entry<DID, ARPEntry> e : snapshot.entrySet()) {
             v.visit(e.getKey(), e.getValue());
         }
     }
 
-    private void notifyListeners(DID did, boolean isOnline)
-    {
-        for (IARPListener listener : listeners) {
-            listener.onARPEntryChange(did, isOnline);
-        }
-    }
-
     @Override
-    public synchronized String toString()
+    public String toString()
     {
+        Map<DID, ARPEntry> snapshot;
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<DID, ARPEntry> en : arpEntries.entrySet()) {
+        synchronized (arpEntries) { snapshot = ImmutableMap.copyOf(this.arpEntries); }
+
+        for (Map.Entry<DID, ARPEntry> en : snapshot.entrySet()) {
             String a = en.getKey().toString();
             sb.append(a)
               .append(" -> ")

@@ -7,7 +7,6 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.TimerUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -31,9 +30,7 @@ import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.tcp.ARP.ARPEntry;
-import com.aerofs.daemon.transport.tcp.ARP.IARPListener;
 import com.aerofs.daemon.transport.tcp.ARP.IARPVisitor;
-import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -116,18 +113,20 @@ public class TCP implements ITransport, IAddressResolver
 
         this.id = id;
         this.pref = pref;
-        this.arp = new ARP();
         this.transportStats = new TransportStats();
         this.outgoingEventSink = outgoingEventSink;
 
         this.multicast = new Multicast(localdid, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
         linkStateService.addListener(multicast, sameThreadExecutor()); // can notify on the link-state thread because Multicast is thread-safe
 
+        // unicast
+        this.unicast = new Unicast(this, this);
+        monitor = new ChannelMonitor(unicast.getDirectory(), timer);
+        this.arp = new ARP(monitor);
+
         this.stores = new Stores(localdid, this, arp, multicast);
         multicast.setStores(stores);
 
-        // unicast
-        this.unicast = new Unicast(this, this);
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
@@ -147,31 +146,18 @@ public class TCP implements ITransport, IAddressResolver
                 transportStats,
                 timer,
                 rockLog);
-        ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelFactory, serverChannelTeardownHandler);
+        ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelFactory,
+                serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
         linkStateService.addListener(unicast, sameThreadExecutor());
 
         // presence hookups
         unicast.setUnicastListener(presenceService);
-        monitor = new ChannelMonitor(unicast.getDirectory(), timer);
         multicast.setListener(monitor);
         presenceService.addListener(new DevicePresenceListener(id, unicast, pulseManager, rockLog));
         presenceService.addListener(stores);
         presenceService.addListener(monitor);
-
-        arp.addListener(new IARPListener()
-        {
-            @Override
-            public void onARPEntryChange(DID did, boolean added)
-            {
-                if (added) {
-                    monitor.onDeviceReachable(did);
-                } else {
-                    monitor.onDeviceUnreachable(did);
-                }
-            }
-        });
 
         // flush all the arp entries immediately when the link-state changes
         linkStateService.addListener(new ILinkStateListener()

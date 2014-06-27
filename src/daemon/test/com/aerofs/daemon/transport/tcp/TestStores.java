@@ -7,7 +7,8 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EIPresence;
-import com.aerofs.testlib.LoggerSetup;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -15,6 +16,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBTCPPong;
 import com.aerofs.proto.Transport.PBTCPStoresFilter;
 import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.LoggerSetup;
 import com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,7 +64,7 @@ public final class TestStores extends AbstractTest
     private final Multicast multicast = mock(Multicast.class);
     @SuppressWarnings("unchecked") private final IBlockingPrioritizedEventSink<IEvent> q = mock(IBlockingPrioritizedEventSink.class);
     private final TCP tcp = mock(TCP.class);
-    private final ARP arp = new ARP();
+    private final ARP arp = new ARP(mock(IMulticastListener.class));
     private final Stores stores = new Stores(LOCAL_PEER, tcp, arp, multicast);
 
     private class PresenceInfo
@@ -183,7 +185,7 @@ public final class TestStores extends AbstractTest
     }
 
     @Test
-    public void shouldAddEntryToARPAndNotifyCoreWhenPongIsReceived()
+    public void shouldAddEntryToARPAndNotifyCoreWhenPongIsReceived() throws ExDeviceUnavailable
     {
         stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{}); // only interested in two stores
 
@@ -197,7 +199,7 @@ public final class TestStores extends AbstractTest
         EIPresence presenceEvent = (EIPresence) addEventCaptor.getValue();
         verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, true, SID_00, SID_01);
 
-        assertThat(checkNotNull(arp.get(REMOTE_PEER_00)).remoteAddress, equalTo(REMOTE_PEER_00_ADDRESS));
+        assertThat(checkNotNull(arp.getThrows(REMOTE_PEER_00)).remoteAddress, equalTo(REMOTE_PEER_00_ADDRESS));
     }
 
     @Test
