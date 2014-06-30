@@ -33,6 +33,7 @@ import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.tcp.ARP.ARPEntry;
 import com.aerofs.daemon.transport.tcp.ARP.IARPListener;
 import com.aerofs.daemon.transport.tcp.ARP.IARPVisitor;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -279,9 +280,10 @@ public class TCP implements ITransport, IAddressResolver
     @Override
     public void start()
     {
-        transportEventQueue.start();
+        // Start these in the right order; bind the listener, THEN start processing the queues.
+        // Otherwise, handling events could die; some handlers assume the transport was started
         unicast.start(new InetSocketAddress(PORT_ANY));
-        multicast.start();
+        transportEventQueue.start();
 
         l.info("listening to {}", getListeningPort());
     }

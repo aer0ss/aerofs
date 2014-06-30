@@ -29,7 +29,6 @@ import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;

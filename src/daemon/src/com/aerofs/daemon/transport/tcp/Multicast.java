@@ -110,10 +110,6 @@ class Multicast implements IMaxcast, ILinkStateListener
                 .build();
     }
 
-    void start()
-    {
-    }
-
     private void close(MulticastSocket s)
     {
         try {
