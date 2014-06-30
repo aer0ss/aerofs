@@ -16,6 +16,20 @@ from web.util import get_rpc_stub
 log = logging.getLogger(__name__)
 
 
+def _audit(request, topic, event, data=None):
+    data = data or {}
+    assert type(data) == dict
+    data['timestamp'] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+    data['topic'] = topic
+    data['event'] = event
+    data['ip'] = request.client_addr
+    host = request.registry.settings["base.audit.service.host"]
+    port = request.registry.settings["base.audit.service.port"]
+    path = request.registry.settings["base.audit.service.path"]
+    headers = {'Content-type': 'application/json'}
+    requests.post("http://{}:{}{}".format(host, port, path), data=json.dumps(data), headers=headers)
+
+
 def _get_new_zelda_token(request, expires_in, soid):
     client_id = 'aerofs-zelda'
     client_secret = request.registry.settings["oauth.zelda_client_secret"]
@@ -62,6 +76,14 @@ def create_url(request):
     })
     key = reply.url_info.key
 
+    assert len(reply.url_info.soid) == 64, reply.url_info.soid
+
+    _audit(request, "LINK", "link.create", {
+        'caller': authenticated_userid(request),
+        'key': key,
+        'soid': {'sid': reply.url_info.soid[:32], 'oid': reply.url_info.soid[32:]},
+    })
+
     return {"key": key}
 
 
@@ -83,6 +105,9 @@ def get_url(request):
         if e.get_type() == PBException.BAD_CREDENTIAL:
             return HTTPUnauthorized()
         raise e
+
+    _audit(request, "LINK", "link.access", {'key': key})
+
     return _pb_rest_object_url_to_dict(reply.url_info)
 
 
@@ -118,6 +143,12 @@ def set_url_expires(request):
         PBException.NO_PERM: "The user is not an owner of the shared folder",
     })
 
+    _audit(request, "LINK", "link.set_expiry", {
+        'caller': authenticated_userid(request),
+        'key': key,
+        'expiry': int(expires),
+    })
+
     return {}
 
 
@@ -143,6 +174,11 @@ def remove_url_expires(request):
         PBException.NO_PERM: "The user is not an owner of the shared folder",
     })
 
+    _audit(request, "LINK", "link.remove_expiry", {
+        'caller': authenticated_userid(request),
+        'key': key,
+    })
+
     return {}
 
 
@@ -163,6 +199,11 @@ def remove_url(request):
     exception2error(get_rpc_stub(request).remove_url, (key,), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
         PBException.NO_PERM: "The user is not an owner of the shared folder",
+    })
+
+    _audit(request, "LINK", "link.delete", {
+        'caller': authenticated_userid(request),
+        'key': key,
     })
 
     return {}
@@ -193,6 +234,11 @@ def set_url_password(request):
         PBException.NO_PERM: "The user is not an owner of the shared folder",
     })
 
+    _audit(request, "LINK", "link.set_password", {
+        'caller': authenticated_userid(request),
+        'key': key,
+    })
+
     return {}
 
 
@@ -209,6 +255,11 @@ def remove_url_password(request):
     exception2error(get_rpc_stub(request).remove_url_password, (key,), {
         PBException.NOT_FOUND: "The link does not exist or has expired",
         PBException.NO_PERM: "The user is not an owner of the shared folder",
+    })
+
+    _audit(request, "LINK", "link.remove_password", {
+        'caller': authenticated_userid(request),
+        'key': key,
     })
 
     return {}
