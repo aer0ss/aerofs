@@ -15,6 +15,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3BucketIdConfig;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3CryptoConfig;
 import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.lib.log.LogUtil;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
@@ -167,7 +168,7 @@ public class S3Backend implements IBlockStorageBackend
                     l.debug("md:{}", metadata);
                     return null;
                 } catch (AmazonServiceException e) {
-                    l.debug(Util.e(e));
+                    l.debug("404 when trying to get S3 object metadata", LogUtil.suppress(e));
                 }
 
                 EncoderData d = (EncoderData)encoderData;
