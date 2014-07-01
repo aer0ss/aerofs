@@ -1,5 +1,9 @@
 from datetime import datetime
+from base64 import b64decode
+from urllib import quote
+import json
 import logging
+import time
 from pyramid.security import authenticated_userid
 
 from pyramid.view import view_config
@@ -85,6 +89,12 @@ def team_server_devices(request):
 
 
 def _devices(request, devices, mobile_devices, user, page_heading, are_team_servers):
+    last_seen_nullable = None
+    try:
+        last_seen_nullable = _get_last_seen(_get_verkehr_url(request.registry.settings), devices)
+    except Exception as e:
+        log.error('get_last_seen failed. use null values: {}'.format(e))
+
     return {
         'url_param_user': URL_PARAM_USER,
         'url_param_device_id': _URL_PARAM_DEVICE_ID,
@@ -94,6 +104,7 @@ def _devices(request, devices, mobile_devices, user, page_heading, are_team_serv
         'page_heading': page_heading,
         'user': user,
         'devices': devices,
+        'last_seen_nullable': last_seen_nullable,
         'mobile_devices': mobile_devices,
         'are_team_servers': are_team_servers,
     }
@@ -203,3 +214,55 @@ def _get_device_id_from_request(request, action):
     device_id = request.params[_URL_PARAM_DEVICE_ID]
     log.info('{} {} device {}'.format(authenticated_userid(request), action, device_id))
     return device_id.decode('hex')
+
+
+def _get_verkehr_url(settings):
+   host = settings.get('base.verkehr.host', 'verkehr.aerofs.com')
+   port = settings.get('base.verkehr.port.rest', 25234)
+   return 'http://{}:{}'.format(host, port)
+
+
+def _get_last_seen(verkehr_url, devices):
+    """
+    Call verkehr to retrieve last seen time and location for the given list of devices.
+    @return a dict of:
+
+        { "<device_id>": { "time": "Just Now", "ip": "1.2.3.4" }, ... }
+
+        Devices that haven't been seen before are absent from the map.
+    """
+
+    last_seen = {}
+    for device in devices:
+        did = device.device_id.encode('hex')
+
+        last_seen_topic = quote('online/{}'.format(did), safe='') # by setting safe to empty we also quote '/'
+        r = requests.get('{}/v2/topics/{}/updates'.format(verkehr_url, last_seen_topic), params={'from': '-1'})
+
+        # device was never seen - ignore it
+        if r.status_code == requests.codes.not_found:
+            continue
+
+        if not r.ok:
+            msg = 'verkehr returns {}: {}'.format(r.status_code, r.text)
+            log.error(msg)
+            raise HTTPInternalServerError(msg)
+
+        updates_container = r.json()
+        updates = updates_container['updates']
+
+        # the topic exists but no updates are available (?!)
+        if len(updates) == 0:
+            continue
+
+        payload = updates[0]['payload'] # should only be one entry
+        device_last_seen = json.loads(b64decode(payload))
+        last_seen_time = datetime.strptime(device_last_seen['time'], '%Y-%m-%dT%H:%M:%SZ')
+        log.info('last_seen:{}'.format(last_seen_time))
+
+        last_seen[did] = {
+            'time': _pretty_timestamp(60, time.mktime(last_seen_time.timetuple())),
+            'ip': device_last_seen['ip'],
+        }
+
+    return last_seen
