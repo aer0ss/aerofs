@@ -8,11 +8,9 @@
 </%def>
 
 <%block name="top_navigation_bar_mobile">
-    <%navigation:marketing_links/>
 </%block>
 
 <%block name="top_navigation_bar_tablet">
-    <%navigation:marketing_links/>
 </%block>
 
 <%block name="top_navigation_bar_desktop">

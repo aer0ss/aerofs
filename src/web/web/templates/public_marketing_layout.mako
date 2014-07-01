@@ -25,23 +25,23 @@
 </%block>
 
 <%block name="top_navigation_bar_mobile">
-        <li><a href="${request.route_path('product_overview')}">Product</a></li>
-        <li><a href="${request.route_path('solutions_overview')}">Solutions</a></li>
-        <li><a href="${request.route_path('personal_usage')}">Personal</a></li>
-        <li><a href="${request.route_path('business_usage')}">Business</a></li>
-        <li><a href="${request.route_path('security_overview')}">Security</a></li>
-        <li><a href="${request.route_path('pricing')}">Pricing</a></li>
-        <li class="divider"></li>
-        <li><a href="${request.route_path('dashboard_home')}">Sign in</a></li>
-        <li><a href="${request.route_path('pricing')}">Sign up</a></li>
-        <li class="divider"></li>
-        <li><a href="mailto:business@aerofs.com">
-            business@aerofs.com</a></li>
-        <li><a style="font-weight: normal; color: #222">1-800-656-AERO</a></li>
-</%block>
-
-<%block name="top_navigation_bar_tablet">
-    <%top_navigation_bar_mobile()/>
+    <li class="dropdown hidden-lg hidden-md pull-right"><span class="glyphicon glyphicon-th-list"></span> Menu
+        <ul class="dropdown-menu">
+            <li><a href="${request.route_path('dashboard_home')}">Sign in</a></li>
+            <li><a href="${request.route_path('pricing')}">Sign up</a></li>
+            <li class="divider"></li>
+            <li><a href="${request.route_path('product_overview')}">Product</a></li>
+            <li><a href="${request.route_path('solutions_overview')}">Solutions</a></li>
+            <li><a href="${request.route_path('personal_usage')}">Personal</a></li>
+            <li><a href="${request.route_path('business_usage')}">Business</a></li>
+            <li><a href="${request.route_path('security_overview')}">Security</a></li>
+            <li><a href="${request.route_path('pricing')}">Pricing</a></li>
+            <li class="divider"></li>
+            <li><a href="mailto:business@aerofs.com">
+                business@aerofs.com</a></li>
+            <li><a style="font-weight: normal; color: #222">1-800-656-AERO</a></li>
+        </ul>
+    </li>
 </%block>
 
 <%block name="top_navigation_bar_desktop">
@@ -54,17 +54,17 @@
             sign_up_button = route_name != 'marketing_home'
             sign_in_button = route_name != 'login'
     %>
-    <li class="dropdown">
+    <li class="dropdown hidden-xs hidden-sm">
         <a class="dropdown-toggle link-with-dropdown" data-toggle="dropdown"
                 href="${request.route_path('product_overview')}">
             <p>Product</p>
         </a>
         <ul class="dropdown-menu top-nav-dropdown">
-            <%navigation:product_items/>
+            <div class="visible-lg"><%navigation:product_items/></div>
         </ul>
     </li>
 
-    <li class="dropdown">
+    <li class="dropdown hidden-xs hidden-sm">
         <a class="dropdown-toggle link-with-dropdown" data-toggle="dropdown"
                 href="${request.route_path('solutions_overview')}">
             <p>Solutions</p>
@@ -74,10 +74,10 @@
         </ul>
     </li>
 
-    <li><a href="${request.route_path('personal_usage')}">Personal</a></li>
-    <li><a href="${request.route_path('business_usage')}">Business</a></li>
+    <li class="hidden-xs hidden-sm"><a href="${request.route_path('personal_usage')}">Personal</a></li>
+    <li class="hidden-xs hidden-sm"><a href="${request.route_path('business_usage')}">Business</a></li>
 
-    <li class="dropdown">
+    <li class="dropdown hidden-xs hidden-sm">
         <a class="dropdown-toggle link-with-dropdown" data-toggle="dropdown"
                 href="${request.route_path('security_overview')}">
             <p>Security</p>
@@ -87,23 +87,17 @@
         </ul>
     </li>
 
-    <li><a href="${request.route_path('pricing')}">Pricing</a></li>
+    <li class="hidden-xs hidden-sm"><a href="${request.route_path('pricing')}">Pricing</a></li>
     %if sign_up_button:
-        <!-- <li class="pull-right">
+        <li class="pull-right hidden-xs hidden-sm">
             <a class="btn btn-default" id="nav-btn-sign-up" href="${request.route_path('pricing')}">
                 Sign up
             </a>
-        </li> -->
+        </li>
     %endif
     %if sign_in_button:
-        <!-- <li class="pull-right"><a href="${request.route_path('dashboard_home')}">Sign in</a></li> -->
+        <li class="pull-right hidden-xs hidden-sm"><a href="${request.route_path('dashboard_home')}">Sign in</a></li>
     %endif
-    <!-- <li class="pull-right top-contact"><a href="http://www.twitter.com/aerofs">
-        <span class="aerofs-icon-twitter" id="contact-twitter"></span></a></li>
-    <li class="pull-right top-contact"><a href="mailto:business@aerofs.com">
-        <span class="glyphicon glyphicon-envelope" id="contact-email"></span></a></li>
-    <li class="pull-right top-contact"><a href="#" onclick="showEnterpriseContactForm(); return false;">
-        <span class="aerofs-icon-earphone" id="contact-phone"></span></a></li> -->
 </%block>
 
 <%def name="home_url()">
