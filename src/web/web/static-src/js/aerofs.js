@@ -100,12 +100,12 @@ function showErrorMessageFromResponse(xhr) {
 }
 
 function getInternalErrorText() {
-    return "<p>Oops! Our server ran into an unexpected error while it was trying " +
+    return "Oops! Our server ran into an unexpected error while it was trying " +
         "to serve this page. It looks like we may have broken something. " +
-        "Sorry about that!</p> <p>Please refresh the page and try again." +
+        "Sorry about that!<br><br>Please refresh the page and try again." +
         " If this issue persists, please contact" +
         " <a href='mailto:support@aerofs.com' target='_blank'>" +
-        "support@aerofs.com</a> for assistance.</p>";
+        "support@aerofs.com</a> for assistance.";
 }
 
 // N.B. this message should match the text in the iOS app. Make sure to keep
