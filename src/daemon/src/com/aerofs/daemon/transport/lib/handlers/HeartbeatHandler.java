@@ -70,10 +70,10 @@ public final class HeartbeatHandler extends SimpleChannelHandler
         // if we receive a response to the latest heartbeat sent
         // out in a timely fashion
         if (heartbeatId == lastSentHeartbeatId) {
-            l.debug("{} received heartbeat {} over {} - heartbeat count reset", did, heartbeatId, TransportUtil.hexify(channel));
+            l.trace("{} received heartbeat {} over {} - heartbeat count reset", did, heartbeatId, TransportUtil.hexify(channel));
             unansweredHeartbeatCount = 0;
         } else {
-            l.debug("{} received heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
+            l.trace("{} received heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
         }
     }
 
@@ -126,7 +126,7 @@ public final class HeartbeatHandler extends SimpleChannelHandler
                             .setHeartbeatId(heartbeatId))
                     .build();
             write(ctx, future(ctx.getChannel()), TransportProtocolUtil.newControl(reply));
-            l.debug("{} respond to heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
+            l.trace("{} respond to heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
         } else {
             // we've received a heartbeat reply
             onHeartbeatReceived(did, channel, heartbeatId);
@@ -150,11 +150,11 @@ public final class HeartbeatHandler extends SimpleChannelHandler
         final DID did = TransportUtil.getChannelData(channel).getRemoteDID();
 
         if (channel.getCloseFuture().isDone()) {
-            l.debug("{} channel {} closed - skip heartbeat reschedule", did, TransportUtil.hexify(channel));
+            l.info("{} channel {} closed - skip heartbeat reschedule", did, TransportUtil.hexify(channel));
             return;
         }
 
-        l.debug("{} schedule heartbeat over {} after {}ms", did, TransportUtil.hexify(channel), interval);
+        l.trace("{} schedule heartbeat over {} after {}ms", did, TransportUtil.hexify(channel), interval);
 
         heartbeatTimer.newTimeout(new TimerTask()
         {
@@ -202,7 +202,7 @@ public final class HeartbeatHandler extends SimpleChannelHandler
 
                 onHeartbeatSent(heartbeatId);
 
-                l.debug("{} send heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
+                l.trace("{} send heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
             }
         }, interval, TimeUnit.MILLISECONDS);
     }
