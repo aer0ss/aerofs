@@ -4,6 +4,7 @@ import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.daemon.IModule;
 import com.aerofs.daemon.core.acl.ACLNotificationSubscriber;
 import com.aerofs.daemon.core.activity.ClientAuditEventReporter;
+import com.aerofs.daemon.core.charlie.CharlieClient;
 import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.db.TamperingDetection;
 import com.aerofs.daemon.core.first_launch.FirstLaunch;
@@ -57,6 +58,7 @@ public class Core implements IModule
     private final CoreDBSetup _dbsetup;
     private final TamperingDetection _tamperingDetection;
     private final IMetriks _metriks;
+    private final CharlieClient _cc;
     private final HealthCheckService _hcs;
     private final ClientAuditEventReporter _caer;
     private final DaemonLaunchTasks _dlts;
@@ -85,6 +87,7 @@ public class Core implements IModule
             TamperingDetection tamperingDetection,
             IStores ss,
             IMetriks metriks,
+            CharlieClient charlieClient,
             HealthCheckService hcs,
             ClientAuditEventReporter caer,
             IQuotaEnforcement quota,
@@ -112,6 +115,7 @@ public class Core implements IModule
         _tamperingDetection = tamperingDetection;
         _metriks = metriks;
         _hcs = hcs;
+        _cc = charlieClient;
         _caer = caer;
         _dlts = dlts;
         _quota = quota;
@@ -256,5 +260,6 @@ public class Core implements IModule
         _linker.start_();
         _vk.start();
         _quota.start_();
+        _cc.start();
     }
 }
