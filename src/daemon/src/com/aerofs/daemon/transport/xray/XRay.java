@@ -17,7 +17,6 @@ import com.aerofs.daemon.transport.lib.ChannelMonitor;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
-import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportEventQueue;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -65,12 +64,10 @@ public final class XRay implements ITransport
     private final TransportEventQueue transportEventQueue;
     private final EventDispatcher dispatcher;
     private final Scheduler scheduler;
-    private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
 
-    private final PulseManager pulseManager = new PulseManager();
     private final StreamManager streamManager = new StreamManager();
 
-    private final PresenceService presenceService; // FIXME (AG): remove dependency of pulsing system on the presence system
+    private final PresenceService presenceService;
     private final Multicast multicast;
     private final XMPPConnectionService xmppConnectionService;
 
@@ -121,8 +118,6 @@ public final class XRay implements ITransport
         this.id = id;
         this.rank = rank;
 
-        this.outgoingEventSink = outgoingEventSink;
-
         this.xmppConnectionService = new XMPPConnectionService(
                 id,
                 localdid,
@@ -142,7 +137,7 @@ public final class XRay implements ITransport
 
 
         SignallingService signallingService = new SignallingService(id, xmppServerDomain, xmppConnectionService);
-        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager);
+        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager);
         ChannelTeardownHandler channelTeardownHandler = new ChannelTeardownHandler(this, outgoingEventSink, streamManager, TWOWAY);
         this.xrayAddress = xrayAddress;
         this.xrayConnectionService = new XRayConnectionService(
@@ -168,7 +163,7 @@ public final class XRay implements ITransport
 
         this.monitor = new ChannelMonitor(xrayConnectionService.getDirectory(), timer);
 
-        presenceService.addListener(new DevicePresenceListener(id, xrayConnectionService, pulseManager, rockLog));
+        presenceService.addListener(new DevicePresenceListener(xrayConnectionService));
         XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, outgoingEventSink, monitor);
         presenceService.addListener(xmppPresenceProcessor);
         presenceService.addListener(monitor);
@@ -199,7 +194,7 @@ public final class XRay implements ITransport
     public void init()
             throws Exception
     {
-        setupCommonHandlersAndListeners(this, dispatcher, scheduler, outgoingEventSink, multicast, streamManager, pulseManager, xrayConnectionService, presenceService);
+        setupCommonHandlersAndListeners(dispatcher, multicast, streamManager, xrayConnectionService);
         xrayConnectionService.init();
     }
 

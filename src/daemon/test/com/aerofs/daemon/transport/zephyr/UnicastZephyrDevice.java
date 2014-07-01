@@ -20,8 +20,6 @@ import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
 import com.aerofs.daemon.transport.PrivateKeyProvider;
 import com.aerofs.daemon.transport.TransportReader;
-import com.aerofs.daemon.transport.lib.ChannelDirectory;
-import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.SemaphoreTriggeringListener;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -75,7 +73,6 @@ public final class UnicastZephyrDevice
         xmppConnectionService = new XMPPConnectionService("z", did, new InetSocketAddress("localhost", 5222), "arrowfs.org", "s", new byte[]{0}, 1000, 2, 1000, 5000, mockRockLog.getRockLog(), linkStateService);
 
         StreamManager streamManager = new StreamManager();
-        PulseManager pulseManager = new PulseManager();
         TransportStats transportStats = new TransportStats();
 
         SignallingService signallingService = new SignallingService("z", "arrowfs.org", xmppConnectionService);
@@ -83,7 +80,7 @@ public final class UnicastZephyrDevice
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
         SSLEngineFactory serverSSLEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
-        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager, pulseManager);
+        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager);
         ChannelTeardownHandler twowayChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.SERVER);
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);

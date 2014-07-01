@@ -18,7 +18,6 @@ import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.PrivateKeyProvider;
 import com.aerofs.daemon.transport.TransportReader;
 import com.aerofs.daemon.transport.lib.IAddressResolver;
-import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.SemaphoreTriggeringListener;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -88,14 +87,13 @@ public final class UnicastTCPDevice
 
         TransportStats transportStats = new TransportStats();
         StreamManager streamManager = new StreamManager();
-        PulseManager pulseManager = new PulseManager();
 
         unicast = new Unicast(addressResolver, transport);
         unicast.setUnicastListener(unicastListener);
         linkStateService.addListener(unicast, sameThreadExecutor());
 
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
-        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager, pulseManager);
+        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager);
         clientChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.CLIENT);
         serverChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.SERVER);
 

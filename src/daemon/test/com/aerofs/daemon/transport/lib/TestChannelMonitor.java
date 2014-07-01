@@ -38,7 +38,6 @@ public class TestChannelMonitor extends AbstractTest
 {
     DID did;
     ChannelDirectory directory;
-    IDevicePresenceService presence;
     ChannelFuture lastFuture;
     Timer timer;
 
@@ -47,7 +46,6 @@ public class TestChannelMonitor extends AbstractTest
     {
         did = new DID("91200100000000000000000000000456");
         directory = spy(new ChannelDirectory(mock(ITransport.class), mock(IUnicastConnector.class)));
-        presence = mock(IDevicePresenceService.class);
         timer = spy(TimerUtil.getGlobalTimer());
 
         doAnswer(new Answer()

@@ -24,7 +24,7 @@ import static com.google.common.collect.Sets.newHashSet;
  * </ul>
  * <br/>
  */
-public final class PresenceService implements IUnicastListener, IDevicePresenceService
+public final class PresenceService implements IUnicastListener
 {
     private static final Logger l = Loggers.getLogger(PresenceService.class);
 
@@ -36,9 +36,8 @@ public final class PresenceService implements IUnicastListener, IDevicePresenceS
         listeners.add(listener);
     }
 
-    // FIXME: remove this!! only used by PulseManager and tests
-    @Override
-    public synchronized boolean isPotentiallyAvailable(DID did)
+    // used only by unit tests
+    synchronized boolean isPotentiallyAvailable(DID did)
     {
         return onlineOnUnicast.contains(did);
     }

@@ -173,7 +173,9 @@ public class TransportRoutingLayer
                     @Override
                     public void handle_()
                     {
-                        _dp.startPulse_(ep.tp(), ep.did());
+                        // FIXME: Need to understand this guy. Ok, we start pulsing, but if we don't do that, is
+                        // there any purpose for this whole containing method?
+//                        _dp.startPulse_(ep.tp(), ep.did());
                     }
                 }, Prio.LO);
             }

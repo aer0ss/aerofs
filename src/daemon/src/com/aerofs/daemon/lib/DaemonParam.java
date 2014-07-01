@@ -25,17 +25,6 @@ public class DaemonParam
     public static final long HEARTBEAT_INTERVAL   = 5 * C.SEC;
     public static final int MAX_FAILED_HEARTBEATS = 3;
 
-    //
-    // pulsing parameters
-    //
-
-    public static class Pulse
-    {
-        public static final int MAX_PULSE_FAILURES      = 3;
-        public static final long INIT_PULSE_TIMEOUT     = 10 * C.SEC;
-        public static final long MAX_PULSE_TIMEOUT      = 120 * C.SEC;
-    }
-
     public static class TCP
     {
         public static final String MCAST_ADDRESS        = "225.7.8.9";

@@ -17,7 +17,6 @@ import com.aerofs.daemon.transport.lib.ChannelMonitor;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
-import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportEventQueue;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -63,7 +62,6 @@ public class Jingle implements ITransport
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
     private final TransportStats transportStats;
     private final PresenceService presenceService;
-    private final PulseManager pulseManager = new PulseManager();
     private final StreamManager streamManager = new StreamManager();
     private final DID localdid;
     private final Jid localjid;
@@ -140,7 +138,7 @@ public class Jingle implements ITransport
 
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
-        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, this.outgoingEventSink, streamManager, pulseManager);
+        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, this.outgoingEventSink, streamManager);
         // FIXME (AG): if I can somehow remove the circular dependency for IServerHandlerListener I can completely remove the setBootstraps call!
         JingleBootstrapFactory bootstrapFactory = new JingleBootstrapFactory(
                 localUser,
@@ -169,8 +167,7 @@ public class Jingle implements ITransport
         // presence service wiring
         signalThread.setUnicastListener(presenceService); // presence service is notified whenever signal thread goes up/down
         unicast.setUnicastListener(presenceService); // presence service is notified whenever a device connects/disconnects to unicast
-        presenceService.addListener(
-                new DevicePresenceListener(this.id, unicast, pulseManager, rockLog)); // shut down pulsing and disconnect everyone when they go offline
+        presenceService.addListener(new DevicePresenceListener(unicast)); // disconnect everyone when they go offline
         presenceService.addListener(xmppPresenceProcessor); // send any final offline presence to the core when people go offline
         presenceService.addListener(monitor);
 
@@ -190,7 +187,7 @@ public class Jingle implements ITransport
     public void init()
             throws Exception
     {
-        setupCommonHandlersAndListeners(this, dispatcher, scheduler, outgoingEventSink, multicast, streamManager, pulseManager, unicast, presenceService);
+        setupCommonHandlersAndListeners(dispatcher, multicast, streamManager, unicast);
     }
 
     @Override

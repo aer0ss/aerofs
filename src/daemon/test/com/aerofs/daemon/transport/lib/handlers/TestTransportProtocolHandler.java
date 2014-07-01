@@ -13,19 +13,16 @@ import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.testlib.LoggerSetup;
-import com.aerofs.daemon.transport.lib.PulseManager;
-import com.aerofs.daemon.transport.lib.PulseManager.AddPulseResult;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.proto.Transport.PBCheckPulse;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
+import com.aerofs.testlib.LoggerSetup;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -72,16 +69,14 @@ public final class TestTransportProtocolHandler
     private static final DID DID_0 = DID.generate();
     private static final UserID USER_0 = UserID.DUMMY;
     private static final InetSocketAddress REMOTE_ADDRESS_0 = new InetSocketAddress("localhost", 9999);
-    private static final int PULSE_ID = 8888;
 
     private final ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
     private final ChannelPipeline pipeline = mock(ChannelPipeline.class);
     private final Channel channel = mock(Channel.class);
     private final ITransport transport = mock(ITransport.class);
     private final StreamManager streamManager = new StreamManager();
-    private final PulseManager pulseManager = new PulseManager();
     private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(10);
-    private final TransportProtocolHandler handler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager, pulseManager);
+    private final TransportProtocolHandler handler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager);
 
     @Before
     public void setup()
@@ -106,62 +101,6 @@ public final class TestTransportProtocolHandler
         assertThat(message._userID, equalTo(USER_0));
 
         assertThatIncomingDataMatchesTestData(message.is());
-    }
-
-    @Test
-    public void shouldSendPulseReplyWhenPulseCallIsReceived()
-            throws Exception
-    {
-        ChannelBuffer pulseCallBuffer = serializeToChannelBuffer(
-                TransportProtocolUtil.newControl(PBTPHeader
-                                .newBuilder()
-                                .setType(Type.TRANSPORT_CHECK_PULSE_CALL)
-                                .setCheckPulse(PBCheckPulse.newBuilder().setPulseId(PULSE_ID))
-                                .build()
-                ));
-
-        TransportMessage pulseCallMessage = new TransportMessage(pulseCallBuffer, DID_0, USER_0);
-        handler.messageReceived(ctx,
-                new UpstreamMessageEvent(channel, pulseCallMessage, REMOTE_ADDRESS_0));
-
-        ArgumentCaptor<ChannelEvent> eventCaptor = ArgumentCaptor.forClass(ChannelEvent.class);
-        verify(ctx).sendDownstream(eventCaptor.capture());
-
-        // it should be a MessageEvent
-        MessageEvent message = (MessageEvent) eventCaptor.getValue();
-
-        // pick out the pulse reply bytes and verify that it has the correct values
-        byte[][] pulseReplyBytes = (byte[][]) message.getMessage();
-        assertThat(pulseReplyBytes, notNullValue());
-
-        PBTPHeader deserializedHeader = PBTPHeader.parseDelimitedFrom(new ByteArrayInputStream(pulseReplyBytes[0]));
-        assertThat(deserializedHeader.getType(), equalTo(Type.TRANSPORT_CHECK_PULSE_REPLY));
-        assertThat(deserializedHeader.hasCheckPulse(), equalTo(true));
-        assertThat(deserializedHeader.getCheckPulse().getPulseId(), equalTo(PULSE_ID));
-    }
-
-    @Test
-    public void shouldCallPulseManagerToProcessIncomingPulseReplyForOutstandingPulse()
-            throws Exception
-    {
-        // setup an outstanding pulse
-        AddPulseResult result = pulseManager.addInProgressPulse(DID_0, null);
-        assertThat(pulseManager.getInProgressPulse(DID_0), equalTo(result.msgid()));
-
-        // pretend that we received a CHECK_PULSE_REPLY for this pulse message id
-        ChannelBuffer pulseCallBuffer = serializeToChannelBuffer(
-                TransportProtocolUtil.newControl(PBTPHeader
-                                .newBuilder()
-                                .setType(Type.TRANSPORT_CHECK_PULSE_REPLY)
-                                .setCheckPulse(PBCheckPulse.newBuilder().setPulseId(result.msgid()))
-                                .build()
-                ));
-
-        TransportMessage pulseCallMessage = new TransportMessage(pulseCallBuffer, DID_0, USER_0);
-        handler.messageReceived(ctx, new UpstreamMessageEvent(channel, pulseCallMessage, REMOTE_ADDRESS_0));
-
-        // check that indeed, there's no more outstanding pulse
-        assertThat(pulseManager.getInProgressPulse(DID_0), nullValue());
     }
 
     @Test

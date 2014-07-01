@@ -105,17 +105,8 @@ public class RPC
             ep = _trl.sendUnicast_(did, request);
             return receiveResponse_(request.getRpcid(), tk, reason);
         } catch (ExTimeout e) {
-            handleTimeout_(request, ep);
+           l.warn("timeout rid:{} t:{} ep:{}", request.getRpcid(), CoreProtocolUtil.typeString(request), ep);
             throw e;
-        }
-    }
-
-    private void handleTimeout_(PBCore request, @Nullable Endpoint ep)
-    {
-        l.warn("timeout rid:{} t:{} ep:{}", request.getRpcid(), CoreProtocolUtil.typeString(request), ep);
-
-        if (ep != null) {
-            _dp.startPulse_(ep.tp(), ep.did());
         }
     }
 

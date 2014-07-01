@@ -5,9 +5,6 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.EventDispatcher;
-import com.aerofs.daemon.event.net.EOStartPulse;
-import com.aerofs.daemon.event.net.EOTpStartPulse;
-import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIChunk;
@@ -23,12 +20,10 @@ import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBStream.Type;
@@ -272,15 +267,10 @@ public abstract class TransportProtocolUtil
     }
 
     public static void setupCommonHandlersAndListeners(
-            ITransport transport,
             EventDispatcher dispatcher,
-            IScheduler scheduler,
-            IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
             IStores stores,
             StreamManager streamManager,
-            PulseManager pulseManager,
-            IUnicastInternal unicast,
-            IDevicePresenceService presenceManager)
+            IUnicastInternal unicast)
     {
         dispatcher
             .setHandler_(EOUnicastMessage.class, new HdUnicastMessage(unicast))
@@ -289,13 +279,7 @@ public abstract class TransportProtocolUtil
             .setHandler_(EOTxEndStream.class, new HdTxEndStream(streamManager))
             .setHandler_(EORxEndStream.class, new HdRxEndStream(streamManager))
             .setHandler_(EOTxAbortStream.class, new HdTxAbortStream(streamManager, unicast))
-            .setHandler_(EOUpdateStores.class, new HdUpdateStores(stores))
-            .setHandler_(EOStartPulse.class, new HdStartPulse(scheduler))
-            .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(pulseManager, unicast, new SubsequentPulse(scheduler, pulseManager, unicast)))
-            .setHandler_(EOTpStartPulse.class, new HdPulse<EOTpStartPulse>(pulseManager, unicast, new StartPulse(scheduler, pulseManager, presenceManager)))
-            .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(pulseManager, unicast, new SubsequentPulse(scheduler, pulseManager, unicast)));
-
-        pulseManager.addGenericPulseDeletionWatcher(transport, outgoingEventSink);
+            .setHandler_(EOUpdateStores.class, new HdUpdateStores(stores));
     }
 
     public static void setupMulticastHandler(EventDispatcher dispatcher, IMaxcast maxcast)

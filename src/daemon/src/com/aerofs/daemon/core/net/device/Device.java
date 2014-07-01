@@ -22,14 +22,11 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static com.google.common.base.Preconditions.checkState;
-
 // FIXME (AG): Remove sidx management from this class
 //
 // this class should simply be a mapping from Device to 'available transports'
 // sidcs should be managed by DevicePresence
 // a major complication in making this work is the interaction defining which stores are 'available'
-// especially in the face of interleaved pulsing and online/offline events
 // technically, DevicePresence should simply have the following map:
 // did => sid*, where sid is a union of all the sids 'available' on each transport
 // while intellectually appealing, this _cannot_ currently work because of the
@@ -38,7 +35,6 @@ import static com.google.common.base.Preconditions.checkState;
 // to explain, consider the following case for device D1:
 // tcp online: S1, S2, S3
 // jingle online: S1, S2
-// tcp begins pulsing
 //
 // what stores are available on D1?
 //
@@ -51,19 +47,6 @@ import static com.google.common.base.Preconditions.checkState;
 // more complicated than they 'could' be. it's also possible that we will miss
 // opportunities to communicate with devices about stores simply because of a quirk
 // in our underlying multicast system
-
-/**
- * State transition:
- *
- *  when device is online:  start pulses:   goes to false online
- *                          stop pulses:    goes to true online
- *  when device is offline: start pulses:   nop
- *                          stop pulses:    nop
- *  when pulses is started: comes online:   nop
- *                          goes offline:   nop
- *  when pulses is stoped:  comes online:   goes to true online
- *                          goes offline:   goes to offline
- */
 // FIXME (AG): this class _SHOULD NOT_ care about stores at all
 // its concept of online and offline should only be based on whether it has connections or not
 public class Device implements Comparable<Device>
@@ -72,17 +55,16 @@ public class Device implements Comparable<Device>
 
     private class TransportState
     {
-        boolean _isBeingPulsed;
         final Set<SIndex> _sidcsAvailable = Sets.newHashSet();
 
         boolean isUnused_()
         {
-            return !_isBeingPulsed && _sidcsAvailable.isEmpty();
+            return _sidcsAvailable.isEmpty();
         }
 
         boolean isOnlineForStore_(SIndex sidx)
         {
-            return !_isBeingPulsed && _sidcsAvailable.contains(sidx);
+            return _sidcsAvailable.contains(sidx);
         }
     }
 
@@ -106,8 +88,7 @@ public class Device implements Comparable<Device>
     }
 
     /**
-     * @return collection of stores that are online
-     * <strong>or</strong> being pulsed for this device
+     * @return collection of stores that are online for this device
      */
     public Collection<SIndex> getAllKnownSidcs_()
     {
@@ -130,9 +111,7 @@ public class Device implements Comparable<Device>
         List<SIndex> ret = Lists.newLinkedList();
         for (SIndex sidx : sidcs) {
             boolean added = tpState._sidcsAvailable.add(sidx); // _always_ add
-            if (added && !tpState._isBeingPulsed) {
-                ret.add(sidx);
-            }
+            if (added) ret.add(sidx);
         }
         return getSidcsWhoseStateChanged_(tpState, ret);
     }
@@ -147,20 +126,7 @@ public class Device implements Comparable<Device>
 
         List<SIndex> ret = Lists.newLinkedList();
         for (SIndex sidx : sidcs) {
-            boolean removed = tpState._sidcsAvailable.remove(sidx); // _always_ remove
-
-            //
-            // FIXME (AG): Simplify interaction between Device, DevicePresence and users of both
-            // the test for _isBeingPulsed is necessary because of a complicated (and implicit)
-            // contract between Device and its callers.
-            //
-            // Basically, when a caller decides to pulse a device we return all the stores that
-            // have gone into the offline state. Since that point, additional stores may be
-            // added. When the caller calls this method, we only return those stores that _weren't_
-            // returned previously
-            //
-
-            if (removed && !tpState._isBeingPulsed) {
+            if (tpState._sidcsAvailable.remove(sidx)) {
                 ret.add(sidx);
             }
         }
@@ -181,37 +147,6 @@ public class Device implements Comparable<Device>
 
         // make a copy to avoid concurrent modification exception
         return offline_(tp, new ArrayList<SIndex>(en._sidcsAvailable));
-    }
-
-    /**
-     * must call isPulseStarted before calling this method
-     * @return a collection of sids that becomes offline to the device
-     */
-    Collection<SIndex> pulseStarted_(ITransport tp)
-    {
-        TransportState tpState = getOrCreate_(tp);
-
-        checkState(!tpState._isBeingPulsed);
-
-        tpState._isBeingPulsed = true;
-        return getSidcsWhoseStateChanged_(tpState);
-    }
-
-    /**
-     * @return a collection of sids that becomes online to the device
-     */
-    Collection<SIndex> pulseStopped_(ITransport tp)
-    {
-        TransportState tpState = _tpsAvailable.get(tp);
-
-        checkState(tpState != null && tpState._isBeingPulsed);
-
-        tpState._isBeingPulsed = false;
-        if (tpState.isUnused_()) {
-            _tpsAvailable.remove(tp);
-        }
-
-        return getSidcsWhoseStateChanged_(tpState);
     }
 
     private TransportState getOrCreate_(ITransport tp)
@@ -252,40 +187,9 @@ public class Device implements Comparable<Device>
         return sidcs;
     }
 
-    /*
-     * Returns a collection of sindexes that are currently unavailable on all transports
-     */
-    private Collection<SIndex> getSidcsWhoseStateChanged_(TransportState comparedTpState)
-    {
-        List<SIndex> ret = Lists.newLinkedList();
-        for (SIndex sidx : comparedTpState._sidcsAvailable) {
-            boolean isAvailable = false;
-            for (TransportState tpState : _tpsAvailable.values()) {
-                if (tpState != comparedTpState && tpState.isOnlineForStore_(sidx)) {
-                    isAvailable = true;
-                    break;
-                }
-            }
-            if (!isAvailable) ret.add(sidx);
-        }
-
-        return ret;
-    }
-
     boolean isOnline_()
     {
-        for (Entry<ITransport, TransportState> en : _tpsAvailable.entrySet()) {
-            if (!en.getValue()._isBeingPulsed) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    boolean isBeingPulsed_(ITransport tp)
-    {
-        TransportState en = _tpsAvailable.get(tp);
-        return en != null && en._isBeingPulsed;
+        return !_tpsAvailable.isEmpty();
     }
 
     boolean isAvailable_()
@@ -312,22 +216,9 @@ public class Device implements Comparable<Device>
 
     private @Nullable ITransport getPreferredTransport()
     {
-        for (Entry<ITransport, TransportState> en : _tpsAvailable.entrySet()) {
-            if (!en.getValue()._isBeingPulsed) {
-                return en.getKey();
-            }
-        }
-
-        return null;
+        return _tpsAvailable.firstKey();
     }
 
-    /**
-     * TODO incorporate the following factors:
-     *  o latency/throughput
-     *  o failure history
-     *  o workload
-     *  o etc etc
-     */
     public int getPreferenceUtility_()
     {
         return getPreferredTransport_().rank();
@@ -358,12 +249,7 @@ public class Device implements Comparable<Device>
             // id
             transportBuilder.setTransportId(entry.getKey().id());
 
-            // is the transport being pulsed or not
-            if (transportState._isBeingPulsed) {
-                transportBuilder.setState(Transport.TransportState.PULSING);
-            } else {
-                transportBuilder.setState(Transport.TransportState.POTENTIALLY_AVAILABLE);
-            }
+            transportBuilder.setState(Transport.TransportState.POTENTIALLY_AVAILABLE);
 
             // what sidcs are 'available' on this transport
             for (SIndex sidx : transportState._sidcsAvailable) {

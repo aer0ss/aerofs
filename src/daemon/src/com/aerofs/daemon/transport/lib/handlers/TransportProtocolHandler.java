@@ -12,7 +12,6 @@ import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.FrameParams;
-import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -27,7 +26,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
-import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.jboss.netty.channel.Channels.future;
 import static org.jboss.netty.channel.Channels.write;
@@ -37,7 +35,6 @@ import static org.jboss.netty.channel.Channels.write;
  * and performs one/more of the following actions:
  * <ul>
  *     <li>Delivers an event to the core.</li>
- *     <li>Turns on/off pulsing for the sending peer.</li>
  *     <li>Starts/stops a stream for the sending peer.</li>
  *     <li>Sends control messages to the remote peer.</li>
  * </ul>
@@ -52,18 +49,15 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
     private final ITransport transport;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventsink;
     private final StreamManager streamManager;
-    private final PulseManager pulseManager;
 
     public TransportProtocolHandler(
             ITransport transport,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventsink,
-            StreamManager streamManager,
-            PulseManager pulseManager)
+            StreamManager streamManager)
     {
         this.outgoingEventsink = outgoingEventsink;
         this.transport = transport;
         this.streamManager = streamManager;
-        this.pulseManager = pulseManager;
     }
 
     @Override
@@ -112,16 +106,14 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
         switch (header.getType()) {
         case TRANSPORT_CHECK_PULSE_CALL:
         {
-            int pulseid = header.getCheckPulse().getPulseId();
-            l.info("{} rcv pulse req with id {} over {}", endpoint.did(), pulseid, endpoint.tp());
-            reply = newCheckPulseReply(pulseid);
+            // FIXME: remove this block when it seems safe
+            l.warn("{} rcv unexpected pulse req over {}", endpoint.did(), endpoint.tp());
             break;
         }
         case TRANSPORT_CHECK_PULSE_REPLY:
         {
-            int pulseid = header.getCheckPulse().getPulseId();
-            l.info("{} rcv pulse rep with id {} over {}", endpoint.did(), pulseid, endpoint.tp());
-            pulseManager.processIncomingPulseId(endpoint.did(), pulseid);
+            // FIXME: remove this block when it seems safe
+            l.info("{} rcv unexpected pulse rep over {}", endpoint.did(), endpoint.tp());
             break;
         }
         default:

@@ -13,12 +13,9 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
-import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.sched.ExponentialRetry;
@@ -52,15 +49,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * Incoming notifications:
  *  - online/offline (come from HdPresence only)
- *  - pulse started (RPC / TRL)
- *  - pulse stopped (HdPulseStopped)
  *
  * Outgoing notifications:
  *  - notify Store of OPM
  *  - EOUpdateStores (I don't understand this)
  */
-// FIXME: what is the expected multiplicity of this class. Singleton would be super convenient.
-// FIXME: what concurrency access controls are wrapped around this class?
 public class DevicePresence implements IDiagnosable
 {
     private static final Logger l = Loggers.getLogger(DevicePresence.class);
@@ -149,48 +142,6 @@ public class DevicePresence implements IDiagnosable
             }
             notifyListenersOnDeviceOfflineEdge_(did, wasFormerlyAvailable, dev.isAvailable_());
         }
-    }
-
-    // FIXME: take an Endpoint instead
-    public void startPulse_(ITransport tp, DID did)
-    {
-        Device dev = _did2dev.get(did);
-        if (dev == null) {
-            l.info("{} dn on start pulse", did);
-            return;
-        }
-
-        if (dev.isBeingPulsed_(tp)) return;
-
-        l.info("{} start pulse for {}", did, tp);
-
-        boolean wasFormerlyAvailable = dev.isAvailable_();
-        removeDIDFromStores_(did, dev.pulseStarted_(tp));
-        notifyListenersOnDeviceOfflineEdge_(dev.did(), wasFormerlyAvailable, dev.isAvailable_());
-
-        try {
-            // we have to enqueue the event *after* the data structure is set up
-            // properly, because before we resume from the blocking below,
-            // the pulse stopped event may be triggered from the transport and
-            // being processed by another core thread
-            AbstractEBIMC ev = new EOStartPulse(_tps.getIMCE_(tp), did);
-            CoreIMC.enqueueBlocking_(ev, _tokenManager);
-        } catch (Exception e) {
-            l.warn("{} fail start pulse on {} err:{}", did, tp, Util.e(e));
-            pulseStopped_(tp, did);
-        }
-    }
-
-    public void pulseStopped_(ITransport tp, DID did)
-    {
-        Device dev = _did2dev.get(did);
-        if (dev == null) {
-            l.warn("{} pulse stopped but device not found", did);
-            return;
-        }
-
-        Collection<SIndex> sidcsOnline = dev.pulseStopped_(tp);
-        onlineImpl_(dev, sidcsOnline);
     }
 
     /**
@@ -319,15 +270,8 @@ public class DevicePresence implements IDiagnosable
 
         // FIXME (AG): consider alternatives
         //
-        // get the complete set of sidcs that are available _or_ being pulsed.
+        // get the complete set of sidcs that are available
         //
-        // we have to do this as a separate step because
-        // _sidx2opm only contains the sidcs that are available,
-        // which meant that if we had stores that were _only_
-        // on devices being pulsed we will not dump their diagnostic information
-        //
-        // to make the diagnostics more useful we also include information
-        // for these pulsed stores
         Multimap<SIndex, DID> knownSidcs = TreeMultimap.create();
 
         for (Device device : _did2dev.values()) {
@@ -347,8 +291,6 @@ public class DevicePresence implements IDiagnosable
 
             // remove this from the 'known' set, because we've already
             // dumped its diagnostic info
-            // NOTE: _all_ the DIDs associated with this sidx are removed
-            // regardless of whether the device is being pulsed or not
             knownSidcs.removeAll(sidx);
 
             // once we're done, add the entry into the top-level message
@@ -356,7 +298,7 @@ public class DevicePresence implements IDiagnosable
         }
 
         // now, dump information for any remaining sidcs
-        // these are stores that are known to devices but not available (i.e. being pulsed)
+        // these are stores that are known to devices but not available (previously, those in pulsing)
         // don't remove the store from the known set during iteration
         for (Map.Entry<SIndex, Collection<DID>> entry: knownSidcs.asMap().entrySet()) {
             Builder storeBuilder = Diagnostics.Store.newBuilder();

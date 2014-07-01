@@ -54,34 +54,11 @@ public class TestDevice extends AbstractTest
     }
 
     @Test
-    public void shouldReturnSecondBestTransportAsPreferredTransportIfFirstTransportIsBeingPulsed()
-    {
-        putTp1AndTp2Online();
-
-        _dev.pulseStarted_(_tp1);
-
-        assertEquals("checking tp2 is the best", _tp2, _dev.getPreferredTransport_());
-    }
-
-    @Test
-    public void shouldReturnBestTransportAsPreferredTransportAfterPulsingSucceeds()
-    {
-        putTp1AndTp2Online();
-
-        _dev.pulseStarted_(_tp1);
-        _dev.pulseStopped_(_tp1);
-
-        assertEquals("checking tp1 is the best", _tp1, _dev.getPreferredTransport_());
-    }
-
-    @Test
     public void shouldReturnBestTransportAsPreferredTransportAfterMultipleStateChanges()
     {
         putTp1AndTp2Online();
 
-        _dev.pulseStarted_(_tp1);
         _dev.offline_(_tp1);
-        _dev.pulseStopped_(_tp1);
         _dev.online_(_tp1, _tp1sids);
 
         assertEquals("checking tp1 is the best", _tp1, _dev.getPreferredTransport_());
@@ -127,78 +104,6 @@ public class TestDevice extends AbstractTest
         l.info("after tp1:" + sidcsOfflineAfterTp1);
 
         assertFalse(_dev.isOnline_());
-    }
-
-    @Test
-    public void shouldMarkTheAppropriateSidcsAsOfflineWhenATransportIsPulsed()
-    {
-        putTp1AndTp2Online();
-
-        Collection<SIndex> sidcsOfflineAfterTp2 = _dev.pulseStarted_(_tp2);
-        assertTrue(sidCollectionsIdentical(sidcsOfflineAfterTp2, ImmutableSet.of(new SIndex(2))));
-
-        assertFalse(_dev.isBeingPulsed_(_tp1));
-        assertTrue(_dev.isBeingPulsed_(_tp2));
-    }
-
-    @Test
-    public void shouldMarkDeviceAsOfflineWhenAllTransportsArePulsed()
-    {
-        putTp1AndTp2Online();
-
-        // start by pulsing just tp2 (so only sid2 goes offline)
-
-        Collection<SIndex> sidcsOfflineAfterTp2 = _dev.pulseStarted_(_tp2);
-        assertTrue(sidCollectionsIdentical(sidcsOfflineAfterTp2, ImmutableSet.of(new SIndex(2))));
-
-        assertFalse(_dev.isBeingPulsed_(_tp1));
-
-        // now try pulsing tp1 (at this point all sids go offline)
-
-        Collection<SIndex> sidcsOfflineAfterTp1 = _dev.pulseStarted_(_tp1);
-        assertTrue(sidCollectionsIdentical(sidcsOfflineAfterTp1, _tp1sids));
-
-        assertTrue(_dev.isBeingPulsed_(_tp1));
-
-        // from our perspective the device is no longer online
-
-        assertTrue(!_dev.isOnline_());
-    }
-
-    @Test
-    public void shouldMarkDeviceAsOnlineIfAPulseIsStopped()
-    {
-        _dev.online_(_tp1, _tp1sids);
-
-        // start tp1 pulsing
-
-        Collection<SIndex> sidcsOfflineAfterTp1StartsPulsing = _dev.pulseStarted_(_tp1);
-        assertTrue(sidCollectionsIdentical(sidcsOfflineAfterTp1StartsPulsing, _tp1sids));
-
-        // from our perspective the device is no longer online
-
-        assertTrue(!_dev.isOnline_());
-
-        // now the pulse stops
-
-        Collection<SIndex> sidcsOfflineAfterTp1StopsPulsing = _dev.pulseStopped_(_tp1);
-        assertTrue(sidCollectionsIdentical(sidcsOfflineAfterTp1StopsPulsing, _tp1sids));
-
-        assertTrue(_dev.isOnline_());
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void shouldNotAllowPulsingToBeStartedOnATransportWithoutItBeingStoppedFirst()
-    {
-        _dev.online_(_tp1, _tp1sids);
-
-        try {
-            _dev.pulseStarted_(_tp1);
-        } catch (Throwable t) {
-            assertTrue("first pulse failed", false);
-        }
-
-        _dev.pulseStarted_(_tp1); // should throw
     }
 
     /**

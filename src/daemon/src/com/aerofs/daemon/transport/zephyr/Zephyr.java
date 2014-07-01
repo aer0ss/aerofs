@@ -18,7 +18,6 @@ import com.aerofs.daemon.transport.lib.ChannelMonitor;
 import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
-import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportEventQueue;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -68,12 +67,8 @@ public final class Zephyr implements ITransport
     private final TransportEventQueue transportEventQueue;
     private final EventDispatcher dispatcher;
     private final Scheduler scheduler;
-    private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
 
-    private final PulseManager pulseManager = new PulseManager();
     private final StreamManager streamManager = new StreamManager();
-
-    private final PresenceService presenceService; // FIXME (AG): remove dependency of pulsing system on the presence system
     private final Multicast multicast;
     private final XMPPConnectionService xmppConnectionService;
 
@@ -125,8 +120,6 @@ public final class Zephyr implements ITransport
         this.id = id;
         this.rank = rank;
 
-        this.outgoingEventSink = outgoingEventSink;
-
         this.xmppConnectionService = new XMPPConnectionService(
                 id,
                 localdid,
@@ -142,11 +135,11 @@ public final class Zephyr implements ITransport
                 linkStateService);
 
         this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
-        this.presenceService = new PresenceService();
+        PresenceService presenceService = new PresenceService();
 
 
         SignallingService signallingService = new SignallingService(id, xmppServerDomain, xmppConnectionService);
-        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager);
+        TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager);
         ChannelTeardownHandler channelTeardownHandler = new ChannelTeardownHandler(this, outgoingEventSink, streamManager, TWOWAY);
         this.zephyrAddress = zephyrAddress;
         this.zephyrConnectionService = new ZephyrConnectionService(
@@ -174,7 +167,7 @@ public final class Zephyr implements ITransport
 
         XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, outgoingEventSink, monitor);
         presenceService.addListener(xmppPresenceProcessor);
-        presenceService.addListener(new DevicePresenceListener(id, zephyrConnectionService, pulseManager, rockLog));
+        presenceService.addListener(new DevicePresenceListener(zephyrConnectionService));
         presenceService.addListener(monitor);
 
         // WARNING: it is very important that XMPPPresenceProcessor listen to XMPPConnectionService
@@ -225,7 +218,7 @@ public final class Zephyr implements ITransport
     public void init()
             throws Exception
     {
-        setupCommonHandlersAndListeners(this, dispatcher, scheduler, outgoingEventSink, multicast, streamManager, pulseManager, zephyrConnectionService, presenceService);
+        setupCommonHandlersAndListeners(dispatcher, multicast, streamManager, zephyrConnectionService);
         zephyrConnectionService.init();
     }
 

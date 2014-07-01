@@ -20,7 +20,6 @@ import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IAddressResolver;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
-import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportEventQueue;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -84,7 +83,6 @@ public class TCP implements ITransport, IAddressResolver
     private final Multicast multicast;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
     private final StreamManager streamManager = new StreamManager();
-    private final PulseManager pulseManager = new PulseManager();
     private final PresenceService presenceService = new PresenceService();
     private final ChannelMonitor monitor;
 
@@ -130,7 +128,7 @@ public class TCP implements ITransport, IAddressResolver
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
         ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
-        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager, pulseManager);
+        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager);
         TCPBootstrapFactory bootstrapFactory = new TCPBootstrapFactory(
                 localUser,
                 localdid,
@@ -155,7 +153,7 @@ public class TCP implements ITransport, IAddressResolver
         // presence hookups
         unicast.setUnicastListener(presenceService);
         multicast.setListener(monitor);
-        presenceService.addListener(new DevicePresenceListener(id, unicast, pulseManager, rockLog));
+        presenceService.addListener(new DevicePresenceListener(unicast));
         presenceService.addListener(stores);
         presenceService.addListener(monitor);
 
@@ -201,7 +199,7 @@ public class TCP implements ITransport, IAddressResolver
     public void init() throws Exception
     {
         // must be called *after* the Unicast object is initialized.
-        setupCommonHandlersAndListeners(this, dispatcher, scheduler, outgoingEventSink, stores, streamManager, pulseManager, unicast, presenceService);
+        setupCommonHandlersAndListeners(dispatcher, stores, streamManager, unicast);
         setupMulticastHandler(dispatcher, multicast);
 
         multicast.init();
