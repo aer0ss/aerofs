@@ -18,6 +18,7 @@ import com.aerofs.daemon.core.protocol.GetVersionsRequest;
 import com.aerofs.daemon.core.protocol.GetVersionsResponse;
 import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.protocol.UpdateSenderFilter;
+import com.aerofs.daemon.core.store.ExSIDNotFound;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.SystemUtil;
@@ -125,7 +126,8 @@ public class CoreProtocolReactor implements IUnicastInputLayer
 
             processIncomingMessage_(new DigestedMessage(pb, is, ep, userID, null), true);
         } catch (Exception e) {
-            l.warn("{} fail process mc", did, LogUtil.suppress(e, ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class));
+            l.warn("{} fail process mc", did,
+                    LogUtil.suppress(e, ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class, ExSIDNotFound.class));
             SystemUtil.fatalOnUncheckedException(e);
         }
     }

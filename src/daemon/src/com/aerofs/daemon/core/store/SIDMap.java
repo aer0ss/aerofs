@@ -1,19 +1,17 @@
 package com.aerofs.daemon.core.store;
 
-import java.sql.SQLException;
-import java.util.Map;
+import com.aerofs.base.id.SID;
+import com.aerofs.daemon.lib.db.ISIDDatabase;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.id.SIndex;
+import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-
-import com.aerofs.daemon.lib.db.ISIDDatabase;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
-import com.aerofs.lib.id.SIndex;
-import com.google.common.collect.Maps;
+import java.sql.SQLException;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -48,10 +46,10 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     }
 
     @Override
-    public @Nonnull SIndex getThrows_(SID sid) throws ExNotFound
+    public @Nonnull SIndex getThrows_(SID sid) throws ExSIDNotFound
     {
         SIndex sidx = getNullable_(sid);
-        if (sidx == null) throw new ExNotFound("sidx for " + sid);
+        if (sidx == null) throw new ExSIDNotFound("sidx for " + sid);
         return sidx;
     }
 
@@ -70,10 +68,10 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     }
 
     @Override
-    public @Nonnull SID getThrows_(SIndex sidx) throws ExNotFound
+    public @Nonnull SID getThrows_(SIndex sidx) throws ExSIDNotFound
     {
         SID sid = getNullable_(sidx);
-        if (sid == null) throw new ExNotFound("sid for " + sidx);
+        if (sid == null) throw new ExSIDNotFound("sid for " + sidx);
         return sid;
     }
 
