@@ -13,13 +13,21 @@
 
 .nav-node {
   font-weight: bold;
+  a {
+    color: @gray-dark;
+  }
 }
 
 .nav-subnode {
   margin-left: 15px;
-  &.active {
-    color: @blue;
+
+  a {
+    color: #bbb;
   }
+}
+
+.active a {
+  color: @brand-primary;
 }
 
 .methods {
