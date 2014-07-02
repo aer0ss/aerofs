@@ -14,6 +14,7 @@ import com.aerofs.daemon.core.Dumpables;
 import com.aerofs.daemon.core.tc.TokenManager.ITokenUseListener;
 import com.aerofs.daemon.lib.db.trans.TransBoundaryChecker;
 import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
@@ -28,7 +29,6 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.db.DBIteratorMonitor;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.Util;
 
 import javax.annotation.Nonnull;
@@ -133,6 +133,11 @@ public class TC implements IDumpStatMisc, ITokenUseListener
             return ret;
         }
 
+        void pseudoPause_()
+        {
+            _l.unlock();
+        }
+
         @Override
         public String toString()
         {
@@ -146,15 +151,13 @@ public class TC implements IDumpStatMisc, ITokenUseListener
         }
     }
 
-    private final static ThreadLocal<TCB> tl_tcb = new ThreadLocal<TCB>();
+    private final static ThreadLocal<TCB> tl_tcb = new ThreadLocal<>();
 
     private final static String THREAD_NAME_PREFIX = "c";
 
     private int _total;
 
     private int _pendingQuits;
-
-    private boolean _shutdown;
 
     // for debugging/statistics only
     private final Set<TCB> _paused = Sets.newHashSet();
@@ -170,17 +173,17 @@ public class TC implements IDumpStatMisc, ITokenUseListener
     private final ThreadGroup _threadGroup = new ThreadGroup("core");
 
     @Inject
-    public TC(CoreScheduler sched, CoreEventDispatcher disp, CoreQueue q, TokenManager tokenManager,
-            TransBoundaryChecker tm)
+    public TC(CoreQueue q, CoreEventDispatcher disp, CoreScheduler sched,
+            TokenManager tokenManager, TransBoundaryChecker tm)
     {
         _sched = sched;
         _disp = disp;
         _q = q;
-        _l = q.getLock();
         _tm = tm;
+        _l = new StrictLock();
         _resumed = _l.newCondition();
 
-        // break circular depency w/ listener pattern
+        // break circular dependency w/ listener pattern
         tokenManager.setListener_(this);
 
         Dumpables.add("tc", this);
@@ -214,9 +217,8 @@ public class TC implements IDumpStatMisc, ITokenUseListener
 
     private void newThread_()
     {
-        _total++;
-        final String name = _threadNamePool.isEmpty() ? THREAD_NAME_PREFIX
-                + _total : _threadNamePool.remove();
+        int n = ++_total;
+        final String name = _threadNamePool.isEmpty() ? THREAD_NAME_PREFIX + n : _threadNamePool.remove();
 
         l.trace("new: {} ({})", name, _total);
 
@@ -225,44 +227,78 @@ public class TC implements IDumpStatMisc, ITokenUseListener
             public void run()
             {
                 tl_tcb.set(new TCB());
+                IEvent ev;
+                OutArg<Prio> outPrio = new OutArg<>();
 
-                OutArg<Prio> outPrio = new OutArg<Prio>();
-
-                _l.lock();
                 try {
-                    while (true) {
-                        try {
-                            waitResumed();
+                    do {
+                        ev = dequeue(outPrio);
+                    } while (process(ev, outPrio.get()));
+                } catch (Throwable e) {
+                    // fail fast
+                    throw SystemUtil.fatal(e);
+                }
+            }
 
-                            IEvent ev = _q.dequeue_(outPrio);
-                            if (_shutdown) {
-                                continueShutdown_();
-                            }
-                            if (ev == EV_QUIT) {
-                                _pendingQuits--;
-                                testReclamation_();
-                                if (_shutdown || _total - _paused.size() >
-                                        DaemonParam.TC_RECLAIM_LO_WATERMARK) break;
-                            }
+            private IEvent dequeue(OutArg<Prio> outPrio) throws InterruptedException
+            {
+                IEvent ev;
 
-                            setPrio(outPrio.get());
+                l.trace("waiting");
+                while (true) {
+                    // ensure we're cleared to process events
+                    _l.lock();
 
-                            _disp.dispatch_(ev, outPrio.get());
+                    // try to dequeue an event
+                    _q.getLock().lock();
+                    ev = _q.tryDequeue_(outPrio);
 
-                            _tm.assertNoOngoingTransaction_();
-                        } catch (Throwable e) {
-                            // fail fast
-                            throw SystemUtil.fatal(e);
+                    // we did it!
+                    if (ev != null) {
+                        // allow other threads to enqueue events
+                        _q.getLock().unlock();
+                        return ev;
+                    }
+
+                    // no events available
+                    // release core lock to allow paused threads to resume
+                    _l.unlock();
+
+                    // wait for core queue to refill
+                    _q.await_();
+
+                    // must release queue lock before re-acquiring core lock
+                    _q.getLock().unlock();
+                }
+            }
+
+            private boolean process(IEvent ev, Prio prio) throws InterruptedException
+            {
+                try {
+                    waitResumed();
+                    l.trace("processing");
+
+                    if (ev == EV_QUIT) {
+                        _pendingQuits--;
+                        testReclamation_();
+                        if (_total - _paused.size() >
+                                DaemonParam.TC_RECLAIM_LO_WATERMARK) {
+                            l.trace("{} reclaimed", name);
+                            _threadNamePool.offer(name);
+                            _total--;
+                            return false;
                         }
                     }
 
-                    l.trace("{} reclaimed", name);
-                    _threadNamePool.offer(name);
-                    _total--;
+                    setPrio(prio);
 
+                    _disp.dispatch_(ev, prio);
+
+                    _tm.assertNoOngoingTransaction_();
                 } finally {
                     _l.unlock();
                 }
+                return true;
             }
         }, name);
 
@@ -280,21 +316,6 @@ public class TC implements IDumpStatMisc, ITokenUseListener
     public void start_()
     {
         newThread_();
-    }
-
-
-    private void continueShutdown_()
-    {
-        while (_pendingQuits < _total) {
-            if (!_q.enqueue_(EV_QUIT, Prio.LO)) break;
-            ++_pendingQuits;
-        }
-    }
-
-    public void shutdown_()
-    {
-        _shutdown = true;
-        continueShutdown_();
     }
 
     public static TCB tcb()

@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.transfers.download;
 
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
-import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.tc.Cat;
@@ -14,7 +13,6 @@ import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
@@ -29,7 +27,6 @@ import java.util.Set;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -43,7 +40,6 @@ public class TestDownloads extends AbstractTest
 {
     @Mock Token tk;
 
-    @Mock CoreQueue q;
     @Mock CoreScheduler sched;
     @Mock TokenManager tokenManager;
 
@@ -67,7 +63,7 @@ public class TestDownloads extends AbstractTest
     public void setUp() throws Exception
     {
         dls = new Downloads();
-        dls.inject_(q, sched, tokenManager, factDL, cedb);
+        dls.inject_(sched, tokenManager, factDL, cedb);
         when(cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
     }
 
@@ -83,7 +79,7 @@ public class TestDownloads extends AbstractTest
         verify(tokenManager).addTokenReclamationListener_(Cat.CLIENT, trl);
         verifyNoMoreInteractions(tokenManager);
 
-        verifyZeroInteractions(q, sched, factDL);
+        verifyZeroInteractions(sched, factDL);
     }
 
     @Test
@@ -91,7 +87,6 @@ public class TestDownloads extends AbstractTest
     {
         SOCID socid = gen(CID.META);
         when(tokenManager.acquire_(eq(Cat.CLIENT), anyString())).thenReturn(tk);
-        when(q.enqueue_(any(IEvent.class), any(Prio.class))).thenReturn(true);
 
         assertTrue(dls.downloadAsync_(socid, ImmutableSet.of(did), trl, dcl));
 
@@ -100,27 +95,9 @@ public class TestDownloads extends AbstractTest
 
         verify(factDL).create_(eq(socid), eq(ImmutableSet.of(did)), eq(dcl), eq(tk));
 
-        verify(q).enqueue_(any(IEvent.class), any(Prio.class));
+        verify(sched).schedule_(any(IEvent.class));
 
         verifyZeroInteractions(sched);
-    }
-
-    @Test
-    public void shouldScheduleDownloadIfCoreQueueFull() throws Exception
-    {
-        SOCID socid = gen(CID.META);
-        when(tokenManager.acquire_(eq(Cat.CLIENT), anyString())).thenReturn(tk);
-        when(q.enqueue_(any(IEvent.class), any(Prio.class))).thenReturn(false);
-
-        assertTrue(dls.downloadAsync_(socid, ImmutableSet.of(did), trl, dcl));
-
-        verify(tokenManager).acquire_(eq(Cat.CLIENT), anyString());
-        verifyNoMoreInteractions(tokenManager);
-
-        verify(factDL).create_(eq(socid), eq(ImmutableSet.of(did)), eq(dcl), eq(tk));
-
-        verify(q).enqueue_(any(IEvent.class), any(Prio.class));
-        verify(sched).schedule(any(IEvent.class), anyLong());
     }
 
     @Test
@@ -128,7 +105,6 @@ public class TestDownloads extends AbstractTest
     {
         SOCID socid = gen(CID.META);
         when(tokenManager.acquire_(eq(Cat.CLIENT), anyString())).thenReturn(tk);
-        when(q.enqueue_(any(IEvent.class), any(Prio.class))).thenReturn(true);
         AsyncDownload dl = mock(AsyncDownload.class);
         when(factDL.create_(eq(socid), anySetOf(DID.class), eq(dcl), eq(tk))).thenReturn(dl);
 
@@ -150,7 +126,6 @@ public class TestDownloads extends AbstractTest
     {
         SOCID socid = gen(CID.META);
         when(tokenManager.acquire_(eq(Cat.CLIENT), anyString())).thenReturn(tk);
-        when(q.enqueue_(any(IEvent.class), any(Prio.class))).thenReturn(true);
         AsyncDownload dl = mock(AsyncDownload.class);
         when(factDL.create_(eq(socid), anySetOf(DID.class), eq(dcl), eq(tk))).thenReturn(dl);
 

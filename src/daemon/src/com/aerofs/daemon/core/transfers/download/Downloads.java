@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.transfers.download;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.ids.DID;
-import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
@@ -21,7 +20,6 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
@@ -46,7 +44,6 @@ public class Downloads implements IContentDownloads
     private TokenManager _tokenManager;
     private AsyncDownload.Factory _factDL;
 
-    private CoreQueue _q;
     private CoreScheduler _sched;
 
     private ChangeEpochDatabase _cedb;
@@ -61,10 +58,9 @@ public class Downloads implements IContentDownloads
     }
 
     @Inject
-    public void inject_(CoreQueue q, CoreScheduler sched, TokenManager tokenManager,
+    public void inject_(CoreScheduler sched, TokenManager tokenManager,
             AsyncDownload.Factory factDL, ChangeEpochDatabase cedb)
     {
-        _q = q;
         _sched = sched;
         _factDL = factDL;
         _tokenManager = tokenManager;
@@ -207,7 +203,7 @@ public class Downloads implements IContentDownloads
 
         // try to immediately enqueue event, schedule if core queue full
         IEvent ev = makeDownloadEvent_(dl);
-        if (!_q.enqueue_(ev, Prio.LO)) _sched.schedule(ev, 0);
+        _sched.schedule_(ev);
 
         Util.verify(_ongoing.put(socid, dl) == null);
     }

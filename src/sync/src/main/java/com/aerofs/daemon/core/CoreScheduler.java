@@ -20,12 +20,11 @@ public class CoreScheduler extends Scheduler
 
     public void schedule_(IEvent ev)
     {
-        // sigh
         // this can be called from the main thread during the initialization phase
         // which for all intent and purposes is equivalent to a core thread, except
-        // it doesn't actually own the core lock
+        // it doesn't have a TCB/Prio/...
         Prio prio = TC.currentThreadPrio();
-        if (prio == null || !_q.enqueue_(ev, prio)) {
+        if (!_q.enqueue(ev, prio == null ? Prio.LO : prio)) {
             schedule(ev, 0);
         }
     }

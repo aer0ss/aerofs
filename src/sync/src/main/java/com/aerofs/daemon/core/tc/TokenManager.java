@@ -10,12 +10,10 @@ import javax.annotation.Nullable;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExTimeout;
-import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.Dumpables;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.event.Prio;
 import com.google.common.base.Preconditions;
@@ -88,16 +86,12 @@ public class TokenManager implements IDumpStatMisc
         }
     }
 
-    private final StrictLock _l;
-
     private ITokenUseListener _listener;
     private final EnumMap<Cat, CatInfo> _cat2info = Maps.newEnumMap(Cat.class);
 
     @Inject
-    public TokenManager(CoreQueue q)
+    public TokenManager()
     {
-        _l = q.getLock();
-
         for (Cat cat : Cat.values()) _cat2info.put(cat, new CatInfo(cat, getQuota(cat)));
 
         Dumpables.add("cat", this);
@@ -264,7 +258,7 @@ public class TokenManager implements IDumpStatMisc
     {
         TCB tcb = TC.tcb();
         _listener.prePause_(tcb, tk, reason);
-        _l.unlock();
+        tcb.pseudoPause_();
         return tcb;
     }
 

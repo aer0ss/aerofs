@@ -10,6 +10,7 @@ import com.aerofs.lib.event.Prio;
 import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
 public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, IDumpStatMisc
 {
@@ -49,7 +50,7 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
         this(new StrictLock(), capacity);
     }
 
-    public StrictLock getLock()
+    public Lock getLock()
     {
         return _l;
     }
@@ -115,7 +116,7 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
         }
     }
 
-    public void enqueueBlocking_(T ev, Prio prio)
+    private void enqueueBlocking_(T ev, Prio prio)
     {
         while (_pq.isFull_()) {
             _cvEnq.awaitUninterruptibly();
@@ -134,7 +135,7 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
         }
     }
 
-    public void enqueueThrows_(T ev, Prio prio) throws ExNoResource
+    private void enqueueThrows_(T ev, Prio prio) throws ExNoResource
     {
         if (!enqueue_(ev, prio)) throw new ExNoResource("q full");
     }
@@ -153,7 +154,7 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
     /**
      * @return false if the queue is full
      */
-    public boolean enqueue_(T ev, Prio prio)
+    private boolean enqueue_(T ev, Prio prio)
     {
         if (_pq.isFull_()) {
             return false;
@@ -201,6 +202,13 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
     {
         if (_pq.isEmpty_()) return null;
         return dequeue_(outPrio);
+    }
+
+    public void await_()
+    {
+        while (_pq.isEmpty_()) {
+            _cvDeq.awaitUninterruptibly();
+        }
     }
 
     public T dequeue_(OutArg<Prio> outPrio)
@@ -251,7 +259,7 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
         }
     }
 
-    public boolean isEmpty_()
+    private boolean isEmpty_()
     {
         return _pq.isEmpty_();
     }

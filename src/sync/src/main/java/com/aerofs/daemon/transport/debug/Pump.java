@@ -61,7 +61,6 @@ import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Server;
 import static com.aerofs.base.ssl.SSLEngineFactory.Platform.Desktop;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
-import static com.aerofs.daemon.core.tc.TC.*;
 import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
 import static com.aerofs.lib.NioChannelFactories.getServerChannelFactory;
 import static com.aerofs.lib.event.Prio.LO;
@@ -86,14 +85,14 @@ public final class Pump implements IProgram, IUnicastInputLayer
 
     private final CoreQueue queue = new CoreQueue();
     private final CoreScheduler sched = new CoreScheduler(queue);
-    private final TokenManager tokenManager = new TokenManager(queue);
+    private final TokenManager tokenManager = new TokenManager();
     private final CoreEventDispatcher disp = new CoreEventDispatcher(ImmutableSet.of(
             d ->  {
                 d.setHandler_(EIUnicastMessage.class, new HdUnicastMessage(this));
                 d.setHandler_(EIStreamBegun.class, new HdStreamBegun(this));
             }
     ));
-    private final TC tc = new TC(sched, disp, queue, tokenManager, () -> {});
+    private final TC tc = new TC(queue, disp, sched, tokenManager, () -> {});
 
     // PROG RTROOT [t|z|j] ([send|stream] <did>)*
     @Override
@@ -277,9 +276,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
         protected void resched_() {
             if (scheduled) return;
             scheduled = true;
-            if (!queue.enqueue_(this, currentThreadPrio())) {
-                sched.schedule_(this);
-            }
+            sched.schedule_(this);
         }
 
         public void handlePresence_(boolean online, ImmutableMap<DID, Collection<SID>> did2sids) {
