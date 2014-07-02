@@ -1,17 +1,37 @@
 import base64
 import requests
-import properties
+import tempfile
 from cStringIO import StringIO
+
+import properties
 
 class Configuration(object):
     """
     Class that fetches and manages configuration.
     """
-    def __init__(self, base_url):
+    def __init__(self, base_url, custom_cert=None, custom_cert_bundle=None):
         self.base_url = base_url
+        # To allow for custom certificate use, we allow a custom_cert parameter
+        # (raw PEM-encoded bytes), or a custom_cert_bundle parameter (filename)
+        self.custom_cert = custom_cert
+        self.custom_cert_bundle = custom_cert_bundle
 
     def _get(self, url):
-        r = requests.get(url)
+        r = None
+        if self.custom_cert_bundle:
+            r = requests.get(url, verify=self.custom_cert_bundle)
+        elif self.custom_cert:
+            # Python's urllib SSL bindings do not allow specifying cacerts/bundles
+            # as bytebuffers; they allow only filenames.  So create a named tempfile
+            # to work around this limitation.  There's a small race condition here
+            # that could potentially be exploited by a determined attacker, but this
+            # is still better than verify=None, which is the alternative.
+            with tempfile.NamedTemporaryFile() as f:
+                f.write(self.custom_cert)
+                f.seek(0)
+                r = requests.get(url, verify=f.name)
+        else:
+            r = requests.get(url)
         if not r.ok:
             raise IOError("Couldn't reach configuration server: {}".format(
                 r.status_code))
