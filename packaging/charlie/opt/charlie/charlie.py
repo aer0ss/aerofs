@@ -40,7 +40,13 @@ app.config.from_object('config')
 
 # This currently uses client properties because we haven't finished working out
 # server properties for hybrid cloud.
-aerofs_config = Configuration(app.config["CONFIG_SERVER_BASE_URI"]).client_properties()
+config_client = None
+if "CONFIG_SERVER_CERT" in app.config:
+    config_client = Configuration(app.config["CONFIG_SERVER_BASE_URI"],
+                                  custom_cert=app.config["CONFIG_SERVER_CERT"])
+else:
+    config_client = Configuration(app.config["CONFIG_SERVER_BASE_URI"])
+aerofs_config = config_client.client_properties()
 
 PATTERN = r"Aero-Device-Cert ([0-9a-fA-F]{32}) (.*)"
 AUTH_HEADER_REGEX = re.compile(PATTERN)
