@@ -4,12 +4,14 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.protocol.ComputeHash;
 import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
@@ -182,7 +184,8 @@ public class CoreProtocolReactor implements IUnicastInputLayer
     private void sendErrorResponse_(DigestedMessage msg, Exception cause)
             throws Exception
     {
-        l.warn("{} fail process msg cause:{}", msg.did(), CoreProtocolUtil.typeString(msg.pb()), cause);
+        l.warn("{} fail process msg cause:{}", msg.did(), CoreProtocolUtil.typeString(msg.pb()),
+                BaseLogUtil.suppress(cause, ExNoComponentWithSpecifiedVersion.class));
 
         PBCore error = null;
         try {

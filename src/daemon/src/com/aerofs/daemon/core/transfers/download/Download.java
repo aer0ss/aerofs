@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
@@ -123,7 +124,7 @@ class Download
 
         private void downloadSync_(DependencyEdge edge) throws ExUnsatisfiedDependency
         {
-            l.info("cxt.dlsync {}", edge);
+            l.info("{} cxt.dlsync {}", edge, did);
             try {
                 try {
                     deps.addEdge_(edge);
@@ -134,7 +135,7 @@ class Download
                                 .download_();
 
                         assert resolved.contains(edge.dst) : edge.dst + " " + this;
-                        l.info("dep solved");
+                        l.info("{} dep solved", did);
                     } finally {
                         deps.removeEdge_(edge);
                     }
@@ -149,7 +150,8 @@ class Download
                     if (!_f._ddr.resolveDeadlock_(e._cycle, this)) throw e;
                 }
             } catch (Exception e) {
-                l.info("dep error {} {}", edge.dst, e);
+                l.info("{} dep error {} {}", did, edge.dst,
+                        BaseLogUtil.suppress(e, ExNoComponentWithSpecifiedVersion.class));
                 throw new ExUnsatisfiedDependency(edge.dst, did, e);
             }
         }
@@ -330,7 +332,7 @@ class Download
             // TODO: avoid duplicate concurrent requests w/ per-device tracking of ongoing downloads
             cxt.downloadSync_(new SOCID(_socid.sidx(), e._ocid), e._type);
         } catch (ExUpdateInProgress e) {
-            onUpdateInProgress();
+            onUpdateInProgress(msg.did());
         } catch (SQLException e) {
             throw e;
         } catch (ExAborted e) {
@@ -341,7 +343,7 @@ class Download
             // retry
         } catch (ExStreamInvalid e) {
             if (e.getReason() == InvalidationReason.UPDATE_IN_PROGRESS) {
-                onUpdateInProgress();
+                onUpdateInProgress(msg.did());
             } else {
                 // hmm, this may be more of a remote error, should the wrapping be changed?
                 throw new ExProcessReplyFailed(cxt.did, e);
@@ -366,16 +368,16 @@ class Download
     private static final int MAX_UPDATE_RETRY = 2;
     private static final long UPDATE_RETRY_DELAY = 3 * C.SEC;
 
-    private void onUpdateInProgress() throws ExAborted
+    private void onUpdateInProgress(DID did) throws ExAborted
     {
         // too many retries: abort dl to free token
         // the collector will retry at a later time (i.e. on next iteration)
         if (++_updateRetry > MAX_UPDATE_RETRY) {
-            l.warn("{}: update in prog for too long. abort", _socid);
+            l.warn("{} {}: update in prog for too long. abort", did, _socid);
             throw new ExAborted("update in progress");
         }
 
-        l.info("{}: update in prog. retry later", _socid);
+        l.info("{} {}: update in prog. retry later", did, _socid);
         _tk.sleep_(UPDATE_RETRY_DELAY, "retry dl (update in prog)");
     }
 }
