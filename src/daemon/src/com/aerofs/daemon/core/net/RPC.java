@@ -9,7 +9,6 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -25,7 +24,6 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.util.Map;
 
@@ -48,14 +46,12 @@ public class RPC
     }
 
     private final TransportRoutingLayer _trl;
-    private final DevicePresence _dp;
 
     private final Map<Integer, ResponseWaiter> _waiters = Maps.newTreeMap();
 
     @Inject
-    public RPC(DevicePresence dp, TransportRoutingLayer trl, CoreExecutor coreExecutor, LinkStateService lss)
+    public RPC(TransportRoutingLayer trl, CoreExecutor coreExecutor, LinkStateService lss)
     {
-        _dp = dp;
         _trl = trl;
 
         lss.addListener(new ILinkStateListener()

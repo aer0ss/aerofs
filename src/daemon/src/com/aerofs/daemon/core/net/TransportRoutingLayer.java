@@ -8,10 +8,10 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.net.device.Device;
-import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -45,17 +45,17 @@ public class TransportRoutingLayer
 
     private DID _localdid;
     private CoreQueue _q;
-    private DevicePresence _dp;
+    private Devices _devices;
     private Transports _tps;
     private UnicastInputOutputStack _stack;
     private RockLog _rockLog;
 
     @Inject
-    public void inject_(CfgLocalDID localDID, CoreQueue q, DevicePresence dp, Transports tps, UnicastInputOutputStack stack, RockLog rockLog)
+    public void inject_(CfgLocalDID localDID, CoreQueue q, Devices dp, Transports tps, UnicastInputOutputStack stack, RockLog rockLog)
     {
         _localdid = localDID.get();
         _q = q;
-        _dp = dp;
+        _devices = dp;
         _tps = tps;
         _stack = stack;
         _rockLog = rockLog;
@@ -99,7 +99,7 @@ public class TransportRoutingLayer
     {
         checkArgument(!did.equals(_localdid), "cannot send unicast to self");
 
-        Device dev = _dp.getOPMDevice_(did);
+        Device dev = _devices.getOPMDevice_(did);
         if (dev == null) { // there's no online device, so we drop the packet
             return null;
         }
@@ -175,7 +175,7 @@ public class TransportRoutingLayer
                     {
                         // FIXME: Need to understand this guy. Ok, we start pulsing, but if we don't do that, is
                         // there any purpose for this whole containing method?
-//                        _dp.startPulse_(ep.tp(), ep.did());
+//                        _devices.startPulse_(ep.tp(), ep.did());
                     }
                 }, Prio.LO);
             }

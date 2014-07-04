@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.admin;
 
 import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.daemon.core.net.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
@@ -20,14 +20,14 @@ import static com.aerofs.daemon.core.tc.Cat.UNLIMITED;
 public class HdDumpDiagnostics extends AbstractHdIMC<EIDumpDiagnostics>
 {
     private final TokenManager _tokenManager;
-    private final DevicePresence _dp;
+    private final Devices _devices;
     private final Transports _tps;
 
     @Inject
-    public HdDumpDiagnostics(TokenManager tokenManager, DevicePresence dp, Transports tps)
+    public HdDumpDiagnostics(TokenManager tokenManager, Devices devices, Transports tps)
     {
         _tokenManager = tokenManager;
-        _dp = dp;
+        _devices = devices;
         _tps = tps;
     }
 
@@ -36,9 +36,9 @@ public class HdDumpDiagnostics extends AbstractHdIMC<EIDumpDiagnostics>
     {
         final GetDiagnosticsReply.Builder diagnosticsReplyBuilder = GetDiagnosticsReply.newBuilder();
 
-        // start by getting the device presence diagnostics (within the core thread)
+        // start by getting the store availability diagnostics (within the core thread)
 
-        diagnosticsReplyBuilder.setDeviceDiagnostics(_dp.dumpDiagnostics_());
+        diagnosticsReplyBuilder.setDeviceDiagnostics(_devices.dumpDiagnostics_());
 
         // then, get the transport diagnostics
         // NOTE: run this without the core lock held, because this method does

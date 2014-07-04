@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.net.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -34,7 +34,7 @@ public class Stores implements IStores, IStoreDeletionOperator
     protected IStoreDatabase _sdb;
     private SIDMap _sm;
     private MapSIndex2Store _sidx2s;
-    private DevicePresence _dp;
+    private Devices _devices;
 
     // cached hierarchy information
     private Map<SIndex, Set<SIndex>> _parents = Maps.newHashMap();
@@ -43,13 +43,17 @@ public class Stores implements IStores, IStoreDeletionOperator
     private static final Logger l = Loggers.getLogger(Stores.class);
 
     @Inject
-    public void inject_(IStoreDatabase sdb, SIDMap sm, MapSIndex2Store sidx2s,
-            DevicePresence dp, StoreDeletionOperators sdo)
+    public void inject_(
+            IStoreDatabase sdb,
+            SIDMap sm,
+            MapSIndex2Store sidx2s,
+            Devices devices,
+            StoreDeletionOperators sdo)
     {
         _sdb = sdb;
         _sm = sm;
         _sidx2s = sidx2s;
-        _dp = dp;
+        _devices = devices;
 
         sdo.add_(this);
     }
@@ -229,7 +233,7 @@ public class Stores implements IStores, IStoreDeletionOperator
     }
 
     /**
-     * Create a Store instance and notify the DevicePresence accordingly. Record the Store
+     * Create a Store instance and notify Devices accordingly. Record the Store
      * in the sidx2s map.
      */
     private void notifyAddition_(SIndex sidx) throws SQLException
@@ -238,17 +242,17 @@ public class Stores implements IStores, IStoreDeletionOperator
         // this is the only place Store instances are created...
         Store s = _sidx2s.add_(sidx);
 
-        _dp.afterAddingStore_(sidx);
+        _devices.afterAddingStore_(sidx);
         s.postCreate();
     }
 
     /**
-     * Notify the DevicePresence and Store instances that this store is going to be deleted;
+     * Notify Devices and affected Store instances that this store is going to be deleted;
      * then remove it from the maps.
      */
     private void notifyDeletion_(SIndex sidx)
     {
-        _dp.beforeDeletingStore_(sidx);
+        _devices.beforeDeletingStore_(sidx);
 
         _sidx2s.get_(sidx).preDelete();
 

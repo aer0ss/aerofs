@@ -3,7 +3,7 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.net.EIPresence;
+import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.lib.IDevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IStores;
 import com.aerofs.lib.Util;
@@ -170,7 +170,7 @@ class Stores implements IStores, IDevicePresenceListener
 
         // enqueue must not fail because if it does the core will not receive this presence update
 
-        _tcp.sink().enqueueBlocking(new EIPresence(_tcp, online, did, sids), Prio.LO);
+        _tcp.sink().enqueueBlocking(new EIStoreAvailability(_tcp, online, did, sids), Prio.LO);
     }
 
     /**

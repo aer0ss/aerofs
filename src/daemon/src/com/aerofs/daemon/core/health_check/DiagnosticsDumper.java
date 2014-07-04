@@ -9,7 +9,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.daemon.core.net.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.lib.IDiagnosable;
@@ -50,7 +50,7 @@ final class DiagnosticsDumper implements Runnable
     private final Object _locker = new Object();
     private final InjectableCfg _cfg;
     private final CoreQueue _q;
-    private final DevicePresence _dp;
+    private final Devices _devices;
     private final TransferStatisticsManager _tsm;
     private final Transports _tps;
     private final UploadState _ul;
@@ -58,11 +58,11 @@ final class DiagnosticsDumper implements Runnable
     private final IMetriks _metriks;
 
     @Inject
-    DiagnosticsDumper(InjectableCfg cfg, CoreQueue q, DevicePresence dp, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl, IMetriks metriks)
+    DiagnosticsDumper(InjectableCfg cfg, CoreQueue q, Devices devices, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl, IMetriks metriks)
     {
         _cfg = cfg;
         _q = q;
-        _dp = dp;
+        _devices = devices;
         _tsm = tsm;
         _tps = tps;
         _ul = ul;
@@ -82,7 +82,7 @@ final class DiagnosticsDumper implements Runnable
             dumpSystemInformation(builder);
             dumpDiagnostics(builder, "uls", _ul); // runs holding the core lock
             dumpDiagnostics(builder, "dls", _dl); // runs holding the core lock
-            dumpDiagnostics(builder, "devices", _dp); // runs holding the core lock
+            dumpDiagnostics(builder, "devices", _devices); // runs holding the core lock
             dumpTransportDiagnostics(builder); // runs without holding core lock
             dumpTransportTransferDiagnostics(builder); // runs without holding core lock
 

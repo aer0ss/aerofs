@@ -18,9 +18,9 @@ public class TransportListener
 
     public void onIncomingStreamChunk(DID did, StreamID streamID, InputStream inputStream) {}
 
-    public void onDeviceAvailable(DID did, Collection<SID> sids) {}
+    public void onStoreAvailableForDevice(DID did, Collection<SID> sids) {}
 
-    public void onDeviceUnavailable(DID did, Collection<SID> sids) {}
+    public void onStoreUnavailableForDevice(DID did, Collection<SID> sids) {}
 
     public void onIncomingPacket(DID did, UserID userID, byte[] packet) {}
 }

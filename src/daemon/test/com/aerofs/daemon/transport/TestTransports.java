@@ -251,7 +251,7 @@ public final class TestTransports
         transport0.setTransportListener(new TransportListener()
         {
             @Override
-            public void onDeviceAvailable(DID did, Collection<SID> sid)
+            public void onStoreAvailableForDevice(DID did, Collection<SID> sid)
             {
                 if (did.equals(transport1.getDID())) {
 
@@ -455,7 +455,7 @@ public final class TestTransports
         transport.setTransportListener(new TransportListener()
         {
             @Override
-            public void onDeviceAvailable(DID did, Collection<SID> sid)
+            public void onStoreAvailableForDevice(DID did, Collection<SID> sid)
             {
                 if (otherDIDs.contains(did)) {
                     availableSemaphore.release();
@@ -463,7 +463,7 @@ public final class TestTransports
             }
 
             @Override
-            public void onDeviceUnavailable(DID did, Collection<SID> sids)
+            public void onStoreUnavailableForDevice(DID did, Collection<SID> sids)
             {
                 if (otherDIDs.contains(did)) {
                     unavailableSempahore.release();

@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.xmpp.presence;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.net.EIPresence;
+import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.testlib.LoggerSetup;
@@ -108,8 +108,8 @@ public final class TestXMPPPresenceProcessor
     {
         Multimap<DID, SID> didToSids = TreeMultimap.create();
 
-        EIPresence presence;
-        while ((presence = (EIPresence) outgoingEventSink.tryDequeue(new OutArg<Prio>(Prio.LO))) != null) {
+        EIStoreAvailability presence;
+        while ((presence = (EIStoreAvailability) outgoingEventSink.tryDequeue(new OutArg<Prio>(Prio.LO))) != null) {
             assertThat(presence._online, equalTo(expectedOnline));
 
             for (Map.Entry<DID, Collection<SID>> entry : presence._did2sids.entrySet()) {

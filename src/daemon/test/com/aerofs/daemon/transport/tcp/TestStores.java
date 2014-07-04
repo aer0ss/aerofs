@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.net.EIPresence;
+import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.lib.bf.BFSID;
@@ -143,7 +143,7 @@ public final class TestStores extends AbstractTest
         ArgumentCaptor<IEvent> evcaptor = ArgumentCaptor.forClass(IEvent.class);
         verify(q).enqueueBlocking(evcaptor.capture(), any(Prio.class));
 
-        EIPresence presenceEvent = (EIPresence) evcaptor.getValue();
+        EIStoreAvailability presenceEvent = (EIStoreAvailability) evcaptor.getValue();
         verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, true, SID_00);
     }
 
@@ -160,7 +160,7 @@ public final class TestStores extends AbstractTest
         verify(q, times(1)).enqueueBlocking(addEventCaptor.capture(), any(Prio.class));
         verifyNoMoreInteractions(q);
 
-        EIPresence presenceEvent = (EIPresence) addEventCaptor.getValue();
+        EIStoreAvailability presenceEvent = (EIStoreAvailability) addEventCaptor.getValue();
         verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, true, SID_00, SID_01);
 
         arp.remove(REMOTE_PEER_00);
@@ -180,7 +180,7 @@ public final class TestStores extends AbstractTest
         ArgumentCaptor<IEvent> delEventCaptor = ArgumentCaptor.forClass(IEvent.class); // only captures arg for last call (first one was for device going online)
         verify(q, times(2)).enqueueBlocking(delEventCaptor.capture(), any(Prio.class));
 
-        EIPresence presenceEvent = (EIPresence) delEventCaptor.getValue();
+        EIStoreAvailability presenceEvent = (EIStoreAvailability) delEventCaptor.getValue();
         verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, false, SID_00, SID_01);
     }
 
@@ -196,7 +196,7 @@ public final class TestStores extends AbstractTest
         verify(q).enqueueBlocking(addEventCaptor.capture(), any(Prio.class));
         verifyNoMoreInteractions(q);
 
-        EIPresence presenceEvent = (EIPresence) addEventCaptor.getValue();
+        EIStoreAvailability presenceEvent = (EIStoreAvailability) addEventCaptor.getValue();
         verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, true, SID_00, SID_01);
 
         assertThat(checkNotNull(arp.getThrows(REMOTE_PEER_00)).remoteAddress, equalTo(REMOTE_PEER_00_ADDRESS));
@@ -330,7 +330,7 @@ public final class TestStores extends AbstractTest
             ArgumentCaptor<IEvent> evcaptor = ArgumentCaptor.forClass(IEvent.class);
             presenceOrder.verify(q, calls(1)).enqueueBlocking(evcaptor.capture(), eq(Prio.LO));
 
-            EIPresence presenceEvent = (EIPresence) evcaptor.getValue();
+            EIStoreAvailability presenceEvent = (EIStoreAvailability) evcaptor.getValue();
             assertEquals(1, presenceEvent._did2sids.size());
 
             boolean found = false;
@@ -354,10 +354,10 @@ public final class TestStores extends AbstractTest
     {
         ArgumentCaptor<IEvent> presenceCaptor = ArgumentCaptor.forClass(IEvent.class);
         presenceOrder.verify(q, calls(1)).enqueueBlocking(presenceCaptor.capture(), eq(Prio.LO));
-        verifyPresenceEvent((EIPresence)presenceCaptor.getValue(), did, online, sids);
+        verifyPresenceEvent((EIStoreAvailability)presenceCaptor.getValue(), did, online, sids);
     }
 
-    private void verifyPresenceEvent(EIPresence presenceEvent, DID did, boolean online, SID... sids)
+    private void verifyPresenceEvent(EIStoreAvailability presenceEvent, DID did, boolean online, SID... sids)
     {
         assertEquals(tcp, presenceEvent._tp);
         assertEquals(online, presenceEvent._online);

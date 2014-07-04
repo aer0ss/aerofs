@@ -25,9 +25,9 @@ import java.util.TreeMap;
 // FIXME (AG): Remove sidx management from this class
 //
 // this class should simply be a mapping from Device to 'available transports'
-// sidcs should be managed by DevicePresence
+// sidcs should be managed by Devices
 // a major complication in making this work is the interaction defining which stores are 'available'
-// technically, DevicePresence should simply have the following map:
+// technically, Devices should simply have the following map:
 // did => sid*, where sid is a union of all the sids 'available' on each transport
 // while intellectually appealing, this _cannot_ currently work because of the
 // way multicast is implemented in jingle and zephyr
@@ -43,7 +43,7 @@ import java.util.TreeMap;
 // both jingle and zephyr use multicast chatrooms for each store, any multicast messages
 // sent to S3 on D1 via jingle are dropped.
 //
-// until we can fix this, the combination of DevicePresence and Device will be substantially
+// until we can fix this, the combination of Devices and Device will be substantially
 // more complicated than they 'could' be. it's also possible that we will miss
 // opportunities to communicate with devices about stores simply because of a quirk
 // in our underlying multicast system

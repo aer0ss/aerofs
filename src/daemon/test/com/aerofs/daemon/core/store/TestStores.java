@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.store;
 
-import com.aerofs.daemon.core.net.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -27,7 +27,7 @@ public class TestStores extends AbstractTest
 {
     @Mock SIDMap sm;
     @Mock MapSIndex2Store sidx2s;
-    @Mock DevicePresence dp;
+    @Mock Devices devices;
     @Mock Trans t;
     @Mock StoreDeletionOperators sdo;
     @Mock Store store;
@@ -49,7 +49,7 @@ public class TestStores extends AbstractTest
         sdb = new StoreDatabase(dbcw.getCoreDBCW());
 
         ss = new Stores();
-        ss.inject_(sdb, sm, sidx2s, dp, sdo);
+        ss.inject_(sdb, sm, sidx2s, devices, sdo);
 
         when(sidx2s.get_(sidx)).thenReturn(store);
         when(sidx2s.add_(sidx)).thenReturn(store);
@@ -111,14 +111,14 @@ public class TestStores extends AbstractTest
     }
 
     @Test
-    public void shouldDeleteStorePersistentDataAfterCleaningDevicePresence() throws SQLException
+    public void shouldDeleteStorePersistentDataAfterCleaningDevices() throws SQLException
     {
         ss.add_(sidx, "", t);
 
         ss.deleteStore_(sidx, t);
 
-        InOrder inOrder = inOrder(dp, store);
-        inOrder.verify(dp).beforeDeletingStore_(sidx);
+        InOrder inOrder = inOrder(devices, store);
+        inOrder.verify(devices).beforeDeletingStore_(sidx);
         inOrder.verify(store).deletePersistentData_(t);
     }
 

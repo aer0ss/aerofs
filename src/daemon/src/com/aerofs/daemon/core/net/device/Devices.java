@@ -42,21 +42,21 @@ import java.util.concurrent.Callable;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * DevicePresence is responsible for managing the list of potentially-available devices,
+ * Devcies is responsible for managing the list of potentially-available devices,
  * mapping those to stores, and detecting edge transitions.
  *
  * "Edge transition": device or store goes from offline to online (or vice versa).
  *
  * Incoming notifications:
- *  - online/offline (come from HdPresence only)
+ *  - online/offline (come from HdStoreAvailiability only)
  *
  * Outgoing notifications:
  *  - notify Store of OPM
  *  - EOUpdateStores (I don't understand this)
  */
-public class DevicePresence implements IDiagnosable
+public class Devices implements IDiagnosable
 {
-    private static final Logger l = Loggers.getLogger(DevicePresence.class);
+    private static final Logger l = Loggers.getLogger(Devices.class);
 
     private final Map<DID, Device> _did2dev = Maps.newHashMap();
     // FIXME: sidx2opm can't contain empty OPMDevice objects; wrap this map in safe mutators
@@ -70,8 +70,13 @@ public class DevicePresence implements IDiagnosable
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public DevicePresence(TokenManager tokenManager, CoreScheduler sched, Transports tps,
-            CoreExponentialRetry cer, MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid)
+    public Devices(
+            TokenManager tokenManager,
+            CoreScheduler sched,
+            Transports tps,
+            CoreExponentialRetry cer,
+            MapSIndex2Store sidx2s,
+            IMapSIndex2SID sidx2sid)
     {
         _tokenManager = tokenManager;
         _sched = sched;
@@ -255,7 +260,7 @@ public class DevicePresence implements IDiagnosable
     }
 
     /**
-     * Dump diagnostic information from the {@code DevicePresence} subsystem.
+     * Dump diagnostic information from the {@code Devices} subsystem.
      * <p/>
      * This method is <strong>not</strong> thread-safe and <strong>must</strong>
      * be called with the core lock held.

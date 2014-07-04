@@ -8,7 +8,7 @@ import java.util.Set;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.device.Device;
-import com.aerofs.daemon.core.net.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -64,13 +64,13 @@ public class To
 
     public static class Factory
     {
-        private final DevicePresence _dp;
+        private final Devices __devices;
         private final MapSIndex2Store _sidx2s;
 
         @Inject
-        public Factory(DevicePresence dp, MapSIndex2Store sidx2s)
+        public Factory(Devices devices, MapSIndex2Store sidx2s)
         {
-            _dp = dp;
+            __devices = devices;
             _sidx2s = sidx2s;
         }
 
@@ -200,7 +200,7 @@ public class To
     {
         DevEntry min = null;
         for (DID did : _dids) {
-            Device dev = _f._dp.getOPMDevice_(did);
+            Device dev = _f.__devices.getOPMDevice_(did);
             DevEntry den;
             if (dev == null) {
                 den = new DevEntry(did, Integer.MAX_VALUE);

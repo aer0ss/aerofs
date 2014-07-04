@@ -3,10 +3,10 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.net.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
-import com.aerofs.daemon.event.net.EIPresence;
+import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
@@ -19,26 +19,26 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 
-public class HdPresence implements IEventHandler<EIPresence>
+public class HdStoreAvailability implements IEventHandler<EIStoreAvailability>
 {
-    private static final Logger l = Loggers.getLogger(HdPresence.class);
+    private static final Logger l = Loggers.getLogger(HdStoreAvailability.class);
 
-    private final DevicePresence _dp;
+    private final Devices _devices;
     private final IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public HdPresence(DevicePresence dp, IMapSID2SIndex sid2sidx)
+    public HdStoreAvailability(Devices devices, IMapSID2SIndex sid2sidx)
     {
-        _dp = dp;
+        _devices = devices;
         _sid2sidx = sid2sidx;
     }
 
     @Override
-    public void handle_(EIPresence ev, Prio prio)
+    public void handle_(EIStoreAvailability ev, Prio prio)
     {
         if (ev._did2sids.isEmpty()) {
             Preconditions.checkArgument(!ev._online);
-            _dp.offline_(ev._tp);
+            _devices.offline_(ev._tp);
         } else {
             for (Entry<DID, Collection<SID>> entry : ev._did2sids.entrySet()) {
                 DID did = entry.getKey();
@@ -59,9 +59,9 @@ public class HdPresence implements IEventHandler<EIPresence>
                 l.debug("{} {} {}", entry.getKey(), ev._online ? "+" : "-", entry.getValue());
 
                 if (ev._online) {
-                    _dp.online_(ev._tp, did, sidcs);
+                    _devices.online_(ev._tp, did, sidcs);
                 } else {
-                    _dp.offline_(ev._tp, did, sidcs);
+                    _devices.offline_(ev._tp, did, sidcs);
                 }
             }
         }

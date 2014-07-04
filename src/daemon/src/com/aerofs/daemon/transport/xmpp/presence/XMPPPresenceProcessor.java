@@ -9,7 +9,7 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.net.EIPresence;
+import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IDevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
@@ -181,7 +181,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
 
         // handle core notifications, sent only for connected devices:
         if (deviceOnline) {
-            outgoingEventSink.enqueueBlocking(new EIPresence(transport, available, did, ImmutableList.of(sid)), LO);
+            outgoingEventSink.enqueueBlocking(new EIStoreAvailability(transport, available, did, ImmutableList.of(sid)), LO);
         }
 
         return true;
@@ -200,7 +200,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         }
 
         if (onlineStores != null && !onlineStores.isEmpty()) {
-            outgoingEventSink.enqueueBlocking(new EIPresence(transport, isPotentiallyAvailable, did, onlineStores), LO);
+            outgoingEventSink.enqueueBlocking(new EIStoreAvailability(transport, isPotentiallyAvailable, did, onlineStores), LO);
         }
     }
 }

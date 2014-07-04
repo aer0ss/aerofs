@@ -5,7 +5,7 @@ import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.net.device.Device;
-import com.aerofs.daemon.core.net.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.IDumpStatMisc;
@@ -23,7 +23,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     private final Collector _collector;
     private final SenderFilters _senderFilters;
-    private final DevicePresence _dp;
+    private final Devices _devices;
 
     // For debugging.
     // The idea is that when this.deletePersistentData_ is called, this object
@@ -34,20 +34,24 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     public static class Factory
     {
-        private DevicePresence _dp;
+        private Devices _devices;
         private AntiEntropy _ae;
         private Collector.Factory _factCollector;
         private SenderFilters.Factory _factSF;
         private IPulledDeviceDatabase _pddb;
 
         @Inject
-        public void inject_(SenderFilters.Factory factSF, Collector.Factory factCollector,
-                AntiEntropy ae, DevicePresence dp, IPulledDeviceDatabase pddb)
+        public void inject_(
+                SenderFilters.Factory factSF,
+                Collector.Factory factCollector,
+                AntiEntropy ae,
+                Devices devices,
+                IPulledDeviceDatabase pddb)
         {
             _factSF = factSF;
             _factCollector = factCollector;
             _ae = ae;
-            _dp = dp;
+            _devices = devices;
             _pddb = pddb;
         }
 
@@ -64,7 +68,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _sidx = sidx;
         _collector = f._factCollector.create_(sidx);
         _senderFilters = f._factSF.create_(sidx);
-        _dp = f._dp;
+        _devices = f._devices;
         _isDeleted = false;
         _f = f;
     }
@@ -145,7 +149,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     void preDelete()
     {
         // TODO: is this necessary? Perhaps not.
-        for (DID did : _dp.getOnlinePotentialMemberDevices_(_sidx).keySet()) {
+        for (DID did : _devices.getOnlinePotentialMemberDevices_(_sidx).keySet()) {
             notifyDeviceOffline(did);
         }
     }
@@ -156,12 +160,12 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     public Map<DID, Device> getOnlinePotentialMemberDevices_()
     {
         assert !_isDeleted;
-        return _dp.getOnlinePotentialMemberDevices_(_sidx);
+        return _devices.getOnlinePotentialMemberDevices_(_sidx);
     }
 
     public boolean hasOnlinePotentialMemberDevices_()
     {
-        return _dp.getOPMDevices_(_sidx) != null;
+        return _devices.getOPMDevices_(_sidx) != null;
     }
 
     @Override

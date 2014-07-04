@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
-import com.aerofs.daemon.event.net.EIPresence;
+import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
@@ -117,8 +117,8 @@ public final class Pump implements IProgram
             IEvent incoming = incomingEventSink.dequeue(eventPriority);
             if (incoming instanceof EIUnicastMessage) {
                 handleUnicastMessage((EIUnicastMessage)incoming);
-            } else if (incoming instanceof EIPresence) {
-                handlePresence((EIPresence) incoming);
+            } else if (incoming instanceof EIStoreAvailability) {
+                handlePresence((EIStoreAvailability) incoming);
             } else {
                 handleOther(incoming);
             }
@@ -199,7 +199,7 @@ public final class Pump implements IProgram
         l.debug("recv incoming d:{}", unicastMessage._ep.did());
     }
 
-    private void handlePresence(EIPresence presence)
+    private void handlePresence(EIStoreAvailability presence)
     {
         if (presence._online && presence._did2sids.containsKey(remote)) {
             l.info("device reachable d:{}", remote);

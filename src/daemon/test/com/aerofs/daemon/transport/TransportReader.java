@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.net.EIPresence;
+import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.event.net.rx.EIChunk;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
@@ -82,8 +82,8 @@ public final class TransportReader
 
                         l.trace("handling event type:{}", event.getClass().getSimpleName());
 
-                        if (event instanceof EIPresence) {
-                            handlePresence((EIPresence)event);
+                        if (event instanceof EIStoreAvailability) {
+                            handleStoreAvailability((EIStoreAvailability)event);
                         } else if (event instanceof EIUnicastMessage) {
                             handleUnicastMessage((EIUnicastMessage)event);
                         } else if (event instanceof EIStreamBegun) {
@@ -111,13 +111,13 @@ public final class TransportReader
         outgoingEventQueueReader.start();
     }
 
-    private void handlePresence(EIPresence presence)
+    private void handleStoreAvailability(EIStoreAvailability storeAvailability)
     {
-        for (Map.Entry<DID, Collection<SID>> entry : presence._did2sids.entrySet()) {
-            if (presence._online) {
-                transportListener.onDeviceAvailable(entry.getKey(), entry.getValue());
+        for (Map.Entry<DID, Collection<SID>> entry : storeAvailability._did2sids.entrySet()) {
+            if (storeAvailability._online) {
+                transportListener.onStoreAvailableForDevice(entry.getKey(), entry.getValue());
             } else {
-                transportListener.onDeviceUnavailable(entry.getKey(), entry.getValue());
+                transportListener.onStoreUnavailableForDevice(entry.getKey(), entry.getValue());
             }
         }
     }
