@@ -2413,6 +2413,10 @@ public class SPService implements ISPService
                 password_reset_token, new_credentials.toByteArray());
         _sqlTrans.commit();
 
+        // On password reset we expect all web sessions to get logged out. Invalidating all sessions
+        // in SP makes this happen.
+        _sessionInvalidator.invalidate(user.id());
+
         _auditClient.event(AuditTopic.USER, "user.password.reset")
                 .add("user", user.id())
                 .publish();
