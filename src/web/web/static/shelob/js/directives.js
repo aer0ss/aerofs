@@ -21,7 +21,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                     scope.progressModal.close();
                     showSuccessMessage('Successfully uploaded "' + fileJSON.name + '"');
                     fileJSON.type = 'file';
-                    $rootScope.objects.push(fileJSON);
+                    scope.objects.push(fileJSON);
                 }, 500);
             }, function(response) {
                 // file upload failed
@@ -64,7 +64,11 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
             });
 
             // create an empty file before upload
-            var fileObj = {parent: $routeParams.oid, name: file.name};
+            scope.rootFolder = $routeParams.oid;
+            if (!$routeParams.oid) {
+                scope.rootFolder = 'root';
+            }
+            var fileObj = {parent: scope.rootFolder, name: file.name};
             $log.debug("creating file:", fileObj);
             var headers = {'Endpoint-Consistency': 'strict'};
             API.post('/files', fileObj, headers).then(function(response) {
@@ -81,7 +85,8 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
             });
         };
     },
-}});
+};
+});
 
 shelobDirectives.directive('inPlaceEdit', function($timeout) { return {
     restrict: 'EA',

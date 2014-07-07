@@ -25,7 +25,7 @@
 
 <div class="row">
     <div class="col-lg-8 col-sm-10 col-lg-offset-2 col-sm-offset-1">
-        <div ng-app="shelobApp">
+        <div ng-app="shelobApp" id="shelobApp">
             <div id="linkshare">
                 <div ng-view></div>
             </div>

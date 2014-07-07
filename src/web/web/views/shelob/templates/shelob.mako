@@ -1,7 +1,7 @@
 <%inherit file="dashboard_layout.mako"/>
 <%! page_title = "My Files" %>
 
-<div ng-app="shelobApp">
+<div ng-app="shelobApp" id="shelobApp">
 <div ng-view></div>
 </div>
 

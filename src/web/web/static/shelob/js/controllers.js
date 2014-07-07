@@ -1,10 +1,10 @@
 var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', 'API', 'Token', 'API_LOCATION', 'OutstandingRequestsCounter',
-        function ($scope, $http, $log, $routeParams, $window, $modal, API, Token, API_LOCATION, OutstandingRequestsCounter) {
+shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', 'API', 'Token', 'API_LOCATION', 'OutstandingRequestsCounter',
+        function ($scope, $rootScope, $http, $log, $routeParams, $window, $modal, API, Token, API_LOCATION, OutstandingRequestsCounter) {
 
     var FOLDER_LAST_MODIFIED = '--';
-
+    
     // Set csrf-token header on $http by default
     var metas = document.getElementsByTagName('meta');
     for (var i=0; i<metas.length; i++) {
@@ -27,12 +27,14 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         Initialize variables!
         * * *
     */
-    // $scope.linkPasswordEntered contains user-entered password attempt,
-    // if linkshare is password-protected. Nothing, otherwise.
+    // $rootScope.linkPasswordEntered contains user-entered password attempt,
+    // if linkshare is password-protected. Nothing, otherwise. Uses $rootScope so that
+    // state can be shared with the login controller. Hopefully this can be reformulated in 
+    // the future.
     // $scope.objects contains all folder/file data.
     // $scope.links contains all link data. Added to $scope.objects by _populateLinks().
     // $scope.currentFolder is an object describing the current active folder.
-    $scope.linkPasswordEntered, $scope.objects, $scope.links, $scope.currentFolder;
+    $rootScope.linkPasswordEntered, $scope.objects, $scope.links, $scope.currentFolder;
 
     // Headers for request, in case user isn't logged in
     // and requests a linkshare page
@@ -127,10 +129,13 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         if (status == 401 && $scope.share) {
             // redirect to linkshare login page
             $log.info('Link may be password-protected; directing user to log in.');
-            window.location.hash = 'login';
-            if ($scope.linkPasswordEntered) {
+            if (window.location.hash != '#/login') {
+                window.location.hash = '#/login';
+            }
+            if ($rootScope.linkPasswordEntered) {
                 showErrorMessage('Password was incorrect. Please try again.');
             }
+            $rootScope.linkPasswordEntered = undefined;
         } else {
             if ($scope.share) {
                 $log.error('Link-sharing call failed with ' + status);
@@ -168,7 +173,7 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         // ping get_url_info for link's password-needed, expiry, token, and soid
         // if login's already run, and successfully, there'll be a password attached
         $http.post('/url_info/' + $scope.share, {
-            password: $scope.linkPasswordEntered
+            password: $rootScope.linkPasswordEntered
         }).success(function(response){
             $scope.requestHeaders = response;
             // linkshare root is never 'root', fixing it
@@ -272,7 +277,8 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
                     id: response.data.id,
                     name: response.data.name,
                     last_modified: FOLDER_LAST_MODIFIED,
-                    is_shared: response.data.is_shared
+                    is_shared: response.data.is_shared,
+                    links: []
                 });
             }, function(response) {
                 // create new folder failed
@@ -393,8 +399,9 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
         // treedata is a list of folder objects with label, id, and children attrs,
         // where children is a treedata object
         var rootFolder = {label: "AeroFS", id: 'root', children: []};
-        $scope.treedata = [rootFolder];
-        $scope.onMoveFolderExpanded(rootFolder);
+        // $rootScope used so that the tree control directive can access it
+        $rootScope.treedata = [rootFolder];
+        $rootScope.onMoveFolderExpanded(rootFolder);
 
         $scope.moveModal = $modal.open({
             templateUrl: '/static/shelob/partials/object-move-modal.html',
@@ -415,7 +422,8 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     // It should fetch the children of that folder if necessary, and update
     // the treeview
     //
-    $scope.onMoveFolderExpanded = function(folder) {
+    // $rootScope used so that the tree control directive can access it
+    $rootScope.onMoveFolderExpanded = function(folder) {
         //TODO: don't GET children if we already know there are no children
         if (folder.children.length > 0) return;
         API.get('/folders/' + folder.id + '/children?t=' + Math.random()).then(function(response) {
@@ -594,6 +602,9 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     $scope.showLink = function(object) {
         $scope.toggleLink(object);
         // if there is no link yet, create one
+        if (object.links === undefined) {
+            object.links = [];
+        }
         if (object.links.length === 0) {
             $log.info("Creating link for object " + object.name);
             $http.post('/create_url', {
@@ -607,7 +618,8 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
                     newLink.expires = newLink.expiration_options[0];
                     object.links.push(newLink);
                 }).error(function(response) {
-                    // move failed
+                    // link creation request failed
+                    $log.debug("Link creation failed with status " + response.status);
                     showErrorMessageUnsafe(getInternalErrorText());
                 });
         }
@@ -732,15 +744,15 @@ shelobControllers.controller('FileListCtrl', ['$rootScope', '$http', '$log', '$r
     };
 }]);
 
-/* Warning: this controller (in fact, both controllers) have $scope = $rootScope.
-   This is questionable/bad, for Reasons. TODO: Separate concerns. */
+
 shelobControllers.controller('LoginCtrl',
-    ['$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', 'API', 'Token', 'API_LOCATION', 'OutstandingRequestsCounter',
-    function ($scope, $http, $log, $routeParams, $window, $modal, API, Token, API_LOCATION, OutstandingRequestsCounter) {
-        $scope.login = function(password) {
+    ['$scope', '$rootScope',
+    function ($scope, $rootScope) {
+        $scope.loginFunction = function(password) {
             /* Hack: put password in root scope, so other controller can access it */
-            $scope.linkPasswordEntered = password;
+            $rootScope.linkPasswordEntered = password;
+            password = '';
             // redirect to main page
-            window.location.hash = '';
+            window.location.hash = '#/';
         };
     }]);
