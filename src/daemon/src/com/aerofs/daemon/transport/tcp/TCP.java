@@ -115,7 +115,6 @@ public class TCP implements ITransport, IAddressResolver
         this.outgoingEventSink = outgoingEventSink;
 
         this.multicast = new Multicast(localdid, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
-        linkStateService.addListener(multicast, sameThreadExecutor()); // can notify on the link-state thread because Multicast is thread-safe
 
         // unicast
         this.unicast = new Unicast(this, this);
@@ -148,7 +147,28 @@ public class TCP implements ITransport, IAddressResolver
                 serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
-        linkStateService.addListener(unicast, sameThreadExecutor());
+
+        // For TCP only, the link state listeners have a strange (and bad) interdependency.
+        // The Multicast class controls whether we are sending/receiving tcp ping/pong traffic, and
+        // winds up talking to ARP.
+        // The Unicast infrastructure does bad things if it is asked to deal with a peer before the
+        // link state (suspended/resumed) flag has been updated internally.
+        //
+        //  Since the Notifier as we use it does not provide a way to guarantee safe ordering, we
+        // do so explicitly with the following trivial compound notifier.
+        //
+        linkStateService.addListener(new ILinkStateListener() {
+            @Override
+            public void onLinkStateChanged(
+                    ImmutableSet<NetworkInterface> previous,
+                    ImmutableSet<NetworkInterface> current,
+                    ImmutableSet<NetworkInterface> added,
+                    ImmutableSet<NetworkInterface> removed)
+            {
+                unicast.onLinkStateChanged(previous, current, added, removed);
+                multicast.onLinkStateChanged(previous, current, added, removed);
+            }
+        }, sameThreadExecutor());
 
         // presence hookups
         unicast.setUnicastListener(presenceService);
