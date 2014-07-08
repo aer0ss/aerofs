@@ -24,7 +24,7 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
     public PulledDeviceDatabase(CoreDBCW dbcw, StoreDeletionOperators storeDeletionOperators)
     {
         super(dbcw.get());
-        storeDeletionOperators.add_(this);
+        storeDeletionOperators.addImmediate_(this);
     }
 
     private PreparedStatement _psPDContains;

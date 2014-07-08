@@ -42,7 +42,7 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
         _vdb = vdb;
         _cfgLocalDID = cfgLocalDID;
         _tlva = tlva;
-        sdo.add_(this);
+        sdo.addDeferred_(this);
     }
 
     public void init_() throws SQLException
@@ -87,7 +87,6 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
         }
 
         _vdb.deleteTicksAndKnowledgeForStore_(sidx, t);
-        _tlva.get(t).storeDeleted_(sidx);
     }
 
     /**

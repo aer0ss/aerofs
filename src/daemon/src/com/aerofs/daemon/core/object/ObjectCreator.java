@@ -100,7 +100,7 @@ public class ObjectCreator
      */
     public void createImmigrantMeta_(OA.Type type, SOID soidFrom, SOID soidTo, OID oidToParent,
             String name, PhysicalOp op, boolean updateVersion, Trans t)
-            throws ExNotFound, ExAlreadyExist, SQLException, IOException
+            throws Exception
     {
         boolean expelled = createOA_(type, soidTo, oidToParent, name, 0, op, updateVersion, t);
 
@@ -135,7 +135,7 @@ public class ObjectCreator
 
     private void adjustPhysicalObject_(SOID soid, boolean expelled, boolean immigrated,
             PhysicalOp op, Trans t)
-            throws ExNotFound, SQLException, ExAlreadyExist, IOException
+            throws Exception
     {
 
         OA oa = _ds.getOA_(soid);

@@ -92,6 +92,18 @@ public class Path implements Comparable<Path>
         return new Path(_sid, elemsNew);
     }
 
+    /**
+     * Create a new Path by appending to this one {@paramref n} components taken from
+     * {@paramref suffix} starting at position {@paramref i}
+     */
+    public Path append(String[] suffix, int i, int n)
+    {
+        if (n == 0) return this;
+        String[] elemsNew = Arrays.copyOf(_elems, _elems.length + n);
+        System.arraycopy(suffix, i, elemsNew, _elems.length, n);
+        return new Path(_sid, elemsNew);
+    }
+
     public Path removeLast()
     {
         assert _elems.length > 0;

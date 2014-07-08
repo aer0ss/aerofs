@@ -386,6 +386,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
      */
     private boolean physicalObjectDisappeared(OA oa) throws Exception
     {
+        if (oa.isExpelled()) return false;
         // files with no master branch should not appear in the deletion buffer
         // but we need to be extra defensive here to avoid mistakenly propagating
         // a deletion operation to remote nodes

@@ -24,7 +24,6 @@ import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
@@ -50,12 +49,15 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class LinkedStorage implements IPhysicalStorage
 {
@@ -187,26 +189,23 @@ public class LinkedStorage implements IPhysicalStorage
     }
 
     @Override
-    public void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t)
+    public void deleteStore_(SID physicalRoot, SIndex sidx, SID sid, Trans t)
             throws IOException, SQLException
     {
-        if (op != PhysicalOp.APPLY) return;
-
         // delete aux files other than revision files. no need to register for deletion rollback
         // since these files are not important.
         String prefix = LinkedPath.makeAuxFilePrefix(sidx);
-        String absAuxRoot = auxRootForStore_(sidx);
-        deleteFiles_(absAuxRoot, LibParam.AuxFolder.CONFLICT, prefix);
-        deleteFiles_(absAuxRoot, LibParam.AuxFolder.PREFIX, prefix);
-        // FIXME: nros, ...
+        String absAuxRoot = _lrm.auxRoot_(physicalRoot);
+        deleteFiles_(absAuxRoot, AuxFolder.CONFLICT, prefix);
+        deleteFiles_(absAuxRoot, AuxFolder.PREFIX, prefix);
 
         // Unlink external store/root.
         LinkerRoot lr = _lrm.get_(sid);
         if (lr != null) {
+            checkArgument(physicalRoot.equals(sid));
             _lrm.unlink_(sid, t);
             l.info("Unlinked {} {}", sid, lr.absRootAnchor());
         }
-
     }
 
     String auxFilePath(SOKID sokid, AuxFolder folder) throws SQLException
@@ -247,6 +246,12 @@ public class LinkedStorage implements IPhysicalStorage
     }
 
     @Override
+    public boolean isDiscardingRevForTrans_(Trans t)
+    {
+        return _tlUseHistory.get(t);
+    }
+
+    @Override
     public ImmutableCollection<NonRepresentableObject> listNonRepresentableObjects_()
             throws IOException, SQLException
     {
@@ -271,13 +276,22 @@ public class LinkedStorage implements IPhysicalStorage
     }
 
     @Override
-    public PhysicalOp deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+    public void deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
             throws SQLException, IOException
     {
-        if (op != PhysicalOp.APPLY) return op;
-        String absPath = _rh.getPhysicalPath_(path, PathType.SOURCE).physical;
-        _sa.stageDeletion_(absPath, _tlUseHistory.get(t) ? path : Path.root(path.sid()), t);
-        return PhysicalOp.MAP;
+        if (op == PhysicalOp.APPLY) {
+            String absPath = _rh.getPhysicalPath_(path, PathType.SOURCE).physical;
+            _sa.stageDeletion_(absPath, _tlUseHistory.get(t) ? path : Path.root(path.sid()), t);
+        }
+        onDeletion_(newFolder_(path, PathType.SOURCE), op, t);
+    }
+
+    @Override
+    public void scrub_(SOID soid,  @Nonnull Path historyPath, Trans t)
+            throws SQLException, IOException
+    {
+        // TODO: NRO db
+        // TODO: files/folders
     }
 
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException

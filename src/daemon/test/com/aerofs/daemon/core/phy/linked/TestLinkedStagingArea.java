@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
 import com.aerofs.daemon.core.phy.linked.db.LinkedStagingAreaDatabase;
@@ -44,6 +43,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.mock.physical.MockPhysicalTree.dir;
 import static com.aerofs.daemon.core.mock.physical.MockPhysicalTree.file;
@@ -92,7 +92,7 @@ public class TestLinkedStagingArea extends AbstractTest
         new LinkedStorageSchema().create_(dbcw.getConnection().createStatement(), dbcw);
 
         lsa = new LinkedStagingArea(lrm, lsadb, factFile,
-                sched, new CoreExponentialRetry(sched), tm, tokenManager,
+                sched, tm, tokenManager,
                 mock(IgnoreList.class), revProvider, mock(RockLog.class));
 
         LinkerRoot lr = mock(LinkerRoot.class);
@@ -209,6 +209,17 @@ public class TestLinkedStagingArea extends AbstractTest
         lsa.start_();
 
         verify(staged).deleteIgnoreErrorRecursively();
+        assertStagingDatabaseEmpty();
+    }
+
+    private void assertStagingDatabaseEmpty() throws SQLException
+    {
+        IDBIterator<StagedFolder> it = lsadb.listEntries_(0);
+        try {
+            assertFalse(it.next_());
+        } finally {
+            it.close_();
+        }
     }
 
     @Test
@@ -220,6 +231,7 @@ public class TestLinkedStagingArea extends AbstractTest
         lsa.start_();
 
         verify(staged, times(2)).deleteIgnoreErrorRecursively();
+        assertStagingDatabaseEmpty();
     }
 
     @Test
@@ -235,6 +247,7 @@ public class TestLinkedStagingArea extends AbstractTest
         verify(rf, times(2)).save_();
         verify(bar).deleteIgnoreError();
         verify(staged).deleteIgnoreError();
+        assertStagingDatabaseEmpty();
     }
 
     @Test
@@ -261,5 +274,6 @@ public class TestLinkedStagingArea extends AbstractTest
         verify(rf, times(4)).save_();
         verify(bar, times(2)).deleteIgnoreError();
         verify(staged, times(2)).deleteIgnoreError();
+        assertStagingDatabaseEmpty();
     }
 }

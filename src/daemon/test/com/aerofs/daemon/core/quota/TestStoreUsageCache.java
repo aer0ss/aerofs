@@ -73,7 +73,7 @@ public class TestStoreUsageCache extends AbstractTest
         mockDSGetBytesUsed(456);
         assertEquals(suc.getBytesUsed_(sidx), 456);
 
-        listener.objectContentDeleted_(new SOKID(sidx, OID.generate(), KIndex.MASTER), null, null);
+        listener.objectContentDeleted_(new SOKID(sidx, OID.generate(), KIndex.MASTER), null);
         mockDSGetBytesUsed(789);
         assertEquals(suc.getBytesUsed_(sidx), 789);
 

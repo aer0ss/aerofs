@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.phy.linked.db.LinkedStagingAreaDatabase;
@@ -17,6 +16,8 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.lib.CleanupScheduler;
+import com.aerofs.daemon.lib.CleanupScheduler.CleanupHandler;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -25,12 +26,8 @@ import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.sched.ExponentialRetry;
-import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
-import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -38,7 +35,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.concurrent.Callable;
 
 /**
  * To implement efficient atomic deletion of large object tree in LinkedStorage we introduce the
@@ -52,45 +48,31 @@ import java.util.concurrent.Callable;
  * was specified at the time the folder was staged, files will be moved to the appropriate location
  * in sync history, otherwise they will be discarded.
  */
-public class LinkedStagingArea implements IStartable
+public class LinkedStagingArea implements IStartable, CleanupHandler
 {
     private final static Logger l = Loggers.getLogger(LinkedStagingArea.class);
 
+    private final CleanupScheduler _sas;
     private final LinkerRootMap _lrm;
     private final LinkedStagingAreaDatabase _sadb;
     private final InjectableFile.Factory _factFile;
-    private final Scheduler _sched;
-    private final ExponentialRetry _er;
     private final TransManager _tm;
     private final TokenManager _tokenManager;
     private final IgnoreList _il;
     private final LinkedRevProvider _revProvider;
     private final RockLog _rl;
 
-    private final AbstractEBSelfHandling _ev = new AbstractEBSelfHandling() {
-        @Override
-        public void handle_()
-        {
-            if (_processing) return;
-            processStagedFoldersWithExponentialRetry_();
-        }
-    };
-
-    // sync on core lock
-    private boolean _processing;
-
     @Inject
     public LinkedStagingArea(LinkerRootMap lrm,
             LinkedStagingAreaDatabase sadb, InjectableFile.Factory factFile,
-            CoreScheduler sched, CoreExponentialRetry cer, TransManager tm,
+            CoreScheduler sched, TransManager tm,
             TokenManager tokenManager, IgnoreList il, LinkedRevProvider revProvider,
             RockLog rl)
     {
+        _sas = new CleanupScheduler(this, sched);
         _lrm = lrm;
         _sadb = sadb;
         _factFile = factFile;
-        _sched = sched;
-        _er = cer;
         _tm = tm;
         _tokenManager = tokenManager;
         _il = il;
@@ -99,9 +81,15 @@ public class LinkedStagingArea implements IStartable
     }
 
     @Override
+    public String name()
+    {
+        return "phy-staging";
+    }
+
+    @Override
     public void start_()
     {
-        _sched.schedule(_ev, 0);
+        _sas.schedule_();
     }
 
     /**
@@ -128,8 +116,7 @@ public class LinkedStagingArea implements IStartable
             @Override
             public void committed_()
             {
-                if (_processing) return;
-                _sched.schedule(_ev, 0);
+                _sas.schedule_();
                 l.debug("scheduled processing of staging area");
             }
 
@@ -160,21 +147,9 @@ public class LinkedStagingArea implements IStartable
                 Util.join(_lrm.auxRoot_(sid), AuxFolder.STAGING_AREA._name, Long.toHexString(id)));
     }
 
-    private void processStagedFoldersWithExponentialRetry_()
+    @Override
+    public boolean process_() throws Exception
     {
-        _er.retry("phy-staging", new Callable<Void>() {
-            @Override
-            public Void call() throws Exception
-            {
-                if (!_processing) processStagedFolders_();
-                return null;
-            }
-        });
-    }
-
-    private void processStagedFolders_() throws Exception
-    {
-        _processing = true;
         Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "psa");
         try {
             StagedFolder f;
@@ -190,12 +165,12 @@ public class LinkedStagingArea implements IStartable
             }
             if (!ok) {
                 l.info("deferred processing of staging area");
-                throw new ExRetryLater("staged folders remain");
+                return true;
             }
         } finally {
-            _processing = false;
             tk.reclaim_();
         }
+        return false;
     }
 
     private @Nullable StagedFolder nextStagedFolder_(long lastId) throws SQLException

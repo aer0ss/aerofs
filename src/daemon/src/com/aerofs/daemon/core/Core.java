@@ -7,6 +7,7 @@ import com.aerofs.daemon.core.activity.ClientAuditEventReporter;
 import com.aerofs.daemon.core.charlie.CharlieClient;
 import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.db.TamperingDetection;
+import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.first_launch.FirstLaunch;
 import com.aerofs.daemon.core.health_check.HealthCheckService;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
@@ -63,6 +64,7 @@ public class Core implements IModule
     private final ClientAuditEventReporter _caer;
     private final DaemonLaunchTasks _dlts;
     private final IQuotaEnforcement _quota;
+    private final LogicalStagingArea _sa;
 
     @Inject
     public Core(
@@ -91,7 +93,8 @@ public class Core implements IModule
             HealthCheckService hcs,
             ClientAuditEventReporter caer,
             IQuotaEnforcement quota,
-            DaemonLaunchTasks dlts)
+            DaemonLaunchTasks dlts,
+            LogicalStagingArea sa)
     {
         _imce2core = imce.imce();
         _fl = fl;
@@ -119,6 +122,7 @@ public class Core implements IModule
         _caer = caer;
         _dlts = dlts;
         _quota = quota;
+        _sa = sa;
     }
 
     @Override
@@ -257,6 +261,7 @@ public class Core implements IModule
 
         // rest of the system
 
+        _sa.start_();
         _ps.start_();
         _linker.start_();
         _vk.start();

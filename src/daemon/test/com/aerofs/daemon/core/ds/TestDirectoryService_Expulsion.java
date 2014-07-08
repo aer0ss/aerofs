@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
@@ -61,13 +60,14 @@ public class TestDirectoryService_Expulsion extends AbstractTest
         when(sss.getUserRoot_()).thenReturn(sidx);
 
         when(sm.get_(sid)).thenReturn(sidx);
+        when(sm.getNullable_(sid)).thenReturn(sidx);
         when(sm.get_(sidx)).thenReturn(sid);
+        when(sm.getNullable_(sidx)).thenReturn(sid);
 
         final AbstractPathResolver pr = new SingleuserPathResolver(sss, ds, sm, sm);
 
         ds.inject_(mdb, mock(MapAlias2Target.class), mock(TransManager.class),
-                mock(IMapSID2SIndex.class),
-                mock(StoreDeletionOperators.class), pr);
+                sm, sm, mock(StoreDeletionOperators.class), pr);
     }
 
     @After

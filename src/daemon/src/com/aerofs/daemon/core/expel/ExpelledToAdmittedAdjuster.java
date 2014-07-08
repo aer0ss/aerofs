@@ -21,16 +21,18 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     private final ImmigrantDetector _imd;
     private final Expulsion _expulsion;
     private final StoreCreator _sc;
+    private final LogicalStagingArea _sa;
 
     @Inject
     public ExpelledToAdmittedAdjuster(StoreCreator sc, Expulsion expulsion, ImmigrantDetector imd,
-            DirectoryService ds, IPhysicalStorage ps)
+            DirectoryService ds, IPhysicalStorage ps, LogicalStagingArea sa)
     {
         _sc = sc;
         _expulsion = expulsion;
         _imd = imd;
         _ds = ds;
         _ps = ps;
+        _sa = sa;
     }
 
     @Override
@@ -43,6 +45,8 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         // mightily confusing
         ResolvedPath p = _ds.resolve_(soidRoot);
 
+        // FIXME: ugh! nasty immigration business down here
+        // unfortunately it is far from trivial to refactor
         _ds.walk_(soidRoot, p, new ObjectWalkerAdapter<ResolvedPath>() {
             @Override
             public ResolvedPath prefixWalk_(ResolvedPath parentPath, OA oa)
@@ -54,6 +58,11 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                 // skip the current node and its children if the effective state of the current
                 // object doesn't change
                 if (oa.isSelfExpelled()) return null;
+
+                _sa.ensureClean_(path, t);
+
+                // NB: MUST refresh OA in case the staging area had to clean things up
+                oa = _ds.getOA_(oa.soid());
 
                 switch (oa.type()) {
                 case FILE:

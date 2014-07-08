@@ -1,7 +1,9 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Set;
+import java.util.SortedMap;
 
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.CA;
@@ -17,6 +19,7 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
@@ -26,6 +29,7 @@ import com.aerofs.testlib.AbstractTest;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -79,14 +83,15 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         when(ds.getOANullable_(eq(soid))).thenReturn(oa);
         when(ds.getAliasedOANullable_(eq(soid))).thenReturn(oa);
         when(oa.name()).thenReturn("name");
+        SortedMap<KIndex, CA> cas = Maps.newTreeMap();
         if (flag == ObjectFlag.NO_CONTENT) {
             when(oa.isFile()).thenReturn(true);
-            when(oa.caMasterNullable()).thenReturn(null);
         } else {
             CA ca = mock(CA.class);
-            when(oa.caMasterNullable()).thenReturn(ca);
+            cas.put(KIndex.MASTER, ca);
             when(rh.isNonRepresentable_(oa)).thenReturn(flag == ObjectFlag.NRO);
         }
+        when(oa.casNoExpulsionCheck()).thenReturn(cas);
         return soid;
     }
 

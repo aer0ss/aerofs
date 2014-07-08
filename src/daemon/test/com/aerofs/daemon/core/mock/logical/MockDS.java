@@ -13,12 +13,14 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -36,6 +38,7 @@ import org.mockito.stubbing.Answer;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,6 +80,9 @@ public class MockDS
     private int _nextSidx;
     private final SID _rootSID;
 
+    private final Map<SIndex, SIndex> _parentStore = Maps.newHashMap();
+    private final Map<SIndex, Set<SIndex>> _childStores = Maps.newHashMap();
+
     private final Map<SID, MockDSRoot> _roots = Maps.newHashMap();
 
     public MockDS(SID rootSID, DirectoryService ds) throws  Exception
@@ -86,6 +92,12 @@ public class MockDS
 
     public MockDS(SID rootSID, DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
             @Nullable IMapSIndex2SID sidx2sid) throws  Exception
+    {
+        this(rootSID, ds, sid2sidx, sidx2sid, null);
+    }
+
+    public MockDS(SID rootSID, DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
+            @Nullable IMapSIndex2SID sidx2sid, @Nullable IStores  stores) throws  Exception
     {
         _ds = ds;
         _sid2sidx = sid2sidx;
@@ -149,6 +161,32 @@ public class MockDS
                 };
             }
         });
+
+        if (stores != null) {
+            when(stores.getAll_()).thenAnswer(new Answer<Object>() {
+                @Override
+                public Object answer(InvocationOnMock invocation)
+                {
+                    return _childStores.keySet();
+                }
+            });
+            when(stores.getChildren_(any(SIndex.class))).thenAnswer(new Answer<Object>() {
+                @Override
+                public Object answer(InvocationOnMock invocation)
+                {
+                    return _childStores.get((SIndex)invocation.getArguments()[0]);
+                }
+            });
+            when(stores.getParents_(any(SIndex.class))).thenAnswer(new Answer<Object>() {
+                @Override
+                public Object answer(InvocationOnMock invocation)
+                {
+                    SIndex sidx = (SIndex)invocation.getArguments()[0];
+                    SIndex parent = _parentStore.get(sidx);
+                    return parent != null ? Collections.singleton(parent) : Collections.emptySet();
+                }
+            });
+        }
     }
 
     public SOID resolve(Path path)
@@ -176,6 +214,8 @@ public class MockDS
      */
     private void mockSIDMap(SID sid, SIndex sidx) throws Exception
     {
+        _childStores.put(sidx, Sets.<SIndex>newHashSet());
+
         if (_sid2sidx != null) {
             when(_sid2sidx.getNullable_(sid)).thenReturn(sidx);
             when(_sid2sidx.getThrows_(sid)).thenReturn(sidx);
@@ -238,6 +278,7 @@ public class MockDS
 
             when(_ds.getOA_(eq(_soid))).thenReturn(_oa);
             when(_ds.getOANullable_(eq(_soid))).thenReturn(_oa);
+            when(_ds.getOANullableNoFilter_(eq(_soid))).thenReturn(_oa);
             when(_ds.getAliasedOANullable_(eq(_soid))).thenReturn(_oa);
 
             // The path of a root object should be resolved into the anchor's SOID. So we skip
@@ -378,64 +419,17 @@ public class MockDS
             when(_oa.isFile()).thenReturn(true);
             when(_oa.isDir()).thenReturn(false);
             when(_oa.isAnchor()).thenReturn(false);
-            when(_oa.isDirOrAnchor()).thenReturn(false);
 
-            if (_oa.isExpelled() || branches == 0) {
-                when(_oa.caMaster()).thenThrow(new AssertionError());
-                when(_oa.caMasterNullable()).thenReturn(null);
-                when(_oa.caMasterThrows()).thenThrow(new ExNotFound());
-
-                when(_oa.ca(any(KIndex.class))).thenThrow(new AssertionError());
-                when(_oa.caNullable(any(KIndex.class))).thenReturn(null);
-                when(_oa.caThrows(any(KIndex.class))).thenThrow(new ExNotFound());
-            } else {
+            if (!_oa.isExpelled() && branches > 0) {
                 // add CAs
                 int kMaster = KIndex.MASTER.getInt();
                 for (int i = kMaster; i < kMaster + branches; ++i) {
                     CA ca = mock(CA.class);
                     cas.put(new KIndex(i), ca);
                 }
-
-                // special mocking for master
-                CA caMaster = cas.get(KIndex.MASTER);
-                when(_oa.caMaster()).thenReturn(caMaster);
-                when(_oa.caMasterNullable()).thenReturn(caMaster);
-                when(_oa.caMasterThrows()).thenReturn(caMaster);
-
-                // generic mocking
-                when(_oa.ca(any(KIndex.class))).thenAnswer(new Answer<Object>()
-                {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable
-                    {
-                        KIndex kidx = (KIndex)invocation.getArguments()[0];
-                        CA ca = cas.get(kidx);
-                        assert ca != null;
-                        return ca;
-                    }
-                });
-                when(_oa.caNullable(any(KIndex.class))).thenAnswer(new Answer<Object>()
-                {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable
-                    {
-                        KIndex kidx = (KIndex)invocation.getArguments()[0];
-                        return cas.get(kidx);
-                    }
-                });
-                when(_oa.caThrows(any(KIndex.class))).thenAnswer(new Answer<Object>()
-                {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable
-                    {
-                        KIndex kidx = (KIndex)invocation.getArguments()[0];
-                        CA ca = cas.get(kidx);
-                        if (ca != null) return ca;
-                        throw new ExNotFound(_soid + " branch " + kidx);
-                    }
-                });
+                when(_oa.fidNoExpulsionCheck()).thenReturn(new FID(UniqueID.generate().getBytes()));
             }
-            when(_oa.cas()).thenReturn(cas);
+            when(_oa.casNoExpulsionCheck()).thenReturn(cas);
         }
 
         public MockDSFile caMaster(long length, long mtime)
@@ -502,6 +496,10 @@ public class MockDS
                             return o != null ? o.soid().oid() : null;
                         }
                     });
+
+            if (!_oa.isExpelled() && !_soid.oid().isRoot()) {
+                when(_oa.fidNoExpulsionCheck()).thenReturn(new FID(UniqueID.generate().getBytes()));
+            }
         }
 
         @Override
@@ -666,6 +664,10 @@ public class MockDS
 
             // SIDMap mocking
             mockSIDMap(SID.anchorOID2storeSID(_oa.soid().oid()), sidx);
+            if (!expelled) {
+                _parentStore.put(sidx, _oa.soid().sidx());
+                _childStores.get(_oa.soid().sidx()).add(sidx);
+            }
 
             // create root dir
             _root = new MockDSDir(OA.ROOT_DIR_NAME, this, new SOID(sidx, OID.ROOT));

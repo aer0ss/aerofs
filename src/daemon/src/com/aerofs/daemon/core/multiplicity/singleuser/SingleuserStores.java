@@ -17,7 +17,6 @@ import com.google.common.collect.Iterables;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Set;
@@ -47,7 +46,7 @@ public class SingleuserStores extends Stores
     }
 
     @Override
-    public void init_() throws SQLException, IOException
+    public void init_() throws Exception
     {
         super.init_();
 
@@ -56,7 +55,7 @@ public class SingleuserStores extends Stores
         setUserRootStore_();
     }
 
-    private void createRootStore_() throws SQLException, IOException
+    private void createRootStore_() throws Exception
     {
         Trans t = _tm.begin_();
         try {

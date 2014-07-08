@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.store;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Set;
@@ -8,26 +7,20 @@ import java.util.Set;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
-import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class StoreDeleter
 {
@@ -39,10 +32,11 @@ public class StoreDeleter
     private final IMapSIndex2SID _sidx2sid;
     private final StoreDeletionOperators _operators;
     private final LocalACL _lacl;
+    private final LogicalStagingArea _sa;
 
     @Inject
     public StoreDeleter(IPhysicalStorage ps, DirectoryService ds, IMapSIndex2SID sidx2sid,
-            IStores ss, LocalACL lacl, StoreDeletionOperators operators)
+            IStores ss, LocalACL lacl, StoreDeletionOperators operators, LogicalStagingArea sa)
     {
         _ss = ss;
         _ps = ps;
@@ -50,6 +44,7 @@ public class StoreDeleter
         _lacl = lacl;
         _sidx2sid = sidx2sid;
         _operators = operators;
+        _sa  = sa;
     }
 
     /**
@@ -132,89 +127,17 @@ public class StoreDeleter
             removeParentStoreReference_(sidxChildren.get(i), sidx, pathChildren.get(i), op, t);
         }
 
+        l.info("delete store {} {}", sidx, pathOld);
+
         // delete physical objects under the store. this must be done
         // *after* children stores are deleted, otherwise we cannot delete
         // physical anchors as they are not empty.
-        SOID soidRoot = new SOID(sidx, OID.ROOT);
-        for (OID oidChild : _ds.getChildren_(soidRoot)) {
-            SOID soidChild = new SOID(sidx, oidChild);
-            deletePhysicalObjectsRecursively_(soidChild, pathOld, op, t);
-        }
-
-        delete_(sidx, op, t);
-    }
-
-    private void deletePhysicalObjectsRecursively_(final SOID soidRoot, ResolvedPath pathOldRoot,
-            PhysicalOp requestedOp, final Trans t)
-            throws Exception
-    {
-        OA oa = _ds.getOA_(soidRoot);
-        checkArgument(oa.parent().isRoot());
-        // must use self-expelled and not inherited expelled flag
-        // when deleting a store as a result of an anchor deletion
-        // (as opposed to deleting a physical root) the anchor will
-        // be expelled before this code is called so the inherited
-        // expulsion flag would always be true...
-        if (oa.isSelfExpelled()) return;
 
         // atomic recursive deletion of physical objects, if applicable
-        final PhysicalOp op = _ps.deleteFolderRecursively_(pathOldRoot, requestedOp, t);
+        _ps.deleteFolderRecursively_(pathOld, op, t);
 
-        _ds.walk_(soidRoot, pathOldRoot, new IObjectWalker<ResolvedPath>() {
-            @Override
-            public ResolvedPath prefixWalk_(ResolvedPath pathOldParent, OA oa)
-            {
-                l.debug("del {} {}", pathOldParent, oa);
-                if (oa.type() != Type.DIR) {
-                    return null;
-                } else if (oa.isSelfExpelled()) { // NB: getting there implies parent not expelled...
-                    return null;
-                } else if (oa.soid().oid().isRoot()) {
-                    // should not cross store boundary here
-                    // if a sub-store is anchored in the store being deleted
-                    // either it will have been deleted as a result of its
-                    // ref count dropping to zero or it should not actually
-                    // be deleted
-                    return null;
-                } else {
-                    return pathOldParent.join(oa);
-                }
-            }
+        _sa.stageCleanup_(new SOID(sidx, OID.ROOT), pathOld, t);
 
-            @Override
-            public void postfixWalk_(ResolvedPath pathOldParent, OA oa)
-                    throws IOException, SQLException
-            {
-                ResolvedPath path = pathOldParent.join(oa);
-                l.info("del {}", ObfuscatingFormatters.obfuscatePath(path));
-                switch (oa.type()) {
-                case DIR:
-                case ANCHOR:
-                    if (!oa.isSelfExpelled()) {  // NB: getting there implies parent not expelled
-                        _ps.newFolder_(path).delete_(op, t);
-                    }
-                    break;
-                case FILE:
-                    for (KIndex kidx : oa.cas().keySet()) {
-                        _ps.newFile_(path, kidx).delete_(op, t);
-                    }
-                    break;
-                default:
-                    assert false;
-                }
-            }
-        });
-    }
-
-    private void delete_(final SIndex sidx, PhysicalOp op, Trans t)
-            throws SQLException, IOException
-    {
-        l.debug("delete store " + sidx);
-
-        // MJ thinks (but is unsure whether) we have to do physical store deletion first, before
-        // running other deletion operators
-        _ps.deleteStore_(sidx, _sidx2sid.get_(sidx), op, t);
-
-        _operators.runAll_(sidx, t);
+        _operators.runAllImmediate_(sidx, t);
     }
 }

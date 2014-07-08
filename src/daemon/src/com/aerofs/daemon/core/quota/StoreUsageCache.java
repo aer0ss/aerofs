@@ -38,7 +38,7 @@ class StoreUsageCache
             public void objectContentCreated_(SOKID obj, Path path, Trans t) { invalidate_(obj); }
 
             @Override
-            public void objectContentDeleted_(SOKID obj, Path path, Trans t) { invalidate_(obj); }
+            public void objectContentDeleted_(SOKID obj, Trans t) { invalidate_(obj); }
 
             @Override
             public void objectContentModified_(SOKID obj, Path path, Trans t) { invalidate_(obj); }

@@ -26,6 +26,7 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ProgressIndicators;
@@ -229,7 +230,7 @@ class BlockStorage implements IPhysicalStorage
     {
         FileInfo oldFile = _bsdb.getFileInfo_(newFile._id);
 
-        if (_storagePolicy.useHistory()) {
+        if (_tlUseHistory.get(t)) {
             _bsdb.preserveFileInfo(newPath, oldFile, t);
         } else if (FileInfo.exists(oldFile)) {
             derefBlocks_(oldFile._chunks, t);
@@ -253,11 +254,9 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
-    public void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t)
+    public void deleteStore_(SID physicalRoot, SIndex sidx, SID sid, Trans t)
             throws IOException, SQLException
     {
-        if (op != PhysicalOp.APPLY) return;
-
         /**
          * 1. find all indices that correspond to internal names referring to the given sidx
          * 2. remove file info from db and deref blocks accordingly
@@ -281,8 +280,21 @@ class BlockStorage implements IPhysicalStorage
     @Override
     public void discardRevForTrans_(Trans t)
     {
-        // TODO: implement
-        l.warn("discardRevForTrans not supported yet");
+        _tlUseHistory.set(t, false);
+    }
+
+    private final TransLocal<Boolean> _tlUseHistory = new TransLocal<Boolean>() {
+        @Override
+        protected Boolean initialValue(Trans t)
+        {
+            return _storagePolicy.useHistory();
+        }
+    };
+
+    @Override
+    public boolean isDiscardingRevForTrans_(Trans t)
+    {
+        return !_tlUseHistory.get(t);
     }
 
     @Override
@@ -293,11 +305,33 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
-    public PhysicalOp deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+    public void deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
             throws SQLException, IOException
     {
-        return op;
     }
+
+    @Override
+    public void scrub_(SOID soid, @Nonnull Path historyPath, Trans t)
+            throws SQLException, IOException
+    {
+        // TODO:
+    }
+
+    private final TransLocal<Boolean> _tlScheduleCleaner = new TransLocal<Boolean>()  {
+        @Override
+        protected Boolean initialValue(Trans t)
+        {
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committed_()
+                {
+                    scheduleBlockCleaner();
+                }
+            });
+            return false;
+        }
+    };
+
 
     /**
      * TODO: cleaning blocks is currently ad-hoc - improve this model.
@@ -318,33 +352,34 @@ class BlockStorage implements IPhysicalStorage
      */
     private void scheduleBlockCleaner_(Trans t)
     {
+        // TODO: ensure a single listener is added per trans
+        if (!_tlScheduleCleaner.get(t)) {
+            _tlScheduleCleaner.set(t, true);
+        }
+    }
+
+    private void scheduleBlockCleaner()
+    {
         // TODO: cleanup hist dir info?
         // TODO: cleanup index?
         // pro: reduce disk usage for deleted stores
         // con: crazy index increase when store goes back and forth...
 
-        // only cleanup backend if the transaction is sucessfully committed
-        t.addListener_(new AbstractTransListener() {
+        /**
+         * Removing dead blocks require new DB transactions and releasing core lock around
+         * backend operations so it cannot be done directly
+         */
+        _sched.schedule(new AbstractEBSelfHandling() {
             @Override
-            public void committed_()
+            public void handle_()
             {
-                /**
-                 * Removing dead blocks require new DB transactions and releasing core lock around
-                 * backend operations so it cannot be done directly
-                 */
-                _sched.schedule(new AbstractEBSelfHandling() {
-                    @Override
-                    public void handle_()
-                    {
-                        try {
-                            removeDeadBlocks_();
-                        } catch (Exception e) {
-                            l.warn("Failed to cleanup dead blocks: " + Util.e(e));
-                        }
-                    }
-                }, 0);
+                try {
+                    removeDeadBlocks_();
+                } catch (Exception e) {
+                    l.warn("Failed to cleanup dead blocks: " + Util.e(e));
+                }
             }
-        });
+        }, 0);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

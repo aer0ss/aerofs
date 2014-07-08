@@ -121,8 +121,6 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
 
     private ActivityEntry setEntryFields_(SOID soid, int type, Path path, Trans t)
     {
-        assert path != null;
-
         ActivityEntry en = getEntry_(soid, t);
         en._type |= type;
 
@@ -207,11 +205,8 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
     }
 
     @Override
-    public void objectContentDeleted_(SOKID sokid, Path path, Trans t) throws SQLException
+    public void objectContentDeleted_(SOKID sokid, Trans t) throws SQLException
     {
-        // TODO(huguesb): handle conflict branches properly in activity log
-        // NOTE: ww says it's not worth the engineering effort at this time (11/12)
-        setEntryFields_(sokid.soid(), MODIFICATION_VALUE, path, t);
     }
 
     @Override

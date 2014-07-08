@@ -182,6 +182,12 @@ public class CoreSchema implements ISchema
             C_EX_SIDX        = "e_s",       // SIndex
             C_EX_OID         = "e_o",       // OID
 
+            // Logical Staging Area
+            T_LSA               = "lsa",
+            C_LSA_SIDX          = "lsa_s",
+            C_LSA_OID           = "lsa_o",
+            C_LSA_HISTORY_PATH  = "lsa_p",  // path for sync history, empty if no history is kept
+
             // ACL Table
             T_ACL            = "a",
             C_ACL_SIDX       = "a_i",       // SIndex
@@ -537,6 +543,7 @@ public class CoreSchema implements ISchema
         createUpdateQueueTable(s, dbcw);
         createUnlinkedRootTable(s, dbcw);
         createStoreContributorsTable(s, dbcw);
+        createLogicalStagingArea(s, dbcw);
     }
 
     public static void createOATableAndIndices_(Statement s, IDBCW dbcw, InjectableDriver dr)
@@ -689,5 +696,15 @@ public class CoreSchema implements ISchema
                 "create index " + T_CS + "0 on "
                     + T_CS + "(" + C_CS_SIDX + "," + C_CS_CS + "," + C_CS_OID + ","
                     + C_CS_CID + ")");
+    }
+
+    public static void createLogicalStagingArea(Statement s, IDBCW dbcw) throws SQLException
+    {
+        s.executeUpdate("create table " + T_LSA + "("
+                + C_LSA_SIDX + " integer not null,"
+                + C_LSA_OID + dbcw.uniqueIdType() + "not null,"
+                + C_LSA_HISTORY_PATH + " text not null,"
+                + "primary key(" + C_LSA_SIDX + "," + C_LSA_OID + ")"
+                + ")");
     }
 }

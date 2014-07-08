@@ -3,21 +3,18 @@ package com.aerofs.daemon.core.store;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
-
-import java.io.IOException;
-import java.sql.SQLException;
 
 public class StoreCreator
 {
@@ -29,10 +26,11 @@ public class StoreCreator
     private ImmigrantVersionControl _ivc;
     private IMetaDatabase _mdb;
     private IMapSID2SIndex _sid2sidx;
+    private LogicalStagingArea _sa;
 
     @Inject
     public void inject_(NativeVersionControl nvc, ImmigrantVersionControl ivc, IMetaDatabase mdb,
-            IMapSID2SIndex sid2sidx, IStores ss, IPhysicalStorage ps)
+            IMapSID2SIndex sid2sidx, IStores ss, IPhysicalStorage ps, LogicalStagingArea sa)
     {
         _ss = ss;
         _nvc = nvc;
@@ -40,13 +38,14 @@ public class StoreCreator
         _mdb = mdb;
         _sid2sidx = sid2sidx;
         _ps = ps;
+        _sa = sa;
     }
 
     /**
      * Add {@code sidxParent} as {@code sid}'s parent. Create the child store if it doesn't exist.
      */
     public void addParentStoreReference_(SID sid, SIndex sidxParent, String name, Trans t)
-            throws ExAlreadyExist, SQLException, IOException
+            throws Exception
     {
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) {
@@ -67,7 +66,7 @@ public class StoreCreator
      * Create a store with no parent. See comments in IStores for detail
      */
     public SIndex createRootStore_(SID sid, String name, Trans t)
-            throws SQLException, IOException, ExAlreadyExist
+            throws Exception
     {
         return createStoreImpl_(sid, name, t);
     }
@@ -76,7 +75,7 @@ public class StoreCreator
      * Create a store.
      */
     private SIndex createStoreImpl_(SID sid, String name, Trans t)
-            throws SQLException, ExAlreadyExist, IOException
+            throws Exception
     {
         // Note that during store creation, all in-memory data structures may not be fully set up
         // for the new store yet. Therefore, functions involved in store creation might not be able
@@ -86,7 +85,10 @@ public class StoreCreator
 
         SIndex sidx = _sid2sidx.getAbsent_(sid, t);
 
-        l.debug("create store {}", sidx);
+        // ensure any staged deletion completes
+        _sa.ensureStoreClean_(sidx, t);
+
+        l.info("create store {} {}", sidx, sid);
 
         // create root directory; its parent is itself
         _mdb.insertOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, OA.Type.DIR, 0, t);

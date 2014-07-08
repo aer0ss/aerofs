@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.aerofs.base.ex.ExNotFound;
@@ -13,6 +12,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
@@ -38,7 +38,10 @@ public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
     public static List<OA> getChildrenAttrImpl_(SOID soid, DirectoryService ds)
             throws SQLException, ExNotDir, ExNotFound
     {
-        ArrayList<OA> oas = new ArrayList<OA>();
+        OA oa = ds.getOAThrows_(soid);
+        if (!oa.isDir()) throw new ExNotDir();
+
+        List<OA> oas = Lists.newArrayList();
         for (OID oidChild : ds.getChildren_(soid)) {
             SOID soidChild = new SOID(soid.sidx(), oidChild);
             if (oidChild.isTrash()) continue;

@@ -25,8 +25,8 @@ public interface IDirectoryServiceListener
             Path pathFrom, Path pathTo, Trans t) throws SQLException;
 
     void objectContentCreated_(SOKID obj, Path path, Trans t) throws SQLException;
-    void objectContentDeleted_(SOKID obj, Path path, Trans t) throws SQLException;
     void objectContentModified_(SOKID obj, Path path, Trans t) throws SQLException;
+    void objectContentDeleted_(SOKID obj, Trans t) throws SQLException;
 
     /**
      * Called from deleteOA_ *after* the object is removed from the DB

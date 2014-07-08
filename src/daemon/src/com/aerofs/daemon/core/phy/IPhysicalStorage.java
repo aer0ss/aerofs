@@ -8,6 +8,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -15,6 +16,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.ImmutableCollection;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -57,10 +59,11 @@ public interface IPhysicalStorage extends IStartable
      * Perform necessary operations on the physical storage for deleting a store. The implementation
      * should at least delete prefix files belonging to the store
      *
-     * NB: No assumptions should be made about pathes. All physical objects in the store are deleted
-     * prior to this method being called
+     * NB: This is called *after* store cleanup
+     *    - All objects have been deleted/scrubbed
+     *    - The SIndex is *not* admitted (hence not part of the store hierarchy)
      */
-    void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t) throws IOException, SQLException;
+    void deleteStore_(SID physicalRoot, SIndex sidx, SID sid, Trans t) throws IOException, SQLException;
 
     /**
      * Delete prefix associated with a given SOKID, if any
@@ -74,6 +77,11 @@ public interface IPhysicalStorage extends IStartable
      * deleted (instead of simply being moved to rev) when the transaction is successfully committed
      */
     void discardRevForTrans_(Trans t);
+
+    /**
+     * @return if true, files deleted within the given transaction are not kept in sync history
+     */
+    boolean isDiscardingRevForTrans_(Trans t);
 
     public static class NonRepresentableObject
     {
@@ -98,9 +106,21 @@ public interface IPhysicalStorage extends IStartable
      * For incremental expulsion, storage backends that can be accessed without going
      * through the daemon (i.e. LINKED storage) MUST offer a way to recursively delete
      * folders in a way that *appears* atomic to the outside world.
-     *
-     * @return physical operation to use for incremental cleanup
      */
-    PhysicalOp deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+    void deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+            throws SQLException, IOException;
+
+    /**
+     * For storage backends that do not duplicate path information for all objects,
+     * {@link #deleteFolderRecursively_} is not sufficient to perform a thorough cleanup,
+     * hence the existennce of this method.
+     *
+     * Specifically:
+     *   - BlockStorage maintains NO path->object mapping
+     *   - LinkedStorage does not maintain path->oject mappping for conflicts and NROs
+     *
+     * @param historyPath path under which to preserve old versions. If empty, files are discarded
+     */
+    void scrub_(SOID soid, @Nonnull Path historyPath, Trans t)
             throws SQLException, IOException;
 }

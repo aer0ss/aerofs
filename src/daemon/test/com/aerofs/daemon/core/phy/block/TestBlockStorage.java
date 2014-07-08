@@ -945,7 +945,7 @@ public class TestBlockStorage extends AbstractBlockTest
             }
         }).when(t).addListener_(any(ITransListener.class));
 
-        bs.deleteStore_(sidx, sid, PhysicalOp.APPLY, t);
+        bs.deleteStore_(sid, sidx, sid, t);
 
         // check that block was deref'ed
         Assert.assertEquals(0, bsdb.getBlockCount_(b._key));

@@ -62,7 +62,7 @@ public class TestUtilCore
         switch (type) {
             case FILE:
                 when(oa.isFile()).thenReturn(true);
-                when(oa.cas()).then(RETURNS_MOCKS);
+                when(oa.casNoExpulsionCheck()).thenReturn(Maps.<KIndex, CA>newTreeMap());
                 break;
             case DIR:
                 // don't use .then(RETURNS_MOCKS) here so the client can verify
@@ -88,20 +88,6 @@ public class TestUtilCore
         }
     }
 
-    public static CA mockCA(OA oa, KIndex kidx, long len, long mtime)
-            throws ExNotFound
-    {
-        CA ca = mock(CA.class);
-
-        when(ca.length()).thenReturn(len);
-        when(ca.mtime()).thenReturn(mtime);
-        when(oa.ca(kidx)).thenReturn(ca);
-        when(oa.caNullable(kidx)).thenReturn(ca);
-        when(oa.caThrows(kidx)).thenReturn(ca);
-
-        return ca;
-    }
-
     /**
      * @param nvc non-null to mock local versions for those branches
      */
@@ -118,7 +104,9 @@ public class TestUtilCore
             SOCKID k = new SOCKID(oa.soid(), CID.CONTENT, kidx);
 
             // mock CA
-            CA ca = mockCA(oa, kidx, len, mtime);
+            CA ca = mock(CA.class);
+            when(ca.length()).thenReturn(len);
+            when(ca.mtime()).thenReturn(mtime);
             cas.put(kidx, ca);
 
             if (nvc != null) {
@@ -132,7 +120,7 @@ public class TestUtilCore
             when(nvc.getAllLocalVersions_(new SOCID(oa.soid(), CID.CONTENT))).thenReturn(vAllLocal);
         }
 
-        when(oa.cas()).thenReturn(cas);
+        when(oa.casNoExpulsionCheck()).thenReturn(cas);
     }
 
     public static void mockStore(@Nullable Store s, SID sid, SIndex sidx, SIndex sidxParent,

@@ -7,14 +7,13 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
@@ -32,10 +31,10 @@ import static org.mockito.Mockito.verify;
 public class TestImmigrantCreator extends AbstractTest
 {
     @Mock DirectoryService ds;
-    @Mock IMapSIndex2SID sidx2sid;
     @Mock ObjectDeleter od;
     @Mock ObjectCreator oc;
     @Mock ObjectMover om;
+    @Mock SIDMap sm;
 
     @Mock Trans t;
 
@@ -54,7 +53,7 @@ public class TestImmigrantCreator extends AbstractTest
     @Before
     public void setup() throws Exception
     {
-        mds = new MockDS(rootSID, ds);
+        mds = new MockDS(rootSID, ds, sm, sm);
     }
 
     private void setupMockDS(int branches) throws Exception

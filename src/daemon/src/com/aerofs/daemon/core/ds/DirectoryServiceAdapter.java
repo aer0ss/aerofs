@@ -22,7 +22,7 @@ public class DirectoryServiceAdapter implements IDirectoryServiceListener
             Path pathFrom, Path pathTo, Trans t) throws SQLException {}
     @Override public void objectContentCreated_(SOKID obj, Path path, Trans t)
             throws SQLException {}
-    @Override public void objectContentDeleted_(SOKID obj, Path path, Trans t)
+    @Override public void objectContentDeleted_(SOKID obj, Trans t)
             throws SQLException {}
     @Override public void objectContentModified_(SOKID obj, Path path, Trans t)
             throws SQLException {}

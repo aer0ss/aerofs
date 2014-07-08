@@ -52,7 +52,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
      * over current children)
      */
     public abstract Set<OID> getChildren_(SOID soid)
-            throws SQLException, ExNotDir, ExNotFound;
+            throws SQLException;
 
 
     public abstract OID getChild_(SIndex sidx, OID parent, String name) throws SQLException;
@@ -164,6 +164,20 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     }
 
     /**
+     * DO NOT USE outside of LogicalStagingArea
+     *
+     * To ensure that the use of the staging area does not change externally observable behavior
+     * while still allowing it to be leveraged for incremental cleanup of entire stores we have to
+     * filter out objects lookup.
+     *
+     * If a store is not locally admitted getOANullable_ will return null for any object within
+     * that store, even though the object may still be present in the DB. However, in the staging
+     * area itself we neeed to bypass this filter but we still want to go through DirectoryService
+     * to leverage caching and to trigger listeners as needed.
+     */
+    @Nullable public abstract OA getOANullableNoFilter_(SOID soid) throws SQLException;
+
+    /**
      * @return null if not found.
      */
     @Nullable public abstract OA getOANullable_(SOID soid) throws SQLException;
@@ -220,6 +234,14 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
 
     /**
      * The callback interface for walk_()
+     *
+     * Tread with care when using walk as it may be an expensive operation and there
+     * is currently no way to predict how many object it will touch.
+     *
+     * Also be aware that walking across epxulsion and store boundaries may lead to
+     * unexpected behavior, especially if incremental cleanup is ongoing.
+     *
+     * See {@link com.aerofs.daemon.core.expel.LogicalStagingArea} for details.
      */
     public static interface IObjectWalker<T>
     {
@@ -270,7 +292,10 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     public final <T> void walk_(SOID soid, @Nullable T cookieFromParent, IObjectWalker<T> w)
             throws Exception
     {
-        OA oa = getOAThrows_(soid);
+        // 1. walk_ is used in LogicalStagingArea
+        // 2. other places that walk_ stop at expulsion or store boundary
+        OA oa = getOANullableNoFilter_(soid);
+        if (oa == null) throw new ExNotFound("" + soid);
 
         T ret = w.prefixWalk_(cookieFromParent, oa);
 
@@ -348,12 +373,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
         } else if (k.cid().isMeta()) {
             return true;
         } else {
-            if (oa.isExpelled()) {
-                assert oa.caNullable(k.kidx()) == null;
-                return false;
-            } else {
-                return oa.caNullable(k.kidx()) != null;
-            }
+            return !oa.isExpelled() && oa.caNullable(k.kidx()) != null;
         }
     }
 

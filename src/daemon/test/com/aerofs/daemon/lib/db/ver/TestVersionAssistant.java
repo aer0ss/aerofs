@@ -70,37 +70,12 @@ public class TestVersionAssistant extends AbstractTest
         deleteArbitrarySIndexAndCommit();
     }
 
-    @Test(expected = AssertionError.class)
-    public void shouldAssertOnCommitWhenSameStoreDeletedAndVersionDeletedPermanently()
-        throws Exception
-    {
-        va.versionDeletedPermanently_(socid);
-        deleteSIndexAndCommit(socid.sidx());
-    }
-
-    @Test(expected = AssertionError.class)
-    public void shouldAssertOnCommitWhenSameStoreDeletedAndKMLAdded()
-            throws Exception
-    {
-        va.kmlVersionAdded_(socid);
-        deleteSIndexAndCommit(socid.sidx());
-    }
-
     @Test
     public void shouldNotAssertOnCommitWhenDifferentStoreDeletedAndKMLAdded()
         throws Exception
     {
         va.kmlVersionAdded_(socid);
         deleteArbitrarySIndexAndCommit();
-    }
-
-    @Test(expected = AssertionError.class)
-    public void shouldAssertOnLocalVersionAddedAfterStoreDeleted()
-        throws Exception
-    {
-        va.storeDeleted_(socid.sidx());
-        va.localVersionAdded_(socid);
-        va.committing_(t);
     }
 
     // FIXME This test requires more thorough mocking of VersionAssistant
@@ -111,15 +86,6 @@ public class TestVersionAssistant extends AbstractTest
     {
         va.localVersionAdded_(socid);
         deleteArbitrarySIndexAndCommit();
-    }
-
-    @Test(expected = AssertionError.class)
-    public void shouldAssertOnCommitWhenSameStoreDeletedAndVersionDeleted()
-        throws Exception
-    {
-        va.storeDeleted_(socid.sidx());
-        va.versionDeleted_(socid);
-        va.committing_(t);
     }
 
     @Test
@@ -143,7 +109,6 @@ public class TestVersionAssistant extends AbstractTest
 
     private void deleteSIndexAndCommit(SIndex sidx) throws Exception
     {
-        va.storeDeleted_(sidx);
         va.committing_(t);
     }
 }

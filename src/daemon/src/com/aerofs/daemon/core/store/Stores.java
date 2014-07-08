@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
@@ -55,11 +54,11 @@ public class Stores implements IStores, IStoreDeletionOperator
         _sidx2s = sidx2s;
         _devices = devices;
 
-        sdo.add_(this);
+        sdo.addImmediate_(this);
     }
 
     @Override
-    public void init_() throws SQLException, IOException
+    public void init_() throws Exception
     {
         for (SIndex sidx : _sdb.getAll_()) notifyAddition_(sidx);
     }

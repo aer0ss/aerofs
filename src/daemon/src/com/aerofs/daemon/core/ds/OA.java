@@ -114,19 +114,19 @@ public class OA
     /**
      * @return the attribute of the master branch, null if not present
      */
-    @Nullable public CA caMasterNullable()
+    @Nullable public final CA caMasterNullable()
     {
         return caNullable(KIndex.MASTER);
     }
 
-    @Nonnull public CA caMasterThrows() throws ExNotFound
+    @Nonnull public final CA caMasterThrows() throws ExNotFound
     {
         CA ca = caMasterNullable();
         if (ca == null) throw new ExNotFound(_soid + " master branch");
         return ca;
     }
 
-    @Nonnull public CA caMaster()
+    @Nonnull public final CA caMaster()
     {
         CA ca = caMasterNullable();
         return checkNotNull(ca);
@@ -135,21 +135,20 @@ public class OA
     /**
      * @return the attribute of the branch, null if not present
      */
-    @Nullable public CA caNullable(KIndex kidx)
+    @Nullable public final CA caNullable(KIndex kidx)
     {
-        checkArgument(isFile());
-        assert _cas != null : this;
-        return checkNotNull(_cas, this).get(kidx);
+        checkArgument(!isExpelled());
+        return casNoExpulsionCheck().get(kidx);
     }
 
-    @Nonnull public CA caThrows(KIndex kidx) throws ExNotFound
+    @Nonnull public final CA caThrows(KIndex kidx) throws ExNotFound
     {
         CA ca = caNullable(kidx);
         if (ca == null) throw new ExNotFound(_soid + " branch " + kidx);
         return ca;
     }
 
-    @Nonnull public CA ca(KIndex kidx)
+    @Nonnull public final CA ca(KIndex kidx)
     {
         CA ca = caNullable(kidx);
         return checkNotNull(ca, "%s %s", this, kidx);
@@ -160,7 +159,19 @@ public class OA
      *         Useful for iterating over KIndices in sorted order.
      *         Empty if no branch is present.
      */
-    @Nonnull public SortedMap<KIndex, CA> cas()
+    @Nonnull public final SortedMap<KIndex, CA> cas()
+    {
+        return isExpelled() ? ImmutableSortedMap.<KIndex, CA>of() : casNoExpulsionCheck();
+    }
+
+    /**
+     * DO NOT USE outside of LogicalStagingArea
+     *
+     * To preserve externally observable behavior when doing incremental cleanup of expelled
+     * logical trees, by default we filter out CAs for expelled files. In the logical staging
+     * area we need to bypass that filtering, hence this method.
+     */
+    @Nonnull public SortedMap<KIndex, CA> casNoExpulsionCheck()
     {
         checkArgument(isFile());
         return checkNotNull(_cas, this);
@@ -250,5 +261,17 @@ public class OA
         // so we always return a null FID for expelled objects, even though
         // the DB may still contain a stale FID
         return isExpelled() ? null : _fid;
+    }
+
+    /**
+     * DO NOT USE outside of LogicalStagingArea
+     *
+     * To preserve externally observable behavior when doing incremental cleanup of expelled
+     * logical trees, by default we filter out FID for expelled objects. In the logical staging
+     * area we need to bypass that filtering, hence this method.
+     */
+    @Nullable public FID fidNoExpulsionCheck()
+    {
+        return _fid;
     }
 }

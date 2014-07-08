@@ -86,19 +86,6 @@ public abstract class AbstractTestVersionControl<E extends AbstractTickRow> exte
         }
     }
 
-    @Test
-    public void shouldNotifyVersionAssistantOfStoreDeletion() throws Exception
-    {
-        // This mock is only necessary to avoid a NPE on getTicks return val
-        @SuppressWarnings("unchecked")
-        IDBIterator<E> iter = mock(IDBIterator.class);
-        when(vdb.getMaxTicks_(sidx, cfgLocalDID.get(), Tick.ZERO))
-                .thenReturn(iter);
-
-        vc.deleteStore_(sidx, t);
-        verify(va).storeDeleted_(sidx);
-    }
-
     /**
      * Verify that the *VersionControl correctly adds the tick row to db
      * @throws SQLException

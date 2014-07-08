@@ -57,6 +57,7 @@ public class Expulsion
     private AdmittedToExpelledAdjuster _adjA2E;
     private ExpelledToAdmittedAdjuster _adjE2A;
     private ExpelledToExpelledAdjuster _adjE2E;
+    private LogicalStagingArea _sa;
 
     private final List<IExpulsionListener> _listeners = Lists.newArrayList();
 
@@ -66,7 +67,7 @@ public class Expulsion
     }
 
     @Inject
-    public void inject_(DirectoryService ds, IExpulsionDatabase exdb,
+    public void inject_(DirectoryService ds, IExpulsionDatabase exdb, LogicalStagingArea sa,
             ExpelledToExpelledAdjuster adjE2E, ExpelledToAdmittedAdjuster adjE2A,
             AdmittedToExpelledAdjuster adjA2E, AdmittedToAdmittedAdjuster adjA2A,
             NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s)
@@ -80,6 +81,7 @@ public class Expulsion
         _nvc = nvc;
         _csdb = csdb;
         _sidx2s = sidx2s;
+        _sa = sa;
     }
 
     public void addListener_(IExpulsionListener listener)
@@ -192,6 +194,9 @@ public class Expulsion
             _exdb.deleteExpelledObject_(oaAlias.soid(), t);
             if (target != null) _exdb.insertExpelledObject_(target, t);
         }
+
+        // if the alias was staged, make sure the target is staged
+        _sa.objectAliased_(oaAlias.soid(), target, t);
     }
 
     /**

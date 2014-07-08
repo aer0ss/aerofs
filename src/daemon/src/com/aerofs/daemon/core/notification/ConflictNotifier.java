@@ -13,7 +13,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Lists;
@@ -120,7 +119,13 @@ class ConflictNotifier extends DirectoryServiceAdapter
     public void objectDeleted_(SOID obj, OID parent, Path pathFrom, Trans t) throws SQLException
     {
         OA oa = _ds.getOANullable_(obj);
-        if (oa != null && oa.isFile() && oa.cas().size() > 1) {
+        // Here be dragons: we must use casNoExpulsionCheck() because by the time this method
+        // is called the object is expelled and cas() would always return an empty map.
+        // This entire approach to conflict couting and notification is broken (for instance
+        // the conflict count will lag behind as a result of scalable deletion). There are
+        // ways to address this and a task has been created (ENG-1814) but it is not deemed
+        // high-prio at this time.
+        if (oa != null && oa.isFile() && oa.casNoExpulsionCheck().size() > 1) {
             // when deleting an object with conflict branches, the name will be changed before
             // the conflict branches are deleted, so we need to set the path in the translocal
             // map first to avoid sending notifications for bogus path (i.e. inside the trash)
@@ -139,19 +144,22 @@ class ConflictNotifier extends DirectoryServiceAdapter
     @Override
     public void objectContentCreated_(SOKID sokid, Path path, Trans t) throws SQLException
     {
-        if (!sokid.kidx().equals(KIndex.MASTER)) add(sokid.soid(), path, t);
+        if (!sokid.kidx().isMaster()) add(sokid.soid(), path, t);
     }
 
     @Override
-    public void objectContentDeleted_(SOKID sokid, Path path, Trans t) throws SQLException
+    public void objectContentDeleted_(SOKID sokid, Trans t) throws SQLException
     {
-        if (!sokid.kidx().equals(KIndex.MASTER)) add(sokid.soid(), path, t);
+        if (!sokid.kidx().isMaster()) {
+            Path path = _ds.resolveNullable_(sokid.soid());
+            if (path != null) add(sokid.soid(), path, t);
+        }
     }
 
     @Override
     public void objectContentModified_(SOKID sokid, Path path, Trans t) throws SQLException
     {
-        if (!sokid.kidx().equals(KIndex.MASTER)) add(sokid.soid(), path, t);
+        if (!sokid.kidx().isMaster()) add(sokid.soid(), path, t);
     }
 
     @Override

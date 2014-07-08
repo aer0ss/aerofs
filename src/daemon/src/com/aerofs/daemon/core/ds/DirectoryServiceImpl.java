@@ -15,6 +15,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.LRUCache.IDataReader;
 import com.aerofs.daemon.lib.db.DBCache;
@@ -43,6 +44,7 @@ import com.aerofs.lib.Path;
 import static com.aerofs.lib.Util.set;
 import static com.aerofs.lib.Util.unset;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public class DirectoryServiceImpl extends DirectoryService implements ObjectSurgeon
@@ -52,6 +54,7 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     private IMetaDatabase _mdb;
     private MapAlias2Target _alias2target;
     private IMapSID2SIndex _sid2sidx;
+    private IMapSIndex2SID _sidx2sid;
     private AbstractPathResolver _pathResolver;
 
     private DBCache<Path, SOID> _cacheDS;
@@ -67,18 +70,19 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
 
     @Inject
     public void inject_(IMetaDatabase mdb, MapAlias2Target alias2target,
-            TransManager tm, IMapSID2SIndex sid2sidx,
+            TransManager tm, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
             StoreDeletionOperators storeDeletionOperators, AbstractPathResolver pathResolver)
     {
         _mdb = mdb;
         _alias2target = alias2target;
         _sid2sidx = sid2sidx;
+        _sidx2sid = sidx2sid;
         _pathResolver = pathResolver;
 
         _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
         _cacheOA = new DBCache<SOID, OA>(tm, DaemonParam.DB.OA_CACHE_SIZE);
 
-        storeDeletionOperators.add_(this);
+        storeDeletionOperators.addDeferred_(this);
     }
 
     @Override
@@ -97,9 +101,8 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
 
     @Override
     public Set<OID> getChildren_(SOID soid)
-        throws SQLException, ExNotDir, ExNotFound
+        throws SQLException
     {
-        if (!getOAThrows_(soid).isDir()) throw new ExNotDir();
         return _mdb.getChildren_(soid);
     }
 
@@ -167,7 +170,8 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
                     // TODO: loop detection?
                     int flags = oa.flags();
                     if (!oa.parent().isRoot()) {
-                        OA parent = getOA_(new SOID(soid.sidx(), oa.parent()));
+                        OA parent = getOANullableNoFilter_(new SOID(soid.sidx(), oa.parent()));
+                        checkNotNull(parent);
                         if (parent.isExpelled()) flags |= OA.FLAG_EXPELLED_INH;
                     }
                     oa.setFlags(flags | OA.FLAG_DS_VALIDATED);
@@ -181,6 +185,15 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
      */
     @Override
     @Nullable public OA getOANullable_(SOID soid) throws SQLException
+    {
+        // to preserve externally-observable behavior when incrementally deleting
+        // stores, we need to filter out SOIDs that belong to stores that are
+        // in the process of being cleaned up
+        return _sidx2sid.getNullable_(soid.sidx()) == null ? null : getOANullableNoFilter_(soid);
+    }
+
+    @Override
+    @Nullable public OA getOANullableNoFilter_(SOID soid) throws SQLException
     {
         return _cacheOA.get_(soid, _readerOA);
     }
@@ -265,9 +278,8 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         _mdb.deleteCA_(soid, kidx, t);
         _cacheOA.invalidate_(soid);
 
-        Path path = resolve_(soid);
         for (IDirectoryServiceListener listener : _listeners) {
-            listener.objectContentDeleted_(new SOKID(soid, kidx), path, t);
+            listener.objectContentDeleted_(new SOKID(soid, kidx), t);
         }
     }
 

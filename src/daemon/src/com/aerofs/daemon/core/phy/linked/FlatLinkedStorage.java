@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
@@ -148,7 +147,7 @@ public class FlatLinkedStorage extends LinkedStorage
     }
 
     @Override
-    public void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t)
+    public void deleteStore_(SID physicalRoot, SIndex sidx, SID sid, Trans t)
             throws IOException, SQLException
     {
         _sfti.deleteTagFileAndIconIn(_lrm.absRootAnchor_(sid));

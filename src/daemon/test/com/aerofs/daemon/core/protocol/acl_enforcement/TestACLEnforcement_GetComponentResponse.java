@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.protocol.acl_enforcement;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
@@ -20,6 +21,7 @@ import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -131,7 +133,15 @@ public class TestACLEnforcement_GetComponentResponse extends AbstractTest
         CA ca = mock(CA.class);
         SortedMap <KIndex, CA> cas = Maps.newTreeMap();
         cas.put(k.kidx(), ca);
-        OA oa = OA.createFile(k.soid(), OID.generate(), "haha", cas, 0, null);
+        OA oa = mock(OA.class);
+        when(oa.type()).thenReturn(OA.Type.FILE);
+        when(oa.isFile()).thenReturn(true);
+        when(oa.name()).thenReturn("haha");
+        when(oa.soid()).thenReturn(k.soid());
+        when(oa.parent()).thenReturn(OID.generate());
+        when(oa.flags()).thenReturn(0);
+        when(oa.casNoExpulsionCheck()).thenReturn(cas);
+        when(oa.fid()).thenReturn(new FID(UniqueID.generate().getBytes()));
         when(replier._ds.getOA_(k.soid())).thenReturn(oa);
 
         // connect replier to the caller

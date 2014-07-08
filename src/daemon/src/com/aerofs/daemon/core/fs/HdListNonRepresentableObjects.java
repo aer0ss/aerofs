@@ -43,7 +43,7 @@ public class HdListNonRepresentableObjects extends AbstractHdIMC<EIListNonRepres
 
         for (NonRepresentableObject nro : _ps.listNonRepresentableObjects_()) {
             OA oa = _ds.getOANullable_(nro.soid);
-            // NROs that are pending cleanup (i.e. in logical StagingArea) should be ignored
+            // NROs that are pending cleanup (i.e. in LogicalStagingArea) should be ignored
             if (oa == null || oa.isExpelled()) continue;
             ResolvedPath path = _ds.resolve_(oa);
             bd.add(PBNonRepresentableObject.newBuilder()

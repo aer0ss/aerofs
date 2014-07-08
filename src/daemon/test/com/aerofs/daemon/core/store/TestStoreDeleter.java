@@ -1,42 +1,27 @@
 package com.aerofs.daemon.core.store;
 
-import static com.aerofs.daemon.core.mock.TestUtilCore.mockBranches;
-import static com.aerofs.daemon.core.mock.TestUtilCore.mockOA;
-import static com.aerofs.daemon.core.mock.TestUtilCore.mockStore;
 import static org.mockito.Mockito.*;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
+import com.aerofs.daemon.core.expel.LogicalStagingArea;
+import com.aerofs.daemon.core.mock.logical.MockDS;
+import com.aerofs.daemon.core.mock.logical.MockDS.MockDSAnchor;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
-
-import javax.annotation.Nullable;
+import org.mockito.verification.VerificationMode;
 
 public class TestStoreDeleter extends AbstractTest
 {
@@ -45,119 +30,39 @@ public class TestStoreDeleter extends AbstractTest
     @Mock IStores ss;
     @Mock IMapSIndex2SID sidx2sid;
     @Mock StoreDeletionOperators _operators;
+    @Mock LogicalStagingArea sa;
     @Mock Trans t;
 
     @InjectMocks StoreDeleter sd;
 
-    // these objects are under the grand child
-    @Mock OA oaFile;
-    @Mock OA oaFolder;
-    @Mock OA oaAnchor;
-    @Mock OA oaFolderExpelled;
-    @Mock OA oaAnchorExpelled;
-
-    // object names
-    String nChild = "c";
-    String nGrandChild1 = "gc1";
-    String nGrandChild2 = "gc2";
-    String nFile = "file";
-    String nFolder = "folder";
-    String nAnchor = "anchor";
-    String nFolderExpelled = "folderEx";
-    String nAnchorExpelled = "anchorEx";
+    MockDS mds;
 
     SID rootSID = SID.generate();
 
-    ResolvedPath mkpath(String... elems)
-    {
-        List<String> l = Arrays.asList(elems);
-        return new ResolvedPath(rootSID, Lists.transform(l, new Function<String, SOID>() {
-            @Override
-            public @Nullable SOID apply(@Nullable String s)
-            {
-                return new SOID(new SIndex(1), OID.generate());
-            }
-        }), l);
-    }
-
-    ResolvedPath append(ResolvedPath p, String name)
-    {
-        return p.join(new SOID(new SIndex(1), OID.generate()), name);
-    }
-
-    ResolvedPath pNewRoot = ResolvedPathTestUtil.fromString(rootSID, "n1/n2/n3");
-    ResolvedPath pNewChild = append(pNewRoot, nChild);
-    ResolvedPath pNewGrandChild = append(append(pNewChild, nGrandChild1), nGrandChild2);
-
-    ResolvedPath pOldRoot = mkpath("1", "2", "3");
-    ResolvedPath pOldChild = append(pOldRoot, nChild);
-    ResolvedPath pOldGrandChild = append(append(pOldChild, nGrandChild1), nGrandChild2);
-
-    ResolvedPath pOldFile = append(pOldGrandChild, nFile);
-    ResolvedPath pOldFolder = append(pOldGrandChild, nFolder);
-    ResolvedPath pOldAnchor = append(pOldGrandChild, nAnchor);
-    ResolvedPath pOldFolderExpelled = append(pOldGrandChild, nFolderExpelled);
-    ResolvedPath pOldAnchorExpelled = append(pOldGrandChild, nAnchorExpelled);
-
-    SIndex sidxRootParent = new SIndex(4);
-    SIndex sidxRoot = new SIndex(3);
-    SIndex sidxChild = new SIndex(2);
-    SIndex sidxGrandChild = new SIndex(1);
-    SID sidRoot = SID.generate();
-    SID sidChild = SID.generate();
-    SID sidGrandChild = SID.generate();
-    SOID soidAnchorChild = new SOID(sidxRoot, SID.storeSID2anchorOID(sidChild));
-    SOID soidAnchorGrandChild = new SOID(sidxChild, SID.storeSID2anchorOID(sidGrandChild));
-
-    SOID soidFile = new SOID(sidxGrandChild, new OID(UniqueID.generate()));
-    SOID soidFolder = new SOID(sidxGrandChild, new OID(UniqueID.generate()));
-    SOID soidAnchor = new SOID(sidxGrandChild, new OID(UniqueID.generate()));
-    SOID soidFolderExpelled = new SOID(sidxGrandChild, new OID(UniqueID.generate()));
-    SOID soidAnchorExpelled = new SOID(sidxGrandChild, new OID(UniqueID.generate()));
+    SIndex sidxRoot;
+    SIndex sidx;
+    SIndex sidxChild;
+    SIndex sidxChildExpelled;
+    SIndex sidxGrandChild;
+    SIndex sidxGrandChildExpelled;
 
     @Before
     public void setup() throws Exception
     {
-        mockStore(null, sidRoot, sidxRoot, sidxRootParent, ss, null, null, sidx2sid);
-        mockStore(null, sidChild, sidxChild, sidxRoot, ss, null, null, sidx2sid);
-        mockStore(null, sidGrandChild, sidxGrandChild, sidxChild, ss, null, null, sidx2sid);
+        mds = new MockDS(rootSID, ds, null, sidx2sid, ss);
+        MockDSAnchor s = mds.root().anchor("s");
+        MockDSAnchor c = s.root().anchor("c");
+        MockDSAnchor ce = s.root().anchor("ce", true);
 
-        mockOA(oaFile, soidFile, Type.FILE, false, null, nFile, ds);
-        mockOA(oaFolder, soidFolder, Type.DIR, false, null, nFolder, ds);
-        mockOA(oaAnchor, soidAnchor, Type.ANCHOR, false, null, nAnchor, ds);
-        mockOA(oaFolderExpelled, soidFolderExpelled, Type.DIR, true, null, nFolderExpelled, ds);
-        mockOA(oaAnchorExpelled, soidAnchorExpelled, Type.ANCHOR, true, null, nAnchorExpelled, ds);
+        MockDSAnchor gc = c.root().anchor("gc");
+        MockDSAnchor gce = c.root().anchor("gce", true);
 
-        mockBranches(oaFile, 2, 0, 0, null);
-
-        when(ps.newFile_(any(ResolvedPath.class), any(KIndex.class))).then(RETURNS_MOCKS);
-        when(ps.newFolder_(any(ResolvedPath.class))).then(RETURNS_MOCKS);
-
-        OA dummy = mock(OA.class);
-        when(ds.getOANullable_(soidAnchorChild)).thenReturn(dummy);
-        when(ds.getOANullable_(soidAnchorGrandChild)).thenReturn(dummy);
-
-        mockPathResolution(new SOID(sidxRoot, OID.ROOT), pNewRoot);
-        mockPathResolution(new SOID(sidxChild, OID.ROOT), pNewChild);
-        mockPathResolution(new SOID(sidxGrandChild, OID.ROOT), pNewGrandChild);
-        mockPathResolution(new SOID(sidxRoot, SID.storeSID2anchorOID(sidChild)), pNewChild);
-        mockPathResolution(new SOID(sidxChild, SID.storeSID2anchorOID(sidGrandChild)),
-                pNewGrandChild);
-
-        HashSet<OID> children = new HashSet<OID>();
-        children.add(soidFile.oid());
-        children.add(soidFolder.oid());
-        children.add(soidAnchor.oid());
-        children.add(soidFolderExpelled.oid());
-        children.add(soidAnchorExpelled.oid());
-        when(ds.getChildren_(new SOID(sidxGrandChild, OID.ROOT))).thenReturn(children);
-    }
-
-    private void mockPathResolution(SOID soid, ResolvedPath path) throws SQLException
-    {
-        OA dummy = mock(OA.class);
-        when(ds.getOANullable_(soid)).thenReturn(dummy);
-        when(ds.resolve_(dummy)).thenReturn(path);
+        sidxRoot = mds.root().soid().sidx();
+        sidx = s.root().soid().sidx();
+        sidxChild = c.root().soid().sidx();
+        sidxChildExpelled = ce.root().soid().sidx();
+        sidxGrandChild = gc.root().soid().sidx();
+        sidxGrandChildExpelled = gce.root().soid().sidx();
     }
 
     @Test
@@ -165,51 +70,59 @@ public class TestStoreDeleter extends AbstractTest
     {
         delete(PhysicalOp.APPLY);
 
-        verifyStoreDeletion(sidxRoot, sidRoot);
-        verifyStoreDeletion(sidxChild, sidChild);
-        verifyStoreDeletion(sidxGrandChild, sidGrandChild);
+        verifyStoreDeletion(sidx);
+        verifyStoreDeletion(sidxChild);
+        verifyStoreDeletion(sidxGrandChild);
+        verifyStoreDeletion(sidxChildExpelled, never());
+        verifyStoreDeletion(sidxGrandChildExpelled, never());
     }
 
     @Test
     public void shouldDeletePhysicalObjects() throws Exception
     {
+        ResolvedPath p = ds.resolve_(new SOID(sidxGrandChild, OID.ROOT));
+
         delete(PhysicalOp.APPLY);
 
-        verify(ps).newFolder_(pOldFolder);
-        verify(ps).newFolder_(pOldAnchor);
-
-        for (KIndex kidx : oaFile.cas().keySet()) {
-            SOKID sokid = new SOKID(oaFile.soid(), kidx);
-            verify(ps).newFile_(pOldFile, sokid.kidx());
-        }
+        verify(ps).deleteFolderRecursively_(p, PhysicalOp.APPLY, t);
+        verify(ps).deleteFolderRecursively_(p.parent(), PhysicalOp.APPLY, t);
+        verify(ps).deleteFolderRecursively_(p.parent().parent(), PhysicalOp.APPLY, t);
     }
 
     @Test
     public void shouldNotDeleteExpelledAnchorsAndFolders() throws Exception
     {
+        ResolvedPath ce = ds.resolve_(new SOID(sidxChildExpelled, OID.ROOT));
+        ResolvedPath gce = ds.resolve_(new SOID(sidxGrandChildExpelled, OID.ROOT));
+
         delete(PhysicalOp.APPLY);
 
-        verify(ps, never()).newFolder_(pOldFolderExpelled);
-        verify(ps, never()).newFolder_(pOldAnchorExpelled);
+        verify(ps, never()).deleteFolderRecursively_(eq(gce), any(PhysicalOp.class), eq(t));
+        verify(ps, never()).deleteFolderRecursively_(eq(ce), any(PhysicalOp.class), eq(t));
     }
 
     @Test (expected = ExArbitrary.class)
     public void shouldThrowOnException() throws Exception
     {
-        doThrow(new ExArbitrary()).when(ps).deleteStore_(
-                eq(sidxGrandChild), eq(sidGrandChild),any(PhysicalOp.class), eq(t));
+        doThrow(new ExArbitrary()).when(ps)
+                .deleteFolderRecursively_(any(ResolvedPath.class), eq(PhysicalOp.APPLY), eq(t));
 
         delete(PhysicalOp.APPLY);
     }
 
     private void delete(PhysicalOp op) throws Exception
     {
-        sd.removeParentStoreReference_(sidxRoot, sidxRootParent, pOldRoot, op, t);
+        sd.removeParentStoreReference_(sidx, sidxRoot, ds.resolve_(new SOID(sidx, OID.ROOT)), op, t);
     }
 
-    private void verifyStoreDeletion(SIndex sidx, SID sid) throws SQLException, IOException
+    private void verifyStoreDeletion(SIndex sidx) throws Exception
     {
-        verify(ps).deleteStore_(eq(sidx), eq(sid), any(PhysicalOp.class), eq(t));
-        verify(_operators).runAll_(sidx, t);
+        verifyStoreDeletion(sidx, times(1));
+    }
+
+    private void verifyStoreDeletion(SIndex sidx, VerificationMode mode) throws Exception
+    {
+        verify(sa, mode).stageCleanup_(eq(new SOID(sidx, OID.ROOT)), any(ResolvedPath.class), eq(t));
+        verify(_operators, mode).runAllImmediate_(sidx, t);
     }
 }

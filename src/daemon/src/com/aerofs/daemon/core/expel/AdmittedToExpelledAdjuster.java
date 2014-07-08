@@ -1,33 +1,24 @@
 package com.aerofs.daemon.core.expel;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.expel.Expulsion.IExpulsionListener;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Version;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 
@@ -38,24 +29,22 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
     private static final Logger l = Loggers.getLogger(AdmittedToExpelledAdjuster.class);
 
     private final DirectoryService _ds;
-    private final NativeVersionControl _nvc;
-    private final PrefixVersionControl _pvc;
     private final IPhysicalStorage _ps;
     private final Expulsion _expulsion;
+    private final LogicalStagingArea _sa;
     private final StoreDeleter _sd;
     private final IMapSIndex2SID _sidx2sid;
     private final IStores _ss;
 
     @Inject
     public AdmittedToExpelledAdjuster(StoreDeleter sd, Expulsion expulsion,
-            IPhysicalStorage ps, NativeVersionControl nvc, PrefixVersionControl pvc,
+            IPhysicalStorage ps, LogicalStagingArea sa,
             DirectoryService ds, IMapSIndex2SID sidx2sid, IStores ss)
     {
         _sd = sd;
         _expulsion = expulsion;
+        _sa = sa;
         _ps = ps;
-        _nvc = nvc;
-        _pvc = pvc;
         _ds = ds;
         _ss = ss;
         _sidx2sid = sidx2sid;
@@ -88,9 +77,11 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 
         // atomic recursive deletion of physical objects, if applicable
         if (oa.isDirOrAnchor()) {
-            op = _ps.deleteFolderRecursively_(pOld, op, t);
+            _ps.deleteFolderRecursively_(pOld, op, t);
+        } else  {
+            _ps.newFile_(pOld, KIndex.MASTER).delete_(op, t);
         }
-        cleanup_(soidRoot, pOld, op, t);
+        _sa.stageCleanup_(soidRoot, pOld, t);
     }
 
     /**
@@ -135,77 +126,5 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                         .addAll(Arrays.asList(newChild.elements())
                                 .subList(newParent.elements().length, newChild.elements().length))
                         .build());
-    }
-
-    private void cleanup_(final SOID soidRoot, ResolvedPath pOld, final PhysicalOp op,
-            final Trans t)
-            throws Exception
-    {
-        _ds.walk_(soidRoot, pOld, new IObjectWalker<ResolvedPath>() {
-            @Override
-            public @Nullable ResolvedPath prefixWalk_(ResolvedPath pOldParent, OA oa)
-                    throws Exception
-            {
-                boolean isRoot = soidRoot.equals(oa.soid());
-                boolean oldExpelled = !isRoot && oa.isSelfExpelled();
-
-                ResolvedPath pathOld = isRoot ? pOldParent : pOldParent.join(oa);
-
-                switch (oa.type()) {
-                case FILE:
-                    // explicit expulsion is only allowed at folder granularity, and the walk doesn't
-                    // enter expelled folders, so we should never walk an expelled file.
-                    assert !oldExpelled;
-
-                    SOCID socid = new SOCID(oa.soid(), CID.CONTENT);
-                    Version vKMLAdd = Version.empty();
-                    for (KIndex kidx : oa.cas().keySet()) {
-                        SOCKID k = new SOCKID(socid, kidx);
-                        _ps.newFile_(pathOld, kidx).delete_(op, t);
-                        Version vBranch = _nvc.getLocalVersion_(k);
-                        vKMLAdd = vKMLAdd.add_(vBranch);
-                        _nvc.deleteLocalVersion_(k, vBranch, t);
-
-                        _ds.deleteCA_(oa.soid(), kidx, t);
-                        _ps.deletePrefix_(k.sokid());
-                    }
-
-                    // move all the local versions to KML version
-                    Version vKMLOld = _nvc.getKMLVersion_(socid);
-                    _nvc.addKMLVersionNoAssert_(socid, vKMLAdd.sub_(vKMLOld), t);
-
-                    _pvc.deleteAllPrefixVersions_(socid.soid(), t);
-                    return null;
-
-                case DIR:
-                    // skip children if the expulsion state of the current object doesn't change
-                    return oldExpelled ? null : pathOld;
-
-                case ANCHOR:
-                    return null;
-
-                default:
-                    assert false;
-                    return null;
-                }
-            }
-
-            @Override
-            public void postfixWalk_(ResolvedPath pOldParent, OA oa)
-                    throws IOException, SQLException
-            {
-                boolean isRoot = soidRoot.equals(oa.soid());
-                boolean oldExpelled = !isRoot && oa.isSelfExpelled();
-
-                if (oldExpelled) return;
-
-                if (oa.isDirOrAnchor()) {
-                    ResolvedPath pathOld = isRoot ? pOldParent : pOldParent.join(oa);
-                    // have to do it in postfixWalk rather than prefixWalk because otherwise child
-                    // objects under the folder would prevent us from deleting the folder.
-                    _ps.newFolder_(pathOld).delete_(op, t);
-                }
-            }
-        });
     }
 }

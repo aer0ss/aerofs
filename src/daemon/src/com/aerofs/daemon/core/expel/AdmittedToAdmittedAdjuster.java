@@ -13,7 +13,6 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster

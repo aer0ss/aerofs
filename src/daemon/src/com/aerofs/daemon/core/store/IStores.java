@@ -4,7 +4,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SIndex;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -29,7 +28,7 @@ import java.util.Set;
  */
 public interface IStores
 {
-    void init_() throws SQLException, IOException;
+    void init_() throws Exception;
 
     /**
      * @pre the store is not present locally
