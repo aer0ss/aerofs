@@ -77,7 +77,6 @@ describe('Shelob Controllers', function() {
         });
 
         it("should rename folder when submitRename is called", function () {
-            window.showSuccessMessage = jasmine.createSpy();
 
             folder_1_object.newName = 'newname';
             $rootScope.submitRename(folder_1_object);
@@ -86,7 +85,6 @@ describe('Shelob Controllers', function() {
                     .respond(200, {id: folder_1.id, name: 'newname'});
             $httpBackend.flush();
 
-            expect(window.showSuccessMessage).toHaveBeenCalled();
             expect($rootScope.objects[0].name).toBe('newname');
         });
 
@@ -122,8 +120,6 @@ describe('Shelob Controllers', function() {
         });
 
         it("should move folder into sibling", function() {
-            window.showSuccessMessage = jasmine.createSpy();
-
             $rootScope.startMove(folder_1);
             expect(modal.open).toHaveBeenCalled();
             $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
@@ -134,15 +130,11 @@ describe('Shelob Controllers', function() {
                     .respond(200, folder_1);
             $httpBackend.flush();
 
-            expect(window.showSuccessMessage).toHaveBeenCalled();
-
             // verify that the view was updated to remove folder_1
             expect(get_object_by_id(folder_1.id)).toBeNull();
         });
 
         it("should move file into sibling", function() {
-            window.showSuccessMessage = jasmine.createSpy();
-
             $rootScope.startMove(file_object);
             expect(modal.open).toHaveBeenCalled();
             $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
@@ -152,8 +144,6 @@ describe('Shelob Controllers', function() {
             $httpBackend.expectPUT('/api/v1.2/files/' + file.id, {name: file.name, parent: folder_1.id})
                 .respond(200, file);
             $httpBackend.flush();
-
-            expect(window.showSuccessMessage).toHaveBeenCalled();
 
             // verify that the view was updated to remove folder_1
             expect(get_object_by_id(file.id)).toBeNull();
@@ -197,21 +187,17 @@ describe('Shelob Controllers', function() {
         });
 
         it("should delete folder when intent to delete is confirmed", function() {
-            window.showSuccessMessage = jasmine.createSpy();
             $rootScope.submitDelete(folder_1_object);
             $httpBackend.expectDELETE('/api/v1.2/folders/' + folder_1.id).respond(204);
             $httpBackend.flush();
             expect(get_object_by_id(folder_1.id)).toBeNull();
-            expect(window.showSuccessMessage).toHaveBeenCalled();
         });
 
         it("should delete file when intent to delete is confirmed", function() {
-            window.showSuccessMessage = jasmine.createSpy();
             $rootScope.submitDelete(file_object);
             $httpBackend.expectDELETE('/api/v1.2/files/' + file.id).respond(204);
             $httpBackend.flush();
             expect(get_object_by_id(file.id)).toBeNull();
-            expect(window.showSuccessMessage).toHaveBeenCalled();
         });
 
         it("should not remove file from view when deletion fails", function() {
