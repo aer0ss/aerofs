@@ -126,8 +126,8 @@ public final class UnicastTCPDevice
         ClientBootstrap clientBootstrap = tcpBootstrapFactory.newClientBootstrap(clientSocketChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
 
-        linkStateService.markLinksUp();
         unicast.start(listeningAddress);
+        linkStateService.markLinksUp();
         transportReader.start();
     }
 }
