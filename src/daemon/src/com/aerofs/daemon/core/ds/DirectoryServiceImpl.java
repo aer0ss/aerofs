@@ -82,6 +82,20 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     }
 
     @Override
+    public boolean hasChildren_(SOID soid)
+            throws SQLException
+    {
+        return _mdb.hasChildren_(soid);
+    }
+
+    @Override
+    public IDBIterator<OID> listChildren_(SOID soid)
+            throws SQLException
+    {
+        return _mdb.listChildren_(soid);
+    }
+
+    @Override
     public Set<OID> getChildren_(SOID soid)
         throws SQLException, ExNotDir, ExNotFound
     {
@@ -279,16 +293,9 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         OA oa = getOA_(alias);
         Path path = resolve_(oa);
 
-        if (oa.isDir()) {
-            Set<OID> children = _mdb.getChildren_(alias);
-
-            if (!children.isEmpty()) {
-                _mdb.replaceParentInChildren_(alias.sidx(), alias.oid(), target.oid(), t);
-
-                for (OID child : children) {
-                    _cacheOA.invalidate_(new SOID(alias.sidx(), child));
-                }
-            }
+        if (oa.isDir() && _mdb.hasChildren_(alias)) {
+            _mdb.replaceParentInChildren_(alias.sidx(), alias.oid(), target.oid(), t);
+            _cacheOA.invalidateAll_();
         }
 
         _mdb.replaceOAOID_(alias.sidx(), alias.oid(), target.oid(), t);

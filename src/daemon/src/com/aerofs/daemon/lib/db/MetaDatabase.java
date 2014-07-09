@@ -8,8 +8,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedMap;
 
@@ -35,8 +33,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 /*
@@ -524,72 +522,117 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private PreparedStatement _psGetChildren;
+    private PreparedStatementWrapper _pswHasChildren = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_OA, C_OA_SIDX + "=? and " + C_OA_PARENT + "=?", "1") + " limit 1");
     @Override
-    public Set<OID> getChildren_(SOID parent) throws SQLException
+    public boolean hasChildren_(SOID parent) throws SQLException
     {
         try {
-            if (_psGetChildren == null) _psGetChildren = c()
-                    .prepareStatement(
-                            "select " + C_OA_OID + " from " + T_OA + " where " + C_OA_SIDX +
-                                    "=? and " + C_OA_PARENT + "=?");
-            _psGetChildren.setInt(1, parent.sidx().getInt());
-            _psGetChildren.setBytes(2, parent.oid().getBytes());
-            ResultSet rs = _psGetChildren.executeQuery();
+            PreparedStatement ps = _pswHasChildren.get(c());
+            ps.setInt(1, parent.sidx().getInt());
+            ps.setBytes(2, parent.oid().getBytes());
+            ResultSet rs = ps.executeQuery();
             try {
-                boolean rootParent = parent.oid().isRoot();
-                // Most callers of this method simply iterate over the set, so if performance is
-                // an issue, consider using a LinkedHashSet
-                Set<OID> children = new HashSet<OID>();
-                while (rs.next()) {
-                    OID oid = new OID(rs.getBytes(1));
-                    if (rootParent && oid.isRoot()) continue;
-                    children.add(oid);
-                }
-                return children;
+                return rs.next();
             } finally {
                 rs.close();
             }
-
         } catch (SQLException e) {
-            DBUtil.close(_psGetChildren);
-            _psGetChildren = null;
+            _pswHasChildren.close();
             throw detectCorruption(e);
         }
     }
 
-    private PreparedStatement _psGetTypedChildren;
     @Override
-    public Collection<TypeNameOID> getTypedChildren_(SIndex sidx, OID parent)
+    public Set<OID> getChildren_(SOID parent) throws SQLException
+    {
+        IDBIterator<OID> it = listChildren_(parent);
+        try {
+            // Most callers of this method simply iterate over the set, so if performance is
+            // an issue, consider using a LinkedHashSet
+            Set<OID> children = Sets.newHashSet();
+            while (it.next_()) children.add(it.get_());
+            return children;
+        } catch (SQLException e) {
+            throw detectCorruption(e);
+        } finally {
+            it.close_();
+        }
+    }
+
+    private PreparedStatementWrapper _pswGetChildren = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_OA, C_OA_SIDX + "=? and " + C_OA_PARENT + "=?", C_OA_OID));
+    @Override
+    public IDBIterator<OID> listChildren_(SOID soid) throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswGetChildren.get(c());
+            ps.setInt(1, soid.sidx().getInt());
+            ps.setBytes(2, soid.oid().getBytes());
+            ResultSet rs = ps.executeQuery();
+            final boolean rootParent = soid.oid().isRoot();
+            return new AbstractDBIterator<OID>(rs) {
+                OID oid;
+                @Override
+                public boolean next_() throws SQLException
+                {
+                    do {
+                        if (!_rs.next()) return false;
+                        oid = new OID(_rs.getBytes(1));
+                    } while (rootParent && oid.isRoot());
+                    return true;
+                }
+
+                @Override
+                public OID get_() throws SQLException
+                {
+                    return oid;
+                }
+            };
+        } catch (SQLException e) {
+            _pswGetChildren.close();
+            throw detectCorruption(e);
+        }
+    }
+
+    private PreparedStatementWrapper _pswGetTypedChildren = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_OA,
+                    C_OA_SIDX + "=? and " + C_OA_PARENT + "=? and " + C_OA_FLAGS + "=0",
+                    C_OA_OID, C_OA_NAME, C_OA_TYPE));
+    @Override
+    public IDBIterator<TypeNameOID> getTypedChildren_(SIndex sidx, OID parent)
             throws SQLException
     {
         try {
-            if (_psGetTypedChildren == null) _psGetTypedChildren = c()
-                    .prepareStatement(DBUtil.selectWhere(T_OA,
-                            C_OA_SIDX + "=? and " + C_OA_PARENT + "=? and " + C_OA_FLAGS + "=?",
-                            C_OA_OID, C_OA_NAME, C_OA_TYPE));
-            _psGetTypedChildren.setInt(1, sidx.getInt());
-            _psGetTypedChildren.setBytes(2, parent.getBytes());
-            _psGetTypedChildren.setInt(3, 0);
-            ResultSet rs = _psGetTypedChildren.executeQuery();
+            PreparedStatement ps = _pswGetTypedChildren.get(c());
+            ps.setInt(1, sidx.getInt());
+            ps.setBytes(2, parent.getBytes());
+            ResultSet rs = ps.executeQuery();
             try {
-                boolean rootParent = parent.isRoot();
-                // Most callers of this method simply iterate over the set, so if performance is
-                // an issue, consider using a LinkedHashSet
-                Collection<TypeNameOID> children = Lists.newArrayList();
-                while (rs.next()) {
-                    OID oid = new OID(rs.getBytes(1));
-                    if (rootParent && oid.isRoot()) continue;
-                    children.add(new TypeNameOID(rs.getString(2), oid, Type.valueOf(rs.getInt(3))));
-                }
-                return children;
+                final boolean rootParent = parent.isRoot();
+                return new AbstractDBIterator<TypeNameOID>(rs) {
+                    OID oid;
+                    @Override
+                    public boolean next_() throws SQLException
+                    {
+                        do {
+                            if (!_rs.next()) return false;
+                            oid = new OID(_rs.getBytes(1));
+                        } while (rootParent && oid.isRoot());
+                        return true;
+                    }
+
+                    @Override
+                    public TypeNameOID get_() throws SQLException
+                    {
+                        return new TypeNameOID(_rs.getString(2), oid, Type.valueOf(_rs.getInt(3)));
+                    }
+                };
             } finally {
                 rs.close();
             }
-
         } catch (SQLException e) {
-            DBUtil.close(_psGetTypedChildren);
-            _psGetTypedChildren = null;
+            _pswGetTypedChildren.close();
             throw detectCorruption(e);
         }
     }

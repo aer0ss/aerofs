@@ -20,7 +20,7 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.oauth.Scope;
@@ -34,7 +34,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -171,32 +170,16 @@ public class MetadataBuilder
     {
         SIndex sidx = oa.soid().sidx();
         SID sid = _sidx2sid.get_(sidx);
-        Collection<OID> children;
-        try {
-            children = _ds.getChildren_(oa.soid());
-        } catch (ExNotDir e) { throw new ExNotFound(e.getMessage()); }
+
 
         List<Folder> folders = Lists.newArrayList();
         List<File> files = Lists.newArrayList();
-        for (OID c : children) {
-            OA coa = _ds.getOAThrows_(new SOID(sidx, c));
-            String restId = new RestObject(sid, c).toStringFormal();
-            if (coa.isFile()) {
-                Long size = null;
-                Date lastModified = null;
-                if (!coa.isExpelled() && coa.caMasterNullable() != null) {
-                    size = coa.caMaster().length();
-                    lastModified = new Date(coa.caMaster().mtime());
-                }
-                files.add(new File(restId, coa.name(), parent,
-                        lastModified, size, _detector.detect(coa.name()),
-                        _etags.etagForContent(coa.soid()).getValue()));
-            } else if (!coa.soid().oid().isTrash()) {
-                if (shouldIncludeInResponse(coa, token)) {
-                    folders.add(new Folder(restId, coa.name(), parent, coa.isAnchor() ?
-                            SID.anchorOID2storeSID(coa.soid().oid()).toStringFormal() : null));
-                }
-            }
+
+        IDBIterator<OID> it = _ds.listChildren_(oa.soid());
+        try {
+            while (it.next_()) addChild(sidx, sid, it.get_(), parent, token, files, folders);
+        } finally {
+            it.close_();
         }
 
         // The spec says the items are to be sorted as a pre-requisite for pagination.
@@ -215,13 +198,36 @@ public class MetadataBuilder
         return new ChildrenList(includeParent ? parent : null, folders, files);
     }
 
-    /**
-     * If the OAuth token has the "linksharing" scope, anchor names should be included iff the owner
-     * of the token is a manager of the store.
-     */
+    private void addChild(SIndex sidx, SID sid, OID c, String parent, OAuthToken token,
+            List<File> files,  List<Folder> folders)
+            throws ExNotFound, SQLException
+    {
+        OA coa = _ds.getOAThrows_(new SOID(sidx, c));
+        String restId = new RestObject(sid, c).toStringFormal();
+        if (coa.isFile()) {
+            Long size = null;
+            Date lastModified = null;
+            if (!coa.isExpelled() && coa.caMasterNullable() != null) {
+                size = coa.caMaster().length();
+                lastModified = new Date(coa.caMaster().mtime());
+            }
+            files.add(new File(restId, coa.name(), parent, lastModified, size,
+                    _detector.detect(coa.name()),
+                    _etags.etagForContent(coa.soid()).getValue()));
+        } else if (shouldIncludeInResponse(coa, token)) {
+            folders.add(new Folder(restId, coa.name(), parent,
+                    coa.isAnchor() ? SID.anchorOID2storeSID(coa.soid().oid()).toStringFormal() : null));
+        }
+    }
+
     private boolean shouldIncludeInResponse(OA oa, OAuthToken token)
             throws SQLException
     {
+        // never  show the trash
+        if (oa.soid().oid().isTrash()) return false;
+
+        // If the OAuth token has the "linksharing" scope, anchor names should be included iff the
+        // owner of the token is a manager of the store.
         if (!oa.isAnchor() || !token.hasPermission(Scope.LINKSHARE)) return true;
         SIndex sidx = _sid2sidx.getNullable_(SID.anchorOID2storeSID(oa.soid().oid()));
         return sidx != null && _acl.check_(token.user(), sidx, Permissions.allOf(Permission.MANAGE));

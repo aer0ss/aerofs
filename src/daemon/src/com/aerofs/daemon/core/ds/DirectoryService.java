@@ -40,8 +40,20 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
 
     public abstract void addListener_(IDirectoryServiceListener listener);
 
+    public abstract boolean hasChildren_(SOID soid)
+            throws SQLException;
+
+    public abstract IDBIterator<OID> listChildren_(SOID soid)
+            throws SQLException;
+
+    /**
+     * Prefer the iterator version in new code, unless you have a good reason to fetch the
+     * whole list of children to memory (e.g. if you want to add/remove children within a loopp
+     * over current children)
+     */
     public abstract Set<OID> getChildren_(SOID soid)
             throws SQLException, ExNotDir, ExNotFound;
+
 
     public abstract OID getChild_(SIndex sidx, OID parent, String name) throws SQLException;
 

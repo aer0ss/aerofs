@@ -6,7 +6,6 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
@@ -30,17 +29,15 @@ public class ObjectCreator
     private final IPhysicalStorage _ps;
     private final VersionUpdater _vu;
     private final ImmigrantDetector _imd;
-    private final Expulsion _ex;
     private final StoreCreator _sc;
 
     @Inject
-    public ObjectCreator(DirectoryService ds, VersionUpdater vu, ImmigrantDetector imd, Expulsion ex,
+    public ObjectCreator(DirectoryService ds, VersionUpdater vu, ImmigrantDetector imd,
             StoreCreator sc, IPhysicalStorage ps)
     {
         _ds = ds;
         _vu = vu;
         _imd = imd;
-        _ex = ex;
         _sc = sc;
         _ps = ps;
     }

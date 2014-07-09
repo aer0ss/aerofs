@@ -32,10 +32,14 @@ public interface IMetaDatabase
      */
     @Nullable OID getChild_(SIndex sidx, OID parent, String name) throws SQLException;
 
+
+    boolean hasChildren_(SOID soid) throws SQLException;
+
     /**
      * the implementation must skip the root folder (e.g. OID.ROOT) and aliased
      * objects
      */
+    IDBIterator<OID> listChildren_(SOID parent) throws SQLException;
     Set<OID> getChildren_(SOID parent) throws SQLException;
 
     /**

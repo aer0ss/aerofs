@@ -18,6 +18,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -25,6 +26,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -33,6 +35,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import javax.annotation.Nullable;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,6 +99,54 @@ public class MockDS
             public SOID answer(InvocationOnMock invocation) throws Throwable
             {
                 return resolve((Path)invocation.getArguments()[0]);
+            }
+        });
+
+        when(_ds.hasChildren_(any(SOID.class))).thenAnswer(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                final SOID soid = (SOID)invocation.getArguments()[0];
+                return !_ds.getChildren_(soid).isEmpty();
+            }
+        });
+
+        when(_ds.listChildren_(any(SOID.class))).thenAnswer(new Answer<Object>()
+        {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable
+            {
+                final SOID soid = (SOID)invocation.getArguments()[0];
+                return new IDBIterator<OID>() {
+                    int i = -1;
+                    boolean closed = false;
+                    final ImmutableList<OID> oids = ImmutableList.copyOf(_ds.getChildren_(soid));
+
+                    @Override
+                    public OID get_() throws SQLException
+                    {
+                        return oids.get(i);
+                    }
+
+                    @Override
+                    public boolean next_()
+                    {
+                        return ++i < oids.size();
+                    }
+
+                    @Override
+                    public void close_()
+                    {
+                        closed = true;
+                    }
+
+                    @Override
+                    public boolean closed_()
+                    {
+                        return closed;
+                    }
+                };
             }
         });
     }

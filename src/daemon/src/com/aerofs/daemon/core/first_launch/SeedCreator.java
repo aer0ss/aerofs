@@ -17,6 +17,7 @@ import com.aerofs.daemon.lib.db.IMetaDatabaseWalker;
 import com.aerofs.daemon.lib.db.IMetaDatabaseWalker.TypeNameOID;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
@@ -96,9 +97,15 @@ public class SeedCreator
         case DIR:
             if (oid.isTrash()) return;
             if (!oid.isRoot()) sdb.setOID_(path, true, oid);
-            for (TypeNameOID tno : _mdbw.getTypedChildren_(sidx, oid)) {
-                populateImpl_(sidx, tno._oid, tno._type,
-                        path.isEmpty() ? tno._name : Util.join(path, tno._name), sdb);
+            IDBIterator<TypeNameOID> it = _mdbw.getTypedChildren_(sidx, oid);
+            try {
+                while (it.next_()) {
+                    TypeNameOID tno = it.get_();
+                    populateImpl_(sidx, tno._oid, tno._type,
+                            path.isEmpty() ? tno._name : Util.join(path, tno._name), sdb);
+                }
+            } finally {
+                it.close_();
             }
             break;
         case FILE:

@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ProgressIndicators;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
@@ -458,18 +459,23 @@ class ScanSession
 
         // add logical children to the deletion buffer
         if (soidParent != null) {
-            for (OID oid : _f._ds.getChildren_(soidParent)) {
-                SOID soid = new SOID(soidParent.sidx(), oid);
-                OA oa = _f._ds.getOA_(soid);
-                // avoid placing objects in deletion buffer if we know they won't appear in a scan:
-                // 1. expelled objects
-                // 2. files whose master branch was not succcessfully downloaded yet
-                // 3. non-representable objects
-                if (!(MightDelete.shouldNotDelete(oa) || _f._rh.isNonRepresentable_(oa))) {
-                    l.debug("hold_ on {}", soid);
-                    _holder.hold_(soid);
+            IDBIterator<OID> it = _f._ds.listChildren_(soidParent);
+            try {
+                while (it.next_()) {
+                    SOID soid = new SOID(soidParent.sidx(), it.get_());
+                    OA oa = _f._ds.getOA_(soid);
+                    // avoid placing objects in deletion buffer if we know they won't appear in a scan:
+                    // 1. expelled objects
+                    // 2. files whose master branch was not succcessfully downloaded yet
+                    // 3. non-representable objects
+                    if (!(MightDelete.shouldNotDelete(oa) || _f._rh.isNonRepresentable_(oa))) {
+                        l.debug("hold_ on {}", soid);
+                        _holder.hold_(soid);
+                    }
+                    _f._pi.incrementMonotonicProgress();
                 }
-                _f._pi.incrementMonotonicProgress();
+            } finally {
+                it.close_();
             }
         }
     }
