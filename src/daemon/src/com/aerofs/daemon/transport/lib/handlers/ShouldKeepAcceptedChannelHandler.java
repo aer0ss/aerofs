@@ -41,7 +41,7 @@ public final class ShouldKeepAcceptedChannelHandler extends SimpleChannelHandler
         if (enabled) {
             super.childChannelOpen(ctx, e);
         } else {
-            e.getChannel().close();
+            e.getChildChannel().close();
         }
     }
 }
