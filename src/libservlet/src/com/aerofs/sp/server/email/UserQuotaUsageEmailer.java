@@ -26,7 +26,7 @@ public class UserQuotaUsageEmailer
     {
         int percentUsed = (int)((double)bytesUsed * 100 / (double)bytesAllowed);
         String subject = getEmailSubject(percentUsed);
-        String body = getEmailBody((int)(bytesUsed / C.GB), (int)(bytesAllowed / C.GB), percentUsed);
+        String body = getEmailBody(bytesUsed, bytesAllowed, percentUsed);
 
         Email email = new Email();
         email.addSection(subject, body);
@@ -42,19 +42,24 @@ public class UserQuotaUsageEmailer
                 " space on the Team Server";
     }
 
-    private static String getEmailBody(int usedGB, int quotaGB, int percentQuotaUsed)
+    private static String getEmailBody(long bytesUsed, long bytesAllowed, int percentQuotaUsed)
     {
         return "\nYour AeroFS folder is automatically backed up to a Team Server. You are "
-                + "currently using " + Integer.toString(usedGB) + "GB ("
+                + "currently using " + formatBytes(bytesUsed) + " GB ("
                 + Integer.toString(percentQuotaUsed) + "%) of the allowed "
-                + Integer.toString(quotaGB) + "GB.\n"
+                + formatBytes(bytesAllowed) + " GB.\n"
                 + "\n"
-                + "If your AeroFS folder is larger than " + Integer.toString(quotaGB) + "GB, new "
+                + "If your AeroFS folder is larger than " + formatBytes(bytesAllowed) + " GB, new "
                 + "files will not be backed up to the Team Server and may not be visible on the "
                 + "AeroFS iOS and Android apps or the My Files web interface. All of your files "
                 + "will still be synced across your devices and to other people with whom you have "
                 + "shared folders.\n"
                 + "\n"
                 + "You can free up space at any time by moving files out of the AeroFS folder.";
+    }
+
+    private static String formatBytes(long bytes)
+    {
+        return String.format("%.2f", (((float) bytes) / C.GB));
     }
 }
