@@ -25,6 +25,7 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.link.LinkStateService;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
@@ -75,6 +76,7 @@ public final class TransportResource extends ExternalResource
     private final MockRockLog mockRockLog;
     private final InetSocketAddress zephyrAddress;
     private final InetSocketAddress xrayAddress;
+    private final IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
     private DID did;
     private ITransport transport;
@@ -153,7 +155,8 @@ public final class TransportResource extends ExternalResource
                 clientSocketChannelFactory,
                 serverSocketChannelFactory,
                 clientSSLEngineFactory,
-                serverSSLEngineFactory
+                serverSSLEngineFactory,
+                roundTripTimes
         );
 
         transport = transportFactory.newTransport(transportType, transportId, 1);

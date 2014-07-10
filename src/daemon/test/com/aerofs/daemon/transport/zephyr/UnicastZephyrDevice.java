@@ -20,6 +20,7 @@ import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
 import com.aerofs.daemon.transport.PrivateKeyProvider;
 import com.aerofs.daemon.transport.TransportReader;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.SemaphoreTriggeringListener;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -57,7 +58,15 @@ public final class UnicastZephyrDevice
     public ZephyrConnectionService unicast;
     public XMPPConnectionService xmppConnectionService;
 
-    public UnicastZephyrDevice(Random random, SecureRandom secureRandom, String zephyrHost, int zephyrPort, MockCA mockCA, MockRockLog mockRockLog, UnicastTransportListener transportListener)
+    public UnicastZephyrDevice(
+            Random random,
+            SecureRandom secureRandom,
+            String zephyrHost,
+            int zephyrPort,
+            MockCA mockCA,
+            MockRockLog mockRockLog,
+            UnicastTransportListener transportListener,
+            IRoundTripTimes roundTripTimes)
             throws Exception
     {
         this.transportListener = transportListener;
@@ -103,7 +112,8 @@ public final class UnicastZephyrDevice
                 mockRockLog.getRockLog(),
                 ChannelFactories.newClientChannelFactory(),
                 new InetSocketAddress(zephyrHost, zephyrPort),
-                Proxy.NO_PROXY);
+                Proxy.NO_PROXY,
+                roundTripTimes);
 
         workaround.setRealUnicast(unicast);
     }

@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.daemon.transport.lib.IChannelDiagnosticsHandler;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.TransportDefects;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
@@ -22,11 +23,14 @@ final class TCPChannelDiagnosticsHandler extends SimpleChannelHandler implements
 {
     private final HandlerMode mode;
     private final RockLog rockLog;
+    private final IRoundTripTimes roundTripTimes;
 
-    public TCPChannelDiagnosticsHandler(HandlerMode mode, RockLog rockLog)
+    public TCPChannelDiagnosticsHandler(HandlerMode mode, RockLog rockLog,
+            IRoundTripTimes roundTripTimes)
     {
         this.mode = mode;
         this.rockLog = rockLog;
+        this.roundTripTimes = roundTripTimes;
     }
 
     @Override
@@ -48,6 +52,11 @@ final class TCPChannelDiagnosticsHandler extends SimpleChannelHandler implements
         } else {
             // FIXME (AG): according to the netty codebase this can happen sometimes on Windows when the socket is closed. I'm suspicious.
             rockLog.newDefect(TransportDefects.DEFECT_NAME_NULL_REMOTE_ADDRESS).addData("state", TransportUtil.getChannelState(channel)).send();
+        }
+
+        Long rtt = roundTripTimes.getMicros(channel.getId());
+        if (rtt != null) {
+            channelBuilder.setRoundTripTime(rtt);
         }
 
         return channelBuilder.build();

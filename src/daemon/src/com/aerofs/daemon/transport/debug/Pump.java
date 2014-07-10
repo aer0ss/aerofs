@@ -25,7 +25,9 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.daemon.transport.lib.RoundTripTimes;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
@@ -159,6 +161,7 @@ public final class Pump implements IProgram
         SSLEngineFactory serverSslEngineFactory = new SSLEngineFactory(Server, Desktop, keyProvider, trustedCA, null);
         ClientSocketChannelFactory clientChannelFactory = getClientChannelFactory();
         ServerSocketChannelFactory serverChannelFactory = getServerChannelFactory();
+        IRoundTripTimes roundTripTimes = new RoundTripTimes();
         return new TransportFactory(
                 absRTRoot.get(),
                 localid.get(),
@@ -190,7 +193,8 @@ public final class Pump implements IProgram
                 clientChannelFactory,
                 serverChannelFactory,
                 clientSslEngineFactory,
-                serverSslEngineFactory);
+                serverSslEngineFactory,
+                roundTripTimes);
     }
 
     private void handleUnicastMessage(EIUnicastMessage unicastMessage)

@@ -17,6 +17,7 @@ import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelMonitor;
 import com.aerofs.daemon.transport.lib.IAddressResolver;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -102,7 +103,8 @@ public class TCP implements ITransport, IAddressResolver
             Timer timer,
             RockLog rockLog,
             ClientSocketChannelFactory clientChannelFactory,
-            ServerSocketChannelFactory serverChannelFactory)
+            ServerSocketChannelFactory serverChannelFactory,
+            IRoundTripTimes roundTripTimes)
     {
         this.dispatcher = new EventDispatcher();
         this.transportEventQueue = new TransportEventQueue(id, this.dispatcher);
@@ -141,7 +143,8 @@ public class TCP implements ITransport, IAddressResolver
                 tcpProtocolHandler,
                 transportStats,
                 timer,
-                rockLog);
+                rockLog,
+                roundTripTimes);
         ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelFactory,
                 serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);

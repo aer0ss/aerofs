@@ -14,6 +14,8 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelMonitor;
+import com.aerofs.daemon.transport.lib.DevicePresenceListener;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -97,7 +99,8 @@ public class Jingle implements ITransport
             MaxcastFilterReceiver maxcastFilterReceiver,
             RockLog rockLog,
             SSLEngineFactory clientSslEngineFactory,
-            SSLEngineFactory serverSslEngineFactory)
+            SSLEngineFactory serverSslEngineFactory,
+            IRoundTripTimes roundTripTimes)
     {
         OSUtil.get().loadLibrary("aerofsj");
 
@@ -154,7 +157,8 @@ public class Jingle implements ITransport
                 protocolHandler,
                 transportStats,
                 signalThread,
-                channelWorker);
+                channelWorker,
+                roundTripTimes);
         ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelTeardownHandler);
         ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);

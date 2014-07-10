@@ -13,6 +13,7 @@ import com.aerofs.daemon.transport.ExTransport;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelDirectory;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.IUnicastConnector;
 import com.aerofs.daemon.transport.lib.IUnicastInternal;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
@@ -97,6 +98,8 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
+    private final IRoundTripTimes roundTripTimes;
+
     ZephyrConnectionService(
             UserID localid,
             DID localdid,
@@ -116,7 +119,8 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             RockLog rockLog,
             ChannelFactory channelFactory,
             InetSocketAddress zephyrAddress,
-            Proxy proxy)
+            Proxy proxy,
+            IRoundTripTimes roundTripTimes)
     {
         this.zephyrAddress = zephyrAddress;
         this.bootstrap = new ClientBootstrap(channelFactory);
@@ -136,7 +140,8 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                         proxy,
                         hearbeatInterval,
                         maxFailedHeartbeats,
-                        zephyrHandshakeTimeout));
+                        zephyrHandshakeTimeout,
+                        roundTripTimes));
 
         this.rockLog = rockLog;
 
@@ -145,6 +150,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         this.unicastListener = unicastListener;
         this.directory = new ChannelDirectory(transport, this);
         directory.setUnicastListener(unicastListener);
+        this.roundTripTimes = roundTripTimes;
     }
 
     //
@@ -478,17 +484,21 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             Channel channel = entry.getValue();
 
             ZephyrClientHandler client = getZephyrClient(channel);
+            ZephyrChannel.Builder channelBd = ZephyrChannel.newBuilder()
+                    .setState(getChannelState(client))
+                    .setZidLocal(client.getLocalZid())
+                    .setZidRemote(client.getRemoteZid())
+                    .setBytesSent(client.getBytesSent())
+                    .setBytesReceived(client.getBytesReceived())
+                    .setLifetime(client.getChannelLifetime());
+
+            Long rtt = roundTripTimes.getMicros(channel.getId());
+            if (rtt != null) channelBd.setRoundTripTime(rtt);
+
             ZephyrDevice device = ZephyrDevice
                     .newBuilder()
                     .setDid(did.toPB())
-                    .addChannel(ZephyrChannel
-                            .newBuilder()
-                            .setState(getChannelState(client))
-                            .setZidLocal(client.getLocalZid())
-                            .setZidRemote(client.getRemoteZid())
-                            .setBytesSent(client.getBytesSent())
-                            .setBytesReceived(client.getBytesReceived())
-                            .setLifetime(client.getChannelLifetime()))
+                    .addChannel(channelBd)
                     .build();
 
             devices.add(device);

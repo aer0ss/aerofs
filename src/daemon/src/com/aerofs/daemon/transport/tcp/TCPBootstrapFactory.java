@@ -9,6 +9,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
@@ -62,6 +63,7 @@ final class TCPBootstrapFactory
     private final TransportStats transportStats;
     private final Timer timer;
     private final RockLog rockLog;
+    private final IRoundTripTimes roundTripTimes;
 
     TCPBootstrapFactory(
             UserID localuser,
@@ -77,7 +79,8 @@ final class TCPBootstrapFactory
             TCPProtocolHandler tcpProtocolHandler,
             TransportStats stats,
             Timer timer,
-            RockLog rockLog)
+            RockLog rockLog,
+            IRoundTripTimes roundTripTimes)
     {
         this.localuser = localuser;
         this.localdid = localdid;
@@ -90,11 +93,12 @@ final class TCPBootstrapFactory
         this.protocolHandler = protocolHandler;
         this.tcpProtocolHandler = tcpProtocolHandler;
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
-        this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT, rockLog);
-        this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER, rockLog);
+        this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT, rockLog, roundTripTimes);
+        this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER, rockLog, roundTripTimes);
         this.transportStats = stats;
         this.timer = timer;
         this.rockLog = rockLog;
+        this.roundTripTimes = roundTripTimes;
     }
 
     ClientBootstrap newClientBootstrap(ClientSocketChannelFactory channelFactory, final ChannelTeardownHandler clientChannelTeardownHandler)
@@ -120,7 +124,7 @@ final class TCPBootstrapFactory
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
                         verifiedHandler,
                         messageHandler,
-                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer),
+                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
                         tcpProtocolHandler,
                         protocolHandler,
                         clientChannelDiagnosticsHandler,
@@ -156,7 +160,7 @@ final class TCPBootstrapFactory
                         verifiedHandler,
                         messageHandler,
                         incomingChannelHandler,
-                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer),
+                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
                         tcpProtocolHandler,
                         protocolHandler,
                         serverChannelDiagnosticsHandler,

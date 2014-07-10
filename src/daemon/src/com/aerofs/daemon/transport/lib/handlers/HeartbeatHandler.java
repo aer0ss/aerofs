@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.proto.Transport.PBHeartbeat;
@@ -47,12 +48,15 @@ public final class HeartbeatHandler extends SimpleChannelHandler
     private final ElapsedTimer outgoingMessageTimer = new ElapsedTimer(); // protected by this
     private int unansweredHeartbeatCount; // protected by this
     private int lastSentHeartbeatId; // protected by this
+    private IRoundTripTimes roundTripTimes;
 
-    public HeartbeatHandler(long heartbeatInterval, int maxFailedHeartbeats, Timer heartbeatTimer)
+    public HeartbeatHandler(long heartbeatInterval, int maxFailedHeartbeats, Timer heartbeatTimer,
+            IRoundTripTimes roundTripTimes)
     {
         this.heartbeatInterval = heartbeatInterval;
         this.maxFailedHeartbeats = maxFailedHeartbeats;
         this.heartbeatTimer = heartbeatTimer;
+        this.roundTripTimes = roundTripTimes;
     }
 
     //
@@ -65,7 +69,9 @@ public final class HeartbeatHandler extends SimpleChannelHandler
         unansweredHeartbeatCount++;
     }
 
-    private synchronized void onHeartbeatReceived(DID did, Channel channel, int heartbeatId) {
+    private synchronized void onHeartbeatReceived(DID did, Channel channel, int heartbeatId,
+            long elapsedMicros)
+    {
         // we're only interested in resetting the counter
         // if we receive a response to the latest heartbeat sent
         // out in a timely fashion
@@ -75,6 +81,7 @@ public final class HeartbeatHandler extends SimpleChannelHandler
         } else {
             l.trace("{} received heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
         }
+        roundTripTimes.putMicros(channel.getId(), elapsedMicros);
     }
 
     private synchronized int getUnansweredHeartbeatCount() {
@@ -97,6 +104,8 @@ public final class HeartbeatHandler extends SimpleChannelHandler
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
             throws Exception
     {
+        long recvTimeNanos = System.nanoTime();
+
         if (!(e.getMessage() instanceof TransportMessage)) {
             super.messageReceived(ctx, e);
             return;
@@ -115,6 +124,7 @@ public final class HeartbeatHandler extends SimpleChannelHandler
         Channel channel = ctx.getChannel();
         DID did = TransportUtil.getChannelData(channel).getRemoteDID();
         int heartbeatId = msg.getHeader().getHeartbeat().getHeartbeatId();
+        long sentTimeNanos = msg.getHeader().getHeartbeat().getSentTime();
 
         if (type == Type.HEARTBEAT_CALL) {
             // a remote peer wants to check if the connection is live
@@ -123,13 +133,14 @@ public final class HeartbeatHandler extends SimpleChannelHandler
                     .setType(Type.HEARTBEAT_REPLY)
                     .setHeartbeat(PBHeartbeat
                             .newBuilder()
-                            .setHeartbeatId(heartbeatId))
+                            .setHeartbeatId(heartbeatId)
+                            .setSentTime(sentTimeNanos))
                     .build();
             write(ctx, future(ctx.getChannel()), TransportProtocolUtil.newControl(reply));
             l.trace("{} respond to heartbeat {} over {}", did, heartbeatId, TransportUtil.hexify(channel));
         } else {
             // we've received a heartbeat reply
-            onHeartbeatReceived(did, channel, heartbeatId);
+            onHeartbeatReceived(did, channel, heartbeatId, (recvTimeNanos - sentTimeNanos) / 1000);
         }
     }
 
@@ -195,7 +206,8 @@ public final class HeartbeatHandler extends SimpleChannelHandler
                         .setType(Type.HEARTBEAT_CALL)
                         .setHeartbeat(PBHeartbeat
                                 .newBuilder()
-                                .setHeartbeatId(heartbeatId))
+                                .setHeartbeatId(heartbeatId)
+                                .setSentTime(System.nanoTime()))
                         .build();
 
                 write(ctx, future(channel), TransportProtocolUtil.newControl(heartbeat));

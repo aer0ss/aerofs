@@ -14,6 +14,8 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelMonitor;
+import com.aerofs.daemon.transport.lib.DevicePresenceListener;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -102,7 +104,8 @@ public final class XRay implements ITransport
             int maxFailedHeartbeats,
             long xrayHandshakeTimeout,
             InetSocketAddress xrayAddress,
-            Proxy proxy)
+            Proxy proxy,
+            IRoundTripTimes roundTripTimes)
     {
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.XRay.HANDSHAKE_TIMEOUT); // should be much larger!
 
@@ -158,7 +161,8 @@ public final class XRay implements ITransport
                 rockLog,
                 clientSocketChannelFactory,
                 this.xrayAddress,
-                proxy);
+                proxy,
+                roundTripTimes);
 
         this.monitor = new ChannelMonitor(xrayConnectionService.getDirectory(), timer);
 

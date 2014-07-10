@@ -81,6 +81,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
 
     private void leaveMUC(SID sid) throws XMPPException
     {
+        l.info("leaving muc {}", sid.toStringFormal());
         MultiUserChat muc;
         synchronized (this) {
             allStores.remove(sid);
@@ -145,7 +146,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
 
     private void joinRoom(MultiUserChat muc) throws XMPPException
     {
-        l.info("joining {}", shortenRoomStringForLogging(muc));
+        l.info("joining muc {}", shortenRoomStringForLogging(muc));
 
         // requesting no history
         DiscussionHistory history = new DiscussionHistory();

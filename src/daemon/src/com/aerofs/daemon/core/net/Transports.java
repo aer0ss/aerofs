@@ -18,6 +18,7 @@ import com.aerofs.daemon.lib.ITransferStat;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.LibParam;
@@ -88,7 +89,8 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             ClientSSLEngineFactory clientSslEngineFactory,
             ServerSSLEngineFactory serverSslEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
-            ServerSocketChannelFactory serverSocketChannelFactory)
+            ServerSocketChannelFactory serverSocketChannelFactory,
+            IRoundTripTimes roundTripTimes)
             throws ExUnsupportedTransport
     {
         TransportFactory transportFactory = new TransportFactory(
@@ -122,7 +124,8 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 clientSocketChannelFactory,
                 serverSocketChannelFactory,
                 clientSslEngineFactory,
-                serverSslEngineFactory);
+                serverSslEngineFactory,
+                roundTripTimes);
 
         if (enabledTransports.isTcpEnabled()) {
             addTransport(transportFactory.newTransport(LANTCP));

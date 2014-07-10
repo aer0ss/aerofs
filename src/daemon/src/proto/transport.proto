@@ -101,4 +101,5 @@ message PBCheckPulse {
 
 message PBHeartbeat {
     required int32 heartbeat_id = 1;
+    required uint64 sent_time = 2;
 }

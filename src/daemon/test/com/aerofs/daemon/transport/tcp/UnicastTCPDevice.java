@@ -18,6 +18,7 @@ import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.PrivateKeyProvider;
 import com.aerofs.daemon.transport.TransportReader;
 import com.aerofs.daemon.transport.lib.IAddressResolver;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.SemaphoreTriggeringListener;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportStats;
@@ -114,7 +115,8 @@ public final class UnicastTCPDevice
                 tcpProtocolHandler,
                 transportStats,
                 mock(Timer.class),
-                mock(RockLog.class));
+                mock(RockLog.class),
+                mock(IRoundTripTimes.class));
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);
     }

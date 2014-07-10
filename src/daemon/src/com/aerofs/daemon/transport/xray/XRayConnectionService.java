@@ -17,6 +17,7 @@ import com.aerofs.daemon.transport.ExTransport;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelDirectory;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.IUnicastConnector;
 import com.aerofs.daemon.transport.lib.IUnicastInternal;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
@@ -101,6 +102,8 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
+    private final IRoundTripTimes roundTripTimes;
+
     XRayConnectionService(
             UserID localid,
             DID localdid,
@@ -120,7 +123,8 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
             RockLog rockLog,
             ChannelFactory channelFactory,
             InetSocketAddress xrayAddress,
-            Proxy proxy)
+            Proxy proxy,
+            IRoundTripTimes roundTripTimes)
     {
         this.xrayAddress = xrayAddress;
         this.bootstrap = new ClientBootstrap(channelFactory);
@@ -140,7 +144,8 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
                         proxy,
                         hearbeatInterval,
                         maxFailedHeartbeats,
-                        xrayHandshakeTimeout));
+                        xrayHandshakeTimeout,
+                        roundTripTimes));
 
         this.rockLog = rockLog;
 
@@ -149,6 +154,7 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
         this.unicastListener = unicastListener;
         this.directory = new ChannelDirectory(transport, this);
         directory.setUnicastListener(unicastListener);
+        this.roundTripTimes = roundTripTimes;
     }
 
     //
@@ -477,17 +483,21 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
             Channel channel = entry.getValue();
 
             XRayClientHandler client = getZephyrClient(channel);
+            XRayChannel.Builder channelBd = XRayChannel.newBuilder()
+                    .setState(getChannelState(client))
+                    .setZidLocal(client.getLocalZid())
+                    .setZidRemote(client.getRemoteZid())
+                    .setBytesSent(client.getBytesSent())
+                    .setBytesReceived(client.getBytesReceived())
+                    .setLifetime(client.getChannelLifetime());
+
+            Long rtt = roundTripTimes.getMicros(channel.getId());
+            if (rtt != null) channelBd.setRoundTripTime(rtt);
+
             XRayDevice device = XRayDevice
                     .newBuilder()
                     .setDid(did.toPB())
-                    .addChannel(XRayChannel
-                            .newBuilder()
-                            .setState(getChannelState(client))
-                            .setZidLocal(client.getLocalZid())
-                            .setZidRemote(client.getRemoteZid())
-                            .setBytesSent(client.getBytesSent())
-                            .setBytesReceived(client.getBytesReceived())
-                            .setLifetime(client.getChannelLifetime()))
+                    .addChannel(channelBd)
                     .build();
 
             devices.add(device);

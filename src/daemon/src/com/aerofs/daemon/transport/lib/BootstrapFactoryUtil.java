@@ -71,9 +71,10 @@ public abstract class BootstrapFactoryUtil
         return new IOStatsHandler(stats);
     }
 
-    public static HeartbeatHandler newHeartbeatHandler(long heartbeatInterval, int maxFailedHeartbeats, Timer timer)
+    public static HeartbeatHandler newHeartbeatHandler(long heartbeatInterval, int maxFailedHeartbeats,
+            Timer timer, IRoundTripTimes roundTripTimes)
     {
-        return new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer);
+        return new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes);
     }
 
     public static void setConnectTimeout(ClientBootstrap bootstrap, long channelConnectTimeout)

@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport.jingle;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.transport.lib.ChannelData;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
@@ -45,6 +46,7 @@ public final class TestJingleChannelDiagnosticsHandler
     private final WriteCompletionEvent writeCompletionEvent = new DefaultWriteCompletionEvent(channel, 92);
     private final ChannelBuffer buffer = ChannelBuffers.copiedBuffer(new byte[]{0x00, 0x00, 0x00});
     private final MessageEvent messageEvent = new UpstreamMessageEvent(channel, buffer, new JingleAddress(DID.generate(), mock(Jid.class)));
+    private final IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
     // set in tests
     private HandlerMode handlerMode;
@@ -66,6 +68,8 @@ public final class TestJingleChannelDiagnosticsHandler
         // setup the IOStats handler
         ioStatsHandler.writeComplete(ctx, writeCompletionEvent);
         ioStatsHandler.messageReceived(ctx, messageEvent);
+
+        handler = new JingleChannelDiagnosticsHandler(handlerMode, roundTripTimes);
     }
 
     //
@@ -76,7 +80,6 @@ public final class TestJingleChannelDiagnosticsHandler
     public void shouldReturnValidDiagnosticsMessageWhenConnecting()
     {
         handlerMode = HandlerMode.CLIENT;
-        handler = new JingleChannelDiagnosticsHandler(handlerMode);
         checkValidPBMessage(handler.getDiagnostics(channel), ChannelState.CONNECTING, handlerMode);
     }
 
@@ -88,7 +91,6 @@ public final class TestJingleChannelDiagnosticsHandler
 
         // now check the diagnostics message
         handlerMode = HandlerMode.CLIENT;
-        handler = new JingleChannelDiagnosticsHandler(handlerMode);
         checkValidPBMessage(handler.getDiagnostics(channel), ChannelState.VERIFIED, handlerMode);
     }
 
@@ -100,7 +102,6 @@ public final class TestJingleChannelDiagnosticsHandler
 
         // now check the diagnostics message
         handlerMode = HandlerMode.CLIENT;
-        handler = new JingleChannelDiagnosticsHandler(handlerMode);
         checkValidPBMessage(handler.getDiagnostics(channel), ChannelState.CLOSED, handlerMode);
     }
 
@@ -116,7 +117,6 @@ public final class TestJingleChannelDiagnosticsHandler
 
         // now check the diagnostics message
         HandlerMode handlerMode = HandlerMode.SERVER;
-        handler = new JingleChannelDiagnosticsHandler(handlerMode);
         checkValidPBMessage(handler.getDiagnostics(channel), ChannelState.VERIFIED, handlerMode);
     }
 

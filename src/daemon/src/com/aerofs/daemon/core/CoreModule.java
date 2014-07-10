@@ -59,6 +59,8 @@ import com.aerofs.daemon.lib.db.ver.IPrefixVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.ImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
+import com.aerofs.daemon.transport.lib.RoundTripTimes;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.cfg.Cfg;
@@ -120,6 +122,7 @@ public class CoreModule extends AbstractModule
         bind(IUserAndDeviceNameDatabase.class).to(UserAndDeviceNameDatabase.class);
         bind(IAuditDatabase.class).to(AuditDatabase.class);
         bind(IAnalyticsPlatformProperties.class).to(DesktopAnalyticsProperties.class);
+        bind(IRoundTripTimes.class).toInstance(new RoundTripTimes());
 
         // we use multibindings to allow splitting DB schemas cleanly, only setting up
         // exactly as much as required depending on Module instantiation and preventing

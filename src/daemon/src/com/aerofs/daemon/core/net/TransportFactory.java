@@ -12,6 +12,7 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.jingle.Jingle;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.xray.XRay;
@@ -96,6 +97,7 @@ public final class TransportFactory
     private final MaxcastFilterReceiver maxcastFilterReceiver;
     private final SSLEngineFactory serverSslEngineFactory;
     private final SSLEngineFactory clientSslEngineFactory;
+    private final IRoundTripTimes roundTripTimes;
 
     public TransportFactory(
             String absRtRoot,
@@ -128,7 +130,8 @@ public final class TransportFactory
             ClientSocketChannelFactory clientSocketChannelFactory,
             ServerSocketChannelFactory serverSocketChannelFactory,
             SSLEngineFactory clientSslEngineFactory,
-            SSLEngineFactory serverSslEngineFactory)
+            SSLEngineFactory serverSslEngineFactory,
+            IRoundTripTimes roundTripTimes)
     {
         this.absRtRoot = absRtRoot;
         this.userID = userID;
@@ -161,6 +164,7 @@ public final class TransportFactory
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.mobileServerZephyrConnector = mobileServerZephyrConnector;
+        this.roundTripTimes = roundTripTimes;
     }
 
     public ITransport newTransport(TransportType transportType, String transportId, int transportRank)
@@ -205,7 +209,8 @@ public final class TransportFactory
                 timer,
                 rockLog,
                 clientSocketChannelFactory,
-                serverSocketChannelFactory);
+                serverSocketChannelFactory,
+                roundTripTimes);
     }
 
     private ITransport newZephyr(String transportId, int transportRank)
@@ -235,7 +240,8 @@ public final class TransportFactory
                 maxFailedHeartbeats,
                 zephyrHandshakeTimeout,
                 zephyrServerAddress,
-                proxy);
+                proxy,
+                roundTripTimes);
     }
 
     private ITransport newXrayRS(String transportId, int transportRank)
@@ -264,7 +270,8 @@ public final class TransportFactory
                 maxFailedHeartbeats,
                 xrayHandshakeTimeout,
                 xrayServerAddress,
-                proxy);
+                proxy,
+                roundTripTimes);
     }
 
     private ITransport newJingle(String transportId, int transportRank)
@@ -293,6 +300,7 @@ public final class TransportFactory
                 maxcastFilterReceiver,
                 rockLog,
                 clientSslEngineFactory,
-                serverSslEngineFactory);
+                serverSslEngineFactory,
+                roundTripTimes);
     }
 }

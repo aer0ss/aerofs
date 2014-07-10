@@ -8,6 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
@@ -42,8 +43,8 @@ import static org.jboss.netty.channel.Channels.pipeline;
  */
 final class JingleBootstrapFactory
 {
-    private final JingleChannelDiagnosticsHandler clientChannelDiagnosticsHandler = new JingleChannelDiagnosticsHandler(HandlerMode.CLIENT);
-    private final JingleChannelDiagnosticsHandler serverChannelDiagnosticsHandler = new JingleChannelDiagnosticsHandler(HandlerMode.SERVER);
+    private final JingleChannelDiagnosticsHandler clientChannelDiagnosticsHandler;
+    private final JingleChannelDiagnosticsHandler serverChannelDiagnosticsHandler;
     private final UserID localuser;
     private final DID localdid;
     private final long channelConnectTimeout;
@@ -59,6 +60,7 @@ final class JingleBootstrapFactory
     private final TransportStats transportStats;
     private final SignalThread signalThread;
     private final JingleChannelWorker channelWorker;
+    private final IRoundTripTimes roundTripTimes;
 
     JingleBootstrapFactory(
             UserID localuser,
@@ -75,8 +77,11 @@ final class JingleBootstrapFactory
             TransportProtocolHandler protocolHandler,
             TransportStats transportStats,
             SignalThread signalThread,
-            JingleChannelWorker channelWorker)
+            JingleChannelWorker channelWorker,
+            IRoundTripTimes roundTripTimes)
     {
+        clientChannelDiagnosticsHandler = new JingleChannelDiagnosticsHandler(HandlerMode.CLIENT, roundTripTimes);
+        serverChannelDiagnosticsHandler = new JingleChannelDiagnosticsHandler(HandlerMode.SERVER, roundTripTimes);
         this.localuser = localuser;
         this.localdid = localdid;
         this.channelConnectTimeout = channelConnectTimeout;
@@ -92,6 +97,7 @@ final class JingleBootstrapFactory
         this.transportStats = transportStats;
         this.signalThread = signalThread;
         this.channelWorker = channelWorker;
+        this.roundTripTimes = roundTripTimes;
     }
 
     ClientBootstrap newClientBootstrap(final ChannelTeardownHandler clientChannelTeardownHandler)
@@ -116,7 +122,7 @@ final class JingleBootstrapFactory
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
                         verifiedHandler,
                         messageHandler,
-                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer),
+                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
                         protocolHandler,
                         clientChannelDiagnosticsHandler,
                         clientChannelTeardownHandler);
@@ -150,7 +156,7 @@ final class JingleBootstrapFactory
                         verifiedHandler,
                         messageHandler,
                         incomingChannelHandler,
-                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer),
+                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
                         protocolHandler,
                         serverChannelDiagnosticsHandler,
                         serverChannelTeardownHandler);

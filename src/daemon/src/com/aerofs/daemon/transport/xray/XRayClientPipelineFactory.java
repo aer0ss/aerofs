@@ -10,6 +10,7 @@ import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.transport.lib.BootstrapFactoryUtil;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
@@ -62,6 +63,7 @@ final class XRayClientPipelineFactory implements ChannelPipelineFactory
     private final long xrayHandshakeTimeout;
     private final TimeUnit xrayHandshakeTimeoutTimeunit;
     private final Timer timer;
+    private final IRoundTripTimes roundTripTimes;
 
     public XRayClientPipelineFactory(
             UserID localid,
@@ -78,7 +80,8 @@ final class XRayClientPipelineFactory implements ChannelPipelineFactory
             Proxy proxy,
             long heartbeatInterval,
             int maxFailedHeartbeats,
-            long xrayHandshakeTimeout)
+            long xrayHandshakeTimeout,
+            IRoundTripTimes roundTripTimes)
     {
         checkArgument(proxy.type() == DIRECT || proxy.type() == HTTP, "cannot support proxy type:" + proxy.type());
 
@@ -99,6 +102,7 @@ final class XRayClientPipelineFactory implements ChannelPipelineFactory
         this.maxFailedHeartbeats = maxFailedHeartbeats;
         this.xrayHandshakeTimeout = xrayHandshakeTimeout;
         this.xrayHandshakeTimeoutTimeunit = MILLISECONDS;
+        this.roundTripTimes = roundTripTimes;
     }
 
     @Override
@@ -148,7 +152,7 @@ final class XRayClientPipelineFactory implements ChannelPipelineFactory
         pipeline.addLast(XRAY_CLIENT_HANDLER_NAME, zephyrClientHandler);
 
         // setup the heartbeat handler
-        pipeline.addLast("heartbeat", new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer));
+        pipeline.addLast("heartbeat", new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes));
 
         // setup the actual transport protocol handler
         pipeline.addLast("transport-protocol", transportProtocolHandler);

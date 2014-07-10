@@ -15,6 +15,8 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelMonitor;
+import com.aerofs.daemon.transport.lib.DevicePresenceListener;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -104,7 +106,8 @@ public final class Zephyr implements ITransport
             int maxFailedHeartbeats,
             long zephyrHandshakeTimeout,
             InetSocketAddress zephyrAddress,
-            Proxy proxy)
+            Proxy proxy,
+            IRoundTripTimes roundTripTimes)
     {
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
 
@@ -160,7 +163,8 @@ public final class Zephyr implements ITransport
                 rockLog,
                 clientSocketChannelFactory,
                 this.zephyrAddress,
-                proxy);
+                proxy,
+                roundTripTimes);
 
         this.monitor = new ChannelMonitor(zephyrConnectionService.getDirectory(), timer);
 

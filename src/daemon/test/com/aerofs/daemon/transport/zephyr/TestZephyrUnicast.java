@@ -11,6 +11,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener;
@@ -38,6 +39,7 @@ import java.util.concurrent.ExecutionException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
 public final class TestZephyrUnicast
@@ -72,9 +74,10 @@ public final class TestZephyrUnicast
         SecureRandom secureRandom = new SecureRandom();
         MockRockLog mockRockLog = new MockRockLog();
         MockCA mockCA = new MockCA("test-ca", new SecureRandom());
+        IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
-        localDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), mockCA, mockRockLog, new UnicastTransportListener());
-        otherDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), mockCA, mockRockLog, new UnicastTransportListener());
+        localDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), mockCA, mockRockLog, new UnicastTransportListener(), roundTripTimes);
+        otherDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), mockCA, mockRockLog, new UnicastTransportListener(), roundTripTimes);
 
         localDevice.init();
         otherDevice.init();

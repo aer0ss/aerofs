@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.transport.lib.ChannelData;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
@@ -53,6 +54,7 @@ public final class TestTCPChannelDiagnosticsHandler
     private final MessageEvent messageEvent = new UpstreamMessageEvent(channel, buffer, remoteAddress);
     private final RockLog rockLog = mock(RockLog.class);
     private final Defect defect = mock(Defect.class);
+    private final IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
     // set in tests
     private HandlerMode handlerMode;
@@ -90,7 +92,7 @@ public final class TestTCPChannelDiagnosticsHandler
     public void shouldReturnValidDiagnosticsMessageWhenConnecting()
     {
         handlerMode = HandlerMode.CLIENT;
-        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog);
+        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog, roundTripTimes);
         checkValidPBMessage(handler.getDiagnostics(channel), ChannelState.CONNECTING, handlerMode);
     }
 
@@ -102,7 +104,7 @@ public final class TestTCPChannelDiagnosticsHandler
 
         // now check the diagnostics message
         handlerMode = HandlerMode.CLIENT;
-        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog);
+        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog, roundTripTimes);
         checkValidPBMessage(handler.getDiagnostics(channel), ChannelState.VERIFIED, handlerMode);
     }
 
@@ -114,7 +116,7 @@ public final class TestTCPChannelDiagnosticsHandler
 
         // now check the diagnostics message
         handlerMode = HandlerMode.CLIENT;
-        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog);
+        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog, roundTripTimes);
         checkValidPBMessage(handler.getDiagnostics(channel), ChannelState.CLOSED, handlerMode);
     }
 
@@ -126,7 +128,7 @@ public final class TestTCPChannelDiagnosticsHandler
 
         // pretend that we're connecting, but, for some reason the remote address is null
         handlerMode = HandlerMode.CLIENT;
-        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog);
+        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog, roundTripTimes);
         checkValidPBMessage(handler.getDiagnostics(channel), ChannelState.CONNECTING, handlerMode, null);
     }
 
@@ -142,7 +144,7 @@ public final class TestTCPChannelDiagnosticsHandler
 
         // now check the diagnostics message
         HandlerMode handlerMode = HandlerMode.SERVER;
-        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog);
+        handler = new TCPChannelDiagnosticsHandler(handlerMode, rockLog, roundTripTimes);
         checkValidPBMessage(handler.getDiagnostics(channel), ChannelState.VERIFIED, handlerMode);
     }
 

@@ -10,6 +10,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.MockRockLog;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
@@ -40,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
 public final class TestXRayUnicast
@@ -73,14 +75,15 @@ public final class TestXRayUnicast
         SecureRandom secureRandom = new SecureRandom();
         MockRockLog mockRockLog = new MockRockLog();
         MockCA mockCA = new MockCA("test-ca", new SecureRandom());
+        IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
         String host = "localhost";
         short port = (short) (random.nextInt(10000) + 5000);
         xray = new XRayServer(host, port, new Dispatcher());
         xray.init();
 
-        localDevice = new UnicastXRayDevice(random, secureRandom, host, port, mockCA, mockRockLog, new UnicastTransportListener());
-        otherDevice = new UnicastXRayDevice(random, secureRandom, host, port, mockCA, mockRockLog, new UnicastTransportListener());
+        localDevice = new UnicastXRayDevice(random, secureRandom, host, port, mockCA, mockRockLog, new UnicastTransportListener(), roundTripTimes);
+        otherDevice = new UnicastXRayDevice(random, secureRandom, host, port, mockCA, mockRockLog, new UnicastTransportListener(), roundTripTimes);
 
         Thread xrayThread = new Thread(new Runnable()
         {

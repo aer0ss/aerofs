@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ConfigurationPropertiesResource;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.jingle.Jingle;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -64,6 +65,7 @@ public class TestCoreTransports extends AbstractTest
     private @Mock ServerSSLEngineFactory _serverSSLEngineFactory;
     private @Mock ClientSocketChannelFactory _clientSocketChannelFactory;
     private @Mock ServerSocketChannelFactory _serverSocketChannelFactory;
+    private @Mock IRoundTripTimes _roundTripTimes;
 
     @ClassRule
     public static ConfigurationPropertiesResource _configurationPropertiesResource = new ConfigurationPropertiesResource();
@@ -107,7 +109,8 @@ public class TestCoreTransports extends AbstractTest
                 _clientSslEngineFactory,
                 _serverSSLEngineFactory,
                 _clientSocketChannelFactory,
-                _serverSocketChannelFactory);
+                _serverSocketChannelFactory,
+                _roundTripTimes);
 
         Collection<ITransport> constructedTransports = transports.getAll_();
 
@@ -146,7 +149,8 @@ public class TestCoreTransports extends AbstractTest
                 _clientSslEngineFactory,
                 _serverSSLEngineFactory,
                 _clientSocketChannelFactory,
-                _serverSocketChannelFactory);
+                _serverSocketChannelFactory,
+                _roundTripTimes);
 
         Collection<ITransport> constructedTransports = transports.getAll_();
 
