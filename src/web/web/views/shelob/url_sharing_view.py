@@ -13,13 +13,16 @@ import requests
 from oauth import get_new_oauth_token, delete_oauth_token
 from web import error
 from web.sp_util import exception2error
-from web.util import get_rpc_stub
+from web.util import get_rpc_stub, is_private_deployment, str2bool
 
 
 log = logging.getLogger(__name__)
 
 
 def _audit(request, topic, event, data=None):
+    if not is_private_deployment(request.registry.settings) or
+            not str2bool(request.registry.settings["base.audit.enabled"]):
+        return
     data = data or {}
     assert type(data) == dict
     data['timestamp'] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f%z")
