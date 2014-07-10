@@ -65,7 +65,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
     private final LinkerRootMap _lrm;
     private final InjectableDriver _dr;
     private final IMetaDatabase _mdb;
-    private final NRODatabase _nrodb;
+    final NRODatabase _nrodb;
     private final InjectableFile.Factory _factFile;
     private final RitualNotificationServer _rns;
     private final DirectoryService _ds;

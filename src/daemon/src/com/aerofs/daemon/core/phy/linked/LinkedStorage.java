@@ -290,8 +290,28 @@ public class LinkedStorage implements IPhysicalStorage
     public void scrub_(SOID soid,  @Nonnull Path historyPath, Trans t)
             throws SQLException, IOException
     {
-        // TODO: NRO db
-        // TODO: files/folders
+        //l.info("scrub {} {}", soid, historyPath);
+        SID sid = historyPath.sid();
+        String auxRoot = _lrm.auxRoot_(sid);
+        String prefix = LinkedPath.makeAuxFileName(soid);
+
+        // scrub NRO if needed
+        String nro = Util.join(auxRoot, AuxFolder.NON_REPRESENTABLE._name, prefix);
+        InjectableFile f = _factFile.create(nro);
+        if (f.exists()) {
+            if (f.isDirectory()) {
+                _sa.stageDeletion_(nro, historyPath, t);
+            } else if (!historyPath.isEmpty()) {
+                _revProvider.newLocalRevFile(historyPath, nro, KIndex.MASTER).save_();
+            } else {
+                f.delete();
+            }
+            _rh._nrodb.setRepresentable_(soid, t);
+        }
+
+        // TODO: reorg storage for more efficient scrubbing
+        deleteFiles_(auxRoot, AuxFolder.CONFLICT, prefix);
+        deleteFiles_(auxRoot, AuxFolder.PREFIX, prefix);
     }
 
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException

@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.Set;
 import java.util.SortedMap;
 
