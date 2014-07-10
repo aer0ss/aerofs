@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 
 def _audit(request, topic, event, data=None):
-    if not is_private_deployment(request.registry.settings) or
+    if not is_private_deployment(request.registry.settings) or \
             not str2bool(request.registry.settings["base.audit.enabled"]):
         return
     data = data or {}
