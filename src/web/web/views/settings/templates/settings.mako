@@ -56,6 +56,20 @@
 <div class="row">
     <hr>
     <div class="col-sm-12">
+        <h4>Two-factor authentication</h4>
+        % if two_factor_enforced:
+        <p>Status: On</p>
+        <a href="${request.route_path('two_factor_settings')}">Edit &raquo;</a>
+        % else:
+        <p>Status: Off</p>
+        <a href="${request.route_path('two_factor_intro')}">Set up &raquo;</a>
+        % endif
+    </div>
+</div>
+
+<div class="row">
+    <hr>
+    <div class="col-sm-12">
         <% member_since = date.fromtimestamp(long(signup_date / 1000)) %>
         <p>You've been an AeroFS member since
             ${'{0:%B} {1}, {0:%Y}'.format(member_since, member_since.day)}.</p>
