@@ -3,32 +3,6 @@
     float: left;
 }
 
-.btn-plain, .btn-plain:active, .btn-group.open .dropdown-toggle.btn-plain {
-    background: none;
-    box-shadow: none;
-}
-
-.my-row, .file-list-head {
-    border-bottom: 1pt solid #ddd;
-    padding-top: 5px;
-}
-
-.my-row:hover {
-    background: #f9f9f9;
-}
-
-.my-row .name, .my-row .last-modified, .my-row .link-status, .my-row .size {
-    padding-top: 10px;
-}
-
-.my-row .actions {
-    padding-top: 2px;
-}
-
-.my-row .actions, .link .options {
-    padding-right: 0;
-}
-
 .name {
     word-wrap: break-word;
 }
@@ -39,11 +13,6 @@
 
 .link {
     margin-bottom: 5px;
-}
-
-.file-list-head {
-    font-weight: bold;
-    border-bottom: 2pt solid #ddd;
 }
 
 .breadcrumb {

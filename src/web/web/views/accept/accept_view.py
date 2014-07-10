@@ -1,4 +1,5 @@
 import logging
+import base64
 
 from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
@@ -8,6 +9,7 @@ from web.auth import is_admin
 from web.sp_util import exception2error
 from web.util import flash_success, get_rpc_stub, is_team_server_user_id
 from web.views.payment import stripe_util
+from web.views.shared_folders.shared_folders_view import _decode_store_id
 
 
 log = logging.getLogger(__name__)
@@ -116,7 +118,10 @@ def ignore_team_invitation(request):
     request_method = 'POST'
 )
 def accept_folder_invitation(request):
-    share_id = request.params[URL_PARAM_SHARE_ID].decode('hex')
+    try:
+        share_id = request.params[URL_PARAM_SHARE_ID].decode('hex')
+    except KeyError:
+        share_id = _decode_store_id(request.json_body['sid'])
     sp = get_rpc_stub(request)
     sp.join_shared_folder(share_id, None)
 

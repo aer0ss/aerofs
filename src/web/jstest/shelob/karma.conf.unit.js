@@ -11,8 +11,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      '../../web/static/shelob/lib/angular/angular.min.js',
-      '../../web/static/shelob/lib/angular/angular-*.js',
+      '../../web/static/js/angular-lib/angular/angular.min.js',
+      '../../web/static/js/angular-lib/angular/angular-*.js',
       'lib/**/*.js',
       '../../web/static/shelob/js/**/*.js',
       'unit/*Spec.js',
@@ -21,7 +21,7 @@ module.exports = function(config) {
 
     // list of files to exclude
     exclude: [
-      '../../web/static/shelob/lib/angular/angular.min.js.map'
+      '../../web/static/js/angular-lib/angular/angular.min.js.map'
     ],
 
 

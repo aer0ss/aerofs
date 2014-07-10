@@ -1,0 +1,88 @@
+<div class="modal-header">
+        <button type="button" class="close" ng-click="ok()">×</button>
+    <h4><span ng-show="is_privileged">Manage "{{folder.name}}" Members</span><span ng-hide="is_privileged">"{{folder.name}}" Members</span></h4>
+</div>
+<div class="modal-body">
+    <div class="my-table">
+        <div class="my-table-head row">
+            <div class="col-sm-6 col-xs-8">
+                Member
+            </div>
+            <div class="col-sm-2 col-xs-4">
+                Role <a href="https://support.aerofs.com/entries/22831810" target="_blank"><span class="glyphicon glyphicon-question-sign"></span></a>
+            </div>
+        </div>
+        <div class="my-table-body">
+            <div class="row my-row" 
+                ng-repeat="person in people | orderBy:['is_pending', '-is_owner', '-can_edit', 'email']">
+                <div class="col-sm-6 col-xs-8">
+                    <span ng-hide="person.is_pending">{{person|myName}}
+                        <span class="help" ng-show="person.email != me"><a ng-href="mailto:{{person.email}}" title="Email this user">{{person.email}}</a></span>
+                    </span>
+                    <span ng-show="person.is_pending" class="help">
+                        {{person.email}} <span class="help">(pending)</span>
+                    </span>
+                </div>
+                <div class="col-sm-6 col-xs-4">
+                    <span ng-hide="is_privileged && person.email != me">
+                        <span ng-show="person.is_owner && person.can_edit">Owner</span>
+                        <span ng-show="!person.is_owner && person.can_edit">Editor</span>
+                        <span ng-show="!person.is_owner && !person.can_edit">Viewer</span>
+                        <span ng-show="person.is_owner && !person.can_edit">Manager</span>
+                    </span>
+                    <div class="btn-group" ng-show="is_privileged && person.email != me">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                            <span ng-show="person.is_owner && person.can_edit">Owner</span>
+                            <span ng-show="!person.is_owner && person.can_edit">Editor</span>
+                            <span ng-show="!person.is_owner && !person.can_edit">Viewer</span>
+                            <span ng-show="person.is_owner && !person.can_edit">Manager</span> <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="#" ng-click="changePerms(person, 'Owner')">
+                                <span ng-show="person.is_owner && person.can_edit" class="glyphicon glyphicon-ok"></span>
+                                Owner <span class="help">(read, write, and manage membership)</span>
+                            </a></li>
+                            <li><a href="#" ng-click="changePerms(person, 'Editor')">
+                                <span ng-show="!person.is_owner && person.can_edit" class="glyphicon glyphicon-ok"></span>
+                                Editor <span class="help">(read and write)</span>
+                            </a></li>
+                            <li><a href="#" ng-click="changePerms(person, 'Viewer')">
+                                <span ng-show="!person.is_owner && !person.can_edit" class="glyphicon glyphicon-ok"></span>
+                                Viewer <span class="help">(read)</span>
+                            </a></li>
+                            <li class="divider"></li>
+                            <li><a href="#" ng-click="remove(person)">Remove from folder</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <form id="modal-invite-form" role="form" method="post" 
+            ng-if="is_privileged" 
+            ng-submit="inviteMembers(invitees, inviteeRole); invitees = '';">
+            <div class="col-xs-12"><strong>Invite new members:</strong></div>
+            <div id="invite-user-inputs" class="col-sm-6 col-xs-12">
+                <input type="text" class="form-control" id="modal-invitee-email" ng-model="invitees" placeholder="Add email addresses" title="Invite multiple users by separating email addresses with commas">
+            </div>
+            <div class="col-sm-2 col-xs-6">
+                <input type="hidden" id="modal-invite-role">
+                <div class="btn-group">
+                    <a class="btn btn-default dropdown-toggle" data-toggle="dropdown" href="#">
+                        <span id="modal-invite-role-label"></span>{{inviteeRole}}&nbsp;&#x25BE;
+                    </a>
+                    <ul id="modal-invite-role-menu" class="dropdown-menu text-left">
+                        <li><a ng-click="inviteeRole='Viewer'" href="#">Viewer</a></li>
+                        <li><a ng-click="inviteeRole='Editor'" href="#">Editor</a></li>
+                        <li><a ng-click="inviteeRole='Owner'" href="#">Owner</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-sm-4 col-xs-6">
+                <span id="modal-spinner" class="pull-left">&nbsp;</span>
+                <input class="btn btn-primary pull-right" type="submit" value="Invite to Folder">
+            </div>
+        </form>
+    </div>
+</div>

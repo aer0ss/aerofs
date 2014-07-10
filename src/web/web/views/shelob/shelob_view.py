@@ -2,6 +2,7 @@ import logging
 
 from pyramid.view import view_config
 from pyramid.security import authenticated_userid
+from web.util import show_welcome_image_and_set_cookie
 
 from oauth import get_new_oauth_token
 
@@ -22,11 +23,7 @@ def get_new_shelob_token(request):
         request_method='GET',
 )
 def files(request):
-    if 'aerofs_welcome_seen' not in request.cookies:
-        request.response.set_cookie('aerofs_welcome_seen','true')
-        return { 'splash': True }
-    else:
-        return { 'splash': False }
+    return { 'splash': show_welcome_image_and_set_cookie(request) }
 
 
 # map of userid -> access_token

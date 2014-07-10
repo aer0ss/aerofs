@@ -48,16 +48,16 @@
 </%block>
 
 <%block name="scripts">
-    <script src="${request.static_path('web:static/shelob/lib/angular/angular.min.js')}"></script>
-    <script src="${request.static_path('web:static/shelob/lib/angular/angular-route.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/angular-lib/angular/angular-route.min.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/app.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/filters.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/services.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/controllers.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/directives.js')}"></script>
-    <script src="${request.static_path('web:static/shelob/lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
-    <script src="${request.static_path('web:static/shelob/lib/angular-tree-control.js')}"></script>
-    <script src="${request.static_path('web:static/shelob/lib/modernizr.js')}"></script>
+    <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/angular-lib/angular-tree-control.js')}"></script>
+    <script src="${request.static_path('web:static/js/angular-lib/modernizr.js')}"></script>
     <%! from web.util import is_private_deployment %>
     %if is_private_deployment(request.registry.settings):
         <script src="${request.static_path('web:static/shelob/js/config/config_private.js')}"></script>

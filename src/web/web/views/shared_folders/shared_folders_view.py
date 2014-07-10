@@ -18,8 +18,8 @@ from web.sp_util import exception2error
 from web.util import get_rpc_stub, parse_rpc_error_exception, is_restricted_external_sharing_enabled
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
-from aerofs_sp.gen.common_pb2 import PBException, MANAGE
-from aerofs_sp.gen.sp_pb2 import JOINED, PENDING
+from aerofs_sp.gen.common_pb2 import PBException, WRITE, MANAGE
+from aerofs_sp.gen.sp_pb2 import JOINED, PENDING, LEFT
 
 
 from web.views.payment.stripe_util\
@@ -58,20 +58,10 @@ class DatatablesPaginate:
 def my_shared_folders(request):
     _ = request.translate
 
-    return _shared_folders(DatatablesPaginate.NO, request,
+    return _shared_folders(request,
             _("My shared folders"),
-            request.route_url('json.get_my_shared_folders'),
-            _("You can manage this folder because you are an Owner of this"
-              " folder."),
-            _("You cannot change this folder's settings because you are not"
-              " an Owner of this folder."))
+            request.route_url('json.get_my_shared_folders'))
 
-_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN = \
-    "You can manage this folder because you are an organization admin and one or more " \
-    "users in your organization are this folder's Owners."
-_UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN = \
-    "You cannot change this folder's settings since no users in your " \
-    "organization are its Owners."
 
 @view_config(
     route_name = 'user_shared_folders',
@@ -80,14 +70,11 @@ _UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN = \
 )
 def user_shared_folders(request):
     _ = request.translate
-    user = request.params[URL_PARAM_USER]
     full_name = request.params[URL_PARAM_FULL_NAME]
 
-    return _shared_folders(DatatablesPaginate.NO, request,
+    return _shared_folders(request,
             _("${name}'s shared folders", {'name': full_name}),
-            request.route_url('json.get_user_shared_folders', _query={URL_PARAM_USER: user}),
-            _(_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN),
-            _(_UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN))
+            request.route_url('json.get_user_shared_folders'))
 
 
 @view_config(
@@ -98,24 +85,14 @@ def user_shared_folders(request):
 def org_shared_folders(request):
     _ = request.translate
 
-    return _shared_folders(DatatablesPaginate.YES, request,
+    return _shared_folders(request,
             _("Shared folders in my organization"),
-            request.route_url('json.get_org_shared_folders'),
-            _(_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN),
-            _(_UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN))
+            request.route_url('json.get_org_shared_folders'))
 
 
 # @param {un,}privileged_modal_subtitle: the subtitles used in the shared folder
 # modal if the user {has,doesn't have) the privilege to manage the folder.
-def _shared_folders(datatables_paginate, request,
-                    page_heading, datatables_request_route_url,
-                    privileged_modal_tooltip,
-                    unprivileged_modal_tooltip):
-    if 'aerofs_welcome_seen' not in request.cookies:
-        request.response.set_cookie('aerofs_welcome_seen','true')
-        splash = True
-    else:
-        splash = False
+def _shared_folders(request, page_heading, data_url):
     return {
         # constants
         'open_modal_class': _OPEN_MODAL_CLASS,
@@ -130,14 +107,11 @@ def _shared_folders(datatables_paginate, request,
         'session_user': authenticated_userid(request),
         'is_admin': is_admin(request),
         'use_restricted': is_restricted_external_sharing_enabled(request.registry.settings),
-        'datatables_paginate': datatables_paginate == DatatablesPaginate.YES,
         # N.B. can't use "page_title" as the variable name. base_layout.mako
         # defines a global variable using the same name.
         'page_heading': page_heading,
-        'datatables_request_route_url': datatables_request_route_url,
-        'privileged_modal_tooltip': privileged_modal_tooltip,
-        'unprivileged_modal_tooltip': unprivileged_modal_tooltip,
-        'splash': splash
+        'data_url': data_url,
+        'splash': util.show_welcome_image_and_set_cookie(request)
     }
 
 
@@ -147,22 +121,16 @@ def _shared_folders(datatables_paginate, request,
     permission = 'user'
 )
 def json_get_my_shared_folders(request):
-    echo = request.params['sEcho']
-
-    # It's very weird that if we use get_rpc_stub instead of
-    # helper_functions.get_rpc_stub here, the unit test would fail.
-    sp = util.get_rpc_stub(request)
-    session_user = authenticated_userid(request)
-    reply = sp.list_user_shared_folders(session_user)
-    joined = [f for f in reply.shared_folder if _is_joined(f, session_user)]
-    return _sp_reply2datatables(joined,
-        _session_user_privileger,
-        len(joined), echo, session_user, request, True)
+    return json_get_user_shared_folders(request, is_me=True)
 
 
 def _is_joined(folder, user):
     """ return true if the user is a JOINED member of the PBSharedFolder """
     return any(ups.user.user_email == user and ups.state == JOINED for ups in folder.user_permissions_and_state)
+
+def _is_left(folder, user):
+    """ return true if the user is a LEFT member of the PBSharedFolder """
+    return any(ups.user.user_email == user and ups.state == LEFT for ups in folder.user_permissions_and_state)
 
 
 def _session_user_privileger(folder, session_user):
@@ -184,18 +152,19 @@ def _has_permission(folder, user, permission):
     renderer = 'json',
     permission = 'user'
 )
-def json_get_user_shared_folders(request):
-    echo = request.params['sEcho']
-    specified_user = request.params[URL_PARAM_USER]
+def json_get_user_shared_folders(request, is_me=False):
+    if is_me:
+        specified_user = authenticated_userid(request)
+    else:
+        specified_user = request.params[URL_PARAM_USER]
 
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
     reply = sp.list_user_shared_folders(specified_user)
-    joined = [f for f in reply.shared_folder if _is_joined(f, specified_user)]
-    return _sp_reply2datatables(joined,
-        _session_team_privileger,
-        len(joined), echo, authenticated_userid(request), request)
+    folders = [f for f in reply.shared_folder if (_is_joined(f, specified_user) or _is_left(f, specified_user))]
+    return _sp_reply2json(folders,
+        _session_team_privileger, authenticated_userid(request), request, is_mine=is_me, specified_user=specified_user)
 
 
 @view_config(
@@ -204,123 +173,89 @@ def json_get_user_shared_folders(request):
     permission = 'admin'
 )
 def json_get_org_shared_folders(request):
-    echo = request.params['sEcho']
-    count = int(request.params['iDisplayLength'])
-    offset = int(request.params['iDisplayStart'])
+    try:
+        count = int(request.params['count'])
+    except KeyError:
+        count = 20
+
+    try:
+        offset = int(request.params['offset'])
+    except KeyError:
+        offset = 0
 
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
     reply = sp.list_organization_shared_folders(count, offset)
-    return _sp_reply2datatables(reply.shared_folder, _session_team_privileger,
-        reply.total_count, echo, authenticated_userid(request), request)
+    return _sp_reply2json(reply.shared_folder, _session_team_privileger,
+        authenticated_userid(request), request)
 
 
 def _session_team_privileger(folder, session_user):
     return folder.owned_by_team
 
+def _jsonable_person(person):
+    """ Converts protobuf user object to dictionary """
+    is_owner = False
+    can_edit = False
+    if person.state == PENDING:
+        is_pending = True
+    else:
+        is_pending = False
+    if WRITE in person.permissions.permission:
+        can_edit = True
+    if MANAGE in person.permissions.permission:
+        is_owner = True
+    return {
+        'first_name': person.user.first_name,
+        'last_name': person.user.last_name,
+        'is_owner': is_owner,
+        'can_edit': can_edit,
+        'is_pending': is_pending,
+        'email': person.user.user_email
+    }
 
-def _sp_reply2datatables(folders, privileger, total_count, echo, session_user, request, is_mine=False):
+def _jsonable_people(people_list, session_user):
+    """ Converts list of protobuf user objects to a list of dictionaries 
+    that json can handle, then moves "me" to end of the list, if necessary"""
+    json_people = (_jsonable_person(p) for p in people_list)
+    return sorted(json_people, key=lambda x: x.get('email') == session_user)
+
+
+def _sp_reply2json(folders, privileger, session_user, request, is_mine=False, specified_user=None):
     """
     @param privileger a callback function to determine if the session user has
         privileges to modify ACL of the folder
     """
+
+    left_user = specified_user if specified_user is not None else session_user
     data = []
     for folder in folders:
-        # a workaround to filter folder.user_permissions_and_state to leave only joined users
-        # using del & extend because setting folder.user_permissions_and_state doesn't work
-        # due to Protobuf magic
+        # a workaround to filter folder.user_permissions_and_state into owners and members
+        # due to Protobuf magic, you can't just use folder twice
         member_folder = folder
-        owners = filter(lambda urs: urs.state == JOINED and MANAGE in urs.permissions.permission, 
+        owners = filter(lambda urs: urs.state in (JOINED, LEFT, PENDING) and MANAGE in urs.permissions.permission, 
             folder.user_permissions_and_state)
-        members = filter(lambda urs: urs.state == JOINED and MANAGE not in urs.permissions.permission, 
+        members = filter(lambda urs: urs.state in (JOINED, LEFT, PENDING) and MANAGE not in urs.permissions.permission, 
             member_folder.user_permissions_and_state)
 
+        id = _encode_store_id(folder.store_id)
+        reordered_owners_list = _jsonable_people(list(owners), session_user)
+        reordered_members_list = _jsonable_people(list(members), session_user)
         data.append({
             'name': escape(folder.name),
-            'owners': _render_shared_folder_users(owners, session_user),
-            'members': _render_shared_folder_users(members, session_user),
-            'options': _render_shared_folder_options_link(folder, session_user,
-                privileger(folder, session_user), request, is_mine),
+            'owners': reordered_owners_list,
+            'members': reordered_members_list,
+            'sid': escape(id),
+            'is_privileged': 1 if privileger(folder, session_user) else 0,
+            'is_member': is_mine,
+            'is_left': _is_left(folder, left_user)
         })
 
     return {
-        'sEcho': echo,
-        'iTotalRecords': total_count,
-        'iTotalDisplayRecords': total_count,
-        'aaData': data
+        'data': data,
+        'me': session_user
     }
-
-
-def _render_shared_folder_users(user_permissions_and_state_list, session_user):
-
-    # Place 'me' to the end of the list so that if the list is too long we show
-    # "Foo, Bar, me, and 10 others" instead of "me, Foo, and 10 others"
-    #
-    # Also, it's polite to place "me" last.
-    #
-    reordered_list = list(user_permissions_and_state_list)
-    for i in range(len(reordered_list)):
-        if reordered_list[i].user.user_email == session_user:
-            myself = reordered_list.pop(i)
-            reordered_list.append(myself)
-            break
-
-    total = len(reordered_list)
-
-    str = ''
-    if total == 0:
-        str = "--"
-    elif total == 1:
-        str = _get_first_name(reordered_list[0], session_user)
-    elif total == 2:
-        str = u"{} and {}".format(
-            _get_first_name(reordered_list[0], session_user),
-            _get_first_name(reordered_list[1], session_user))
-    elif total < 5:
-        for i in range(total):
-            if i > 0: str += ", "
-            if i == total - 1: str += "and "
-            str += _get_first_name(reordered_list[i], session_user)
-    else:
-        # If there are more than 5 people, print the first 2 or 3 only
-        # Always print "me" if user is in group
-        printed = 2
-        for i in range(printed):
-            str += _get_first_name(reordered_list[i], session_user)
-            str += ", "
-        # if current user in list, make sure they get printed
-        # because of reordering, we know they'll be the last in the list
-        if reordered_list[len(reordered_list)-1].user.user_email == session_user:
-            str += "me, "
-            printed += 1
-        str += "and {} others".format(total - printed)
-
-    return escape(str)
-
-
-def _render_shared_folder_options_link(folder, session_user, privileged, request, is_mine):
-    """
-    @param privileged whether the session user has the privilege to modify ACL
-    """
-    id = _encode_store_id(folder.store_id)
-    urs = to_json(filter(lambda user: user.state == JOINED or user.state == PENDING, 
-        folder.user_permissions_and_state), session_user)
-
-    data = {
-        'open_modal_class': _OPEN_MODAL_CLASS,
-        'data_sid': _LINK_DATA_SID,
-        'sid': escape(id),
-        'data_privileged': _LINK_DATA_PRIVILEGED,
-        'is_privileged': 1 if privileged else 0,
-        'data_name': _LINK_DATA_NAME,
-        'folder_name': escape(folder.name),
-        'data_perms': _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST,
-        'perms': escape(urs),
-        'is_member': is_mine
-    }
-
-    return render('shared_folder_actions.mako', data, request)
 
 
 def to_json(user_permissions_and_state_list, session_user):
