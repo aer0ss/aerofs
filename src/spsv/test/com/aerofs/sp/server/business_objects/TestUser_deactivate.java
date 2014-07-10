@@ -69,7 +69,7 @@ public class TestUser_deactivate extends AbstractBusinessObjectTest
 
         assertThat(user.getDevices(), empty());
         assertThat(user.getPeerDevices(), empty());
-        assertThat(user.getSharedFolders(), empty());
+        assertThat(user.getJoinedFolders(), empty());
         assertThat(user.getPendingSharedFolders(), empty());
 
         try {

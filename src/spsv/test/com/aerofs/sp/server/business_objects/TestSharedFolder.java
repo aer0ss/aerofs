@@ -521,10 +521,10 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         assertFalse(shared.exists());
         assertEquals(ImmutableList.of(factSharedFolder.create(SID.rootSID(invited.id()))),
-                invited.getSharedFolders());
+                invited.getJoinedFolders());
         assertTrue(invited.getPendingSharedFolders().isEmpty());
         assertEquals(ImmutableList.of(factSharedFolder.create(SID.rootSID(left.id()))),
-                left.getSharedFolders());
+                left.getJoinedFolders());
         assertTrue(left.getPendingSharedFolders().isEmpty());
     }
 

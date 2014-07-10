@@ -148,9 +148,15 @@ def json_get_my_shared_folders(request):
     sp = util.get_rpc_stub(request)
     session_user = authenticated_userid(request)
     reply = sp.list_user_shared_folders(session_user)
-    return _sp_reply2datatables(reply.shared_folder,
+    joined = [f for f in reply.shared_folder if _is_joined(f, session_user)]
+    return _sp_reply2datatables(joined,
         _session_user_privileger,
-        len(reply.shared_folder), echo, session_user, request, True)
+        len(joined, echo, session_user, request, True)
+
+
+def _is_joined(folder, user):
+    """ return true if the user is a JOINED member of the PBSharedFolder """
+    return any(ups.user.user_email == user and ups.state == JOINED for ups in folder.user_permissions_and_state)
 
 
 def _session_user_privileger(folder, session_user):
@@ -180,9 +186,10 @@ def json_get_user_shared_folders(request):
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
     reply = sp.list_user_shared_folders(specified_user)
-    return _sp_reply2datatables(reply.shared_folder,
+    joined = [f for f in reply.shared_folder if _is_joined(f, specified_user)]
+    return _sp_reply2datatables(joined,
         _session_team_privileger,
-        len(reply.shared_folder), echo, authenticated_userid(request), request)
+        len(joined), echo, authenticated_userid(request), request)
 
 
 @view_config(

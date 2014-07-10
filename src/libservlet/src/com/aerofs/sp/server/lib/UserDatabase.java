@@ -424,7 +424,20 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.executeUpdate();
     }
 
-    public Collection<SID> getSharedFolders(UserID userId) throws SQLException
+    private Collection<SID> executeGetFoldersQuery  (PreparedStatement ps) throws SQLException {
+        ResultSet rs = ps.executeQuery();
+        try {
+            List<SID> sids = Lists.newArrayList();
+            while (rs.next()) {
+                sids.add(new SID(rs.getBytes(1)));
+            }
+            return sids;
+        } finally {
+            rs.close();
+        }
+    }
+
+    public Collection<SID> getJoinedFolders(UserID userId) throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
                 C_AC_USER_ID + "=? and " + C_AC_STATE + "=?", C_AC_STORE_ID));
@@ -432,16 +445,26 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setString(1, userId.getString());
         ps.setInt(2, SharedFolderState.JOINED.ordinal());
 
-        ResultSet rs = ps.executeQuery();
-        try {
-            List<SID> sids = Lists.newArrayList();
-            while (rs.next()) sids.add(new SID(rs.getBytes(1)));
-            return sids;
-        } finally {
-            rs.close();
-        }
+        return executeGetFoldersQuery(ps);
+
     }
 
+    /**
+     * @return the shared folders for which the user has acls (this includes folders for which the
+     * user is PENDING or has LEFT)
+     */
+    public Collection<SID> getSharedFolders(UserID userId) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+            C_AC_USER_ID + "=?", C_AC_STORE_ID));
+        ps.setString(1, userId.getString());
+
+        return executeGetFoldersQuery(ps);
+    }
+
+    /**
+     *
+     */
     /**
      * Deactivate a user
      *

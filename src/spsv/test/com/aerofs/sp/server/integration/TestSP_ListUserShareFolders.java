@@ -19,7 +19,9 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
@@ -85,10 +87,31 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         createSharedFolders();
-
+        setSession(USER_1);
         assertAllSharedFoldersHaveUser(queryOtherUser(), USER_2);
-
         assertAllSharedFoldersHaveUser(queryCurrentUser(), USER_1);
+    }
+
+    @Test
+    public void shouldListSharedFolderRegardlessOfStateOfSpecifiedUser()
+            throws Exception
+    {
+        sqlTrans.begin();
+        User admin = saveUser();
+        admin.setOrganization(USER_2.getOrganization(), AuthorizationLevel.ADMIN);
+        sqlTrans.commit();
+
+        SID joinedSID = SID.generate();
+        shareAndJoinFolder(USER_1, joinedSID, USER_2, Permissions.allOf(Permission.WRITE));
+
+        SID pendingSID = SID.generate();
+        shareFolder(USER_1, pendingSID, USER_2, Permissions.allOf(Permission.WRITE));
+
+        SID leftSID = SID.generate();
+        shareAndJoinFolder(USER_1, leftSID, USER_2, Permissions.allOf(Permission.WRITE));
+
+        setSession(admin);
+        assertEquals(3, queryOtherUser().size());
     }
 
     @Test
@@ -146,16 +169,12 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     private List<PBSharedFolder> queryOtherUser()
             throws Exception
     {
-        setSession(USER_1);
-
         return service.listUserSharedFolders(USER_2.id().getString()).get().getSharedFolderList();
     }
 
     private List<PBSharedFolder> queryCurrentUser()
             throws Exception
     {
-        setSession(USER_1);
-
         return service.listUserSharedFolders(USER_1.id().getString()).get().getSharedFolderList();
     }
 
@@ -163,6 +182,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         List<PBSharedFolder> list = Lists.newArrayList();
+        setSession(USER_1);
         list.addAll(queryCurrentUser());
         list.addAll(queryOtherUser());
         return list;

@@ -76,7 +76,7 @@ public class CheckQuotaHelper
     {
         Set<SharedFolder> allStores = Sets.newHashSet();
         for (User user : users) {
-            allStores.addAll(user.getSharedFolders());
+            allStores.addAll(user.getJoinedFolders());
         }
         return allStores;
     }

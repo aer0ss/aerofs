@@ -80,11 +80,11 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // sanity check store membership
         sqlTrans.begin();
 
-        assertTrue(Sets.newHashSet(admin.getSharedFolders())
+        assertTrue(Sets.newHashSet(admin.getJoinedFolders())
                 .equals(Sets.newHashSet(storeA, storeAll, storeA1)));
-        assertTrue(Sets.newHashSet(user1.getSharedFolders())
+        assertTrue(Sets.newHashSet(user1.getJoinedFolders())
                 .equals(Sets.newHashSet(store1, storeAll, storeA1, store12)));
-        assertTrue(Sets.newHashSet(user2.getSharedFolders())
+        assertTrue(Sets.newHashSet(user2.getJoinedFolders())
                 .equals(Sets.newHashSet(store2, storeAll, store12)));
 
         assertTrue(Sets.newHashSet(storeA.getAllUsersExceptTeamServers())

@@ -172,6 +172,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.mail.MessagingException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
@@ -181,6 +182,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
@@ -1256,8 +1258,6 @@ public class SPService implements ISPService
         return true;
     }
 
-
-
     @Override
     public ListenableFuture<Void> joinSharedFolder(ByteString sid, @Nullable Boolean external)
             throws Exception
@@ -1293,6 +1293,10 @@ public class SPService implements ISPService
             return;
         }
 
+        if (state == SharedFolderState.LEFT) {
+            l.info("Rejoining a left shared folder");
+        }
+
         // Note 1. it also throws if the folder doesn't exist
         // Note 2. we allow users who have left the folder to rejoin
         if (state == null) throw new ExNotFound("No such invitation");
@@ -1303,15 +1307,19 @@ public class SPService implements ISPService
         // set the external bit for consistent auto-join behavior across devices
         sf.setExternal(user, external);
 
-        Collection<Device> peerDevices = user.getPeerDevices();
-        // Refresh CRLs for peer devices once this user joins the shared folder (since the peer user
-        // map may have changed).
-        for (Device peer : peerDevices) {
-            l.info("{} crl refresh", peer.id());
-            _commandDispatcher.enqueueCommand(peer.id(), createCommandMessage(
-                    CommandType.REFRESH_CRL));
+        refreshCRLs(user);
+
+        if (state == SharedFolderState.PENDING) {
+            sendNotificationEmailToSharer(user, sf);
         }
 
+        // always call this method as the last step of the transaction
+        _aclPublisher.publish_(users);
+    }
+
+    private void sendNotificationEmailToSharer(User user, SharedFolder sf)
+            throws SQLException, ExNotFound, IOException, MessagingException
+    {
         User sharer = sf.getSharerNullable(user);
         if (sharer != null && !sharer.id().isTeamServerID()) {
 
@@ -1326,9 +1334,18 @@ public class SPService implements ISPService
             // Send notification email
             _sfnEmailer.sendInvitationAcceptedNotificationEmail(sf, sharer, user);
         }
+    }
 
-        // always call this method as the last step of the transaction
-        _aclPublisher.publish_(users);
+    private void refreshCRLs(User user)
+            throws SQLException, ExFormatError, ExecutionException, InterruptedException
+    {Collection<Device> peerDevices = user.getPeerDevices();
+        // Refresh CRLs for peer devices once this user joins the shared folder (since the peer user
+        // map may have changed).
+        for (Device peer : peerDevices) {
+            l.info("{} crl refresh", peer.id());
+            _commandDispatcher.enqueueCommand(peer.id(), createCommandMessage(
+                    CommandType.REFRESH_CRL));
+        }
     }
 
     @Override
@@ -2286,7 +2303,7 @@ public class SPService implements ISPService
         if (serverEpoch == epoch) {
             l.info("no updates - matching epoch: {}", epoch);
         } else {
-            for (SharedFolder sf : user.getSharedFolders()) {
+            for (SharedFolder sf : user.getJoinedFolders()) {
                 l.debug("add store {}", sf.id());
                 PBStoreACL.Builder aclBuilder = PBStoreACL.newBuilder();
                 aclBuilder.setStoreId(sf.id().toPB());

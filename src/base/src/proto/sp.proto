@@ -24,7 +24,7 @@ import "cmd.proto";
 // When this happens, deal with any comment tagged with WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE and
 // make sure you bump the protocol version everywhere:
 //      SP_PROTOCOL_VERSION in BaseParam.java
-//      SP_PROTO_VERSION in syncdet_test/lib/param.py
+//      SP_PROTO_VERSION in src/python-lib/aerofs_sp/param.py
 //      sp.version in
 //          src/web/development/modes/local.ini
 //          src/web/development/modes/private.ini

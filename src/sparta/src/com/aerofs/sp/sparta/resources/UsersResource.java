@@ -279,7 +279,7 @@ public class UsersResource extends AbstractSpartaResource
             throws ExNotFound, SQLException
     {
         ImmutableList.Builder<com.aerofs.rest.api.SharedFolder> bd = ImmutableList.builder();
-        for (SharedFolder sf : user.getSharedFolders()) {
+        for (SharedFolder sf : user.getJoinedFolders()) {
             // filter out root store
             if (sf.id().isUserRoot()) continue;
             com.aerofs.rest.api.SharedFolder s = new com.aerofs.rest.api.SharedFolder(

@@ -54,6 +54,7 @@ import javax.inject.Inject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -308,11 +309,11 @@ public class User
     public Collection<Device> getPeerDevices()
             throws SQLException, ExFormatError
     {
-        // Get shared folders and all users who sync those shared folders.
-        Collection<SharedFolder> sharedFolders = getSharedFolders();
+        // Get joined shared folders and all users who sync those shared folders.
+        Collection<SharedFolder> joinedSharedFolders = getJoinedFolders();
         Set<User> peerUsers = Sets.newHashSet();
 
-        for (SharedFolder sharedFolder : sharedFolders) {
+        for (SharedFolder sharedFolder : joinedSharedFolders) {
             for (User user : sharedFolder.getJoinedUsers()) {
                 peerUsers.add(user);
             }
@@ -482,7 +483,7 @@ public class User
 
         // delete ACLs
         ImmutableSet.Builder<UserID> affected = ImmutableSet.builder();
-        for (SharedFolder sf : getSharedFolders()) {
+        for (SharedFolder sf : getJoinedFolders()) {
             affected.addAll(sf.removeUserAndTransferOwnership(this, newOwner));
         }
 
@@ -618,7 +619,7 @@ public class User
         OrganizationInvitation oi = _f._factOrgInvite.create(this, org);
         if (oi.exists()) oi.delete();
 
-        Collection<SharedFolder> sfs = getSharedFolders();
+        Collection<SharedFolder> sfs = getJoinedFolders();
 
         ImmutableSet.Builder<UserID> builder = ImmutableSet.builder();
 
@@ -644,15 +645,27 @@ public class User
         return builder.build();
     }
 
-    public Collection<SharedFolder> getSharedFolders()
-            throws SQLException
+    private Collection<SharedFolder> getFoldersFromSIDs(Collection<SID> sids)
     {
-        Collection<SID> sids = _f._udb.getSharedFolders(_id);
         List<SharedFolder> sfs = Lists.newArrayListWithCapacity(sids.size());
         for (SID sid : sids) {
             sfs.add(_f._factSharedFolder.create(sid));
         }
         return sfs;
+    }
+
+    public Collection<SharedFolder> getJoinedFolders()
+            throws SQLException
+    {
+        Collection<SID> sids = _f._udb.getJoinedFolders(_id);
+        return getFoldersFromSIDs(sids);
+    }
+
+    public Collection<SharedFolder> getSharedFolders()
+            throws SQLException
+    {
+        Collection<SID> sids = _f._udb.getSharedFolders(_id);
+        return getFoldersFromSIDs(sids);
     }
 
     public static class PendingSharedFolder
