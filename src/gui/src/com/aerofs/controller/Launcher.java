@@ -238,7 +238,16 @@ public class Launcher
     private static void runPostUpdateTasks() throws Exception
     {
         new UIPostUpdateTasks(Cfg.db()).run();
-        if (PostUpdate.updated()) Cfg.db().set(Key.LAST_VER, Cfg.ver());
+        if (PostUpdate.updated()) {
+            // TODO: more robust event sending?
+            String ver = Cfg.ver();
+            UIGlobals.rockLog()
+                    .newDefect("update")
+                    .addData("previous_version", Cfg.db().get(Key.LAST_VER))
+                    .addData("version", ver)
+                    .send();
+            Cfg.db().set(Key.LAST_VER, ver);
+        }
     }
 
     /**
