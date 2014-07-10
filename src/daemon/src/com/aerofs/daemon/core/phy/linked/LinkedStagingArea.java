@@ -5,11 +5,10 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.core.phy.linked.db.LinkedStagingAreaDatabase;
 import com.aerofs.daemon.core.phy.linked.db.LinkedStagingAreaDatabase.StagedFolder;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
@@ -40,8 +39,6 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * To implement efficient atomic deletion of large object tree in LinkedStorage we introduce the
@@ -119,11 +116,10 @@ public class LinkedStagingArea implements IStartable
             throws SQLException, IOException
     {
         final InjectableFile from = _factFile.create(absPath);
-
         if (!from.exists()) return;
 
         long id = _sadb.addEntry_(historyPath, t);
-        final InjectableFile to = stagedPath(id, historyPath);
+        final InjectableFile to = stagedPath(id, historyPath.sid());
 
         l.debug("staging[{}] {} -> {}", absPath, historyPath, id);
 
@@ -155,14 +151,13 @@ public class LinkedStagingArea implements IStartable
      * obtained from a monotonically increasing counter (auto-increment key in the db).
      *
      * @param id staged folder identifier
-     * @param path path of the folder at time of deletion, may be empty but not null
+     * @param sid physical root at time of deletion
      * @return physical path in the staging area
      */
-    private InjectableFile stagedPath(long id, Path path)
+    private InjectableFile stagedPath(long id, SID sid)
     {
         return _factFile.create(
-                Util.join(_lrm.auxRoot_(path.sid()), AuxFolder.STAGING_AREA._name,
-                        Long.toHexString(id)));
+                Util.join(_lrm.auxRoot_(sid), AuxFolder.STAGING_AREA._name, Long.toHexString(id)));
     }
 
     private void processStagedFoldersWithExponentialRetry_()
@@ -228,7 +223,7 @@ public class LinkedStagingArea implements IStartable
     private boolean processStagedFolder_(StagedFolder sf, Token tk) throws ExAborted
     {
         l.debug("staged {} {}", sf.id, sf.historyPath);
-        InjectableFile f = stagedPath(sf.id, sf.historyPath);
+        InjectableFile f = stagedPath(sf.id, sf.historyPath.sid());
         if (!f.exists()) return true;
         TCB tcb = tk.pseudoPause_("psa");
         try {

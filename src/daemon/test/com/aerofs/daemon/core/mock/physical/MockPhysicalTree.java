@@ -25,7 +25,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
 
 /**
  * This class mocks InjectableFiles and wires the factory accordingly. Usage:
