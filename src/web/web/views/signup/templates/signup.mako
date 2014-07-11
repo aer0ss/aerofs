@@ -86,11 +86,12 @@
                             <span class="help-block">
                                 Fields marked by (*) are mandatory.<br/><br/>
                                 By signing up, you agree to AeroFS's 
-                                <a % if is_private_deployment(request.registry.settings):
+                                <a
+                                    %if is_private_deployment(request.registry.settings):
                                         href="$http://www.aerofs.com/terms/#privatecloud"
-                                     % else:
+                                    %else:
                                         href="${request.route_path('terms')}#tos"
-                                     % endif
+                                    %endif
                                     target="_blank">Terms of Service</a>
                             </span>
                         </div>
