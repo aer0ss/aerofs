@@ -11,7 +11,7 @@ from pyramid.view import view_config
 import qrcode
 
 from web.util import get_rpc_stub, flash_error, flash_success
-from web.crypto import crypto_box, crypto_box_open
+from web.cryptobox import crypto_box, crypto_box_open
 
 log = logging.getLogger(__name__)
 
