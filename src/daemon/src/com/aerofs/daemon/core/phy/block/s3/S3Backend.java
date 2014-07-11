@@ -11,7 +11,6 @@ import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.base.BaseSecUtil.CipherFactory;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3BucketIdConfig;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3CryptoConfig;
 import com.aerofs.daemon.core.ex.ExAborted;

@@ -67,7 +67,6 @@ import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.get
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 

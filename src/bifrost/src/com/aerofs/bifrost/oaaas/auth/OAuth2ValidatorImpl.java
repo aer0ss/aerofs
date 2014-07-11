@@ -18,10 +18,8 @@ package com.aerofs.bifrost.oaaas.auth;
 import com.aerofs.bifrost.oaaas.model.AccessTokenRequest;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.bifrost.oaaas.model.Client;
-import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import org.apache.commons.lang.StringUtils;
 
-import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

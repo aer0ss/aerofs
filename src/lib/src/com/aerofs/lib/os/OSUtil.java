@@ -3,7 +3,6 @@ package com.aerofs.lib.os;
 import com.aerofs.lib.SystemUtil.ExitCode;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public abstract class OSUtil

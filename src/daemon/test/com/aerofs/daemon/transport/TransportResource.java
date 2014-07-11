@@ -29,7 +29,6 @@ import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.google.common.io.Files;
-import org.jboss.netty.buffer.ChannelBufferFactory;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;

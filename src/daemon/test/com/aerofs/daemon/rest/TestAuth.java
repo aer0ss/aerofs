@@ -8,8 +8,6 @@ import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -17,7 +15,6 @@ import org.mockito.stubbing.Answer;
 
 import static com.jayway.restassured.RestAssured.expect;
 import static com.jayway.restassured.RestAssured.given;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;

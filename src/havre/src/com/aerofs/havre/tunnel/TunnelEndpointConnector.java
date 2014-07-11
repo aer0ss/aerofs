@@ -23,7 +23,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.Channels;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;

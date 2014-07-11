@@ -7,7 +7,6 @@ package com.aerofs.daemon.lib;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
-import com.google.common.base.Preconditions;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
