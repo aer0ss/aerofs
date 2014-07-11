@@ -88,7 +88,7 @@
                                 By signing up, you agree to AeroFS's 
                                 <a
                                     %if is_private_deployment(request.registry.settings):
-                                        href="$http://www.aerofs.com/terms/#privatecloud"
+                                        href="http://www.aerofs.com/terms/#privatecloud"
                                     %else:
                                         href="${request.route_path('terms')}#tos"
                                     %endif
