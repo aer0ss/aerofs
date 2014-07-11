@@ -1,5 +1,6 @@
 <%inherit file="marketing_layout.mako"/>
 <%! page_title = "Create Account" %>
+<%! from web.util import is_private_deployment %>
 
 <div class="row">
     <div class="col-sm-4 col-sm-offset-4 text-center">
@@ -84,7 +85,13 @@
                         <div class="col-sm-8 col-sm-offset-4">
                             <span class="help-block">
                                 Fields marked by (*) are mandatory.<br/><br/>
-                                By signing up, you agree to AeroFS's <a href="${request.route_path('terms')}#tos" target="_blank">Terms of Service</a>.
+                                By signing up, you agree to AeroFS's 
+                                <a % if is_private_deployment(request.registry.settings):
+                                        href="$http://www.aerofs.com/terms/#privatecloud"
+                                     % else:
+                                        href="${request.route_path('terms')}#tos"
+                                     % endif
+                                    target="_blank">Terms of Service</a>
                             </span>
                         </div>
                     </div>
