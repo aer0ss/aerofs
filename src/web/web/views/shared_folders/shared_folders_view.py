@@ -151,7 +151,7 @@ def json_get_my_shared_folders(request):
     joined = [f for f in reply.shared_folder if _is_joined(f, session_user)]
     return _sp_reply2datatables(joined,
         _session_user_privileger,
-        len(joined, echo, session_user, request, True))
+        len(joined), echo, session_user, request, True)
 
 
 def _is_joined(folder, user):
