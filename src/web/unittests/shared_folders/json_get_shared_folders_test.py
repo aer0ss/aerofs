@@ -79,7 +79,7 @@ class GetSharedFoldersTest(TestBase):
 
         request = self.create_dummy_request({
             'sEcho': 'hoho',
-            URL_PARAM_USER: 'some@email'
+            URL_PARAM_USER: 'test1@aerofs.com'
         })
         request.registry.settings["mako.directories"] = "web.views.shared_folders:templates"
         auth.is_admin = Mock(return_value=True)
