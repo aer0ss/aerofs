@@ -84,7 +84,7 @@ public class Sparta extends Service
         Loggers.init();
     }
 
-    static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 2);
+    static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 3);
 
     private final ExecutionHandler _executionHandler;
 

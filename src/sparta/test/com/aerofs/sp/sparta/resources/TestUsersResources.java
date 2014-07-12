@@ -24,6 +24,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -34,6 +36,7 @@ public class TestUsersResources extends AbstractResourceTest
     private final String RESOURCE_BASE = "/v1.1/users";
     private final String RESOURCE = RESOURCE_BASE + "/{email}";
     private final String QUOTA_RESOURCE = "/v1.2/users/{email}/quota";
+    private final String TWO_FACTOR_RESOURCE = "/v1.3/users/{email}/two_factor";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -699,6 +702,80 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("bytes_allowed", equalTo(bytesAllowed))
         .when().log().everything()
                 .get(QUOTA_RESOURCE, user.getString());
+    }
+
+    @Test
+    public void getTwoFactor_shouldSucceed() throws Exception
+    {
+        sqlTrans.begin();
+        User _user = factUser.create(user);
+        _user.setupTwoFactor();
+        _user.enableTwoFactorEnforcement();
+        sqlTrans.commit();
+
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("enforce", equalTo(true))
+        .when().log().everything()
+                .get(TWO_FACTOR_RESOURCE, user.getString());
+
+        // Disable afterward to avoid two-factor auth messing with other tests
+        sqlTrans.begin();
+        _user.disableTwoFactorEnforcement();
+        sqlTrans.commit();
+
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("enforce", equalTo(false))
+        .when().log().everything()
+                .get(TWO_FACTOR_RESOURCE, user.getString());
+    }
+
+    @Test
+    public void deleteTwoFactor_shouldSucceed() throws Exception
+    {
+        sqlTrans.begin();
+        User _user = factUser.create(user);
+        _user.setupTwoFactor();
+        _user.enableTwoFactorEnforcement();
+        assertTrue(_user.shouldEnforceTwoFactor());
+        sqlTrans.commit();
+
+        givenAdminAccess()
+        .expect()
+                .statusCode(204)
+        .when().log().everything()
+                .delete(TWO_FACTOR_RESOURCE, user.getString());
+
+        sqlTrans.begin();
+        assertFalse(_user.shouldEnforceTwoFactor());
+        sqlTrans.commit();
+    }
+
+    @Test
+    public void deleteTwoFactor_shouldFailNoPerm() throws Exception
+    {
+        sqlTrans.begin();
+        User _user = factUser.create(user);
+        _user.setupTwoFactor();
+        _user.enableTwoFactorEnforcement();
+        assertTrue(_user.shouldEnforceTwoFactor());
+        sqlTrans.commit();
+
+        givenReadAccess()
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+        .when().log().everything()
+                .delete(TWO_FACTOR_RESOURCE, user.getString());
+
+        sqlTrans.begin();
+        assertTrue(_user.shouldEnforceTwoFactor());
+        _user.disableTwoFactorEnforcement();
+        sqlTrans.commit();
+
     }
 
     private ImmutableMap<String, String> userAttributes(User u)

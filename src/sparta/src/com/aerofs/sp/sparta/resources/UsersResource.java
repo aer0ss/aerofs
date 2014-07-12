@@ -486,4 +486,44 @@ public class UsersResource extends AbstractSpartaResource
                         user.getOrganization().getQuotaPerUser()))
                 .build();
     }
+
+    private class TwoFactor
+    {
+        public final Boolean enforce;
+        public TwoFactor(Boolean enforce)
+        {
+            this.enforce = enforce;
+        }
+    }
+
+    @Since("1.3")
+    @GET
+    @Path("/{email}/two_factor")
+    public Response getTwoFactorEnabled(@Auth IUserAuthToken auth, @PathParam("email") User user)
+            throws SQLException, ExNotFound
+    {
+        requirePermission(Scope.READ_USER, auth);
+        User caller = _factUser.create(auth.user());
+        throwIfNotSelfOrTSOf(caller, user);
+
+        return Response.ok()
+                .entity(new TwoFactor(user.shouldEnforceTwoFactor()))
+                .build();
+    }
+
+    @Since("1.3")
+    @DELETE
+    @Path("/{email}/two_factor")
+    public Response disableTwoFactor(
+            @Auth IUserAuthToken auth,
+            @PathParam("email") User user)
+            throws Exception
+    {
+        requirePermission(Scope.MANAGE_PASSWORD, auth);
+        User caller = _factUser.create(auth.user());
+        throwIfNotSelfOrTSOf(caller, user);
+        user.disableTwoFactorEnforcement();
+        // TODO: queue notification email
+        return Response.noContent().build();
+    }
 }
