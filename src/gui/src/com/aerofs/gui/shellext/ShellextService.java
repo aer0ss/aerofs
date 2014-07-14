@@ -108,6 +108,11 @@ public class ShellextService
         _server.send(reply.toByteArray());
     }
 
+    private String normalize(String path)
+    {
+        return OSUtil.get().normalizeInputFilename(path);
+    }
+
     protected void react(byte[] bytes)
             throws InvalidProtocolBufferException, ExProtocolError
     {
@@ -119,22 +124,22 @@ public class ShellextService
             break;
         case SHARE_FOLDER:
             assert (call.hasShareFolder());
-            shareFolder(call.getShareFolder().getPath());
+            shareFolder(normalize(call.getShareFolder().getPath()));
             break;
         case SYNC_STATUS:
             // TODO (MP) remove this when the shell ext is rebuilt.
             break;
         case VERSION_HISTORY:
             assert (call.hasVersionHistory());
-            versionHistory(call.getVersionHistory().getPath());
+            versionHistory(normalize(call.getVersionHistory().getPath()));
             break;
         case GET_PATH_STATUS:
             assert (call.hasGetPathStatus());
-            getStatus(call.getGetPathStatus().getPath());
+            getStatus(normalize(call.getGetPathStatus().getPath()));
             break;
         case CONFLICT_RESOLUTION:
             assert (call.hasConflictResolution());
-            conflictResolution(call.getConflictResolution().getPath());
+            conflictResolution(normalize(call.getConflictResolution().getPath()));
             break;
         default:
             throw new ExProtocolError(ShellextCall.Type.class);

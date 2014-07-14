@@ -6,14 +6,13 @@ import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.injectable.InjectableJNotify;
+import com.aerofs.lib.os.OSUtilOSX;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.contentobjects.jnotify.JNotifyException;
 import net.contentobjects.jnotify.macosx.FSEventListener;
 import net.contentobjects.jnotify.macosx.JNotify_macosx;
 
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
@@ -99,19 +98,7 @@ public class OSXNotifier implements INotifier, FSEventListener
 
         if (Linker.isInternalPath(name)) return;
 
-        // OSX uses a variant of Normal Form D therefore @param{name} can be in NFD.
-        // @see{http://developer.apple.com/library/mac/#qa/qa1173/_index.html}
-        // However most other platforms use NFC by default (hence Java helpfully normalizing
-        // the result of File.list() to NFC)
-        // Because OSX is unicode-normalizing (and crucially not normalization-preserving)
-        // we cannot use the same "contextual NRO" logic that smoothes case-insensitivity
-        // considerations. Instead we need to arbitrarily pick one normal form as the only
-        // representable one on OSX.
-        // A naive choice would be to pick NFD to stay as close to the actual filesystem
-        // contents. That would however lead to a terrible UX when syncing between OSX
-        // and non-OSX devices. It would also cause a number of issues in devices installed
-        // prior to this change.
-        name = Normalizer.normalize(name, Form.NFC);
+        name = OSUtilOSX.normalizeOSXInputFilename(name);
         b._batch.add(name);
         b._recurse |= (flags & JNotify_macosx.MUST_SCAN_SUBDIRS) != 0;
     }

@@ -297,6 +297,9 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     }
 
     @Override
+    public String normalizeInputFilename(String name) { return name; }
+
+    @Override
     public boolean isInvalidFileName(String name)
     {
         return name.length() > 255 || INVALID_FILENAME_CHARS.matcher(name).find();

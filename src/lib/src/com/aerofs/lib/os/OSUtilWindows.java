@@ -223,6 +223,9 @@ public class OSUtilWindows implements IOSUtil
     }
 
     @Override
+    public String normalizeInputFilename(String name) { return name; }
+
+    @Override
     public boolean isInvalidFileName(String path)
     {
         return isInvalidWin32FileName(path);

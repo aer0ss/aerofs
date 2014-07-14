@@ -114,6 +114,12 @@ public interface IOSUtil
     String cleanFileName(String name);
 
     /**
+     * Use when accepting a local filename as input (Notifier, Shellext, ...)
+     * See implementation in {@link OSUtilOSX} for the gory details
+     */
+    String normalizeInputFilename(String name);
+
+    /**
      * whether a filename is invalid (i.e. inherently non-representable) on this OS
      */
     boolean isInvalidFileName(String name);

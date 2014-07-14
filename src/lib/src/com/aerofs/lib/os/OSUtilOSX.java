@@ -337,6 +337,29 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     }
 
     @Override
+    public String normalizeInputFilename(String name)
+    {
+        return normalizeOSXInputFilename(name);
+    }
+
+    public static String normalizeOSXInputFilename(String name)
+    {
+        // OSX uses a variant of Normal Form D therefore @param{name} can be in NFD.
+        // @see{http://developer.apple.com/library/mac/#qa/qa1173/_index.html}
+        // However most other platforms use NFC by default (hence Java helpfully normalizing
+        // the result of File.list() to NFC)
+        // Because OSX is unicode-normalizing (and crucially not normalization-preserving)
+        // we cannot use the same "contextual NRO" logic that smoothes case-insensitivity
+        // considerations. Instead we need to arbitrarily pick one normal form as the only
+        // representable one on OSX.
+        // A naive choice would be to pick NFD to stay as close to the actual filesystem
+        // contents. That would however lead to a terrible UX when syncing between OSX
+        // and non-OSX devices. It would also cause a number of issues in devices installed
+        // prior to this change.
+        return Normalizer.normalize(name, Form.NFC);
+    }
+
+    @Override
     public String reasonForInvalidFilename(String name)
     {
         if (name.length() > 255) {
