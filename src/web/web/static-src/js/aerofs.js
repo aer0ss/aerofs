@@ -100,11 +100,10 @@ function showErrorMessageFromResponse(xhr) {
 }
 
 function getInternalErrorText() {
-    return "Oops! Our server ran into an unexpected error while it was trying " +
-        "to serve this page. It looks like we may have broken something. " +
-        "Sorry about that!<br><br>Please refresh the page and try again." +
-        " If this issue persists, please contact" +
-        " <a href='mailto:support@aerofs.com' target='_blank'>" +
+    return "Our server ran into an unexpected error while it was trying to serve this page. " +
+        "Please refresh the page and try again. " +
+        "If this issue persists, please contact " +
+        "<a href='mailto:support@aerofs.com' target='_blank'>" +
         "support@aerofs.com</a> for assistance.";
 }
 
