@@ -190,8 +190,7 @@
 <%def name="render_nonadmin_links()">
     <%
         links = []
-        if is_private_deployment(request.registry.settings):
-            links.append(('files', _("My Files")))
+        links.append(('files', _("My Files")))
         links.append(('my_shared_folders', _("My Shared Folders")))
         links.append(('accept', _("Pending Invitations")))
         links.append(('my_devices', _("My Devices")))
