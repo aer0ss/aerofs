@@ -55,7 +55,9 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
@@ -267,7 +269,9 @@ class BlockStorage implements IPhysicalStorage
          * 5. remove dead blocks from the backend (on successful commit)
          */
 
-        IDBIterator<Long> it = _bsdb.getIndicesWithPrefix_(storePrefix(sidx));
+        String prefix = storePrefix(sidx);
+
+        IDBIterator<Long> it = _bsdb.getIndicesWithPrefix_(prefix);
         try {
             while (it.next_()) removeFile_(it.get_(), t);
         } finally {
@@ -275,6 +279,22 @@ class BlockStorage implements IPhysicalStorage
         }
 
         scheduleBlockCleaner_(t);
+
+        deletePrefixFilesMatching_(prefix);
+    }
+
+
+    private void deletePrefixFilesMatching_(final String prefix) throws IOException
+    {
+        InjectableFile[] fs = _prefixDir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name)
+            {
+                return name.startsWith(prefix);
+            }
+        });
+
+        if (fs != null) for (InjectableFile f : fs) f.deleteOrThrowIfExist();
     }
 
     @Override
@@ -314,7 +334,22 @@ class BlockStorage implements IPhysicalStorage
     public void scrub_(SOID soid, @Nonnull Path historyPath, Trans t)
             throws SQLException, IOException
     {
-        // TODO:
+        String prefix = objectPrefix(soid);
+        IDBIterator<Long> it = _bsdb.getIndicesWithPrefix_(prefix);
+        try {
+            while (it.next_()) {
+                long id = it.get_();
+                if (historyPath.isEmpty()) {
+                    removeFile_(id, t);
+                } else {
+                    FileInfo info = FileInfo.newDeletedFileInfo(id, new Date().getTime());
+                    updateFileInfo_(historyPath, info, t);
+                }
+            }
+        } finally {
+            it.close_();
+        }
+        deletePrefixFilesMatching_(prefix);
     }
 
     private final TransLocal<Boolean> _tlScheduleCleaner = new TransLocal<Boolean>()  {
@@ -384,14 +419,19 @@ class BlockStorage implements IPhysicalStorage
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private String storePrefix(SIndex sidx)
+    private static String storePrefix(SIndex sidx)
     {
         return sidx.toString() + '-';
     }
 
-    private String makeFileName(SOKID sokid)
+    private static String objectPrefix(SOID soid)
     {
-        return storePrefix(sokid.sidx()) + sokid.oid().toStringFormal() + '-' + sokid.kidx();
+        return storePrefix(soid.sidx()) + soid.oid().toStringFormal();
+    }
+
+    private static String makeFileName(SOKID sokid)
+    {
+        return objectPrefix(sokid.soid()) + '-' + sokid.kidx();
     }
 
     private long getOrCreateFileId_(SOKID sokid, Trans t) throws SQLException
