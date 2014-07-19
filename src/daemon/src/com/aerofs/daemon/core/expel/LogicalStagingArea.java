@@ -26,13 +26,11 @@ import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -427,18 +425,11 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
         _ps.scrub_(oa.soid(), historyPath, t);
 
         SOCID socid = new SOCID(oa.soid(), CID.CONTENT);
-        Version vKMLAdd = Version.empty();
         for (KIndex kidx : oa.casNoExpulsionCheck().keySet()) {
-            SOCKID k = new SOCKID(socid, kidx);
-            Version vBranch = _nvc.getLocalVersion_(k);
-            vKMLAdd = vKMLAdd.add_(vBranch);
-            _nvc.deleteLocalVersion_(k, vBranch, t);
             _ds.deleteCA_(oa.soid(), kidx, t);
         }
 
-        // move all the local versions to KML version
-        Version vKMLOld = _nvc.getKMLVersion_(socid);
-        _nvc.addKMLVersionNoAssert_(socid, vKMLAdd.sub_(vKMLOld), t);
+        _nvc.moveAllContentTicksToKML_(oa.soid(), t);
 
         _pvc.deleteAllPrefixVersions_(socid.soid(), t);
     }

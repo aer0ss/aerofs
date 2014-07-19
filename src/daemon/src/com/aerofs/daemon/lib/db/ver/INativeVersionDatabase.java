@@ -60,4 +60,22 @@ public interface INativeVersionDatabase extends IVersionDatabase<NativeTickRow>
      * @pre target may not have any local versions (it may have KMLs)
      */
     void moveAllLocalVersions_(SOCID alias, SOCID target, Trans t) throws SQLException;
+
+    /**
+     * When deleting/expelling content, we can condense
+     *    - n+1 getLocalVersion
+     *    - n deleteLocalVersion
+     *    - 1 addLocalVersion
+     *    - 1 updateMaxticks
+     * into
+     *    - 1 deleteAllVersions
+     *    - 1 moveMaxTicksToKML
+     * by leveraging the invariant that max ticks is always the union
+     * of all ticks (including KMLs).
+     *
+     * This saves a fair amount of CPU and disk I/O when deleting/expelling
+     * large number of files.
+     */
+    void deleteAllVersions_(SOCID socid, Trans t) throws SQLException;
+    void moveMaxTicksToKML_(SOCID socid, Trans t) throws SQLException;
 }

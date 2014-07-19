@@ -222,6 +222,26 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         // TODO: listeners?
     }
 
+    /**
+     * When expelling content, all local ticks should be moved to KMLs
+     *
+     * There's a dum way to do it which involves reading version vectors
+     * branch by branch and accumulating them in memory, then deleting
+     * ticks for local branchs and updating KMLs. All of this causes a
+     * recomputation of max ticks.
+     *
+     * The smarter way to do it is to delete all local ticks and copy
+     * max ticks into KMLs, which does not trigger a recomputation of
+     * max ticks.
+     */
+    public void moveAllContentTicksToKML_(SOID soid, Trans t) throws SQLException
+    {
+        SOCID socid = new SOCID(soid, CID.CONTENT);
+        // NB: listeners are not welcome here
+        _nvdb.deleteAllVersions_(socid, t);
+        _nvdb.moveMaxTicksToKML_(socid, t);
+    }
+
     public @Nonnull Version getKMLVersion_(SOCID socid) throws SQLException
     {
         Version v = _nvdb.getKMLVersion_(socid);

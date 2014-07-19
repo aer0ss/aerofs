@@ -187,12 +187,9 @@ public class TestLogicalStagingArea extends AbstractTest
     private void verifyFileCleanup(SOID soid, Path historyPath) throws SQLException, IOException
     {
         verify(ds).unsetFID_(soid, t);
-        verify(nvc).deleteLocalVersion_(eq(new SOCKID(soid, CID.CONTENT, KIndex.MASTER)),
-                any(Version.class), eq(t));
+        verify(nvc).moveAllContentTicksToKML_(soid, t);
         verify(ds).deleteCA_(soid, KIndex.MASTER, t);
         verify(ps).scrub_(soid, historyPath, t);
-        verify(nvc).addKMLVersionNoAssert_(eq(new SOCID(soid, CID.CONTENT)),
-                any(Version.class), eq(t));
         verify(pvc).deleteAllPrefixVersions_(soid, t);
     }
 

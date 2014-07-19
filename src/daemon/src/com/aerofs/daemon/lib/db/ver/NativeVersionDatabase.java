@@ -18,6 +18,7 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
@@ -219,6 +220,59 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psMoveVer);
             _psMoveVer = null;
+            throw detectCorruption(e);
+        }
+    }
+
+    private final PreparedStatementWrapper _pswDLV = new PreparedStatementWrapper(
+            DBUtil.deleteWhereEquals(T_VER, C_VER_SIDX, C_VER_OID, C_VER_CID));
+    @Override
+    public void deleteAllVersions_(SOCID socid, Trans t) throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswDLV.get(c());
+            ps.setInt(1, socid.sidx().getInt());
+            ps.setBytes(2, socid.oid().getBytes());
+            ps.setInt(3, socid.cid().getInt());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            _pswDLV.close();
+            throw detectCorruption(e);
+        }
+    }
+
+    private final PreparedStatementWrapper _pswKAT = new PreparedStatementWrapper(
+            "insert into " + T_VER + " ("
+            + C_VER_SIDX + ","
+            + C_VER_OID + ","
+            + C_VER_CID + ","
+            + C_VER_KIDX + ","
+            + C_VER_DID + ","
+            + C_VER_TICK + ")"
+            + " select "
+            + C_MAXTICK_SIDX + ","
+            + C_MAXTICK_OID + ","
+            + C_MAXTICK_CID + ","
+            + KIndex.KML.getInt() + ","
+            + C_MAXTICK_DID + ","
+            + C_MAXTICK_MAX_TICK
+            + " from "
+            + T_MAXTICK
+            + " where "
+            + C_MAXTICK_SIDX + "=? and "
+            + C_MAXTICK_OID + "=? and "
+            + C_MAXTICK_CID + "=?");
+    @Override
+    public void moveMaxTicksToKML_(SOCID socid, Trans t) throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswKAT.get(c());
+            ps.setInt(1, socid.sidx().getInt());
+            ps.setBytes(2, socid.oid().getBytes());
+            ps.setInt(3, socid.cid().getInt());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            _pswKAT.close();
             throw detectCorruption(e);
         }
     }
