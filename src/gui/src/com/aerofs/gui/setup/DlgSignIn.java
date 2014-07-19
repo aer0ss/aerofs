@@ -22,6 +22,7 @@ import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
+import com.aerofs.gui.singleuser.SingleUserDlgSecondFactor;
 import com.aerofs.gui.singleuser.SingleuserDlgSetupAdvanced;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.Identity;
@@ -157,6 +158,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
 
         Button signInButton = GUIUtil.createButton(composite, SWT.PUSH);
         signInButton.setText("Sign in with " + Identity.SERVICE_IDENTIFIER);
+        // Capture parent
         signInButton.addSelectionListener(new SelectionAdapter()
         {
             @Override
@@ -409,16 +411,25 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         }
     }
 
+    private static String formatExceptionMessage(Exception e)
+    {
+        if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
+        else if (e instanceof ExBadCredential) return S.BAD_CREDENTIAL_CAP + ".";
+        else if (e instanceof ExExternalAuthFailure) return S.OPENID_AUTH_BAD_CRED;
+        else if (e instanceof ExUIMessage) return e.getMessage();
+        else if (e instanceof ExTimeout) return S.OPENID_AUTH_TIMEOUT;
+        else if (e instanceof ExInternalError) return S.SERVER_INTERNAL_ERROR;
+        else return S.SETUP_DEFAULT_SIGNIN_ERROR;
+    }
+
     class SignInWorker implements ISWTWorker
     {
         @Override
         public void run() throws Exception
         {
             _model.doSignIn();
-            _model.doInstall();
-
-            setupShellExtension();
         }
+
         @Override
         public void error(Exception e)
         {
@@ -431,21 +442,50 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         @Override
         public void okay()
         {
-            _okay = true;
-            close();
-        }
-
-        protected String formatExceptionMessage(Exception e)
-        {
-            if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
-            else if (e instanceof ExBadCredential) return S.BAD_CREDENTIAL_CAP + ".";
-            else if (e instanceof ExExternalAuthFailure) return S.OPENID_AUTH_BAD_CRED;
-            else if (e instanceof ExUIMessage) return e.getMessage();
-            else if (e instanceof ExTimeout) return S.OPENID_AUTH_TIMEOUT;
-            else if (e instanceof ExInternalError) return S.SERVER_INTERNAL_ERROR;
-            else return S.SETUP_DEFAULT_SIGNIN_ERROR;
+            if (_model.getNeedSecondFactor()) {
+                // Open modal dialog prompting for second factor
+                SingleUserDlgSecondFactor modal = new SingleUserDlgSecondFactor(getShell(), _model);
+                int res = modal.open();
+                if (res == IDialogConstants.OK_ID) {
+                    GUI.get().safeWork(getShell(), installWorker());
+                } else {
+                    // Two factor auth dialog was closed by quit button; quit
+                    close();
+                }
+            } else {
+                // No second factor needed?  Jump straight to running the install worker.
+                GUI.get().safeWork(getShell(), installWorker());
+            }
         }
     }
+
+    public ISWTWorker installWorker()
+    {
+        return new ISWTWorker() {
+            @Override
+            public void run() throws Exception
+            {
+                _model.doInstall();
+                setupShellExtension();
+            }
+
+            @Override
+            public void okay()
+            {
+                _okay = true;
+                close();
+            }
+
+            @Override
+            public void error(Exception e)
+            {
+                l.error("Failed to register and setup device", e);
+                ErrorMessages.show(getShell(), e, formatExceptionMessage(e));
+                clearInProgressStatus();
+            }
+        };
+    }
+
 
     private void setControlState(boolean enabled)
     {

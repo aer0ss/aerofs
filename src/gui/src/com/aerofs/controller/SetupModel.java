@@ -10,6 +10,7 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgRestService;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.google.common.base.Preconditions;
 
 /**
  * This class collects various pieces of information necessary to run setup and delegate to other
@@ -50,9 +51,17 @@ public class SetupModel
      */
     public void doSignIn() throws Exception
     {
-        assert _signInActor != null : "SetupModel sign-in state error";
+        Preconditions.checkNotNull(_signInActor, "SetupModel sign-in state error");
         _signInActor.signInUser(this);
-        assertConnected();
+        verifyConnected();
+    }
+
+    public void doSecondFactorSignIn() throws Exception
+    {
+        Preconditions.checkNotNull(_signInActor, "SetupModel sign-in state error");
+        Preconditions.checkNotNull(_sp, "SP connection must be nonnull");
+        _signInActor.provideSecondFactor(this);
+        verifyConnected();
     }
 
     /**
@@ -61,8 +70,8 @@ public class SetupModel
      */
     public void doInstall() throws Exception
     {
-        assert _installActor != null : "SetupModel installation state error";
-        assertConnected();
+        Preconditions.checkNotNull(_installActor, "SetupModel installation state error");
+        verifyConnected();
         _installActor.install(_setup, this);
     }
 
@@ -93,15 +102,22 @@ public class SetupModel
 
     public void setPassword(String pw)      { _password = pw; }
 
+    public boolean getNeedSecondFactor()    { return _needSecondFactor; }
+    public void setNeedSecondFactor(boolean needed)
+                                            { _needSecondFactor = needed; }
+
     public String getUsername()             { return _username; }
     public UserID getUserID() throws ExEmptyEmailAddress
                                             { return UserID.fromExternal(_username); }
     public void setUserID(String username)  { _username = username; }
 
+    public int getSecondFactorCode()        { return _secondFactorCode; }
+    public void setSecondFactorCode(int code) { _secondFactorCode = code; }
+
     public boolean isAPIAccessEnabled()     { return _apiAccess; }
     public void enableAPIAccess(boolean enabled) { _apiAccess = enabled; }
 
-    public void assertConnected()           { assert _sp != null: "Not signed in"; }
+    public void verifyConnected()           { Preconditions.checkNotNull(_sp, "Not signed in"); }
 
     // FIXME: the LocalOptions/S3Options classes are useless without polymorphism...
     // might as well just store all these directly in SetupModel.
@@ -141,6 +157,8 @@ public class SetupModel
 
     private String          _username;
     private String          _password;
+    private boolean         _needSecondFactor;
+    private int             _secondFactorCode;
 
     private boolean         _apiAccess;
 

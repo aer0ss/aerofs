@@ -1,7 +1,10 @@
 package com.aerofs.cli;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.C;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.base.ex.ExRateLimitExceeded;
+import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.Setup;
 import com.aerofs.controller.SetupModel;
@@ -62,15 +65,42 @@ public class CLISetup
             setupSingleuser(cli);
         }
 
-        if (LibParam.OpenId.enabled()) {
-            _model.doSignIn();
-            cli.progress(S.SETUP_INSTALL_MESSAGE);
-            _model.doInstall();
-        } else {
-            cli.progress(S.SETUP_INSTALL_MESSAGE);
-            _model.doSignIn();
-            _model.doInstall();
+        cli.progress(S.SETUP_SIGNIN_MESSAGE);
+        _model.doSignIn();
+
+        if (_model.getNeedSecondFactor()) {
+            cli.show(MessageType.INFO,
+                    "Two-Factor Authentication required for " + _model.getUsername());
+            while (true) {
+                String authCode = cli.askText("6-digit authentication code", null);
+                Integer authCodeValue = null;
+                try {
+                    authCodeValue = Integer.parseInt(authCode, 10);
+                } catch (NumberFormatException e) {
+                    // invalid number
+                    cli.show(MessageType.ERROR,
+                            "That wasn't a valid 6-digit code.  Try again.");
+                    continue;
+                }
+                _model.setSecondFactorCode(authCodeValue);
+                try {
+                    _model.doSecondFactorSignIn();
+                } catch (ExSecondFactorRequired e) {
+                    cli.show(MessageType.ERROR, "Incorrect authentication code.  Try again.");
+                    continue;
+                } catch (ExRateLimitExceeded e) {
+                    cli.show(MessageType.ERROR,
+                            "Rate limit exceeded for " + _model.getUsername() + ".\n" +
+                            "Wait a minute, then try again.");
+                    Thread.sleep(1 * C.MIN);
+                    continue;
+                }
+                break;
+            }
         }
+
+        cli.progress(S.SETUP_REGISTERING_MESSAGE);
+        _model.doInstall();
 
         cli.notify(MessageType.INFO,
                 "You can now access " + L.product() + " functions through the " +

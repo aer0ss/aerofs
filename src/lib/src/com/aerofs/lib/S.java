@@ -35,6 +35,10 @@ public class S
             SETUP_DEV_ALIAS          = "Computer name",
             SETUP_ERR_CONN           = "Sorry, couldn't connect to the server.",
             SETUP_INSTALL_MESSAGE    = "Performing magic",
+            SETUP_ERR_RATE_LIMIT     = "Rate limit exceeded.  Wait a minute before trying again.",
+            SETUP_ERR_SECOND_FACTOR  = "Incorrect second factor provided",
+            SETUP_SIGNIN_MESSAGE     = "Signing in",
+            SETUP_REGISTERING_MESSAGE = "Registering new device",
 
             // used in setup storage screen
             SETUP_STORAGE_MESSAGE    = "Where would you like to store your organization's data?",

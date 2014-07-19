@@ -11,6 +11,7 @@ import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
+import com.aerofs.proto.Sp.SignInUserReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.google.protobuf.ByteString;
@@ -36,6 +37,11 @@ public abstract class SignInActor
      */
     public abstract void signInUser(SetupModel model) throws Exception;
 
+    public void provideSecondFactor(SetupModel model) throws Exception
+    {
+        model.getClient().provideSecondFactor(model.getSecondFactorCode());
+    }
+
     /**
      * An actor that signs in using stored credentials (requires userID and password
      * in the model).
@@ -50,12 +56,14 @@ public abstract class SignInActor
             // should not bother with scrypt'ing the credential and talking to
             // (legacy) signInUser. credentialSignIn() accepts cleartext credential for
             // LDAP and locally-authenticated users.
+            SignInUserReply reply;
             if (Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL) {
-                sp.credentialSignIn(model.getUsername(), ByteString.copyFrom(model.getPassword()));
+                reply = sp.credentialSignIn(model.getUsername(), ByteString.copyFrom(model.getPassword()));
             } else {
                 // legacy call:
-                sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getScrypted()));
+                reply = sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getScrypted()));
             }
+            model.setNeedSecondFactor(reply.getNeedSecondFactor());
             model.setClient(sp);
         }
     }
@@ -78,7 +86,7 @@ public abstract class SignInActor
 
     public static class OpenIdCLIActor extends SignInActor
     {
-        public OpenIdCLIActor(CLI cli) { _out = cli; }
+        public OpenIdCLIActor(CLI cli) { _cli = cli; }
 
         @Override
         public void signInUser(SetupModel model) throws Exception
@@ -91,29 +99,30 @@ public abstract class SignInActor
                     "Setup will complete automatically once the OpenID Provider confirms your " +
                     "identity.";
 
-            _out.show(MessageType.INFO, msg);
-            _out.show(MessageType.INFO, helper.getDelegateUrl());
+            _cli.show(MessageType.INFO, msg);
+            _cli.show(MessageType.INFO, helper.getDelegateUrl());
 
             helper.getSessionAttributes();
         }
 
-        private final CLI _out;
+        private final CLI _cli;
     }
 
-    private static class OpenIdHelper extends ElapsedTimer
+    private static class OpenIdHelper
     {
         OpenIdHelper(SetupModel model) throws Exception
         {
             _model = model;
             _spclient = newOneWayAuthClientFactory().create();
             _sessionKeys = _spclient.openIdBeginTransaction();
+            _timer = new ElapsedTimer();
 
-            start();
+            _timer.start();
         }
 
         void getSessionAttributes() throws Exception
         {
-            while (elapsed() < (OpenId.DELEGATE_TIMEOUT * C.SEC)) {
+            while (_timer.elapsed() < (OpenId.DELEGATE_TIMEOUT * C.SEC)) {
                 Thread.sleep(OpenId.SESSION_INTERVAL * C.SEC);
 
                 OpenIdSessionAttributes session
@@ -124,6 +133,7 @@ public abstract class SignInActor
 
                 _model.setUserID(session.getUserId());
                 _model.setClient(_spclient);
+                _model.setNeedSecondFactor(session.getNeedSecondFactor());
                 return;
             }
             throw new ExTimeout("Timed out waiting for authentication.");
@@ -136,9 +146,10 @@ public abstract class SignInActor
                     + "?" + OpenId.IDENTITY_REQ_PARAM + "=" + _sessionKeys.getDelegateNonce();
         }
 
-        private SPBlockingClient    _spclient;
-        private OpenIdSessionNonces _sessionKeys;
-        private final SetupModel    _model;
-        private static Logger       l = LoggerFactory.getLogger(OpenIdHelper.class);
+        private final SPBlockingClient    _spclient;
+        private final OpenIdSessionNonces _sessionKeys;
+        private final SetupModel          _model;
+        private final ElapsedTimer        _timer;
+        private static Logger             l = LoggerFactory.getLogger(OpenIdHelper.class);
     }
 }

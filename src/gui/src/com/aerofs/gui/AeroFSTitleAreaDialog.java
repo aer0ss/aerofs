@@ -7,6 +7,9 @@ import org.eclipse.swt.widgets.Shell;
 
 import com.aerofs.lib.S;
 
+/**
+ * This class is deprecated.  New code should prefer to use AeroFSDialog.
+ */
 public class AeroFSTitleAreaDialog extends TitleAreaDialog {
 
     private final String _title;

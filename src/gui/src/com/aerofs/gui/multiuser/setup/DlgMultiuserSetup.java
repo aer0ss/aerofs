@@ -79,10 +79,35 @@ public class DlgMultiuserSetup extends AeroFSDialog
             {
                 switch (event.detail) {
                 case SWT.TRAVERSE_PAGE_NEXT:
-                    loadPage(createSelectStoragePage());
+                    if (_model.getNeedSecondFactor()) {
+                        loadPage(createTwoFactorPage());
+                    } else {
+                        loadPage(createSelectStoragePage());
+                    }
                     break;
                 case SWT.TRAVERSE_PAGE_PREVIOUS:
                     closeDialog();
+                    break;
+                }
+            }
+        });
+        return page;
+    }
+
+    private AbstractSetupPage createTwoFactorPage()
+    {
+        AbstractSetupPage page = new PageSecondFactor(getShell());
+        page.addTraverseListener(new TraverseListener()
+        {
+            @Override
+            public void keyTraversed(TraverseEvent event)
+            {
+                switch (event.detail) {
+                case SWT.TRAVERSE_PAGE_NEXT:
+                    loadPage(createSelectStoragePage());
+                    break;
+                case SWT.TRAVERSE_PAGE_PREVIOUS:
+                    loadPage(createLoginPage());
                     break;
                 }
             }
