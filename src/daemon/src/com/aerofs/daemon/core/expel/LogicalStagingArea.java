@@ -396,9 +396,10 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
     private boolean cleanupObject_(OA oa, Path historyPath, Trans t)
             throws SQLException, IOException
     {
-        l.debug("cleanup {} {}", oa.soid(), historyPath);
-        if (oa.fidNoExpulsionCheck() != null) _ds.unsetFID_(oa.soid(), t);
-
+        //l.trace("cleanup {}", oa.soid(), historyPath);
+        if (oa.fidNoExpulsionCheck() != null && !isStoreStaged_(oa.soid().sidx())) {
+            _ds.unsetFID_(oa.soid(), t);
+        }
         switch (oa.type()) {
         case FILE:
             cleanupFile_(oa, historyPath, t);
@@ -425,11 +426,13 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
         _ps.scrub_(oa.soid(), historyPath, t);
 
         SOCID socid = new SOCID(oa.soid(), CID.CONTENT);
-        for (KIndex kidx : oa.casNoExpulsionCheck().keySet()) {
-            _ds.deleteCA_(oa.soid(), kidx, t);
+        // if the entire store is staged it's counter-productive to cleanup objects one by one
+        if (!isStoreStaged_(socid.sidx())) {
+            for (KIndex kidx : oa.casNoExpulsionCheck().keySet()) {
+                _ds.deleteCA_(oa.soid(), kidx, t);
+            }
+            _nvc.moveAllContentTicksToKML_(oa.soid(), t);
         }
-
-        _nvc.moveAllContentTicksToKML_(oa.soid(), t);
 
         _pvc.deleteAllPrefixVersions_(socid.soid(), t);
     }

@@ -46,83 +46,32 @@ public interface IVersionDatabase<E extends AbstractTickRow>
     void addKnowledge_(SIndex sidx, DID did, Tick tick, Trans t)
             throws SQLException;
 
-    void deleteTicksAndKnowledgeForStore_(SIndex sidx, Trans t) throws SQLException;
-
-
-    /* ======================= BACKUP TICKS ==================================
-     *
-`    * Need to restore the exact local tick history of a device on a resync.
-     * These methods provide the means to backup and retrieve local ticks to
-     * a different table than the version table.
-     * The DID parameter is not necessary as it is implicitly the local DID.
-     * For more details, see below.
-     */
-
-    /**
-     * Backup all *TickRows of the iterator into a different table than used for
-     * regular versions
-     * @param sidx the Store Index associated with the tick row
-     */
-    public void insertBackupTicks_(SIndex sidx, IDBIterator<E> iter, Trans t)
-            throws SQLException;
-
-    /**
-     * @return all backed-up tick entries in ascending order
-     */
-    public @Nonnull IDBIterator<E> getBackupTicks_(SIndex sidx) throws SQLException;
-
-    public void deleteBackupTicksFromStore_(SIndex sidx, Trans t) throws SQLException;
-
-
     /*
      * On Backing up Local Device Ticks During Store Deletion
      * -------------------------------------------------------------------------
      * When a store is locally deleted, all data related to the store is deleted
      * from DB tables that are used in typical operations. This purge avoids
      * cluttering the tables over time, reducing the space and time complexity
-     * of typical/frequent database operations. The Native and Immigrant Version
-     * tables are included in the purge, but for correctness the tick history of
-     * the local machine must be restorable.
+     * of typical/frequent database operations.
      *
-     * This interface concerns the backup of Native Version ticks. Recall that
-     * in the Anti-Entropy pull algorithm, the local device will query a remote
-     * device for knowledge that exceeds its own: all ticks below the remote
-     * knowledge vector that exceed the local knowledge vector are downloaded.
-     * Following this exchange the local device can safely increase its own
-     * knowledge vector to match the remote's. Now consider what would happen if
-     * the remote device had deleted all ticks about itself for the store of
-     * interest. Its knowledge about the store is now zero. Obviously if the
-     * store remains deleted on that device, it has no files/folders to share,
-     * so the lack of knowledge to pull is acceptable. Furthermore, the remote
-     * device will not create any new ticks (as the store is deleted, and
-     * modifications cannot be made), so again, the device's knowledge is no
-     * longer of interest to other devices.
+     * Ideally native  and immigrant ticks would be purged as well, however the
+     * distributed synchronization algorithm does not allow that. Indeed, we
+     * cannot safely accept ticks about ourselves from a remote device.
      *
-     * On resync or restoration of the store, the resynced device's knowledge
-     * about its own history becomes necessary. Consider the contrary; suppose
-     * we did not restore the device's own tick history, and the resynced device
-     * has zero knowledge of its prior object modifications prior to store
-     * deletion. The device could acquire some knowledge about its history from
-     * other devices by pulling via Anti-Entropy; it could even acquire the
-     * entire knowledge of its former history if some device is online that was
-     * entirely consistent with the remote before it deleted the store. However,
-     * consider that if no such device exists online, the resynced device will
-     * never reach its former knowledge level. When the device makes local
-     * modifications after the resync, it will create new ticks, but because it
-     * never reached its former knowledge level, the device cannot increase its
-     * knowledge of itself up to the newly created ticks, as this would break
-     * the invariant that all ticks below the knowledge vector follow a globally
-     * unique history. Therefore on AE-pulls by other devices, the resynced
-     * device cannot share its new object modifications as "knowledge," and
-     * therefore none of its new modifications after the resync will be shared
-     * as knowledge with the rest of the system of devices.
+     * In the past we moved ticks around from the regular tick table to a special
+     * backup table. However that was costly in terms of CPU and  disk I/O, it
+     * increased DB fragmentation and caused long pauses when deleting large
+     * stores.
      *
-     * From this semi proof-by-contradiction, it is apparent that we need to
-     * restore the exact local tick history of a device on a resync, and
-     * therefore this interface provides the means to backup and retrieve local
-     * ticks. The DID parameter is not necessary as it is implicitly the local
-     * DID.
-     *
-     * @author markj
+     * The new approach is much simpler:
+     *   - native ticks for the local device are preserved in the MAXTICKS table
+     *   - immigrant ticks for the local device are preserved in-place
      */
+
+    void deleteTicksAndKnowledgeForStore_(SIndex sidx, Trans t) throws SQLException;
+
+    /**
+     * @return all backed-up tick entries
+     */
+    public @Nonnull IDBIterator<E> getBackupTicks_(SIndex sidx) throws SQLException;
 }

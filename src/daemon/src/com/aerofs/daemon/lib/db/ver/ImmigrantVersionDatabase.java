@@ -1,13 +1,5 @@
 package com.aerofs.daemon.lib.db.ver;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_CID;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_DID;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_IMM_TICK;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_OID;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_SIDX;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_TICK;
-import static com.aerofs.daemon.lib.db.CoreSchema.T_IBT;
-
 import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_CID;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_DID;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_IMM_DID;
@@ -32,9 +24,11 @@ import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.CID;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
@@ -48,34 +42,14 @@ public class ImmigrantVersionDatabase
         extends AbstractVersionDatabase<ImmigrantTickRow>
         implements IImmigrantVersionDatabase
 {
+    private final CfgLocalDID _localDID;
 
     @Inject
-    public ImmigrantVersionDatabase(CoreDBCW dbcw)
+    public ImmigrantVersionDatabase(CoreDBCW dbcw, CfgLocalDID  localDID)
     {
         super(dbcw.get(), C_GT_IMMIGRANT, T_IK, C_IK_SIDX, C_IK_IMM_DID, C_IK_IMM_TICK, T_IV,
-                C_IV_IMM_DID, C_IV_SIDX, T_IBT, C_IBT_SIDX, C_IV_TICK, C_IV_CID, C_IV_OID);
-    }
-
-    @Override
-    protected PreparedStatement createInsertBackupStatement() throws SQLException
-    {
-        return c().prepareStatement("insert into "
-                    + T_IBT + "(" + C_IBT_SIDX + "," + C_IBT_OID + ","
-                    + C_IBT_CID + "," + C_IBT_DID + "," + C_IBT_TICK + ","
-                    + C_IBT_IMM_TICK
-                    + ") values (?,?,?,?,?,?)");
-    }
-
-    @Override
-    protected void setAddBackupParameters(PreparedStatement ps, SIndex sidx,
-            ImmigrantTickRow tr) throws SQLException
-    {
-        ps.setInt(1, sidx.getInt());
-        ps.setBytes(2, tr._oid.getBytes());
-        ps.setInt(3, tr._cid.getInt());
-        ps.setBytes(4, tr._did.getBytes());
-        ps.setLong(5, tr._tick.getLong());
-        ps.setLong(6, tr._immTick.getLong());
+                C_IV_IMM_DID, C_IV_SIDX, C_IV_TICK, C_IV_CID, C_IV_OID);
+        _localDID = localDID;
     }
 
     private PreparedStatement _psGetImmTicks;
@@ -105,16 +79,29 @@ public class ImmigrantVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetImmTicks);
             _psGetImmTicks = null;
-
             throw detectCorruption(e);
         }
     }
 
+    private final PreparedStatementWrapper _pswDelRemoteTicks = new PreparedStatementWrapper(
+            DBUtil.deleteWhere(T_IV, C_IV_SIDX + "=? and " + C_IV_IMM_DID + "!=?"));
     @Override
     public void deleteTicksAndKnowledgeForStore_(SIndex sidx, Trans t) throws SQLException
     {
         StoreDatabase.deleteRowsInTablesForStore_(
-                ImmutableMap.of(T_IV, C_IV_SIDX, T_IK, C_IK_SIDX), sidx, c(), t);
+                ImmutableMap.of(T_IK, C_IK_SIDX), sidx, c(), t);
+
+        // discard imm ticks for remote devices
+        // keep local ticks in case the store is re-admitted in the future
+        try {
+            PreparedStatement ps = _pswDelRemoteTicks.get(c());
+            ps.setInt(1, sidx.getInt());
+            ps.setBytes(2, _localDID.get().getBytes());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            _pswDelRemoteTicks.close();
+            throw detectCorruption(e);
+        }
     }
 
     private PreparedStatement _psAddIMMVer;
@@ -167,30 +154,33 @@ public class ImmigrantVersionDatabase
         }
     }
 
-    private PreparedStatement _psGetBackupTicks;
     @Override
     public @Nonnull IDBIterator<ImmigrantTickRow> getBackupTicks_(SIndex sidx)
             throws SQLException
     {
-        try {
-            if (_psGetBackupTicks == null) {
-                _psGetBackupTicks = c().prepareStatement(
-                    "select " + C_IBT_OID + "," + C_IBT_CID + ","
-                    + C_IBT_DID + "," + C_IBT_TICK + ","
-                    + C_IBT_IMM_TICK + " from " + T_IBT +
-                    " where " + C_IBT_SIDX +
-                    "=? order by " +
-                    C_IBT_IMM_TICK + " asc");
+        return new IDBIterator<ImmigrantTickRow>() {
+            @Override
+            public ImmigrantTickRow get_() throws SQLException
+            {
+                return null;
             }
 
-            _psGetBackupTicks.setInt(1, sidx.getInt());
+            @Override
+            public boolean next_() throws SQLException
+            {
+                return false;
+            }
 
-            return new DBIterImmigrantTickRow(_psGetBackupTicks.executeQuery());
-        } catch (SQLException e) {
-            DBUtil.close(_psGetBackupTicks);
-            _psGetBackupTicks = null;
-            throw detectCorruption(e);
-        }
+            @Override
+            public void close_() throws SQLException
+            {}
+
+            @Override
+            public boolean closed_()
+            {
+                return false;
+            }
+        };
     }
 
     // FIXME this is duplicated from deleteMaxTicksForSOCID_ in
@@ -217,6 +207,5 @@ public class ImmigrantVersionDatabase
             _psDelImmTick = null;
             throw detectCorruption(e);
         }
-
     }
 }

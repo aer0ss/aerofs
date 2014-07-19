@@ -41,28 +41,8 @@ public class NativeVersionDatabase
     public NativeVersionDatabase(CoreDBCW dbcw, CfgLocalDID cfgLocalDID)
     {
         super(dbcw.get(), C_GT_NATIVE, T_KWLG, C_KWLG_SIDX, C_KWLG_DID, C_KWLG_TICK, T_VER, C_VER_DID,
-                C_VER_SIDX, T_BKUPT, C_BKUPT_SIDX, C_VER_TICK, C_VER_CID, C_VER_OID);
+                C_VER_SIDX, C_VER_TICK, C_VER_CID, C_VER_OID);
         _cfgLocalDID = cfgLocalDID;
-    }
-
-    @Override
-    protected PreparedStatement createInsertBackupStatement() throws SQLException
-    {
-        return c().prepareStatement("insert into "
-                    + T_BKUPT + "(" + C_BKUPT_SIDX + "," + C_BKUPT_OID + ","
-                    + C_BKUPT_CID + "," + C_BKUPT_TICK
-                    + ") values (?,?,?,?)");
-    }
-
-    @Override
-    protected void setAddBackupParameters(PreparedStatement ps, SIndex sidx, NativeTickRow tr)
-            throws SQLException
-    {
-        assert tr._tick.getLong() != 0;
-        ps.setInt(1, sidx.getInt());
-        ps.setBytes(2, tr._oid.getBytes());
-        ps.setInt(3, tr._cid.getInt());
-        ps.setLong(4, tr._tick.getLong());
     }
 
     private PreparedStatement _psGetTicks;
@@ -91,17 +71,31 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetTicks);
             _psGetTicks = null;
-
             throw detectCorruption(e);
         }
     }
 
+    private final PreparedStatementWrapper _pswDelRemoteTicks = new PreparedStatementWrapper(
+            DBUtil.deleteWhere(T_MAXTICK, C_MAXTICK_SIDX + "=? and " + C_MAXTICK_DID + "!=?"));
     @Override
-    public void deleteTicksAndKnowledgeForStore_(SIndex sidx, Trans t) throws SQLException
+    public void deleteTicksAndKnowledgeForStore_(SIndex sidx, Trans t)
+            throws SQLException
     {
         StoreDatabase.deleteRowsInTablesForStore_(
-                ImmutableMap.of(T_VER, C_VER_SIDX, T_MAXTICK, C_MAXTICK_SIDX, T_KWLG, C_KWLG_SIDX),
+                ImmutableMap.of(T_VER, C_VER_SIDX, T_KWLG, C_KWLG_SIDX),
                 sidx, c(), t);
+
+        // discard max ticks for remote devices
+        // keep local ticks in case the store is re-admitted in the future
+        try {
+            PreparedStatement ps = _pswDelRemoteTicks.get(c());
+            ps.setInt(1, sidx.getInt());
+            ps.setBytes(2, _cfgLocalDID.get().getBytes());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            _pswDelRemoteTicks.close();
+            throw detectCorruption(e);
+        }
     }
 
     @Override
@@ -516,14 +510,10 @@ public class NativeVersionDatabase
     {
         try {
             if (_psGetBackupTicks == null) {
-                _psGetBackupTicks = c().prepareStatement(
-                    "select " + C_BKUPT_OID + "," + C_BKUPT_CID + "," +
-                    C_BKUPT_TICK + " from " + T_BKUPT +
-                    " where " + C_BKUPT_SIDX +
-                    "=? order by " +
-                    C_BKUPT_TICK + " asc");
+                _psGetBackupTicks = c().prepareStatement(DBUtil.selectWhere(T_MAXTICK,
+                        C_MAXTICK_SIDX + "=?",
+                        C_MAXTICK_OID, C_MAXTICK_CID, C_MAXTICK_MAX_TICK));
             }
-
             _psGetBackupTicks.setInt(1, sidx.getInt());
 
             return new DBIterNativeTickRow(_psGetBackupTicks.executeQuery());

@@ -55,15 +55,6 @@ public class TestImmigrantVersionControl extends AbstractTestVersionControl<Immi
         return new MockDBIteratorImmTickRow();
     }
 
-    @Override
-    protected void shouldAddTickRowToVersionDatabase(SIndex sidx, ImmigrantTickRow tr)
-            throws SQLException
-    {
-        SOCID socid = new SOCID(sidx, tr._oid, tr._cid);
-        verify(ivdb).addImmigrantVersion_( socid, cfgLocalDID.get(), tr._immTick, tr._did, tr._tick,
-                t);
-    }
-
     @Before
     public void setup() throws Exception
     {

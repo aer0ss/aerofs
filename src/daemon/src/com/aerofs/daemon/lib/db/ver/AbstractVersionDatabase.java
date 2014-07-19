@@ -12,7 +12,6 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
@@ -49,9 +48,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
     private final String _c_ver_did;
     private final String _c_ver_tick;
 
-    private final String _t_bkupt;
-    private final String _c_bkupt_sid;
-
     /**
      * @param c_gt the column of interest in the Greatest Ticks table (i.e. Native or Immigrant)
      * @param t_k the knowledge table for this version db (Immigrant or Native)
@@ -70,8 +66,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
             String t_ver,
             String c_ver_did,
             String c_ver_sidx,
-            String t_bkupt,
-            String c_bkupt_sid,
             String c_ver_tick,
             String c_ver_cid,
             String c_ver_oid)
@@ -85,26 +79,10 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
         _t_ver = t_ver;
         _c_ver_did = c_ver_did;
         _c_ver_sidx = c_ver_sidx;
-        _t_bkupt = t_bkupt;
-        _c_bkupt_sid = c_bkupt_sid;
         _c_ver_tick = c_ver_tick;
         _c_ver_cid = c_ver_cid;
         _c_ver_oid = c_ver_oid;
     }
-
-    /**
-     * @return the PreparedStatement to add a *TickRow to the backup table
-     */
-    abstract protected PreparedStatement createInsertBackupStatement()
-            throws SQLException;
-
-    /**
-     * Set the variable parameters in ps to add a *TickRow to the backup table
-     * @param tr the Native or ImmigrantTickRow to add to the backup table
-     */
-    abstract protected void setAddBackupParameters(PreparedStatement ps,
-            final SIndex sidx, final E tr) throws SQLException;
-
 
     @Override
     public @Nonnull Tick getGreatestTick_() throws SQLException
@@ -230,51 +208,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
         } catch (SQLException e) {
             DBUtil.close(_psISK);
             _psISK = null;
-            throw detectCorruption(e);
-        }
-    }
-
-    private PreparedStatement _psAddBkupTicks;
-    @Override
-    public void insertBackupTicks_(SIndex sidx, IDBIterator<E> iter, Trans t)
-            throws SQLException
-    {
-        try {
-            if (_psAddBkupTicks == null) {
-                _psAddBkupTicks = createInsertBackupStatement();
-            }
-
-            while(iter.next_()) {
-                E tr = iter.get_();
-                setAddBackupParameters(_psAddBkupTicks, sidx, tr);
-                _psAddBkupTicks.addBatch();
-            }
-            _psAddBkupTicks.executeBatch();
-
-        } catch (SQLException e) {
-            DBUtil.close(_psAddBkupTicks);
-            _psAddBkupTicks = null;
-            throw detectCorruption(e);
-        }
-    }
-
-    private PreparedStatement _psDelBackupTicks;
-    @Override
-    public void deleteBackupTicksFromStore_(SIndex sidx, Trans t)
-            throws SQLException
-    {
-        try {
-            if (_psDelBackupTicks == null) {
-                _psDelBackupTicks = c().prepareStatement("delete from "
-                    + _t_bkupt + " where "
-                    + _c_bkupt_sid + "=?");
-            }
-            _psDelBackupTicks.setInt(1, sidx.getInt());
-
-            _psDelBackupTicks.executeUpdate();
-        } catch (SQLException e) {
-            DBUtil.close(_psDelBackupTicks);
-            _psDelBackupTicks = null;
             throw detectCorruption(e);
         }
     }

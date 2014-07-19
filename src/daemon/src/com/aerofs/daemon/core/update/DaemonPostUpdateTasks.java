@@ -5,6 +5,7 @@ import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.os.IOSUtil;
@@ -24,7 +25,7 @@ public class DaemonPostUpdateTasks
 
     @Inject
     public DaemonPostUpdateTasks(IOSUtil osutil, CfgDatabase cfgDB, CoreDBCW dbcw,
-            CfgLocalUser cfgUser, InjectableDriver dr)
+            CfgLocalUser cfgUser, CfgLocalDID localDID, InjectableDriver dr)
     {
         _cfgDB = cfgDB;
 
@@ -83,6 +84,7 @@ public class DaemonPostUpdateTasks
             new DPUTUpdateOAFlags(dbcw),
             new DPUTAddPhysicalStagingArea(dbcw),
             new DPUTAddLogicalStagingArea(dbcw),
+            new DPUTRemoveBackupTicks(dbcw, localDID),
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 

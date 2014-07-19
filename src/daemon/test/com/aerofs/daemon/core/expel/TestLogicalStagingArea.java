@@ -43,6 +43,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.mockito.verification.VerificationMode;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -181,9 +182,13 @@ public class TestLogicalStagingArea extends AbstractTest
     // TODO: test w/ multiple conflict branches
     private void verifyFileCleanup(SOID soid, Path historyPath) throws SQLException, IOException
     {
-        verify(ds).unsetFID_(soid, t);
-        verify(nvc).moveAllContentTicksToKML_(soid, t);
-        verify(ds).deleteCA_(soid, KIndex.MASTER, t);
+        // some cleanup skipped when whole store is going down
+        int n = sm.getNullable_(soid.sidx()) != null ? 1 : 0;
+        VerificationMode mode = times(n);
+        verify(ds, mode).unsetFID_(soid, t);
+        verify(nvc, mode).moveAllContentTicksToKML_(soid, t);
+        verify(ds, mode).deleteCA_(soid, KIndex.MASTER, t);
+
         verify(ps).scrub_(soid, historyPath, t);
         verify(pvc).deleteAllPrefixVersions_(soid, t);
     }
@@ -202,7 +207,10 @@ public class TestLogicalStagingArea extends AbstractTest
 
     private void verifyFolderCleanup(SOID soid, Path historyPath) throws SQLException, IOException
     {
-        verify(ds).unsetFID_(soid, t);
+        // FID cleanup skipped when whole store is going down
+        int n = sm.getNullable_(soid.sidx()) != null ? 1 : 0;
+        verify(ds, times(n)).unsetFID_(soid, t);
+
         verify(ps).scrub_(soid, historyPath, t);
     }
 

@@ -59,13 +59,6 @@ public class CoreSchema implements ISchema
             C_KWLG_DID      = "k_d",        // DID
             C_KWLG_TICK     = "k_t",        // Tick
 
-            // Backup Ticks
-            T_BKUPT         = "bt",
-            C_BKUPT_SIDX    = "bt_s",       // SIndex
-            C_BKUPT_OID     = "bt_o",       // OID
-            C_BKUPT_CID     = "bt_c",       // CID
-            C_BKUPT_TICK    = "bt_t",       // Tick
-
             // Immigrant Versions
             T_IV            = "iv",
             C_IV_SIDX       = "iv_s",       // SIndex
@@ -81,15 +74,6 @@ public class CoreSchema implements ISchema
             C_IK_SIDX       = "ik_s",       // SIndex
             C_IK_IMM_DID    = "ik_d",       // DID
             C_IK_IMM_TICK   = "ik_t",       // Tick
-
-            // Immigrant Backup Ticks
-            T_IBT           = "ibt",
-            C_IBT_SIDX      = "ibt_i",      // SIndex
-            C_IBT_OID       = "ibt_o",      // OID
-            C_IBT_CID       = "ibt_c",      // CID
-            C_IBT_IMM_TICK  = "ibt_it",     // immigrant Tick
-            C_IBT_DID       = "ibt_d",      // DID
-            C_IBT_TICK      = "ibt_t",      // Tick
 
             // Prefixes
             T_PRE           = "r",          // prefix table
@@ -296,22 +280,6 @@ public class CoreSchema implements ISchema
                           "," +  C_VER_DID + "," + C_VER_TICK + ")"
                     );
 
-        /*
-         * TODO: The primary key (SIDX, OID, CID) may be incorrect?
-         * Items are added to the table by (SIDX, OID, CID, Tick)
-         * Items are queried by SIDX
-         */
-        s.executeUpdate(
-                "create table " + T_BKUPT + "(" +
-                    C_BKUPT_SIDX + " integer not null," +
-                    C_BKUPT_OID + dbcw.uniqueIdType() + " not null," +
-                    C_BKUPT_CID + " integer not null," +
-                    C_BKUPT_TICK + dbcw.longType() + " not null," +
-                    "primary key (" + C_BKUPT_SIDX + "," + C_BKUPT_OID + "," +
-                        C_BKUPT_CID + ")" +
-                ")" + dbcw.charSet());
-
-
         s.executeUpdate(
                 "create table " + T_KWLG + "(" +
                     C_KWLG_SIDX + " integer not null," +
@@ -350,18 +318,6 @@ public class CoreSchema implements ISchema
                     "primary key (" + C_IK_SIDX + "," + C_IK_IMM_DID + ")" +
                 ")" + dbcw.charSet());
 
-
-        s.executeUpdate(
-                "create table " + T_IBT + "(" +
-                    C_IBT_SIDX + " integer not null," +
-                    C_IBT_OID + dbcw.uniqueIdType() + " not null," +
-                    C_IBT_CID + " integer not null," +
-                    C_IBT_DID + dbcw.uniqueIdType() + " not null, " +
-                    C_IBT_TICK + dbcw.longType() + " not null," +
-                    C_IBT_IMM_TICK + dbcw.longType() + " not null," +
-                    "primary key (" + C_IBT_SIDX + "," + C_IBT_OID + "," + C_IBT_CID + "," +
-                    C_IBT_DID + ")" +
-                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_SID + "(" +

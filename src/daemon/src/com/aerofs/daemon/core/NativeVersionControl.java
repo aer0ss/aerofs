@@ -367,6 +367,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     protected void restoreTickRow_(SOCID socid, NativeTickRow tr, Trans t)
             throws SQLException
     {
+        // TODO: avoid recomputing max ticks
         addKMLVersionAndCollectorSequenceNoAssert_(socid,
                 Version.of(_cfgLocalDID.get(), tr._tick), t);
     }

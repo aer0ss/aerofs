@@ -7,7 +7,6 @@ import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.InOrder;
 import org.mockito.Mock;
 
 import static org.mockito.Mockito.*;
@@ -68,9 +67,7 @@ public abstract class AbstractTestVersionControl<E extends AbstractTickRow> exte
 
         vc.deleteStore_(sidx, t);
 
-        InOrder inOrder = inOrder(vdb);
-        inOrder.verify(vdb).insertBackupTicks_(sidx, iter, t);
-        inOrder.verify(vdb).deleteTicksAndKnowledgeForStore_(sidx, t);
+        verify(vdb).deleteTicksAndKnowledgeForStore_(sidx, t);
     }
 
     @Test
@@ -90,7 +87,7 @@ public abstract class AbstractTestVersionControl<E extends AbstractTickRow> exte
      * Verify that the *VersionControl correctly adds the tick row to db
      * @throws SQLException
      */
-    protected abstract void shouldAddTickRowToVersionDatabase(SIndex sidx, E tr) throws SQLException;
+    protected void shouldAddTickRowToVersionDatabase(SIndex sidx, E tr) throws SQLException {}
 
     @Ignore @Test
     public void shouldRestoreGivenStoreWithSameSIDAsDeleteButDifferentSIndex()

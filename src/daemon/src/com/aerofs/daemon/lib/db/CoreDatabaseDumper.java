@@ -85,10 +85,6 @@ public class CoreDatabaseDumper
         ps.println();
         dumpAlias_(s, ps, formal);
         ps.println();
-        dumpNativeBackupTicks_(s, ps);
-        ps.println();
-        dumpImmigrantBackupTicks_(s, ps, formal);
-        ps.println();
         dumpPulledDevice(s, ps, formal);
         ps.println();
         dumpExpulsion_(s, ps, formal);
@@ -563,59 +559,6 @@ public class CoreDatabaseDumper
         while (rs.next()) {
             long acl = rs.getInt(1);
             ps.println(acl);
-        }
-    }
-
-    public void dumpNativeBackupTicks_(Statement s, PrintStream ps) throws SQLException
-    {
-        ResultSet rs = s.executeQuery(
-                "select " + C_BKUPT_SIDX + ", " + C_BKUPT_OID + ", " +
-                C_BKUPT_CID + ", " + C_BKUPT_TICK + " from " + T_BKUPT +
-                " order by " + C_BKUPT_SIDX + ", " + C_BKUPT_OID + ", " +
-                C_BKUPT_CID
-                );
-        ps.println("================== " + T_BKUPT + " =====================");
-        ps.println(C_BKUPT_SIDX + "\t" + C_BKUPT_OID + "\t" + C_BKUPT_CID +
-                   "\t" + C_BKUPT_TICK);
-        ps.println("--------------------------------------------");
-        while (rs.next()) {
-            SIndex sidx = new SIndex(rs.getInt(1));
-            OID oid = new OID(rs.getBytes(2));
-            CID cid = new CID(rs.getInt(3));
-            Tick tick = new Tick(rs.getLong(4));
-
-            ps.println(sidx + "\t" + oid + "\t" + cid + "\t" + tick);
-        }
-    }
-
-
-    private void dumpImmigrantBackupTicks_(Statement s, PrintStream ps, boolean formal)
-            throws SQLException
-    {
-        ResultSet rs = s.executeQuery(
-                "select " + C_IBT_SIDX + "," + C_IBT_IMM_TICK +
-                    "," + C_IBT_OID + "," + C_IBT_CID + "," + C_IBT_DID + "," +
-                        C_IBT_TICK + " from " + T_IBT);
-        ps.println("=================== " + T_IBT + " =====================");
-        ps.println(C_IBT_SIDX + "\t" + C_IBT_IMM_TICK + "\t" + C_IBT_OID + "\t"
-                   + C_IBT_CID + "\t" + C_IBT_DID + "\t" + C_IBT_TICK);
-        ps.println("-------------------------------------------");
-        while (rs.next()) {
-            SIndex sidx = new SIndex(rs.getInt(1));
-            Tick immtick = new Tick(rs.getLong(2));
-            OID oid = new OID(rs.getBytes(3));
-            CID cid = new CID(rs.getInt(4));
-            DID did = new DID(rs.getBytes(5));
-            Tick tick = new Tick(rs.getLong(6));
-
-            if (formal) {
-                ps.println("" + sidx + '\t' + immtick + '\t'
-                        + oid.toStringFormal() + '\t' + cid
-                        + '\t' + did.toStringFormal() + '\t' + tick);
-            } else {
-                ps.println("" + sidx + '\t' + immtick + '\t' +
-                        oid + '\t' + cid + '\t' + did + '\t' + tick);
-            }
         }
     }
 

@@ -87,7 +87,5 @@ public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTic
     @Override
     protected void restoreTickRow_(SOCID socid, ImmigrantTickRow tr, Trans t) throws SQLException
     {
-        _ivdb.addImmigrantVersion_(socid, _cfgLocalDID.get(), tr._immTick, tr._did, tr._tick, t);
-        _sidx2contrib.addContributor_(socid.sidx(), _cfgLocalDID.get(), t);
     }
 }

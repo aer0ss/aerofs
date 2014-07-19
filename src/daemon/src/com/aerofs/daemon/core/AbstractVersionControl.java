@@ -77,14 +77,7 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
     @Override
     public void deleteStore_(SIndex sidx, Trans t) throws SQLException
     {
-        l.debug("Delete store " + sidx + " and backup max ticks");
-        IDBIterator<E> iter = getMaxTicks_(sidx, _cfgLocalDID.get(), Tick.ZERO);
-        try {
-            _vdb.insertBackupTicks_(sidx, iter, t);
-        } finally {
-            assert !iter.closed_() : sidx;
-            iter.close_();
-        }
+        l.debug("Delete store {}", sidx);
 
         _vdb.deleteTicksAndKnowledgeForStore_(sidx, t);
     }
@@ -93,15 +86,12 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
      * Restores the version ticks for *this* DID to the relevant version table
      * (native or immigrant), for Store s. This method is a template algorithm;
      * subclasses must restore each Tick Row in their own specialized way.
-     * - assumed to be called *after* deleteStore_
-     * - if not, this method is effectively a nop:
-     *   the backup table will have no entries for Store s
-     * - side effect: after restoring the backed up ticks,
-     *   the method deletes all backups for Store s from the backup table
+     *
+     * MUST not be called on an unclean store.
      */
     public void restoreStore_(SIndex sidx, Trans t) throws SQLException
     {
-        l.debug("Restore store " + sidx + " and delete backup ticks");
+        l.debug("Restore store {}", sidx);
 
         IDBIterator<E> iter = _vdb.getBackupTicks_(sidx);
         try {
@@ -119,7 +109,6 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
         } finally {
             iter.close_();
         }
-        _vdb.deleteBackupTicksFromStore_(sidx, t);
     }
 
     /**
