@@ -128,20 +128,16 @@ Before this step, you'll need your accounts created on gerrit, so get to that.
 
 Make sure you put the repo at `$HOME/repos/aerofs`:
 
-```
-mkdir -p $HOME/repos && cd $HOME/repos
-git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/syncdet
-git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
-```
+    mkdir -p $HOME/repos && cd $HOME/repos
+    git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/syncdet
+    git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
 
 ### Install git-review for a better gerrit experience
 
-```
-cd $HOME/repos/aerofs
-pip install git-review
-scp -p -P 29418 <gerrit username>@gerrit.arrowfs.org:hooks/commit-msg .git/hooks/
-git remote add gerrit ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
-```
+    cd $HOME/repos/aerofs
+    pip install git-review
+    scp -p -P 29418 <gerrit username>@gerrit.arrowfs.org:hooks/commit-msg .git/hooks/
+    git remote add gerrit ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
 
 This installs `git-review`, installs a post-commit hook for gerrit and adds the gerrit remote.
 
