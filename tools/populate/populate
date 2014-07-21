@@ -87,7 +87,7 @@ function create_site_properties_file() {
     if [[ "$MODE" == 'PRIVATE' ]]
     then
         set +e
-        wget -qO- --no-check-certificate -T 5 https://unified.syncfs.com:4433/config/client > "$APPROOT"/site-config.properties
+        wget -qO- --no-check-certificate --timeout=5 --tries=1 https://unified.syncfs.com:4433/config/client > "$APPROOT"/site-config.properties
 
         if [[ $? -ne 0 ]]
         then
