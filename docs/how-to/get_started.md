@@ -55,9 +55,7 @@ We require that you use either an IDE or a language validator to check syntax an
 
 Paste the following in a terminal:
 
-```
-ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go/install)"
-```
+    ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go/install)"
 
 It'll prompt you before it does anything, but the defaults are sane.
 
@@ -155,22 +153,18 @@ This installs `git-review`, installs a post-commit hook for gerrit and adds the 
 
 Set a good root password for MySQL, then create the test user for MySQL:
 
-```
-mysql -u root -p << EOF
-CREATE USER 'test'@'localhost' IDENTIFIED BY PASSWORD '*7F7520FA4303867EDD3C94D78C89F789BE25C4EA' ;
-GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost';
-FLUSH PRIVILEGES;
-EOF
-```
+    mysql -u root -p << EOF
+    CREATE USER 'test'@'localhost' IDENTIFIED BY PASSWORD '*7F7520FA4303867EDD3C94D78C89F789BE25C4EA' ;
+    GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost';
+    FLUSH PRIVILEGES;
+    EOF
 
 ## Set up ejabberd for unit tests
 
 `brew install ejabberd`. Copy the ejabberd config, key/cert and authorization scripts as listed below.
 
-```
-cp repos/aerofs/tools/ejabberd/ejabberd.* /usr/local/etc/ejabberd/
-cp repos/aerofs/tools/ejabberd/ejabberd_auth_all /usr/local/bin/
-```
+    cp repos/aerofs/tools/ejabberd/ejabberd.* /usr/local/etc/ejabberd/
+    cp repos/aerofs/tools/ejabberd/ejabberd_auth_all /usr/local/bin/
 
 Then, start ejabberd using `/usr/local/sbin/ejabberdctl start`.
 
@@ -187,11 +181,8 @@ This VM is required to run your private AeroFS clients that are isolated from th
 You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal repository.
 
      echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.profile
-     sudo sh -c 'echo 192.168.51.150 unified.syncfs.com >> /etc/hosts'
      source ~/repos/aerofs/tools/bashrc/include.sh
-     
-     ssh apt.aerofs.com (Create password and don't forget it!)
-     
+     ssh apt.aerofs.com # (create password and don't forget it!)
      lp-create
 
 The last step may take a while (expect 30 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing. Once done, you can run `lp-ssh` to log in your VM. See [Local Production (aka. local prod)](../references/local_prod.html) for more information about the private environment.
