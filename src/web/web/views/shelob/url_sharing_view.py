@@ -5,7 +5,7 @@ from datetime import datetime
 
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.common_pb2 import PBException
-from pyramid.httpexceptions import HTTPUnauthorized
+from pyramid.httpexceptions import HTTPUnauthorized, HTTPForbidden, HTTPNotFound
 from pyramid.view import view_config
 from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid
 import requests
@@ -64,6 +64,21 @@ def _pb_rest_object_url_to_dict(pb):
         'expires': _abs_milli_to_delta_seconds(getattr(pb, 'expires', 0)),
     }
 
+def _make_sp_request(fn, args):
+    try:
+        return exception2error(fn, args, {
+            PBException.BAD_ARGS: "400 Bad Request",
+            PBException.NO_PERM: "403 Forbidden",
+        })
+    except ExceptionReply as e:
+        if e.get_type() == PBException.BAD_CREDENTIAL:
+            raise HTTPUnauthorized()
+        if e.get_type() == PBException.NO_PERM:
+            raise HTTPForbidden()
+        if e.get_type() == PBException.NOT_FOUND:
+            raise HTTPNotFound()
+        raise e
+
 
 @view_config(
         route_name='create_url',
@@ -76,10 +91,7 @@ def create_url(request):
     if soid is None:
         error.error('missing "soid" param')
     token = _get_new_zelda_token(request, 0, soid)  # N.B. 0 means no expiry
-    reply = exception2error(get_rpc_stub(request).create_url, (soid, token), {
-        PBException.BAD_ARGS: "The SOID provided was invalid",
-        PBException.NO_PERM: "You are not an owner of the shared folder",
-    })
+    reply = _make_sp_request(get_rpc_stub(request).create_url, (soid, token))
     key = reply.url_info.key
 
     assert len(reply.url_info.soid) == 64, reply.url_info.soid
@@ -113,17 +125,8 @@ def get_url_info(request):
     password = request.json_body.get('password')
     if password is not None:
         password = password.encode('utf-8')
-    try:
-        reply = exception2error(get_rpc_stub(request).get_url_info, (key, password), {
-            PBException.NOT_FOUND: "The link does not exist or has expired",
-        })
-    except ExceptionReply as e:
-        if e.get_type() == PBException.BAD_CREDENTIAL:
-            return HTTPUnauthorized()
-        raise e
-
+    reply = _make_sp_request(get_rpc_stub(request).get_url_info, (key, password))
     _audit(request, "LINK", "link.access", {'key': key})
-
     return _pb_rest_object_url_to_dict(reply.url_info)
 
 
@@ -147,17 +150,13 @@ def set_url_expires(request):
         expires_abs_milli = _delta_seconds_to_abs_milli(int(expires))
     except ValueError:
         error.error('"expires" param must be a valid number')
-    url_info = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-    }).url_info
+
+    url_info = _make_sp_request(get_rpc_stub(request).get_url_info, (key, None)).url_info
     old_token = url_info.token
     soid = url_info.soid
     new_token = _get_new_zelda_token(request, int(expires), soid)
     delete_oauth_token(request, old_token)
-    exception2error(get_rpc_stub(request).set_url_expires, (key, expires_abs_milli, new_token), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-        PBException.NO_PERM: "The user is not an owner of the shared folder",
-    })
+    _make_sp_request(get_rpc_stub(request).set_url_expires, (key, expires_abs_milli, new_token))
 
     _audit(request, "LINK", "link.set_expiry", {
         'caller': authenticated_userid(request),
@@ -178,17 +177,12 @@ def remove_url_expires(request):
     key = request.json_body.get("key")
     if key is None:
         error.error('missing "key" param')
-    url_info = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-    }).url_info
+    url_info = _make_sp_request(get_rpc_stub(request).get_url_info, (key, None)).url_info
     old_token = url_info.token
     soid = url_info.soid
     new_token = _get_new_zelda_token(request, 0, soid)
     delete_oauth_token(request, old_token)
-    exception2error(get_rpc_stub(request).remove_url_expires, (key, new_token), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-        PBException.NO_PERM: "The user is not an owner of the shared folder",
-    })
+    _make_sp_request(get_rpc_stub(request).remove_url_expires, (key, new_token))
 
     _audit(request, "LINK", "link.remove_expiry", {
         'caller': authenticated_userid(request),
@@ -208,14 +202,9 @@ def remove_url(request):
     key = request.json_body.get("key")
     if key is None:
         error.error('missing "key" param')
-    old_token = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-    }).url_info.token
+    old_token = _make_sp_request(get_rpc_stub(request).get_url_info, (key, None)).url_info.token
     delete_oauth_token(request, old_token)
-    exception2error(get_rpc_stub(request).remove_url, (key,), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-        PBException.NO_PERM: "The user is not an owner of the shared folder",
-    })
+    _make_sp_request(get_rpc_stub(request).remove_url, (key,))
 
     _audit(request, "LINK", "link.delete", {
         'caller': authenticated_userid(request),
@@ -239,16 +228,11 @@ def set_url_password(request):
     if password is None:
         error.error('missing "password" param')
     password = password.encode('utf-8')
-    reply = exception2error(get_rpc_stub(request).get_url_info, (key, None), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-    })
+    reply = _make_sp_request(get_rpc_stub(request).get_url_info, (key, None))
     old_expires = _abs_milli_to_delta_seconds(reply.url_info.expires)
     new_token = _get_new_zelda_token(request, old_expires, reply.url_info.soid)
     delete_oauth_token(request, reply.url_info.token)
-    reply = exception2error(get_rpc_stub(request).set_url_password, (key, password, new_token), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-        PBException.NO_PERM: "The user is not an owner of the shared folder",
-    })
+    reply = _make_sp_request(get_rpc_stub(request).set_url_password, (key, password, new_token))
 
     _audit(request, "LINK", "link.set_password", {
         'caller': authenticated_userid(request),
@@ -268,10 +252,7 @@ def remove_url_password(request):
     key = request.json_body.get("key")
     if key is None:
         error.error('missing "key" param')
-    exception2error(get_rpc_stub(request).remove_url_password, (key,), {
-        PBException.NOT_FOUND: "The link does not exist or has expired",
-        PBException.NO_PERM: "The user is not an owner of the shared folder",
-    })
+    _make_sp_request(get_rpc_stub(request).remove_url_password, (key,))
 
     _audit(request, "LINK", "link.remove_password", {
         'caller': authenticated_userid(request),
@@ -292,10 +273,7 @@ def list_urls_for_store(request):
     if sid is None:
         error.error('missing "sid" param')
     sid_bytes = 'root'.encode('utf-8') if sid == 'root' else sid.decode('hex')
-    reply = exception2error(get_rpc_stub(request).list_urls_for_store, (sid_bytes,), {
-        PBException.NOT_FOUND: "The shared folder does not exist",
-        PBException.NO_PERM: "The user is not amanager of the shared folder",
-    })
+    reply = _make_sp_request(get_rpc_stub(request).list_urls_for_store, (sid_bytes,))
 
     return {'urls': [_pb_rest_object_url_to_dict(u) for u in reply.url]}
 

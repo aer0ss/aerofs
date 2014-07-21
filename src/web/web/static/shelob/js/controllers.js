@@ -627,10 +627,19 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                     };
                     newLink.expires = newLink.expiration_options[0];
                     object.links.push(newLink);
-                }).error(function(response) {
+                }).error(function(response, status) {
                     // link creation request failed
-                    $log.debug("Link creation failed with status " + response.status);
-                    showErrorMessageUnsafe(getInternalErrorText());
+                    if (status == 400 && response.type == "NO_PERM") {
+                        $log.error("Unauthorized attempt to make link.");
+                        showErrorMessage("You are not authorized to make a link for this " +
+                             "file or folder. " +
+                             "You must be an owner of the folder in order to share it.");
+                    } else {
+                        $log.debug("Link creation failed with status " + status);
+                        showErrorMessageUnsafe(getInternalErrorText());
+                    }
+                    // hide spinner
+                    $scope.toggleLink(object);
                 });
         }
     };
