@@ -31,6 +31,7 @@ import org.jboss.netty.util.Timer;
 import java.net.Proxy;
 import java.util.concurrent.TimeUnit;
 
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newConnectTimeoutHandler;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.net.Proxy.Type.DIRECT;
 import static java.net.Proxy.Type.HTTP;
@@ -131,6 +132,8 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         CNameVerifiedHandler verifiedHandler = newCNameVerifiedHandler();
         pipeline.addLast(CNAME_VERIFIED_HANDLER_NAME, verifiedHandler);
         verificationHandler.setListener(verifiedHandler);
+
+        pipeline.addLast("timeout-handler", newConnectTimeoutHandler(zephyrHandshakeTimeout, timer));
 
         // framing
         pipeline.addLast("length-decoder", BootstrapFactoryUtil.newFrameDecoder());

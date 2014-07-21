@@ -31,6 +31,7 @@ import org.jboss.netty.util.Timer;
 
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
 import static com.aerofs.base.net.NettyUtil.newSslHandler;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newConnectTimeoutHandler;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionReader;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionWriter;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newFrameDecoder;
@@ -123,6 +124,7 @@ final class TCPBootstrapFactory
                         newCoreProtocolVersionWriter(),
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
                         verifiedHandler,
+                        newConnectTimeoutHandler(channelConnectTimeout, timer),
                         messageHandler,
                         newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
                         tcpProtocolHandler,
@@ -161,6 +163,7 @@ final class TCPBootstrapFactory
                         messageHandler,
                         incomingChannelHandler,
                         newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
+                        newConnectTimeoutHandler(channelConnectTimeout, timer),
                         tcpProtocolHandler,
                         protocolHandler,
                         serverChannelDiagnosticsHandler,

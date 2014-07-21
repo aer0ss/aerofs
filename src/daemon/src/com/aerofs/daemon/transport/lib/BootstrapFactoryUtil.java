@@ -8,6 +8,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.net.CoreProtocolHandlers.RecvCoreProtocolVersionHandler;
 import com.aerofs.base.net.CoreProtocolHandlers.SendCoreProtocolVersionHandler;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.transport.lib.handlers.ConnectTimeoutHandler;
 import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.lib.LibParam;
@@ -75,6 +76,11 @@ public abstract class BootstrapFactoryUtil
             Timer timer, IRoundTripTimes roundTripTimes)
     {
         return new HeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes);
+    }
+
+    public static ConnectTimeoutHandler newConnectTimeoutHandler(long channelConnectTimeout, Timer timer)
+    {
+        return new ConnectTimeoutHandler(channelConnectTimeout, timer);
     }
 
     public static void setConnectTimeout(ClientBootstrap bootstrap, long channelConnectTimeout)

@@ -27,6 +27,7 @@ import org.jboss.netty.util.Timer;
 
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
 import static com.aerofs.base.net.NettyUtil.newSslHandler;
+import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newConnectTimeoutHandler;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionReader;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionWriter;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newFrameDecoder;
@@ -120,6 +121,7 @@ final class JingleBootstrapFactory
                         newCoreProtocolVersionReader(),
                         newCoreProtocolVersionWriter(),
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                        newConnectTimeoutHandler(channelConnectTimeout, timer),
                         verifiedHandler,
                         messageHandler,
                         newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
@@ -153,6 +155,7 @@ final class JingleBootstrapFactory
                         newCoreProtocolVersionReader(),
                         newCoreProtocolVersionWriter(),
                         newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                        newConnectTimeoutHandler(channelConnectTimeout, timer),
                         verifiedHandler,
                         messageHandler,
                         incomingChannelHandler,
