@@ -28,6 +28,12 @@ cp $thisdir/Makefile $thisdir/$deploy_path
 cp $thisdir/openssl.cnf $thisdir/$deploy_path
 cd $thisdir/$deploy_path
 
+# This ensures a (usually) unique DN for our CA to work around a chrome and firefox
+# bug. These browsers will fail weirdly when you try to create an exception for a new
+# cert that has a DN that it already knows about.
+random=$(openssl rand -hex 16 | tr '[:lower:]' '[:upper:]')
+echo "commonName = AeroFS-$random" >> openssl.cnf
+
 if [ ! -z "$password" ]
 then
     echo "$password" > passwd
