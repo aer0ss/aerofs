@@ -50,6 +50,8 @@ public class CommonMetadata
         @Override
         public int compare(CommonMetadata o1, CommonMetadata o2)
         {
+            if (o1.name == null) return -1;
+            if (o2.name == null) return 1;
             return o1.name.compareTo(o2.name);
         }
     };

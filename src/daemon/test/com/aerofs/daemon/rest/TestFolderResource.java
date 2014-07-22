@@ -3,14 +3,16 @@ package com.aerofs.daemon.rest;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
 import com.aerofs.base.id.RestObject;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.rest.api.*;
+import com.aerofs.rest.api.CommonMetadata;
 import com.aerofs.rest.api.Error;
 import com.google.common.util.concurrent.SettableFuture;
 import com.jayway.restassured.http.ContentType;
@@ -19,11 +21,11 @@ import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.Assert.assertEquals;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -421,7 +423,7 @@ public class TestFolderResource extends AbstractRestTest
         givenAccess()
                 .contentType(ContentType.JSON)
                 .body(CommonMetadata.child(new RestObject(rootSID, OID.generate()).toStringFormal(),
-                        "foo"),
+                                "foo"),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)
@@ -671,9 +673,7 @@ public class TestFolderResource extends AbstractRestTest
 
         givenAccess()
                 .contentType(ContentType.JSON)
-                .body(json(CommonMetadata.child(
-                        object("bar").toStringFormal(),
-                        "test")))
+                .body(json(CommonMetadata.child(object("bar").toStringFormal(), "test")))
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
@@ -787,5 +787,143 @@ public class TestFolderResource extends AbstractRestTest
                 .body("type", equalTo("FORBIDDEN"))
         .when()
                 .delete("/v0.10/folders/" + new RestObject(rootSID, soid.oid()).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn403WhenGetMetadataForAnchorWithNoPermWithLinkShareToken() throws Exception
+    {
+        mds.root()
+            .dir("d0")
+                .anchor("a")
+                    .dir("d").parent()
+                    .file("f").parent();
+
+        SIndex sidxRoot = mds.root().soid().sidx();
+        SIndex sidxChild = mds.root().dir("d0").anchor("a").dir("d").soid().sidx();
+        when(acl.check_(any(UserID.class), eq(sidxRoot), any(Permissions.class))).thenReturn(true);
+        when(acl.check_(any(UserID.class), eq(sidxChild), any(Permissions.class))).thenReturn(false);
+
+        givenLinkShareReadAccess()
+        .expect()
+                .statusCode(403)
+        .when().log().everything()
+                .get(RESOURCE, object("d0/a").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn403WhenGetMetadataForStoreWithNoPermWithLinkShareToken() throws Exception
+    {
+        mds.root()
+            .dir("d0")
+                .anchor("a")
+                    .dir("d").parent()
+                    .file("f").parent();
+
+        SIndex sidxRoot = mds.root().soid().sidx();
+        SIndex sidxChild = mds.root().dir("d0").anchor("a").dir("d").soid().sidx();
+        when(acl.check_(any(UserID.class), eq(sidxRoot), any(Permissions.class))).thenReturn(true);
+        when(acl.check_(any(UserID.class), eq(sidxChild), any(Permissions.class))).thenReturn(false);
+        SID sid = SID.anchorOID2storeSID(mds.root().dir("d0").anchor("a").soid().oid());
+
+        givenLinkShareReadAccess()
+                .expect()
+                .statusCode(403)
+                .when().log().everything()
+                .get(RESOURCE, new RestObject(sid, OID.ROOT).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn200WhenGetMetadataForAnchorWithPermWithLinkShareToken() throws Exception
+    {
+        mds.root()
+            .dir("d0")
+                .anchor("a")
+                    .dir("d").parent()
+                    .file("f").parent();
+
+        SIndex sidxRoot = mds.root().soid().sidx();
+        SIndex sidxChild = mds.root().dir("d0").anchor("a").dir("d").soid().sidx();
+        when(acl.check_(any(UserID.class), eq(sidxRoot), any(Permissions.class))).thenReturn(true);
+        when(acl.check_(any(UserID.class), eq(sidxChild), any(Permissions.class))).thenReturn(true);
+
+        givenLinkShareReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("name", equalTo("a"))
+        .when().log().everything()
+                .get(RESOURCE, object("d0/a").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn200WhenGetMetadataForStoreWithPermWithLinkShareToken() throws Exception
+    {
+        mds.root()
+            .dir("d0")
+                .anchor("a")
+                    .dir("d").parent()
+                    .file("f").parent();
+
+        SIndex sidxRoot = mds.root().soid().sidx();
+        SIndex sidxChild = mds.root().dir("d0").anchor("a").dir("d").soid().sidx();
+        when(acl.check_(any(UserID.class), eq(sidxRoot), any(Permissions.class))).thenReturn(true);
+        when(acl.check_(any(UserID.class), eq(sidxChild), any(Permissions.class))).thenReturn(true);
+        SID sid = SID.anchorOID2storeSID(mds.root().dir("d0").anchor("a").soid().oid());
+
+        givenLinkShareReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("name", equalTo("a"))
+        .when().log().everything()
+                .get(RESOURCE, new RestObject(sid, OID.ROOT).toStringFormal());
+    }
+
+    @Test
+    public void shouldHideChildAnchorWithNoPermWithLinkShareToken() throws Exception
+    {
+        mds.root()
+            .dir("d0")
+                .anchor("a")
+                    .dir("d").parent()
+                    .file("f").parent();
+
+        SIndex sidxRoot = mds.root().soid().sidx();
+        SIndex sidxChild = mds.root().dir("d0").anchor("a").dir("d").soid().sidx();
+        when(acl.check_(any(UserID.class), eq(sidxRoot), any(Permissions.class))).thenReturn(true);
+        when(acl.check_(any(UserID.class), eq(sidxChild), any(Permissions.class))).thenReturn(false);
+
+        givenLinkShareReadAccess()
+                .queryParam("fields", "children")
+        .expect()
+                .statusCode(200)
+                .body("name", equalTo("d0"))
+                .body("children.folders", iterableWithSize(0))
+        .when().log().everything()
+                .get(RESOURCE, object("d0").toStringFormal());
+    }
+
+    @Test
+    public void shouldIncludeChildAnchorWithPermWithLinkShareToken() throws Exception
+    {
+        mds.root()
+            .dir("d0")
+                .anchor("a")
+                    .dir("d").parent()
+                    .file("f").parent();
+
+        SIndex sidxRoot = mds.root().soid().sidx();
+        SIndex sidxChild = mds.root().dir("d0").anchor("a").dir("d").soid().sidx();
+        when(acl.check_(any(UserID.class), eq(sidxRoot), any(Permissions.class))).thenReturn(true);
+        when(acl.check_(any(UserID.class), eq(sidxChild), any(Permissions.class))).thenReturn(true);
+
+        givenLinkShareReadAccess()
+                .queryParam("fields", "children")
+        .expect()
+                .statusCode(200)
+                .body("name", equalTo("d0"))
+                .body("children.folders", iterableWithSize(1))
+                .body("children.folders[0].id", equalTo(object("d0/a").toStringFormal()))
+                .body("children.folders[0].name", equalTo("a"))
+        .when().log().everything()
+                .get(RESOURCE, object("d0").toStringFormal());
     }
 }

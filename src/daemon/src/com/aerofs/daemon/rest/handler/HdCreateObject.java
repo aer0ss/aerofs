@@ -59,7 +59,7 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
                 + '/' + object.toStringFormal();
 
         ev.setResult_(Response.created(URI.create(location))
-                .entity(_mb.metadata(soid, ev.user()))
+                .entity(_mb.metadata(soid, ev._token))
                 .tag(_etags.etagForMeta(soid)));
     }
 }

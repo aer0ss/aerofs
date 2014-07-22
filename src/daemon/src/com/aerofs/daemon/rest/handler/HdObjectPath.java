@@ -27,6 +27,6 @@ public class HdObjectPath extends AbstractRestHdIMC<EIObjectPath>
         // NB: technically we're sending meta about all the children, should we log them too?
         _eol.log_(META_REQUEST, oa.soid(), ev.did());
 
-        ev.setResult_(_mb.path(p, ev.user()));
+        ev.setResult_(_mb.path(p, ev._token));
     }
 }

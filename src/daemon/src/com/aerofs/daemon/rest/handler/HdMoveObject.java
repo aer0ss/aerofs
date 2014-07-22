@@ -66,7 +66,7 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
         }
 
         ev.setResult_(Response.ok()
-                .entity(_mb.metadata(soid, ev.user()))
+                .entity(_mb.metadata(soid, ev._token))
                 .tag(_etags.etagForMeta(soid)));
     }
 }

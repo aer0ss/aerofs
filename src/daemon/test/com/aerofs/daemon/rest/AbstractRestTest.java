@@ -64,6 +64,7 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.oauth.Scope;
 import com.aerofs.oauth.TokenVerificationClient;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.oauth.VerifyTokenResponse;
@@ -610,6 +611,11 @@ public class AbstractRestTest extends AbstractTest
         return givenTokenWithScopes(ImmutableSet.of("files.read", "files.write"));
     }
 
+    protected RequestSpecification givenLinkShareReadAccess() throws Exception
+    {
+        return givenTokenWithScopes(ImmutableSet.of("files.read", "linksharing"));
+    }
+
     protected RequestSpecification givenReadAccess() throws Exception
     {
         return givenTokenWithScopes(ImmutableSet.of("files.read"));
@@ -618,6 +624,11 @@ public class AbstractRestTest extends AbstractTest
     protected RequestSpecification givenReadAccessTo(RestObject object) throws Exception
     {
         return givenTokenWithScopes(ImmutableSet.of("files.read:" + object.toStringFormal()));
+    }
+
+    protected RequestSpecification givenLinkShareReadAccessTo(RestObject object) throws Exception
+    {
+        return givenTokenWithScopes(ImmutableSet.of("files.read:" + object.toStringFormal(), "linksharing"));
     }
 
     protected RequestSpecification givenExpiredToken() throws Exception

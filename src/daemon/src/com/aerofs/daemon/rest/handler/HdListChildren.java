@@ -23,7 +23,7 @@ public class HdListChildren extends AbstractRestHdIMC<EIListChildren>
 
         requireAccessToFile(ev._token, Scope.READ_FILES, oa);
 
-        ChildrenList l = _mb.children(ev._object.toStringFormal(), oa, ev._includeParent);
+        ChildrenList l = _mb.children(ev._object.toStringFormal(), oa, ev._includeParent, ev._token);
 
         // NB: technically we're sending meta about all the children, should we log them too?
         _eol.log_(META_REQUEST, oa.soid(), ev.did());

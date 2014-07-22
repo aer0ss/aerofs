@@ -28,7 +28,7 @@ public class HdObjectInfo extends AbstractRestHdIMC<EIObjectInfo>
 
         _eol.log_(META_REQUEST, oa.soid(), ev.did());
 
-        ResponseBuilder r = Response.ok().entity(_mb.metadata(oa, ev.user(), ev._fields));
+        ResponseBuilder r = Response.ok().entity(_mb.metadata(oa, ev._token, ev._fields));
 
         // NB: only include Etag when response does not include  on-demand fields
         ev.setResult_(ev._fields == null ? r.tag(_etags.etagForMeta(oa.soid())) : r);

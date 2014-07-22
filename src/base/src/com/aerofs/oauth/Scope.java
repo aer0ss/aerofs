@@ -30,7 +30,8 @@ public enum Scope
     WRITE_USER("user.write", false),
     MANAGE_PASSWORD("user.password", false),
     ORG_ADMIN("organization.admin", false),
-    APPDATA("files.appdata", false)
+    APPDATA("files.appdata", false),
+    LINKSHARE("linksharing", false)
     ;
 
     private final String name;
