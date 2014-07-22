@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.linked.linker.notifier.windows;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.IEvent;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -34,6 +35,7 @@ public class WindowsNotifier implements INotifier, IWin32NotifyListener
     {
         _cq = cq;
         _jn = jn;
+        _jn.win32_setLogFile(Util.join(Cfg.absRTRoot(), "jn.log"));
     }
 
     @Override

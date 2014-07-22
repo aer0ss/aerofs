@@ -23,6 +23,11 @@ public class InjectableJNotify
         OSUtil.get().loadLibrary("aerofsjn");
     }
 
+    public void win32_setLogFile(String path)
+    {
+        JNotify_win32.initLogger(path);
+    }
+
     public void win32_setNotifyListener(IWin32NotifyListener l)
     {
         JNotify_win32.setNotifyListener(l);
