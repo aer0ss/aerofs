@@ -1,1 +1,7 @@
-pygpgme==0.3
+# When changing this file, update requirements-exact.txt as well:
+# virtualenv env
+# env/bin/pip install -r requirements.txt
+# env/bin/pip freeze > requirements-exact.txt
+# rm -rf env
+# Our explicit dependencies:
+pygpgme

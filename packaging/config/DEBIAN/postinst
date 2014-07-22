@@ -7,4 +7,4 @@ virtualenv $PYTHONENV
 $PYTHONENV/bin/pip install --find-links file:///opt/config/sdist    \
                            --no-index                               \
                            --log /var/log/aerofs/config.install.log \
-                           --requirement /opt/config/requirements.txt
+                           --requirement /opt/config/requirements-exact.txt

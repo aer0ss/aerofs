@@ -11,4 +11,4 @@ virtualenv $PYTHONENV
 $PYTHONENV/bin/pip install --find-links file:///opt/charlie/sdist   \
                            --no-index                               \
                            --log $LOG_DIR/charlie.install.log       \
-                           --requirement /opt/charlie/requirements.txt
+                           --requirement /opt/charlie/requirements-exact.txt

@@ -32,7 +32,7 @@ jekyll build
 popd
 cp -a $API_SOURCE_DIR/_site/* $OPT/docs/api/
 # Also include stuff needed for package installation
-cp -a $SOURCE_DIR/requirements.txt $OPT/
+cp -a $SOURCE_DIR/requirements-exact.txt $OPT/
 # Include the wsgi application file that uwsgi will run
 cp -a $SOURCE_DIR/production.wsgi $OPT/
 
@@ -40,7 +40,7 @@ cp -a $SOURCE_DIR/production.wsgi $OPT/
 # PIP_CACHE is a flat directory of .tar.gz source files from PyPI.
 SDIST=$OPT/sdist
 SDIST_CACHE=$HOME/.aerofs-cache/pip/web
-tools/pip-prefetch.sh "../src/web/requirements.txt" "$SDIST_CACHE"
+tools/pip-prefetch.sh "../src/web/requirements-exact.txt" "$SDIST_CACHE"
 
 # Copy PyPI dependency packages to /opt/web/sdist, so they'll be available at
 # package install time.
@@ -48,7 +48,7 @@ mkdir -p $SDIST
 cp $SDIST_CACHE/* $SDIST/
 
 # Also include the aerofs-py-lib package.
-tools/python-buildpackage.sh "../src/python-lib" "$SDIST" "$OPT/requirements.txt"
+tools/python-buildpackage.sh "../src/python-lib" "$SDIST" "$OPT/requirements-exact.txt"
 
 # Also include the aerofs-web package
-tools/python-buildpackage.sh "../src/web" "$SDIST" "$OPT/requirements.txt"
+tools/python-buildpackage.sh "../src/web" "$SDIST" "$OPT/requirements-exact.txt"

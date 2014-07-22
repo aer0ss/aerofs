@@ -13,7 +13,7 @@ mkdir -p $OPT
 # A folder for lizard to store some state in; it'll be writable by www-data
 mkdir -p $OPT/state
 # Include requirements for package installation
-cp -a $SOURCE_DIR/requirements.txt $OPT/
+cp -a $SOURCE_DIR/requirements-exact.txt $OPT/
 # Include base config.  This contains configuration that is used in both dev
 # and production.  Deployment-specific configuration comes from
 # additional_config.py which is provided by puppet for production use and the
@@ -30,13 +30,13 @@ cp -pRL $SOURCE_DIR/lizard/static/* $OPT/static
 
 SDIST=$OPT/sdist
 SDIST_CACHE=$HOME/.aerofs-cache/pip/lizard
-tools/pip-prefetch.sh "../src/lizard/requirements.txt" "$SDIST_CACHE"
+tools/pip-prefetch.sh "../src/lizard/requirements-exact.txt" "$SDIST_CACHE"
 
 # Copy PyPI dependencies to /opt/lizard/sdist
 mkdir -p $SDIST
 cp $SDIST_CACHE/* $SDIST/
 
 # Include aerofs-licensing, upon which lizard depends
-tools/python-buildpackage.sh "../src/licensing" "$SDIST" "$OPT/requirements.txt"
+tools/python-buildpackage.sh "../src/licensing" "$SDIST" "$OPT/requirements-exact.txt"
 # Include the aerofs-lizard package
-tools/python-buildpackage.sh "../src/lizard" "$SDIST" "$OPT/requirements.txt"
+tools/python-buildpackage.sh "../src/lizard" "$SDIST" "$OPT/requirements-exact.txt"

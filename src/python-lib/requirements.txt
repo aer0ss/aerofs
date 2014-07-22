@@ -1,4 +1,6 @@
-argparse==1.2.1
-protobuf==2.5.0
-requests==1.2.0
-wsgiref==0.1.2
+# When changing this file, update requirements-exact.txt as well:
+# virtualenv env
+# env/bin/pip install -r requirements.txt
+# env/bin/pip freeze > requirements-exact.txt
+protobuf
+requests

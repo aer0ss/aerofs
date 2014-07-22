@@ -5,4 +5,4 @@ virtualenv $PYTHONENV
 $PYTHONENV/bin/pip install --find-links file:///opt/sanity/sdist    \
                            --no-index                               \
                            --log /var/log/aerofs/sanity.install.log \
-                           --requirement /opt/sanity/requirements.txt
+                           --requirement /opt/sanity/requirements-exact.txt

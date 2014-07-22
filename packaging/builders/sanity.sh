@@ -5,7 +5,7 @@ OUTPUT_DIR=build/sanity
 mkdir -p $OUTPUT_DIR
 
 # Fetch dependencies
-REQUIREMENTS=$OUTPUT_DIR/opt/sanity/requirements.txt
+REQUIREMENTS=$OUTPUT_DIR/opt/sanity/requirements-exact.txt
 SDIST_CACHE=$HOME/.aerofs-cache/pip/sanity
 tools/pip-prefetch.sh "$REQUIREMENTS" "$SDIST_CACHE"
 

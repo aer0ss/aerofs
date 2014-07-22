@@ -19,7 +19,7 @@ virtualenv $PYHOME
 $PYHOME/bin/pip install --find-links file:///opt/lizard/sdist      \
                         --no-index                                 \
                         --log /var/log/lizard/lizard.install.log   \
-                        --requirement /opt/lizard/requirements.txt
+                        --requirement /opt/lizard/requirements-exact.txt
 
 # Return to initial starting folder
 popd

@@ -8,4 +8,4 @@ virtualenv $PYTHONENV
 $PYTHONENV/bin/pip install --find-links file://$SDIST                    \
                            --no-index                                    \
                            --log /var/log/aerofs/repackaging.install.log \
-                           --requirement $OPT/requirements.txt
+                           --requirement $OPT/requirements-exact.txt

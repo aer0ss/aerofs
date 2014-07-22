@@ -15,7 +15,7 @@ virtualenv $PYHOME
 $PYHOME/bin/pip install --find-links file:///opt/web/sdist      \
                         --no-index                              \
                         --log /var/log/web/web.install.log   \
-                        --requirement /opt/web/requirements.txt
+                        --requirement /opt/web/requirements-exact.txt
 
 # For some reason this value gets set to /root/.python-eggs which is
 # not writable by www-data. Explicitly setting it fixes the problem.

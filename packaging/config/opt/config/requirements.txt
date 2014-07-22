@@ -1,6 +1,9 @@
-Flask==0.10.1
-Werkzeug==0.7
-Jinja2==2.4
-itsdangerous==0.21
-CherryPy==3.2.4
-pygpgme==0.3
+# When changing this file, update requirements-exact.txt as well:
+# virtualenv env
+# env/bin/pip install -r requirements.txt
+# env/bin/pip freeze > requirements-exact.txt
+# Our explicit deps:
+Flask
+CherryPy
+# Hoisted from aerofs-licensing:
+pygpgme

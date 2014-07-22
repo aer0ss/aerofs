@@ -5,7 +5,7 @@ OUTPUT_DIR=build/repackaging
 OPT=$OUTPUT_DIR/opt/repackaging
 
 # Fetch python dependency packages to cache
-REQUIREMENTS=repackaging/opt/repackaging/requirements.txt
+REQUIREMENTS=repackaging/opt/repackaging/requirements-exact.txt
 SDIST_CACHE=$HOME/.aerofs-cache/pip/repackaging
 tools/pip-prefetch.sh $REQUIREMENTS $SDIST_CACHE
 

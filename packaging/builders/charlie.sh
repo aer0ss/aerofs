@@ -4,8 +4,8 @@ set -e -u
 OUTPUT_DIR=build/charlie
 SDIST=$OUTPUT_DIR/opt/charlie/sdist
 SDIST_CACHE=$HOME/.aerofs-cache/pip/charlie
-REQUIREMENTS_IN=charlie/opt/charlie/requirements.txt
-REQUIREMENTS_OUT=$OUTPUT_DIR/opt/charlie/requirements.txt
+REQUIREMENTS_IN=charlie/opt/charlie/requirements-exact.txt
+REQUIREMENTS_OUT=$OUTPUT_DIR/opt/charlie/requirements-exact.txt
 
 tools/pip-prefetch.sh "$REQUIREMENTS_IN" "$SDIST_CACHE"
 
