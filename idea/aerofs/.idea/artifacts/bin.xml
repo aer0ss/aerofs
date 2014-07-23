@@ -6,11 +6,9 @@
       <element id="module-output" name="daemon" />
       <element id="module-output" name="gui" />
       <element id="module-output" name="lib" />
-      <element id="module-output" name="swiglibs" />
       <element id="module-output" name="spsv" />
       <element id="module-output" name="libservlet" />
       <element id="module-output" name="libjingle.binding" />
-      <element id="module-output" name="syncstat" />
       <element id="module-output" name="verkehr" />
       <element id="module-output" name="zephyr" />
       <element id="module-output" name="rest-api" />

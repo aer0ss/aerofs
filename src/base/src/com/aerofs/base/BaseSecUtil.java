@@ -7,7 +7,6 @@ package com.aerofs.base;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.swig.scrypt.Scrypt;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
@@ -680,22 +679,6 @@ public abstract class BaseSecUtil
             // same reason
             return new String(passwd).getBytes();
         }
-    }
-
-    protected static byte[] scryptImpl(char[] passwd, UserID user)
-    {
-        byte[] bsPass = KeyDerivation.getPasswordBytes(passwd);
-        byte[] bsUser = KeyDerivation.getSaltForUser(user);
-
-        byte[] scrypted = new byte[KeyDerivation.dkLen];
-        int rc = Scrypt.crypto_scrypt(bsPass, bsPass.length, bsUser, bsUser.length,
-                KeyDerivation.N, KeyDerivation.r, KeyDerivation.p,
-                scrypted, scrypted.length);
-
-        // sanity checks
-        if (rc != 0) throw new Error("scr rc != 0");
-
-        return scrypted;
     }
 
     // throw ExCannotDecrypt if authentication failed`

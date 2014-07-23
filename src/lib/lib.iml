@@ -8,8 +8,8 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="swiglibs" exported="" />
     <orderEntry type="module" module-name="base" exported="" />
+    <orderEntry type="library" exported="" name="aerofsd" level="project" />
     <orderEntry type="library" exported="" name="guice" level="project" />
     <orderEntry type="library" exported="" name="guice-multibindings" level="project" />
     <orderEntry type="library" exported="" name="jnotify-aerofs" level="project" />

@@ -8,8 +8,6 @@
 TEMPLATE = lib          # Building a shared library
 CONFIG -= qt            # Do not use Qt
 TARGET = aerofsd        # The name of our library. Qmake will add the "lib" prefix on *nix platforms
-DESTDIR = $$PWD/build   # Put the resulting library in the "build" folder
-
 
 INCLUDEPATH += $$PWD/3rd_party/include
 QMAKE_CXX_FLAGS += -D_FILE_OFFSET_BITS=64 -fmessage-length=0 -fno-rtti
@@ -112,7 +110,7 @@ OTHER_FILES += $$SWIG_FILES \
 gen_swg.input = SWIG_FILES
 gen_swg.output  = ${QMAKE_FILE_PATH}/${QMAKE_FILE_BASE}_wrap.cpp
 gen_swg.variable_out = SOURCES
-gen_swg.commands = swig -c++ -java \
+gen_swg.commands = $(MKDIR) "\"$$PWD/gen/com/aerofs/swig/${QMAKE_FILE_BASE}\"" && swig -c++ -java \
                         -outdir "\"$$PWD/gen/com/aerofs/swig/${QMAKE_FILE_BASE}\"" \
                         -package "com.aerofs.swig.${QMAKE_FILE_BASE}"  \
                         -o  "${QMAKE_FILE_OUT}" \

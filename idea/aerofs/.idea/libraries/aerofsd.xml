@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="aerofsd">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../resource/client/all/lib/aerofsd.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

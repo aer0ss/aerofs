@@ -8,7 +8,6 @@
       <sourceFolder url="file://$MODULE_DIR$/gen" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="swiglibs" exported="" />
     <orderEntry type="library" exported="" name="javax.inject" level="project" />
     <orderEntry type="library" exported="" name="jsr305" level="project" />
     <orderEntry type="library" exported="" name="guava" level="project" />

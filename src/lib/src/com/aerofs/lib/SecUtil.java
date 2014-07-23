@@ -4,6 +4,7 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.swig.scrypt.Scrypt;
 
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
@@ -29,5 +30,20 @@ public class SecUtil extends BaseSecUtil
     {
         OSUtil.get().loadLibrary("aerofsd");
         return OpenSslPkcs10.create(pubKey, privKey, userId, did);
+    }
+
+    protected static byte[] scryptImpl(char[] passwd, UserID user)
+    {
+        byte[] bsPass = KeyDerivation.getPasswordBytes(passwd);
+        byte[] bsUser = KeyDerivation.getSaltForUser(user);
+
+        byte[] scrypted = new byte[KeyDerivation.dkLen];
+        int rc = Scrypt.crypto_scrypt(bsPass, bsPass.length, bsUser, bsUser.length, KeyDerivation.N,
+                KeyDerivation.r, KeyDerivation.p, scrypted, scrypted.length);
+
+        // sanity checks
+        if (rc != 0) throw new Error("scr rc != 0");
+
+        return scrypted;
     }
 }

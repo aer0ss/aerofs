@@ -1,3 +1,4 @@
 build
+gen
 *.user
 *_wrap.cpp
