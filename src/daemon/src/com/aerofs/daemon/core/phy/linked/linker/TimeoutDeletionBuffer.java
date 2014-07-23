@@ -377,7 +377,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                     return true;
                 }
 
-                l.warn("here be dragons {} {}", oa.soid(), oa.fid(), fid,
+                l.warn("here be dragons {} {} {} {}", oa.soid(), oa.fid(), fid,
                         ObfuscatingFormatters.obfuscatePath(path));
                 // if the physical object has different type or FID, proceed with the deletion
                 if (f.isFile() == oa.isFile() && fid.equals(oa.fid())) {
