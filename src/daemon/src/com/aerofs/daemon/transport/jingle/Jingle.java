@@ -14,7 +14,6 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelMonitor;
-import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -167,7 +166,6 @@ public class Jingle implements ITransport
         // presence service wiring
         signalThread.setUnicastListener(presenceService); // presence service is notified whenever signal thread goes up/down
         unicast.setUnicastListener(presenceService); // presence service is notified whenever a device connects/disconnects to unicast
-        presenceService.addListener(new DevicePresenceListener(unicast)); // disconnect everyone when they go offline
         presenceService.addListener(xmppPresenceProcessor); // send any final offline presence to the core when people go offline
         presenceService.addListener(monitor);
 

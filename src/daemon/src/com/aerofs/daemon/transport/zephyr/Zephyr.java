@@ -15,7 +15,6 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelMonitor;
-import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -167,7 +166,6 @@ public final class Zephyr implements ITransport
 
         XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, outgoingEventSink, monitor);
         presenceService.addListener(xmppPresenceProcessor);
-        presenceService.addListener(new DevicePresenceListener(zephyrConnectionService));
         presenceService.addListener(monitor);
 
         // WARNING: it is very important that XMPPPresenceProcessor listen to XMPPConnectionService

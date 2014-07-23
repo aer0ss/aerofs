@@ -16,7 +16,6 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelMonitor;
-import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IAddressResolver;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
@@ -173,7 +172,6 @@ public class TCP implements ITransport, IAddressResolver
         // presence hookups
         unicast.setUnicastListener(presenceService);
         multicast.setListener(monitor);
-        presenceService.addListener(new DevicePresenceListener(unicast));
         presenceService.addListener(stores);
         presenceService.addListener(monitor);
 
