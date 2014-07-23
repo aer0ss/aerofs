@@ -393,6 +393,10 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     {
         if (l.isDebugEnabled()) l.debug(oa.soid() + ": move to " + oaParent.soid() + "/" + name);
 
+        // thou shalt not move ROOT or TRASH folders
+        checkArgument(!oa.soid().oid().isRoot());
+        checkArgument(!oa.soid().oid().isTrash());
+
         // assigning the child to a parent in a different store is always wrong.
         checkArgument(oa.soid().sidx().equals(oaParent.soid().sidx()), oa + " " + oaParent);
 

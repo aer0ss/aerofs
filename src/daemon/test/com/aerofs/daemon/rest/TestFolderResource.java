@@ -644,6 +644,25 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturn400MovingRoot() throws Exception
+    {
+        SOID soid = mds.root()
+                .anchor("shared").root().soid();
+        SOID child = mds.root()
+                .dir("foo").soid();
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(CommonMetadata.child(id(child), "test"), ObjectMapperType.GSON)
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+                .body("message", equalTo("Invalid parameter: cannot move system folder"))
+        .when()
+                .put("/v0.10/folders/" + id(soid));
+    }
+
+    @Test
     public void shouldReturn400MovingUnderFile() throws Exception
     {
         SOID soid = mds.root()

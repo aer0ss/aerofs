@@ -68,7 +68,7 @@ public class TestImmigrantCreator extends AbstractTest
     ////////
     // enforcement tests
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = IllegalArgumentException.class)
     public void shouldAssertDifferentStores() throws Exception
     {
         setupMockDS(0);

@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -129,7 +130,11 @@ public class ImmigrantCreator
             final SOID soidToRootParent, final String toRootName, final PhysicalOp op, final Trans t)
             throws Exception
     {
-        assert !soidFromRoot.sidx().equals(soidToRootParent.sidx());
+        // thou shalt not move ROOT or TRASH folder
+        checkArgument(!soidFromRoot.oid().isRoot());
+        checkArgument(!soidFromRoot.oid().isTrash());
+        // ensure moving across store boundary
+        checkArgument(!soidFromRoot.sidx().equals(soidToRootParent.sidx()));
 
         MigratedPath pathParent = new MigratedPath(
                 pathFromParent,

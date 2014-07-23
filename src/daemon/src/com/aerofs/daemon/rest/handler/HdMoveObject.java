@@ -37,6 +37,8 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
         requireAccessToFile(ev._token, Scope.WRITE_FILES, from);
         requireAccessToFile(ev._token, Scope.WRITE_FILES, toParent);
 
+        checkArgument(!from.soid().oid().isRoot() && !from.soid().oid().isTrash(),
+                "cannot move system folder");
         checkArgument(toParent.isDir(), "parent field must point to a valid folder");
 
         EntityTag etag = _etags.etagForMeta(from.soid());
