@@ -217,7 +217,7 @@ getFilename = function(mimeType) {
 // Generates a file/folder row for an object.
 // Uses different templates to render with depending on whether this is 
 // a My Files admin page or a linkshare page
-shelobDirectives.directive('ngFileRow', function(){
+shelobDirectives.directive('ngFileRow', function() {
     return {
         restrict: 'A',
         scope: false,

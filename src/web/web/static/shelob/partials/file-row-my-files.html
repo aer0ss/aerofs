@@ -7,7 +7,7 @@
             <div ng-if="object.type == 'file'" aero-icon data-mime-type={{object.mime_type}}></div>
           </div>
           <div class="name">
-            <a ng-if="object.type === 'folder'" ng-hide="object.edit" ng-href="#/{{object.id}}">{{object.name}}</a>
+            <a ng-if="object.type === 'folder'" ng-hide="object.edit" ng-href="#/{{deref_anchor(object)}}">{{object.name}}</a>
             <a ng-if="object.type === 'file' && object.size > 0" ng-hide="object.edit" ng-click="download(object.id)">{{object.name}}</a>
             <span ng-if="object.type === 'file' && (object.size === undefined || object.size === null || object.size === 0 || object.size === -1)">{{object.name}}</span>
             <input in-place-edit

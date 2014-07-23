@@ -4,7 +4,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         function ($scope, $rootScope, $http, $log, $routeParams, $window, $modal, API, Token, API_LOCATION, OutstandingRequestsCounter) {
 
     var FOLDER_LAST_MODIFIED = '--';
-    
+
     // Set csrf-token header on $http by default
     var metas = document.getElementsByTagName('meta');
     for (var i=0; i<metas.length; i++) {
@@ -48,9 +48,11 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         $scope.rootFolder = 'root';
     }
 
-    // anchor SID/OID -> root folder SID/OID
-    function _deref_anchor(folder) {
-        if (folder.is_shared) folder.id = folder.sid + "00000000000000000000000000000000";
+    // for anchor SID/OID: return root folder SID/OID
+    // for folder: return input
+    $scope.deref_anchor = function(folder) {
+        if (folder.is_shared) return folder.sid + "00000000000000000000000000000000";
+        else return folder.id;
     }
 
     var _getFolders = function (){
@@ -64,10 +66,6 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 name: response.data.name,
             };
 
-            for (var i = 0; i < response.data.path.folders.length; i++) {
-                _deref_anchor(response.data.path.folders[i])
-            }
-
             // omit the root AeroFS folder from the breadcrumb trail, since we will always
             // include a link to the root with the label "My Files"
             if (response.data.path.folders.length && response.data.path.folders[0].name == 'AeroFS') {
@@ -80,7 +78,6 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             for (var i = 0; i < response.data.children.folders.length; i++) {
                 response.data.children.folders[i].type = 'folder';
                 response.data.children.folders[i].last_modified = FOLDER_LAST_MODIFIED;
-                _deref_anchor(response.data.children.folders[i])
             }
             for (var i = 0; i < response.data.children.files.length; i++) {
                 response.data.children.files[i].type = 'file';
