@@ -1,6 +1,8 @@
-var shelobFilters = angular.module('shelobFilters', []).filter('humanBytes', function(){
+var shelobFilters = angular.module('shelobFilters', []);
+
+shelobFilters.filter('humanBytes', function() {
     var rounded = function(n, divisor) {
-        return Math.round(n*10/divisor)/10;
+        return Math.round(n * 10 / divisor) / 10;
     };
     return function(input) {
         if (input >= 0) {

@@ -39,7 +39,7 @@ def _audit(request, topic, event, data=None):
 def _get_new_zelda_token(request, expires_in, soid):
     client_id = 'aerofs-zelda'
     client_secret = request.registry.settings["oauth.zelda_client_secret"]
-    scopes = ['files.read:' + soid]
+    scopes = ['files.read:' + soid, "linksharing"]
     return get_new_oauth_token(request, client_id, client_secret, expires_in, scopes)
 
 
