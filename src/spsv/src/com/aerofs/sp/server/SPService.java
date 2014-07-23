@@ -1500,7 +1500,9 @@ public class SPService implements ISPService
         if (restObject.getSID() == null || restObject.getOID() == null) {
             throw new ExBadArgs("invalid soid");
         }
-        SharedFolder sf = _factSharedFolder.create(restObject.getSID());
+        SID sidToCheck = restObject.getOID().isAnchor() ?
+                SID.anchorOID2storeSID(restObject.getOID()) : restObject.getSID();
+        SharedFolder sf = _factSharedFolder.create(sidToCheck);
         _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserLegacyProvenance();
         sf.throwIfNoPrivilegeToChangeACL(requester);

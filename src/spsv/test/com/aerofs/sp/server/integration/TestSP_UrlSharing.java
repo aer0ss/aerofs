@@ -106,6 +106,30 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void createUrl_shouldThrowWithNoPermToAnchor() throws Exception
+    {
+        try {
+            setSession(editor);
+            SID rootSid = SID.rootSID(editor.id());
+            OID anchorOid = SID.storeSID2anchorOID(sid);
+            RestObject restObject = new RestObject(rootSid, anchorOid);
+            service.createUrl(restObject.toStringFormal(), UniqueID.generate().toStringFormal());
+            fail();
+        } catch (ExNoPerm ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void createUrl_shouldSucceedWithPermToAnchor() throws Exception
+    {
+        SID rootSid = SID.rootSID(owner.id());
+        OID anchorOid = SID.storeSID2anchorOID(sid);
+        RestObject restObject = new RestObject(rootSid, anchorOid);
+        service.createUrl(restObject.toStringFormal(), UniqueID.generate().toStringFormal());
+    }
+
+    @Test
     public void getUrlInfo_shouldGetUrlInfo() throws Exception
     {
         String token = UniqueID.generate().toStringFormal();
