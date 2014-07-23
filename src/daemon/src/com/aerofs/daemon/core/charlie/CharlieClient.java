@@ -39,6 +39,8 @@ public class CharlieClient
 
     private static final long INITIAL_CHECK_IN_DELAY = 30 * C.SEC;
     private static final long CHECK_IN_INTERVAL = 60 * C.SEC;
+    private static final long CONNECT_TIMEOUT = 30 * C.SEC;
+    private static final long READ_TIMEOUT = 30 * C.SEC;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final UserID localUser;
@@ -101,12 +103,13 @@ public class CharlieClient
         // create and set up the connection
         HttpsURLConnection connection = (HttpsURLConnection) Charlie.CHARLIE_URL.openConnection();
         sslConnectionConfigurator.configure(connection);
+        connection.setUseCaches(false);
         connection.setDoOutput(true);
         connection.setDoInput(true);
-        connection.addRequestProperty(
-                CHARLIE_AUTH_KEY,
-                String.format(CHARLIE_AUTH_VALUE, localDID.toStringFormal(), localUser.getString()));
+        connection.addRequestProperty(CHARLIE_AUTH_KEY, String.format(CHARLIE_AUTH_VALUE, localDID.toStringFormal(), localUser.getString()));
         connection.setRequestMethod("POST");
+        connection.setConnectTimeout((int) CONNECT_TIMEOUT);
+        connection.setReadTimeout((int) READ_TIMEOUT);
 
         // make an empty POST
         connection.connect();
