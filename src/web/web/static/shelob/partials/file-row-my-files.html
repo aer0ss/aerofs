@@ -83,9 +83,7 @@
         <div class="link row">
             <div class="col-sm-3 the-link" ng-hide="link.copying">
               <span class="glyphicon glyphicon-link"></span> <span class="extra-settings-icons"><span ng-show="link.expires.value" class="glyphicon glyphicon-time" title="Has expiration time"></span> <span ng-show="link.has_password" class="glyphicon glyphicon-lock" title="Password protected"></span></span> 
-              Link to 
-              <span ng-if="object.type === 'folder'">folder</span>
-              <span ng-if="object.type === 'file'">file</span>: 
+              Link to <span ng-if="object.type === 'folder'">folder</span><span ng-if="object.type === 'file'">file</span>:
             </div>
             <div class="col-sm-7 the-link" ng-hide="link.copying">
               <a class="url" title="Copy link to clipboard" ng-show="!link.copying" ng-click="toggleCopying(link)">
@@ -127,6 +125,12 @@
               </div>
             </div>
         </div>
+    </div>
+    <div class="link row" ng-show="object.links.length > 0">
+      <div class="col-sm-3" ng-hide="link.copying">
+        <a ng-click="createLink(object)">
+          + Create another link</a>
+      </div>
     </div>
 </div>
 </div>

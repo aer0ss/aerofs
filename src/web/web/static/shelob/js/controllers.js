@@ -607,38 +607,49 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // Generates a link, then...
     // Lets user see link URL and specify link permissions
     $scope.showLink = function(object) {
-        $scope.toggleLink(object);
         // if there is no link yet, create one
         if (object.links === undefined) {
             object.links = [];
         }
         if (object.links.length === 0) {
-            $log.info("Creating link for object " + object.name);
-            $http.post('/create_url', {
-                soid: object.id
-            }).success(function(response) {
-                    var newLink = {
-                        key: response.key,
-                        has_password: false,
-                        expiration_options: _expiration_options()
-                    };
-                    newLink.expires = newLink.expiration_options[0];
-                    object.links.push(newLink);
-                }).error(function(response, status) {
-                    // link creation request failed
-                    if (status == 400 && response.type == "NO_PERM") {
-                        $log.error("Unauthorized attempt to make link.");
-                        showErrorMessage("You are not authorized to make a link for this " +
-                             "file or folder. " +
-                             "You must be an owner of the folder in order to share it.");
-                    } else {
-                        $log.debug("Link creation failed with status " + status);
-                        showErrorMessageUnsafe(getInternalErrorText());
-                    }
-                    // hide spinner
-                    $scope.toggleLink(object);
-                });
+            $scope.createLink(object);
+        } else {
+            // otherwise, just show the link(s)
+            $scope.toggleLink(object);
         }
+    };
+
+    $scope.createLink = function(object) {
+        if (!object.showingLinks) {
+            $scope.toggleLink(object);
+        }
+        $log.info("Creating link for object " + object.name);
+        $http.post('/create_url', {
+            soid: object.id
+        }).success(function(response) {
+            var newLink = {
+                key: response.key,
+                has_password: false,
+                expiration_options: _expiration_options()
+            };
+            newLink.expires = newLink.expiration_options[0];
+            object.links.push(newLink);
+        }).error(function(response, status) {
+            // link creation request failed
+            if (status == 400 && response.type == "NO_PERM") {
+                $log.error("Unauthorized attempt to make link.");
+                showErrorMessage("You are not authorized to make a link for this " +
+                     "file or folder. " +
+                     "You must be an owner of the folder in order to share it.");
+            } else {
+                $log.debug("Link creation failed with status " + status);
+                showErrorMessageUnsafe(getInternalErrorText());
+            }
+            if (object.links.length === 0) {
+                // hide spinner
+                $scope.toggleLink(object);
+            }
+        });
     };
 
 
