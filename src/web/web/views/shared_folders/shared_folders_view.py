@@ -111,8 +111,8 @@ def _shared_folders(datatables_paginate, request,
                     page_heading, datatables_request_route_url,
                     privileged_modal_tooltip,
                     unprivileged_modal_tooltip):
-    if 'aerofs_welcome_seen' not in request.session:
-        request.session['aerofs_welcome_seen'] = True
+    if 'aerofs_welcome_seen' not in request.cookies:
+        request.response.set_cookie('aerofs_welcome_seen','true')
         splash = True
     else:
         splash = False
