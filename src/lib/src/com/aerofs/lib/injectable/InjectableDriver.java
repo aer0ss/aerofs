@@ -1,6 +1,7 @@
 package com.aerofs.lib.injectable;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import com.aerofs.lib.SystemUtil;
@@ -8,13 +9,16 @@ import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.id.FID;
-import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.lib.os.OSUtil.OSFamily;
 import com.aerofs.swig.driver.Driver;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static com.aerofs.swig.driver.DriverConstants.*;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * The injectable wrapper for Driver
@@ -22,11 +26,13 @@ import static com.aerofs.swig.driver.DriverConstants.*;
 public class InjectableDriver
 {
     private final int _lenFID;
+    private final IOSUtil _osutil;
 
     @Inject
-    public InjectableDriver()
+    public InjectableDriver(IOSUtil osutil)
     {
-        OSUtil.get().loadLibrary("aerofsd");
+        _osutil = osutil;
+        _osutil.loadLibrary("aerofsd");
 
         // cache the result to avoid unecessary JNI calls
         _lenFID = Driver.getFidLength();
@@ -46,6 +52,11 @@ public class InjectableDriver
         public static final int PATH_NOT_FOUND = 3;     // Non-final path component didn't exist
         public static final int ACCESS_DENIED = 5;      // User lacks permissions
         public static final int SHARING_VIOLATION = 32; // File already opened exclusively
+
+        // specific to ReplaceFile
+        private final static int UNABLE_TO_MOVE_REPLACED = 0x497;
+        private final static int UNABLE_TO_MOVE_REPLACEMENT = 0x498;
+        private final static int UNABLE_TO_MOVE_REPLACEMENT_2 = 0x499;
     }
 
     // From /usr/include/asm-generic/errno-base.h from a Linux box.
@@ -98,7 +109,7 @@ public class InjectableDriver
     private void throwExceptionByErrno(int errno, File f)
             throws IOException
     {
-        if (OSUtil.isWindows()) {
+        if (_osutil.getOSFamily() == OSFamily.WINDOWS) {
             switch (errno) {
             case WindowsErrnoList.FILE_NOT_FOUND:
                 throw new ExFileNotFound(f);
@@ -133,6 +144,47 @@ public class InjectableDriver
     {
         FIDAndType fnt = getFIDAndTypeNullable(absPath);
         return fnt == null ? null : fnt._fid;
+    }
+    public static class ReplaceFileException extends IOException
+    {
+        private static final long serialVersionUID = 0L;
+
+        public final boolean replacedMovedToBackup;
+
+        private ReplaceFileException(String message, boolean moved)
+        {
+            super(message);
+            replacedMovedToBackup = moved;
+        }
+    }
+
+    public void replaceFile(@Nonnull String replaced, @Nonnull String replacement,
+            @Nonnull String backup) throws IOException
+    {
+        // only supported on Widows for now
+        checkState(_osutil.getOSFamily() == OSFamily.WINDOWS);
+
+        int ret = Driver.replaceFile(null, replaced, replacement, backup);
+        if (ret == DRIVER_SUCCESS) return;
+        switch (ret) {
+        case WindowsErrnoList.FILE_NOT_FOUND:
+        case WindowsErrnoList.PATH_NOT_FOUND:
+            throw new FileNotFoundException("replaced or replacement file missing");
+        case WindowsErrnoList.ACCESS_DENIED:
+            throw new ExFileIO("access to file(s) denied",
+                    new File(replaced), new File(replacement));
+        case WindowsErrnoList.SHARING_VIOLATION:
+            throw new ExFileIO("file(s) open by another process",
+                    new File(replaced), new File(replacement));
+        case WindowsErrnoList.UNABLE_TO_MOVE_REPLACED:
+            throw new ReplaceFileException("could not delete " + replaced, false);
+        case WindowsErrnoList.UNABLE_TO_MOVE_REPLACEMENT:
+            throw new ReplaceFileException("could not move " + replacement, false);
+        case WindowsErrnoList.UNABLE_TO_MOVE_REPLACEMENT_2:
+            throw new ReplaceFileException("could not move " + replacement, true);
+        default:
+            throw new IOException("ReplaceFile failed: " + ret);
+        }
     }
 
     /**

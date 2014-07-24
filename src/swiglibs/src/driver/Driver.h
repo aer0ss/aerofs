@@ -54,6 +54,13 @@ int getFidLength();
 int getFid(JNIEnv * j, jstring path, void * buffer);
 
 /**
+ * Windows-only, wrapper for ReplaceFile
+ *
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/aa365512(v=vs.85).aspx
+ */
+int replaceFile(JNIEnv * j, jstring replaced, jstring replacement, jstring backup);
+
+/**
  * Return the size of a mount-unique identifier, in bytes.
  * Only used on OSX and Linux.
  *

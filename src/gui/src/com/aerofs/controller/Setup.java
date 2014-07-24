@@ -342,7 +342,7 @@ public class Setup
         if (OSUtil.isLinux()) return;
 
         // TODO use real dependency injection
-        InjectableDriver dr = new InjectableDriver();
+        InjectableDriver dr = new InjectableDriver(OSUtil.get());
         dr.setFolderIcon(rootAnchorPath, OSUtil.get().getIconPath(Icon.RootAnchor));
     }
 

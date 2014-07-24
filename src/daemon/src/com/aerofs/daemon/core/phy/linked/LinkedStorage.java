@@ -26,6 +26,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
@@ -35,7 +36,11 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.lib.injectable.InjectableDriver.ReplaceFileException;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.lib.os.OSUtil.OSFamily;
 import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableCollection;
@@ -60,6 +65,8 @@ public class LinkedStorage implements IPhysicalStorage
     final InjectableFile.Factory _factFile;
     final IFIDMaintainer.Factory _factFIDMan;
     final SharedFolderTagFileAndIcon _sfti;
+    private final IOSUtil _osutil;
+    private final InjectableDriver _dr;
     private final CfgStoragePolicy _cfgStoragePolicy;
     protected final CfgAbsRoots _cfgAbsRoots;
     private final IStores _stores;
@@ -81,6 +88,8 @@ public class LinkedStorage implements IPhysicalStorage
     public LinkedStorage(InjectableFile.Factory factFile,
             IFIDMaintainer.Factory factFIDMan,
             LinkerRootMap lrm,
+            IOSUtil osutil,
+            InjectableDriver dr,
             RepresentabilityHelper rh,
             IStores stores,
             IMapSIndex2SID sidx2sid,
@@ -95,6 +104,8 @@ public class LinkedStorage implements IPhysicalStorage
         _il = il;
         _rh = rh;
         _lrm = lrm;
+        _dr = dr;
+        _osutil = osutil;
         _factFile = factFile;
         _factFIDMan = factFIDMan;
         _cfgStoragePolicy = cfgStoragePolicy;
@@ -267,9 +278,63 @@ public class LinkedStorage implements IPhysicalStorage
         final LinkedFile f = (LinkedFile) file;
         final LinkedPrefix p = (LinkedPrefix) prefix;
 
-        if (wasPresent) moveToRev_(f, t);
+        if (_osutil.getOSFamily() == OSFamily.WINDOWS) {
+            // We use ReplaceFile to ensure preservation of DACL but that only works if the file is
+            // already present. To make sure DACL are correctly inherited when the file is first
+            // downloaded, we first create an empty file in the target location, use ReplaceFile
+            // and then delete the dummy file from revision history
+            if (!wasPresent) {
+                f._f.createNewFile();
+            }
+            // behold the magic incantation that will preserve ACLs, stream and other Windows stuff
+            final String revPath =  _revProvider.newRevPath(f._path.virtual, f._f.getAbsolutePath(),
+                    f._sokid.kidx());
+            _factFile.create(revPath).getParentFile().ensureDirExists();
+            try {
+                _dr.replaceFile(f.getAbsPath_(), p._f.getAbsolutePath(), revPath);
+            } catch (ReplaceFileException e) {
+                _rl.newDefect("linked.replace").setException(e).send();
+                if (e.replacedMovedToBackup) {
+                    try {
+                        _factFile.create(revPath).moveInSameFileSystem(f._f);
+                    } catch (IOException re) {
+                        l.error("fs rollback failed", re);
+                        // FIXME: reset CA to prevent a spurious deletion?
+                    }
+                }
+                throw e;
+            }
 
-        move_(p, f, t);
+            final boolean deleteRev = !_tlUseHistory.get(t);
+            if (wasPresent) {
+                t.addListener_(new AbstractTransListener() {
+                    @Override
+                    public void committed_()
+                    {
+                        if (deleteRev) _factFile.create(revPath).deleteIgnoreError();
+                    }
+
+                    @Override
+                    public void aborted_()
+                    {
+                        try {
+                            f._f.moveInSameFileSystem(p._f);
+                            _factFile.create(revPath).moveInSameFileSystem(f._f);
+                        } catch (IOException e) {
+                            l.error("fs rollback failed {}", f._f, e);
+                            // FIXME: reset CA to prevent a spurious deletion?
+                            SystemUtil.fatal("fs rollback failed " + f._f);
+                        }
+                    }
+                });
+            } else {
+                // delete dummy file immediately
+                _factFile.create(revPath).deleteIgnoreError();
+            }
+        } else {
+            if (wasPresent) moveToRev_(f, t);
+            move_(p, f, t);
+        }
         f._f.setLastModified(mtime);
         f.created_(t);
 
@@ -283,8 +348,8 @@ public class LinkedStorage implements IPhysicalStorage
      */
     void moveToRev_(LinkedFile f, Trans t) throws SQLException, IOException
     {
-        final LinkedRevFile rev = _revProvider.newLocalRevFile_(
-                f._path.virtual, f._f.getAbsolutePath(), f._sokid.kidx());
+        final LinkedRevFile rev = _revProvider.newLocalRevFile(f._path.virtual,
+                f._f.getAbsolutePath(), f._sokid.kidx());
         rev.save_();
 
         TransUtil.onRollback_(f._f, t, new IPhysicalOperation() {

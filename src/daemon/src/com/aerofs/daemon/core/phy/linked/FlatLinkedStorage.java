@@ -27,6 +27,7 @@ import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.rocklog.RockLog;
@@ -53,6 +54,7 @@ public class FlatLinkedStorage extends LinkedStorage
     public FlatLinkedStorage(InjectableFile.Factory factFile,
             IFIDMaintainer.Factory factFIDMan,
             LinkerRootMap lrm,
+            InjectableDriver dr,
             IStores stores,
             RepresentabilityHelper rh,
             IMapSIndex2SID sidx2sid,
@@ -67,7 +69,7 @@ public class FlatLinkedStorage extends LinkedStorage
             RockLog rl,
             CoreScheduler sched)
     {
-        super(factFile, factFIDMan, lrm, rh, stores, sidx2sid, cfgAbsRoots,
+        super(factFile, factFIDMan, lrm, os, dr, rh, stores, sidx2sid, cfgAbsRoots,
                 cfgStoragePolicy, il, sfti, revProvider, rl, sched);
         _os = os;
         _lacl = lacl;

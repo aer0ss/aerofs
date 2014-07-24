@@ -69,7 +69,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     private final FrequentDefectSender _fdsDeath = new FrequentDefectSender();
     private final FrequentDefectSender _fdsHeartbeatGone = new FrequentDefectSender();
     private final FrequentDefectSender _fdsRestartFail = new FrequentDefectSender();
-    private final InjectableDriver _driver = new InjectableDriver();
+    private final InjectableDriver _driver = new InjectableDriver(OSUtil.get());
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
     private final LaunchArgs _launchArgs;

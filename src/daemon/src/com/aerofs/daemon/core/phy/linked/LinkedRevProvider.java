@@ -287,12 +287,19 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         return Util.join(_lrm.auxRoot_(path.sid()), AuxFolder.HISTORY._name) + bd.toString();
     }
 
-    LinkedRevFile newLocalRevFile_(Path path, String absPath, KIndex kidx) throws IOException
+    String newRevPath(Path path, String absPath, KIndex kidx) throws IOException
     {
         InjectableFile f = _factFile.create(absPath);
         String revPath = revPath(path, PathType.FILE);
         RevisionInfo info = new RevisionInfo(kidx.getInt(), _ts.getTime(), f.lastModified());
-        return new LinkedRevFile(path, _factFile.create(revPath, info.hexEncoded()), f);
+        return Util.join(revPath, info.hexEncoded());
+    }
+
+    LinkedRevFile newLocalRevFile(Path path, String absPath, KIndex kidx) throws IOException
+    {
+        return new LinkedRevFile(path,
+                _factFile.create(newRevPath(path, absPath, kidx)),
+                _factFile.create(absPath));
     }
 
     @Override
@@ -701,7 +708,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
          * The length is queried from the file system.
          *
          * NOTE: the file MUST exist until the end of the method and its name MUST match the format
-         * produced by {@link LinkedRevProvider#newLocalRevFile_}
+         * produced by {@link LinkedRevProvider#newLocalRevFile}
          */
         public static @Nullable RevInfo fromRevisionFileNullable(InjectableFile file)
         {

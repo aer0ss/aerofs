@@ -117,7 +117,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
         });
 
         s = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
-                rh,
+                mock(IOSUtil.class), mock(InjectableDriver.class), rh,
                 mock(IStores.class), mock(IMapSIndex2SID.class), mock(CfgAbsRoots.class),
                 mock(CfgStoragePolicy.class), il, mock(SharedFolderTagFileAndIcon.class),
                 mock(LinkedRevProvider.class), mock(RockLog.class), mock(CoreScheduler.class));

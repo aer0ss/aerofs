@@ -97,6 +97,12 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
     return type == S_IFREG ? GETFID_FILE : GETFID_DIR;
 }
 
+int replaceFile(JNIEnv * j, jstring replacement, jstring replaced, jstring backup)
+{
+    // stub for Windows-only function
+    return DRIVER_FAILURE;
+}
+
 /**
  * Return the size (in bytes) of a unique mount identifier (dev_t).
  */

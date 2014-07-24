@@ -180,7 +180,8 @@ public class TestLinkedStorage extends AbstractTest
                 mock(IMetaDatabase.class), nro, factFile, mock(RitualNotificationServer.class), ds);
 
         storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
-                rh, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, null,
+                mock(IOSUtil.class), mock(InjectableDriver.class), rh, stores, sidx2sid,
+                cfgAbsRoots, cfgStoragePolicy, il, null,
                 new LinkedRevProvider(lrm, factFile, new LinkedRevProvider.TimeSource()),
                 mock(RockLog.class), mock(CoreScheduler.class));
 

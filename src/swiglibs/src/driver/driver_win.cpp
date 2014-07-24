@@ -65,6 +65,8 @@ static tstring getPrefixedPath(tstring path)
     // http://msdn.microsoft.com/en-us/library/windows/desktop/aa363858(v=vs.85).aspx
     // Correctly handle UNC paths.
     if (path.size() > 2 && path[0] == L'\\' && path[1] == L'\\') {
+        // avoid double prefixing
+        if (path.size() > 4 && path[2] == L'?' && path[3] == L'\\') return path;
         // This is a UNC path (like \\SERVERNAME\sharename\AeroFS )
         // We want to return "\\?\UNC\SERVERNAME\sharename\AeroFS"
         return tstring(_T("\\\\?\\UNC\\")) + path.substr(2);
@@ -72,13 +74,16 @@ static tstring getPrefixedPath(tstring path)
     return tstring( _T("\\\\?\\")) + path;
 }
 
+#define jstr2prefixed(ts, js)  \
+    tstring ts;      \
+    if (!AeroFS::jstr2tstr(&ts, j, js)) return DRIVER_FAILURE; \
+    ts = getPrefixedPath(ts);
+
 int getFid(JNIEnv * j, jstring jpath, void * buffer)
 {
-    tstring path;
-    if (!AeroFS::jstr2tstr(&path, j, jpath)) return DRIVER_FAILURE;
-    tstring long_path = getPrefixedPath(path);
+    jstr2prefixed(path, jpath)
 
-    HANDLE h = CreateFile(long_path.c_str(),
+    HANDLE h = CreateFile(path.c_str(),
         0,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
         0,
@@ -87,7 +92,7 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
         0);
     if (h == INVALID_HANDLE_VALUE) {
         FWARN("1: " << GetLastError());
-        h = CreateFile(long_path.c_str(),
+        h = CreateFile(path.c_str(),
             0,
             FILE_SHARE_READ | FILE_SHARE_WRITE,
             0,
@@ -123,6 +128,26 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
         GETFID_DIR : GETFID_FILE;
 }
 
+
+int replaceFile(JNIEnv * j, jstring jreplaced, jstring jreplacement, jstring jbackup)
+{
+    jstr2prefixed(replaced, jreplaced)
+    jstr2prefixed(replacement, jreplacement)
+    jstr2prefixed(backup, jbackup)
+
+    if (!ReplaceFile(replaced.c_str(),
+            replacement.c_str(),
+            backup.c_str(),
+            REPLACEFILE_IGNORE_MERGE_ERRORS,
+            NULL,
+            NULL)) {
+        FWARN("ReplaceFile: " << GetLastError());
+        return GetLastError();
+    }
+
+    return DRIVER_SUCCESS;
+}
+
 // These two functions relating to mount ids are only available on OSX and
 // Linux, so we stub them out here.
 int getMountIdLength() {
@@ -138,17 +163,12 @@ int getMountIdForPath(JNIEnv * j, jstring jpath, void * buffer)
 
 int getFileSystemType(JNIEnv * j, jstring jpath, void * buf, int bufLen)
 {
-    tstring path;
-    if (!AeroFS::jstr2tstr(&path, j, jpath)) {
-        FWARN("jstr2tstr failed");
-        return DRIVER_FAILURE;
-    }
-    tstring long_path = getPrefixedPath(path);
+    jstr2prefixed(path, jpath)
 
     // MAX_PATH is fine here, since it's the path to the drive root (which
     // is quite unlikely to be farther in than MAX_PATH)
     TCHAR root[MAX_PATH + 1];
-    if (!GetVolumePathName(long_path.c_str(), root, MAX_PATH + 1)) {
+    if (!GetVolumePathName(path.c_str(), root, MAX_PATH + 1)) {
         FWARN("GVPN: " << GetLastError());
         return DRIVER_FAILURE;
     }

@@ -91,8 +91,8 @@ public class TestLinkedRevProvider extends AbstractTest
         Path path = Path.fromString(rootSID, "test1");
         InjectableFile test1 = factFile.create(dataDir, path.last());
         writeFile(test1, "test1");
-        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
-                path, test1.getPath(), KIndex.MASTER);
+        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile(path, test1.getPath(),
+                KIndex.MASTER);
         Assert.assertTrue(test1.isFile());
         assertEquals(1, dataDir.list().length);
         assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
@@ -112,8 +112,8 @@ public class TestLinkedRevProvider extends AbstractTest
         Path path = Path.fromString(rootSID, longName.toString());
         InjectableFile test1 = factFile.create(dataDir, path.last());
         writeFile(test1, "test1");
-        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
-                path, test1.getPath(), KIndex.MASTER);
+        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile(path, test1.getPath(),
+                KIndex.MASTER);
         Assert.assertTrue(test1.isFile());
         assertEquals(1, dataDir.list().length);
         assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
@@ -131,8 +131,8 @@ public class TestLinkedRevProvider extends AbstractTest
         Path path = Path.fromString(rootSID, "test1");
         InjectableFile test1 = factFile.create(dataDir, path.last());
         writeFile(test1, "test1");
-        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
-                path, test1.getPath(), KIndex.MASTER);
+        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile(path, test1.getPath(),
+                KIndex.MASTER);
         Assert.assertTrue(test1.isFile());
         assertEquals(1, dataDir.list().length);
         assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
@@ -183,8 +183,8 @@ public class TestLinkedRevProvider extends AbstractTest
         when(ts.getTime()).thenReturn(backThen.getTime());
 
         test1.setLastModified(backThen.getTime());
-        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
-                path, test1.getPath(), KIndex.MASTER);
+        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile(path, test1.getPath(),
+                KIndex.MASTER);
         Assert.assertTrue(test1.isFile());
         assertEquals(1, dataDir.list().length);
         assertEquals(0, localRevProvider.listRevChildren_(path.removeLast()).size());
@@ -254,8 +254,8 @@ public class TestLinkedRevProvider extends AbstractTest
                 InjectableFile file = factFile.create(dir, name);
                 writeFile(file, name);
                 file.setLastModified(backThen.getTime());
-                LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
-                        path, file.getPath(), KIndex.MASTER);
+                LinkedRevFile localRevFile = localRevProvider.newLocalRevFile(path, file.getPath(),
+                        KIndex.MASTER);
                 localRevFile.save_();
             }
         }
