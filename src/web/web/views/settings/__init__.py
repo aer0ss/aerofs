@@ -10,4 +10,5 @@ def includeme(config):
     config.add_route('two_factor_download_backup_codes', 'settings/two_factor_authentication/backup_codes')
     config.add_route('json_send_password_reset_email','json_send_password_reset_email')
     config.add_route('json_set_full_name','json_set_full_name')
+    config.add_route('json_delete_user','json_delete_user')
     config.add_route('json_delete_access_token','json_delete_access_token')

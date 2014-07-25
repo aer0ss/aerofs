@@ -36,6 +36,17 @@ def json_send_password_reset_email(request):
 
 
 @view_config(
+    route_name='json_delete_user',
+    permission='user',
+    renderer='json',
+    request_method='POST'
+)
+def json_delete_user(request):
+    sp = get_rpc_stub(request)
+    sp.deactivate_user(authenticated_userid(request), False)
+
+
+@view_config(
     route_name='json_set_full_name',
     permission='user',
     renderer='json',

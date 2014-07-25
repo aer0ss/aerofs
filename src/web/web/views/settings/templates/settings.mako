@@ -10,8 +10,7 @@
 <div class="row">
     <div class="col-sm-12">
         <h4>Change your name</h4>
-        <form class="form-horizontal" role="form" id="fullname-form" method="post"
-                onsubmit="setFullname(); return false;">
+        <form class="form-horizontal" role="form" id="fullname-form" method="post">
             ${self.csrf.token_input()}
             <fieldset>
                 ## <legend>User info</legend>
@@ -42,8 +41,14 @@
 <div class="row">
     <hr>
     <div class="col-sm-12">
-        <a href="#" onclick="sendPasswordResetEmail(); return false;">
+        <a href="#" id="password-reset">
             Reset your password
+        </a>
+        <br><br>
+    </div>
+    <div class="col-sm-12">
+        <a href="#" id="delete-account">
+            Delete your account
         </a>
     </div>
 </div>
@@ -68,38 +73,70 @@
     in the email to reset your password.
 </%modal:modal>
 
+<%modal:modal>
+    <%def name="id()">delete-account-modal</%def>
+    <%def name="title()">Delete account</%def>
+    <%def name="footer()">
+        <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+        <a href="#" class="btn btn-danger" id="delete-account-confirmed" data-dismiss="modal">Delete</a>
+    </%def>
+
+    Are you sure that you want to delete your AeroFS account? This action cannot be undone.
+</%modal:modal>
+
 <%block name="scripts">
     <script>
         $(document).ready(function() {
+            var sendPasswordResetEmail = function() {
+                $.post("${request.route_path('json_send_password_reset_email')}", { }
+                ).done(function() {
+                    console.log("sent password reset email successful");
+                }).fail(function(xhr) {
+                    // Ignore errors as if the email is lost in transit.
+                    console.log("sent password reset email failed: " + xhr.status);
+                });
+            };
+
+            var deleteAccount = function(){
+                $.post("${request.route_path('json_delete_user')}", { }
+                ).done(function() {
+                    showSuccessMessage("You have deleted your account. Goodbye! :-(");
+                }).fail(function(xhr) {
+                    showErrorMessageUnsafe("Sorry, account deletion failed. " +
+                        "Please try again. If this issue persists, please contact " +
+                        "<a href='mailto:support@aerofs.com' target='_blank'>" +
+                        "support@aerofs.com</a> for assistance.");
+                });
+            };
+
             $('#first-name').focus();
+
+            $('#fullname-form').on('submit', function(e){
+                e.preventDefault();
+                var $btn = $('#fullname-btn');
+                setEnabled($btn, false);
+
+                $.post('${request.route_path('json_set_full_name')}',
+                    $('#fullname-form').serialize()
+                )
+                .done(function() {
+                    showSuccessMessage("Your name has been updated.");
+                })
+                .fail(showErrorMessageFromResponse)
+                .always(function() {
+                    setEnabled($btn, true);
+                });
+            });
+            $('#password-reset').on('click', function(e){
+                e.preventDefault();
+                $('#reset-password-modal').modal('show');
+                sendPasswordResetEmail();
+            });
+            $('#delete-account').on('click', function(e){
+                e.preventDefault();
+                $('#delete-account-modal').modal('show');
+            });
+            $('#delete-account-confirmed').on('click', deleteAccount);
         });
-
-        function sendPasswordResetEmail() {
-            $('#reset-password-modal').modal('show');
-
-            $.post('${request.route_path('json_send_password_reset_email')}', { }
-            ).done(function() {
-                console.log("sent password reset email successful");
-            }).fail(function(xhr) {
-                ## Ignore errors as if the email is lost in transit.
-                console.log("sent password reset email failed: " + xhr.status);
-            });
-        }
-
-        function setFullname() {
-            var $btn = $('#fullname-btn');
-            setEnabled($btn, false);
-
-            $.post('${request.route_path('json_set_full_name')}',
-                $('#fullname-form').serialize()
-            )
-            .done(function() {
-                showSuccessMessage("Your name has been updated.");
-            })
-            .fail(showErrorMessageFromResponse)
-            .always(function() {
-                setEnabled($btn, true);
-            });
-        }
     </script>
 </%block>
