@@ -58,6 +58,8 @@ public abstract class SystemUtil
         JNOTIFY_WATCH_CREATION_FAILED(81, "jnotify watch failed"),
         // Core DB was restored from a backup or otherwise tampered with
         CORE_DB_TAMPERING(82, "db tampering detected"),
+        // Failed to probe filesystem properties: assume unsuitable for syncing
+        FILESYSTEM_PROBE_FAILED(83, "filesystem checks failed"),
         ////////
 
         NEW_VERSION_AVAILABLE(83, "new version available");

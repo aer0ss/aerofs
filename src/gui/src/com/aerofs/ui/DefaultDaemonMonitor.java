@@ -6,9 +6,11 @@ package com.aerofs.ui;
 
 import com.aerofs.LaunchArgs;
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FrequentDefectSender;
@@ -36,14 +38,19 @@ import com.aerofs.swig.driver.DriverConstants;
 import com.aerofs.ui.IUI.IWaiter;
 import com.aerofs.ui.IUI.MessageType;
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -51,6 +58,7 @@ import static com.aerofs.lib.SystemUtil.ExitCode.CORE_DB_TAMPERING;
 import static com.aerofs.lib.SystemUtil.ExitCode.CORRUPTED_DB;
 import static com.aerofs.lib.SystemUtil.ExitCode.DPUT_MIGRATE_AUX_ROOT_FAILED;
 import static com.aerofs.lib.SystemUtil.ExitCode.FAIL_TO_LAUNCH;
+import static com.aerofs.lib.SystemUtil.ExitCode.FILESYSTEM_PROBE_FAILED;
 import static com.aerofs.lib.SystemUtil.ExitCode.JNOTIFY_WATCH_CREATION_FAILED;
 import static com.aerofs.lib.SystemUtil.ExitCode.RELOCATE_ROOT_ANCHOR;
 import static com.aerofs.lib.SystemUtil.ExitCode.S3_BAD_CREDENTIALS;
@@ -216,11 +224,15 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     L.product() + " has the appropriate permissions to write to that " +
                     "folder.");
         } else if (exitCode == JNOTIFY_WATCH_CREATION_FAILED.getCode()) {
-            // TODO: multiroot support (diagnose which root is failing)
             throw new ExUIMessage(L.product() + " couldn't launch because it couldn't "
-                    + "watch for file changes under \"" + Cfg.absDefaultRootAnchor() + "\"\n\n"
+                    + "watch for file changes under \"" + getFailedRootPath_() + "\"\n\n"
                     + "Please make sure that " + L.product() + " has the appropriate permissions to"
                     + " access that folder.");
+        } else if (exitCode == FILESYSTEM_PROBE_FAILED.getCode()) {
+            throw new ExUIMessage(L.product() + " couldn't launch because the filesystem "
+                    + "checks failed for \"" + getFailedRootPath_() + "\"\n\n"
+                    + "Please make sure that both the underlying filesystem and your locale "
+                    + "settings are fully UTF8-compatible.");
         } else if (exitCode == CORRUPTED_DB.getCode()) {
             // TODO: use custom dialog to streamline reinstall process
             // w/ unlink, seed file gen if possible, ...
@@ -230,6 +242,45 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             handlCoreDBTampering();
         } else {
             throw new IOException(getMessage(exitCode));
+        }
+    }
+
+    /**
+     * @return Abs path of the root which could not be initialized correctly
+     *
+     * Fallback to default abs root if any error occurs.
+     */
+    private static String getFailedRootPath_()
+    {
+        SID sid = getFailedRootSID_();
+        String path = null;
+        try {
+            if (sid != null) path = Cfg.getRootPathNullable(sid);
+        } catch (SQLException e) {
+            l.error("could not retrieve failed root path", e);
+        }
+        return path != null ? path : Cfg.absDefaultRootAnchor();
+    }
+
+    /**
+     * See LinkerRootMap.setFailedRootSID_
+     *
+     * @return SID of the root which could not be initialized correctly
+     */
+    private static @Nullable SID getFailedRootSID_()
+    {
+        try {
+            String path = Util.join(Cfg.absRTRoot(), LibParam.FAILED_SID);
+            InputStream i = new FileInputStream(path);
+            try {
+                return SID.fromStringFormal(BaseUtil.utf2string(ByteStreams.toByteArray(i)));
+            } finally {
+                i.close();
+                new File(path).delete();
+            }
+        } catch (Exception e) {
+            l.warn("could not retrieve failed root sid", e);
+            return null;
         }
     }
 

@@ -7,6 +7,7 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.EnumSet;
 
@@ -21,10 +22,16 @@ public class FileSystemProber
 
     // NB: isStricterThan assumes that all properties are restrictions and will
     // need to be updated if this ever changes
-    public enum FileSystemProperty
+    public static enum FileSystemProperty
     {
         CaseInsensitive,
         NormalizationInsensitive
+    }
+
+    public static class ProbeException extends IOException
+    {
+        private static final long serialVersionUID = 0L;
+        ProbeException(Throwable t) { super(t); }
     }
 
     @Inject
@@ -33,7 +40,7 @@ public class FileSystemProber
         _factFile = factFile;
     }
 
-    public EnumSet<FileSystemProperty> probe(String auxRoot) throws IOException
+    public EnumSet<FileSystemProperty> probe(String auxRoot) throws ProbeException
     {
         EnumSet<FileSystemProperty> props = EnumSet.noneOf(FileSystemProperty.class);
 
@@ -57,6 +64,14 @@ public class FileSystemProber
                 props.add(FileSystemProperty.NormalizationInsensitive);
             }
 
+            // U+1F44A FISTED HAND SIGN
+            // probe broken java encoding settings
+            InjectableFile f = _factFile.create(d, probeId + "\uD83D\uDC4A");
+            f.createNewFile();
+            if (!f.exists()) {
+                throw new FileNotFoundException("Unable to create file with unicode name");
+            }
+
             // cleanup probe dir for future runs
             // NB: do not throw on failure
             d.deleteIgnoreErrorRecursively();
@@ -64,7 +79,7 @@ public class FileSystemProber
             return props;
         } catch (IOException e) {
             l.error("failed to probe filesystem properties", e);
-            throw e;
+            throw new ProbeException(e);
         }
     }
 

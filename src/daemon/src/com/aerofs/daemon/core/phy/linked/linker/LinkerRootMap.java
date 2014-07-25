@@ -4,8 +4,10 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.phy.linked.FileSystemProber.ProbeException;
 import com.aerofs.daemon.core.phy.linked.LinkedPath;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -19,12 +21,14 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
+import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -32,7 +36,10 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -54,6 +61,8 @@ public class LinkerRootMap
     private final UnlinkedRootDatabase _urdb;
     private final RitualNotificationServer _rns;
     private final SharedFolderTagFileAndIcon _sfti;
+    private final CfgAbsRTRoot _rtRoot;
+    private final RockLog _rl;
 
     private LinkerRoot.Factory _factLR;
     private final Map<SID, LinkerRoot> _map = Maps.newHashMap();
@@ -75,7 +84,8 @@ public class LinkerRootMap
 
     @Inject
     public LinkerRootMap(IOSUtil os, InjectableFile.Factory factFile, CfgAbsRoots cfgAbsRoots,
-            SharedFolderTagFileAndIcon sfti, UnlinkedRootDatabase urdb, RitualNotificationServer rns)
+            SharedFolderTagFileAndIcon sfti, UnlinkedRootDatabase urdb, RitualNotificationServer rns,
+            CfgAbsRTRoot rtRoot, RockLog rl)
     {
         _os = os;
         _factFile = factFile;
@@ -83,6 +93,8 @@ public class LinkerRootMap
         _sfti = sfti;
         _cfgAbsRoots = cfgAbsRoots;
         _rns = rns;
+        _rtRoot = rtRoot;
+        _rl = rl;
     }
 
     // work around circular dep using explicit injection of the factory
@@ -103,6 +115,16 @@ public class LinkerRootMap
      */
     void init_()
     {
+        Charset cs = Charset.defaultCharset();
+        l.info("encoding {} {}", cs, System.getProperty("file.encoding"));
+        // TODO: be extra strict and abort if the default charset is not UTF-8?
+        if (!cs.equals(BaseUtil.CHARSET_UTF)) {
+            _rl.newDefect("charset")
+                    .addData("default", cs)
+                    .addData("file", System.getProperty("file.encoding"))
+                    .send();
+        }
+
         Map<SID, String> roots;
         try {
             roots = _cfgAbsRoots.getAll();
@@ -113,8 +135,30 @@ public class LinkerRootMap
             IOException ex = add_(e.getKey(), e.getValue());
             if (ex != null) {
                 l.error("failed to add root {} {} {}", e.getKey(), e.getValue(), Util.e(ex));
+                setFailedRootSID_(e.getKey());
+                if (ex instanceof ProbeException) {
+                    ExitCode.FILESYSTEM_PROBE_FAILED.exit();
+                }
                 ExitCode.JNOTIFY_WATCH_CREATION_FAILED.exit();
             }
+        }
+    }
+
+    /**
+     * For simplicity, use a simple text file in the rtroot to notify the UI which of possibly many
+     * physical roots could not be initialized.
+     */
+    private void setFailedRootSID_(SID sid)
+    {
+        try {
+            OutputStream o = new FileOutputStream(Util.join(_rtRoot.get(), LibParam.FAILED_SID));
+            try {
+                o.write(BaseUtil.string2utf(sid.toStringFormal()));
+            } finally {
+                o.close();
+            }
+        } catch (IOException e) {
+            l.warn("failed to communicate failing SID to UI", e);
         }
     }
 

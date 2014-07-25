@@ -77,6 +77,8 @@ public class LibParam extends BaseParam
     // has finished
     public static final String RTROOT_MIGRATION_FINISHED = "rtroot_migrate_finished";
 
+    public static final String FAILED_SID              = "failed_sid";
+
     /**
      * AuxRoot (auxiliary root) is the location where AeroFS stores temporary, conflict, and history
      * files for a given path that hosts AeroFS physical files.
