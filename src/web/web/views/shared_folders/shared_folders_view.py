@@ -43,9 +43,8 @@ def my_shared_folders(request):
     _ = request.translate
 
     return _shared_folders(request,
-            _("My shared folders"),
+            _("Manage shared folders"),
             request.route_url('json.get_my_shared_folders'))
-
 
 @view_config(
     route_name = 'user_shared_folders',

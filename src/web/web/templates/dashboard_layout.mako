@@ -191,7 +191,7 @@
     <%
         links = []
         links.append(('files', _("My Files")))
-        links.append(('my_shared_folders', _("My Shared Folders")))
+        links.append(('my_shared_folders', _("Manage Shared Folders")))
         links.append(('accept', _("Pending Invitations")))
         links.append(('my_devices', _("My Devices")))
     %>
