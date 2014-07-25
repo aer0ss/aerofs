@@ -353,6 +353,8 @@ public class ReceiveAndApplyUpdate
             throws Exception
     {
         OA remoteOA = _ds.getOAThrows_(soid);
+        if (remoteOA.isExpelled()) throw new ExAborted("expelled " + soid);
+
         List<KIndex> kidcsDel = Lists.newArrayList();
 
         final PBGetComponentResponse response = msg.pb().getGetComponentResponse();
@@ -927,7 +929,7 @@ public class ReceiveAndApplyUpdate
                 // assert after opening the stream otherwise the file length may
                 // have changed after the assertion and before newOutputStream()
                 checkState(prefix.getLength_() == prefixLength,
-                        "{} {} != {}", k, prefix.getLength_(), prefixLength);
+                        "%s %s != %s", k, prefix.getLength_(), prefixLength);
 
                 ElapsedTimer timer = new ElapsedTimer();
 
@@ -941,6 +943,12 @@ public class ReceiveAndApplyUpdate
                     while (remaining > 0) {
                         // sending notifications is not cheap, hence the rate-limiting
                         if (timer.elapsed() > DaemonParam.NOTIFY_THRESHOLD) {
+                            OA oa = _ds.getOANullable_(k.soid());
+                            if (oa == null || oa.isExpelled()) {
+                                prefixStream.close();
+                                prefix.delete_();
+                                throw new ExAborted("expelled " + k);
+                            }
                             _dlState.progress_(k.socid(), msg.ep(), totalFileLength - remaining,
                                     totalFileLength);
                             timer.restart();
@@ -948,7 +956,7 @@ public class ReceiveAndApplyUpdate
                         is = _iss.recvChunk_(msg.streamKey(), tk);
                         remaining -= ByteStreams.copy(is, prefixStream);
                     }
-                    checkState(remaining == 0, "{} {} {}", k, msg.ep(), remaining);
+                    checkState(remaining == 0, "%s %s %s", k, msg.ep(), remaining);
                 }
             }
         } finally {
@@ -1021,7 +1029,10 @@ public class ReceiveAndApplyUpdate
             // abort if the object is expelled. Although Download.java checks
             // for this condition before starting the download, but the object
             // may be expelled during pauses of the current thread.
-            if (oa.isExpelled()) throw new ExAborted(k + " becomes offline");
+            if (oa.isExpelled()) {
+                prefix.delete_();
+                throw new ExAborted("expelled " + k);
+            }
 
             CA ca = oa.caNullable(k.kidx());
             boolean wasPresent = ca != null;

@@ -245,11 +245,15 @@ class Download
             throw new ExAborted("store expelled: " + _socid.sidx());
         }
 
-        final OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
+        OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
         if (oa == null) {
             SOCID dst = new SOCID(_socid.soid(), CID.META);
             _f._dls.downloadSync_(dst, _from.allDIDs(), _cxt);
-        } else if (oa.isExpelled()) {
+            oa = _f._ds.getAliasedOANullable_(_socid.soid());
+            if (oa == null) throw new ExAborted("meta dl failed");
+        }
+
+        if (oa.isExpelled()) {
             throw new ExAborted("object expelled: " + _socid);
         }
     }
