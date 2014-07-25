@@ -36,6 +36,7 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
+import com.aerofs.sp.server.email.TwoFactorEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
@@ -200,6 +201,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             mock(PasswordResetEmailer.class), authenticator);
     @Spy DeviceRegistrationEmailer _deviceRegistrationEmailer = mock(DeviceRegistrationEmailer.class);
     @Spy RequestToSignUpEmailer requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
+    @Spy TwoFactorEmailer twoFactorEmailer = mock(TwoFactorEmailer.class);
 
     @Mock SharedFolderNotificationEmailer sharedFolderNotificationEmailer;
 
@@ -309,6 +311,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 factEmailer,
                 _deviceRegistrationEmailer,
                 requestToSignUpEmailer,
+                twoFactorEmailer,
                 commandQueue,
                 analytics,
                 identitySessionManager,

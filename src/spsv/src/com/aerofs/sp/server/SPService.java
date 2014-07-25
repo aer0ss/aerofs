@@ -131,6 +131,7 @@ import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
+import com.aerofs.sp.server.email.TwoFactorEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -223,6 +224,7 @@ public class SPService implements ISPService
 
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
     private final RequestToSignUpEmailer _requestToSignUpEmailer;
+    private final TwoFactorEmailer _twoFactorEmailer;
     private final SharedFolderNotificationEmailer _sfnEmailer;
     private final InvitationEmailer.Factory _factInvitationEmailer;
     private final AsyncEmailSender _emailSender;
@@ -273,6 +275,7 @@ public class SPService implements ISPService
             InvitationEmailer.Factory factInvitationEmailer,
             DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer,
+            TwoFactorEmailer twoFactorEmailer,
             JedisEpochCommandQueue commandQueue,
             Analytics analytics,
             IdentitySessionManager identitySessionManager,
@@ -305,6 +308,7 @@ public class SPService implements ISPService
 
         _deviceRegistrationEmailer = deviceRegistrationEmailer;
         _requestToSignUpEmailer = requestToSignUpEmailer;
+        _twoFactorEmailer = twoFactorEmailer;
         _sfnEmailer = sfnEmailer;
         _factInvitationEmailer = factInvitationEmailer;
         _emailSender = asyncEmailSender;
@@ -1659,10 +1663,11 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserLegacyProvenance();
         if (requester.shouldEnforceTwoFactor()) {
-            // TODO: email user
             User.checkProvenance(requester, _session.getAuthenticatedProvenances(),
                     ProvenanceGroup.LEGACY);
             requester.disableTwoFactorEnforcement();
+            _twoFactorEmailer.sendTwoFactorDisabledEmail(
+                    requester.id().getString(), requester.getFullName()._first);
         }
         byte[] secret = requester.setupTwoFactor();
         SetupTwoFactorReply.Builder builder = SetupTwoFactorReply.newBuilder();
@@ -1694,10 +1699,12 @@ public class SPService implements ISPService
                 // (they have just proven that they possess the proper code)
                 _session.setSecondFactorAuthDate(System.currentTimeMillis());
                 requester.enableTwoFactorEnforcement();
-                // TODO: email user
+                _twoFactorEmailer.sendTwoFactorEnabledEmail(requester.id().getString(),
+                        requester.getFullName()._first);
             } else {
                 requester.disableTwoFactorEnforcement();
-                // TODO: email user
+                _twoFactorEmailer.sendTwoFactorDisabledEmail(requester.id().getString(),
+                        requester.getFullName()._first);
             }
         }
         _sqlTrans.commit();

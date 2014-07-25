@@ -32,6 +32,7 @@ import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
+import com.aerofs.sp.server.email.TwoFactorEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -89,11 +90,13 @@ public class UsersResource extends AbstractSpartaResource
     private final CommandDispatcher _commandDispatcher;
     private final PasswordManagement _passwordManagement;
     private final AuditClient _audit;
+    private final TwoFactorEmailer _twoFactorEmailer;
 
     @Inject
     public UsersResource(Factory factUser, ACLNotificationPublisher aclPublisher,
             CommandDispatcher commandDispatcher, VerkehrClient verkehrClient,
-            PasswordManagement passwordManagement, AuditClient audit)
+            PasswordManagement passwordManagement, AuditClient audit,
+            TwoFactorEmailer twoFactorEmailer)
     {
         _factUser = factUser;
         _aclPublisher = aclPublisher;
@@ -101,6 +104,7 @@ public class UsersResource extends AbstractSpartaResource
         _commandDispatcher.setVerkehrClient(verkehrClient);
         _passwordManagement = passwordManagement;
         _audit = audit;
+        _twoFactorEmailer = twoFactorEmailer;
     }
 
     private AuditableEvent audit(User caller, IUserAuthToken token, AuditTopic topic, String event)
@@ -523,7 +527,8 @@ public class UsersResource extends AbstractSpartaResource
         User caller = _factUser.create(auth.user());
         throwIfNotSelfOrTSOf(caller, user);
         user.disableTwoFactorEnforcement();
-        // TODO: queue notification email
+        _twoFactorEmailer.sendTwoFactorDisabledEmail(caller.id().getString(),
+                caller.getFullName()._first);
         return Response.noContent().build();
     }
 }

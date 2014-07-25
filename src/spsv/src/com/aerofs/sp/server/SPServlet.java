@@ -27,6 +27,7 @@ import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
+import com.aerofs.sp.server.email.TwoFactorEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
@@ -132,6 +133,7 @@ public class SPServlet extends AeroServlet
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer = new DeviceRegistrationEmailer();
 
     private final RequestToSignUpEmailer _requestToSignUpEmailer = new RequestToSignUpEmailer();
+    private final TwoFactorEmailer _twoFactorEmailer = new TwoFactorEmailer();
     private final PooledJedisConnectionProvider _jedisConProvider =
             new PooledJedisConnectionProvider();
     private final JedisThreadLocalTransaction _jedisTrans =
@@ -169,6 +171,7 @@ public class SPServlet extends AeroServlet
             _factEmailer,
             _deviceRegistrationEmailer,
             _requestToSignUpEmailer,
+            _twoFactorEmailer,
             _commandQueue,
             _analytics,
             new IdentitySessionManager(),
