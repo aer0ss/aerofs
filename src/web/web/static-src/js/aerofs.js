@@ -109,9 +109,13 @@ function getInternalErrorText() {
 
 // N.B. this message should match the text in the iOS app. Make sure to keep
 // them in-sync.
-function getClientsOfflineErrorText() {
+function getClientsOfflineErrorText(isPrivate) {
+    var supportUrl = 'https://support.aerofs.com/hc/en-us/articles/201438954';
+    if (isPrivate) {
+        supportUrl = 'https://support.aerofs.com/hc/en-us/articles/201438964';
+    }
     return "All AeroFS clients are offline. Please make sure at least one AeroFS desktop client or Team Server is" +
-        " online and <a href='https://support.aerofs.com/hc/en-us/articles/201438954' target='_blank'>" +
+        " online and <a href='" + supportUrl + "' target='_blank'>" +
         "has API access enabled</a>.";
 }
 
