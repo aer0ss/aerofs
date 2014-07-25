@@ -59,7 +59,7 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
     public void onDeviceReachable(DID did)
     {
         if (knownOnMulticast.add(did)) {
-            l.info("{} cm reachable", did);
+            l.info("{} cm +", did);
             try {
                 connectNewChannel(0, did);
             } catch (ExTransport etu) {
@@ -71,6 +71,7 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
     @Override
     public void onDeviceUnreachable(DID did)
     {
+        l.info("{} cm -", did);
         knownOnMulticast.remove(did);
     }
 
@@ -115,9 +116,9 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
                                 throws Exception
                         {
                             if (channelFuture.isSuccess()) {
-                                l.debug("{} cm:online", did);
+                                l.info("{} cm:online", did);
                             } else {
-                                l.debug("{} cm:reconn", did);
+                                l.info("{} cm:reconn", did);
                                 scheduleConnect(iters + 1, did);
                             }
                         }

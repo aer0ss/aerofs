@@ -164,6 +164,7 @@ public class ChannelDirectory
     public SortedSet<Channel> detach(DID did)
     {
         SortedSet<Channel> detached = channels.removeAll(did);
+        l.info("{} detach", did);
         if (!detached.isEmpty()) {
             unicastListener.onDeviceDisconnected(did);
         }
@@ -206,11 +207,13 @@ public class ChannelDirectory
 
         synchronized (channels) {
             if (channels.remove(remotePeer, channel)) {
-
                 // "If this device now has zero unicast channels for this transport..."
                 if (!channels.containsKey(remotePeer)) {
                     deviceDisconnected = true;
                 }
+            } else {
+                // indicates two attempts to unregister the same channel?
+                l.info("{} unreg !rem {}", remotePeer, TransportUtil.hexify(channel));
             }
         }
         // FIXME: see that comment just above. This is the line that could generate an EIPresence.
