@@ -6,11 +6,13 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.phy.linked.FileSystemProber.FileSystemProperty;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -18,14 +20,15 @@ import com.aerofs.base.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,6 +55,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     private final InjectableDriver _dr;
     private final IgnoreList _il;
     private final RepresentabilityHelper _rh;
+    private final InjectableFile.Factory _factFile;
 
     private boolean _deletionScheduled = false;
 
@@ -166,7 +170,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     @Inject
     TimeoutDeletionBuffer(ObjectDeleter od, CoreScheduler sched, TransManager tm,
             DirectoryService ds, LinkerRootMap lrm, InjectableDriver dr, IgnoreList il,
-            RepresentabilityHelper rh)
+            RepresentabilityHelper rh, InjectableFile.Factory factFile)
     {
         _od = od;
         _sched = sched;
@@ -176,6 +180,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         _lrm = lrm;
         _il = il;
         _rh = rh;
+        _factFile = factFile;
     }
 
     @Override
@@ -310,6 +315,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         return remainingUnheldObjects;
     }
 
+
     private boolean deleteLogicalObject_(SOID soid, Trans t) throws Exception
     {
         if (!_ds.hasOA_(soid)) {
@@ -359,52 +365,45 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         // need to be extra defensive about deletions so we double check here
         if (_rh.isNonRepresentable_(oa)) return false;
 
-        Path path = _ds.resolve_(oa);
-        String absRoot = _lrm.absRootAnchor_(path.sid());
-        if (absRoot != null) {
-            String absPath = path.toAbsoluteString(absRoot);
-            File f = new File(absPath);
-            if (f.exists() && !_il.isIgnored(f.getName())) {
-                // ok, so the file we're supposed to be deleting exists, but wait, is it actually
-                // the same file? Path are pretty useless on case-insensitive filesystems so we
-                // check type and FID instead.
-                FID fid;
-                try {
-                    fid = _dr.getFID(absPath);
-                    if (fid == null) return true;
-                } catch (IOException e) {
-                    l.warn("failed to get FID, assuming disappeared {} {}", oa.soid(), absPath);
-                    return true;
-                }
+        if (_il.isIgnored(oa.name())) return true;
 
-                l.warn("here be dragons {} {} {} {}", oa.soid(), oa.fid(), fid,
-                        ObfuscatingFormatters.obfuscatePath(path));
-                // if the physical object has different type or FID, proceed with the deletion
-                if (f.isFile() == oa.isFile() && fid.equals(oa.fid())) {
-                    // physical object with same FID and same type at the same path:
-                    // 1. submit a defect
-                    // 2. prevent deletion of logical object
-                    // 3. allow removal of object from deletion buffer
-                    //
-                    // NB: this can happen if a remote-initiated deletion or a locally initiated
-                    // expulsion affects a large tree and fails. In that case the MCN may take too
-                    // long to reach the core so the TDB is full of OIDs not actually deleted.
-                    //
-                    // TODO: schedule full scan?
-                    /**
-                     *  The following is commented out because the defects are overloading Rocklog.
-                     *  While this doesn't affect many users, each affected user tends to flood
-                     *  Rocklog with many defect reports thus overloading Rocklog.
-                     *
-                     *  TODO: investigate the issue and come up with a resolution
-                    _rocklog.newDefect("daemon.linker.tdb")
-                            .setMessage(ObfuscatingFormatters.obfuscatePath(path) + " " + oa)
-                            .send();
-                     */
-                    return false;
-                }
-            }
+        Path path = _ds.resolve_(oa);
+        LinkerRoot lr = _lrm.get_(path.sid());
+        if (lr == null) return true;
+
+        String absRoot = lr.absRootAnchor();
+        String absPath = path.toAbsoluteString(absRoot);
+        InjectableFile f = _factFile.create(absPath);
+        if (!existsCaseSensitive(lr, f)) return true;
+
+        FID fid;
+        try {
+            fid = _dr.getFID(absPath);
+            if (fid == null) return true;
+        } catch (IOException e) {
+            l.warn("failed to get FID, assuming disappeared {} {}", oa.soid(), absPath);
+            return true;
         }
-        return true;
+
+        l.warn("here be dragons {} {} {} {}", oa.soid(), oa.fid(), fid, path);
+        // something is definitely fishy
+        // maybe notifications are slow or downright untrustworthy
+        // maybe a large deletion failed halfway through and was rolled back
+        // maybe fairies at having some fun at our expense
+        //
+        // in any case, remove the object from the timeout deletion buffer for now
+        // and schedule a scan of the parent folder to bring some measure of harmony
+        // back to this wretched world
+        lr.scanImmediately_(ImmutableSet.of(f.getParent()), false);
+        return false;
+    }
+
+    private boolean existsCaseSensitive(LinkerRoot lr, InjectableFile f)
+    {
+        if (!f.exists()) return false;
+        if (!lr.properties().contains(FileSystemProperty.CaseInsensitive)) return true;
+        // TODO: add fid->path resolution to Driver to avoid iterating siblings
+        String[] siblings = f.getParentFile().list();
+        return siblings != null && Arrays.asList(siblings).contains(f.getName());
     }
 }
