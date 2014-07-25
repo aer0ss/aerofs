@@ -15,7 +15,6 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelMonitor;
-import com.aerofs.daemon.transport.lib.DevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PresenceService;
