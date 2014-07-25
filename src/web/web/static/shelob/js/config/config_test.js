@@ -6,4 +6,5 @@
 // and the API factory must include 'API_LOCATION'.
 //
 angular.module('shelobConfig', [])
-    .constant('API_LOCATION', '');
+    .constant('API_LOCATION', '')
+    .constant('IS_PRIVATE', false);
