@@ -19,6 +19,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 
@@ -42,6 +43,8 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
     @Mock LinkerRootMap lrm;
     @Mock RockLog rocklog;
     @Mock RepresentabilityHelper rh;
+    @Mock IgnoreList il;
+    @Mock InjectableFile.Factory factFile;
     @InjectMocks TimeoutDeletionBuffer delBuffer;
     Holder h;
 
