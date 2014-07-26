@@ -44,6 +44,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.mockito.Mock;
 
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -122,7 +123,6 @@ public class TestACLSynchronizer extends AbstractTest
         when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
-
         lacl = new LocalACL(cfgLocalUser, tm, stores, adb, ds);
 
         aclsync = new ACLSynchronizer(tokenManager, tm, adb, lacl, storeJoiner,
@@ -181,8 +181,7 @@ public class TestACLSynchronizer extends AbstractTest
     public void shouldUpdateLocalACLOnSuccessfulRemoteUpdate() throws Exception
     {
         SIndex sidx = new SIndex(2);
-        when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
-        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
+        mockPresent(sidx, sid1);
 
         aclsync.update_(sidx, user1, Permissions.allOf(Permission.WRITE), false);
 
@@ -194,8 +193,7 @@ public class TestACLSynchronizer extends AbstractTest
     public void shouldNotUpdateLocalACLOnFailedRemoteUpdate() throws Exception
     {
         SIndex sidx = new SIndex(2);
-        when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
-        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
+        mockPresent(sidx, sid1);
 
         when(spClient.updateACL(any(ByteString.class), any(String.class), any(PBPermissions.class), any(Boolean.class)))
                 .thenThrow(new ExNoPerm());
@@ -216,8 +214,7 @@ public class TestACLSynchronizer extends AbstractTest
     public void shouldDeleteLocalACLOnSuccessfulRemoteDelete() throws Exception
     {
         SIndex sidx = new SIndex(2);
-        when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
-        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
+        mockPresent(sidx, sid1);
         lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
 
         aclsync.delete_(sidx, user1);
@@ -230,9 +227,7 @@ public class TestACLSynchronizer extends AbstractTest
     public void shouldNotDeleteLocalACLOnFailedRemoteDelete() throws Exception
     {
         SIndex sidx = new SIndex(2);
-        when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
-        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid1);
-        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
+        mockPresent(sidx, sid1);
         lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
 
         when(spClient.deleteACL(any(ByteString.class), any(String.class)))
@@ -254,9 +249,7 @@ public class TestACLSynchronizer extends AbstractTest
     public void shouldJoinFolderWhenAccessGained() throws Exception
     {
         SIndex sidx = new SIndex(2);
-        when(sid2sidx.getNullable_(sid1)).thenReturn(null);
-        when(sid2sidx.getAbsent_(sid1, t)).thenReturn(sidx);
-        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(null);
+        mockAbsent(sidx, sid1);
 
         mockGetACL(42L, storeACL(sid1,
                 new SubjectPermissions(user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE)),
@@ -274,15 +267,31 @@ public class TestACLSynchronizer extends AbstractTest
                 eq(t));
     }
 
+    private void mockPresent(SIndex sidx, SID sid) throws SQLException
+    {
+        when(sidx2sid.get_(eq(sidx))).thenReturn(sid);
+        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid);
+        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid);
+        when(sid2sidx.get_(sid)).thenReturn(sidx);
+        when(sid2sidx.getNullable_(sid)).thenReturn(sidx);
+        when(sid2sidx.getLocalOrAbsentNullable_(sid)).thenReturn(sidx);
+    }
+
+    private void mockAbsent(SIndex sidx, SID sid) throws SQLException
+    {
+        when(sidx2sid.get_(eq(sidx))).thenThrow(new AssertionError());
+        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(null);
+        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid);
+        when(sid2sidx.get_(sid)).thenThrow(new AssertionError());
+        when(sid2sidx.getNullable_(sid)).thenReturn(null);
+        when(sid2sidx.getLocalOrAbsentNullable_(sid)).thenReturn(sidx);
+    }
+
     @Test
     public void shouldLeaveFolderWhenAccessLost() throws Exception
     {
         SIndex sidx = new SIndex(2);
-        when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
-        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
-        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid1);
-        when(sid2sidx.getNullable_(sid1)).thenReturn(sidx);
-        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
+        mockPresent(sidx, sid1);
 
         lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
         mockGetACL(42L);
@@ -297,9 +306,7 @@ public class TestACLSynchronizer extends AbstractTest
     public void shouldNotJoinOrLeaveFolderWhenAccessUnchanged() throws Exception
     {
         SIndex sidx = new SIndex(2);
-        when(sid2sidx.get_(sid1)).thenReturn(sidx);
-        when(sid2sidx.getNullable_(sid1)).thenReturn(sidx);
-        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
+        mockPresent(sidx, sid1);
         lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
 
         mockGetACL(42L, storeACL(sid1,
@@ -316,11 +323,7 @@ public class TestACLSynchronizer extends AbstractTest
     public void shouldLeaveExpelledFolderWhenAccessLost() throws Exception
     {
         SIndex sidx = new SIndex(2);
-        when(sidx2sid.getAbsent_(eq(sidx))).thenReturn(sid1);
-        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(null);
-        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid1);
-        when(sid2sidx.getNullable_(sid1)).thenReturn(null);
-        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
+        mockAbsent(sidx, sid1);
 
         lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
         mockGetACL(42L);

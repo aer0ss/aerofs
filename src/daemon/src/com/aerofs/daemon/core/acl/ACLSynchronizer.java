@@ -128,10 +128,7 @@ public class ACLSynchronizer
     private SID resolveSIndex_(SIndex sidx)
             throws SQLException
     {
-        SID sid = _sidx2sid.getNullable_(sidx);
-        if (sid == null) sid = _sidx2sid.getAbsent_(sidx);
-
-        return sid;
+        return _sidx2sid.getLocalOrAbsent_(sidx);
     }
 
     /**
