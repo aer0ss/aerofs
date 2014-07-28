@@ -46,6 +46,9 @@ import java.util.TreeSet;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+// FIXME: This class has potential for bad state mismatches with XMPPConnectionService (and it's
+// own callers who may do things like updateStores() before we are finished handling a connect
+// notifier). Refactor this so its lifetime is scoped to a particular xmpp connection?
 public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServiceListener
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
@@ -225,6 +228,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
     @Override
     public void xmppServerConnected(XMPPConnection conn) throws XMPPException
     {
+        l.info("xmppConn {}", mucs.size());
         // re-register all existing rooms. a copy of the allStores array is needed
         // as it may get modified by getMUC().
         // a loop is needed in case more entries are added to "allStores" but failed

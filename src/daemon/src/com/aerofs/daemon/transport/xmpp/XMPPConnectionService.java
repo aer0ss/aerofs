@@ -468,6 +468,11 @@ public final class XMPPConnectionService implements ILinkStateListener
             newConnection = createNewConnectionAndLogin();
             addPingListener(newConnection);
 
+            // FIXME: we need to verify that the connection is actually valid prior to adding a listener
+            // we don't rely on Smack API's connect capability as experiments
+            // showed it's not reliable. See also newXMPPConnection()
+            addXMPPConnectionDisconnectionListener(newConnection);
+
             // for legacy reasons (basically I don't have time to refactor the code) Multicast
             // accesses connection directly. Since Multicast runs on a different thread the moment we
             // assign a new value to connection it _may_ be accessed by Multicast (i.e. even before
@@ -477,17 +482,14 @@ public final class XMPPConnectionService implements ILinkStateListener
 
             // I would prefer to only set connection _after_ calling listener.connected, but apparently
             // Multicast.java uses connection() internally...
-            notifyListenersOfNewXMPPConnection(newConnection);
-
-            // FIXME: we need to verify that the connection is actually valid prior to adding a listener
-            // we don't rely on Smack API's connect capability as experiments
-            // showed it's not reliable. See also newXMPPConnection()
-            addXMPPConnectionDisconnectionListener(newConnection);
+            for (IXMPPConnectionServiceListener listener : _listeners) {
+                listener.xmppServerConnected(newConnection);
+            }
         } catch (Exception e) {
             if (newConnection != null) {
                 safeDisconnect(newConnection);
             }
-
+            connection = null;
             throw e;
         }
     }
@@ -531,19 +533,6 @@ public final class XMPPConnectionService implements ILinkStateListener
                 }
             }
         }, new PacketTypeFilter(IQ.class));
-    }
-
-    private void notifyListenersOfNewXMPPConnection(XMPPConnection newConnection)
-            throws Exception
-    {
-        try {
-            for (IXMPPConnectionServiceListener listener : _listeners) {
-                listener.xmppServerConnected(newConnection);
-            }
-        } catch (Exception e) {
-            connection = null;
-            throw e;
-        }
     }
 
     private void addXMPPConnectionDisconnectionListener(final XMPPConnection newConnection)
