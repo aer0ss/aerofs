@@ -1,6 +1,7 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.RestObject;
@@ -8,6 +9,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SIndex;
@@ -20,6 +22,8 @@ import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 
+import java.util.Properties;
+
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
@@ -27,6 +31,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -238,6 +243,21 @@ public class TestFolderResource extends AbstractRestTest
                 .body("folders[2].parent", equalTo(object("d1").toStringFormal()))
         .when().log().everything()
                 .get(RESOURCE + "/path", object("d1/a2/d3").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturnPathOnTS() throws Exception
+    {
+        Properties ts = new Properties();
+        ts.setProperty("labeling.isMultiuser", "true");
+        L.set(ts);
+
+        try {
+            assertTrue(L.isMultiuser());
+            shouldReturnPath();
+        } finally {
+            L.set(new Properties());
+        }
     }
 
     @Test

@@ -19,6 +19,7 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -37,7 +38,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 public class MetadataBuilder
 {
@@ -85,14 +85,9 @@ public class MetadataBuilder
         if (!soid.oid().isRoot()) return soid;
         SID root = SID.rootSID(user);
         SID sid = _sidx2sid.get_(soid.sidx());
-        Set<SIndex> parents = _stores.getParents_(soid.sidx());
-        // NB: this won't work with nested sharing, which is okay because we don't support that...
-        for (SIndex sidxParent : parents) {
-            if (root.equals(_sidx2sid.get_(sidxParent))) {
-                return new SOID(sidxParent, SID.storeSID2anchorOID(sid));
-            }
-        }
-        return soid;
+        SIndex sidxRoot = _sid2sidx.get_(root);
+        return _stores.getParents_(soid.sidx()).contains(sidxRoot)
+                ? new SOID(sidxRoot, SID.storeSID2anchorOID(sid)) : soid;
     }
 
     public CommonMetadata metadata(OA oa, OAuthToken token, Fields fields) throws ExNotFound, SQLException
@@ -141,9 +136,21 @@ public class MetadataBuilder
                 _detector.detect(name), _etags.etagForContent(soid).getValue());
     }
 
-
     public ParentPath path(ResolvedPath path, OAuthToken token) throws ExNotFound, SQLException
     {
+        // On TS, DirectoryService resolve path up to the store root but to provide consistent
+        // API responses we need to take the userid into account and resolve the path within
+        // their root folder if possible
+        if (L.isMultiuser() && !path.sid().isUserRoot())  {
+            SID root = SID.rootSID(token.user());
+            SIndex sidxRoot = _sid2sidx.get_(root);
+            SIndex sidxChild = _sid2sidx.get_(path.sid());
+            if (_stores.getParents_(sidxChild).contains(sidxRoot)) {
+                SOID anchor = new SOID(sidxRoot, SID.storeSID2anchorOID(path.sid()));
+                ResolvedPath anchorPath = _ds.resolve_(anchor);
+                path = anchorPath.join(path);
+            }
+        }
         // TODO: determine name for alternate roots (aka external shares)
         List<Folder> folders = Lists.newArrayList();
         if (!path.isEmpty()) {

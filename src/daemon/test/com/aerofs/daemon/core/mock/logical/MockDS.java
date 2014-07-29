@@ -14,6 +14,7 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExNotFound;
@@ -211,6 +212,7 @@ public class MockDS
 
             do {
                 if (obj._name.equals(OA.ROOT_DIR_NAME)) {
+                    if (L.isMultiuser()) break;
                     Preconditions.checkState(obj._parent instanceof MockDSAnchor);
                 } else {
                     soids.add(obj._soid);
@@ -448,6 +450,15 @@ public class MockDS
                             return o != null ? o.soid().oid() : null;
                         }
                     });
+        }
+
+        @Override
+        public Path getPath()
+        {
+            if (L.isMultiuser() && _soid.oid().isRoot() && _parent instanceof MockDSAnchor) {
+                return Path.root(SID.anchorOID2storeSID(_parent._soid.oid()));
+            }
+            return super.getPath();
         }
 
         @Override

@@ -64,7 +64,6 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.oauth.Scope;
 import com.aerofs.oauth.TokenVerificationClient;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.oauth.VerifyTokenResponse;

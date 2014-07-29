@@ -33,6 +33,13 @@ class PropertiesLabeling implements ILabeling
         _propertiesHelper.logProperties(LOGGER, "Labeling properties", properties);
     }
 
+    // TESTING only
+    PropertiesLabeling(Properties prop)
+    {
+        properties = prop;
+        _propertiesHelper = new PropertiesHelper();
+    }
+
     @Override
     public boolean isMultiuser()
     {

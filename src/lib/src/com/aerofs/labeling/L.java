@@ -4,6 +4,8 @@
 
 package com.aerofs.labeling;
 
+import java.util.Properties;
+
 /**
  * L stands for "Labeling". We use a single letter as class name for convenience, as many classes
  * refer to it.
@@ -56,5 +58,11 @@ public class L
 
     private static class LazyHolder {
         private static ILabeling s_l = new PropertiesLabeling();
+    }
+
+    // TESTING only
+    public static void set(Properties p)
+    {
+        LazyHolder.s_l = new PropertiesLabeling(p);
     }
 }
