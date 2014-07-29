@@ -279,58 +279,7 @@ public class LinkedStorage implements IPhysicalStorage
         final LinkedPrefix p = (LinkedPrefix) prefix;
 
         if (_osutil.getOSFamily() == OSFamily.WINDOWS) {
-            // We use ReplaceFile to ensure preservation of DACL but that only works if the file is
-            // already present. To make sure DACL are correctly inherited when the file is first
-            // downloaded, we first create an empty file in the target location, use ReplaceFile
-            // and then delete the dummy file from revision history
-            if (!wasPresent) {
-                f._f.createNewFile();
-            }
-            // behold the magic incantation that will preserve ACLs, stream and other Windows stuff
-            final String revPath =  _revProvider.newRevPath(f._path.virtual, f._f.getAbsolutePath(),
-                    f._sokid.kidx());
-            _factFile.create(revPath).getParentFile().ensureDirExists();
-            try {
-                _dr.replaceFile(f.getAbsPath_(), p._f.getAbsolutePath(), revPath);
-            } catch (ReplaceFileException e) {
-                _rl.newDefect("linked.replace").setException(e).send();
-                if (e.replacedMovedToBackup) {
-                    try {
-                        _factFile.create(revPath).moveInSameFileSystem(f._f);
-                    } catch (IOException re) {
-                        l.error("fs rollback failed", re);
-                        // FIXME: reset CA to prevent a spurious deletion?
-                    }
-                }
-                throw e;
-            }
-
-            final boolean deleteRev = !_tlUseHistory.get(t);
-            if (wasPresent) {
-                t.addListener_(new AbstractTransListener() {
-                    @Override
-                    public void committed_()
-                    {
-                        if (deleteRev) _factFile.create(revPath).deleteIgnoreError();
-                    }
-
-                    @Override
-                    public void aborted_()
-                    {
-                        try {
-                            f._f.moveInSameFileSystem(p._f);
-                            _factFile.create(revPath).moveInSameFileSystem(f._f);
-                        } catch (IOException e) {
-                            l.error("fs rollback failed {}", f._f, e);
-                            // FIXME: reset CA to prevent a spurious deletion?
-                            SystemUtil.fatal("fs rollback failed " + f._f);
-                        }
-                    }
-                });
-            } else {
-                // delete dummy file immediately
-                _factFile.create(revPath).deleteIgnoreError();
-            }
+            applyPreservingStreamsAndACLs_(wasPresent, t, f, p);
         } else {
             if (wasPresent) moveToRev_(f, t);
             move_(p, f, t);
@@ -341,6 +290,71 @@ public class LinkedStorage implements IPhysicalStorage
         l.info("applied {} {} {} {}", f._sokid, mtime, f._f.lastModified(), f.getLength_());
 
         return f._f.lastModified();
+    }
+
+    private void applyPreservingStreamsAndACLs_(boolean wasPresent, Trans t, final LinkedFile f,
+            final LinkedPrefix p)
+            throws SQLException, IOException
+    {
+        // We use ReplaceFile to ensure preservation of DACL but that only works if the file is
+        // already present. To make sure DACL are correctly inherited when the file is first
+        // downloaded, we first create an empty file in the target location, use ReplaceFile
+        // and then delete the dummy file from revision history
+        if (!wasPresent) {
+            _rh.try_(f, t,  new IPhysicalOperation() {
+                @Override
+                public void run_() throws IOException
+                {
+                    f._f.createNewFile();
+                }
+            });
+        }
+
+        // behold the magic incantation that will preserve ACLs, stream and other Windows stuff
+        final String revPath =  _revProvider.newRevPath(f._path.virtual, f._f.getAbsolutePath(),
+                f._sokid.kidx());
+        _factFile.create(revPath).getParentFile().ensureDirExists();
+        try {
+            _dr.replaceFile(f.getAbsPath_(), p._f.getAbsolutePath(), revPath);
+        } catch (ReplaceFileException e) {
+            _rl.newDefect("linked.replace").setException(e).send();
+            if (e.replacedMovedToBackup) {
+                try {
+                    _factFile.create(revPath).moveInSameFileSystem(f._f);
+                } catch (IOException re) {
+                    l.error("fs rollback failed", re);
+                    // FIXME: reset CA to prevent a spurious deletion?
+                }
+            }
+            throw e;
+        }
+
+        final boolean deleteRev = !_tlUseHistory.get(t);
+        if (wasPresent) {
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committed_()
+                {
+                    if (deleteRev) _factFile.create(revPath).deleteIgnoreError();
+                }
+
+                @Override
+                public void aborted_()
+                {
+                    try {
+                        f._f.moveInSameFileSystem(p._f);
+                        _factFile.create(revPath).moveInSameFileSystem(f._f);
+                    } catch (IOException e) {
+                        l.error("fs rollback failed {}", f._f, e);
+                        // FIXME: reset CA to prevent a spurious deletion?
+                        SystemUtil.fatal("fs rollback failed " + f._f);
+                    }
+                }
+            });
+        } else {
+            // delete dummy file immediately
+            _factFile.create(revPath).deleteIgnoreError();
+        }
     }
 
     /**
