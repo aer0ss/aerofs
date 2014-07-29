@@ -1,0 +1,97 @@
+#!/bin/bash
+
+# Download N days of archived logs for device D belonging to user U,
+# with awesomeness quotient Q.
+
+DieUsage()
+{
+    echo ""
+    echo "That's a BAD MISTER KITTY! "
+    echo ""
+    echo "Cow goes moo; fish goes blub; and the elephant goes toot."
+    echo "But how do args go?"
+    echo ""
+    echo "      $0 [-v] [-g] -d <deviceid> -u <userid> [-t <days>]"
+    echo ""
+    echo "  -d: device ID. No default."
+    echo "  -g: get gui.log. If not set, only daemon logs are downloaded."
+    echo "  -p: local Path to store logs."
+    echo "  -t: number of days. Default 5 days."
+    echo "  -u: user ID. No default."
+    echo "  -v: Verbose. Default No."
+    echo ""
+    echo "$@"
+    echo ""
+    exit 1
+}
+
+typeset -i days=5
+typeset -i idx=0
+typeset -i Verbose=0
+typeset -i GuiLog=0
+typeset Server=sv.aerofs.com
+typeset LocalPath=.
+
+DoArgs()
+{
+    while getopts "d:gp:t:u:v" OPTION
+    do
+        case $OPTION in
+        d)
+            did=$OPTARG
+            ;;
+        g)
+            GuiLog=1
+            ;;
+        p)
+            LocalPath="$OPTARG"
+            ;;
+        t)
+            let days=$OPTARG
+            ;;
+        u)
+            uid=$OPTARG
+            ;;
+        v)
+            Verbose=1
+            ;;
+        *)
+            DieUsage "Unrecognized option $OPTARG"
+            ;;
+        esac
+    done
+
+    if [ -z "$did" -o -z "$uid" ]
+    then
+        DieUsage "You must specify user and device id. YOU MUST."
+    fi
+
+    if [ ! -d "$LocalPath" ]
+    then
+        DieUsage "Hey dummy, \"$LocalPath\" is not a directory. Sheesh."
+    fi
+}
+
+function DoWork
+{
+    [ $Verbose -ne 0 ] && set -x
+
+    echo "Downloading $days days' worth of daemon logs for uid $uid did $did."
+    while [ $idx -lt $days ]
+    do
+        # I hope you have GNU date! osx does...
+        typeset ndate=$(date -j -v -${idx}d +20%y%m%d)
+
+        scp $Server:/data/var/svlogs_prod/archived/$uid/$did.daemon.log.$ndate.gz "$LocalPath"
+        if [ $GuiLog -ne 0 ]
+        then
+            scp $Server:/data/var/svlogs_prod/archived/$uid/$did.gui.log.$ndate.gz "$LocalPath"
+        fi
+
+        let idx=$(($idx+1))
+    done
+}
+
+DoArgs $@;
+DoWork
+
