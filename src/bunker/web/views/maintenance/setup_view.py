@@ -20,7 +20,8 @@ from maintenance_util import write_pem_to_file, \
     format_pem, is_certificate_formatted_correctly, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \
     is_configuration_initialized, is_key_formatted_correctly, \
-    get_conf_client, get_conf
+    get_conf_client, get_conf, is_ipv4_address, \
+    is_hostname_resolvable
 
 log = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ def setup(request):
 
 
 def _get_default_support_email(hostname):
-    if not hostname or _is_ipv4_address(hostname):
+    if not hostname or is_ipv4_address(hostname):
         # Return an empty support email address if the hostname is invalid or
         # it's a IP address. Although we can return 'support@[1.2.3.4]' but this
         # format is rarely used. See the "Domain Part" section in
@@ -91,15 +92,6 @@ def _get_default_support_email(hostname):
         match = re.search(r'^[^\.]+\.(.+)', hostname)
         domain = match.group(1) if match else hostname
         return 'support@{}'.format(domain)
-
-
-def _is_ipv4_address(string):
-    import socket
-    try:
-        socket.inet_aton(string)
-        return True
-    except socket.error:
-        return False
 
 
 # ------------------------------------------------------------------------
@@ -201,22 +193,13 @@ def json_setup_hostname(request):
 
     if hostname == "localhost" or local_ips.match(hostname):
         error("Local hostnames or IP addresses are not allowed.")
-    elif not _is_hostname_resolvable(hostname):
+    elif not is_hostname_resolvable(hostname):
         error("Unable to resolve " + hostname + ". Please check your settings.")
 
     conf_client = get_conf_client(request)
     conf_client.set_external_property('base_host', hostname)
 
     return {}
-
-
-def _is_hostname_resolvable(hostname):
-    try:
-        socket.gethostbyname(hostname)
-        return True
-    except socket.error:
-        return False
-
 
 # ------------------------------------------------------------------------
 # Email

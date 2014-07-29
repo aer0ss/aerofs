@@ -16,6 +16,7 @@
                 ('identity', _("Identity")),
                 ('setup', _("Setup")),
                 ('device_authorization', _("Device Authorization")),
+                ('timekeeping', _("Timekeeping")),
             ]
         %>
         <ul>

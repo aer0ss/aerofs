@@ -17,6 +17,8 @@ email.sender.public_cert={{ email_cert }}
 server.browser.certificate={{ browser_cert }}
 server.browser.key={{ browser_key }}
 
+ntp.server={{ ntp_server }}
+
 open_signup=false
 
 sharing_rules.restrict_external_sharing={{ readonly_external_folders }}

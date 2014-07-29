@@ -1,4 +1,5 @@
 import os
+import socket
 from subprocess import call, Popen, PIPE
 import tempfile
 
@@ -71,3 +72,19 @@ def get_conf(request):
 
 def get_conf_client(request):
     return Configuration(request.registry.settings["deployment.config_server_uri"])
+
+
+def is_ipv4_address(string):
+    try:
+        socket.inet_aton(string)
+        return True
+    except socket.error:
+        return False
+
+
+def is_hostname_resolvable(hostname):
+    try:
+        socket.gethostbyname(hostname)
+        return True
+    except socket.error:
+        return False

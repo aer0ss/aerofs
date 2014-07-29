@@ -16,7 +16,7 @@
             <fieldset>
                 <div class="form-group">
                     <div class="col-sm-12">
-                        <button class="btn btn-danger" class="form-control" id="disable-btn">Disable</button>
+                        <button class="btn btn-danger" id="disable-btn">Disable</button>
                     </div>
                 </div>
             </fieldset>
