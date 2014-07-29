@@ -17,7 +17,7 @@ node default {
         default     => "prod"
     }
 
-    # Common package for for motd, apt, etc.
+    # Common package for for apt, logs, service management, etc.
     class{"common":
         aptkey => hiera("aptkey"),
         repo => $repo

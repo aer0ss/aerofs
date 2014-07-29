@@ -17,7 +17,6 @@ class common (
         ensure => latest,
     }
 
-    include motd
     include common::logs
 
     apt::source { "aerofs":
