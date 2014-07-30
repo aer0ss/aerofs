@@ -47,7 +47,8 @@ def _do_login(request):
     stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
     try:
         try:
-            headers, second_factor_required = log_in_user(request, _sp_cred_signin, userid=userid, password=password, stay_signed_in=stay_signed_in)
+            headers, second_factor_required = log_in_user(request, _sp_cred_signin, userid=userid,
+                    password=password, stay_signed_in=stay_signed_in)
             return redirect_to_next_page(request, headers, DEFAULT_DASHBOARD_NEXT)
         except ExceptionReply as e:
             if e.get_type() == PBException.BAD_CREDENTIAL:
@@ -55,6 +56,17 @@ def _do_login(request):
                 flash_error(request, _("Email or password is incorrect."))
             elif e.get_type() == PBException.EMPTY_EMAIL_ADDRESS:
                 flash_error(request, _("The email address cannot be empty."))
+            elif e.get_type() == PBException.LICENSE_LIMIT:
+                # When a user logs in with a non-local credential for the first time this actually
+                # does a license check. We might want to handle this nicely on a different page, but
+                # for now we should at least do the right thing with the exception.
+                # TODO (MP) dedupe code in signup_view.py
+                support_email = request.registry.settings.get('base.www.support_email_address')
+                log.warn(userid + " attempts to login with non-local cred hitting license limit.")
+                flash_error(request,
+                        "Adding your user account would cause your organization to exceed its " +
+                        "licensed user limit. Please contact your administrator at " +
+                        "{}.".format(support_email))
             else:
                 raise e
     except Exception as e:
