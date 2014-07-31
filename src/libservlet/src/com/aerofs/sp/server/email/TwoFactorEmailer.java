@@ -55,7 +55,7 @@ public class TwoFactorEmailer
         // Technically, org admins can disable your second factor, but we should teach people that
         // this is a Thing Which Should Be Taken Seriously.
         String request =
-                "Please, take a minute to download and print your backup codes from" +
+                "Please, take a minute to download and print your backup codes from " +
                 getSettingsURL();
         String admonition =
                 "If you lose your phone, delete your authenticator application, or lose your " +
