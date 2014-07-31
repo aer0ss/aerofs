@@ -37,5 +37,9 @@
             ">${publisher_link_text if is_publisher else not_publisher_link_text}</a></li>
     %endif
 
+    %if two_factor_enforced:
+    <li><a href="#" onclick="disableTwoFactor('${email}', $(this)); return false;">Disable Two-Factor Auth</a></li>
+    %endif
+
     <li><a href="#" onclick="deactivate('${email}', $(this)); return false;">Delete User</a></li>
 </%def>

@@ -66,6 +66,24 @@
     </p>
 </%modal:modal>
 
+
+<%modal:modal>
+    <%def name="id()">disable_two_factor_modal</%def>
+    <%def name="title()">Disable two-factor authentication</%def>
+    <%def name="footer()">
+    <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+    <a href="#" id="confirm_disable_two_factor" class="btn btn-danger">Disable Two-Factor Authentication</a>
+    </%def>
+
+    <p>Are you sure that you want to disable two-factor authentication for
+    <strong id="disable_two_factor_email"></strong>?
+    This user's account will no longer require two-factor authentication codes
+    to sign in or set up new devices, and you cannot re-enable two-factor
+    authentication on their behalf.
+    </p>
+</%modal:modal>
+
+
 <%credit_card_modal:html>
     <%def name="title()">
         <%credit_card_modal:default_title/>
@@ -293,5 +311,28 @@
 
             modal.modal('show');
         }
+
+        function disableTwoFactor(user, $link) {
+            var modal = $("#disable_two_factor_modal");
+            modal.find("#disable_two_factor_email").text(user);
+            modal.find("#confirm_disable_two_factor").off().on('click', function() {
+                modal.modal('hide');
+                $.post("${request.route_path('json.disable_two_factor')}", {
+                        "${url_param_user}": user
+                    }
+                )
+                .done(function() {
+                    showSuccessMessage("Two factor authentication has been disabled for " + user + ".");
+                    // Remove icon from user
+                    $link.closest('tr').find('.glyphicon-phone').remove();
+                    // Remove option from menu
+                    $link.remove();
+                })
+                .fail(showErrorMessageFromResponse);
+            });
+
+            modal.modal('show');
+        }
+
     </script>
 </%block>

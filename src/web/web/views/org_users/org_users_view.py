@@ -111,6 +111,7 @@ def _render_user_options_link(request, user_and_level, session_user, is_publishe
                                         'is_private': is_private_deployment(request.registry.settings),
                                         'is_publisher': is_publisher,
                                         'use_restricted': is_publisher is not None,
+                                        'two_factor_enforced': user.two_factor_enforced,
         }, request=request)
 
 
@@ -245,3 +246,14 @@ def json_remove_publisher(request):
     sp.remove_user_from_whitelist(user)
     return HTTPOk()
 
+@view_config(
+    route_name = 'json.disable_two_factor',
+    renderer = 'json',
+    permission = 'admin',
+    request_method = 'POST',
+)
+def json_disable_two_factor(request):
+    user = request.params[URL_PARAM_USER]
+    sp = get_rpc_stub(request)
+    sp.set_two_factor_enforcement(False, None, user)
+    return HTTPOk()
