@@ -767,11 +767,12 @@ public class SPService implements ISPService
     private static PBUser.Builder user2pb(User user, FullName fn)
             throws SQLException, ExNotFound
     {
-        return PBUser.newBuilder()
+        PBUser.Builder bd = PBUser.newBuilder()
                 .setUserEmail(user.id().getString())
                 .setFirstName(fn._first)
-                .setLastName(fn._last)
-                .setTwoFactorEnforced(user.shouldEnforceTwoFactor());
+                .setLastName(fn._last);
+        if (user.exists()) bd.setTwoFactorEnforced(user.shouldEnforceTwoFactor());
+        return bd;
     }
 
     @Override
