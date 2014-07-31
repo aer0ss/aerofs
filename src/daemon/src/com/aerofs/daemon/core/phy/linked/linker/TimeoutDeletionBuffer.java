@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.FileSystemProber.FileSystemProperty;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.FID;
@@ -29,12 +30,16 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.annotation.Nullable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * A buffer of objects (SOIDs) to be deleted from the system. Objects added to the buffer will be
@@ -45,8 +50,6 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
 {
     private static final Logger l = Loggers.getLogger(TimeoutDeletionBuffer.class);
 
-    // use linked hash map rather than hash map to speed up key iteration.
-    private final Map<SOID, TimeAndHolders> _soid2th = Maps.newLinkedHashMap();
     private final ObjectDeleter _od;
     private final TransManager _tm;
     private final Scheduler _sched;
@@ -63,38 +66,18 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     // (N.B. only package-private for testing purposes)
     static final long TIMEOUT = 6 * C.SEC;
 
-    private static class TimeAndHolders
-    {
-        // Time in milliseconds since 1970. 0 if uninitialized.
-        long _time;
-        // Allow nullable to avoid creating new objects when _holders are not referred to.
-        private @Nullable Set<Holder> _holders;
+    /**
+     * To reduce memory usage in the common case where there is a single Holder,
+     * we use a form of dynamic typing for the value of this array. It can be
+     * either a Holder object or a Set of such objects. The code ensures that
+     * the value will never be an empty set.
+     */
+    private final Map<SOID, Object> _held = Maps.newHashMap();
 
-        boolean hasHolders_()
-        {
-            return _holders != null && !_holders.isEmpty();
-        }
-
-        boolean addHolder_(Holder h)
-        {
-            if (_holders == null) _holders = Sets.newHashSet();
-            return _holders.add(h);
-        }
-
-        /**
-         * @return whether the object contains the specified holder
-         * @pre h must have been added before
-         */
-        boolean removeHolder_(Holder h)
-        {
-            return _holders != null && _holders.remove(h);
-        }
-
-        boolean hasHolder_(Holder h)
-        {
-            return _holders != null && _holders.contains(h);
-        }
-    }
+    /**
+     * Set of objects scheduled for deletion.
+     */
+    private final Map<SOID, Long> _scheduled = Maps.newHashMap();
 
     /**
      * There are cases with SOID deletion, where an SOID might be deleted *eventually*, but at
@@ -118,6 +101,11 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
      * - remove or removeAll followed by hold will add the SOID back to the buffer.
      *
      * See TestTimeoutDeletionBuffer.java for another summary of assumptions.
+     *
+     * TODO: for large recursive scans, use multiple Holder if the deletion buffers grows too large
+     * This would allow deletions to be acted upon earlier, thereby avoiding crash-loop-inducin OOM,
+     * at the expense of a small loss of accuracy where some moves might be interpreted as
+     * delete+create sequences.
      */
     public class Holder
     {
@@ -129,16 +117,40 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
          * on exceptions. The caller is responsible to retry and re-delete the SOIDs after the
          * exception. See add_() for details.
          */
+        @SuppressWarnings("unchecked")
         public void hold_(SOID soid)
         {
-            assert soid != null;
-            TimeAndHolders th = _soid2th.get(soid);
-            if (th == null) {
-                th = new TimeAndHolders();
-                _soid2th.put(soid, th);
+            checkNotNull(soid);
+            Object o = _held.get(soid);
+            if (o == null) {
+                _held.put(soid, this);
+            } else {
+                if (o instanceof Holder) {
+                    o = Sets.newHashSet((Holder)o);
+                    _held.put(soid, o);
+                }
+                checkState(o instanceof Set);
+                checkState(((Set<Holder>)o).add(this), "%s %s", soid, this);
             }
-            boolean added = th.addHolder_(this);
-            assert added : soid + " " + this;
+        }
+
+        /**
+         * @return SOID released or null if there still exists a hold on that SOID
+         */
+        @SuppressWarnings("unchecked")
+        private @Nullable SOID release_(Iterator<Entry<SOID, Object>> it)
+        {
+            Entry<SOID, Object> e = it.next();
+            if (e.getValue() instanceof Holder) {
+                if (e.getValue() != this) return null;
+            } else {
+                checkState(e.getValue() instanceof Set);
+                Set<Holder> s = (Set<Holder>)e.getValue();
+                if (!s.remove(this)) return null;
+                if (!s.isEmpty()) return null;
+            }
+            it.remove();
+            return e.getKey();
         }
 
         /**
@@ -147,8 +159,10 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
          */
         public void releaseAll_()
         {
-            for (Entry<SOID, TimeAndHolders> e : _soid2th.entrySet()) {
-                if (e.getValue().removeHolder_(this)) scheduleDeletion_(e.getKey(), e.getValue());
+            Iterator<Entry<SOID, Object>> it = _held.entrySet().iterator();
+            while (it.hasNext()) {
+                SOID soid = release_(it);
+                if (soid != null) scheduleDeletion_(soid);
             }
         }
 
@@ -157,13 +171,11 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
          */
         public void removeAll_()
         {
-            // use a separate set to avoid concurrent modifications. alternatively, we can use
-            // iterator.remove().
-            List<SOID> soids = Lists.newArrayListWithExpectedSize(_soid2th.size());
-            for (Entry<SOID, TimeAndHolders> en : _soid2th.entrySet()) {
-                if (en.getValue().hasHolder_(this)) soids.add(en.getKey());
+            Iterator<Entry<SOID, Object>> it = _held.entrySet().iterator();
+            while (it.hasNext()) {
+                SOID soid = release_(it);
+                if (soid != null) _scheduled.remove(soid);
             }
-            for (SOID soid : soids) remove_(soid);
         }
     }
 
@@ -186,20 +198,16 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     @Override
     public void add_(SOID soid)
     {
-        assert soid != null;
-        TimeAndHolders th = _soid2th.get(soid);
-        if (th == null) {
-            th = new TimeAndHolders();
-            _soid2th.put(soid, th);
-        }
-        scheduleDeletion_(soid, th);
+        checkNotNull(soid);
+        scheduleDeletion_(soid);
     }
 
     @Override
     public void remove_(SOID soid)
     {
-        assert soid != null;
-        _soid2th.remove(soid);
+        checkNotNull(soid);
+        _scheduled.remove(soid);
+        _held.remove(soid);
     }
 
     public Holder newHolder()
@@ -207,26 +215,25 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         return new Holder();
     }
 
-    private void scheduleDeletion_(SOID soid, TimeAndHolders th)
+    private void scheduleDeletion_(SOID soid)
     {
         // If any holders remain on this object, do not bother scheduling a deletion
-        if (th.hasHolders_()) return;
+        if (_held.containsKey(soid)) return;
 
         // Initialize the deletion time only if it's uninitialized. If we don't do this, in the
         // case of many consecutive scans each of them trying to delete the same object, the object
         // may not get deleted for a long time. As a hypothetical example, a user on OSX (which
         // relies on the scanner) may continuously update a file under a folder where another file
         // is just deleted.
-        if (th._time == 0) {
+        Long deletionTime = _scheduled.get(soid);
+        if (deletionTime == null) {
             // If there are no holders of this SOID, reset its scheduled deletion time,
             // and schedule a deletion event in the future.
-            long deletionTime = System.currentTimeMillis() + TIMEOUT;
-            // A previously scheduled deletion should never be later than a newly scheduled time
-            assert th._time <= deletionTime;
-            th._time = deletionTime;
+            deletionTime = System.currentTimeMillis() + TIMEOUT;
+            _scheduled.put(soid, deletionTime);
         }
 
-        l.info("sched delete {} {}", soid, th._time);
+        l.info("sched delete {} {}", soid, deletionTime);
 
         if (!_deletionScheduled) {
             _sched.schedule(new AbstractEBSelfHandling() {
@@ -266,53 +273,75 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
      */
     private boolean executeDeletion_() throws Exception
     {
-        boolean retval;
-        Trans t = _tm.begin_();
-        try {
-            retval = executeDeletion_(System.currentTimeMillis(), t);
-            t.commit_();
-        } finally {
-            t.end_();
-        }
-        return retval;
+        DeletionStatus status;
+
+        do {
+            Trans t = _tm.begin_();
+            try {
+                status = executeDeletion_(System.currentTimeMillis(), t);
+                t.commit_();
+            } finally {
+                t.end_();
+            }
+        } while (status == DeletionStatus.CONTINUE);
+
+        return status == DeletionStatus.RESCHEDULE;
     }
+
+    static enum DeletionStatus
+    {
+        DONE,           // no more object to delete
+        CONTINUE,       // more objects to delete immediately (in separate transaction)
+        RESCHEDULE      // more objects to delete in the future
+    }
+
+    private static final int MAX_DELETION_PER_TRANS = 1000;
 
     /**
      * N.B. this is only package-private so that TestTimeoutDeletionBuffer can access it
-     * @return whether any objects in the map have zero holders, but were not deleted
      */
-    boolean executeDeletion_(long currentTime, Trans t) throws Exception
+    DeletionStatus executeDeletion_(long currentTime, Trans t) throws Exception
     {
-        boolean remainingUnheldObjects = false;
-        List<SOID> deletedSOIDs = Lists.newLinkedList();
+        DeletionStatus status = DeletionStatus.DONE;
+        final List<SOID> deletedSOIDs = Lists.newLinkedList();
 
-        // NB: if this loop ever proves to be a performance issue, use a priority queue that orders
-        // elements by their scheduled deletion time
-        for (Map.Entry<SOID, TimeAndHolders> entry : _soid2th.entrySet()) {
-            TimeAndHolders th = entry.getValue();
+        for (Map.Entry<SOID, Long> entry : _scheduled.entrySet()) {
+            SOID soid = entry.getKey();
+            Long time = entry.getValue();
 
             // Delete an object from the system if
             // 1) it has no holders, and
             // 2) its scheduled deletion time has passed
-            if (!th.hasHolders_()) {
-                if (th._time <= currentTime) {
-                    SOID soid = entry.getKey();
-                    if (deleteLogicalObject_(soid, t)) {
-                        deletedSOIDs.add(soid);
-                    }
-                } else {
-                    // This object has no holders, but its scheduled deletion time has not passed,
-                    // so there are remaining unheld objects.
-                    remainingUnheldObjects = true;
+            if (_held.containsKey(soid)) continue;
+
+            // split the transaction
+            if (deletedSOIDs.size() > MAX_DELETION_PER_TRANS) {
+                status = DeletionStatus.CONTINUE;
+                break;
+            }
+
+            if (time <= currentTime) {
+                if (deleteLogicalObject_(soid, t)) {
+                    deletedSOIDs.add(soid);
                 }
+            } else {
+                // This object has no holders, but its scheduled deletion time has not passed,
+                // so there are remaining unheld objects.
+                status = DeletionStatus.RESCHEDULE;
             }
         }
 
         // Remove the deleted SOIDSs from the buffer *after* all have been successfully deleted
         // i.e. be sure the transaction will complete, before removing the SOIDs
-        for (SOID soid : deletedSOIDs) remove_(soid);
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void committed_()
+            {
+                for (SOID soid : deletedSOIDs) _scheduled.remove(soid);
+            }
+        });
 
-        return remainingUnheldObjects;
+        return status;
     }
 
 

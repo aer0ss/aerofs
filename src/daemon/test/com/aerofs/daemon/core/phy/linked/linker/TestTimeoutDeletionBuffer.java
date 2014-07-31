@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
+import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.DeletionStatus;
 import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -167,11 +168,11 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         // Tell the executor that enough time has passed to delete the first 4 objects
         final long mockExecuteTime = System.currentTimeMillis() + TimeoutDeletionBuffer.TIMEOUT -
                                      timeoutDelay;
-        final boolean remainingUnheld = delBuffer.executeDeletion_(mockExecuteTime, t);
+        final DeletionStatus remainingUnheld = delBuffer.executeDeletion_(mockExecuteTime, t);
 
         // There should be some objects remaining that are unheld, but were not deleted as the
         // timeout did not elapse.
-        assertTrue(remainingUnheld);
+        assertTrue(remainingUnheld == DeletionStatus.RESCHEDULE);
 
         // We should see the expected SOIDs were deleted
         for (SOID s : expectedDeletableSOIDs) {
