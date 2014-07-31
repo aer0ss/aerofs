@@ -61,7 +61,7 @@ def two_factor_setup_post(request):
             claimed_code = int(request.params[_URL_PARAM_CODE], 10)
             sp = get_rpc_stub(request)
             try:
-                reply = sp.set_two_factor_enforcement(True, claimed_code)
+                reply = sp.set_two_factor_enforcement(True, claimed_code, None)
                 # Two factor auth is now enabled!
                 flash_success(request, "Two-factor authentication enabled.")
                 return HTTPFound(location=request.route_path('two_factor_settings'))

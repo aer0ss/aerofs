@@ -765,11 +765,13 @@ public class SPService implements ISPService
     }
 
     private static PBUser.Builder user2pb(User user, FullName fn)
+            throws SQLException, ExNotFound
     {
         return PBUser.newBuilder()
                 .setUserEmail(user.id().getString())
                 .setFirstName(fn._first)
-                .setLastName(fn._last);
+                .setLastName(fn._last)
+                .setTwoFactorEnforced(user.shouldEnforceTwoFactor());
     }
 
     @Override
@@ -1678,33 +1680,39 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> setTwoFactorEnforcement(Boolean enforce, Integer currentCode)
+    public ListenableFuture<Void> setTwoFactorEnforcement(Boolean enforce, Integer currentCode,
+            String userId)
             throws Exception
     {
         _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserLegacyProvenance();
+        User target = (userId != null) ? _factUser.createFromExternalID(userId) : requester;
+        throwIfSessionUserIsNotOrAdminOf(target);
         // Noop happily unless there's actually a state change happening
-        if (enforce != requester.shouldEnforceTwoFactor()) {
+        if (enforce != target.shouldEnforceTwoFactor()) {
             if (enforce) {
+                // Only allow users to set up two-factor auth themselves.
+                if (target != requester) {
+                    throw new ExBadArgs("Not allowed to enable two-factor for other users");
+                }
                 // Verify the user provided a code
                 if (currentCode == null) {
                     throw new ExBadArgs("No current two-factor code provided");
                 }
                 // Verify that currentCode matches our expectations for the user's current secret
-                if (!requester.checkSecondFactor(currentCode)) {
-                    // TODO: throw something that indicates "bad or missing code"
+                if (!target.checkSecondFactor(currentCode)) {
                     throw new ExBadCredential("Incorrect two-factor auth code");
                 }
                 // Mark this session as logged in with their second factor
                 // (they have just proven that they possess the proper code)
                 _session.setSecondFactorAuthDate(System.currentTimeMillis());
-                requester.enableTwoFactorEnforcement();
-                _twoFactorEmailer.sendTwoFactorEnabledEmail(requester.id().getString(),
-                        requester.getFullName()._first);
+                target.enableTwoFactorEnforcement();
+                _twoFactorEmailer.sendTwoFactorEnabledEmail(target.id().getString(),
+                        target.getFullName()._first);
             } else {
-                requester.disableTwoFactorEnforcement();
-                _twoFactorEmailer.sendTwoFactorDisabledEmail(requester.id().getString(),
-                        requester.getFullName()._first);
+                target.disableTwoFactorEnforcement();
+                _twoFactorEmailer.sendTwoFactorDisabledEmail(target.id().getString(),
+                        target.getFullName()._first);
             }
         }
         _sqlTrans.commit();

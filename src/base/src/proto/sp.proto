@@ -1109,6 +1109,7 @@ message PBUser {
     // TOOD (WW) use PBFullName
     required string first_name = 2;
     required string last_name = 3;
+    optional bool two_factor_enforced = 4;
 }
 
 message SetAuthorizationLevelCall {
@@ -1493,6 +1494,7 @@ message SetupTwoFactorReply {
 message SetTwoFactorEnforcementCall {
     required bool enforce = 1;
     optional int32 current_code = 2;
+    optional string user_id = 3; // If absent, the target of this call is the caller's session's user.
 }
 
 message ListUrlsForStoreCall {
