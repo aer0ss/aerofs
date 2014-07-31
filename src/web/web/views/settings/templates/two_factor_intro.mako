@@ -17,7 +17,7 @@
 <div class="row">
     <div class="col-sm-12">
         <p>
-        <a href="https://support.aerofs.com/hc/en-us/articles/202775400">Two-factor authentication</a>
+        <a href="https://support.aerofs.com/hc/en-us/articles/202610424">Two-factor authentication</a>
         adds additional security to your account.  In addition to your normal
         login, you'll need to enter a code that you get from an app on your
         phone or tablet when signing in to the AeroFS website or setting up new
