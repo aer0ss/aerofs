@@ -12,7 +12,7 @@
     <h2>Users in my organization</h2>
     <table id="users_table" class="table table-hover">
         ## thead is required by datatables
-        <thead style="display: none;"><tr><th></th><th></th><th></th><th></th></tr></thead>
+        <thead style="display: none;"><tr><th></th><th></th><th></th><th></th><th></th></tr></thead>
         <tbody></tbody>
     </table>
 
@@ -114,6 +114,7 @@
                     { "mDataProp": 'name', "sClass": "full_name" },
                     { "mDataProp": 'label' },
                     { "mDataProp": 'email' },
+                    { "mDataProp": 'two_factor_icon' },
                     { "mDataProp": 'options' }
                 ],
 
@@ -136,14 +137,15 @@
         });
 
         function registerUserRowTooltips() {
-            $('.tooltip_admin').tooltip({placement: 'top', 'title' : 'An admin has access to ' +
+            $('.tooltip_admin').tooltip({placement: 'top', title: 'An admin has access to ' +
                     'administrative functions for your organization: provision Team Servers, manage users and shared ' +
                     'folders, add/remove other admins, manage payment, and so on.'});
-            $('.tooltip_publisher').tooltip({placement: 'top', 'title' :
+            $('.tooltip_publisher').tooltip({placement: 'top', title:
                     'A publisher is a user in your organization who can be made ' +
                     'an editor of externally shared folders. Since you have ' +
                     'enabled restricted external sharing, users in your organization ' +
                     'cannot edit externally shared folders by default.'});
+            $('.tooltip_2fa').tooltip({placement: 'top', title: 'This user has two-factor authentication enabled.'});
         }
 
         ## done and always are callbacks for AJAX success and completion. They can be undefined.

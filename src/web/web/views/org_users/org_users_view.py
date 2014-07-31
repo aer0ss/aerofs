@@ -68,6 +68,7 @@ def json_list_org_users(request):
                 'name': _render_full_name(ul.user, session_user),
                 'label': _render_label(ul.level, ul.user.user_email in publishers),
                 'email': markupsafe.escape(ul.user.user_email),
+                'two_factor_icon': "<span class='glyphicon glyphicon-phone tooltip_2fa' style='color: #BBB;'></span>" if ul.user.two_factor_enforced else "",
                 'options': _render_user_options_link(request, ul, session_user,
                     ul.user.user_email in publishers if use_restricted else None)
             } for ul in reply.user_and_level]
