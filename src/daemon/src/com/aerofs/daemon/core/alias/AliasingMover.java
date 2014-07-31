@@ -184,7 +184,7 @@ public class AliasingMover
             Set<KIndex> kidxsTarget, Trans t)
             throws SQLException, ExNotFound, ExAborted, DigestException, IOException
     {
-        checkArgument(alias.cid() == CID.CONTENT && target.cid() == CID.CONTENT);
+        checkArgument(alias.cid().isContent() && target.cid().isContent());
         if (kidxsAlias.isEmpty()) {
             l.info("local alias: no content {}", alias.soid());
             return;

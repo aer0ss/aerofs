@@ -46,7 +46,7 @@ public class DescendantStores
         // among immediate children of the given store, find those who are under the given path
         Collection<SIndex> children = _ss.getChildren_(sidx);
         for (SIndex csidx : children) {
-            if (csidx == sidx) continue;
+            if (csidx.equals(sidx)) continue;
 
             SID csid = _sidx2sid.get_(csidx);
             Path cpath = _ds.resolve_(new SOID(sidx, SID.storeSID2anchorOID(csid)));

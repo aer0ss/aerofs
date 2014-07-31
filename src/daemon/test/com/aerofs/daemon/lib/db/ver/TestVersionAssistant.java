@@ -137,7 +137,7 @@ public class TestVersionAssistant extends AbstractTest
     private void deleteArbitrarySIndexAndCommit() throws Exception
     {
         SIndex sidx = new SIndex(5);
-        assertFalse(sidx == socid.sidx());
+        assertFalse(sidx.equals(socid.sidx()));
         deleteSIndexAndCommit(sidx);
     }
 

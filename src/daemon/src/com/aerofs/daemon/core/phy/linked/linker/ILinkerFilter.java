@@ -49,7 +49,8 @@ public interface ILinkerFilter
         @Override
         public boolean shouldIgnoreChilren_(PathCombo pc, @Nonnull OA oaParent) throws SQLException
         {
-            return oaParent.isAnchor() || oaParent.soid().sidx() != _sid2sidx.get_(pc._path.sid());
+            return oaParent.isAnchor()
+                    || !oaParent.soid().sidx().equals(_sid2sidx.get_(pc._path.sid()));
         }
     }
 }

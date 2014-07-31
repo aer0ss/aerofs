@@ -107,7 +107,7 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
             SID sid = _sidx2sid.getNullable_(sidx);
             if (sid != null) {
                 SIndex root = _stores.getPhysicalRoot_(sidx);
-                if (root != sidx) sid = _sidx2sid.get_(root);
+                if (!root.equals(sidx)) sid = _sidx2sid.get_(root);
             } else {
                 // if the store is expelled we cannot determine the physical root
                 // in which case we specify an invalid SID
