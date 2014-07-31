@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.Exceptions;
@@ -92,7 +93,9 @@ public class GetComponentResponse
             throws Exception
     {
         try {
-            if (msg.pb().hasExceptionResponse()) throw Exceptions.fromPB(msg.pb().getExceptionResponse());
+            if (msg.pb().hasExceptionResponse()) {
+                throw BaseLogUtil.suppress(Exceptions.fromPB(msg.pb().getExceptionResponse()));
+            }
             Util.checkPB(msg.pb().hasGetComponentResponse(), PBGetComponentResponse.class);
             processResponseInternal_(socid, msg, cxt);
         } finally {
