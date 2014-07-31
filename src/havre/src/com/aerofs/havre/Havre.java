@@ -90,6 +90,11 @@ public class Havre
         return _proxy.getListeningPort();
     }
 
+    public int getTunnelPort()
+    {
+        return _tunnel.getListeningPort();
+    }
+
     public static void main(String[] args) throws Exception
     {
         Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());

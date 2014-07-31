@@ -200,6 +200,7 @@ public class AbstractRestTest extends AbstractTest
 
     protected @Spy InMemoryPrefix pf = new InMemoryPrefix();
 
+    private static Properties prop;
 
     protected class InMemoryPrefix implements IPhysicalPrefix
     {
@@ -306,7 +307,7 @@ public class AbstractRestTest extends AbstractTest
 
         when(sessionFactory.openSession()).thenReturn(session);
 
-        Properties prop = new Properties();
+        prop = new Properties();
         prop.setProperty("bifrost.port", "0");
         ConfigurationProperties.setProperties(prop);
 
@@ -320,12 +321,11 @@ public class AbstractRestTest extends AbstractTest
 
         prop.setProperty("api.daemon.port", "0");
         prop.setProperty("api.tunnel.host", "localhost");
-        prop.setProperty("api.tunnel.port", "48808");
         prop.setProperty("daemon.oauth.id", BifrostTest.RESOURCEKEY);
         prop.setProperty("daemon.oauth.secret", BifrostTest.RESOURCESECRET);
         prop.setProperty("daemon.oauth.url", bifrostUrl);
         prop.setProperty("havre.tunnel.host", "localhost");
-        prop.setProperty("havre.tunnel.port", "48808");
+        prop.setProperty("havre.tunnel.port", "0");
         prop.setProperty("havre.proxy.host", "localhost");
         prop.setProperty("havre.proxy.port", "0");
         prop.setProperty("havre.oauth.id", BifrostTest.RESOURCEKEY);
@@ -367,7 +367,7 @@ public class AbstractRestTest extends AbstractTest
     private Injector inj;
 
     private RestTunnelClient tunnel;
-    private static Havre havre;
+    private Havre havre;
     private static Bifrost bifrost;
 
     protected final static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -437,8 +437,12 @@ public class AbstractRestTest extends AbstractTest
                 });
 
         // start local gateway
-        havre = new Havre(user, did, kmgr, kmgr, cacert, getGlobalTimer(), tokenVerifier);
-        havre.start();
+        if (useProxy) {
+            havre = new Havre(user, did, kmgr, kmgr, cacert, getGlobalTimer(), tokenVerifier);
+            havre.start();
+
+            prop.setProperty("api.tunnel.port", Integer.toString(havre.getTunnelPort()));
+        }
 
         // start REST service
         inj = coreInjector();
@@ -565,9 +569,9 @@ public class AbstractRestTest extends AbstractTest
     @After
     public void tearDown() throws Exception
     {
-        havre.stop();
         service.stop();
         if (useProxy) {
+            havre.stop();
             tunnel.stop();
         }
     }
