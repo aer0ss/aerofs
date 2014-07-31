@@ -6,6 +6,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 
 /**
  * This class combines Path and its corresponding string-type path. The former
@@ -73,5 +74,10 @@ public class PathCombo implements Comparable<PathCombo>
     public int hashCode()
     {
         return _path.hashCode();
+    }
+
+    public PathCombo parent()
+    {
+        return new PathCombo(_path.removeLast(), new File(_absPath).getParent());
     }
 }

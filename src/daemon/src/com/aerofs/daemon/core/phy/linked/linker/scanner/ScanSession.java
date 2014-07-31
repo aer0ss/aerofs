@@ -25,6 +25,7 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -262,6 +263,9 @@ class ScanSession
 
     private void addRootPathComboToStack_()
     {
+        Set<String> rescan = Sets.newHashSet();
+        PathCombo lastRescan = null;
+
         Iterator<PathCombo> iter = _sortedPCRoots.iterator();
         while (iter.hasNext()) {
             PathCombo pcRoot = iter.next();
@@ -272,22 +276,29 @@ class ScanSession
                 iter.remove();
                 break;
             } else {
-                /* Comment (A), referred to by the constructor, TestScanSession_Misc, MightCreate
-                *
-                * Skip a root folder if it's missing or no longer a directory. This is to
-                * prevent infinite scans on such events. However, we throw and in turn retry
-                * from scratch in the event of any error on any non-root objects. Silently
-                * ignoring would cause false deletion of objects. For example, if physical
-                * folder A is moved to under folder P while A is being scanned, and P has been
-                * scanned before, ignoring errors caused by the missing A would lead to
-                * deletion of the logical object corresponding to A. This is because the
-                * logical object is already in the deletion buffer when A is being scanned.
-                */
-                l.warn("root " + ObfuscatingFormatters.obfuscatePath(pcRoot._absPath)
-                        + " no longer a dir. skip");
+                /*
+                 * In a perfect world this race condition could be safely ignored, however
+                 * nothing is ever quite that simple in this wretched world. One would think
+                 * that if a folder disappears we would be notified about it. To be fair, we
+                 * sort of are, just not necessarily the way the docs say it should happen...
+                 *
+                 * On OSX deletion of folders should be reported as changes to be scanned in
+                 * the parent folders, which is mostly what happens, except sometimes we
+                 * instead get notifications of changes in the deleted folders and none for
+                 * the parent folders, in which case safety can only be achieved by forcing
+                 * a re-scan of the parent.
+                 */
+                l.warn("root {} no longer a dir. skip", pcRoot._absPath);
                 iter.remove();
+                PathCombo p = pcRoot.parent();
+                if (lastRescan == null || !p._path.isStrictlyUnder(lastRescan._path)) {
+                    rescan.add(p._absPath);
+                    lastRescan = p;
+                }
             }
         }
+
+        if (!rescan.isEmpty()) _root.scanImmediately_(rescan, false);
     }
 
     /**

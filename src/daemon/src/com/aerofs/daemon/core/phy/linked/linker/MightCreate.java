@@ -158,7 +158,7 @@ public class MightCreate
 
         SOID parent = _ds.resolveNullable_(pcPhysical._path.removeLast());
         if (shouldIgnoreChildren_(pcPhysical,  parent)) {
-            l.debug("ignored {}:{}", pcPhysical, fnt._fid);
+            l.debug("ignored under {} {}:{}", parent, pcPhysical, fnt._fid);
             return Result.IGNORED;
         }
 

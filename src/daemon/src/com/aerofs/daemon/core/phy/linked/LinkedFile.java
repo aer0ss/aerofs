@@ -11,11 +11,13 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -23,6 +25,8 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 
 import com.aerofs.lib.id.SOKID;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
 {
@@ -211,6 +215,15 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
         try {
             return new FileInputStream(_f.getImplementation());
         } catch (FileNotFoundException e) {
+            if (_path.isRepresentable()) {
+                checkNotNull(_path.virtual);
+                LinkerRoot lr = _s._lrm.get_(_path.virtual.sid());
+                if (lr != null) {
+                    lr.scanImmediately_(ImmutableSet.of(_f.getParent()), false);
+                }
+            } else {
+                l.warn("missing NRO {} {}", _sokid, _path);
+            }
             throw new ExFileNotFound(_f.getImplementation());
         }
     }
