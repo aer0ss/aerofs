@@ -196,16 +196,26 @@ public class LinkerRootMap
      *
      * Update conf DB and create a new {@code LinkerRoot}
      */
-    public void link_(final SID sid, String absRoot, Trans t) throws IOException, SQLException
+    public void link_(final SID sid, final String absRoot, Trans t) throws IOException, SQLException
     {
+        // ensure aux folders clean
+        // we don't want leftover conflicts, nros or prefixes
+        InjectableFile auxRoot = _factFile.create(Cfg.absAuxRootForPath(absRoot, sid));
+        for (AuxFolder af : LibParam.AuxFolder.values()) {
+            // do not enforce history cleanup as this folder could be very large
+            if (af.equals(AuxFolder.HISTORY)) continue;
+            _factFile.create(auxRoot, af._name).deleteOrThrowIfExistRecursively();
+        }
+
         IOException e = add_(sid, absRoot);
         if (e != null) throw e;
         _sfti.addTagFileAndIconIn(sid, absRoot, t);
-        _cfgAbsRoots.add(sid, absRoot);
         _urdb.removeUnlinkedRoot(sid, t);
 
-        t.addListener_(new AbstractTransListener()
-        {
+        // MUST be the last thing before adding the trans listener
+        _cfgAbsRoots.add(sid, absRoot);
+
+        t.addListener_(new AbstractTransListener() {
             @Override
             public void aborted_()
             {
@@ -238,6 +248,8 @@ public class LinkerRootMap
         IOException e = remove_(sid);
         if (e != null) throw e;
         _sfti.removeTagFileAndIconIn(sid, absPath, t);
+
+        // MUST be the last thing before adding the trans listener
         _cfgAbsRoots.remove(sid);
 
         t.addListener_(new AbstractTransListener() {
@@ -256,6 +268,9 @@ public class LinkerRootMap
             public void committed_()
             {
                 notifyRootsChanged_();
+                boolean ok =_factFile.create(Cfg.absAuxRootForPath(absPath, sid))
+                        .deleteIgnoreErrorRecursively();
+                l.info("cleanup auxroot {} {}", sid, ok);
             }
         });
     }

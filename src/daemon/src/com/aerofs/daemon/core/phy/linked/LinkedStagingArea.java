@@ -223,6 +223,8 @@ public class LinkedStagingArea implements IStartable
     private boolean processStagedFolder_(StagedFolder sf, Token tk) throws ExAborted
     {
         l.debug("staged {} {}", sf.id, sf.historyPath);
+        // ignore entries whose physical root was ulinked
+        if (_lrm.get_(sf.historyPath.sid()) == null) return true;
         InjectableFile f = stagedPath(sf.id, sf.historyPath.sid());
         if (!f.exists()) return true;
         TCB tcb = tk.pseudoPause_("psa");
