@@ -9,6 +9,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
+import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -64,8 +65,9 @@ public final class TestStores extends AbstractTest
     private final Multicast multicast = mock(Multicast.class);
     @SuppressWarnings("unchecked") private final IBlockingPrioritizedEventSink<IEvent> q = mock(IBlockingPrioritizedEventSink.class);
     private final TCP tcp = mock(TCP.class);
-    private final ARP arp = new ARP(mock(IMulticastListener.class));
-    private final Stores stores = new Stores(LOCAL_PEER, tcp, arp, multicast);
+    private ARP arp;
+    private PresenceService presenceService;
+    private Stores stores;
 
     private class PresenceInfo
     {
@@ -100,6 +102,15 @@ public final class TestStores extends AbstractTest
     {
         when(tcp.sink()).thenReturn(q);
         when(tcp.getListeningPort()).thenReturn(8888);
+        arp = new ARP(mock(IMulticastListener.class));
+        presenceService = new PresenceService();
+        stores = new Stores(LOCAL_PEER, tcp, arp, multicast, presenceService);
+    }
+
+    private void deviceOnline(DID did, InetSocketAddress addr)
+    {
+        arp.put(did, addr);
+        presenceService.onDeviceConnected(did);
     }
 
     @Test
@@ -107,7 +118,7 @@ public final class TestStores extends AbstractTest
     {
         stores.updateStores(new SID[]{SID_02}, new SID[]{}); // only interested in SID_02
 
-        arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
+        deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
         updateFilterForRemotePeer(REMOTE_PEER_00, SID_00, SID_01);  // remote peer has SID_00 and _01
 
@@ -133,7 +144,7 @@ public final class TestStores extends AbstractTest
     public void shouldSendPresenceWhenAMatchingFilterIsReceivedFromPeer()
             throws Exception
     {
-        arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
+        deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
         stores.updateStores(new SID[]{SID_00}, new SID[]{}); // only interested in SID_00
 
         updateFilterForRemotePeer(REMOTE_PEER_00, SID_00, SID_01);  // remote peer has SID_00 and _01
@@ -150,7 +161,7 @@ public final class TestStores extends AbstractTest
     @Test
     public void shouldNotNotifyCoreWhenARPEntryIsDeletedAndPeerHasInterestingStores()
     {
-        arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
+        deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
         stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{});
 
@@ -169,7 +180,7 @@ public final class TestStores extends AbstractTest
     @Test
     public void shouldNotifyCoreWhenDevicePresenceNotifiesThatAPeerIsUnavailableAndPeerHasInterestingStores()
     {
-        arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
+        deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
         stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{});
 
@@ -187,10 +198,34 @@ public final class TestStores extends AbstractTest
     @Test
     public void shouldAddEntryToARPAndNotifyCoreWhenPongIsReceived() throws ExDeviceUnavailable
     {
+        deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
         stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{}); // only interested in two stores
 
         PBTCPPong pbpong = newPBTCPPong(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS.getPort(), SID_00, SID_01, SID_02); // told of interest in 3
         stores.processPong(REMOTE_PEER_00_ADDRESS.getAddress(), REMOTE_PEER_00, pbpong);
+
+        ArgumentCaptor<IEvent> addEventCaptor = ArgumentCaptor.forClass(IEvent.class);
+        verify(q).enqueueBlocking(addEventCaptor.capture(), any(Prio.class));
+        verifyNoMoreInteractions(q);
+
+        EIStoreAvailability presenceEvent = (EIStoreAvailability) addEventCaptor.getValue();
+        verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, true, SID_00, SID_01);
+
+        assertThat(checkNotNull(arp.getThrows(REMOTE_PEER_00)).remoteAddress, equalTo(REMOTE_PEER_00_ADDRESS));
+    }
+
+    @Test
+    public void shouldAddEntryToARPAndWaitToNotifyCoreUntilDeviceIsOnline() throws Exception
+    {
+        stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{}); // only interested in two stores
+
+        PBTCPPong pbpong = newPBTCPPong(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS.getPort(), SID_00, SID_01, SID_02); // told of interest in 3
+        stores.processPong(REMOTE_PEER_00_ADDRESS.getAddress(), REMOTE_PEER_00, pbpong);
+
+        verifyZeroInteractions(q);
+
+        deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
+        stores.onDevicePresenceChanged(REMOTE_PEER_00, true);
 
         ArgumentCaptor<IEvent> addEventCaptor = ArgumentCaptor.forClass(IEvent.class);
         verify(q).enqueueBlocking(addEventCaptor.capture(), any(Prio.class));
@@ -211,10 +246,10 @@ public final class TestStores extends AbstractTest
 
         // remote peers only have SID 01 and 02
 
-        arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
+        deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
         updateFilterForRemotePeer(REMOTE_PEER_00, SID_01, SID_02);
 
-        arp.put(REMOTE_PEER_01, REMOTE_PEER_01_ADDRESS);
+        deviceOnline(REMOTE_PEER_01, REMOTE_PEER_01_ADDRESS);
         updateFilterForRemotePeer(REMOTE_PEER_01, SID_01, SID_02);
 
         // suddenly core is interested in 01 and 02
@@ -260,10 +295,10 @@ public final class TestStores extends AbstractTest
         // REMOTE_PEER_00: +(SID_00, SID_01)
         // REMOTE_PEER_01: +(SID_00, SID_02)
 
-        arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
+        deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
         updateFilterForRemotePeer(REMOTE_PEER_00, SID_00, SID_01);
 
-        arp.put(REMOTE_PEER_01, REMOTE_PEER_01_ADDRESS);
+        deviceOnline(REMOTE_PEER_01, REMOTE_PEER_01_ADDRESS);
         updateFilterForRemotePeer(REMOTE_PEER_01, SID_00, SID_02);
 
         // now we're no longer interested in SID_01

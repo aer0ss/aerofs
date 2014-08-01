@@ -24,7 +24,7 @@ import static com.google.common.collect.Sets.newHashSet;
  * </ul>
  * <br/>
  */
-public final class PresenceService implements IUnicastListener
+public class PresenceService implements IUnicastListener
 {
     private static final Logger l = Loggers.getLogger(PresenceService.class);
 
@@ -41,6 +41,9 @@ public final class PresenceService implements IUnicastListener
     {
         return onlineOnUnicast.contains(did);
     }
+
+    // used by tcp.Stores
+    public synchronized boolean isConnected(DID did) { return onlineOnUnicast.contains(did); }
 
     @Override
     public synchronized void onUnicastReady()

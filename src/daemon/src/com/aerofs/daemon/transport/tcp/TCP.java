@@ -122,7 +122,7 @@ public class TCP implements ITransport, IAddressResolver
         monitor = new ChannelMonitor(unicast.getDirectory(), timer);
         this.arp = new ARP(monitor);
 
-        this.stores = new Stores(localdid, this, arp, multicast);
+        this.stores = new Stores(localdid, this, arp, multicast, presenceService);
         multicast.setStores(stores);
 
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);

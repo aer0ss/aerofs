@@ -6,6 +6,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.lib.IDevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IStores;
+import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.event.Prio;
@@ -34,6 +35,7 @@ import static com.google.common.base.Preconditions.checkState;
 class Stores implements IStores, IDevicePresenceListener
 {
     private static final int FILTER_SEQ_INVALID = -1;
+    private final PresenceService _presenceService;
 
     private static class PerDeviceStoreMembership
     {
@@ -65,12 +67,17 @@ class Stores implements IStores, IDevicePresenceListener
     private BFSID _filter = new BFSID(); // _filter contains all the stores the local device cares about (immutable)
     private int _filterSeq = FILTER_SEQ_INVALID;
 
-    Stores(DID did, TCP tcp, ARP arp, Multicast multicast)
+    // Sigh, circular dependencies. PresenceService, why do you exist here?
+    // Well, the reason why is: we need to know if a given device is actually Available; if we hear
+    // a rumor from ARP we don't go tell core about it just for kicks. We wait until the device is
+    // actually reachable.
+    Stores(DID did, TCP tcp, ARP arp, Multicast multicast, PresenceService presenceService)
     {
         _did = did;
         _tcp = tcp;
         _arp = arp;
         _multicast = multicast;
+        _presenceService = presenceService;
     }
 
     /**
@@ -155,10 +162,14 @@ class Stores implements IStores, IDevicePresenceListener
             removed.removeAll(newMembership._onlineSids);
         }
 
-        if (!added.isEmpty()) {
+        // only send store-online notifications to core if the device in question is actually
+        // connected. If it is not yet online, count on the fact that someone will call
+        // onDevicePresenceChanged eventually...
+        if ((!added.isEmpty()) && _presenceService.isConnected(did)) {
             sendPresence_(did, true, added);
         }
 
+        // store-offline notifications are always sent, regardless of device connectedness
         if (!removed.isEmpty()) {
             sendPresence_(did, false, removed);
         }
@@ -338,20 +349,12 @@ class Stores implements IStores, IDevicePresenceListener
         // noop. do nothing
     }
 
-    //
-    // IDevicePresenceListener methods
-    //
-
     @Override
-    public synchronized void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
+    public void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
     {
-        if (isPotentiallyAvailable) {
-            return;
-        }
+        PerDeviceStoreMembership membership = isPotentiallyAvailable ? _memberships.get(did) : _memberships.remove(did);
 
-        PerDeviceStoreMembership membership = _memberships.remove(did);
         if (membership == null || (membership._onlineSids.isEmpty())) return;
-
-        sendPresence_(did, false, membership._onlineSids);
+        sendPresence_(did, isPotentiallyAvailable, membership._onlineSids);
     }
 }
