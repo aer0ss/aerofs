@@ -46,6 +46,7 @@ static Overlay overlayForStatus(PBPathStatus* status)
 @synthesize overlay;
 @synthesize contextMenu;
 @synthesize sidebarIcon;
+@synthesize isLinkSharingEnabled;
 
 
 /**
@@ -117,6 +118,21 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     NSLog(@"AeroFS: Trying to connect to the server on sock file: %@...", sockFile);
     [self clearCache];
     [socket connectToServerOnSocket:sockFile];
+}
+
+/**
+ * Implementation of the "Create Link" context menu item
+ * The sender must set its represented object to the path of the folder
+ */
+- (void)createLink:(id)sender
+{
+    NSString* path = [sender representedObject];
+
+    ShellextCall_Builder* builder = [ShellextCall builder];
+    builder.type = ShellextCall_TypeCreateLink;
+    builder.createLink = [[[CreateLinkCall builder] setPath:path] build];
+
+    [socket sendMessage: builder.build];
 }
 
 /**
@@ -250,10 +266,14 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     }
 
     BOOL isDir = NO;
-    [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir];
-    if (isDir) {
-        flags |= Directory;
+    if ([[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir]) {
+        if (isDir) {
+            flags |= Directory;
+        } else {
+            flags |= File;
+        }
     }
+
     return flags;
 }
 

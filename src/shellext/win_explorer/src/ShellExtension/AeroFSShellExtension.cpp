@@ -27,7 +27,8 @@ AeroFSShellExtension::AeroFSShellExtension()
 	m_cache(new OverlayCache(OVERLAY_CACHE_SIZE_LIMIT)),
 	m_rootAnchor(),
 	m_lastConnectionAttempt(0),
-	m_fileName()
+	m_fileName(),
+	m_is_link_sharing_enabled(false)
 {
 	InitializeCriticalSection(&m_cs);
 }
@@ -126,9 +127,12 @@ int AeroFSShellExtension::pathFlags(const std::wstring& path) const
 	}
 	std::wstring long_path = std::wstring(L"\\\\?\\") + path;
 	DWORD attributes = GetFileAttributes(long_path.c_str());
-	if (attributes != INVALID_FILE_ATTRIBUTES
-			&& (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
-		flags |= Directory;
+	if (attributes != INVALID_FILE_ATTRIBUTES) {
+		if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
+			flags |= Directory;
+		} else {
+			flags |= File;
+		}
 	}
 	return flags;
 }
@@ -155,12 +159,17 @@ void AeroFSShellExtension::parseNotification(const ShellextNotification& notific
 			break;
 
 		case ShellextNotification_Type_LINK_SHARING_ENABLED:
-			is_link_sharing_enabled = notification.link_sharing_enabled().is_link_sharing_enabled();
+			m_is_link_sharing_enabled = notification.link_sharing_enabled().is_link_sharing_enabled();
 			break;
 
 		default:
 			break;
 	}
+}
+
+bool AeroFSShellExtension::isLinkSharingEnabled()
+{
+	return m_is_link_sharing_enabled;
 }
 
 static int overlayForStatus(const PBPathStatus& status) {
@@ -319,6 +328,16 @@ void AeroFSShellExtension::showVersionHistoryDialog(const std::wstring& path)
 	INFO_LOG("VersionHistoryDialog shown");
 }
 
+void AeroFSShellExtension::createLink(const std::wstring& path)
+{
+	ShellextCall call;
+	call.set_type(ShellextCall_Type_CREATE_LINK);
+	call.mutable_create_link()->set_path(narrow(path.c_str()));
+
+	m_socket->sendMessage(call);
+	INFO_LOG("Create Link");
+}
+
 void AeroFSShellExtension::showShareFolderDialog(const std::wstring& path)
 {
 	ShellextCall call;
@@ -394,7 +413,7 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
 // Adds entries to the system registry.
 STDAPI DllRegisterServer(void)
 {
-	DEBUG_LOG(" ========== REG SERVER  ===========");
+	DEBUG_LOG(" ========== REG SERVER ===========");
 	HRESULT hr = _instance.DllRegisterServer(FALSE);
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
 	return hr;

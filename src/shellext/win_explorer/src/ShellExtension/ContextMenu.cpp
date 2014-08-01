@@ -148,6 +148,12 @@ HRESULT ContextMenu::QueryContextMenu(HMENU hmenu, UINT position, UINT idCmdFirs
 	AppendMenu(submenu, MF_STRING, idCmdFirst + VersionHistoryMenuId, L"Sync History...");
 	++entryCount;
 
+	if (((pflags & (Directory | File)) && !(pflags & RootAnchor))
+			&& m_instance->isLinkSharingEnabled()) {
+		AppendMenu(submenu, MF_STRING, idCmdFirst + CreateLinkMenuId, L"Create Link");
+		++entryCount;
+	}
+
 	if ((pflags & Directory) && !(pflags & RootAnchor)) {
 		AppendMenu(submenu, MF_STRING, idCmdFirst + ShareFolderMenuId, L"Share This Folder...");
 		++entryCount;
@@ -199,6 +205,9 @@ HRESULT ContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO pInfo)
 		return S_OK;
 	case VersionHistoryMenuId:
 		m_instance->showVersionHistoryDialog(m_path);
+		return S_OK;
+	case CreateLinkMenuId:
+		m_instance->createLink(m_path);
 		return S_OK;
 	case ShareFolderMenuId:
 		m_instance->showShareFolderDialog(m_path);

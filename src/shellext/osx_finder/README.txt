@@ -35,5 +35,5 @@ Making a debug build
 --------------------
 
 Use AppCode or Xcode to build FinderExtension.xcodeproj.
-Make sure you get AeroFSFinderExtension.osax under build/Debug
+Make sure you get AeroFSFinderExtension.osax under src/shellext/osx_finder/build/Debug
 THen use the ./inject script in 'tools' to inject the extension into the Finder.

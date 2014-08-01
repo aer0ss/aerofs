@@ -87,7 +87,7 @@ public class ShellextService
     private void notifyLinkSharingEnabled()
     {
         l.info("Link sharing from shellext is " +
-                ((ShellextLinkSharing.IS_ENABLED)? "enabled ": "disabled "));
+                ((ShellextLinkSharing.IS_ENABLED)? "enabled.": "disabled."));
         ShellextNotification notification = ShellextNotification.newBuilder()
                 .setType(Type.LINK_SHARING_ENABLED)
                 .setLinkSharingEnabled(LinkSharingEnabled.newBuilder()
@@ -135,6 +135,10 @@ public class ShellextService
             assert (call.hasGreeting());
             greeting(call.getGreeting());
             break;
+        case CREATE_LINK:
+            assert (call.hasCreateLink());
+            createLink(call.getCreateLink().getPath());
+            break;
         case SHARE_FOLDER:
             assert (call.hasShareFolder());
             shareFolder(normalize(call.getShareFolder().getPath()));
@@ -177,40 +181,50 @@ public class ShellextService
         return Path.fromAbsoluteString(Cfg.rootSID(), absRoot, absPath);
     }
 
+    private boolean isPathInAeroFSRoot(final String absPath, String absRootAnchor)
+    {
+        if (!Path.isUnder(absRootAnchor, absPath)) {
+            l.warn("shellext provided an external path " + absPath);
+            return false;
+        }
+        return true;
+    }
+
+    private void createLink(final String absPath)
+    {
+        String absRootAnchor = Cfg.absDefaultRootAnchor();
+        if (isPathInAeroFSRoot(absPath, absRootAnchor)) {
+            Path path = mkpath(absRootAnchor, absPath);
+            GUIUtil.createLink(path);
+        }
+    }
+
     /**
      * @param absPath the absolute path
      */
     private void shareFolder(final String absPath)
     {
         String absRootAnchor = Cfg.absDefaultRootAnchor();
-        if (!Path.isUnder(absRootAnchor, absPath)) {
-            l.warn("shellext provided an external path " + absPath);
-            return;
+        if (isPathInAeroFSRoot(absPath, absRootAnchor)) {
+            Path path = mkpath(absRootAnchor, absPath);
+            GUIUtil.shareFolder(path, path.last());
         }
-        Path path = mkpath(absRootAnchor, absPath);
-        GUIUtil.shareFolder(path, path.last());
     }
 
     private void versionHistory(final String absPath)
     {
         String absRootAnchor = Cfg.absDefaultRootAnchor();
-        if (!Path.isUnder(absRootAnchor, absPath)) {
-            l.warn("shellext provided an external path " + absPath);
-            return;
+        if (isPathInAeroFSRoot(absPath, absRootAnchor)) {
+            GUIUtil.showVersionHistory(mkpath(absRootAnchor, absPath));
         }
-
-        GUIUtil.showVersionHistory(mkpath(absRootAnchor, absPath));
     }
 
     private void conflictResolution(final String absPath)
     {
         String absRootAnchor = Cfg.absDefaultRootAnchor();
-        if (!Path.isUnder(absRootAnchor, absPath)) {
-            l.warn("shellext provided an external path " + absPath);
-            return;
+        if (isPathInAeroFSRoot(absPath, absRootAnchor)) {
+            GUIUtil.showConflictResolutionDialog(mkpath(absRootAnchor, absPath));
         }
-
-        GUIUtil.showConflictResolutionDialog(mkpath(absRootAnchor, absPath));
     }
 
     private void getStatus(final String absPath)

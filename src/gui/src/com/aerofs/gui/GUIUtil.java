@@ -1,21 +1,30 @@
 package com.aerofs.gui;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.IAnalyticsEvent;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.invitee.DlgInviteUsers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
+import com.aerofs.ui.error.ErrorMessage;
+import com.aerofs.ui.error.ErrorMessages;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -283,10 +292,7 @@ public class GUIUtil
         return OSUtil.isLinux() ? 0 : SWT.ON_TOP;
     }
 
-    /**
-     * This method can be run in a non-UI thread
-     */
-    public static void shareFolder(final Path path, final String name)
+    private static boolean isTryingToShareRoot(Path path)
     {
         if (new Path(Cfg.rootSID()).equals(path)) {
             // Sharing the default root folder?
@@ -294,9 +300,68 @@ public class GUIUtil
                     .setMessage("share default root?")
                     .sendAsync();
             UI.get().show(MessageType.WARN, "The root " + L.product() + " folder can't be shared.");
+            return true;
+        }
+        return false;
+    }
+
+    public static void createLink(final Path path)
+    {
+        // Do not allow link sharing for the root.
+        if (isTryingToShareRoot(path)) {
             return;
         }
+        try {
+            final String link = UIGlobals.ritual().createUrl(path.toPB()).getLink();
+            GUI.get().asyncExec(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    String linkUrl = WWW.DASHBOARD_HOST_URL + "/l/" + link;
+                    copyLinkToClipboard(linkUrl);
+                    showLinkUrl(path, linkUrl);
+                }
+            });
+        } catch (Exception e) {
+            ErrorMessages.show(e, "Unable to create link for " + path.last() + ".",
+                    new ErrorMessage(ExNoPerm.class, S.NON_OWNER_CANNOT_CREATE_LINK));
+            l.info("Unable to create link for {}. Got exception {}", path, LogUtil.suppress(e));
+        }
+    }
 
+    private static void showLinkUrl(Path path, final String linkUrl)
+    {
+        String toastMsg = "A link has been created for " + path.last() +
+                " and copied to your clipboard (Click to view)";
+        // Notify the user and open link in browser if clicked.
+        UI.get().notify(MessageType.INFO, toastMsg, new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                GUIUtil.launch(linkUrl);
+            }
+        });
+    }
+
+    private static void copyLinkToClipboard(String linkUrl)
+    {
+        // Copy link to the clipboard.
+        Clipboard clipboard = new Clipboard(GUI.get().disp());
+        clipboard.setContents(new String[]{ linkUrl},
+            new Transfer[]{TextTransfer.getInstance()});
+        clipboard.dispose();
+    }
+
+    /**
+     * This method can be run in a non-UI thread
+     */
+    public static void shareFolder(final Path path, final String name)
+    {
+        if (isTryingToShareRoot(path)) {
+            return;
+        }
         GUI.get().asyncExec(() -> new DlgInviteUsers(GUI.get().sh(),
                 getLabelByPath(path), path, name, false).openDialog());
     }

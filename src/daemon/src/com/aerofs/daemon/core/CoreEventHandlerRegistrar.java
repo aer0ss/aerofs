@@ -26,6 +26,7 @@ import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
 import com.aerofs.daemon.core.admin.HdSetExpelled;
 import com.aerofs.daemon.core.admin.HdUpdateACL;
+import com.aerofs.daemon.core.fs.HdCreateUrl;
 import com.aerofs.daemon.core.fs.HdListSharedFolders;
 import com.aerofs.daemon.core.fs.HdCreateObject;
 import com.aerofs.daemon.core.fs.HdDeleteBranch;
@@ -78,6 +79,7 @@ import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
+import com.aerofs.daemon.event.fs.EICreateUrl;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
 import com.aerofs.daemon.event.fs.EIDeleteObject;
 import com.aerofs.daemon.event.fs.EIGetAttr;
@@ -127,6 +129,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     @Inject HdDeleteACL _hdDeleteACL;
     @Inject HdGetChildrenAttr _hdGetChildrenAttr;
     @Inject HdGetAttr _hdGetAttr;
+    @Inject HdCreateUrl _hdCreateUrl;
     @Inject HdShareFolder _hdShareFolder;
     @Inject HdImportFile _hdImportFile;
     @Inject HdExportFile _hdExportFile;
@@ -164,6 +167,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIReloadConfig.class, _hdReloadConfig)
                 .setHandler_(EIDumpStat.class, _hdDumpStat)
                 .setHandler_(EIDumpDiagnostics.class, _hdDumpDiagnostics)
+                .setHandler_(EICreateUrl.class, _hdCreateUrl)
                 .setHandler_(EIShareFolder.class, _hdShareFolder)
                 .setHandler_(EIJoinSharedFolder.class, _hdJoinSharedFolder)
                 .setHandler_(EILeaveSharedFolder.class, _hdLeaveSharedFolder)

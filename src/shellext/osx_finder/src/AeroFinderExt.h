@@ -22,8 +22,10 @@ typedef enum {
 // flags are bitwise OR'ed
 typedef enum {
 	RootAnchor = 1 << 0,
-	Directory  = 1 << 1
+	Directory  = 1 << 1,
+	File       = 1 << 2
 } PathFlag;
+
 
 @interface AeroFinderExt : NSObject <AeroEvictionDelegate> {
 @private
@@ -35,15 +37,15 @@ typedef enum {
 	NSString* userId;
 	AeroOverlayCache* statusCache;
 
-	BOOL isLinkSharingEnabled;
-
 	NSTimer* refreshTimer;
 	NSTimeInterval lastRefreshTime;
+	BOOL isLinkSharingEnabled;
 }
 
 @property (readonly) AeroOverlay* overlay;
 @property (readonly) AeroContextMenu* contextMenu;
 @property (readonly) AeroSidebarIcon* sidebarIcon;
+@property (readonly) BOOL isLinkSharingEnabled;
 
 OSErr AeroLoadHandler(const AppleEvent* ev, AppleEvent* reply, long refcon);
 
@@ -58,6 +60,7 @@ OSErr AeroLoadHandler(const AppleEvent* ev, AppleEvent* reply, long refcon);
 - (void)showSyncStatusDialog:(id)sender;
 - (void)showVersionHistoryDialog:(id)sender;
 - (void)showConflictResolutionDialog:(id)sender;
+- (void)createLink:(id)sender;
 - (void)sendGreeting;
 - (void)parseNotification:(ShellextNotification*)notification;
 - (void)onStatus:(PathStatusNotification*)notification;

@@ -89,6 +89,18 @@ void doChangeContextMenu(NSMenu* menu, id browserVC)
 
     int idx = 0;
 
+    if (((flags & (Directory | File)) && !(flags & RootAnchor))
+            && [[AeroFinderExt instance] isLinkSharingEnabled]) {
+        NSMenuItem* create_link = [submenu insertItemWithTitle:NSLocalizedString(@"Create Link", @"Context menu")
+                                                  action:@selector(createLink:)
+                                           keyEquivalent:@""
+                                                 atIndex:idx];
+
+        [create_link setTarget: [AeroFinderExt instance]];
+        [create_link setRepresentedObject:path];
+        ++idx;
+    }
+
     if ((flags & Directory) && !(flags & RootAnchor)) {
         NSMenuItem* share = [submenu insertItemWithTitle:NSLocalizedString(@"Share This Folder...", @"Context menu")
                                                   action:@selector(showShareFolderDialog:)

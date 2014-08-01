@@ -66,6 +66,8 @@ service RitualService {
     //
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
+    rpc CreateUrl(CreateUrlCall) returns(CreateUrlReply);
+
     // Unshare a shared folder and remove all the users from the folder. Nop if the folder is
     // already unshared.
     rpc UnshareFolder(UnshareFolderCall) returns(Void);
@@ -364,6 +366,14 @@ message ListUnlinkedRootsReply {
     }
 
     repeated UnlinkedRoot root = 1;
+}
+
+message CreateUrlCall {
+    required PBPath path = 1;
+}
+
+message CreateUrlReply {
+    required string link = 1;
 }
 
 message ShareFolderCall {

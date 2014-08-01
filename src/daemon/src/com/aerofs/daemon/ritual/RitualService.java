@@ -43,6 +43,7 @@ import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
+import com.aerofs.daemon.event.fs.EICreateUrl;
 import com.aerofs.daemon.event.fs.EIListUnlinkedRoots;
 import com.aerofs.daemon.event.fs.EIUnlinkRoot;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
@@ -73,6 +74,7 @@ import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Ritual.CreateRootReply;
 import com.aerofs.proto.Ritual.CreateSeedFileReply;
+import com.aerofs.proto.Ritual.CreateUrlReply;
 import com.aerofs.proto.Ritual.DumpStatsReply;
 import com.aerofs.proto.Ritual.ExportConflictReply;
 import com.aerofs.proto.Ritual.ExportFileReply;
@@ -206,6 +208,15 @@ public class RitualService implements IRitualService
         ev.execute(PRIO);
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<CreateUrlReply> createUrl(PBPath path)
+            throws Exception
+    {
+        EICreateUrl ev = new EICreateUrl(Path.fromPB(path));
+        ev.execute(PRIO);
+        return createReply(CreateUrlReply.newBuilder().setLink(ev.link()).build());
     }
 
     @Override

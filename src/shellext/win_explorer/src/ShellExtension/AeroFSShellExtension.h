@@ -44,7 +44,8 @@ enum Overlay {
 // flags are bitwise OR'ed
 enum PathFlag {
 	RootAnchor = 1 << 0,
-	Directory  = 1 << 1
+	Directory  = 1 << 1,
+	File       = 1 << 2
 };
 
 class AeroFSShellExtension : public ATL::CAtlDllModuleT<AeroFSShellExtension>
@@ -63,8 +64,10 @@ public:
 	void showSyncStatusDialog(const std::wstring& path);
 	void showVersionHistoryDialog(const std::wstring& path);
 	void showShareFolderDialog(const std::wstring& path);
+	void createLink(const std::wstring& path);
 	void showConflictResolutionDialog(const std::wstring& path);
 	void sendGreeting();
+	bool isLinkSharingEnabled();
 	Overlay overlay(const std::wstring& path);
 
 	static AeroFSShellExtension* instance();
@@ -88,5 +91,5 @@ private:
 	wstring m_userId;
 	unsigned long m_lastConnectionAttempt;
 	tstring m_fileName;
-	bool is_link_sharing_enabled;
+	bool m_is_link_sharing_enabled;
 };

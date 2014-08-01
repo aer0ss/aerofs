@@ -70,7 +70,8 @@ private:
 		VersionHistoryMenuId,
 		ShareFolderMenuId,
 		ConflictResolutionMenuId,
-		AeroFSMenuId  // this should always be the last item of this enum. (see comment in QueryContextMenu)
+		CreateLinkMenuId,
+		AeroFSMenuId // this should always be the last item of this enum. (see comment in QueryContextMenu)
 	} MenuId;
 
 	AeroFSShellExtension* m_instance;

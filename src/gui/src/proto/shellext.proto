@@ -17,6 +17,7 @@ message ShellextCall {
         SYNC_STATUS = 2;
         VERSION_HISTORY = 3;
         CONFLICT_RESOLUTION = 5;
+        CREATE_LINK = 6;
 
         // Data queries (answer comes through notifications)
         GET_PATH_STATUS = 4;
@@ -30,10 +31,16 @@ message ShellextCall {
     optional VersionHistoryCall version_history = 5;
     optional GetPathStatusCall get_path_status = 6;
     optional ConflictResolutionCall conflict_resolution = 7;
+    optional CreateLinkCall create_link = 8;
 }
 
 message GreetingCall {
     required int32 protocol_version = 1;
+}
+
+message CreateLinkCall {
+    // absolute path to the file / folder
+    required string path = 1;
 }
 
 message ShareFolderCall {
