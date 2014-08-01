@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -142,26 +143,25 @@ public class PropertiesHelper
     }
 
     /**
-     * Reads properties from a fully qualified filename
-     * @throws Exception when we are unable to load configuration from that file.
+     * Reads properties from a fully qualified filename. Exceptions are logged and life continues
+     * on.
      */
-    public Properties readPropertiesFromFile(String fullyQualifiedFilename)
-            throws Exception
+    public static Properties readPropertiesFromFile(String fullyQualifiedFilename)
     {
         Properties staticProperties = new Properties();
-        InputStream propertyStream = null;
 
         try {
-            propertyStream = new File(fullyQualifiedFilename).toURI().toURL().openStream();
-            staticProperties.load(propertyStream);
-        } catch (Exception e) {
-            throw new Exception("Couldn't read file: " + fullyQualifiedFilename, e);
-        } finally {
-            if (propertyStream != null) {
-                propertyStream.close();
+            InputStream propertyStream = new File(fullyQualifiedFilename).toURI().toURL().openStream();
+            try {
+                staticProperties.load(propertyStream);
+            } finally {
+                if (propertyStream != null) {
+                    propertyStream.close();
+                }
             }
+        } catch (IOException e) {
+            l.warn("Couldn't read file {}: {}", fullyQualifiedFilename, e);
         }
-
         return staticProperties;
     }
 

@@ -20,18 +20,49 @@ import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 public class TestSP_UrlSharing extends AbstractSPFolderTest
 {
     private User owner;
     private User editor;
     private SID sid;
+
+    // Storing mock token so that it can be used by the tests for comparing tokens.
+    protected String mockToken;
+
+    private void mockBifrostTokenRequester()
+            throws InterruptedException, ExecutionException, IOException
+    {
+        // Using thenAnswer as the value of mockToken changes and we want latest value of mockToken
+        // to be returned in the tests.
+        when(_bifrostClient.getBifrostToken(
+                any(String.class), any(Long.class)))
+                .thenAnswer(new Answer<String>()
+                {
+                    @Override
+                    public String answer(InvocationOnMock invocation)
+                            throws Throwable
+                    {
+                        return mockToken;
+                    }
+                });
+
+        doNothing().when(_bifrostClient).deleteToken(any(String.class));
+    }
 
     @Before
     public void setUp() throws Exception
@@ -44,16 +75,17 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         sid = SID.generate();
         shareAndJoinFolder(owner, sid, editor, Permissions.allOf(Permission.WRITE));
         setSession(owner);
+
+        mockToken = UniqueID.generate().toStringFormal();
+        mockBifrostTokenRequester();
     }
 
     @Test
     public void createUrl_shouldThrowIfUserIsNotManager() throws Exception
     {
         setSession(editor);
-        String token = UniqueID.generate().toStringFormal();
-
         try {
-            service.createUrl(new RestObject(sid).toStringFormal(), token);
+            service.createUrl(new RestObject(sid).toStringFormal());
             fail();
         } catch (ExNoPerm ignored) {
             // success
@@ -63,15 +95,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     @Test
     public void createUrl_shouldRespondWithObjectUrl() throws Exception
     {
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl objectUrl = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl objectUrl = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
 
         assertNotNull(objectUrl.getKey());
         assertEquals(object.toStringFormal(), objectUrl.getSoid());
-        assertEquals(token, objectUrl.getToken());
+        assertEquals(mockToken, objectUrl.getToken());
         assertEquals(owner.id().getString(), objectUrl.getCreatedBy());
         assertFalse(objectUrl.hasExpires());
     }
@@ -80,7 +111,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void createUrl_shouldThrowExBadArgsIfSoidIsInvalid() throws Exception
     {
         try {
-            service.createUrl("abc123", UniqueID.generate().toStringFormal());
+            service.createUrl("abc123");
             fail();
         } catch (ExBadArgs ignored) {
             // success
@@ -91,14 +122,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void createUrl_shouldThrowExBadArgsIfSoidIsAlias() throws Exception
     {
         try {
-            service.createUrl("root", UniqueID.generate().toStringFormal());
+            service.createUrl("root");
             fail();
         } catch (ExBadArgs ignored) {
             // success
         }
 
         try {
-            service.createUrl("appdata", UniqueID.generate().toStringFormal());
+            service.createUrl("appdata");
             fail();
         } catch (ExBadArgs ignored) {
             // success
@@ -113,7 +144,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
             SID rootSid = SID.rootSID(editor.id());
             OID anchorOid = SID.storeSID2anchorOID(sid);
             RestObject restObject = new RestObject(rootSid, anchorOid);
-            service.createUrl(restObject.toStringFormal(), UniqueID.generate().toStringFormal());
+            service.createUrl(restObject.toStringFormal());
             fail();
         } catch (ExNoPerm ignored) {
             // success
@@ -126,22 +157,22 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         SID rootSid = SID.rootSID(owner.id());
         OID anchorOid = SID.storeSID2anchorOID(sid);
         RestObject restObject = new RestObject(rootSid, anchorOid);
-        service.createUrl(restObject.toStringFormal(), UniqueID.generate().toStringFormal());
+        service.createUrl(restObject.toStringFormal());
     }
 
     @Test
     public void getUrlInfo_shouldGetUrlInfo() throws Exception
     {
-        String token = UniqueID.generate().toStringFormal();
+
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
         assertEquals(key, getReply.getKey());
-        assertEquals(token, getReply.getToken());
+        assertEquals(mockToken, getReply.getToken());
         assertEquals(object.toStringFormal(), getReply.getSoid());
         assertEquals(owner.id().getString(), getReply.getCreatedBy());
         assertFalse(getReply.hasExpires());
@@ -163,16 +194,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void getUrlInfo_shouldThrowIfNonManagerProvidesNoPassword() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // check that GetUrlInfo fails for an editor
         setSession(editor);
@@ -188,16 +217,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void getUrlInfo_shouldThrowIfNonManagerProvidesInvalidPassword() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // check that GetUrlInfo fails for an editor
         setSession(editor);
@@ -213,16 +240,15 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void getUrlInfo_shouldGetUrlInfoIfNonManagerProvidesCorrectPassword() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
+
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // check that GetUrlInfo succeeds for editor with password
         setSession(editor);
@@ -234,16 +260,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     {
 
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // check that GetUrlInfo succeeds with password and no session user
         service.signOut();
@@ -254,16 +278,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void getUrlInfo_shouldGetUrlInfoIfManagerProvidesNoPassword() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // check that GetUrlInfo succeeds for an owner
         service.getUrlInfo(key).get().getUrlInfo();
@@ -273,22 +295,20 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void setUrlExpires_shouldSetUrlExpires() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the expiry
         long expires = 1234567L;
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlExpires(key, expires, newToken);
+        service.setUrlExpires(key, expires);
 
         // check that the expiry was saved
         PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
         assertEquals(key, getReply.getKey());
-        assertEquals(newToken, getReply.getToken());
+        assertEquals(mockToken, getReply.getToken());
         assertEquals(object.toStringFormal(), getReply.getSoid());
         assertEquals(expires, getReply.getExpires());
     }
@@ -298,9 +318,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     {
         String key = UniqueID.generate().toStringFormal();
         long expires = 42;
-        String token = UniqueID.generate().toStringFormal();
         try {
-            service.setUrlExpires(key, expires, token).get();
+            service.setUrlExpires(key, expires).get();
             fail();
         } catch (ExNotFound ignored) {
             // success
@@ -311,16 +330,15 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void setUrlExpires_shouldThrowIfUserIsNotManager() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         setSession(editor);
         try {
-            service.setUrlExpires(key, 0L, token);
+            service.setUrlExpires(key, 0L);
             fail();
         } catch (ExNoPerm ignored) {
             // success
@@ -331,25 +349,22 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void removeUrlExpires_shouldRemoveUrlExpires() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the expiry
         long expires = 1234567L;
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlExpires(key, expires, newToken);
+        service.setUrlExpires(key, expires);
 
         // check that the expiry was saved
         PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
         assertEquals(expires, getReply.getExpires());
 
         // remove the expiry
-        String newerToken = UniqueID.generate().toStringFormal();
-        service.removeUrlExpires(key, newerToken);
+        service.removeUrlExpires(key);
 
         // check that the expiry was removed
         getReply = service.getUrlInfo(key).get().getUrlInfo();
@@ -360,9 +375,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void removeUrlExpires_shouldThrowIfKeyDoesNotExist() throws Exception
     {
         String key = UniqueID.generate().toStringFormal();
-        String token = UniqueID.generate().toStringFormal();
         try {
-            service.removeUrlExpires(key, token).get();
+            service.removeUrlExpires(key).get();
             fail();
         } catch (ExNotFound ignored) {
             // success
@@ -373,16 +387,15 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void removeUrlExpires_shouldThrowIfUserIsNotManager() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         setSession(editor);
         try {
-            service.removeUrlExpires(key, token);
+            service.removeUrlExpires(key);
             fail();
         } catch (ExNoPerm ignored) {
             // success
@@ -393,9 +406,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void removeUrl_shouldRemoveUrl() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
@@ -427,9 +439,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void removeUrl_shouldThrowIfUserIsNotManager() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
@@ -448,21 +459,19 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void setUrlPassword_shouldSetUrlPassword() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // check that the password was set
         PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
         assertTrue(getReply.getHasPassword());
-        assertEquals(newToken, getReply.getToken());
+        assertEquals(mockToken, getReply.getToken());
     }
 
     @Test
@@ -470,9 +479,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     {
         String key = UniqueID.generate().toStringFormal();
         ByteString password = ByteString.copyFromUtf8("hunter2");
-        String token = UniqueID.generate().toStringFormal();
         try {
-            service.setUrlPassword(key, password, token);
+            service.setUrlPassword(key, password);
             fail();
         } catch (ExNotFound ignored) {
             // success
@@ -483,9 +491,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void setUrlPassword_shouldThrowIfUserIsNotManager() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
@@ -493,9 +500,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         // try to set the password
         setSession(editor);
         ByteString password = ByteString.copyFromUtf8("hunter2");
-        String newToken = UniqueID.generate().toStringFormal();
         try {
-            service.setUrlPassword(key, password, newToken);
+            service.setUrlPassword(key, password);
             fail();
         } catch (ExNoPerm ignored) {
             // success
@@ -506,16 +512,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void validateUrlPassword_shouldValidateUrlPassword() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // validate the password
         service.validateUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
@@ -525,16 +529,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void validateUrlPassword_shouldValidateUrlPasswordForEditor() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // validate the password
         setSession(editor);
@@ -545,16 +547,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void validateUrlPassword_shouldFailToValidateIncorrectPassword() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // validate the password
         try {
@@ -581,9 +581,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void validateUrlPassword_shouldThrowIfNoPasswordSet() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
@@ -601,16 +600,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void removeUrlPassword_shouldRemoveUrlPassword() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"), newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // remove the password
         service.removeUrlPassword(key);
@@ -635,17 +632,14 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void removeUrlPassword_shouldThrowIfUserIsNotManager() throws Exception
     {
         // create the link
-        String token = UniqueID.generate().toStringFormal();
         RestObject object = new RestObject(sid);
-        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal(), token)
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
                 .get()
                 .getUrlInfo();
         String key = createReply.getKey();
 
         // set the password
-        ByteString password = ByteString.copyFromUtf8("hunter2");
-        String newToken = UniqueID.generate().toStringFormal();
-        service.setUrlPassword(key, password, newToken);
+        service.setUrlPassword(key, ByteString.copyFromUtf8("hunter2"));
 
         // try to remove the password
         setSession(editor);
@@ -686,23 +680,36 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         // create three links in the store
         RestObject ro1 = new RestObject(sid, OID.generate());
         RestObject ro2 = new RestObject(sid, OID.generate());
-        String token1 = UniqueID.generate().toStringFormal();
-        String token2 = UniqueID.generate().toStringFormal();
-        String token3 = UniqueID.generate().toStringFormal();
-        service.createUrl(ro1.toStringFormal(), token1);
-        service.createUrl(ro2.toStringFormal(), token2);
-        service.createUrl(ro2.toStringFormal(), token3);
+
+        String token1 = mockToken;
+        service.createUrl(ro1.toStringFormal());
+
+        // We need to generate a new token and assign it to mockToken and also locally store the
+        // value of the new token. This is because:
+        // 1. We want to generate a different token for everytime we create a url in this test.
+        // 2. For the purpose of these tests, mockToken is the token used to create the url by the
+        // bifrostTokenRequestor. Hence, mockToken needs to be updated everytime we create a link.
+        // 3. We want to make sure the urls were created with the right token value. Hence, we
+        // need to store them locally for comparison.
+        mockToken = UniqueID.generate().toStringFormal();
+        String token2 = mockToken;
+        service.createUrl(ro2.toStringFormal());
+
+        mockToken = UniqueID.generate().toStringFormal();
+        String token3 = mockToken;
+        service.createUrl(ro2.toStringFormal());
 
         // create one link in a different store
         SID otherSid = SID.generate();
         shareAndJoinFolder(owner, otherSid, editor, Permissions.allOf(Permission.WRITE));
         RestObject ro3 = new RestObject(otherSid);
-        String token4 = UniqueID.generate().toStringFormal();
-        service.createUrl(ro3.toStringFormal(), token4);
+
+        mockToken = UniqueID.generate().toStringFormal();
+        String token4 = mockToken;
+        service.createUrl(ro3.toStringFormal());
 
         // list Urls
         ListUrlsForStoreReply reply = service.listUrlsForStore(sid.toPB()).get();
-        assertEquals(3, reply.getUrlCount());
         for (PBRestObjectUrl url : reply.getUrlList()) {
             if (token1.equals(url.getToken())) {
                 assertEquals(ro1.toStringFormal(), url.getSoid());
@@ -723,8 +730,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         SID root = SID.rootSID(owner.id());
         OID oid = OID.generate();
         String soid = root.toStringFormal() + oid.toStringFormal();
-        String token = UniqueID.generate().toStringFormal();
-        service.createUrl(soid, token);
+        service.createUrl(soid);
 
         ListUrlsForStoreReply reply = service.listUrlsForStore(ByteString.copyFromUtf8("root"))
                 .get();

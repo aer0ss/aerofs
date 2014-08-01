@@ -47,6 +47,13 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
     // Session extender.
     private final SPSessionExtender _sessionExtender = new SPSessionExtender(_tomcatSessionTracker);
 
+    private static final String ZELDA_PROPERTIES_FILE = "/etc/aerofs/zelda.properties";
+
+    public SPLifecycleListener()
+    {
+        super(ZELDA_PROPERTIES_FILE);
+    }
+
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {

@@ -263,5 +263,4 @@ public class BaseParam
         public static final int                AUDIT_POSTING_INTERVAL =
                 getIntegerProperty(            "base.audit.post.interval",  15 * (int) C.SEC);
     }
-
 }

@@ -25,6 +25,7 @@ import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.AbstractTestWithDatabase;
+import com.aerofs.sp.server.BifrostClient;
 import com.aerofs.sp.server.IdentitySessionManager;
 import com.aerofs.sp.server.JedisRateLimiter;
 import com.aerofs.sp.server.PasswordManagement;
@@ -230,6 +231,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Mock ScheduledExecutorService scheduledExecutorService;
 
+    @Mock protected BifrostClient _bifrostClient;
+
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,
     // - InvitationEmailer, or
@@ -350,7 +353,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 factGroup,
                 rateLimiter,
                 license,
-                scheduledExecutorService);
+                scheduledExecutorService,
+                _bifrostClient);
         wireSPService();
     }
 

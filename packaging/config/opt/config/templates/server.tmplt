@@ -51,6 +51,9 @@ ldap.server.schema.group.member.unique={{ ldap_server_schema_group_member_unique
 ldap.groupsyncing.enabled={{ ldap_groupsyncing_enabled }}
 ldap.groupsyncing.time={{ ldap_groupsyncing_time }}
 
+oauth.aerofs_zelda_id={{ aerofs_zelda_id }}
+oauth.aerofs_zelda_secret={{ aerofs_zelda_secret }}
+
 openid.idp.endpoint.url={{ openid_idp_endpoint_url }}
 openid.idp.endpoint.stateful={{ openid_idp_endpoint_stateful }}
 openid.idp.user.uid.attribute={{ openid_idp_user_uid_attribute }}

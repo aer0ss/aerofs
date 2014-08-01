@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.listeners;
 
+import com.aerofs.base.config.PropertiesHelper;
 import com.aerofs.lib.properties.Configuration;
 import com.aerofs.lib.Util;
 
@@ -9,6 +10,18 @@ import javax.servlet.ServletContextListener;
 public class ConfigurationLifecycleListener
         implements ServletContextListener
 {
+    private final String _pathToPropertiesFile;
+
+    public ConfigurationLifecycleListener()
+    {
+        _pathToPropertiesFile = "";
+    }
+
+    protected ConfigurationLifecycleListener(String pathToPropertiesFile)
+    {
+        _pathToPropertiesFile = pathToPropertiesFile;
+    }
+
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
@@ -17,7 +30,8 @@ public class ConfigurationLifecycleListener
         //
         // Initialize Configuration Properties.
         try {
-            Configuration.Server.initialize();
+            Configuration.Server.initialize(
+                    PropertiesHelper.readPropertiesFromFile(_pathToPropertiesFile));
         } catch (Exception e) {
             throw new RuntimeException("Configuration server init error: " + Util.e(e));
         }

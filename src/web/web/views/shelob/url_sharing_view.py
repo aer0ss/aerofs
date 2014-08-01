@@ -36,13 +36,6 @@ def _audit(request, topic, event, data=None):
     requests.post("http://{}:{}{}".format(host, port, path), data=json.dumps(data), headers=headers)
 
 
-def _get_new_zelda_token(request, expires_in, soid):
-    client_id = 'aerofs-zelda'
-    client_secret = request.registry.settings["oauth.zelda_client_secret"]
-    scopes = ['files.read:' + soid, "linksharing"]
-    return get_new_oauth_token(request, client_id, client_secret, expires_in, scopes)
-
-
 def _abs_milli_to_delta_seconds(abs_milli):
     if abs_milli == 0:
         return 0
@@ -90,8 +83,7 @@ def create_url(request):
     soid = request.json_body.get("soid")
     if soid is None:
         error.error('missing "soid" param')
-    token = _get_new_zelda_token(request, 0, soid)  # N.B. 0 means no expiry
-    reply = _make_sp_request(get_rpc_stub(request).create_url, (soid, token))
+    reply = _make_sp_request(get_rpc_stub(request).create_url, (soid))
     key = reply.url_info.key
 
     assert len(reply.url_info.soid) == 64, reply.url_info.soid
@@ -154,12 +146,7 @@ def set_url_expires(request):
     except ValueError:
         error.error('"expires" param must be a valid number')
 
-    url_info = _make_sp_request(get_rpc_stub(request).get_url_info, (key, None)).url_info
-    old_token = url_info.token
-    soid = url_info.soid
-    new_token = _get_new_zelda_token(request, int(expires), soid)
-    delete_oauth_token(request, old_token)
-    _make_sp_request(get_rpc_stub(request).set_url_expires, (key, expires_abs_milli, new_token))
+    _make_sp_request(get_rpc_stub(request).set_url_expires, (key, expires_abs_milli))
 
     _audit(request, "LINK", "link.set_expiry", {
         'caller': authenticated_userid(request),
@@ -180,12 +167,7 @@ def remove_url_expires(request):
     key = request.json_body.get("key")
     if key is None:
         error.error('missing "key" param')
-    url_info = _make_sp_request(get_rpc_stub(request).get_url_info, (key, None)).url_info
-    old_token = url_info.token
-    soid = url_info.soid
-    new_token = _get_new_zelda_token(request, 0, soid)
-    delete_oauth_token(request, old_token)
-    _make_sp_request(get_rpc_stub(request).remove_url_expires, (key, new_token))
+    _make_sp_request(get_rpc_stub(request).remove_url_expires, (key))
 
     _audit(request, "LINK", "link.remove_expiry", {
         'caller': authenticated_userid(request),
@@ -205,9 +187,7 @@ def remove_url(request):
     key = request.json_body.get("key")
     if key is None:
         error.error('missing "key" param')
-    old_token = _make_sp_request(get_rpc_stub(request).get_url_info, (key, None)).url_info.token
-    delete_oauth_token(request, old_token)
-    _make_sp_request(get_rpc_stub(request).remove_url, (key,))
+    _make_sp_request(get_rpc_stub(request).remove_url, (key))
 
     _audit(request, "LINK", "link.delete", {
         'caller': authenticated_userid(request),
@@ -231,11 +211,7 @@ def set_url_password(request):
     if password is None:
         error.error('missing "password" param')
     password = password.encode('utf-8')
-    reply = _make_sp_request(get_rpc_stub(request).get_url_info, (key, None))
-    old_expires = _abs_milli_to_delta_seconds(reply.url_info.expires)
-    new_token = _get_new_zelda_token(request, old_expires, reply.url_info.soid)
-    delete_oauth_token(request, reply.url_info.token)
-    reply = _make_sp_request(get_rpc_stub(request).set_url_password, (key, password, new_token))
+    reply = _make_sp_request(get_rpc_stub(request).set_url_password, (key, password))
 
     _audit(request, "LINK", "link.set_password", {
         'caller': authenticated_userid(request),
@@ -255,7 +231,7 @@ def remove_url_password(request):
     key = request.json_body.get("key")
     if key is None:
         error.error('missing "key" param')
-    _make_sp_request(get_rpc_stub(request).remove_url_password, (key,))
+    _make_sp_request(get_rpc_stub(request).remove_url_password, (key))
 
     _audit(request, "LINK", "link.remove_password", {
         'caller': authenticated_userid(request),

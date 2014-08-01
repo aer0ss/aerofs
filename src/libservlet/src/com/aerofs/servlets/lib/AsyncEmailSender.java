@@ -4,6 +4,7 @@
 
 package com.aerofs.servlets.lib;
 
+import com.aerofs.base.config.PropertiesHelper;
 import com.aerofs.proto.Common.Void;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +55,7 @@ public class AsyncEmailSender extends AbstractEmailSender
         // We need to be able to load email properties from the filesystem for prod, because prod
         // doesn't have a config server yet and we don't want to embed credentials in the source
         // code that gets shipped for local prod.
-        Properties p = loadPropsFromDisk();
+        Properties p = PropertiesHelper.readPropertiesFromFile(EMAIL_PROPERTIES_FILE);
         // Note that the config server overrides local credentials, and that at
         // least one of (config server, local creds) must be present.
         // We wish there was no default value here, so we could fail loudly if no production
@@ -71,29 +72,6 @@ public class AsyncEmailSender extends AbstractEmailSender
         String cert = getStringProperty("email.sender.public_cert", "");
 
         return new AsyncEmailSender(host, port, username, password, useTls, cert);
-    }
-
-    /**
-     * We need to be able to load credentials from somewhere on the filesystem for the public
-     * deployment, but it doesn't need to exist for the private deployment.
-     */
-    private static Properties loadPropsFromDisk()
-    {
-        Properties p = new Properties();
-        File emailPropsFile = new File(EMAIL_PROPERTIES_FILE);
-        if (emailPropsFile.exists()) {
-            try {
-                FileInputStream is = new FileInputStream(emailPropsFile);
-                try {
-                    p.load(is);
-                } finally {
-                    is.close();
-                }
-            } catch (IOException e) {
-                l.error("Couldn't load mail properties from {}: {}", EMAIL_PROPERTIES_FILE, e);
-            }
-        }
-        return p;
     }
 
     /**

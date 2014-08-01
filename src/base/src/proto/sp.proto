@@ -1557,7 +1557,6 @@ message SetQuotaCall {
 
 message CreateUrlCall {
     required string soid = 1;
-    required string token = 2;
 }
 
 message PBRestObjectUrl {
@@ -1576,12 +1575,10 @@ message CreateUrlReply {
 message SetUrlExpiresCall {
     required string key = 1;
     required uint64 expires = 2;
-    required string new_token = 3;
 }
 
 message RemoveUrlExpiresCall {
     required string key = 1;
-    required string new_token = 2;
 }
 
 message GetUrlInfoCall {
@@ -1600,7 +1597,6 @@ message RemoveUrlCall {
 message SetUrlPasswordCall {
     required string key = 1;
     required bytes password = 2;
-    required string new_token = 3;
 }
 
 message RemoveUrlPasswordCall {

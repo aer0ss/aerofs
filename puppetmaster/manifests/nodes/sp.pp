@@ -8,6 +8,7 @@ node "sp.aerofs.com" inherits default {
     include jeq
 
     include public-email-creds
+    include public-zelda-creds
 
     # Install sp servlet.
     include servlet

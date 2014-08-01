@@ -67,4 +67,7 @@ public class SPParam
     public static final String STATIC_ASSETS =
             getStringProperty("sp.param.static_assets", "https://d37fxzwppxbuun.cloudfront.net");
 
+    // These are needed for link sharing.
+    public static final String ZELDA_ID = getStringProperty("oauth.aerofs_zelda_id", "");
+    public static final String ZELDA_SECRET = getStringProperty("oauth.aerofs_zelda_secret", "");
 }

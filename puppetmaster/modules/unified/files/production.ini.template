@@ -42,7 +42,6 @@ session.validate_key = {{ validate_key }}
 session.encrypt_key = {{ encrypt_key }}
 
 oauth.shelob_client_secret = {{ shelob_client_secret }}
-oauth.zelda_client_secret = {{ zelda_client_secret }}
 oauth.settings_client_secret = {{ settings_client_secret }}
 
 [server:main]

@@ -308,6 +308,8 @@ public class SPService implements ISPService
 
     private final License _license;
 
+    private final BifrostClient _bifrostClient;
+
     public SPService(SPDatabase db,
             SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans,
@@ -338,7 +340,8 @@ public class SPService implements ISPService
             Group.Factory factGroup,
             JedisRateLimiter rateLimiter,
             License license,
-            ScheduledExecutorService scheduledExecutor)
+            ScheduledExecutorService scheduledExecutor,
+            BifrostClient bifrostClient)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -395,6 +398,7 @@ public class SPService implements ISPService
                 l.warn("failed to sync LDAP groups", e);
             }
         });
+        _bifrostClient = bifrostClient;
     }
 
     /**
@@ -1725,7 +1729,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<CreateUrlReply> createUrl(String soid, String token)
+    public ListenableFuture<CreateUrlReply> createUrl(String soid)
             throws Exception
     {
         RestObject restObject;
@@ -1739,6 +1743,7 @@ public class SPService implements ISPService
         }
         SID sidToCheck = restObject.getOID().isAnchor() ?
                 SID.anchorOID2storeSID(restObject.getOID()) : restObject.getSID();
+
         SharedFolder sf = _factSharedFolder.create(sidToCheck);
         _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
@@ -1747,6 +1752,10 @@ public class SPService implements ISPService
         // we only want owners of shared folders to be able to create links. In particular, we do
         // not want org admins to be able to create links to arbitrary content.
         sf.throwIfNotJoinedOwner(requester);
+
+        // Generate bifrost token.
+        String token = _bifrostClient.getBifrostToken(
+                getMobileAccessCode(requester).get().getAccessCode(), 0);
 
         UrlShare link = _factUrlShare.save(restObject, token, requester.id());
         PBRestObjectUrl pbRestObjectUrl = link.toPB();
@@ -1798,15 +1807,21 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> setUrlExpires(String key, Long expires, String newToken)
+    public ListenableFuture<Void> setUrlExpires(String key, Long expires)
             throws Exception
     {
         _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+
         UrlShare link = _factUrlShare.create(key);
         SID sid = link.getSid();
         SharedFolder sf = _factSharedFolder.create(sid);
         sf.throwIfNoPrivilegeToChangeACL(requester);
+
+        String newToken = _bifrostClient.getBifrostToken(
+                getMobileAccessCode(requester).get().getAccessCode(), expires);
+        _bifrostClient.deleteToken(link.getToken());
+
         link.setExpires(expires, newToken);
         _sqlTrans.commit();
 
@@ -1814,15 +1829,21 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> removeUrlExpires(String key, String newToken)
+    public ListenableFuture<Void> removeUrlExpires(String key)
             throws Exception
     {
         _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+
         UrlShare link = _factUrlShare.create(key);
         SID sid = link.getSid();
         SharedFolder sf = _factSharedFolder.create(sid);
         sf.throwIfNoPrivilegeToChangeACL(requester);
+
+        String newToken = _bifrostClient.getBifrostToken(
+                getMobileAccessCode(requester).get().getAccessCode(), 0);
+        _bifrostClient.deleteToken(link.getToken());
+
         link.removeExpires(newToken);
         _sqlTrans.commit();
 
@@ -1835,10 +1856,14 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+
         UrlShare link = _factUrlShare.create(key);
         SID sid = link.getSid();
         SharedFolder sf = _factSharedFolder.create(sid);
         sf.throwIfNoPrivilegeToChangeACL(requester);
+
+        _bifrostClient.deleteToken(link.getToken());
+
         link.delete();
         _sqlTrans.commit();
 
@@ -1846,15 +1871,23 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> setUrlPassword(String key, ByteString password, String newToken)
+    public ListenableFuture<Void> setUrlPassword(String key, ByteString password)
             throws Exception
     {
         _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+
         UrlShare link = _factUrlShare.create(key);
         SID sid = link.getSid();
         SharedFolder sf = _factSharedFolder.create(sid);
         sf.throwIfNoPrivilegeToChangeACL(requester);
+
+        Long oldExpiry = link.getExpiresNullable();
+        String newToken = _bifrostClient.getBifrostToken(
+                getMobileAccessCode(requester).get().getAccessCode(),
+                oldExpiry == null ? 0 : oldExpiry);
+        _bifrostClient.deleteToken(link.getToken());
+
         link.setPassword(password.toByteArray(), newToken);
         _sqlTrans.commit();
 
@@ -3171,20 +3204,24 @@ public class SPService implements ISPService
         boolean userExists = _session.isAuthenticated() && user.exists();
         _sqlTrans.commit();
 
-        if (!userExists) throw new ExNoPerm("Attempt to create device auth for non-existent user");
-        l.info("Gen mobile access code for {}", user.id());
+        if (!userExists) throw new ExNotFound("Attempt to create device auth for non-existent user");
+        return getMobileAccessCode(user);
+    }
 
+    private ListenableFuture<MobileAccessCode> getMobileAccessCode(User user)
+    {
+        l.info("Gen mobile access code for {}", user.id());
         // Important: recall that IdentitySessionManager speaks seconds, not milliseconds,
         // due to the underlying key-expiration technology.
         int timeoutSec = 180;
-
+        // TODO(AS): Add a mechanism to differentiate between callers of getMobileAccessCode.
         _auditClient.event(AuditTopic.DEVICE, "device.mobile.code")
                 .add("user", user.id())
                 .add("timeout", timeoutSec)
                 .publish();
 
         return createReply(MobileAccessCode.newBuilder()
-                .setAccessCode(_identitySessionManager.createDeviceAuthorizationNonce(user, 180))
+                .setAccessCode(_identitySessionManager.createDeviceAuthorizationNonce(user, timeoutSec))
                 .build());
     }
 

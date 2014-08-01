@@ -491,4 +491,19 @@ public class LibParam extends BaseParam
                 getStringProperty(                      "mobile.device.management.proxies",
                                                         "");
     }
+
+    public static class Bifrost
+    {
+        /**
+         * Hostname for internal access to Bifrost.
+         */
+        public static final String              INTERNAL_BIFROST_HOST =
+                getStringProperty(              "base.bifrost.internal.host", "localhost");
+
+        /**
+         * Port number for internal access to Bifrost.
+         */
+        public static final Integer             INTERNAL_BIFROST_PORT =
+                getIntegerProperty(             "base.bifrost.internal.port", 8700);
+    }
 }

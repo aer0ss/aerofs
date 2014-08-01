@@ -174,6 +174,8 @@ public class SPServlet extends AeroServlet
         _factUserSettingsToken.inject(_ustdb);
     }
 
+    private final BifrostClient _bifrostClient = new BifrostClient();
+
     private final SPService _service = new SPService(_db,
             _sqlTrans,
             _jedisTrans,
@@ -204,7 +206,8 @@ public class SPServlet extends AeroServlet
             _factGroup,
             _rateLimiter,
             _license,
-            _scheduledExecutor);
+            _scheduledExecutor,
+            _bifrostClient);
 
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
