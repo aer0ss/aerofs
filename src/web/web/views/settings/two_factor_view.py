@@ -98,7 +98,7 @@ def two_factor_setup_post(request):
 
     # render
     secret = base64.b32encode(shared_secret)
-    label = "AeroFS: {}".format(authenticated_userid(request))
+    label = "AeroFS%3A%20{}".format(authenticated_userid(request))
     url = "otpauth://{}/{}?secret={}".format("totp", label, secret)
     qr = qrcode.QRCode(
         error_correction=qrcode.constants.ERROR_CORRECT_L,
