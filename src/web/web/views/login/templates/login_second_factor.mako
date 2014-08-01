@@ -2,7 +2,7 @@
 <%! page_title = "Two-factor Authentication" %>
 
 <div class="row">
-    <div class="col-sm-4 col-sm-offset-4 login">
+    <div class="col-sm-6 col-sm-offset-3 login">
         <h1>Two-factor Authentication</h1>
 
         <form id="signin_form" class="form-horizontal" role="form" action="${request.url}" method="post">

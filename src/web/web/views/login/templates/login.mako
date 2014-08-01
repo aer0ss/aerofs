@@ -2,7 +2,7 @@
 <%! page_title = "Sign In" %>
 
 <div class="row">
-    <div class="col-sm-4 col-sm-offset-4 login">
+    <div class="col-sm-6 col-sm-offset-3 login">
         <h1>Sign In to AeroFS
             %if not is_private_deployment:
                 Hybrid Cloud
