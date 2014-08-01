@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.phy.linked.db.LinkedStagingAreaDatabase;
 import com.aerofs.daemon.core.phy.linked.db.LinkedStagingAreaDatabase.StagedFolder;
 import com.aerofs.daemon.core.phy.linked.db.LinkedStorageSchema;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -94,6 +95,9 @@ public class TestLinkedStagingArea extends AbstractTest
                 sched, new CoreExponentialRetry(sched), tm, tokenManager,
                 mock(IgnoreList.class), revProvider, mock(RockLog.class));
 
+        LinkerRoot lr = mock(LinkerRoot.class);
+        when(lr.absRootAnchor()).thenReturn("/AeroFS");
+        when(lrm.get_(rootSID)).thenReturn(lr);
         when(lrm.absRootAnchor_(rootSID)).thenReturn("/AeroFS");
 
         when(tm.begin_()).thenReturn(t);
