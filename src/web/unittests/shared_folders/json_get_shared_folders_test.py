@@ -71,7 +71,7 @@ class GetSharedFoldersTest(TestBase):
         auth.is_admin = Mock(return_value=True)
 
         response = json_get_org_shared_folders(request)
-        self.assertEquals(len(response['aaData']), 2)
+        self.assertEquals(len(response['data']), 2)
 
     def test_get_user_shared_folders(self):
         from web.views.shared_folders.shared_folders_view import\
@@ -85,7 +85,7 @@ class GetSharedFoldersTest(TestBase):
         auth.is_admin = Mock(return_value=True)
 
         response = json_get_user_shared_folders(request)
-        self.assertEquals(len(response['aaData']), 2)
+        self.assertEquals(len(response['data']), 2)
 
 def test_suite():
     loader = unittest.TestLoader()
