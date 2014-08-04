@@ -119,8 +119,8 @@ service SPService {
     //   ExAlreadyInvited if the user has already been invited to the organization but has not yet
     //                  accepted the invitation.
     //   ExEmailSendingFailed if we were unable to send the email.
-    //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a Stripe
-    //                  customer ID.
+    //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a
+    // Stripe customer ID.
     //   ExEmailNotVerified if the user's email hasn't been verified
      rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
 
@@ -144,10 +144,11 @@ service SPService {
     //
     // This method returns the user counts as well as Stripe customer id of the specific
     // organization, so the Python Web server may update Stripe subscription plan for that org.
-    // TODO (WW) This design smells badly. Alternatively we can use a separate method to retrieve
-    // the number but it would bring up several security issues. The fundamental problem is that the
-    // Web server shouldn't have handled Stripe calls. Either SP or a service that SP depends on
-    // should do the job.
+    //
+    // TODO (WW) This design smells weird.
+    // Alternatively we can use a separate method to retrieve  the number but it would bring up
+    // several security issues. The fundamental problem is that the Web server shouldn't have
+    // handled Stripe calls. Either SP or a service that SP depends on should do the job.
     //
     // Required Auth Level: user
     //
@@ -181,8 +182,8 @@ service SPService {
     //   ExNoPerm if the sharer isn't authorized to modify ACLs for the given SID
     //   ExAlreadyExists if the user is already a member of the folder
     //   ExCannotInviteSelf if the sharer appears in the list of sharees
-    //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a Stripe
-    //                  customer ID.
+    //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a
+    //     Stripe customer ID.
     //   ExEmailNotVerified if the user's email hasn't been verified
     //
     // Exceptions from shared folder rules.
@@ -784,33 +785,95 @@ service SPService {
 
     // Request (re-)generation of two-factor auth secrets/recovery tokens for
     // the session's user
+    //
     // Required Auth Level: user
     rpc SetupTwoFactor(Void) returns (SetupTwoFactorReply);
 
     // Enable or disable two-factor enforcement for the session's user.
+    //
     // Required Auth Level: user
     rpc SetTwoFactorEnforcement(SetTwoFactorEnforcementCall) returns (Void);
 
     // List all urls for any objects in the given store
     //
     // Required Auth Level: store owner
+    // Throws:
     //   ExNotFound if the store does not exist
     //   ExNoPerm if the current user isn't a manager or an admin of a manager
     //
     rpc ListUrlsForStore(ListUrlsForStoreCall) returns (ListUrlsForStoreReply);
 
-    // Provide second factor to an already-authenticated session.
-    // Requires a half-open session.
+    // Provide second factor to an already-authenticated session. Requires a half-open session.
     // After N unsuccessful second factor login attempts, the session is discarded.
     rpc ProvideSecondFactor(ProvideSecondFactorCall) returns (Void);
 
-    // Provide backup code to act as second factor to an already-authenticated session.
-    // Requires a half-open session.
-    // If this rpc returns success, the code cannot be used again.
+    // Provide backup code to act as second factor to an already-authenticated session. Requires a
+    // half-open session. If this rpc returns success, the code cannot be used again.
     rpc ProvideBackupCode(ProvideBackupCodeCall) returns (Void);
 
-    // Fetch a user's current set of backup codes
+    // Fetch a user's current set of backup codes.
     rpc GetBackupCodes(Void) returns (GetBackupCodesReply);
+
+
+    // Create a locally-managed sharing group.
+    //
+    // Required Auth Level: admin
+    rpc CreateGroup(CreateGroupCall) returns (CreateGroupReply);
+
+    // Set the common name of a group.
+    //
+    // Required Auth Level: admin
+    //
+    // Throws:
+    //   ExNotFound if the group does not exist.
+    //   ExNotLocallyManaged if the group is not locally managed and this op cannot be completed.
+    rpc SetGroupCommonName(SetGroupCommonNameCall) returns (Void);
+
+    // Add users to a group. The users must be in the organization that owns the group in order to
+    // be added.
+    //
+    // Requried Auth Level: admin
+    //
+    // Throws:
+    //   ExNotFound if the group does not exist.
+    //   ExWrongOrganization if one or more of the group members to be added are not in the
+    //     group's owner organization.
+    //   ExNotLocallyManaged if the group is not locally managed and this op cannot be completed.
+    rpc AddGroupMembers(AddGroupMembersCall) returns (Void);
+
+    // Remove users from a group. This will also remove the user from shares that are associated
+    // with this group. Permission prescedence applies (see group sharing design and requirements
+    // documents).
+    //
+    // Requried Auth Level: admin
+    //
+    // Throws:
+    //   ExNotFound if one or more of the users are not members of the group.
+    //   ExNotLocallyManaged if the group is not locally managed and this op cannot be completed.
+    rpc RemoveGroupMembers(RemoveGroupMembersCall) returns (Void);
+
+    // Completely delete a group. Users are removed from shares associated with this group. Again
+    // with the permission precedence thing.
+    //
+    // Requried Auth Level: admin
+    //
+    // Throws:
+    //   ExNotFound if the group to be deleted does not exist.
+    //   ExNotLocallyManaged if the group is not locally managed and this op cannot be completed.
+    rpc DeleteGroup(DeleteGroupCall) returns (Void);
+
+    // List all groups in the caller's organization.
+    //
+    // Requried Auth Level: user
+    rpc ListGroups(ListGroupsCall) returns (ListGroupsReply);
+
+    // List all group members in the given group.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNotFound if the group in question does not exist.
+    rpc ListGroupMembers(ListGroupMembersCall) returns (ListGroupMembersReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -891,9 +954,9 @@ message InviteToOrganizationReply {
     // subscription. See PBStripeData for more info.
     required PBStripeData stripe_data = 1;
 
-    // Whether the invited user is locally managed (see Authenticator#isLocallyManaged). Used by the
-    // frontend to determine if to add the user to the pending invitation list.
-    // optional is for backward compatibility. can be convert to required after Dec 1, 2013
+    // Whether the invited user is locally managed (see Authenticator#isLocallyManaged). Used by
+    // the frontend to determine if to add the user to the pending invitation list.
+    // optional is for backward compatibility. Can be convert to required after Dec 1, 2013.
     optional bool locally_managed = 2 [default = true];
 }
 
@@ -919,33 +982,37 @@ message RemoveUserFromOrganizationReply {
     required PBStripeData stripe_data = 1;
 }
 
+// TODO (MP) clean this up.
+// I would love to reorganize the parameters of this message a bit, but that's not possible without
+// bumping the API version. Let's do this soon^TM.
 message ShareFolderCall {
-    // name of the folder being shared
+    // Name of the folder being shared.
     required string folder_name = 3;
-
     required bytes share_id = 2;
 
-    // The list can be empty
+    // This list can be empty.
     repeated PBSubjectPermissions subject_permissions = 1;
 
-    // Message to the person
+    // Message to the person.
     optional string note = 4;
 
-    // Whether the sharer created the share outside his root anchor.
-    // Ignored when adding new members to an existing shared folder.
-    // See docs/design/sharing_and_migration.txt for more.
+    // Whether the sharer created the share outside his root anchor. Ignored when adding new
+    // members to an existing shared folder. See docs/design/sharing_and_migration.md for more.
     optional bool external = 5;
 
     // Whether to suppress warning exceptions (i.e. ExSharingRulesWarning) generated by shared
     // folder rules. These exceptions are used by the UI to ask the user to confirm execution of
-    // potentially harmful actions. Once confirmed, the UI will call the same method again with this
-    // flag on.
+    // potentially harmful actions. Once confirmed, the UI will call the same method again with
+    // this flag on.
     optional bool suppress_sharing_rules_warnings = 6;
+
+    // This list can be empty.
+    repeated PBGroupPermissions group_permissions = 7;
 }
 
 message JoinSharedFolderCall {
     required bytes shared_id = 1;
-    // See docs/design/sharing_and_migration.txt for information about this flag.
+    // See docs/design/sharing_and_migration.md for information about this flag.
     optional bool external = 2;
 }
 
@@ -1008,7 +1075,7 @@ message GetACLReply {
     message PBStoreACL {
         required bytes store_id = 1;
         repeated PBSubjectPermissions subject_permissions = 2;
-        // See docs/design/sharing_and_migration.txt for information about this flag.
+        // See docs/design/sharing_and_migration.md for information about this flag.
         required bool external = 3;
         required string name = 4;
     }
@@ -1077,9 +1144,10 @@ message ListOrganizationMembersCall {
     // Maximum number of entries returned on one page.
     // The SP server should enforce a reasonable upper bound for this parameter.
     required uint32 max_results = 1;
-
     // Offset to start retrieving the results.
     required uint32 offset = 2;
+    // TODO (MP) on sp proto bump, change this to required.
+    optional string search_prefix = 3;
 }
 
 message ListOrganizationMembersReply {
@@ -1110,6 +1178,11 @@ message PBUser {
     required string first_name = 2;
     required string last_name = 3;
     optional bool two_factor_enforced = 4;
+}
+
+message PBGroup {
+    required uint32 group_id = 1;
+    required string common_name = 2;
 }
 
 message SetAuthorizationLevelCall {
@@ -1217,11 +1290,18 @@ message PBSharedFolder {
         required PBSharedFolderState state = 3;
     }
 
+    message PBGroupPermissionsAndState {
+        required PBGroup group = 1;
+        required PBPermissions permissions = 2;
+        required PBSharedFolderState state = 3;
+    }
+
     required bytes store_id = 1;
     required string name = 2;
     // Whether any user of the session user's organization owns the folder
     required bool owned_by_team = 3;
     repeated PBUserPermissionsAndState user_permissions_and_state = 4;
+    repeated PBGroupPermissionsAndState group_permissions_and_state = 5;
 }
 
 message GetOrganizationInvitationsReply {
@@ -1519,4 +1599,47 @@ message GetBackupCodesReply {
         optional uint64 date_used = 2; // timestamp in "milliseconds since the epoch"
     }
     repeated BackupCode codes = 1;
+}
+
+message CreateGroupCall {
+    required string common_name = 1;
+}
+
+message CreateGroupReply {
+    required uint32 group_id = 1;
+}
+
+message SetGroupCommonNameCall {
+    required uint32 group_id = 1;
+    required string common_name = 2;
+}
+
+message AddGroupMembersCall {
+    repeated string user_emails = 1;
+}
+
+message RemoveGroupMembersCall {
+    repeated string user_emails = 1;
+}
+
+message DeleteGroupCall {
+    required uint32 group_id = 1;
+}
+
+message ListGroupsCall {
+    required uint32 max_results = 1;
+    required uint32 offset = 2;
+    required string search_prefix = 3;
+}
+
+message ListGroupsReply {
+    repeated PBGroup groups = 1;
+}
+
+message ListGroupMembersCall {
+    required uint32 group_id = 1;
+}
+
+message ListGroupMembersReply {
+    repeated PBUser users = 1;
 }

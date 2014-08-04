@@ -31,22 +31,24 @@ public class Exceptions
     static {
         // Initialize the map with the base types
         // N.B. these exception types will be accessible to Android clients
-        _types.put(Type.ALREADY_EXIST,       ExAlreadyExist.class);
+        _types.put(Type.ALREADY_EXIST, ExAlreadyExist.class);
         _types.put(Type.EMPTY_EMAIL_ADDRESS, ExEmptyEmailAddress.class);
-        _types.put(Type.BAD_ARGS,            ExBadArgs.class);
-        _types.put(Type.NO_PERM,             ExNoPerm.class);
-        _types.put(Type.NO_RESOURCE,         ExNoResource.class);
-        _types.put(Type.NOT_FOUND,           ExNotFound.class);
-        _types.put(Type.PROTOCOL_ERROR,      ExProtocolError.class);
-        _types.put(Type.TIMEOUT,             ExTimeout.class);
-        _types.put(Type.BAD_CREDENTIAL,      ExBadCredential.class);
-        _types.put(Type.INTERNAL_ERROR,      ExInternalError.class);
+        _types.put(Type.BAD_ARGS, ExBadArgs.class);
+        _types.put(Type.NO_PERM, ExNoPerm.class);
+        _types.put(Type.NO_RESOURCE, ExNoResource.class);
+        _types.put(Type.NOT_FOUND, ExNotFound.class);
+        _types.put(Type.PROTOCOL_ERROR, ExProtocolError.class);
+        _types.put(Type.TIMEOUT, ExTimeout.class);
+        _types.put(Type.BAD_CREDENTIAL, ExBadCredential.class);
+        _types.put(Type.INTERNAL_ERROR, ExInternalError.class);
         _types.put(Type.EXTERNAL_SERVICE_UNAVAILABLE, ExExternalServiceUnavailable.class);
         _types.put(Type.CANNOT_RESET_PASSWORD, ExCannotResetPassword.class);
         _types.put(Type.EXTERNAL_AUTH_FAILURE, ExExternalAuthFailure.class);
-        _types.put(Type.LICENSE_LIMIT,       ExLicenseLimit.class);
+        _types.put(Type.LICENSE_LIMIT, ExLicenseLimit.class);
         _types.put(Type.RATE_LIMIT_EXCEEDED, ExRateLimitExceeded.class);
         _types.put(Type.SECOND_FACTOR_REQUIRED, ExSecondFactorRequired.class);
+        _types.put(Type.WRONG_ORGANIZATION, ExWrongOrganization.class);
+        _types.put(Type.NOT_LOCALLY_MANAGED, ExNotLocallyManaged.class);
     }
 
     /**

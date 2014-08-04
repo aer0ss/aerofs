@@ -53,7 +53,7 @@ def json_list_org_users(request):
     session_user = authenticated_userid(request)
 
     sp = get_rpc_stub(request)
-    reply = sp.list_organization_members(count, offset)
+    reply = sp.list_organization_members(count, offset, None)
 
     use_restricted = is_restricted_external_sharing_enabled(request.registry.settings)
     if use_restricted:

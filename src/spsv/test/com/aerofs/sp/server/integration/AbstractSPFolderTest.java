@@ -73,7 +73,7 @@ public class AbstractSPFolderTest extends AbstractSPTest
     {
         setSession(sharer);
         service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, permissions), "", external,
-                suppressWarnings);
+                suppressWarnings, null);
     }
 
     protected void joinSharedFolder(User sharee, SID sid) throws Exception

@@ -21,8 +21,10 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotLocallyManaged;
 import com.aerofs.base.ex.ExRateLimitExceeded;
 import com.aerofs.base.ex.ExSecondFactorRequired;
+import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OrganizationID;
@@ -46,6 +48,7 @@ import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBFolderInvitation;
+import com.aerofs.proto.Common.PBGroupPermissions;
 import com.aerofs.proto.Common.PBPermissions;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Common.Void;
@@ -55,6 +58,7 @@ import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
 import com.aerofs.proto.Sp.CheckQuotaReply;
 import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
+import com.aerofs.proto.Sp.CreateGroupReply;
 import com.aerofs.proto.Sp.CreateUrlReply;
 import com.aerofs.proto.Sp.DeactivateUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
@@ -78,6 +82,8 @@ import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.proto.Sp.ISPService;
 import com.aerofs.proto.Sp.InviteToOrganizationReply;
+import com.aerofs.proto.Sp.ListGroupMembersReply;
+import com.aerofs.proto.Sp.ListGroupsReply;
 import com.aerofs.proto.Sp.ListOrganizationInvitedUsersReply;
 import com.aerofs.proto.Sp.ListOrganizationMembersReply;
 import com.aerofs.proto.Sp.ListOrganizationMembersReply.PBUserAndLevel;
@@ -520,7 +526,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<ListOrganizationMembersReply> listOrganizationMembers(
-            Integer maxResults, Integer offset)
+            Integer maxResults, Integer offset, String searchPrefix)
             throws Exception
     {
         throwOnInvalidOffset(offset);
@@ -1195,7 +1201,8 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> shareFolder(String folderName, ByteString shareId,
             List<PBSubjectPermissions> subjectPermissionsList, @Nullable String note,
-            @Nullable Boolean external, @Nullable Boolean suppressSharingRulesWarnings)
+            @Nullable Boolean external, @Nullable Boolean suppressSharingRulesWarnings,
+            List<PBGroupPermissions> groupPermissionsList)
             throws Exception
     {
         external = firstNonNull(external, false);
@@ -3222,7 +3229,8 @@ public class SPService implements ISPService
 
         Organization org = user.getOrganization();
 
-        UserManagement.deactivateByAdmin(caller, user, eraseDevices, _commandDispatcher, _aclPublisher);
+        UserManagement.deactivateByAdmin(caller, user, eraseDevices, _commandDispatcher,
+                _aclPublisher);
 
         PBStripeData sd = getStripeData(org);
 
@@ -3231,6 +3239,61 @@ public class SPService implements ISPService
         _userTracker.signOutAll(user.id());
 
         return createReply(DeactivateUserReply.newBuilder().setStripeData(sd).build());
+    }
+
+    @Override
+    public ListenableFuture<CreateGroupReply> createGroup(String commonName)
+    {
+        // TODO (MP) finish this...
+        return createReply(CreateGroupReply.getDefaultInstance());
+    }
+
+    @Override
+    public ListenableFuture<Void> setGroupCommonName(Integer groupID, String commonName)
+            throws ExNotFound, ExNotLocallyManaged
+    {
+        // TODO (MP) finish this...
+        return createReply(Void.getDefaultInstance());
+    }
+
+    @Override
+    public ListenableFuture<Void> addGroupMembers(List<String> userEmails)
+            throws ExNotFound, ExWrongOrganization, ExNotLocallyManaged
+    {
+        // TODO (MP) finish this...
+        return createReply(Void.getDefaultInstance());
+    }
+
+    @Override
+    public ListenableFuture<Void> removeGroupMembers(List<String> userEmails)
+            throws ExNotFound, ExNotLocallyManaged
+    {
+        // TODO (MP) finish this...
+        return createReply(Void.getDefaultInstance());
+    }
+
+    @Override
+    public ListenableFuture<Void> deleteGroup(Integer groupID)
+            throws ExNotFound, ExNotLocallyManaged
+    {
+        // TODO (MP) finish this...
+        return createReply(Void.getDefaultInstance());
+    }
+
+    @Override
+    public ListenableFuture<ListGroupsReply> listGroups(Integer maxResults, Integer offset,
+            String searchPrefix)
+    {
+        // TODO (MP) finish this...
+        return createReply(ListGroupsReply.getDefaultInstance());
+    }
+
+    @Override
+    public ListenableFuture<ListGroupMembersReply> listGroupMembers(Integer groupID)
+            throws ExNotFound
+    {
+        // TODO (MP) finish this...
+        return createReply(ListGroupMembersReply.getDefaultInstance());
     }
 
     /**

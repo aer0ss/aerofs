@@ -141,6 +141,13 @@ message PBException {
         // A user has proven their identity with one mechanism, but they still
         // need to provide a second authentication token.
         SECOND_FACTOR_REQUIRED = 414;
+
+        // A user has been invited to a group but they are not a member of the organization that
+        // owns the group.
+        WRONG_ORGANIZATION = 415;
+
+        // A user tried to edit a group that is not locally managed.
+        NOT_LOCALLY_MANAGED = 416;
     }
 
     required Type type = 1;
@@ -178,12 +185,23 @@ message PBPermissions {
     repeated PBPermission permission = 1;
 }
 
+// TODO (MP) fix this name.
+// I dislike the fact that this is called "subject permissions". Call it what it is -- user
+// permissions!
 message PBSubjectPermissions {
     required string subject = 1;
     required PBPermissions permissions = 2;
 
-    // whether the store is external (i.e. resides outside the root anchor) for this user
-    // this field is only included in response to requests made by a Team Server
+    // Whether the store is external (i.e. resides outside the root anchor) for this user.
+    // This field is only included in response to requests made by a Team Server.
+    optional bool external = 3;
+}
+
+message PBGroupPermissions {
+    required uint32 group_id = 1;
+    required PBPermissions permissions = 2;
+
+    // See PBSubjectPermissions:external, above.
     optional bool external = 3;
 }
 

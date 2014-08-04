@@ -106,7 +106,7 @@ public class HdCreateRoot extends AbstractHdIMC<EICreateRoot>
                 _factSP.create()
                         .signInRemote()
                         .shareFolder(name, sid.toPB(), Collections.<PBSubjectPermissions>emptyList(),
-                                "", true, false);
+                                "", true, false, null);
             } finally {
                 tcb.pseudoResumed_();
             }

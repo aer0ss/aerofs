@@ -43,7 +43,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         setSession(USER_1);
         service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                Collections.<PBSubjectPermissions>emptyList(), "", false, false).get();
+                Collections.<PBSubjectPermissions>emptyList(), "", false, false, null).get();
     }
 
     @Test
@@ -52,7 +52,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         setSession(USER_1);
         service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                Collections.<PBSubjectPermissions>emptyList(), "", true, false).get();
+                Collections.<PBSubjectPermissions>emptyList(), "", true, false, null).get();
     }
 
     @Test

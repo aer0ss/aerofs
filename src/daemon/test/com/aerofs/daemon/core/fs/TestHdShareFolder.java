@@ -43,6 +43,7 @@ import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.proto.Common.PBGroupPermissions;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -57,6 +58,7 @@ import org.mockito.Mock;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -226,7 +228,8 @@ public class TestHdShareFolder extends AbstractTest
         handle(path, user1);
 
         verify(sp).shareFolder(eq("d"), any(ByteString.class),
-                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false), any(Boolean.class));
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false),
+                any(Boolean.class), anyIterableOf(PBGroupPermissions.class));
         verify(pf).updateSOID_(new SOID(soid.sidx(), anchor), t);
     }
 
@@ -236,7 +239,8 @@ public class TestHdShareFolder extends AbstractTest
         handle(Path.fromString(rootSID, "a"), user1);
 
         verify(sp).shareFolder(eq("a"), any(ByteString.class),
-                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false), any(Boolean.class));
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false),
+                any(Boolean.class), anyIterableOf(PBGroupPermissions.class));
     }
 
     @Test
@@ -245,6 +249,7 @@ public class TestHdShareFolder extends AbstractTest
         handle(Path.root(extSID), user1);
 
         verify(sp).shareFolder(eq("external"), any(ByteString.class),
-                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false), any(Boolean.class));
+                anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false),
+                any(Boolean.class), anyIterableOf(PBGroupPermissions.class));
     }
 }

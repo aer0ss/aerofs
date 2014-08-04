@@ -226,7 +226,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             _factSP.create()
                     .signInRemote()
                     .shareFolder(folderName, sid.toPB(), roles, emailNote, false,
-                            suppressSharingRulesWarnings);
+                            suppressSharingRulesWarnings, null);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();
