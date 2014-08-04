@@ -20,6 +20,7 @@ package com.aerofs.bifrost.oaaas.resource;
 
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.bifrost.oaaas.auth.MobileDeviceManagement;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
 import com.aerofs.bifrost.oaaas.auth.ValidationResponseException;
 import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
@@ -55,6 +56,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -76,6 +79,8 @@ import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.U
 @Path("/")
 public class TokenResource
 {
+    public static final String X_REAL_IP = "X-Real-IP";
+
     public static final String BASIC_REALM = "Basic realm=\"OAuth2 Secure\"";
 
     public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
@@ -182,18 +187,35 @@ public class TokenResource
         }
     }
 
+    private static boolean hasMobileClientId(String clientID) {
+        return clientID.equals("aerofs-android") || clientID.equals("aerofs-ios");
+    }
 
     @POST
     @Path("/token")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes("application/x-www-form-urlencoded")
     public Response token(@HeaderParam("Authorization") String authorization,
-            final MultivaluedMap<String, String> formParameters)
+            final MultivaluedMap<String, String> formParameters, @Context HttpHeaders headers)
     {
         AccessTokenRequest accessTokenRequest = AccessTokenRequest.fromMultiValuedFormParameters(
                 formParameters);
         UserPassCredentials credentials = getClientCredentials(authorization, accessTokenRequest);
         String grantType = accessTokenRequest.getGrantType();
+
+        if(MobileDeviceManagement.isMDMEnabled() && hasMobileClientId(accessTokenRequest.getClientId())) {
+            List<String> realIPVals = headers.getRequestHeader(X_REAL_IP);
+            if (realIPVals == null) {
+                return sendErrorResponse(ValidationResponse.MISSING_X_REAL_IP);
+            }
+            String remoteIP = realIPVals.get(0);
+            if (!MobileDeviceManagement.isWhitelistedIP(remoteIP)) {
+                l.info("denied mobile client in create token request from non-whitelisted IP: {}",
+                        remoteIP);
+                return sendErrorResponse(ValidationResponse.FAIL_IP_WHITELIST);
+            }
+        }
+
         ValidationResponse vr = oAuth2Validator.validate(accessTokenRequest);
         if (!vr.valid()) {
             l.warn("validation error in create token request: {}", vr.getValue());

@@ -477,4 +477,14 @@ public class LibParam extends BaseParam
             return !IS_PRIVATE_DEPLOYMENT;
         }
     }
+
+    public static class MobileDeviceManagement {
+        public static Boolean                           IS_ENABLED =
+                getBooleanProperty(                     "mobile.device.management.enabled",
+                                                        false);
+
+        public static String                            MDM_PROXIES =
+                getStringProperty(                      "mobile.device.management.proxies",
+                                                        "");
+    }
 }
