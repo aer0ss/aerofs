@@ -686,7 +686,7 @@ service SPService {
     // Create a unique key which maps to a rest object and an OAuth token,
     // which a user can share to allow access to that object via URL
     //
-    // Required Auth Level: store manager
+    // Required Auth Level: store owner
     // Throws:
     //   ExNoPerm if the current user isn't a manager of the containing store
     //   ExBadArgs if the SOID provided is invalid
@@ -697,17 +697,17 @@ service SPService {
     //
     // Required Auth Level:
     //   None, if no password is set
-    //   store manager OR provide password, if password is set
+    //   store owner OR provide password, if password is set
     // Throws:
     //   ExNotFound if the key does not exist
-    //   ExBadCredential if a password is set and the user is not a store manager and does not
+    //   ExBadCredential if a password is set and the user is not a store owner and does not
     //      provide the correct password.
     //
     rpc GetUrlInfo(GetUrlInfoCall) returns (GetUrlInfoReply);
 
     // Set the expiry associated with a URL
     //
-    // Required Auth Level: store manager
+    // Required Auth Level: store owner
     // Throws:
     //   ExNotFound if the key does not exist
     //   ExNoPerm if the current user isn't a manager of the containing store
@@ -716,7 +716,7 @@ service SPService {
 
     // Remove the expiry associated with a URL
     //
-    // Required Auth Level: store manager
+    // Required Auth Level: store owner
     // Throws:
     //   ExNotFound if the key does not exist
     //   ExNoPerm if the current user isn't a manager of the containing store
@@ -725,7 +725,7 @@ service SPService {
 
     // Delete a URL
     //
-    // Required Auth Level: store manager
+    // Required Auth Level: store owner
     // Throws:
     //   ExNotFound if the key does not exist
     //   ExNoPerm if the current user isn't a manager of the containing store
@@ -734,7 +734,7 @@ service SPService {
 
     // Set a password for the URL
     //
-    // Required Auth Level: store manager
+    // Required Auth Level: store owner
     // Throws:
     //   ExNotFound if the key does not exist
     //   ExNoPerm if the current user isn't a manager of the containing store
@@ -743,7 +743,7 @@ service SPService {
 
     // Remove the password for the URL
     //
-    // Required Auth Level: store manager
+    // Required Auth Level: store owner
     // Throws:
     //   ExNotFound if the key does not exist
     //   ExNoPerm if the current user isn't a manager of the containing store
@@ -762,7 +762,7 @@ service SPService {
 
     // Destroy a shared folder and remove all ACLs for it
     //
-    // Required Auth Level: store manager
+    // Required Auth Level: store owner
     //   ExNotFound if the key does not exist
     //   ExNoPerm if the current user isn't a manager or an admin of a manager
     //
@@ -793,7 +793,7 @@ service SPService {
 
     // List all urls for any objects in the given store
     //
-    // Required Auth Level: store manager
+    // Required Auth Level: store owner
     //   ExNotFound if the store does not exist
     //   ExNoPerm if the current user isn't a manager or an admin of a manager
     //
