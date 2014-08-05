@@ -1,4 +1,5 @@
 import sys
+import stat
 import argparse
 import os
 import code
@@ -20,11 +21,16 @@ parser = argparse.ArgumentParser(description=
 
 parser.add_argument('sp_url',
         nargs='?',
-        help="The complete url of the SP Service.")
+        help="The complete URL of the SP Service.")
 parser.add_argument('sp_version',
         type=int,
         nargs='?',
         help="The version number to use when connecting.")
+
+def interact_readfunc(prompt):
+    for line in sys.stdin:
+        return line
+    raise EOFError
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -51,4 +57,9 @@ if __name__ == "__main__":
     help += "\nUsers should call credential_sign_in first when using privileged calls."
     commands["help"] = Command(lambda : help.strip())
 
-    code.interact(banner="Type help", local=commands)
+    mode = os.fstat(0).st_mode
+    if stat.S_ISFIFO(mode):
+        code.interact(banner=">>> Running piped commands...", local=commands, readfunc=interact_readfunc)
+    else:
+        code.interact(banner="Type help", local=commands)
+
