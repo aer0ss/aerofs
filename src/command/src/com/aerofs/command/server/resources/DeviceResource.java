@@ -10,7 +10,6 @@ import com.aerofs.verkehr.client.rest.VerkehrClient;
 
 import javax.ws.rs.Path;
 
-@Path("/devices")
 public final class DeviceResource
 {
     private final DID _did;
@@ -25,8 +24,8 @@ public final class DeviceResource
         _verkehr = verkehr;
     }
 
-    @Path("/{queues}")
-    public QueuesResource getDevice()
+    @Path("/queues")
+    public QueuesResource getDeviceQueues()
     {
         return new QueuesResource(_did, _trans, _verkehr);
     }

@@ -16,13 +16,12 @@ import com.aerofs.verkehr.client.rest.VerkehrClient;
 import org.slf4j.Logger;
 
 import javax.ws.rs.POST;
-import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
 
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path("/enqueue")
 public final class QueueResource
 {
     private static final Logger l = Loggers.getLogger(QueueResource.class);
@@ -45,7 +44,7 @@ public final class QueueResource
 
     @POST
     @Produces(APPLICATION_JSON)
-    public void postCommandType() throws Exception
+    public Response postCommandType() throws Exception
     {
         l.info("ENQUEUE did=" + _did.toStringFormal() + " type=" + _type);
 
@@ -58,5 +57,7 @@ public final class QueueResource
                 .setType(_type)
                 .build();
         _verkehr.publish(Topics.getCMDTopic(_did.toStringFormal(), true), command.toByteArray()).get();
+
+        return Response.noContent().build();
     }
 }

@@ -15,7 +15,7 @@ import javax.ws.rs.WebApplicationException;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
-@Path("/" + "devices")
+@Path("/devices")
 public final class DevicesResource
 {
     private final JedisThreadLocalTransaction _trans;

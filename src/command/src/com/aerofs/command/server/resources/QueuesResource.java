@@ -16,7 +16,6 @@ import javax.ws.rs.WebApplicationException;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
-@Path("/enqueues")
 public final class QueuesResource
 {
     private final DID _did;
@@ -31,7 +30,7 @@ public final class QueuesResource
     }
 
     @Path("/{queue}")
-    public QueueResource getDevice(@PathParam("enqueue") String commandType) throws Exception
+    public QueueResource getQueue(@PathParam("queue") String commandType) throws Exception
     {
         if (isNullOrEmpty(commandType)) {
             throw new WebApplicationException(BAD_REQUEST);

@@ -84,7 +84,7 @@ if __name__ == '__main__':
         print('no devices for %s.' %user)
     else:
         for d in devices:
-            url = 'http://c.aerofs.com:9020/devices/%s/enqueue/%s' %(d[0], command)
+            url = 'http://c.aerofs.com:9020/devices/%s/queues/%s' %(d[0], command)
             try:
                 r = requests.post(url)
             except requests.exceptions.ConnectionError:

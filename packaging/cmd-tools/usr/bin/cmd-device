@@ -79,7 +79,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     logger.debug('get info for:%s' %did)
-    url = 'http://c.aerofs.com:9020/devices/%s/enqueue/%s' %(did, command)
+    url = 'http://c.aerofs.com:9020/devices/%s/queues/%s' %(did, command)
     try:
         r = requests.post(url)
     except requests.exceptions.ConnectionError:

@@ -6,6 +6,9 @@ package com.aerofs.command.server;
 
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.config.ConfigurationProperties;
+
+import java.util.Properties;
 
 public class CommandServer
 {
@@ -22,6 +25,10 @@ public class CommandServer
 
         // init catch-all exception handler
         Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
+
+        // Make an empty Properties set so the verkehr config client won't NPE
+        ConfigurationProperties.setProperties(new Properties());
+        System.err.println("starting up");
 
         // Run the command server service.
         CommandServerService service = new CommandServerService();
