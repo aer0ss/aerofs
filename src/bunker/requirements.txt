@@ -2,13 +2,14 @@
 # virtualenv env
 # env/bin/pip install -r requirements.txt
 # env/bin/pip freeze > requirements-exact.txt
+analytics-python
 Babel
 Beaker
 CherryPy
+iptools
 Mako
-PasteDeploy
-analytics-python
 mock
+PasteDeploy
 protobuf
 pycrypto
 pyramid

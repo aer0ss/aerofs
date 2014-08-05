@@ -1,53 +1,44 @@
 <%inherit file="maintenance_layout.mako"/>
-<%! page_title = "Device Authorization" %>
+<%! page_title = "Device Restriction" %>
 
 <%namespace name="csrf" file="csrf.mako"/>
 <%namespace name="bootstrap" file="bootstrap.mako"/>
 <%namespace name="spinner" file="spinner.mako"/>
 <%namespace name="progress_modal" file="progress_modal.mako"/>
 
-<h2>Device Authorization</h2>
+<h2>Device Restriction</h2>
 
-<p class="page-block">The <b>AeroFS Private Cloud Device Authorization Subsystem </b>
+<h4>Desktop Client Authorization</h4>
+
+<p>The <strong>AeroFS Private Cloud Device Authorization Subsystem </strong>
 grants IT administrators fine-grained control over which users and devices on
 their network are permitted to run AeroFS desktop clients.
-<a href="https://support.aerofs.com/hc/en-us/articles/202157674" target="_blank">Read more</a>.</p></P>
+<a href="https://support.aerofs.com/hc/en-us/articles/202951950" target="_blank">Read more</a>.</p>
 
-<p class="page-block">This subsystem should not be confused with AeroFS'
+<p>This subsystem should not be confused with AeroFS'
 end-to-end encryption and private certificate authority, which is always
 enabled and cannot be configured.
-<a href="https://aerofs.com/security" target="_blank">Read more</a>.</p></P>
+<a href="https://aerofs.com/security" target="_blank">Read more</a>.</p>
 
 <div class="page-block">
     ${device_authorization_options_form()}
 </div>
 
 <%def name="device_authorization_options_form()">
-    <form method="POST" onsubmit="submitForm(); return false;">
+    <form method="POST" onsubmit="submitDeviceForm(); return false;">
         ${csrf.token_input()}
 
-        <label class="radio">
-            <input type='radio' id="endpoint_disable" name='enabled'
-                    value='false'
-                %if not device_authorization_endpoint_enabled:
-                    checked
-                %endif
-                    onchange="disableSelected(); optionsUpdated();"
-            >
-
-            Disable device authorization
-        </label>
-
-        <label class="radio">
-            <input type='radio' id="endpoint_enable" name='enabled'
+        <label class="checkbox">
+            <input type='hidden' name='enabled' value='false'>
+            <input type='checkbox' id="endpoint" name='enabled'
                     value='true'
                 %if device_authorization_endpoint_enabled:
                     checked
                 %endif
-                    onchange="enableSelected(); optionsUpdated();"
+                    onchange="deviceEnableToggled(this); optionsUpdated();"
             >
 
-            Enable device authorization
+            Enable Device Authorization
         </label>
 
         <div id="endpoint-options"
@@ -55,9 +46,6 @@ enabled and cannot be configured.
                 style="display: none;"
             %endif
         >
-            <hr/>
-            <h4>Device Authorization Endpoint Options</h4>
-
             <p>Your endpoint: <b><span id="uri"></span></b></p>
 
             <div class="row">
@@ -111,8 +99,73 @@ enabled and cannot be configured.
     </form>
 </%def>
 
+<!--
+<br/>
+
+<h4>Mobile Device Management</h4>
+
+<p>AeroFS can be configured to allow mobile application setup only via a trusted Mobile Device
+Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed devices.
+<a href=https://support.aerofs.com/hc/en-us/articles/202951950 target="_blank"
+>Read more.
+</a></p>
+
+<div class="page-block">
+    ${mdm_options_form()}
+</div>
+
+<%def name="mdm_options_form()">
+    <form method="POST" onsubmit="submitMDMForm(); return false;">
+        ${csrf.token_input()}
+
+        <label class="checkbox">
+            <input type='hidden' name='enabled' value='false'>
+            <input type='checkbox' id="mdm_enable" name='enabled'
+                    value='true'
+                %if mobile_device_management_enabled:
+                    checked
+                %endif
+                    onchange="mdmEnableToggled(this);"
+            >
+            Enable MDM Support
+        </label>
+
+
+        <div id="cidr-blocks"
+            %if not mobile_device_management_enabled:
+                style="display: none;"
+            %endif
+        >
+
+            <p>Please list CIDR Blocks from which you will allow mobile device access.
+            AeroFS will only accept mobile devices that come from a trusted IP address,
+            which should be a MDM proxy server (e.g. a MobileIron Sentry server).
+            </p>
+            <label for="trusted">Trusted CIDR Blocks:</label>
+            <div id="trusted">
+                % for entry in mobile_device_management_proxies:
+                    <input class = "form-control" name="CIDR"
+                    onkeyup="newCIDRBox(this)" type="text" value=${entry}>
+                % endfor
+                <input class="form-control" name="CIDR"
+                onkeyup="newCIDRBox(this)" type="text">
+            </div>
+
+            <div class="help-block">e.g. <code>192.168.156.0/24</code></div>
+
+        </div>
+
+        <div class="row">
+            <div class="col-sm-6">
+                <button id="save-btn" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </form>
+</%def>
+-->
+
 <%progress_modal:html>
-    Configuring the device authorization subsystem...
+    Applying changes...
 </%progress_modal:html>
 
 <%block name="scripts">
@@ -122,22 +175,38 @@ enabled and cannot be configured.
     <script>
         $(document).ready(function() {
             initializeProgressModal();
+            optionsUpdated();
         });
 
-        function submitForm() {
+        function submitDeviceForm() {
             var $progress = $('#${progress_modal.id()}');
             $progress.modal('show');
 
             $.post("${request.route_path('json_set_device_authorization')}",
                     $('form').serialize())
-            .done(restartServices)
+            .done(restartDeviceServices)
             .fail(function(xhr) {
                 showErrorMessageFromResponse(xhr);
                 $progress.modal('hide');
             });
         }
 
-        function restartServices() {
+        /*
+        function submitMDMForm() {
+            var $progress = $('#${progress_modal.id()}');
+            $progress.modal('show');
+
+            $.post("${request.route_path('json_set_mobile_device_management')}",
+                    $('form').serialize())
+            .done(restartMDMServices)
+            .fail(function(xhr) {
+                showErrorMessageFromResponse(xhr);
+                $progress.modal('hide');
+            });
+        }
+        */
+
+        function restartDeviceServices() {
             var $progress = $('#${progress_modal.id()}');
             runBootstrapTask('restart-services-for-device-authorization', function() {
                 $progress.modal('hide');
@@ -147,12 +216,39 @@ enabled and cannot be configured.
             });
         }
 
-        function disableSelected() {
-            $('#endpoint-options').hide();
+        /*
+        function newCIDRBox(element){
+            if (!element.value) {
+                if (element.nextElementSibling!==null) {
+                    element.parentNode.removeChild(element);
+                }
+                return;
+            } else if (element.nextElementSibling) {
+                return;
+            }
+            var newTxt = element.cloneNode();
+            newTxt.name = 'CIDR';
+            newTxt.value='';
+            element.parentNode.appendChild(newTxt);
         }
 
-        function enableSelected() {
-            $('#endpoint-options').show();
+        function restartMDMServices() {
+            var $progress = $('#${progress_modal.id()}');
+            runBootstrapTask('restart-services-for-mdm', function() {
+                $progress.modal('hide');
+                showSuccessMessage('New configuration is saved.');
+            }, function() {
+                $progress.modal('hide');
+            });
+        }
+        */
+
+        function deviceEnableToggled(checkbox) {
+            if (checkbox.checked) {
+                $('#endpoint-options').show();
+            } else {
+                $('#endpoint-options').hide();
+            }
         }
 
         function constructURI() {
@@ -175,10 +271,18 @@ enabled and cannot be configured.
             return uri;
         }
 
+        /*
+        function mdmEnableToggled(checkbox) {
+            if (checkbox.checked) {
+                $('#cidr-blocks').show();
+            } else {
+                $('#cidr-blocks').hide();
+            }
+        }
+        */
+
         function optionsUpdated() {
             $('span#uri').text(constructURI());
         }
-
-        window.onload = optionsUpdated();
     </script>
 </%block>

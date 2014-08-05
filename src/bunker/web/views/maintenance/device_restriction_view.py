@@ -1,20 +1,20 @@
 import logging
 import os
-from pyramid.view import view_config
-from web.util import str2bool
-from maintenance_util import write_pem_to_file, \
-    is_certificate_formatted_correctly, format_pem, get_conf, get_conf_client, \
-    unformat_pem
+from maintenance_util import write_pem_to_file, unformat_pem, \
+    is_certificate_formatted_correctly, format_pem, get_conf_client, get_conf
 from web.error import error
+from web.util import str2bool
+from pyramid.view import view_config
+from mdm_view import parse_cidr_list
 
 log = logging.getLogger(__name__)
 
 @view_config(
-    route_name='device_authorization',
+    route_name='device_restriction',
     permission='maintain',
-    renderer='device_authorization.mako'
+    renderer='device_restriction.mako'
 )
-def device_authorization(request):
+def device_restriction(request):
     conf = get_conf(request)
     return {
         'device_authorization_endpoint_enabled':
@@ -29,6 +29,10 @@ def device_authorization(request):
             str2bool(conf['device.authorization.endpoint_use_ssl']),
         'device_authorization_endpoint_certificate':
             unformat_pem(conf['device.authorization.endpoint_certificate']),
+        'mobile_device_management_enabled':
+            str2bool(conf['mobile.device.management.enabled']),
+        'mobile_device_management_proxies':
+            parse_cidr_list(conf['mobile.device.management.proxies']),
     }
 
 @view_config(
@@ -39,11 +43,9 @@ def device_authorization(request):
 )
 def json_set_device_authorization(request):
     """
-    N.B. the changes won't take effcts on the system until relevant services are
+    N.B. the changes won't take effects on the system until relevant services are
     restarted.
     """
-
-    print request.params
 
     config = get_conf_client(request)
 

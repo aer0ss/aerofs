@@ -15,7 +15,7 @@
                 ('auditing', _("Auditing")),
                 ('identity', _("Identity")),
                 ('setup', _("Setup")),
-                ('device_authorization', _("Device Authorization")),
+                ('device_restriction', _("Device Restriction")),
                 ('timekeeping', _("Timekeeping")),
             ]
         %>

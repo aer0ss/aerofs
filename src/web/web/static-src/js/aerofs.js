@@ -16,6 +16,7 @@ function escapify(message) {
 function showErrorMessageUnnormalizedUnsafe(message) {
     hideAllMessages();
     $('#flash-msg-error-body').html(message);
+    window.scrollTo(0,0)
     $("#flash-msg-error").fadeIn();
 }
 
@@ -38,6 +39,7 @@ function showSuccessMessageUnsafe(message) {
     hideAllMessages();
     var $msg = $("#flash-msg-success");
     $msg.html(normalizeMessage(message));
+    window.scrollTo(0,0)
     $msg.fadeIn();
 
     // Fade out the message in 8 seconds

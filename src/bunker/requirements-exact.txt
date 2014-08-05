@@ -6,6 +6,7 @@ MarkupSafe==0.23
 PasteDeploy==1.5.2
 WebOb==1.4
 analytics-python==0.4.4
+iptools==0.6.1
 mock==1.0.1
 protobuf==2.5.0
 pycrypto==2.6.1

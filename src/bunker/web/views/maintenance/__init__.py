@@ -36,7 +36,7 @@ routes = [
     'json_collect_logs',
     'auditing',
     'json_set_auditing',
-    'device_authorization',
+    'device_restriction',
     'json_set_device_authorization',
     'registered_apps',
     'register_app',
@@ -45,6 +45,7 @@ routes = [
     'status',
     'toggle_maintenance_mode',
     'timekeeping',
+    'json_set_mobile_device_management',
 
     # Routes referred to by nginx. See puppetmaster/modules/unified/files/nginx/web
     'maintenance_mode',

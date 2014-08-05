@@ -4,6 +4,7 @@ from pyramid import testing
 from mock import Mock
 from web import util
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
+from webob.multidict import MultiDict
 
 class TestBase(unittest.TestCase):
     def setup_common(self):
@@ -24,7 +25,7 @@ class TestBase(unittest.TestCase):
 
         util.get_rpc_stub = Mock(return_value=self.sp_rpc_stub)
 
-    def create_dummy_request(self, params={}, json_body={}):
+    def create_dummy_request(self, params=MultiDict(), json_body={}):
         """
         @param params a dictionary of HTTP request parameters
         """
