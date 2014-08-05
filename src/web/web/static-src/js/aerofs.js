@@ -195,7 +195,11 @@ function linkFileSelectorToField(selector, field) {
             reader.onload = function() {
                 $(field).val(this.result);
             };
-            reader.readAsBinaryString(file);
+            // N.B. IE 11 doesn't support readAsBinaryString() despite what
+            //   MSDN doc claims. Since we use this mostly to upload
+            //   certificate and key files, reading the file as UTF-8 text
+            //   is good enough.
+            reader.readAsText(file, "UTF-8");
         } else {
             $(field).val('');
         }

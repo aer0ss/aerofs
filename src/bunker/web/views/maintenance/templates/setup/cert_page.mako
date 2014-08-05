@@ -24,12 +24,12 @@
             </label>
             <div class="form-group">
                 <div class="col-sm-6">
-                    <label for="server.browser.certificate">Certificate file:</label>
+                    <label for="cert-selector">Certificate file:</label>
                     <input type="file" id="cert-selector" disabled/>
                     <input type="hidden" id="server-browser-certificate" name="server.browser.certificate" />
                 </div>
                 <div class="col-sm-6">
-                    <label for="server.browser.certificate">Key file:</label>
+                    <label for="key-selector">Key file:</label>
                     <input type="file" id="key-selector" disabled/>
                     <input type="hidden" id="server-browser-key" name="server.browser.key" />
                 </div>
