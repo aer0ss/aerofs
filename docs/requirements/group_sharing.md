@@ -6,7 +6,7 @@
 
 * Admins/users can share folders with a group instead of inviting individual users.
 * Users join a folder as soon as they join a group, and leave a folder as soon as they leave a
-folder.
+group.
 
 ## Requirements
 
@@ -63,5 +63,5 @@ similar to the existing 'Manage Shared Folder' dialog). The applies to both desk
 
 ### Auto-complete
 
-* FUTURE: User should be able be able to auto-complete search for groups when sharing/managing from
-desktop/web.
+* User should be able be able to auto-complete search for users and groups when sharing/managing
+from desktop/web.
