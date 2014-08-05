@@ -5,7 +5,8 @@ Classes related to the certificate authority server implementation.
 import os
 import socket
 import wsgiref.simple_server
-import aerofs.certauth.openssl
+
+import openssl
 
 """
 Application object parameter to make_server. Does HTTP request handling.
@@ -14,7 +15,7 @@ class ApplicationObject(object):
 
     def __init__(self, cadir):
         self._cadir = cadir
-        self._openssl = aerofs.certauth.openssl.OpenSSLWrapper(cadir)
+        self._openssl = openssl.OpenSSLWrapper(cadir)
 
     def _set_response(self, response, code, length):
         response(code,[
@@ -40,7 +41,7 @@ class ApplicationObject(object):
                 request_body_size = int(environ['CONTENT_LENGTH'])
                 csr = environ['wsgi.input'].read(request_body_size)
             except ValueError:
-                raise aerofs.certauth.openssl.ExBadRequest("No POST body");
+                raise openssl.ExBadRequest("No POST body");
 
             certname = 'certs/' + query_string
             ret =  self._openssl.newcert(certname, csr)
@@ -48,12 +49,12 @@ class ApplicationObject(object):
         # Catch certain exceptions for debugging purposes. Don't catch
         # everything (like file read errors etc.) - that would be a bit overkill
         # since the WSGI app catches those anyway.
-        except aerofs.certauth.openssl.ExBadRequest, e:
+        except openssl.ExBadRequest, e:
             print "Bad request: " + str(e)
             self._set_response(response, "400 Bad Request", 0)
             return ""
 
-        except aerofs.certauth.openssl.ExInternalServerError, e:
+        except openssl.ExInternalServerError, e:
             print "Internal server error: " + str(e)
             self._set_response(response, "500 Internal Server Error", 0)
             return ""

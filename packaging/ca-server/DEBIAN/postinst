@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Install the certificate authority python module.
-# TODO: get this virtualenv'd
-cd /usr/local/aerofs/python/certauth
-python setup.py install
+PYTHONENV=/opt/ca/pythonenv
+rm -rf $PYTHONENV
+virtualenv $PYTHONENV
+# If we had any dependencies, we'd install them here.

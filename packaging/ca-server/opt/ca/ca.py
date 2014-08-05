@@ -11,13 +11,13 @@ At the most basic level, this server is a wrapper for standard openssl commands.
 """
 
 import sys
-import aerofs.certauth.server
+import server
 
 if __name__ == "__main__":
     cadir = '/opt/ca/prod'
     port = 9002
 
-    ca = aerofs.certauth.server.CertificateAuthorityServer(cadir, port)
+    ca = server.CertificateAuthorityServer(cadir, port)
     print "Serving locally on port " + str(port) + "..."
 
     try:
