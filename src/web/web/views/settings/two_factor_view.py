@@ -134,7 +134,7 @@ def two_factor_setup_post(request):
 def two_factor_disable_post(request):
     sp = get_rpc_stub(request)
     try:
-        sp.set_two_factor_enforcement(False, None)
+        sp.set_two_factor_enforcement(False, None, None)
         flash_success(request, "Disabled two-factor authentication")
     except ExceptionReply as e:
         flash_error(request, "Failed to disable two-factor authentication")
