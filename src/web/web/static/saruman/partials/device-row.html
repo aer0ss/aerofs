@@ -1,0 +1,53 @@
+<div class="col-sm-12">
+    <div class="row" style="padding-bottom: 10px;">
+        <div class="col-sm-6">
+            <span data-toggle="tooltip" 
+                class="help os_name_tooltip" 
+                ng-title="device.os_name || 'Unknown operating system'" 
+                ng-class="{
+                    'aerofs-icon-windows': device.os_family == 'Windows',
+                    'aerofs-icon-osx': device.os_family == 'Mac OS X' || os_family == 'iOS' || device.os_name == 'iOS',
+                    'aerofs-icon-android': device.os_family == 'Android' || device.os_name == 'Android',
+                    'aerofs-icon-linux': device.os_family == 'Linux',
+                    'glyphicon glyphicon-question-sign': 
+                        ['Windows', 'Mac OS X', 'iOS', 'Android', 'Linux'].indexOf(device.os_family) == -1 &&
+                        ['Windows', 'Mac OS X', 'iOS', 'Android', 'Linux'].indexOf(device.os_name) == -1
+                    }"></span>
+            <span ng-hide="device.name && device.changingName" 
+                ng-class="{'clickable': device.name}" 
+                ng-click="device.newName = device.name; device.changingName = true">
+                {{ device.name || "AeroFS " + device.os_name + " Device"}}
+            </span>
+            <span ng-show="device.name && device.changingName">
+                <form role="form" class="form-inline" method="POST" style="display: inline;" ng-submit="changeName(device)">
+                    <input type="text" class="form-control" ng-model="device.newName">
+                </form>
+                <button type="button" class="close" ng-click="device.changingName = false"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </span>
+        </div>
+        <div class="col-sm-2">
+            {{ device.last_seen || "N/A" }}
+        </div>
+        <div class="col-sm-2">
+            <span ng-hide="device.is_mobile">{{ device.ip }}</span>
+        </div>
+        <div class="col-sm-2">
+            <div class="btn-group pull-right actions" ng-hide="device.is_mobile">
+                <button type="button" class="btn btn-plain dropdown-toggle" data-toggle="dropdown">
+                Actions <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu pull-right" role="menu">
+                    <li ng-if="device.name"><a ng-click="device.newName = device.name; device.changingName = true">Rename</a></li>
+                    <li ng-if="device.name" class="divider"></li>
+                    <li><a ng-click="unlink(device)">Unlink</a></li>
+                    <li><a ng-click="erase(device)">Erase</a></li>
+                </ul>
+            </div>
+            <div class="actions" ng-show="device.is_mobile">
+                <a class="btn btn-plain pull-right" ng-click="unlink(device)">
+                Unlink
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

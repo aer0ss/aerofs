@@ -7,7 +7,7 @@ import time
 from pyramid.security import authenticated_userid
 
 from pyramid.view import view_config
-from pyramid.httpexceptions import HTTPNoContent, HTTPFound, HTTPInternalServerError
+from pyramid.httpexceptions import HTTPNoContent, HTTPBadRequest, HTTPFound, HTTPInternalServerError
 import requests
 
 from web.util import get_rpc_stub
@@ -16,10 +16,6 @@ from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 
 
 log = logging.getLogger(__name__)
-
-# URL param keys
-_URL_PARAM_DEVICE_ID = 'device_id'  # the value is a HEX encoded device id
-_URL_PARAM_DEVICE_NAME = 'device_name'
 
 
 @view_config(
@@ -32,18 +28,12 @@ def my_devices(request):
 
     user = authenticated_userid(request)
 
-    sp = get_rpc_stub(request)
-    devices = sp.list_user_devices(user).device
+    # if there aren't any devices, redirect user to download page
+    device_data = json_get_devices(request)
+    if len(device_data['devices']) + len(device_data['mobile_devices']) == 0:
+        return HTTPFound(request.route_path('download', _query={'msg_type': 'no_device'}))
 
-    r = requests.get(get_bifrost_url(request) + '/tokenlist',
-            params={'owner': authenticated_userid(request)})
-    r.raise_for_status()
-    mobile_devices = [t for t in r.json()["tokens"] if is_aerofs_mobile_client_id(t["client_id"])]
-
-    if len(devices) + len(mobile_devices) == 0:
-        raise HTTPFound(request.route_path('download', _query={'msg_type': 'no_device'}))
-
-    return _devices(request, devices, mobile_devices, user, _("My devices"), False)
+    return _device_page(request, user, _("My devices"), False)
 
 
 @view_config(
@@ -53,18 +43,9 @@ def my_devices(request):
 )
 def user_devices(request):
     _ = request.translate
-
     user = request.params[URL_PARAM_USER]
     full_name = request.params[URL_PARAM_FULL_NAME]
-
-    sp = get_rpc_stub(request)
-    devices = sp.list_user_devices(user).device
-
-    r = requests.get(get_bifrost_url(request) + '/tokenlist', params={'owner': user})
-    r.raise_for_status()
-    mobile_devices = [t for t in r.json()["tokens"] if is_aerofs_mobile_client_id(t["client_id"])]
-
-    return _devices(request, devices, mobile_devices, user, _("${name}'s devices", {'name': full_name}), False)
+    return _device_page(request, user, _("${name}'s devices", {'name': full_name}), False)
 
 
 @view_config(
@@ -83,29 +64,16 @@ def team_server_devices(request):
         raise HTTPFound(request.route_path('download_team_server',
                                            _query={'msg_type': 'no_device'}))
 
-    mobile_devices = []
-
-    return _devices(request, devices, mobile_devices, ts_user, _("Team Servers"), True)
+    return _device_page(request, ts_user, _("Team Servers"), True)
 
 
-def _devices(request, devices, mobile_devices, user, page_heading, are_team_servers):
-    last_seen_nullable = None
-    try:
-        last_seen_nullable = _get_last_seen(_get_verkehr_url(request.registry.settings), devices)
-    except Exception as e:
-        log.error('get_last_seen failed. use null values: {}'.format(e))
-
+def _device_page(request, user, page_heading, are_team_servers):
     return {
         'url_param_user': URL_PARAM_USER,
-        'url_param_device_id': _URL_PARAM_DEVICE_ID,
-        'url_param_device_name': _URL_PARAM_DEVICE_NAME,
         # N.B. can't use "page_title" as the variable name. base_layout.mako
         # defines a global variable using the same name.
         'page_heading': page_heading,
         'user': user,
-        'devices': devices,
-        'last_seen_nullable': last_seen_nullable,
-        'mobile_devices': mobile_devices,
         'are_team_servers': are_team_servers,
     }
 
@@ -160,6 +128,75 @@ def _pretty_timestamp(polling_interval, timestamp):
     else:
         return "a year ago"
 
+def _jsonable_device(device, last_seen_data):
+    '''Converts a non-mobile device protobuf thing into a JSON-compatible dictionary.'''
+    encoded_id = device.device_id.encode('hex')
+    if encoded_id in last_seen_data:
+        last_seen = last_seen_data[encoded_id]['time']
+        ip = last_seen_data[encoded_id]['ip']
+    else:
+        last_seen = None
+        ip = None
+    try:
+        client_id = device.client_id
+    except AttributeError:
+        client_id = None
+    return {
+            'name': device.device_name,
+            'os_family': device.os_family,
+            'os_name': device.os_name,
+            'is_mobile': device.os_family in ['iOS', 'Android'],
+            'id': encoded_id,
+            'last_seen': last_seen,
+            'ip': ip,
+            'client_id': client_id
+        }
+
+def _jsonable_device_mobile(device):
+    '''Converts a mobile device protobuf thing into a JSON-compatible dictionary.'''
+    return {
+            'token': device['token'],
+            'client_id': device['client_id'],
+            'os_name': 'Android' if device['client_id'] == 'aerofs-android' else 'iOS',
+            'is_mobile': True,
+            'last_seen': None,
+            'ip': None,
+        }
+
+@view_config(
+    route_name='json.get_devices',
+    renderer='json',
+    permission='user',
+    request_method='GET'
+)
+def json_get_devices(request):
+    user = authenticated_userid(request)
+
+    sp = get_rpc_stub(request)
+    devices = sp.list_user_devices(user).device
+
+    r = requests.get(get_bifrost_url(request) + '/tokenlist',
+            params={'owner': user})
+    r.raise_for_status()
+    mobile_devices = [t for t in r.json()["tokens"] if is_aerofs_mobile_client_id(t["client_id"])]
+
+    last_seen_nullable = None
+    try:
+        last_seen_nullable = _get_last_seen(_get_verkehr_url(request.registry.settings), devices)
+    except Exception as e:
+        log.error('get_last_seen failed. use null values: {}'.format(e))
+
+    device_list = []
+    for d in devices:
+        device_list.append(_jsonable_device(d, last_seen_nullable))
+    mobile_device_list = []
+    for d in mobile_devices:
+        mobile_device_list.append(_jsonable_device_mobile(d))
+    return {
+        'devices': device_list,
+        'mobile_devices': mobile_device_list,
+    }
+
 
 @view_config(
     route_name='json.rename_device',
@@ -168,9 +205,9 @@ def _pretty_timestamp(polling_interval, timestamp):
     request_method='POST'
 )
 def json_rename_device(request):
-    user = request.params[URL_PARAM_USER]
+    user = authenticated_userid(request)
     device_id = _get_device_id_from_request(request, 'rename')
-    device_name = request.params[_URL_PARAM_DEVICE_NAME]
+    device_name = request.json_body['device_name']
 
     sp = get_rpc_stub(request)
     sp.set_user_preferences(user, None, None, device_id, device_name)
@@ -211,9 +248,17 @@ def _get_device_id_from_request(request, action):
     """
     N.B. This method assumes the parameter value is a HEX encoded device id
     """
-    device_id = request.params[_URL_PARAM_DEVICE_ID]
+    try:
+        device_id = request.params['device_id']
+    except KeyError:
+        device_id = request.json_body['device_id']
     log.info('{} {} device {}'.format(authenticated_userid(request), action, device_id))
-    return device_id.decode('hex')
+    decoded_id = device_id.decode('hex')
+    if len(decoded_id) != 16:
+        msg = 'hex decoded device id "{}" is an invalid length'.format(decoded_id)
+        log.error(msg)
+        raise HTTPBadRequest(msg)
+    return decoded_id
 
 
 def _get_verkehr_url(settings):

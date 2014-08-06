@@ -170,7 +170,10 @@ def access_tokens(request):
     renderer='json'
 )
 def json_delete_access_token(request):
-    token = request.params['access_token']
+    try:
+        token = request.params['access_token']
+    except KeyError:
+        token = request.json_body['access_token']
     # This is to prevent injection attacks e.g. token='../clients'
     if not is_valid_access_token(token):
         log.error('json_delete_access_token(): invalid token: ' + token)

@@ -25,9 +25,10 @@
                             <div class="col-sm-3 col-xs-12"><strong class="visible-xs">{{folder.name}}</strong><span class="hidden-xs">{{folder.name}}</span></div>
                             <div class="col-sm-3 col-xs-4"><strong class="visible-xs">Owners: </strong>{{folder.people|byRole:"Owner"|myMembers}}</div>
                             <div class="col-sm-4 col-xs-4"><strong class="visible-xs">Members: </strong>{{folder.people|byRole:"Member"|myMembers}}</div>
+
                             <div class="col-sm-2 col-xs-4" id="folder-{{folder.spinnerID}}">
                                 <span class="folder-spinner pull-left">&nbsp;</span>
-                                <div class="sf-actions btn-group pull-right">
+                                <div class="sf-actions btn-group pull-right actions">
                                   <button type="button" class="btn btn-plain dropdown-toggle" data-toggle="dropdown">
                                     Actions <span class="caret"></span>
                                   </button>

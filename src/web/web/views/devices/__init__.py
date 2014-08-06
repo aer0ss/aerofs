@@ -5,6 +5,7 @@ def includeme(config):
     config.add_route('user_devices', 'users/devices')
     config.add_route('team_server_devices', 'team_servers')
 
+    config.add_route('json.get_devices', 'devices/get_devices')
     config.add_route('json.rename_device', 'devices/rename_device')
     config.add_route('json.unlink_device', 'devices/unlink_device')
     config.add_route('json.erase_device', 'devices/erase_device')

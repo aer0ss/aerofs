@@ -13,6 +13,8 @@ Example:
     virtualenv testing
     ./testing/bin/pip install protobuf
     ./testing/bin/pip install requests
+    ./testing/bin/pip install --editable ~/repos/aerofs/src/python-lib
+    ./package.sh
     ./testing/bin/python aero-oauth/main.py -h
 
 ## Usage
