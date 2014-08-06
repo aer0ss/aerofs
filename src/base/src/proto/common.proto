@@ -201,8 +201,9 @@ message PBGroupPermissions {
     required uint32 group_id = 1;
     required PBPermissions permissions = 2;
 
-    // See PBSubjectPermissions:external, above.
-    optional bool external = 3;
+    // Boolean indicating whether or not the group is managed externally (by AD/LDAP system) or
+    // locally.
+    required bool externally_managed = 3;
 }
 
 message PBFolderInvitation {
