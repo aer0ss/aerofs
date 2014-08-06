@@ -3,17 +3,17 @@ package com.aerofs.sp.server.lib.organization;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ParamFactory;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Sp.PBTwoFactorEnforcementLevel;
-import com.aerofs.sp.server.lib.OrganizationDatabase;
-import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.group.GroupDatabase;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -58,17 +58,26 @@ public class Organization
         private User.Factory _factUser;
         private SharedFolder.Factory _factSharedFolder;
         private OrganizationInvitation.Factory _factOrgInvite;
+        private Group.Factory _factGroup;
+        private GroupDatabase _gdb;
 
         @Inject
-        public void inject(OrganizationDatabase odb, OrganizationInvitationDatabase oidb,
-                User.Factory factUser, SharedFolder.Factory factSharedFolder,
-                OrganizationInvitation.Factory factOrgInvite)
+        public void inject(
+                OrganizationDatabase odb,
+                OrganizationInvitationDatabase oidb,
+                User.Factory factUser,
+                SharedFolder.Factory factSharedFolder,
+                OrganizationInvitation.Factory factOrgInvite,
+                Group.Factory factGroup,
+                GroupDatabase gdb)
         {
             _odb = odb;
             _oidb = oidb;
             _factUser = factUser;
             _factSharedFolder = factSharedFolder;
             _factOrgInvite = factOrgInvite;
+            _factGroup = factGroup;
+            _gdb = gdb;
         }
 
         @ParamFactory
@@ -221,11 +230,35 @@ public class Organization
     }
 
     public ImmutableList<User> listUsers(int maxResults, int offset)
-            throws SQLException, ExBadArgs
+            throws SQLException
+    {
+        return listUsers(maxResults, offset, null);
+    }
+
+    public ImmutableList<User> listUsers(int maxResults, int offset, @Nullable String searchPrefix)
+            throws SQLException
     {
         Builder<User> builder = ImmutableList.builder();
-        for (UserID userID : _f._odb.listUsers(_id, offset, maxResults)) {
+        for (UserID userID : _f._odb.listUsers(_id, offset, maxResults, searchPrefix)) {
             builder.add(_f._factUser.create(userID));
+        }
+        return builder.build();
+    }
+
+    public ImmutableList<Group> listGroups(int maxResults, int offset)
+            throws SQLException
+    {
+        return listGroups(maxResults, offset, null);
+    }
+
+    public ImmutableList<Group> listGroups(int maxResults, int offset,
+            @Nullable String searchPrefix)
+            throws SQLException
+    {
+        Builder<Group> builder = ImmutableList.builder();
+
+        for (GroupID gid : _f._gdb.listGroups(_id, offset, maxResults, searchPrefix)) {
+            builder.add(_f._factGroup.create(gid));
         }
         return builder.build();
     }

@@ -28,7 +28,7 @@ import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.PasswordManagement;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;

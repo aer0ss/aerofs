@@ -22,8 +22,6 @@ public final class SPSchema
             C_USER_USAGE_WARNING_SENT       = "u_usage_warning_sent",
             C_USER_TWO_FACTOR_ENFORCED      = "u_two_factor_enforced",
 
-            // (eric) made the columns match the SQL names here, easier to autocomplete in IDE
-            // when the prefix used here matches that in the SQL schema
             T_ORGANIZATION                  = "sp_organization",
             C_O_ID                          = "o_id",
             C_O_NAME                        = "o_name",
@@ -65,19 +63,12 @@ public final class SPSchema
             T_TWO_FACTOR_SECRET             = "sp_two_factor_secret",
             C_TWO_FACTOR_USER_ID            = "tf_u_id",
             C_TWO_FACTOR_SECRET             = "tf_secret",
-            C_TWO_FACTOR_ENROLL_DATE        = "tf_enroll_ts",
 
             T_TWO_FACTOR_RECOVERY           = "sp_two_factor_recovery",
             C_TF_RECOVERY_ID                = "tfr_id",
             C_TF_RECOVERY_USER_ID           = "tfr_u_id",
             C_TF_RECOVERY_CODE              = "tfr_code",
-            C_TF_RECOVERY_CODE_USE_DATE     = "tfr_code_used_ts",
-
-            /*
-             * create table if not exists sp_acls (a_sid binary(16) not null, a_id varchar(320) not
-             * null, a_role tinyint not null, primary key(a_sid, a_id), index(a_sid), index(a_id))
-             * engine=InnoDB;
-             */
+            C_TF_RECOVERY_CODE_USE_TS       = "tfr_code_used_ts",
 
             T_AC                            = "sp_acl",
             C_AC_STORE_ID                   = "a_sid",
@@ -85,8 +76,9 @@ public final class SPSchema
             C_AC_ROLE                       = "a_role",
             C_AC_STATE                      = "a_state",
             C_AC_SHARER                     = "a_sharer",
-            // see docs/design/sharing_and_migration.txt for information about this flag
+            // See docs/design/sharing_and_migration.md for information about this flag.
             C_AC_EXTERNAL                   = "a_external",
+            C_AC_GID                        = "a_gid",
 
             T_SF                            = "sp_shared_folder",
             C_SF_ID                         = "sf_id",
@@ -111,5 +103,20 @@ public final class SPSchema
             C_US_TOKEN                      = "us_token",
             C_US_EXPIRES                    = "us_expires",
             C_US_HASHED_PASSWORD            = "us_hashed_password",
-            C_US_PASSWORD_SALT              = "us_password_salt";
+            C_US_PASSWORD_SALT              = "us_password_salt",
+
+            T_SG                            = "sp_sharing_groups",
+            C_SG_GID                        = "sg_gid",
+            C_SG_COMMON_NAME                = "sg_common_name",
+            C_SG_ORG_ID                     = "sg_org_id",
+            C_SG_EXTERNAL_ID                = "sg_external_id",
+
+            T_GM                            = "sp_sharing_group_members",
+            C_GM_GID                        = "gm_gid",
+            C_GM_MEMBER_ID                  = "gm_member_id",
+
+            T_GS                            = "sp_sharing_group_shares",
+            C_GS_GID                        = "gs_gid",
+            C_GS_SID                        = "gs_sid",
+            C_GS_ROLE                       = "gs_role";
 }

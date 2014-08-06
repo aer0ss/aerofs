@@ -8,7 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
-import com.aerofs.sp.server.lib.OrganizationDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationDatabase;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -99,7 +99,7 @@ public class GetUsersServlet extends HttpServlet
         _sqlTrans.begin();
 
         try {
-            List<UserID> users = _odb.listUsers(PRIVATE_ORGANIZATION, offset, count);
+            List<UserID> users = _odb.listUsers(PRIVATE_ORGANIZATION, offset, count, null);
             _sqlTrans.commit();
             return users;
         } catch (Exception e) {

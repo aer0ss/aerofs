@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.lib;
+package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.ex.ExNotFound;

@@ -4,11 +4,11 @@
     <module name="spsv" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
-    <option name="PACKAGE_NAME" />
+    <option name="PACKAGE_NAME" value="com.aerofs.sp" />
     <option name="MAIN_CLASS_NAME" value="" />
     <option name="METHOD_NAME" value="" />
-    <option name="TEST_OBJECT" value="pattern" />
-    <option name="VM_PARAMETERS" value="-ea" />
+    <option name="TEST_OBJECT" value="package" />
+    <option name="VM_PARAMETERS" value="-ea -Duser.dir=$PROJECT_DIR$/../../approot -Djava.io.tmpdir=$PROJECT_DIR$/../../approot -Dcom.aerofs.test.logLevel=DEBUG -Djava.library.path=$PROJECT_DIR$/../../approot" />
     <option name="PARAMETERS" value="" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../approot" />
     <option name="ENV_VARIABLES" />

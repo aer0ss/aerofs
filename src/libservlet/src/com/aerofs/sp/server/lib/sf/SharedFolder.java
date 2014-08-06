@@ -2,23 +2,26 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.sp.server.lib;
+package com.aerofs.sp.server.lib.sf;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.base.ParamFactory;
-import com.aerofs.sp.server.lib.SharedFolderDatabase.UserIDRoleAndState;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.group.GroupSharesDatabase;
+import com.aerofs.sp.server.lib.group.GroupSharesDatabase.GroupIDAndRole;
+import com.aerofs.sp.server.lib.sf.SharedFolderDatabase.UserIDRoleAndState;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
@@ -26,14 +29,17 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.sql.SQLException;
+import java.util.Map.Entry;
 
 import static com.aerofs.sp.common.SharedFolderState.JOINED;
+import static com.aerofs.sp.common.SharedFolderState.LEFT;
 import static com.aerofs.sp.common.SharedFolderState.PENDING;
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -42,12 +48,17 @@ public class SharedFolder
     public static class Factory
     {
         private SharedFolderDatabase _db;
+        private GroupSharesDatabase _gsdb;
+        private Group.Factory _factGroup;
         private User.Factory _factUser;
 
         @Inject
-        public void inject(SharedFolderDatabase db, User.Factory factUser)
+        public void inject(SharedFolderDatabase db, GroupSharesDatabase gsdb,
+                Group.Factory factGroup, User.Factory factUser)
         {
             _db = db;
+            _gsdb = gsdb;
+            _factGroup = factGroup;
             _factUser = factUser;
         }
 
@@ -185,7 +196,8 @@ public class SharedFolder
     public ImmutableCollection<UserID> addJoinedUser(User user, Permissions permissions)
             throws ExAlreadyExist, SQLException, ExNotFound
     {
-        _f._db.insertUser(_sid, user.id(), permissions, JOINED, null);
+        _f._db.insertUser(_sid, user.id(), permissions, JOINED, null, GroupID.NULL_GROUP);
+        setState(user, JOINED);
 
         addTeamServerForUserImpl(user);
 
@@ -195,7 +207,44 @@ public class SharedFolder
     public void addPendingUser(User user, Permissions permissions, User sharer)
             throws SQLException, ExAlreadyExist
     {
-        _f._db.insertUser(_sid, user.id(), permissions, PENDING, sharer.id());
+        if (getStateNullable(user) != null) {
+            throw new ExAlreadyExist("(userID, SID) pair already exist in the ACL table");
+        }
+        _f._db.insertUser(_sid, user.id(), permissions, PENDING, sharer.id(), GroupID.NULL_GROUP);
+    }
+
+    /** Adds an ACL specific to a group, inherits the state of any already existing ACL for this
+     * shared folder and user - if this is the first time the user is joining the folder, sets the
+     * state as PENDING
+     * @return whether or not we need to send an email inviting the user to the folder
+     */
+    public AffectedAndNeedsEmail addUserWithGroup(User user, @Nullable Group group,
+            Permissions permissions, @Nullable User sharer)
+            throws SQLException, ExAlreadyExist, ExNotFound, ExNoAdminOrOwner
+    {
+        GroupID gid = group == null ? GroupID.NULL_GROUP : group.id();
+        UserID sharerID = sharer == null ? null : sharer.id();
+
+        SharedFolderState oldState = getStateNullable(user), newState = oldState;
+        Permissions oldPermissions = getPermissionsNullable(user);
+        boolean needsEmail = false;
+        if (oldState == LEFT) {
+            _f._db.setState(id(), user.id(), PENDING);
+        }
+        if (oldState == null || oldState == LEFT) {
+            newState = PENDING;
+            needsEmail = true;
+        }
+
+        // insert a new ACL if the row doesn't exist (first half of the if condition), or if the
+        // new state isn't pending - so we can throw ExAlreadyExist on already joined users
+        if (getPermissionsInGroupNullable(user, group) == null || newState != PENDING) {
+            _f._db.insertUser(_sid, user.id(), permissions, newState, sharerID, gid);
+        }
+
+        ImmutableCollection<UserID> affected = needToUpdateACLs(oldState, oldPermissions, newState,
+                getPermissionsNullable(user)) ? getJoinedUserIDs() : ImmutableList.of();
+        return new AffectedAndNeedsEmail(affected, needsEmail);
     }
 
     public ImmutableCollection<UserID> setState(User user, SharedFolderState newState)
@@ -283,7 +332,7 @@ public class SharedFolder
         User tsUser = user.getOrganization().getTeamServerUser();
         if (getPermissionsNullable(tsUser) == null) {
             // Don't call this.addJoinedUser() here as it would cause recursion
-            _f._db.insertUser(_sid, tsUser.id(), Permissions.EDITOR, JOINED, null);
+            _f._db.insertUser(_sid, tsUser.id(), Permissions.EDITOR, JOINED, null, GroupID.NULL_GROUP);
             return true;
         } else {
             return false;
@@ -293,13 +342,46 @@ public class SharedFolder
     public ImmutableCollection<UserID> removeUser(User user)
             throws SQLException, ExNotFound, ExNoAdminOrOwner
     {
-        return removeUserAndTransferOwnership(user, null);
+        return removeUserAndTransferOwnership(user, null, null);
     }
 
-    public ImmutableCollection<UserID> removeUserAndTransferOwnership(User user, @Nullable User newOwner)
+    public ImmutableCollection<UserID> removeUser(User user, Group group)
             throws SQLException, ExNotFound, ExNoAdminOrOwner
     {
-        ImmutableCollection<UserID> affected = removeUserAllowNoOwner(user);
+        return removeUserAndTransferOwnership(user, null, group);
+    }
+
+    public ImmutableCollection<UserID> removeGroup(Group group)
+            throws SQLException, ExNotFound, ExNoAdminOrOwner
+    {
+        ImmutableCollection<UserID> affected = getJoinedUserIDs();
+        ImmutableMap<User, Permissions> prev = getJoinedUsersAndRoles();
+        for (User u : group.listMembers()) {
+            // N.B. this shouldn't throw ExNotFound because the group's users can't remove
+            // themselves from a shared folder, they can only remove the group
+            _f._db.delete(id(), u.id(), group.id());
+        }
+        ImmutableMap<User, Permissions> curr = getJoinedUsersAndRoles();
+
+        // difference of prev and curr keySets is users that used to be joined and no longer are
+        for (User removed : Sets.difference(prev.keySet(), curr.keySet())) {
+            removeTeamServerForUserImpl(removed);
+        }
+
+        if (getJoinedUserIDs().isEmpty()) {
+            destroy();
+        } else {
+            throwIfNoOwnerLeft();
+        }
+
+        return needToUpdateACLs(prev, curr) ? affected : ImmutableList.of();
+    }
+
+    public ImmutableCollection<UserID> removeUserAndTransferOwnership(User user,
+            @Nullable User newOwner, @Nullable Group group)
+            throws SQLException, ExNotFound, ExNoAdminOrOwner
+    {
+        ImmutableCollection<UserID> affected = removeUserAllowNoOwner(user, group);
         if (exists() && !hasOwnerLeft()) {
             if (newOwner == null) throwIfNoOwnerLeft();
             try {
@@ -307,7 +389,7 @@ public class SharedFolder
             } catch (ExAlreadyExist e) {
                 // in general exception-driven control flow is bad but here we need the
                 // try-catch block anyway (if only to fill it with an assertion) and the
-                // likelihood of the new owner already being a member but not and OWNER
+                // likelihood of the new owner already being a member but not an OWNER
                 // is very low...
                 grantPermission(newOwner, Permission.MANAGE);
             }
@@ -315,28 +397,33 @@ public class SharedFolder
         return affected;
     }
 
-    private ImmutableCollection<UserID> removeUserAllowNoOwner(User user)
+    private ImmutableCollection<UserID> removeUserAllowNoOwner(User user, @Nullable Group group)
             throws SQLException, ExNotFound
     {
-        boolean isJoined = getStateNullable(user) == JOINED;
+        SharedFolderState oldState = getStateNullable(user);
+        Permissions oldPermissions = getPermissionsNullable(user);
+        boolean wasJoined = oldState == JOINED;
+        GroupID gid = group == null ? GroupID.NULL_GROUP : group.id();
 
         // retrieve the list of affected users _before_ performing the deletion, so that all the
         // users including the removed ones will get notified. Don't notify any one if the user
         // was not joined.
         ImmutableCollection<UserID> affectedUsers =
-                isJoined ? getJoinedUserIDs() : ImmutableList.<UserID>of();
+                wasJoined ? getJoinedUserIDs() : ImmutableList.<UserID>of();
 
-        _f._db.delete(_sid, user.id());
+        _f._db.delete(_sid, user.id(), gid);
 
+        SharedFolderState newState = getStateNullable(user);
+        Permissions newPermissions = getPermissionsNullable(user);
+        boolean nowJoined = newState == JOINED;
         // remove the Team Server only if the user has joined the folder
-        if (isJoined) removeTeamServerForUserImpl(user);
+        if (wasJoined && !nowJoined) removeTeamServerForUserImpl(user);
 
         // auto-destroy folder if empty
-        if (getJoinedUserIDs().isEmpty()) {
-            destroy();
-        }
+        if (getJoinedUserIDs().isEmpty()) destroy();
 
-        return affectedUsers;
+        return needToUpdateACLs(oldState, oldPermissions, newState, newPermissions) ?
+                affectedUsers : ImmutableList.of();
     }
 
     /**
@@ -376,7 +463,7 @@ public class SharedFolder
             if (_f._factUser.create(otherUser).belongsTo(org)) return false;
         }
 
-        _f._db.delete(_sid, org.id().toTeamServerUserID());
+        _f._db.delete(_sid, org.id().toTeamServerUserID(), GroupID.NULL_GROUP);
         return true;
     }
 
@@ -388,23 +475,52 @@ public class SharedFolder
 
     /**
      * N.B the return value include Team Servers
+     *
+     * this method is used to propagate ACLs, so replies already incorporate Groups
      */
     public ImmutableMap<User, Permissions> getJoinedUsersAndRoles()
             throws SQLException
     {
         ImmutableMap.Builder<User, Permissions> builder = ImmutableMap.builder();
-        for (SubjectPermissions srp : _f._db.getJoinedUsersAndRoles(_sid)) {
-            builder.put(_f._factUser.create(srp._subject), srp._permissions);
+        for (Entry<UserID, Permissions> up : _f._db.getJoinedUsersAndRoles(_sid).entrySet()) {
+            builder.put(_f._factUser.create(up.getKey()), up.getValue());
         }
         return builder.build();
     }
 
-    public Iterable<UserPermissionsAndState> getAllUsersRolesAndStates() throws SQLException
+    public Iterable<UserPermissionsAndState> getAllUsersRolesAndStates()
+            throws SQLException
     {
         ImmutableList.Builder<UserPermissionsAndState> builder = ImmutableList.builder();
         for (UserIDRoleAndState entry : _f._db.getAllUsersRolesAndStates(_sid)) {
             builder.add(new UserPermissionsAndState(_f._factUser.create(entry._userID),
                     entry._permissions, entry._state));
+        }
+        return builder.build();
+    }
+
+    /**
+     * Used to get the User roles for displaying to users, ignoring other groups
+     */
+    public Iterable<UserPermissionsAndState> getUserRolesAndStatesForGroup(@Nullable Group group)
+            throws SQLException
+    {
+        GroupID gid = group == null ? GroupID.NULL_GROUP : group.id();
+
+        ImmutableList.Builder<UserPermissionsAndState> builder = ImmutableList.builder();
+        for (UserIDRoleAndState entry : _f._db.getUserRolesAndStatesWithGroup(_sid, gid)) {
+            builder.add(new UserPermissionsAndState(_f._factUser.create(entry._userID),
+                    entry._permissions, entry._state));
+        }
+        return builder.build();
+    }
+
+    public Iterable<GroupPermissions> getAllGroupsAndRoles() throws SQLException
+    {
+        ImmutableList.Builder<GroupPermissions> builder = ImmutableList.builder();
+        for (GroupIDAndRole groupIDAndRole : _f._gsdb.listJoinedGroupsAndRoles(id())) {
+            builder.add(new GroupPermissions(_f._factGroup.create(groupIDAndRole._groupID),
+                    groupIDAndRole._permissions));
         }
         return builder.build();
     }
@@ -417,10 +533,28 @@ public class SharedFolder
         return builder.build();
     }
 
+    public ImmutableCollection<Group> getJoinedGroups()
+            throws SQLException
+    {
+        Builder<Group> builder = ImmutableList.builder();
+        for (GroupID gid : getJoinedGroupIDs()) {
+            builder.add(_f._factGroup.create(gid));
+        }
+        return builder.build();
+    }
+
     public ImmutableCollection<UserID> getJoinedUserIDs()
             throws SQLException
     {
         return _f._db.getJoinedUsers(_sid);
+    }
+
+    public ImmutableCollection<GroupID> getJoinedGroupIDs()
+            throws SQLException
+    {
+        Builder<GroupID> builder = ImmutableList.builder();
+        builder.addAll(_f._gsdb.listJoinedGroups(id()));
+        return builder.build();
     }
 
     /**
@@ -454,37 +588,58 @@ public class SharedFolder
     public ImmutableCollection<UserID> setPermissions(User user, Permissions permissions)
             throws ExNoAdminOrOwner, ExNotFound, SQLException
     {
+        Permissions prevRole = getPermissionsNullable(user);
         _f._db.setPermissions(_sid, user.id(), permissions);
-        return usersAffectedByPermissionsChange(user);
+        throwIfNoOwnerLeft();
+        SharedFolderState state = getStateNullable(user);
+        Permissions currRole = getPermissionsNullable(user);
+        return needToUpdateACLs(state, prevRole, state, currRole) ?
+                getJoinedUserIDs() : ImmutableList.of();
+
+    }
+
+    public ImmutableCollection<UserID> setPermissionsForGroup(Group group, Permissions permissions)
+            throws ExNoAdminOrOwner, ExNotFound, SQLException
+    {
+        ImmutableMap<User, Permissions> prev = getJoinedUsersAndRoles();
+        _f._db.setPermissionsForGroup(id(), group.id(), permissions);
+        throwIfNoOwnerLeft();
+        ImmutableMap<User, Permissions> curr = getJoinedUsersAndRoles();
+        return needToUpdateACLs(prev, curr) ? getJoinedUserIDs() : ImmutableList.of();
     }
 
     /**
-     * Grant a specific permisison to an existing user
+     * Grant a specific permission to an existing user
      * @return List of affected users for which ACL epochs should be bumped
      */
     public ImmutableCollection<UserID> grantPermission(User user, Permission permission)
             throws ExNoAdminOrOwner, ExNotFound, SQLException
     {
+        Permissions prevRole = getPermissionsNullable(user);
         _f._db.grantPermission(_sid, user.id(), permission);
-        return usersAffectedByPermissionsChange(user);
+        throwIfNoOwnerLeft();
+        SharedFolderState state = getStateNullable(user);
+        Permissions currRole = getPermissionsNullable(user);
+        return needToUpdateACLs(state, prevRole, state, currRole) ?
+                getJoinedUserIDs() : ImmutableList.of();
     }
 
     /**
-     * Revoke a specific permisison for an existing user
+     * Revoke a specific permission for an existing user across all their ACLs, including groups
+     * this method is used to make sure a user does not have a specific permission, do not use
+     * it for the normal modification of a user's role in a folder
      * @return List of affected users for which ACL epochs should be bumped
      */
     public ImmutableCollection<UserID> revokePermission(User user, Permission permission)
             throws ExNoAdminOrOwner, ExNotFound, SQLException
     {
+        Permissions prevRole = getPermissionsNullable(user);
         _f._db.revokePermission(_sid, user.id(), permission);
-        return usersAffectedByPermissionsChange(user);
-    }
-
-    private ImmutableCollection<UserID> usersAffectedByPermissionsChange(User user)
-            throws ExNoAdminOrOwner, SQLException
-    {
         throwIfNoOwnerLeft();
-        return getStateNullable(user) == JOINED ? getJoinedUserIDs() : ImmutableList.<UserID>of();
+        SharedFolderState state = getStateNullable(user);
+        Permissions currRole = getPermissionsNullable(user);
+        return needToUpdateACLs(state, prevRole, state, currRole) ?
+                getJoinedUserIDs() : ImmutableList.of();
     }
 
     /**
@@ -493,7 +648,34 @@ public class SharedFolder
     public @Nullable Permissions getPermissionsNullable(User user)
             throws SQLException
     {
-        return _f._db.getRoleNullable(_sid, user.id());
+        return _f._db.getEffectiveRoleNullable(_sid, user.id());
+    }
+
+    public @Nullable Permissions getPermissionsInGroupNullable(User user, @Nullable Group group)
+            throws SQLException
+    {
+        return _f._db.getRoleNullable(_sid, user.id(),
+                group == null ? GroupID.NULL_GROUP : group.id());
+    }
+
+    public Permissions getPermissions(User user)
+            throws SQLException, ExNotFound
+    {
+        Permissions ret = getPermissionsNullable(user);
+        if (ret == null) {
+            throw new ExNotFound("specified user not found in this shared folder");
+        }
+        return ret;
+    }
+
+    public Permissions getPermissionsInGroup(User user, @Nullable Group group)
+        throws SQLException, ExNotFound
+    {
+        Permissions ret = getPermissionsInGroupNullable(user, group);
+        if (ret == null) {
+            throw new ExNotFound("specified user and group not found in this shared folder");
+        }
+        return ret;
     }
 
     public boolean hasOwnerLeft() throws SQLException
@@ -545,7 +727,10 @@ public class SharedFolder
             throws SQLException
     {
         Permissions permissions = getPermissionsNullable(user);
-        return permissions != null && permissions.covers(Permission.MANAGE) && getStateNullable(user) == JOINED;
+
+        return permissions != null &&
+               permissions.covers(Permission.MANAGE) &&
+               getStateNullable(user) == JOINED;
     }
 
     public void throwIfNotJoinedOwner(User user)
@@ -553,6 +738,36 @@ public class SharedFolder
     {
         if (isJoinedOwner(user)) return;
         throw new ExNoPerm();
+    }
+
+    // N.B. the permissions may only be null if the corresponding state is also null, we also
+    // check the states for nullity before checking permission equality to avoid a NPE
+    public boolean needToUpdateACLs(@Nullable SharedFolderState prevState,
+            @Nullable Permissions prevPermissions, @Nullable SharedFolderState currState,
+            @Nullable Permissions currPermissions)
+    {
+        if (prevState != JOINED && currState != JOINED) {
+            // unjoined users don't have effects on ACLs
+            return false;
+        } else {
+            // if a user joins or leaves, need to update ACLs - otherwise check permission equality
+            return (prevState == JOINED) != (currState == JOINED) ||
+                    !prevPermissions.equals(currPermissions);
+        }
+    }
+
+    public boolean needToUpdateACLs(ImmutableMap<User, Permissions> previous,
+            ImmutableMap<User, Permissions> after)
+    {
+        if (!previous.keySet().equals(after.keySet())) {
+            return true;
+        }
+        for (User u : previous.keySet()) {
+            if (!previous.get(u).equals(after.get(u))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -569,11 +784,12 @@ public class SharedFolder
     // the only purpose of this class is to hold the result of getAllUsersRolesAndStates()
     public static class UserPermissionsAndState
     {
-        @Nonnull public final User _user;
-        @Nonnull public final Permissions _permissions;
-        @Nonnull public final SharedFolderState _state;
+        public final User _user;
+        public final Permissions _permissions;
+        public final SharedFolderState _state;
 
-        public UserPermissionsAndState(User user, Permissions permissions, SharedFolderState state)
+        public UserPermissionsAndState(@Nonnull User user, @Nonnull Permissions permissions,
+                @Nonnull SharedFolderState state)
         {
             _user = user;
             _permissions = permissions;
@@ -594,6 +810,61 @@ public class SharedFolder
         public int hashCode()
         {
             return _user.hashCode() ^ _permissions.hashCode() ^ _state.hashCode();
+        }
+    }
+
+    public static class GroupPermissions
+    {
+        public final Group _group;
+        public final Permissions _permissions;
+
+        public GroupPermissions(@Nonnull Group group, @Nonnull Permissions permissions)
+        {
+            _group = group;
+            _permissions = permissions;
+        }
+
+        @Override
+        public boolean equals(Object that)
+        {
+            return this == that ||
+                    (that instanceof GroupPermissions &&
+                        _group.equals(((GroupPermissions)that)._group) &&
+                        _permissions.equals(((GroupPermissions)that)._permissions));
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _group.hashCode() ^ _permissions.hashCode();
+        }
+    }
+
+    public static class AffectedAndNeedsEmail
+    {
+        public final ImmutableCollection<UserID> _affected;
+        public final Boolean _needsEmail;
+
+        public AffectedAndNeedsEmail(@Nonnull ImmutableCollection<UserID> affected,
+                @Nonnull Boolean needsEmail)
+        {
+            _affected = affected;
+            _needsEmail = needsEmail;
+        }
+
+        @Override
+        public boolean equals(Object that)
+        {
+            return this == that ||
+                    (that instanceof AffectedAndNeedsEmail &&
+                            _affected.equals(((AffectedAndNeedsEmail)that)._affected) &&
+                            _needsEmail.equals(((AffectedAndNeedsEmail)that)._needsEmail));
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _affected.hashCode() ^ _needsEmail.hashCode();
         }
     }
 }

@@ -844,7 +844,8 @@ service SPService {
     // Requried Auth Level: admin
     //
     // Throws:
-    //   ExNotFound if one or more of the users are not members of the group.
+    //   ExNotFound if the group does not exist or if one or more of the users are not members of
+    //     the group.
     //   ExNotLocallyManaged if the group is not locally managed and this op cannot be completed.
     rpc RemoveGroupMembers(RemoveGroupMembersCall) returns (Void);
 
@@ -861,6 +862,8 @@ service SPService {
     // List all groups in the caller's organization.
     //
     // Requried Auth Level: user
+    //
+    // TODO (MP) consider renaming this to ListOrganizationGroups.
     rpc ListGroups(ListGroupsCall) returns (ListGroupsReply);
 
     // List all group members in the given group.
@@ -880,6 +883,11 @@ service SPService {
     //
     // Required Auth Level: user
     rpc GetTwoFactorSetupEnforcement(Void) returns (GetTwoFactorSetupEnforcementReply);
+
+    // List all group member roles and states in a given shared folder
+    //
+    // Required Auth Level: user
+    rpc ListGroupStatusInSharedFolder(ListGroupStatusInSharedFolderCall) returns (ListGroupStatusInSharedFolderReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -996,7 +1004,7 @@ message ShareFolderCall {
     required string folder_name = 3;
     required bytes share_id = 2;
 
-    // This list can be empty.
+    // This list cannot be empty.
     repeated PBSubjectPermissions subject_permissions = 1;
 
     // Message to the person.
@@ -1011,9 +1019,6 @@ message ShareFolderCall {
     // potentially harmful actions. Once confirmed, the UI will call the same method again with
     // this flag on.
     optional bool suppress_sharing_rules_warnings = 6;
-
-    // This list can be empty.
-    repeated PBGroupPermissions group_permissions = 7;
 }
 
 message JoinSharedFolderCall {
@@ -1093,6 +1098,8 @@ message GetACLReply {
     required uint64 epoch = 2;
 }
 
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
+    // make this contain pbsubjectpermissions instead of string and pbpermissions
 message UpdateACLCall {
     required bytes store_id = 1;
     required string subject = 2;
@@ -1102,6 +1109,8 @@ message UpdateACLCall {
     optional bool suppress_sharing_rules_warnings = 4;
 }
 
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
+    // make this contain pbsubject instead of string
 message DeleteACLCall {
     required bytes store_id = 1;
     required string subject = 2;
@@ -1298,10 +1307,15 @@ message PBSharedFolder {
         required PBSharedFolderState state = 3;
     }
 
-    message PBGroupPermissionsAndState {
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
+    // The reason why we have PBGroupPermissions is because PBUserPermissionsAndState comes
+    // first. I can't think of a way to extend PBUserPermissionsAndState in a backwards compatible
+    // way (short of making groups users which is outrageous), so we'll have to save this till the
+    // next SP protocol version bump.
+    // Ideally we have PBSubject := union of { PBUser, PBGroup }
+    message PBGroupPermissions {
         required PBGroup group = 1;
         required PBPermissions permissions = 2;
-        required PBSharedFolderState state = 3;
     }
 
     required bytes store_id = 1;
@@ -1309,7 +1323,7 @@ message PBSharedFolder {
     // Whether any user of the session user's organization owns the folder
     required bool owned_by_team = 3;
     repeated PBUserPermissionsAndState user_permissions_and_state = 4;
-    repeated PBGroupPermissionsAndState group_permissions_and_state = 5;
+    repeated PBGroupPermissions group_permissions = 5;
 }
 
 message GetOrganizationInvitationsReply {
@@ -1629,11 +1643,13 @@ message SetGroupCommonNameCall {
 }
 
 message AddGroupMembersCall {
-    repeated string user_emails = 1;
+    required uint32 group_id = 1;
+    repeated string user_emails = 2;
 }
 
 message RemoveGroupMembersCall {
-    repeated string user_emails = 1;
+    required uint32 group_id = 1;
+    repeated string user_emails = 2;
 }
 
 message DeleteGroupCall {
@@ -1671,4 +1687,18 @@ message SetTwoFactorSetupEnforcementCall {
 
 message GetTwoFactorSetupEnforcementReply {
     required PBTwoFactorEnforcementLevel level = 1;
+}
+
+message ListGroupStatusInSharedFolderCall {
+    required uint32 group_id = 1;
+    required bytes share_id = 2;
+}
+
+message ListGroupStatusInSharedFolderReply {
+    message PBUserAndState {
+        required PBUser user = 1;
+        required PBSharedFolderState state = 2;
+    }
+
+    repeated PBUserAndState user_permissions_and_state = 1;
 }

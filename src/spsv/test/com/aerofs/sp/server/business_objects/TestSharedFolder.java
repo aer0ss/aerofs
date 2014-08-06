@@ -9,11 +9,13 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.SharedFolder.UserPermissionsAndState;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -32,6 +34,8 @@ import static org.junit.Assert.fail;
 
 public class TestSharedFolder extends AbstractBusinessObjectTest
 {
+    public static OrganizationID orgID = new OrganizationID(1);
+
     @Test(expected = ExAlreadyExist.class)
     public void saveSharedFolder_shouldThrowOnDuplicate()
             throws Exception
@@ -598,7 +602,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         }
     }
 
-    @Test
+    @Test(expected=ExNotFound.class)
     public void setRole_shouldThrowIfUserNotFound()
             throws Exception
     {
@@ -606,10 +610,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user = saveUser();
 
-        try {
-            sf.setPermissions(user, Permissions.allOf(Permission.WRITE));
-            fail();
-        } catch (ExNotFound e) {}
+        sf.setPermissions(user, Permissions.allOf(Permission.WRITE));
     }
 
     @Test
@@ -627,9 +628,8 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         // Why 6? owner, user1, user2, and their TS
         addJoinedUser(sf, user2, Permissions.allOf(Permission.WRITE, Permission.MANAGE), owner, 6);
 
-        // intentionally make a no-op change
-        // wh 6? owner, user1, user2, and their perspective team servers
-        assertEquals(sf.setPermissions(user1, Permissions.allOf(Permission.WRITE)).size(), 6);
+        // intentionally make a no-op change, no ACL updates needed
+        assertEquals(sf.setPermissions(user1, Permissions.allOf(Permission.WRITE)).size(), 0);
         assertJoinedRole(sf, user1, Permissions.allOf(Permission.WRITE));
 
         // wh 6? owner, user1, user2, and their perspective team servers
@@ -738,6 +738,52 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
                 .build();
 
         assertEquals(expected, folder.getAllUsersExceptTeamServers());
+    }
+
+    @Test
+    public void shouldThrowExAlreadyExistOnlyIfUserAndGroupMatchAndJoined()
+            throws Exception
+    {
+        User owner = saveUser();
+        User user2 = saveUser();
+        // foreign key constraint that the organization has to exist
+        Organization org = factOrg.save(orgID);
+        Group group = factGroup.save("common name", orgID, null);
+
+        SharedFolder folder = saveSharedFolder(owner);
+        folder.addUserWithGroup(user2, null, Permissions.EDITOR, owner);
+        // won't fail because user hasn't joined yet
+        folder.addUserWithGroup(user2, null, Permissions.OWNER, owner);
+        folder.setState(user2, SharedFolderState.JOINED);
+        try {
+            folder.addUserWithGroup(user2, null, Permissions.OWNER, owner);
+            fail();
+        } catch (ExAlreadyExist e) {}
+        folder.addUserWithGroup(user2, group, Permissions.VIEWER, owner);
+        try {
+            folder.addUserWithGroup(user2, group, Permissions.VIEWER, owner);
+            fail();
+        } catch (ExAlreadyExist e) {}
+    }
+
+    @Test
+    public void shouldRemoveOneMembershipAtATime()
+            throws Exception
+    {
+        User owner = saveUser();
+        User user2 = saveUser();
+        Organization org = factOrg.save(orgID);
+        Group group = factGroup.save("common name", orgID, null);
+
+        SharedFolder folder = saveSharedFolder(owner);
+        folder.addUserWithGroup(user2, null, Permissions.EDITOR, owner);
+        folder.setState(user2, SharedFolderState.JOINED);
+        folder.addUserWithGroup(user2, group, Permissions.EDITOR, owner);
+        assertEquals(folder.getStateNullable(user2), SharedFolderState.JOINED);
+        folder.removeUser(user2);
+        assertEquals(folder.getStateNullable(user2), SharedFolderState.JOINED);
+        folder.removeUser(user2, group);
+        assertEquals(folder.getStateNullable(user2), null);
     }
 
     private User getTeamServerUser(User user)

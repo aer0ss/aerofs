@@ -13,8 +13,9 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.sharing_rules.AbstractExSharingRules.DetailedDescription;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
-import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.SharedFolder.UserPermissionsAndState;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.lib.ex.sharing_rules.AbstractExSharingRules.DetailedDescription.Type;
 import com.google.common.collect.ImmutableCollection;
@@ -98,6 +99,57 @@ public class RestrictedExternalSharing implements ISharingRules
             _warnings.add(new DetailedDescription(Type.WARNING_NO_EXTERNAL_OWNERS,
                     getFullNames(ImmutableList.of(sharee.id()))));
             return newPermissions.minus(Permission.MANAGE);
+        }
+
+        return newPermissions;
+    }
+
+    @Override
+    public Permissions onUpdatingACL(SharedFolder sf, Group sharee, Permissions newPermissions)
+            throws Exception
+    {
+        ImmutableCollection<UserID> externalMembers = getExternalUsers(sf);
+        boolean hasInternal = false;
+        boolean addingExternal = false;
+        boolean isExternalFolder = !externalMembers.isEmpty();
+        List <UserID> externalUsers = Lists.newLinkedList();
+
+        for (User u : sharee.listMembers()) {
+            if (!_f._authenticator.isInternalUser(u.id())) {
+                externalUsers.add(u.id());
+                if (sf.getStateNullable(u) == null) {
+                    addingExternal = true;
+                }
+            } else if (!u.isWhitelisted()) {
+                hasInternal = true;
+            }
+        }
+
+        if (addingExternal) {
+            if (_f._authenticator.isInternalUser(_sharer.id())) {
+                _warnings.add(new DetailedDescription(Type.WARNING_EXTERNAL_SHARING,
+                        getFullNames(ImmutableList.copyOf(externalUsers))));
+            }
+
+            if (!isExternalFolder) revokeWritePermissionForInternalUsers(sf, _sharer);
+        }
+
+        // prevent granting write access to an externally shared folder to internal users
+        if ((isExternalFolder || addingExternal)
+                && hasInternal
+                && newPermissions.covers(Permission.WRITE))
+        {
+            _warnings.add(new DetailedDescription(Type.WARNING_DOWNGRADE,
+                    getFullNames(externalMembers)));
+            newPermissions = newPermissions.minus(Permission.WRITE);
+        }
+
+        if (!externalUsers.isEmpty()
+                && newPermissions.covers(Permission.MANAGE))
+        {
+            _warnings.add(new DetailedDescription(Type.WARNING_NO_EXTERNAL_OWNERS,
+                    getFullNames(externalMembers)));
+            newPermissions = newPermissions.minus(Permission.MANAGE);
         }
 
         return newPermissions;

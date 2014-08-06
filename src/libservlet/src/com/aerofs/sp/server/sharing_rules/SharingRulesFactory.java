@@ -7,7 +7,8 @@ package com.aerofs.sp.server.sharing_rules;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.Factory;
 
@@ -34,6 +35,13 @@ public class SharingRulesFactory
     {
         @Override
         public Permissions onUpdatingACL(SharedFolder sf, User sharee, Permissions newPermissions)
+        {
+            return newPermissions;
+        }
+
+        @Override
+        public Permissions onUpdatingACL(SharedFolder sf, Group sharee, Permissions newPermissions)
+                throws Exception
         {
             return newPermissions;
         }

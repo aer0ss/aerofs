@@ -43,7 +43,6 @@ import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.proto.Common.PBGroupPermissions;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -228,7 +227,7 @@ public class TestHdShareFolder extends AbstractTest
 
         verify(sp).shareFolder(eq("d"), any(ByteString.class),
                 anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false),
-                any(Boolean.class), anyIterableOf(PBGroupPermissions.class));
+                any(Boolean.class));
         verify(pf).updateSOID_(new SOID(soid.sidx(), anchor), t);
     }
 
@@ -239,7 +238,7 @@ public class TestHdShareFolder extends AbstractTest
 
         verify(sp).shareFolder(eq("a"), any(ByteString.class),
                 anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false),
-                any(Boolean.class), anyIterableOf(PBGroupPermissions.class));
+                any(Boolean.class));
     }
 
     @Test
@@ -249,6 +248,6 @@ public class TestHdShareFolder extends AbstractTest
 
         verify(sp).shareFolder(eq("external"), any(ByteString.class),
                 anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false),
-                any(Boolean.class), anyIterableOf(PBGroupPermissions.class));
+                any(Boolean.class));
     }
 }

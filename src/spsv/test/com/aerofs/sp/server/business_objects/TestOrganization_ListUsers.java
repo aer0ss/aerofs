@@ -37,14 +37,21 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
     Organization org = factOrg.create(orgId);
     Organization invalidOrg = factOrg.create(invalidOrgId);
 
+    private final String ADMIN_PREFIX = "admin";
+
     @Before
     public void setup()
         throws Exception
     {
+        setupOrganizations();
+        setupUsers();
+    }
+
+    private void setupOrganizations()
+            throws Exception
+    {
         odb.insert(orgId);
         odb.insert(nonQueriedOrgId);
-
-        setupUsers();
     }
 
     private void setupUsers()
@@ -58,7 +65,7 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
         }
 
         for (int i = 0; i < NUMBER_OF_ADMINS; i++) {
-            udb.insertUser(UserID.fromInternal("admin" + i + "@test.com"), fullName, "".getBytes(),
+            udb.insertUser(UserID.fromInternal(ADMIN_PREFIX + i + "@test.com"), fullName, "".getBytes(),
                     orgId, AuthorizationLevel.ADMIN);
         }
 
@@ -111,5 +118,13 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
             throws Exception
     {
         assertTrue(invalidOrg.listUsers(10, 0).isEmpty());
+    }
+
+    @Test
+    public void shouldListOnlyAdminsWhenSupplyingAdminPrefix()
+            throws Exception
+    {
+        Collection<User> users = org.listUsers(TOTAL_USERS, 0, ADMIN_PREFIX);
+        assertEquals(NUMBER_OF_ADMINS, users.size());
     }
 }

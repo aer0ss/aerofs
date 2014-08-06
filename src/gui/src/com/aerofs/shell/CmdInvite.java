@@ -78,7 +78,8 @@ public class CmdInvite extends AbstractShellCommand<ShProgram>
         String role = cl.getOptionValue('r', Permissions.EDITOR.roleName());
 
         PBPath path = s.d().buildPBPath_(cl.getArgs()[0]);
-        SubjectPermissions srp = new SubjectPermissions(UserID.fromExternal(cl.getArgs()[1]),
+        SubjectPermissions srp = new SubjectPermissions(
+                SubjectPermissions.getUserIDFromString(cl.getArgs()[1]),
                 fromString(role));
 
         String name = path.getElemCount() == 0 ? "unknown folder" :

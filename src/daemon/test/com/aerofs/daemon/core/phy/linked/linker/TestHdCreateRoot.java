@@ -25,7 +25,6 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.proto.Common.PBGroupPermissions;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -121,7 +120,7 @@ public class TestHdCreateRoot extends AbstractTest
         verify(sp).signInRemote();
         verify(sp).shareFolder(eq(name), any(ByteString.class),
                 anyIterableOf(PBSubjectPermissions.class), anyString(), eq(true),
-                any(Boolean.class), anyIterableOf(PBGroupPermissions.class));
+                any(Boolean.class));
         verify(aclsync).syncToLocal_();
 
         verify(lrm, never()).unlink_(any(SID.class), eq(t));
@@ -138,7 +137,7 @@ public class TestHdCreateRoot extends AbstractTest
 
         when(sp.shareFolder(eq(name), any(ByteString.class),
                 anyIterableOf(PBSubjectPermissions.class), anyString(), eq(true),
-                any(Boolean.class), anyIterableOf(PBGroupPermissions.class)))
+                any(Boolean.class)))
                 .thenThrow(new ExArbitrary());
 
         try {
@@ -150,7 +149,7 @@ public class TestHdCreateRoot extends AbstractTest
         verify(sp).signInRemote();
         verify(sp).shareFolder(eq(name), any(ByteString.class),
                 anyIterableOf(PBSubjectPermissions.class), anyString(), eq(true),
-                any(Boolean.class), anyIterableOf(PBGroupPermissions.class));
+                any(Boolean.class));
 
         verify(lrm).unlink_(any(SID.class), eq(t));
         verify(sd).deleteRootStore_(any(SIndex.class), eq(PhysicalOp.MAP), eq(t));

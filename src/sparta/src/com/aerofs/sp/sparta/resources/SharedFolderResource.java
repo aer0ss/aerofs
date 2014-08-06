@@ -36,14 +36,16 @@ import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
-import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.SharedFolder.UserPermissionsAndState;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder.AffectedAndNeedsEmail;
+import com.aerofs.sp.server.lib.sf.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.sharing_rules.ISharingRules;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.sp.sparta.Transactional;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -463,17 +465,26 @@ public class SharedFolderResource extends AbstractSpartaResource
         sf.throwIfNoPrivilegeToChangeACL(caller);
 
         String folderName = sf.getName(caller);
-        ImmutableCollection<UserID> users = sf.getJoinedUserIDs();
+        ImmutableCollection.Builder<UserID> affected = ImmutableSet.builder();
 
         ISharingRules rules = _sharingRules.create(user);
         Permissions req = rules.onUpdatingACL(sf, user, Permissions.fromArray(invitee.permissions));
 
-        InvitationEmailer em = _invitationHelper.createFolderInvitationAndEmailer(sf, caller, user,
-                req, invitee.note, folderName);
+        InvitationEmailer em = _invitationHelper.doesNothing();
+        AffectedAndNeedsEmail updates = sf.addUserWithGroup(user, null, req,
+                caller);
+        affected.addAll(updates._affected);
+        if (updates._needsEmail) {
+            em = _invitationHelper.createFolderInvitationAndEmailer(sf, caller,
+                    user, req, invitee.note, folderName);
+        }
 
         // NB: ignore sharing rules warnings for now
         // rules.throwIfAnyWarningTriggered();
-        if (rules.shouldBumpEpoch()) _aclNotifier.publish_(users);
+        if (rules.shouldBumpEpoch()) {
+            affected.addAll(sf.getJoinedUserIDs());
+        }
+        _aclNotifier.publish_(affected.build());
 
         audit(sf, caller, token, "folder.invite")
                 .add("target", user.id())

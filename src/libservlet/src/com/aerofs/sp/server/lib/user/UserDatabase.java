@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.lib;
+package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.base.Base64;
 import com.aerofs.lib.FullName;
@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
+import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STATE;
@@ -439,7 +440,7 @@ public class UserDatabase extends AbstractSQLDatabase
 
     public Collection<SID> getJoinedFolders(UserID userId) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+        PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
                 C_AC_USER_ID + "=? and " + C_AC_STATE + "=?", C_AC_STORE_ID));
 
         ps.setString(1, userId.getString());
@@ -455,7 +456,7 @@ public class UserDatabase extends AbstractSQLDatabase
      */
     public Collection<SID> getSharedFolders(UserID userId) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+        PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
             C_AC_USER_ID + "=?", C_AC_STORE_ID));
         ps.setString(1, userId.getString());
 
@@ -521,7 +522,7 @@ public class UserDatabase extends AbstractSQLDatabase
     // TODO (WW) move this method to SharedFolderDatabase?
     public Collection<PendingSharedFolder> getPendingSharedFolders(UserID userId) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+        PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
                 C_AC_USER_ID + "=? and " + C_AC_STATE + "=?",
                 C_AC_STORE_ID, C_AC_SHARER));
 
@@ -533,13 +534,11 @@ public class UserDatabase extends AbstractSQLDatabase
             List<PendingSharedFolder> sids = Lists.newArrayList();
             while (rs.next()) {
                 String sharer = rs.getString(2);
-                // TODO (WW) this is a temporary hack: It's true by definition that a pending user
-                // always has a sharer. However, because of the way the system is currently
-                // implemented, a member without a sharer (e.g. the initial owner of the folder) can
-                // be converted to pending when he/she deletes the folder. Once the three-state
-                // system is implemented, the following statement should be changed to throwing
-                // an internal system error instead.
-                if (rs.wasNull()) sharer = userId.getString();
+                // sharer can be null when user is invited to folders as a result of being added to a group
+                // return a team server here so the inviter name will be displayed as "an organization admin"
+                if (rs.wasNull()) {
+                    sharer = UserID.UNKNOWN_TEAM_SERVER.getString();
+                }
 
                 sids.add(new PendingSharedFolder(new SID(rs.getBytes(1)),
                         UserID.fromInternal(sharer)));

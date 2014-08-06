@@ -5,8 +5,7 @@
 package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
-import com.aerofs.sp.server.lib.OrganizationInvitationDatabase.GetBySignUpCodeResult;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase.GetBySignUpCodeResult;
 import com.aerofs.sp.server.lib.user.User;
 
 import javax.annotation.Nonnull;

@@ -10,7 +10,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
 import com.aerofs.proto.Sp.CheckQuotaReply;
 import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Sets;

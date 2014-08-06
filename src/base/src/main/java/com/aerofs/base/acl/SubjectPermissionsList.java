@@ -22,7 +22,7 @@ public final class SubjectPermissionsList
             throws ExBadArgs, ExEmptyEmailAddress
     {
         List<SubjectPermissions> l = Lists.newArrayListWithCapacity(pbl.size());
-        for (PBSubjectPermissions pb : pbl) l.add(new SubjectPermissions(pb));
+        for (PBSubjectPermissions pb : pbl) l.add(SubjectPermissions.fromPB(pb));
         return l;
     }
 

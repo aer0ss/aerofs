@@ -39,13 +39,17 @@ import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.email.TwoFactorEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.License;
-import com.aerofs.sp.server.lib.OrganizationDatabase;
-import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.group.GroupDatabase;
+import com.aerofs.sp.server.lib.group.GroupMembersDatabase;
+import com.aerofs.sp.server.lib.group.GroupSharesDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.SharedFolderDatabase;
-import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolderDatabase;
+import com.aerofs.sp.server.lib.user.UserDatabase;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
@@ -155,6 +159,9 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected SharedFolderDatabase sfdb = new SharedFolderDatabase(sqlTrans);
     @Spy protected OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(sqlTrans);
     @Spy protected UrlSharingDatabase usdb = new UrlSharingDatabase(sqlTrans);
+    @Spy protected final GroupDatabase gdb = new GroupDatabase(sqlTrans);
+    @Spy protected final GroupMembersDatabase gmdb = new GroupMembersDatabase(sqlTrans);
+    @Spy protected final GroupSharesDatabase gsdb = new GroupSharesDatabase(sqlTrans);
 
     // Can't use @Spy as Device.Factory's constructor needs a non-null certgen object.
     protected OrganizationDatabase odb = spy(new OrganizationDatabase(sqlTrans));
@@ -169,6 +176,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected OrganizationInvitation.Factory factOrgInvite =
             new OrganizationInvitation.Factory();
     @Spy protected UrlShare.Factory factUrlShare = new UrlShare.Factory(usdb);
+    @Spy protected final Group.Factory factGroup = new Group.Factory();
 
     @Spy protected JedisEpochCommandQueue commandQueue = new JedisEpochCommandQueue(jedisTrans);
 
@@ -180,9 +188,10 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         factUser.inject(udb, oidb, tfdb, factDevice, factOrg,
                 factOrgInvite, factSharedFolder, license);
         factDevice.inject(ddb, certdb, certgen, factUser, factCert);
-        factSharedFolder.inject(sfdb, factUser);
-        factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
+        factSharedFolder.inject(sfdb, gsdb, factGroup, factUser);
+        factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite, factGroup, gdb);
         factOrgInvite.inject(oidb, factUser, factOrg);
+        factGroup.inject(gdb, gmdb, gsdb, factOrg, factSharedFolder, factUser);
     }
 
     @Spy protected CertificateAuthenticator certificateAuthenticator =
@@ -321,6 +330,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 sharedFolderNotificationEmailer,
                 asyncEmailSender,
                 factUrlShare,
+                factGroup,
                 rateLimiter,
                 license);
         wireSPService();
@@ -502,7 +512,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         assertThat(allPublished.isEmpty(), equalTo(true));
     }
 
-    // TOOD (WW) is this method useful?
+    // TODO (WW) is this method useful?
     protected void clearPublishedMessages()
     {
         allPublished.clear();

@@ -20,7 +20,7 @@ public class DBUtil
      */
     public static String select(String table, String... fields)
     {
-        return selectImpl(table, fields).toString();
+        return selectImpl("", table, fields).toString();
     }
 
     /**
@@ -28,12 +28,21 @@ public class DBUtil
      */
     public static String selectWhere(String table, String condition, String... fields)
     {
-        return selectImpl(table, fields).append(" where ").append(condition).toString();
+        return selectImpl("", table, fields).append(" where ").append(condition).toString();
     }
 
-    private static StringBuilder selectImpl(String table, String... fields)
+    /**
+     * @return string "select distinct <field>,<field> ... <field> from <table> where <condition>"
+     */
+    public static String selectDistinctWhere(String table, String condition, String... fields)
     {
-        StringBuilder sb = new StringBuilder("select ");
+        return selectImpl("distinct ",table, fields).append(" where ").append(condition)
+                .toString();
+    }
+
+    private static StringBuilder selectImpl(String prefix, String table, String... fields)
+    {
+        StringBuilder sb = new StringBuilder("select " + prefix);
         boolean first = true;
         for (String field : fields) {
             if (!first) sb.append(',');

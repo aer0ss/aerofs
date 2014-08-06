@@ -8,16 +8,20 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.sharing_rules.AbstractExSharingRules.DetailedDescription.Type;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
+import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,6 +54,9 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     // This user is internal but has been whitelisted by an admin
     User whitelistedUser = factUser.create(UserID.fromInternal("abcdef@g"));
 
+    Organization org;
+    Group group;
+
     @Before
     public void setup()
             throws Exception
@@ -60,6 +67,8 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         // Authenticator factory reads and caches property values so we have to construct a new one
         sharingRules = new SharingRulesFactory(AuthenticatorFactory.create(),
                 factUser, sharedFolderNotificationEmailer);
+
+        authenticator = AuthenticatorFactory.create();
 
         // reconstruct SP using the new shared folder rules
         rebuildSPService();
@@ -74,6 +83,10 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         saveUser(externalUser3);
         saveUser(whitelistedUser);
         whitelistedUser.setWhitelisted(true);
+        org = internalSharer.getOrganization();
+        group = factGroup.save("Common Name", org.id(), null);
+        makeUsersMembersOfOrganization(org, internalUser1, internalUser2, internalUser3,
+                externalUser1, externalUser2, externalUser3, whitelistedUser);
         sqlTrans.commit();
     }
 
@@ -100,8 +113,8 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
             throws Exception
     {
         shareFolder(internalSharer, sid, internalUser1, Permissions.allOf(Permission.WRITE));
-        shareFolder(internalSharer, sid, internalUser2, Permissions.allOf(Permission.WRITE,
-                Permission.MANAGE));
+        shareFolder(internalSharer, sid, internalUser2,
+                Permissions.allOf(Permission.WRITE, Permission.MANAGE));
     }
 
     @Test
@@ -116,8 +129,8 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
                 Permission.MANAGE));
         joinSharedFolder(internalUser1, sid);
 
-        shareFolder(internalUser1, sid, internalUser2, Permissions.allOf(Permission.WRITE,
-                Permission.MANAGE));
+        shareFolder(internalUser1, sid, internalUser2,
+                Permissions.allOf(Permission.WRITE, Permission.MANAGE));
         shareFolder(internalUser1, sid, internalUser3, Permissions.allOf(Permission.WRITE));
     }
 
@@ -133,19 +146,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     }
 
     @Test
-    public void shouldDisallowFolderCreaterAsExternalUserToAddEditors()
-            throws Exception
-    {
-        try {
-            shareFolder(externalUser1, sid, internalUser1, Permissions.allOf(Permission.WRITE));
-            fail();
-        } catch (ExSharingRulesWarning e) {
-            assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
-            assertEquals(1, e.descriptions().get(0).users.size());
-        }
-    }
-
-    @Test
     public void shouldNotAllowExternalUserAsOwner()
             throws Exception
     {
@@ -155,7 +155,16 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         } catch (ExSharingRulesWarning e) {
             assertEquals(Type.WARNING_EXTERNAL_SHARING, e.descriptions().get(0).type);
             assertEquals(1, e.descriptions().get(0).users.size());
+            sqlTrans.rollback();
         }
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser1,
+                Permissions.allOf(Permission.WRITE, Permission.MANAGE));
+        joinSharedFolder(externalUser1, sid);
+        try {
+            shareFolder(externalUser1, sid, externalUser2,
+                    Permissions.allOf(Permission.WRITE, Permission.MANAGE));
+            fail();
+        } catch (ExNoPerm e) {}
     }
 
     @Test
@@ -520,6 +529,132 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         updateACL(internalUser1, Permissions.allOf());
     }
 
+    @Test
+    public void shouldBehaveNormallyWithInternalGroups()
+            throws Exception
+    {
+        setSession(internalSharer);
+        service.addGroupMembers(group.id().getInt(),
+                Lists.newArrayList(internalUser1.id().getString(), internalUser2.id().getString()));
+        shareFolder(internalSharer, sid, group, Permissions.OWNER);
+    }
+
+    @Test(expected=ExWrongOrganization.class)
+    public void shouldDenyAddingExternalMemberToGroup()
+            throws Exception
+    {
+        setSession(internalSharer);
+        service.addGroupMembers(group.id().getInt(),
+                Lists.newArrayList(internalUser1.id().getString(), internalUser2.id().getString()));
+        service.addGroupMembers(group.id().getInt(),
+                Lists.newArrayList(externalUser1.id().getString()));
+    }
+
+    @Test
+    public void shouldRemoveWriteUponAddingExternalGroup()
+            throws Exception
+    {
+        SharedFolder sf = factSharedFolder.create(sid);
+        setSession(internalSharer);
+        addExternalMemberToGroup(externalUser1, group);
+        shareFolder(internalSharer, sid, internalUser1, Permissions.allOf(Permission.WRITE));
+        try {
+            shareFolder(internalSharer, sid, group, Permissions.allOf());
+            fail();
+        } catch (ExSharingRulesWarning e) {
+            assertEquals(e.descriptions().size(), 1);
+            assertEquals(e.descriptions().get(0).type, Type.WARNING_EXTERNAL_SHARING);
+            sqlTrans.rollback();
+        }
+        shareFolderSuppressWarnings(internalSharer, sid, group, Permissions.allOf());
+        sqlTrans.begin();
+        assertEquals(sf.getPermissions(internalUser1), Permissions.allOf());
+        sqlTrans.commit();
+    }
+
+    @Test
+    public void shouldRemoveManageFromExternalGroup()
+            throws Exception
+    {
+        SharedFolder sf = factSharedFolder.create(sid);
+        setSession(internalSharer);
+        addExternalMemberToGroup(externalUser1, group);
+        addExternalMemberToGroup(externalUser2, group);
+        try {
+            shareFolder(internalSharer, sid, group, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
+            fail();
+        } catch (ExSharingRulesWarning e) {
+            assertEquals(e.descriptions().size(), 2);
+            assertEquals(e.descriptions().get(0).type, Type.WARNING_EXTERNAL_SHARING);
+            assertEquals(e.descriptions().get(1).type, Type.WARNING_NO_EXTERNAL_OWNERS);
+            sqlTrans.rollback();
+        }
+
+        shareFolderSuppressWarnings(internalSharer, sid, group, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
+        sqlTrans.begin();
+        assertEquals(sf.getPermissions(externalUser1), Permissions.allOf(Permission.WRITE));
+        assertEquals(sf.getPermissions(externalUser2), Permissions.allOf(Permission.WRITE));
+        sqlTrans.commit();
+    }
+
+    @Test
+    public void shouldRemoveWriteFromGroupInExternalFolder()
+            throws Exception
+    {
+        SharedFolder sf = factSharedFolder.create(sid);
+        setSession(internalSharer);
+        service.addGroupMembers(group.id().getInt(),
+                Lists.newArrayList(internalUser1.id().getString(), internalUser2.id().getString()));
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf());
+        try {
+            shareFolder(internalSharer, sid, group, Permissions.allOf(Permission.WRITE));
+        } catch (ExSharingRulesWarning e) {
+            assertEquals(e.descriptions().size(), 1);
+            assertEquals(e.descriptions().get(0).type, Type.WARNING_DOWNGRADE);
+            sqlTrans.rollback();
+        }
+        shareFolderSuppressWarnings(internalSharer, sid, group, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
+        sqlTrans.begin();
+        assertEquals(sf.getPermissions(internalUser1), Permissions.allOf(Permission.MANAGE));
+        assertEquals(sf.getPermissions(internalUser2), Permissions.allOf(Permission.MANAGE));
+        sqlTrans.commit();
+    }
+
+    @Test
+    public void shouldRemoveWriteFromGroupAndUsers()
+            throws Exception
+    {
+        SharedFolder sf = factSharedFolder.create(sid);
+        setSession(internalSharer);
+        service.addGroupMembers(group.id().getInt(),
+                Lists.newArrayList(internalUser1.id().getString(), internalUser2.id().getString()));
+        shareFolder(internalSharer, sid, internalUser1, Permissions.OWNER);
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf());
+        shareFolderSuppressWarnings(internalSharer, sid, group, Permissions.allOf(Permission.WRITE));
+        sqlTrans.begin();
+        assertEquals(sf.getPermissions(internalUser1), Permissions.allOf(Permission.MANAGE));
+        assertEquals(sf.getPermissions(internalUser2), Permissions.allOf());
+        sqlTrans.commit();
+    }
+
+    @Test
+    public void shouldRemoveManageAndWrite()
+            throws Exception
+    {
+        SharedFolder sf = factSharedFolder.create(sid);
+        setSession(internalSharer);
+        service.addGroupMembers(group.id().getInt(),
+                Lists.newArrayList(internalUser1.id().getString()));
+        addExternalMemberToGroup(externalUser1, group);
+        shareFolderSuppressWarnings(internalSharer, sid, group,
+                Permissions.allOf(Permission.WRITE, Permission.MANAGE));
+        sqlTrans.begin();
+        // group contains internal and external users, should strip both write and manage permissions
+        assertEquals(sf.getPermissions(internalUser1), Permissions.allOf());
+        assertEquals(sf.getPermissions(externalUser1), Permissions.allOf());
+        sqlTrans.commit();
+    }
+
     private void updateACL(User user, Permissions permissions)
             throws Exception
     {
@@ -530,5 +665,32 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
             throws Exception
     {
         service.updateACL(sid.toPB(), user.id().getString(), permissions.toPB(), true);
+    }
+
+    private void addExternalMemberToGroup(User external, Group group)
+            throws Exception
+    {
+        if (sqlTrans.isInTransaction()) {
+            group.addMember(external);
+        } else {
+            sqlTrans.begin();
+            try {
+                group.addMember(external);
+                sqlTrans.commit();
+            } catch (Throwable t) {
+                sqlTrans.rollback();
+                throw t;
+            } finally {
+                sqlTrans.cleanUp();
+            }
+        }
+    }
+
+    private void makeUsersMembersOfOrganization(Organization org, User... users)
+            throws Exception
+    {
+        for (User u : users) {
+            u.setOrganization(org, AuthorizationLevel.USER);
+        }
     }
 }

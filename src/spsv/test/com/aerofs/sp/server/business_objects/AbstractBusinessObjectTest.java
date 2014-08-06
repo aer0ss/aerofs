@@ -22,12 +22,16 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import com.aerofs.sp.server.lib.OrganizationDatabase;
-import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.group.GroupDatabase;
+import com.aerofs.sp.server.lib.group.GroupMembersDatabase;
+import com.aerofs.sp.server.lib.group.GroupSharesDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
-import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.SharedFolderDatabase;
-import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolderDatabase;
+import com.aerofs.sp.server.lib.user.UserDatabase;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
@@ -55,6 +59,9 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     @Spy protected final OrganizationInvitationDatabase oidb =
             new OrganizationInvitationDatabase(sqlTrans);
     @Spy protected final TwoFactorAuthDatabase tfdb = new TwoFactorAuthDatabase(sqlTrans);
+    @Spy protected final GroupDatabase gdb = new GroupDatabase(sqlTrans);
+    @Spy protected final GroupMembersDatabase gmdb = new GroupMembersDatabase(sqlTrans);
+    @Spy protected final GroupSharesDatabase gsdb = new GroupSharesDatabase(sqlTrans);
 
     @Spy protected final DeviceDatabase ddb = new DeviceDatabase(sqlTrans);
     @Spy protected final CertificateDatabase cdb = new CertificateDatabase(sqlTrans);
@@ -66,6 +73,7 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     @Spy protected final Device.Factory factDevice = new Device.Factory();
     @Spy protected final OrganizationInvitation.Factory factOrgInvite =
             new OrganizationInvitation.Factory();
+    @Spy protected final Group.Factory factGroup = new Group.Factory();
 
     License license = mock(License.class);
 
@@ -73,10 +81,11 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     {
         factUser.inject(udb, oidb, tfdb, factDevice, factOrg,
                 factOrgInvite, factSharedFolder, license);
-        factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
-        factSharedFolder.inject(sfdb, factUser);
+        factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite, factGroup, gdb);
+        factSharedFolder.inject(sfdb, gsdb, factGroup, factUser);
         factDevice.inject(ddb, cdb, cgen, factUser, factCert);
         factOrgInvite.inject(oidb, factUser, factOrg);
+        factGroup.inject(gdb, gmdb, gsdb, factOrg, factSharedFolder, factUser);
     }
 
     private int nextUserID;

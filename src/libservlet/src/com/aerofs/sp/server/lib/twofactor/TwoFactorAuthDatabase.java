@@ -21,7 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static com.aerofs.sp.server.lib.SPSchema.C_TF_RECOVERY_CODE;
-import static com.aerofs.sp.server.lib.SPSchema.C_TF_RECOVERY_CODE_USE_DATE;
+import static com.aerofs.sp.server.lib.SPSchema.C_TF_RECOVERY_CODE_USE_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_TF_RECOVERY_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_TF_RECOVERY_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_TWO_FACTOR_SECRET;
@@ -66,7 +66,7 @@ public class TwoFactorAuthDatabase extends AbstractSQLDatabase
     {
         // Insert the recovery codes and the user secret
         PreparedStatement ps = prepareStatement(DBUtil.insert(T_TWO_FACTOR_RECOVERY,
-                C_TF_RECOVERY_USER_ID, C_TF_RECOVERY_CODE, C_TF_RECOVERY_CODE_USE_DATE));
+                C_TF_RECOVERY_USER_ID, C_TF_RECOVERY_CODE, C_TF_RECOVERY_CODE_USE_TS));
         for (String code : recoveryCodes) {
             Preconditions.checkState(code.length() <= RECOVERY_CODE_MAX_LENGTH);
             ps.setString(1, user.getString());
@@ -81,7 +81,7 @@ public class TwoFactorAuthDatabase extends AbstractSQLDatabase
     {
         PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_TWO_FACTOR_RECOVERY,
                         C_TF_RECOVERY_USER_ID + "=? ORDER BY " + C_TF_RECOVERY_ID,
-                        C_TF_RECOVERY_CODE, C_TF_RECOVERY_CODE_USE_DATE));
+                        C_TF_RECOVERY_CODE, C_TF_RECOVERY_CODE_USE_TS));
         ps.setString(1, user.getString());
         Builder<RecoveryCode> builder = ImmutableList.builder();
         ResultSet rs = ps.executeQuery();
@@ -104,7 +104,7 @@ public class TwoFactorAuthDatabase extends AbstractSQLDatabase
         Preconditions.checkState(code.length() <= RECOVERY_CODE_MAX_LENGTH);
         PreparedStatement ps = prepareStatement(DBUtil.updateWhere(T_TWO_FACTOR_RECOVERY,
                 C_TF_RECOVERY_USER_ID + "=? AND " + C_TF_RECOVERY_CODE + "=?",
-                C_TF_RECOVERY_CODE_USE_DATE));
+                C_TF_RECOVERY_CODE_USE_TS));
         java.util.Date now = new java.util.Date();
         java.sql.Timestamp timestamp = new java.sql.Timestamp(now.getTime());
         ps.setTimestamp(1, timestamp);

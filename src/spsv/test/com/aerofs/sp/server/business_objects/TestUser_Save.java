@@ -9,7 +9,7 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.SID;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;

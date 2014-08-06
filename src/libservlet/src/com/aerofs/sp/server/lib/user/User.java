@@ -29,9 +29,8 @@ import com.aerofs.sp.authentication.TOTP;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.base.ParamFactory;
 import com.aerofs.sp.server.lib.License;
-import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
-import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.base.id.OrganizationID;
@@ -365,7 +364,7 @@ public class User
     /**
      * In public deployment: create a new organization, add the user to the organization as an admin.
      * In private deployment: join the user to the private organization. Create the org if it
-     * doesn't exist. When this method concludes, the organiztion invitation associated with this
+     * doesn't exist. When this method concludes, the organization invitation associated with this
      * user will no longer exist in the database.
      *
      * @param shaedSP sha256(scrypt(p|u)|passwdSalt)
@@ -405,7 +404,7 @@ public class User
             // Remove organization invitations if any. Why we do this:
             //
             // Even though there is only one private organization, the system uses the same code
-            // path as in the public deployemnt when the organization's admin invites users
+            // path as in the public deployment when the organization's admin invites users
             // (either external or internal) to the organization. Once the user joins the org, the
             // user should disappear from the member management Web interface. The interface calls
             // SP.listOrganizationInvitedUsers() to list all the invitations belonging to that org.
@@ -457,7 +456,7 @@ public class User
         // delete ACLs
         ImmutableSet.Builder<UserID> affected = ImmutableSet.builder();
         for (SharedFolder sf : getJoinedFolders()) {
-            affected.addAll(sf.removeUserAndTransferOwnership(this, newOwner));
+            affected.addAll(sf.removeUserAndTransferOwnership(this, newOwner, null));
         }
 
         // to prevent the user from signing up again using old codes
@@ -497,11 +496,9 @@ public class User
         // user mustn't have any daemon running at this moment.
         try {
             rootStore.save("root store: " + _id, this);
-        } catch (ExNotFound e) {
-            // The method throws ExNotFound only if the owner doesn't exist
-            SystemUtil.fatal(e);
-        } catch (ExAlreadyExist e) {
-            // The method throws ExAlreadyExist only if the store already exists
+        } catch (ExNotFound | ExAlreadyExist e) {
+            // The method throws ExNotFound if the owner doesn't exist and ExAlreadyExist if the
+            // store already exists.
             SystemUtil.fatal(e);
         }
     }

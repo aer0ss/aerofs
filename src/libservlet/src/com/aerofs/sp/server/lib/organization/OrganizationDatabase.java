@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.lib;
+package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
+import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_QUOTA_PER_USER;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_TWO_FACTOR_ENFORCEMENT_LEVEL;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
@@ -235,23 +236,40 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @param orgId ID of the organization.
      * @param offset Starting index of the results list from the database.
      * @param maxResults Maximum number of results returned from the database.
-     * @return List of users under the organization {@code orgId}
-     * between [offset, offset + maxResults].
+     * @param searchPrefix The email address prefix we must use in our where clause.
+     * @return List of users under the organization {@code orgId} between
+     * [offset, offset + maxResults].
+     *
+     * TODO (MP) de-dupe code with group db if this pattern is used elsewhere.
+     * @see com.aerofs.sp.server.lib.group.GroupDatabase#listGroups
      */
-    public List<UserID> listUsers(OrganizationID orgId, int offset, int maxResults)
+    public List<UserID> listUsers(OrganizationID orgId, int offset, int maxResults,
+            @Nullable String searchPrefix)
             throws SQLException
     {
-        PreparedStatement psLU = prepareStatement(DBUtil.selectWhere(T_USER,
-                C_USER_ORG_ID + "=? " + andActiveNonTeamServerUser(),
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+                T_USER,
+                C_USER_ORG_ID + "=? " + andActiveNonTeamServerUser() + andUserLike(searchPrefix),
                 C_USER_ID)
                 + " order by " + C_USER_ID + " limit ? offset ?");
 
-        psLU.setInt(1, orgId.getInt());
-        psLU.setInt(2, maxResults);
-        psLU.setInt(3, offset);
+        int index = 0;
+        ps.setInt(++index, orgId.getInt());
+        if (searchPrefix != null) ps.setString(++index, searchPrefix + "%");
+        ps.setInt(++index, maxResults);
+        ps.setInt(++index, offset);
 
-        try (ResultSet rs = psLU.executeQuery()) {
+        try (ResultSet rs = ps.executeQuery()) {
             return usersResultSet2List(rs);
+        }
+    }
+
+    private static String andUserLike(String searchPrefix)
+    {
+        if (searchPrefix == null) {
+            return "";
+        } else {
+            return " and " + C_USER_ID + " like ?";
         }
     }
 
@@ -319,9 +337,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public Collection<SID> listSharedFolders(OrganizationID orgId, int maxResults, int offset)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID),
-                C_AC_STORE_ID)
+        PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
+                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID), C_AC_STORE_ID)
                 + " limit ? offset ?");
 
         ps.setString(1, orgId.toTeamServerUserID().getString());
@@ -347,7 +364,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
                 C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID),
-                "count(*)"));
+                "count(distinct " + C_AC_STORE_ID + ")"));
 
         ps.setString(1, orgId.toTeamServerUserID().getString());
 

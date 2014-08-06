@@ -15,7 +15,7 @@ import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;
@@ -43,7 +43,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         setSession(USER_1);
         service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                Collections.<PBSubjectPermissions>emptyList(), "", false, false, null).get();
+                Collections.<PBSubjectPermissions>emptyList(), "", false, false).get();
     }
 
     @Test
@@ -52,7 +52,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         setSession(USER_1);
         service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                Collections.<PBSubjectPermissions>emptyList(), "", true, false, null).get();
+                Collections.<PBSubjectPermissions>emptyList(), "", true, false).get();
     }
 
     @Test

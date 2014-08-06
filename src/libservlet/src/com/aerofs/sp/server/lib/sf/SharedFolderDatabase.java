@@ -2,13 +2,14 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.lib;
+package com.aerofs.sp.server.lib.sf;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.GroupID;
+import static com.aerofs.base.id.GroupID.NULL_GROUP;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.Util;
@@ -19,6 +20,7 @@ import com.aerofs.sp.common.SharedFolderState;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableCollection.Builder;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,9 +36,11 @@ import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.deleteWhere;
 import static com.aerofs.lib.db.DBUtil.insertOnDuplicateUpdate;
 import static com.aerofs.lib.db.DBUtil.insertedOrUpdatedOneRow;
+import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_EXTERNAL;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_GID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_ROLE;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STATE;
@@ -96,11 +100,11 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     }
 
     public void insertUser(SID sid, UserID user, Permissions permissions, SharedFolderState state,
-            @Nullable UserID sharer)
+            @Nullable UserID sharer, GroupID gid)
             throws SQLException, ExAlreadyExist
     {
         PreparedStatement ps = prepareStatement(DBUtil.insert(T_AC, C_AC_STORE_ID, C_AC_USER_ID,
-                C_AC_ROLE, C_AC_STATE, C_AC_SHARER));
+                C_AC_ROLE, C_AC_STATE, C_AC_SHARER, C_AC_GID));
 
         ps.setBytes(1, sid.getBytes());
         ps.setString(2, user.getString());
@@ -111,6 +115,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         } else {
             ps.setNull(5, Types.VARCHAR);
         }
+        ps.setInt(6, gid.getInt());
 
         /**
          * We enforce a strict API distinction between ACL creation and ACL update
@@ -122,7 +127,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         try {
             Util.verify(ps.executeUpdate() == 1);
         } catch (SQLException e) {
-            throwOnConstraintViolation(e, "the user already exists in shared folder");
+            throwOnConstraintViolation(e, "the (user, group) already exists in shared folder");
             throw e;
         }
     }
@@ -137,7 +142,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps.setBytes(2, sid.getBytes());
         ps.setString(3, userId.getString());
 
-        if (ps.executeUpdate() != 1) throw new ExNotFound();
+        if (ps.executeUpdate() == 0) throw new ExNotFound();
     }
 
     // see docs/design/sharing_and_migration.txt for information about the external flag
@@ -151,7 +156,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps.setBytes(2, sid.getBytes());
         ps.setString(3, userId.getString());
 
-        if (ps.executeUpdate() != 1) throw new ExNotFound();
+        if (ps.executeUpdate() == 0) throw new ExNotFound();
     }
 
     // see docs/design/sharing_and_migration.txt for information about the external flag
@@ -171,24 +176,50 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public @Nullable
-    Permissions getRoleNullable(SID sid, UserID userId)
+    Permissions getEffectiveRoleNullable(SID sid, UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_ROLE));
+        PreparedStatement ps;
+        ps = prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_USER_ID +
+                "=? group by " + C_AC_USER_ID, effectiveRole()));
 
         ps.setBytes(1, sid.getBytes());
         ps.setString(2, userId.getString());
 
         ResultSet rs = ps.executeQuery();
         try {
-            if (!rs.next()) { // there is no entry in the ACL table for this storeid/userid
+            if (!rs.next()) { // there is no entry in the ACL table for this {storeid, userid}
                 return null;
             } else {
-                Permissions userPermissions = Permissions.fromBitmask(rs.getInt(1));
+                Permissions permissions = Permissions.fromBitmask(rs.getInt(1));
                 assert !rs.next();
-                return userPermissions;
+                return permissions;
+            }
+        } finally {
+            rs.close();
+        }
+    }
+
+    public @Nullable
+    Permissions getRoleNullable(SID sid, UserID userId, GroupID gid)
+            throws SQLException
+    {
+        PreparedStatement ps;
+        ps = prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_USER_ID +
+                "=? and " + C_AC_GID + "=?", C_AC_ROLE));
+
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, userId.getString());
+        ps.setInt(3, gid.getInt());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (!rs.next()) { // there is no entry in the ACL table for this {storeid, userid, gid}
+                return null;
+            } else {
+                Permissions permissions = Permissions.fromBitmask(rs.getInt(1));
+                assert !rs.next();
+                return permissions;
             }
         } finally {
             rs.close();
@@ -198,7 +229,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     public @Nullable SharedFolderState getStateNullable(SID sid, UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+        PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
                 C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_STATE));
 
         ps.setBytes(1, sid.getBytes());
@@ -206,10 +237,11 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
         ResultSet rs = ps.executeQuery();
         try {
-            if (!rs.next()) { // there is no entry in the ACL table for this storeid/userid
+            if (!rs.next()) {
                 return null;
             } else {
                 SharedFolderState state = SharedFolderState.fromOrdinal(rs.getInt(1));
+                // should only be one row here, since we're selecting distinct values
                 assert !rs.next();
                 return state;
             }
@@ -223,7 +255,8 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_SHARER));
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=? and " + C_AC_SHARER + " is not null",
+                C_AC_SHARER));
 
         ps.setBytes(1, sid.getBytes());
         ps.setString(2, userId.getString());
@@ -231,11 +264,12 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ResultSet rs = ps.executeQuery();
         try {
             if (!rs.next()) {
+                // TODO (RD): if sharer is null, might be because user was added to group and invited
+                // to its shared folders - can either return the group in this case or propagate the
+                // original sharer of the folder with the group
                 return null;
             } else {
-                String sharer = rs.getString(1);
-                assert !rs.next();
-                return sharer == null ? null : UserID.fromInternal(sharer);
+                return UserID.fromInternal(rs.getString(1));
             }
         } finally {
             rs.close();
@@ -245,7 +279,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     public ImmutableCollection<UserID> getJoinedUsers(SID sid) throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_STATE + "=" +
+                selectDistinctWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_STATE + "=" +
                         SharedFolderState.JOINED.ordinal(), C_AC_USER_ID));
 
         ps.setBytes(1, sid.getBytes());
@@ -267,7 +301,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                selectWhere(T_AC, C_AC_STORE_ID + "=?", C_AC_USER_ID));
+                selectDistinctWhere(T_AC, C_AC_STORE_ID + "=?", C_AC_USER_ID));
 
         ps.setBytes(1, sid.getBytes());
 
@@ -281,22 +315,48 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public Iterable<SubjectPermissions> getJoinedUsersAndRoles(SID sid) throws SQLException
+    public ImmutableMap<UserID, Permissions> getJoinedUsersAndRoles(SID sid) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_STATE + "=?", C_AC_USER_ID, C_AC_ROLE));
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=? and " +
+                        C_AC_STATE + "=" + SharedFolderState.JOINED.ordinal() +
+                        " group by " + C_AC_USER_ID, C_AC_USER_ID, effectiveRole()));
 
         ps.setBytes(1, sid.getBytes());
-        ps.setInt(2, SharedFolderState.JOINED.ordinal());
 
         ResultSet rs = ps.executeQuery();
         try {
-            ImmutableList.Builder<SubjectPermissions> builder = ImmutableList.builder();
+            ImmutableMap.Builder<UserID, Permissions> builder = ImmutableMap.builder();
             while (rs.next()) {
                 UserID userID = UserID.fromInternal(rs.getString(1));
                 Permissions permissions = Permissions.fromBitmask(rs.getInt(2));
 
-                builder.add(new SubjectPermissions(userID, permissions));
+                builder.put(userID, permissions);
+            }
+            return builder.build();
+        } finally {
+            rs.close();
+        }
+    }
+
+    public Iterable<UserIDRoleAndState> getUserRolesAndStatesWithGroup(SID sid, GroupID gid)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_GID
+                + "=?", C_AC_USER_ID, C_AC_ROLE, C_AC_STATE));
+        ps.setBytes(1, sid.getBytes());
+        ps.setInt(2, gid.getInt());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            ImmutableList.Builder<UserIDRoleAndState> builder =
+                    ImmutableList.builder();
+
+            while (rs.next()) {
+                UserID userID = UserID.fromInternal(rs.getString(1));
+                Permissions permissions = Permissions.fromBitmask(rs.getInt(2));
+                SharedFolderState state = SharedFolderState.fromOrdinal(rs.getInt(3));
+
+                builder.add(new UserIDRoleAndState(userID, permissions, state));
             }
             return builder.build();
         } finally {
@@ -307,8 +367,12 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     public Iterable<UserIDRoleAndState> getAllUsersRolesAndStates(SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=?",
-                C_AC_USER_ID, C_AC_ROLE, C_AC_STATE));
+        // group the rows by user ID and state so we can compute the effective roles in the DB
+        // using a bitwise_or aggregate
+        // TODO (RD): verify that there is only one state per UserID
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? group by " + C_AC_USER_ID + ", " + C_AC_STATE,
+                C_AC_USER_ID, effectiveRole(), C_AC_STATE));
 
         ps.setBytes(1, sid.getBytes());
 
@@ -330,14 +394,16 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void delete(SID sid, UserID userID)
+    public void delete(SID sid, UserID userID, GroupID gid)
             throws ExNotFound, SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                deleteWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?"));
+        PreparedStatement ps;
+        ps = prepareStatement(deleteWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=? and " + C_AC_GID + " =?"));
 
         ps.setBytes(1, sid.getBytes());
         ps.setString(2, userID.getString());
+        ps.setInt(3, gid.getInt());
         if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 
@@ -366,13 +432,29 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_ROLE));
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=? and " + C_AC_GID + "=?",
+                C_AC_ROLE));
 
         ps.setInt(1, permissions.bitmask());
         ps.setBytes(2, sid.getBytes());
         ps.setString(3, userID.getString());
+        ps.setInt(4, NULL_GROUP.getInt());
 
         if (ps.executeUpdate() != 1) throw new ExNotFound();
+    }
+
+    public void setPermissionsForGroup(SID sid, GroupID gid, Permissions permissions)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(updateWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_GID + "=?",
+                C_AC_ROLE));
+
+        ps.setInt(1, permissions.bitmask());
+        ps.setBytes(2, sid.getBytes());
+        ps.setInt(3, gid.getInt());
+
+        if (ps.executeUpdate() == 0) throw new ExNotFound();
     }
 
     public void grantPermission(SID sid, UserID userID, Permission permission)
@@ -380,15 +462,19 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     {
         PreparedStatement ps = prepareStatement("update " + T_AC
                 + " set " + C_AC_ROLE + "=" + C_AC_ROLE + " | ?"
-                + " where " +  C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?");
+                + " where " +  C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=? and "
+                + C_AC_GID + "=?");
 
         ps.setInt(1, permission.flag());
         ps.setBytes(2, sid.getBytes());
         ps.setString(3, userID.getString());
+        ps.setInt(4, NULL_GROUP.getInt());
 
         if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 
+    // N.B. this method revokes permissions for a user across all their ACLs, including groups
+    // it's only used by restricted external sharing, where it would be ineffectual to do otherwise
     public void revokePermission(SID sid, UserID userID, Permission permission)
             throws SQLException, ExNotFound
     {
@@ -400,7 +486,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps.setBytes(2, sid.getBytes());
         ps.setString(3, userID.getString());
 
-        if (ps.executeUpdate() != 1) throw new ExNotFound();
+        if (ps.executeUpdate() == 0) throw new ExNotFound();
     }
 
     public void destroy(SID sid)
@@ -482,6 +568,11 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         } else {
             return rs;
         }
+    }
+
+    private String effectiveRole()
+    {
+        return "BIT_OR(" + C_AC_ROLE + ")";
     }
 
     // the only purpose of this class is to carry data from getAllUsersRolesAndStates()

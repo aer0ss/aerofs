@@ -10,7 +10,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class TestUser_deactivate extends AbstractBusinessObjectTest
+public class TestUser_Deactivate extends AbstractBusinessObjectTest
 {
     @Test
     public void shouldMakeAllMethodsBehaveAsIfUserNeverExisted() throws Exception

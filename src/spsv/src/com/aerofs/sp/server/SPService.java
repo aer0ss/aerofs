@@ -17,6 +17,7 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
@@ -28,6 +29,7 @@ import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
@@ -39,6 +41,7 @@ import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
@@ -48,7 +51,6 @@ import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBFolderInvitation;
-import com.aerofs.proto.Common.PBGroupPermissions;
 import com.aerofs.proto.Common.PBPermissions;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Common.Void;
@@ -84,6 +86,8 @@ import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.proto.Sp.ISPService;
 import com.aerofs.proto.Sp.InviteToOrganizationReply;
 import com.aerofs.proto.Sp.ListGroupMembersReply;
+import com.aerofs.proto.Sp.ListGroupStatusInSharedFolderReply;
+import com.aerofs.proto.Sp.ListGroupStatusInSharedFolderReply.PBUserAndState;
 import com.aerofs.proto.Sp.ListGroupsReply;
 import com.aerofs.proto.Sp.ListOrganizationInvitedUsersReply;
 import com.aerofs.proto.Sp.ListOrganizationMembersReply;
@@ -99,9 +103,11 @@ import com.aerofs.proto.Sp.MobileAccessCode;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
+import com.aerofs.proto.Sp.PBGroup;
 import com.aerofs.proto.Sp.PBRestObjectUrl;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.Builder;
+import com.aerofs.proto.Sp.PBSharedFolder.PBGroupPermissions;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.proto.Sp.PBStripeData;
 import com.aerofs.proto.Sp.PBTwoFactorEnforcementLevel;
@@ -145,12 +151,17 @@ import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.SharedFolder.Factory;
-import com.aerofs.sp.server.lib.SharedFolder.UserPermissionsAndState;
+import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedFolders;
+import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedUsers;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder.AffectedAndNeedsEmail;
+import com.aerofs.sp.server.lib.sf.SharedFolder.Factory;
+import com.aerofs.sp.server.lib.sf.SharedFolder.GroupPermissions;
+import com.aerofs.sp.server.lib.sf.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLevel;
@@ -177,6 +188,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+import com.unboundid.ldap.sdk.LDAPSearchException;
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
@@ -234,6 +246,7 @@ public class SPService implements ISPService
     private final Device.Factory _factDevice;
     private final SharedFolder.Factory _factSharedFolder;
     private final UrlShare.Factory _factUrlShare;
+    private final Group.Factory _factGroup;
 
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
     private final RequestToSignUpEmailer _requestToSignUpEmailer;
@@ -297,6 +310,7 @@ public class SPService implements ISPService
             SharedFolderNotificationEmailer sfnEmailer,
             AsyncEmailSender asyncEmailSender,
             UrlShare.Factory factUrlShare,
+            Group.Factory factGroup,
             JedisRateLimiter rateLimiter,
             License license)
     {
@@ -318,6 +332,7 @@ public class SPService implements ISPService
         _esdb = esdb;
         _factSharedFolder = factSharedFolder;
         _factUrlShare = factUrlShare;
+        _factGroup = factGroup;
 
         _deviceRegistrationEmailer = deviceRegistrationEmailer;
         _requestToSignUpEmailer = requestToSignUpEmailer;
@@ -548,7 +563,8 @@ public class SPService implements ISPService
         Organization org = user.getOrganization();
 
         ListOrganizationMembersReply reply = ListOrganizationMembersReply.newBuilder()
-                .addAllUserAndLevel(users2pb(org.listUsers(maxResults, offset)))
+                .addAllUserAndLevel(
+                        users2pbUserAndLevels(org.listUsers(maxResults, offset, searchPrefix)))
                 .setTotalCount(org.countUsers())
                 .build();
 
@@ -557,7 +573,7 @@ public class SPService implements ISPService
         return createReply(reply);
     }
 
-    private static List<PBUserAndLevel> users2pb(Collection<User> users)
+    private static List<PBUserAndLevel> users2pbUserAndLevels(Collection<User> users)
             throws SQLException, ExNotFound
     {
         List<PBUserAndLevel> pb = Lists.newArrayListWithCapacity(users.size());
@@ -684,7 +700,7 @@ public class SPService implements ISPService
         String noPermMsg = "you don't have permission to perform this action";
 
         // Throw early if the specified user doesn't exist rather than relying on the following
-        // below. This is to prevent attacker from testing user existance.
+        // below. This is to prevent attacker from testing user existence.
         if (!target.exists()) throw new ExNoPerm(noPermMsg);
 
         if (!target.belongsTo(sessionUser.getOrganization())) {
@@ -718,9 +734,13 @@ public class SPService implements ISPService
                     .setOwnedByTeam(false);
 
             // fill in folder members
-            for (UserPermissionsAndState entry : sf.getAllUsersRolesAndStates()) {
-                sharedFolderMember2pb(sessionOrg, user2nameCache, builder,
-                        entry._user, entry._permissions, entry._state);
+            for (UserPermissionsAndState entry : sf.getUserRolesAndStatesForGroup(null)) {
+                sharedFolderUser2pb(sessionOrg, user2nameCache, builder, entry._user,
+                        entry._permissions, entry._state);
+            }
+            for (GroupPermissions entry : sf.getAllGroupsAndRoles()) {
+                sharedFolderGroup2pb(builder, entry._group,
+                        entry._permissions);
             }
 
             pbs.add(builder.build());
@@ -728,7 +748,7 @@ public class SPService implements ISPService
         return pbs;
     }
 
-    private void sharedFolderMember2pb(Organization sessionOrg, Map<User, FullName> user2nameCache,
+    private void sharedFolderUser2pb(Organization sessionOrg, Map<User, FullName> user2nameCache,
             Builder builder, User user, Permissions permissions, SharedFolderState state)
             throws ExNotFound, SQLException
     {
@@ -745,6 +765,14 @@ public class SPService implements ISPService
                 .setPermissions(permissions.toPB())
                 .setState(state.toPB())
                 .setUser(user2pb(user, getUserFullName(user, user2nameCache))));
+    }
+
+    private void sharedFolderGroup2pb(Builder builder, Group group, Permissions permissions)
+            throws ExNotFound, SQLException
+    {
+        builder.addGroupPermissions(PBGroupPermissions.newBuilder()
+                .setPermissions(permissions.toPB())
+                .setGroup(group2pb(group)));
     }
 
     /**
@@ -787,6 +815,16 @@ public class SPService implements ISPService
                 .setFirstName(fn._first)
                 .setLastName(fn._last);
         if (user.exists()) bd.setTwoFactorEnforced(user.shouldEnforceTwoFactor());
+        return bd;
+    }
+
+    private static PBGroup.Builder group2pb(Group group)
+            throws SQLException, ExNotFound
+    {
+        PBGroup.Builder bd = PBGroup.newBuilder()
+                .setGroupId(group.id().getInt())
+                .setCommonName(group.getCommonName())
+                .setExternallyManaged(group.isExternallyManaged());
         return bd;
     }
 
@@ -1061,11 +1099,19 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
-    private void throwIfNotOwner(User user, Device device)
+    private static void throwIfNotOwner(User user, Device device)
             throws ExNotFound, SQLException, ExNoPerm
     {
         if (!device.getOwner().equals(user)) {
             throw new ExNoPerm("your are not the owner of the device");
+        }
+    }
+
+    private static void throwIfNotOwner(Organization org, Group group)
+            throws SQLException, ExNotFound, ExNoPerm
+    {
+        if (!org.equals(group.getOrganization())) {
+            throw new ExNoPerm("your organization is not the owner of this group");
         }
     }
 
@@ -1187,7 +1233,7 @@ public class SPService implements ISPService
 
     /**
      * Send an email to the user. This happens to only be used by the linux updater on failure.
-     * TODO (MP) rename this to something more appropriate.
+     * TODO rename this to something more appropriate.
      */
     @Override
     public ListenableFuture<Void> emailUser(String userId, String body)
@@ -1220,8 +1266,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> shareFolder(String folderName, ByteString shareId,
             List<PBSubjectPermissions> subjectPermissionsList, @Nullable String note,
-            @Nullable Boolean external, @Nullable Boolean suppressSharingRulesWarnings,
-            List<PBGroupPermissions> groupPermissionsList)
+            @Nullable Boolean external, @Nullable Boolean suppressSharingRulesWarnings)
             throws Exception
     {
         external = firstNonNull(external, false);
@@ -1242,29 +1287,61 @@ public class SPService implements ISPService
         boolean created = saveSharedFolderIfNecessary(folderName, sf, sharer, external);
         if (created) events.add(auditSharing(sf, sharer, "folder.create"));
 
-        ImmutableCollection<UserID> users = sf.getJoinedUserIDs();
+        ImmutableCollection.Builder<UserID> affected = ImmutableSet.builder();
 
         // The sending of invitation emails is deferred to the end of the transaction to ensure
-        // that all business logic checks pass and the changes are sucessfully committed to the DB
+        // that all business logic checks pass and the changes are successfully committed to the
+        // DB.
         List<InvitationEmailer> emailers = Lists.newLinkedList();
 
         for (SubjectPermissions srp : srps) {
-            User sharee = _factUser.create(srp._subject);
-            Permissions actualPermissions = rules.onUpdatingACL(sf, sharee, srp._permissions);
-            emailers.add(
-                    _invitationHelper.createFolderInvitationAndEmailer(sf, sharer, sharee,
-                            actualPermissions, note, folderName));
+            if (srp._subject instanceof UserID) {
+                User sharee = _factUser.create((UserID)srp._subject);
+                Permissions actualPermissions = rules.onUpdatingACL(sf, sharee, srp._permissions);
+                AffectedAndNeedsEmail updates = sf.addUserWithGroup(sharee, null, actualPermissions, sharer);
+                affected.addAll(updates._affected);
+                if (updates._needsEmail) {
+                    emailers.add(
+                            _invitationHelper.createFolderInvitationAndEmailer(sf, sharer, sharee,
+                                    actualPermissions, note, folderName));
+                }
 
-            events.add(auditSharing(sf, sharer, "folder.invite")
-                    .add("target", sharee.id())
-                    .embed("role", actualPermissions.toArray()));
+                events.add(auditSharing(sf, sharer, "folder.invite")
+                        .add("target", sharee.id())
+                        .embed("role", actualPermissions.toArray()));
+            } else if (srp._subject instanceof GroupID) {
+                Group group = _factGroup.create((GroupID)srp._subject);
+
+                // Permissions: cannot share to a group in a different organization. Sharing rules do
+                // not have to be applied, as group sharing can only occur within an organization.
+                throwIfNotOwner(sharer.getOrganization(), group);
+                Permissions permissions = rules.onUpdatingACL(sf, group, srp._permissions);
+                AffectedUserIDsAndInvitedUsers updates = group.joinSharedFolder(sf, permissions, sharer);
+                affected.addAll(updates._affected);
+                emailers.addAll(_invitationHelper.createFolderInvitationAndEmailer(
+                        sf, sharer, updates._users, permissions, note, folderName));
+
+                // Audit event for each invitation.
+                for (User sharee : group.listMembers()) {
+                    events.add(auditSharing(sf, sharer, "folder.invite")
+                            .add("target", sharee.id())
+                            .embed("role", permissions.toArray()));
+                }
+            } else {
+                String msg = "The subject permissions list contains an invalid subject";
+                l.warn("{}: {}", msg, srp._subject);
+                throw new ExBadArgs(msg + ".");
+            }
         }
 
         if (!suppressSharingRulesWarnings) rules.throwIfAnyWarningTriggered();
 
-        // send verkehr notification as the last step of the transaction
-        if (created || rules.shouldBumpEpoch()) _aclPublisher.publish_(users);
-        
+        if (created || rules.shouldBumpEpoch()) {
+            affected.addAll(sf.getJoinedUserIDs());
+        }
+        // Send verkehr notification as the last step of the transaction.
+        _aclPublisher.publish_(affected.build());
+
         for (AuditableEvent e : events) e.publish();
 
         _sqlTrans.commit();
@@ -1334,7 +1411,7 @@ public class SPService implements ISPService
         // Note 2. we allow users who have left the folder to rejoin
         if (state == null) throw new ExNotFound("No such invitation");
 
-        // reset pending bit to make user a member of the shared folder
+        // make user a member of the shared folder
         ImmutableCollection<UserID> users = sf.setState(user, SharedFolderState.JOINED);
 
         // set the external bit for consistent auto-join behavior across devices
@@ -1422,11 +1499,11 @@ public class SPService implements ISPService
 
         SharedFolderState state = sf.getStateNullable(user);
 
-        if (state == null) throw new ExNotFound("No such folder or you're not member of the folder");
+        if (state == null) throw new ExNotFound("No such folder or you are not a member of this shared folder");
 
-        // silently ignore leave call from pending users as multiple device of the same user
+        // Silently ignore leave call from pending users as multiple device of the same user
         // may make the call depending on the relative speeds of deletion propagation vs ACL
-        // propagation
+        // propagation.
         if (state != SharedFolderState.PENDING) {
             if (state != SharedFolderState.JOINED) {
                 throw new ExNotFound("You are not a member of this shared folder");
@@ -2473,43 +2550,92 @@ public class SPService implements ISPService
             throws Exception
     {
         suppressWarnings = firstNonNull(suppressWarnings, false);
-
-        User subject = _factUser.createFromExternalID(subjectString);
+        Object userOrGroupID = SubjectPermissions.getSubjectFromString(subjectString);
         Permissions role = Permissions.fromPB(permissions);
         SharedFolder sf = _factSharedFolder.create(storeId);
+        ImmutableCollection.Builder<UserID> affected = ImmutableSet.builder();
 
         // making the modification to the database, and then getting the current acl list should
         // be done in a single atomic operation. Otherwise, it is possible for us to send out a
-        // notification that is newer than what it should be (i.e. we skip an update
+        // notification that is newer than what it should be (i.e. we skip an update)
 
         _sqlTrans.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        sf.throwIfNoPrivilegeToChangeACL(user);
+        ISharingRules rules = _sharingRules.create(user);
 
-        Permissions oldPermissions = sf.getPermissionsNullable(subject);
-        if (oldPermissions != role) {
-            sf.throwIfNoPrivilegeToChangeACL(user);
+        if (userOrGroupID instanceof UserID) {
+            User subject = _factUser.create((UserID)userOrGroupID);
+            Permissions oldPermissions = sf.getPermissionsInGroup(subject, null);
+            if (oldPermissions != role) {
+                role = rules.onUpdatingACL(sf, subject, role);
+                if (!suppressWarnings) rules.throwIfAnyWarningTriggered();
 
-            ISharingRules rules = _sharingRules.create(user);
-            role = rules.onUpdatingACL(sf, subject, role);
+                affected.addAll(changeRoleSendEmailAndAudit(sf, user, subject, oldPermissions, role));
 
-            ImmutableCollection<UserID> affectedUsers = sf.setPermissions(subject, role);
-            if (!suppressWarnings) rules.throwIfAnyWarningTriggered();
+            }
+        } else if (userOrGroupID instanceof GroupID) {
+            Group subject = _factGroup.create((GroupID)userOrGroupID);
+            Permissions oldPermissions = subject.getRoleForSharedFolder(sf);
+            if (oldPermissions != role) {
+                role = rules.onUpdatingACL(sf, subject, role);
+                if (!suppressWarnings) rules.throwIfAnyWarningTriggered();
 
-            _sfnEmailer.sendRoleChangedNotificationEmail(sf, user, subject, oldPermissions, role);
-
-            auditSharing(sf, user, "folder.permission.update")
-                    .add("target", subject.id())
-                    .embed("new_role", role.toArray())
-                    .embed("old_role", oldPermissions != null ? oldPermissions.toArray() : "")
-                    .publish();
-
-            // always call publishACLs_() as the last step of the transaction
-            _aclPublisher.publish_(affectedUsers);
+                affected.addAll(changeRoleSendEmailAndAudit(sf, user, subject, oldPermissions, role));
+            }
+        } else {
+            String msg = "The subject permissions list contains an invalid subject";
+            l.warn("{}: {}", msg, subjectString);
+            throw new ExBadArgs(msg + ".");
         }
 
+        if (rules.shouldBumpEpoch()) {
+            affected.addAll(sf.getJoinedUserIDs());
+        }
+        _aclPublisher.publish_(affected.build());
         _sqlTrans.commit();
 
         return createVoidReply();
+    }
+
+    private ImmutableCollection<UserID> changeRoleSendEmailAndAudit(SharedFolder sf, User changer,
+            User changee, Permissions oldRole, Permissions newRole)
+            throws SQLException, ExNoAdminOrOwner, ExNotFound, IOException, MessagingException
+    {
+        //by this point we've already determined that the ACL exists, getPermissionsNullable should
+        //never return null
+        Permissions oldEffectivePermissions = sf.getPermissionsNullable(changee);
+        ImmutableCollection<UserID> affected = sf.setPermissions(changee, newRole);
+        Permissions newEffectivePermissions = sf.getPermissionsNullable(changee);
+
+        _sfnEmailer.sendRoleChangedNotificationEmail(sf, changer, changee, oldEffectivePermissions,
+                newEffectivePermissions);
+
+        auditSharing(sf, changer, "folder.permission.update")
+                .add("target", changee.id())
+                .embed("new_role", newRole.toArray())
+                .embed("old_role", oldRole.toArray())
+                .publish();
+
+        return affected;
+    }
+
+    private ImmutableCollection<UserID> changeRoleSendEmailAndAudit(SharedFolder sf, User changer,
+            Group changee, Permissions oldRole, Permissions newRole)
+            throws ExNoAdminOrOwner, SQLException, ExNotFound, IOException, MessagingException
+    {
+        ImmutableCollection<UserID> affected = changee.changeRoleInSharedFolder(sf, newRole);
+
+        _sfnEmailer.sendRoleChangedNotificationEmail(sf, changer, changee, oldRole,
+                newRole);
+
+        auditSharing(sf, changer, "folder.permission.update")
+                .add("target", changee.id())
+                .embed("new_role", newRole.toArray())
+                .embed("old_role", oldRole.toArray())
+                .publish();
+
+        return affected;
     }
 
     @Override
@@ -2519,18 +2645,30 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         SharedFolder sf = _factSharedFolder.create(storeId);
-
-        User subject = _factUser.createFromExternalID(subjectString);
-
-
         sf.throwIfNoPrivilegeToChangeACL(user);
+        Object userOrGroupID = SubjectPermissions.getSubjectFromString(subjectString);
+        if (userOrGroupID instanceof UserID) {
+            User subject = _factUser.create((UserID)userOrGroupID);
 
-        auditSharing(sf, user, "folder.permission.delete")
-                .add("target", subject.id())
-                .publish();
+            auditSharing(sf, user, "folder.permission.delete").add("target", subject.id())
+                    .publish();
 
-        // always call this method as the last step of the transaction
-        _aclPublisher.publish_(sf.removeUser(subject));
+            _aclPublisher.publish_(sf.removeUser(subject));
+            _sfnEmailer.sendRemovedFromFolderNotificationEmail(sf, user, subject);
+        } else if (userOrGroupID instanceof GroupID) {
+            Group subject = _factGroup.create((GroupID)userOrGroupID);
+
+            auditSharing(sf, user, "folder.permission.delete").add("target", subject.id())
+                    .publish();
+
+            // always call this method as the last step of the transaction
+            _aclPublisher.publish_(subject.deleteSharedFolder(sf));
+            _sfnEmailer.sendRemovedFromFolderNotificationEmail(sf, user, subject);
+        } else {
+            String msg = "The subject permissions list contains an invalid subject";
+            l.warn("{}: {}", msg, subjectString);
+            throw new ExBadArgs(msg + ".");
+        }
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -3058,7 +3196,7 @@ public class SPService implements ISPService
     {
         throw new UnsupportedOperationException();
 
-        // TODO (MP) finish this...
+        // TODO finish this...
 
         /*GetUserCRLReply reply = GetUserCRLReply.newBuilder()
                 .setCrlEpoch(0L)
@@ -3368,58 +3506,283 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<CreateGroupReply> createGroup(String commonName)
+    public ListenableFuture<CreateGroupReply> createGroup(String commonName) throws
+            SQLException,
+            ExNotAuthenticated,
+            ExSecondFactorRequired,
+            ExNotFound,
+            ExNoPerm,
+            ExSecondFactorSetupRequired
     {
-        // TODO (MP) finish this...
-        return createReply(CreateGroupReply.getDefaultInstance());
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        // Permissions: cannot create a group unless you are an admin.
+        user.throwIfNotAdmin();
+        Group group = _factGroup.save(commonName, user.getOrganization().id(), null);
+        _sqlTrans.commit();
+
+        l.info("{} created {}; common name {}", user, group, commonName);
+
+        return createReply(CreateGroupReply.newBuilder().setGroupId(group.id().getInt()).build());
     }
 
     @Override
-    public ListenableFuture<Void> setGroupCommonName(Integer groupID, String commonName)
-            throws ExNotFound, ExNotLocallyManaged
+    public ListenableFuture<Void> setGroupCommonName(Integer groupID, String commonName) throws
+            SQLException,
+            ExNotAuthenticated,
+            ExSecondFactorRequired,
+            ExNotFound,
+            ExNoPerm,
+            ExNotLocallyManaged,
+            ExSecondFactorSetupRequired
     {
-        // TODO (MP) finish this...
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        // Permissions: cannot modify a group unless you are an admin.
+        user.throwIfNotAdmin();
+        Group group = _factGroup.create(groupID);
+        // Permissions: cannot modify a group unless it is owned by your organization.
+        throwIfNotOwner(user.getOrganization(), group);
+        // Permissions: cannot modify externally managed groups.
+        group.throwIfExternallyManaged();
+        group.setCommonName(commonName);
+        _sqlTrans.commit();
+
+        l.info("{} modified {}; new common name {}", user, group, commonName);
+
         return createReply(Void.getDefaultInstance());
     }
 
     @Override
-    public ListenableFuture<Void> addGroupMembers(List<String> userEmails)
-            throws ExNotFound, ExWrongOrganization, ExNotLocallyManaged
+    public ListenableFuture<Void> addGroupMembers(Integer groupID, List<String> userEmails)
+            throws
+            SQLException,
+            ExNotAuthenticated,
+            ExSecondFactorRequired,
+            ExNotFound,
+            ExNoPerm,
+            ExNotLocallyManaged,
+            ExWrongOrganization,
+            ExEmptyEmailAddress,
+            ExAlreadyExist,
+            IOException,
+            LDAPSearchException,
+            ExExternalServiceUnavailable,
+            ExSecondFactorSetupRequired,
+            Exception
     {
-        // TODO (MP) finish this...
+        ImmutableCollection.Builder<UserID> needsACLUpdate = ImmutableSet.builder();
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        Organization org = user.getOrganization();
+        // Permissions: cannot modify a group unless you are an admin.
+        user.throwIfNotAdmin();
+        Group group = _factGroup.create(groupID);
+        // Permissions: cannot modify a group unless it is owned by your organization.
+        throwIfNotOwner(user.getOrganization(), group);
+        // Permissions: cannot modify externally managed groups.
+        group.throwIfExternallyManaged();
+
+        List<InvitationEmailer> emails = Lists.newLinkedList();
+        for (String userEmail : userEmails) {
+            User u = _factUser.create(UserID.fromExternal(userEmail));
+
+            if (!_authenticator.isInternalUser(u.id())) {
+                throw new ExWrongOrganization(u + " is external to this organization, " +
+                        "and not allowed to be in this organization's groups");
+            } else if (!u.getOrganization().equals(org)) {
+                throw new ExWrongOrganization(u + " in wrong org");
+            }
+            AffectedUserIDsAndInvitedFolders updates = group.addMember(u);
+            needsACLUpdate.addAll(updates._affected);
+            emails.add(_invitationHelper.createBatchFolderInvitationAndEmailer(group, u,
+                    updates._folders));
+        }
+
+        _sqlTrans.commit();
+
+        l.info("{} added {} member(s) to {}", user, userEmails.size(), group);
+
+        _aclPublisher.publish_(needsACLUpdate.build());
+
+        for (InvitationEmailer email : emails) {
+            try {
+                email.send();
+            } catch (Exception e) {
+                l.warn("failed to send email notifying {} of folder invitations from joining {}",
+                        user, group);
+            }
+        }
+
         return createReply(Void.getDefaultInstance());
     }
 
     @Override
-    public ListenableFuture<Void> removeGroupMembers(List<String> userEmails)
-            throws ExNotFound, ExNotLocallyManaged
+    public ListenableFuture<Void> removeGroupMembers(Integer groupID, List<String> userEmails)
+            throws
+            SQLException,
+            ExNotAuthenticated,
+            ExSecondFactorRequired,
+            ExNotFound,
+            ExNoPerm,
+            ExNotLocallyManaged,
+            ExEmptyEmailAddress,
+            ExSecondFactorSetupRequired,
+            Exception
     {
-        // TODO (MP) finish this...
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        // Permissions: cannot modify a group unless you are an admin.
+        user.throwIfNotAdmin();
+        Group group = _factGroup.create(groupID);
+        // Permissions: cannot modify a group unless it is owned by your organization.
+        throwIfNotOwner(user.getOrganization(), group);
+        // Permissions: cannot modify externally managed groups.
+        group.throwIfExternallyManaged();
+
+        ImmutableSet.Builder<UserID> affected = ImmutableSet.builder();
+        for (String userEmail : userEmails) {
+            User u = _factUser.create(UserID.fromExternal(userEmail));
+            affected.addAll(group.removeMember(u));
+        }
+
+        _aclPublisher.publish_(affected.build());
+
+        _sqlTrans.commit();
+
+        l.info("{} removed {} member(s) from {}", user, userEmails.size(), group);
+
         return createReply(Void.getDefaultInstance());
     }
 
     @Override
-    public ListenableFuture<Void> deleteGroup(Integer groupID)
-            throws ExNotFound, ExNotLocallyManaged
+    public ListenableFuture<Void> deleteGroup(Integer groupID) throws
+            SQLException,
+            ExNotAuthenticated,
+            ExSecondFactorRequired,
+            ExNotFound,
+            ExNoPerm,
+            ExNotLocallyManaged,
+            ExSecondFactorSetupRequired,
+            Exception
     {
-        // TODO (MP) finish this...
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        // Permissions: cannot delete a group unless you are an admin.
+        user.throwIfNotAdmin();
+        Group group = _factGroup.create(groupID);
+        // Permissions: cannot modify a group unless it is owned by your organization.
+        throwIfNotOwner(user.getOrganization(), group);
+        // Permissions: cannot modify externally managed groups.
+        group.throwIfExternallyManaged();
+        ImmutableCollection<UserID> affected = group.delete();
+
+        _aclPublisher.publish_(affected);
+
+        _sqlTrans.commit();
+
+        l.info("{} deleted {}", user, group);
+
         return createReply(Void.getDefaultInstance());
     }
 
     @Override
     public ListenableFuture<ListGroupsReply> listGroups(Integer maxResults, Integer offset,
-            String searchPrefix)
+            String searchPrefix) throws
+            SQLException,
+            ExNotAuthenticated,
+            ExSecondFactorRequired,
+            ExNotFound,
+            ExNoPerm,
+            ExBadArgs,
+            ExSecondFactorSetupRequired
     {
-        // TODO (MP) finish this...
-        return createReply(ListGroupsReply.getDefaultInstance());
+        throwOnInvalidOffset(offset);
+        throwOnInvalidMaxResults(maxResults);
+
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        Organization org = user.getOrganization();
+        ListGroupsReply reply = ListGroupsReply.newBuilder()
+                .addAllGroups(groups2pbGroups(org.listGroups(maxResults, offset, searchPrefix)))
+                .build();
+        _sqlTrans.commit();
+
+        l.info("{} listed groups; total: {}", user, reply.getGroupsCount());
+
+        return createReply(reply);
+    }
+
+    private static List<PBGroup> groups2pbGroups(Collection<Group> groups)
+            throws SQLException, ExNotFound
+    {
+        List<PBGroup> pb = Lists.newArrayListWithCapacity(groups.size());
+        for (Group group : groups) {
+            pb.add(PBGroup.newBuilder()
+                    .setGroupId(group.id().getInt())
+                    .setCommonName(group.getCommonName())
+                    .setExternallyManaged(group.isExternallyManaged())
+                    .build());
+        }
+        return pb;
     }
 
     @Override
-    public ListenableFuture<ListGroupMembersReply> listGroupMembers(Integer groupID)
-            throws ExNotFound
+    public ListenableFuture<ListGroupMembersReply> listGroupMembers(Integer groupID) throws
+            SQLException,
+            ExNotAuthenticated,
+            ExSecondFactorRequired,
+            ExNotFound,
+            ExNoPerm,
+            ExSecondFactorSetupRequired
     {
-        // TODO (MP) finish this...
-        return createReply(ListGroupMembersReply.getDefaultInstance());
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        Group group = _factGroup.create(groupID);
+        // Permissions: cannot list group members unless your org owns the group in question.
+        throwIfNotOwner(user.getOrganization(), group);
+        ListGroupMembersReply reply = ListGroupMembersReply.newBuilder()
+                .addAllUsers(users2pbUsers(group.listMembers()))
+                .build();
+        _sqlTrans.commit();
+
+        l.info("{} listed members for {}; total: {}", user, group, reply.getUsersCount());
+
+        return createReply(reply);
+    }
+
+    @Override
+    public ListenableFuture<ListGroupStatusInSharedFolderReply> listGroupStatusInSharedFolder(
+            Integer groupID, ByteString shareID)
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        Group group = _factGroup.create(groupID);
+        // N.B. we don't check that the sessionOrg owns the group here because in hybrid cloud we
+        // want any member of a shared folder to list the members of the groups in that folder
+        SharedFolder sf = _factSharedFolder.create(shareID);
+
+        ListGroupStatusInSharedFolderReply.Builder builder = ListGroupStatusInSharedFolderReply.newBuilder();
+        for (UserPermissionsAndState ups : sf.getUserRolesAndStatesForGroup(group)) {
+            builder.addUserPermissionsAndState(PBUserAndState.newBuilder()
+                    .setUser(user2pb(ups._user))
+                    .setState(ups._state.toPB())
+                    .build());
+        }
+        _sqlTrans.commit();
+
+        return createReply(builder.build());
+    }
+
+    private static List<PBUser> users2pbUsers(Collection<User> users)
+            throws SQLException, ExNotFound
+    {
+        List<PBUser> pb = Lists.newArrayListWithCapacity(users.size());
+        for (User user : users) {
+            pb.add(user2pb(user).build());
+        }
+        return pb;
     }
 
     /**

@@ -9,6 +9,7 @@ import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.restless.Version;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
@@ -33,7 +34,7 @@ import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.email.TwoFactorEmailer;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -299,9 +300,11 @@ public class UsersResource extends AbstractSpartaResource
     static Invitation invitation(SharedFolder sf, User invitee)
             throws ExNotFound, SQLException
     {
+        User sharer = sf.getSharerNullable(invitee);
+        Permissions permissions = sf.getPermissionsNullable(invitee);
         return new Invitation(sf.id().toStringFormal(), sf.getName(invitee),
-                sf.getSharerNullable(invitee).id().getString(),
-                sf.getPermissionsNullable(invitee).toArray());
+                sharer == null ? null : sharer.id().getString(),
+                permissions == null ? null : permissions.toArray());
     }
 
     static ImmutableCollection<Invitation> listInvitations(User user, IAuthToken token)

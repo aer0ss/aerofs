@@ -9,18 +9,21 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.sp.authentication.Authenticator;
-import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.Lists;
 import com.unboundid.ldap.sdk.LDAPSearchException;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Set;
 
 public class InvitationHelper
 {
@@ -37,23 +40,34 @@ public class InvitationHelper
         _esdb = esdb;
     }
 
+    public List<InvitationEmailer> createFolderInvitationAndEmailer(SharedFolder sf, User sharer,
+            Set<User> needEmails, Permissions permissions, @Nullable String note, String folderName)
+            throws
+            SQLException,
+            IOException,
+            ExNotFound,
+            ExAlreadyExist,
+            ExExternalServiceUnavailable,
+            LDAPSearchException
+    {
+        List<InvitationEmailer> result = Lists.newLinkedList();
+        for (User sharee : needEmails) {
+            result.add(_factInvitationEmailer.createFolderInvitationEmailer(sharer, sharee,
+                folderName, note, sf.id(), permissions));
+        }
+        return result;
+    }
+
     public InvitationEmailer createFolderInvitationAndEmailer(SharedFolder sf, User sharer,
             User sharee, Permissions permissions, @Nullable String note, String folderName)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist,
-            ExExternalServiceUnavailable, LDAPSearchException
+            throws
+            SQLException,
+            IOException,
+            ExNotFound,
+            ExAlreadyExist,
+            ExExternalServiceUnavailable,
+            LDAPSearchException
     {
-        SharedFolderState state = sf.getStateNullable(sharee);
-        if (state == SharedFolderState.JOINED) {
-            // TODO (WW) throw ExAlreadyJoined?
-            throw new ExAlreadyExist(sharee.id() + " is already joined");
-        } else if (state != null) {
-            // Set user as pending if the user exists but in a non-joined state
-            sf.setState(sharee, SharedFolderState.PENDING);
-        } else {
-            // Add a pending ACL entry if the user doesn't exist
-            sf.addPendingUser(sharee, permissions, sharer);
-        }
-
         InvitationEmailer emailer;
         if (sharee.exists()) {
             // send folder invitation email
@@ -64,6 +78,25 @@ public class InvitationHelper
             emailer = inviteToSignUp(sharer, sharee, folderName, permissions, note)._emailer;
         }
         return emailer;
+    }
+
+    public InvitationEmailer createBatchFolderInvitationAndEmailer(Group sharer,
+            User newMember, Set<SharedFolder> needsEmail)
+            throws
+            IOException,
+            SQLException,
+            ExNotFound
+    {
+        if (needsEmail.size() == 0) {
+            return _factInvitationEmailer.createAddedToGroupEmailer(newMember, sharer);
+        } else {
+            return _factInvitationEmailer.createBatchInvitationEmailer(newMember, sharer, needsEmail);
+        }
+    }
+
+    public InvitationEmailer doesNothing()
+    {
+        return _factInvitationEmailer.doesNothing();
     }
 
     public static class InviteToSignUpResult
@@ -91,13 +124,14 @@ public class InvitationHelper
         String code;
         if (_authenticator.isLocallyManaged(invitee.id())) {
             code = invitee.addSignUpCode();
-            _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+            _esdb.insertEmailSubscription(invitee.id(),
+                    SubscriptionCategory.AEROFS_INVITATION_REMINDER);
         } else {
             // No signup code is needed for auto-provisioned users.
             // They can simply sign in using their externally-managed account credentials.
             code = null;
 
-            // We can't set up reminder emails as we do for locall-managed users, because
+            // We can't set up reminder emails as we do for locally-managed users, because
             // reminder email implementation requires valid signup codes. We can implement
             // different reminder emails if we'd like. In doing that, we need to remove the
             // reminder when creating the user during auto-provisioning.

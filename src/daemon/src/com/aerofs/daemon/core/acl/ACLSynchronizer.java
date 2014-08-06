@@ -391,10 +391,19 @@ public class ACLSynchronizer
             Set<UserID> externalMembers = Sets.newHashSet();
             ImmutableMap.Builder<UserID, Permissions> builder = ImmutableMap.builder();
             for (PBSubjectPermissions pbPair : store.getSubjectPermissionsList()) {
-                SubjectPermissions srp = new SubjectPermissions(pbPair);
-                builder.put(srp._subject, srp._permissions);
+                SubjectPermissions srp = SubjectPermissions.fromPB(pbPair);
+
+                // the core doesn't handle ACL subjects that are not UserIDs.
+                if (!(srp._subject instanceof UserID)) {
+                    l.warn("the server returned a non-UserID ACL subject, skipped: {}",
+                            srp._subject);
+                    continue;
+                }
+
+                UserID userID = (UserID)srp._subject;
+                builder.put(userID, srp._permissions);
                 if (pbPair.hasExternal() && pbPair.getExternal()) {
-                    externalMembers.add(srp._subject);
+                    externalMembers.add(userID);
                 }
             }
 

@@ -5,15 +5,18 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.acl.SubjectPermissionsList;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
+import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.user.User;
 
 import java.util.Collections;
 import java.util.List;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static org.junit.Assert.assertFalse;
 
 public class AbstractSPFolderTest extends AbstractSPTest
@@ -26,7 +29,12 @@ public class AbstractSPFolderTest extends AbstractSPTest
      */
     protected static List<PBSubjectPermissions> toPB(User sharee, Permissions permissions)
     {
-        return SubjectPermissionsList.mapToPB(Collections.singletonMap(sharee.id(), permissions));
+        return newArrayList(new SubjectPermissions(sharee.id(), permissions).toPB());
+    }
+
+    protected static List<PBSubjectPermissions> toPB(Group sharee, Permissions permissions)
+    {
+        return newArrayList(new SubjectPermissions(sharee.id(), permissions).toPB());
     }
 
     /**
@@ -56,7 +64,18 @@ public class AbstractSPFolderTest extends AbstractSPTest
         shareFolderImpl(sharer, sid, sharee, permissions, false, false);
     }
 
+    protected void shareFolder(User sharer, SID sid, Group sharee, Permissions permissions) throws Exception
+    {
+        shareFolderImpl(sharer, sid, sharee, permissions, false, false);
+    }
+
     protected void shareFolderSuppressWarnings(User sharer, SID sid, User sharee, Permissions permissions)
+            throws Exception
+    {
+        shareFolderImpl(sharer, sid, sharee, permissions, false, true);
+    }
+
+    protected void shareFolderSuppressWarnings(User sharer, SID sid, Group sharee, Permissions permissions)
             throws Exception
     {
         shareFolderImpl(sharer, sid, sharee, permissions, false, true);
@@ -74,7 +93,16 @@ public class AbstractSPFolderTest extends AbstractSPTest
     {
         setSession(sharer);
         service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, permissions), "", external,
-                suppressWarnings, null);
+                suppressWarnings);
+    }
+
+    private void shareFolderImpl(User sharer, SID sid, Group sharee, Permissions permissions, boolean external,
+            boolean suppressWarnings)
+            throws Exception
+    {
+        setSession(sharer);
+        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, permissions), "", external,
+                suppressWarnings);
     }
 
     protected void joinSharedFolder(User sharee, SID sid) throws Exception

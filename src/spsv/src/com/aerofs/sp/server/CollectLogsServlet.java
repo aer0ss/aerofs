@@ -22,7 +22,7 @@ import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.email.Email;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.sp.server.lib.user.UserDatabase;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;

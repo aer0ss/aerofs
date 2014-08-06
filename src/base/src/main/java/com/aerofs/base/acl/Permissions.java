@@ -189,6 +189,11 @@ public class Permissions implements Comparable<Permissions>
         return fromBitmask(bitmask() & ~p.flag());
     }
 
+    public Permissions union(Permissions p)
+    {
+        return fromBitmask(bitmask() | p.bitmask());
+    }
+
     public static Permissions allOf(Permission... permissions)
     {
         return new Permissions(Permission.union(Arrays.asList(permissions)));

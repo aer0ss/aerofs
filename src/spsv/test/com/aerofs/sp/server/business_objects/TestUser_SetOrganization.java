@@ -9,7 +9,7 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class TestUser_setOrganization extends AbstractBusinessObjectTest
+public class TestUser_SetOrganization extends AbstractBusinessObjectTest
 {
     @Test
     public void shouldSetAuthLevel()

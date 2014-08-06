@@ -6,15 +6,16 @@ package com.aerofs.sp.server.database_objects;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
-import com.aerofs.sp.server.lib.OrganizationDatabase;
-import com.aerofs.sp.server.lib.SharedFolderDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationDatabase;
+import com.aerofs.sp.server.lib.sf.SharedFolderDatabase;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.sp.server.lib.user.UserDatabase;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,9 +58,9 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     @Test
     public void listUsers_shouldIgnoreTeamServerAndDeactivated() throws Exception
     {
-        assertEquals(2, odb.listUsers(orgID, 0, 100).size());
-        assertThat(odb.listUsers(orgID, 0, 100), hasItem(UserID.fromInternal("foo")));
-        assertThat(odb.listUsers(orgID, 0, 100), hasItem(UserID.fromInternal("bar")));
+        assertEquals(2, odb.listUsers(orgID, 0, 100, null).size());
+        assertThat(odb.listUsers(orgID, 0, 100, null), hasItem(UserID.fromInternal("foo")));
+        assertThat(odb.listUsers(orgID, 0, 100, null), hasItem(UserID.fromInternal("bar")));
     }
 
     @Test
@@ -98,6 +99,6 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
         sfdb.insert(rootsid, "test");
         sfdb.insertUser(rootsid, orgID.toTeamServerUserID(),
                 Permissions.allOf(Permission.WRITE), SharedFolderState.JOINED,
-                null);
+                null, GroupID.NULL_GROUP);
     }
 }

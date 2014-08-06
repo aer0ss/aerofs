@@ -30,12 +30,16 @@ import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.email.TwoFactorEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.License;
-import com.aerofs.sp.server.lib.OrganizationDatabase;
-import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.group.GroupDatabase;
+import com.aerofs.sp.server.lib.group.GroupMembersDatabase;
+import com.aerofs.sp.server.lib.group.GroupSharesDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
-import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.SharedFolderDatabase;
-import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolderDatabase;
+import com.aerofs.sp.server.lib.user.UserDatabase;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
@@ -90,6 +94,9 @@ public class SPServlet extends AeroServlet
     private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_sqlTrans);
     private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_sqlTrans);
     private final UrlSharingDatabase _usdb = new UrlSharingDatabase(_sqlTrans);
+    private final GroupDatabase _gdb = new GroupDatabase(_sqlTrans);
+    private final GroupMembersDatabase _gmdb = new GroupMembersDatabase(_sqlTrans);
+    private final GroupSharesDatabase _gsdb = new GroupSharesDatabase(_sqlTrans);
 
     private final ThreadLocalRequestProvider _requestProvider =
             new ThreadLocalRequestProvider();
@@ -111,15 +118,7 @@ public class SPServlet extends AeroServlet
     private final License _license = new License();
     private final User.Factory _factUser = new User.Factory();
     private final UrlShare.Factory _factUrlShare = new UrlShare.Factory(_usdb);
-
-    {
-        _factUser.inject(_udb, _oidb, _tfdb, _factDevice, _factOrg,
-                _factOrgInvite, _factSharedFolder, _license);
-        _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
-        _factOrg.inject(_odb, _oidb, _factUser, _factSharedFolder, _factOrgInvite);
-        _factOrgInvite.inject(_oidb, _factUser, _factOrg);
-        _factSharedFolder.inject(_sfdb, _factUser);
-    }
+    private final Group.Factory _factGroup = new Group.Factory();
 
     private final SPSession _session = new SPSession(_factUser, _sessionProvider);
 
@@ -154,6 +153,17 @@ public class SPServlet extends AeroServlet
     private final JedisRateLimiter _rateLimiter =
              new JedisRateLimiter(_jedisTrans, RATE_LIMITER_BURST_SIZE, RATE_LIMITER_WINDOW, "rl");
 
+    {
+        _factUser.inject(_udb, _oidb, _tfdb, _factDevice, _factOrg,
+                _factOrgInvite, _factSharedFolder, _license);
+        _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
+        _factOrg.inject(_odb, _oidb, _factUser, _factSharedFolder, _factOrgInvite, _factGroup,
+                _gdb);
+        _factOrgInvite.inject(_oidb, _factUser, _factOrg);
+        _factSharedFolder.inject(_sfdb, _gsdb, _factGroup, _factUser);
+        _factGroup.inject(_gdb, _gmdb, _gsdb, _factOrg, _factSharedFolder, _factUser);
+    }
+
     private final SPService _service = new SPService(_db,
             _sqlTrans,
             _jedisTrans,
@@ -180,6 +190,7 @@ public class SPServlet extends AeroServlet
             _sfnEmailer,
             _asyncEmailSender,
             _factUrlShare,
+            _factGroup,
             _rateLimiter,
             _license);
 

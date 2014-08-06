@@ -11,7 +11,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
-import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;

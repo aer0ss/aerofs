@@ -13,6 +13,11 @@ public class ExWrongOrganization extends AbstractExWirable
         super();
     }
 
+    public ExWrongOrganization(String string)
+    {
+        super(string);
+    }
+
     public ExWrongOrganization(PBException pb)
     {
         super(pb);

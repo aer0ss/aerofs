@@ -44,7 +44,7 @@ public class UserID extends StringID
     /**
      * This method uses {@code str} as is to construct a UserID, without normalization.
      *
-     * Use it to hold UserIDs retreived from internal storage managed by AeroFS or those returned
+     * Use it to hold UserIDs retrieved from internal storage managed by AeroFS or those returned
      * _from_ AeroFS.
      */
     public static UserID fromInternal(String str)
