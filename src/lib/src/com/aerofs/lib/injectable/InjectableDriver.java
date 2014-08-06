@@ -57,6 +57,8 @@ public class InjectableDriver
         private final static int UNABLE_TO_MOVE_REPLACED = 0x497;
         private final static int UNABLE_TO_MOVE_REPLACEMENT = 0x498;
         private final static int UNABLE_TO_MOVE_REPLACEMENT_2 = 0x499;
+
+        private final static int CANT_ACCESS_FILE = 0x780;
     }
 
     // From /usr/include/asm-generic/errno-base.h from a Linux box.
@@ -112,10 +114,10 @@ public class InjectableDriver
         if (_osutil.getOSFamily() == OSFamily.WINDOWS) {
             switch (errno) {
             case WindowsErrnoList.FILE_NOT_FOUND:
-                throw new ExFileNotFound(f);
             case WindowsErrnoList.PATH_NOT_FOUND:
                 throw new ExFileNotFound(f);
             case WindowsErrnoList.ACCESS_DENIED:
+            case WindowsErrnoList.CANT_ACCESS_FILE:
                 throw new ExFileNoPerm(f);
             case WindowsErrnoList.SHARING_VIOLATION:
                 throw new ExFileIO("Another process has {} open", f);
