@@ -5,13 +5,18 @@ shadowfaxControllers.controller('SharedFoldersController',
     function($scope, $rootScope, $log, $modal, $http){
         var csrftoken = $('meta[name=csrf-token]').attr('content');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
+        // paginationLimit set by server, gets inserted into the mako template
+        $scope.paginationLimit = paginationLimit;
+        $scope.offset = 0;
 
-        $scope.folders = [];
-        $scope.leftFolders = [];
         var getData = function() {
-            $http.get(dataUrl).success(function(response){
+            $http.get(dataUrl + '?offset=' + $scope.offset.toString()).success(function(response){
+                // reset folder data to empty
                 $scope.folders = [];
                 $scope.leftFolders = [];
+                // total number of folders the server knows about
+                // number received may be less, due to pagination
+                $scope.total = response.total;
                 for (var i=0; i < response.data.length; i++) {
                     var folder = response.data[i];
                     folder.people = folder.owners.concat(folder.members);
@@ -22,6 +27,14 @@ shadowfaxControllers.controller('SharedFoldersController',
                     }
                 }
                 $rootScope.me = response.me;
+
+                $scope.pages = [];
+                // do we need pagination? if so, let's count up pages
+                if ($scope.total != response.data.length) {
+                    for (var j=1; j < Math.ceil($scope.total / $scope.paginationLimit) + 1; j++) {
+                        $scope.pages.push(j);
+                    }
+                }
             }).error(function(response){
                 $log.warn('Shared folders data failed to load.');
                 showErrorMessageFromResponse(response);
@@ -244,5 +257,18 @@ shadowfaxControllers.controller('SharedFoldersController',
                     }
                 }
             });
+        };
+
+        $scope.getCurrentPage = function() {
+            return Math.ceil($scope.offset/$scope.paginationLimit) + 1;
+        };
+
+        $scope.showPage = function(pageNum) {
+            if (pageNum > 0) {
+                // change offset to where the target page will start
+                $scope.offset = (pageNum - 1) * $scope.paginationLimit;
+                // refresh page data
+                getData();
+            }
         };
 }]);

@@ -59,6 +59,17 @@
                 </div>
             </div>
         </div>
+        <br>
+        <div class="pagination pull-right" ng-hide="pages.length < 2">
+            <a ng-hide="getCurrentPage() === 1" ng-click="showPage(getCurrentPage()-1)">&laquo;</a>
+            <span ng-show="getCurrentPage() === 1">&laquo;</span>
+            <span ng-repeat="number in pages">
+                <a ng-click="showPage(number)" ng-hide="getCurrentPage() === number">{{number}}</a>
+                <span ng-show="getCurrentPage() === number">{{number}}</span>
+            </span>
+            <a ng-hide="getCurrentPage() === pages.length" ng-click="showPage(getCurrentPage()+1)">&raquo;</a>
+            <span ng-show="getCurrentPage() === pages.length">&raquo;</span>
+        </div>
         <br><br>
         <div class="row" ng-show="leftFolders.length > 0">
             <div class="col-sm-12">
@@ -94,6 +105,7 @@
         leaveFolderUrl = "${request.route_path('json.leave_shared_folder')}";
         destroyFolderUrl = "${request.route_path('json.destroy_shared_folder')}";
         rejoinFolderUrl = "${request.route_path('json.accept_folder_invitation')}";
+        paginationLimit = parseInt("${pagination_limit}", 10);
     </script>
     <script src="${request.static_path('web:static/shadowfax/app.js')}"></script>
     <script src="${request.static_path('web:static/shadowfax/filters.js')}"></script>

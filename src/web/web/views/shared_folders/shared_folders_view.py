@@ -10,7 +10,6 @@ import json
 from cgi import escape
 from pyramid.security import authenticated_userid
 from pyramid.view import view_config
-from pyramid.renderers import render
 
 import aerofs_sp.gen.common_pb2 as common
 from web.auth import is_admin
@@ -20,10 +19,6 @@ from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException, WRITE, MANAGE
 from aerofs_sp.gen.sp_pb2 import JOINED, PENDING, LEFT
-
-
-from web.views.payment.stripe_util\
-    import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
 
 
 log = logging.getLogger(__name__)
@@ -36,18 +31,7 @@ def _encode_store_id(sid):
 def _decode_store_id(encoded_sid):
     return base64.b32decode(encoded_sid)
 
-# HTML class for links that open the Options modal
-_OPEN_MODAL_CLASS = 'open-modal'
-
-# HTML data attributes used for links that opens the shared folder Options modal
-_LINK_DATA_SID = 's'
-_LINK_DATA_NAME = 'n'
-_LINK_DATA_PRIVILEGED = 'p'
-_LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST = 'r'
-
-
-class DatatablesPaginate:
-    YES, NO = range(2)
+PAGE_LIMIT = 20
 
 
 @view_config(
@@ -87,22 +71,15 @@ def org_shared_folders(request):
 
     return _shared_folders(request,
             _("Shared folders in my organization"),
-            request.route_url('json.get_org_shared_folders'))
+            request.route_url('json.get_org_shared_folders'),
+            has_pagination=True)
 
 
 # @param {un,}privileged_modal_subtitle: the subtitles used in the shared folder
 # modal if the user {has,doesn't have) the privilege to manage the folder.
-def _shared_folders(request, page_heading, data_url):
+def _shared_folders(request, page_heading, data_url, has_pagination=False):
     return {
-        # constants
-        'open_modal_class': _OPEN_MODAL_CLASS,
-        'link_data_sid': _LINK_DATA_SID,
-        'link_data_name': _LINK_DATA_NAME,
-        'link_data_privileged': _LINK_DATA_PRIVILEGED,
-        'link_data_user_permissions_and_state_list': _LINK_DATA_USER_PERMISSIONS_AND_STATE_LIST,
-        'stripe_publishable_key': STRIPE_PUBLISHABLE_KEY,
-        'url_param_stripe_card_token': URL_PARAM_STRIPE_CARD_TOKEN,
-
+        'pagination_limit': PAGE_LIMIT,
         # variables
         'session_user': authenticated_userid(request),
         'is_admin': is_admin(request),
@@ -110,6 +87,7 @@ def _shared_folders(request, page_heading, data_url):
         # N.B. can't use "page_title" as the variable name. base_layout.mako
         # defines a global variable using the same name.
         'page_heading': page_heading,
+        'has_pagination': has_pagination,
         'data_url': data_url,
         'splash': util.show_welcome_image_and_set_cookie(request)
     }
@@ -176,19 +154,18 @@ def json_get_org_shared_folders(request):
     try:
         count = int(request.params['count'])
     except KeyError:
-        count = 20
+        count = PAGE_LIMIT
 
     try:
         offset = int(request.params['offset'])
     except KeyError:
         offset = 0
-
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
     reply = sp.list_organization_shared_folders(count, offset)
     return _sp_reply2json(reply.shared_folder, _session_team_privileger,
-        authenticated_userid(request), request)
+        authenticated_userid(request), request, total=reply.total_count, offset=offset)
 
 
 def _session_team_privileger(folder, session_user):
@@ -222,12 +199,11 @@ def _jsonable_people(people_list, session_user):
     return sorted(json_people, key=lambda x: x.get('email') == session_user)
 
 
-def _sp_reply2json(folders, privileger, session_user, request, is_mine=False, specified_user=None):
+def _sp_reply2json(folders, privileger, session_user, request, total=None, offset=0, is_mine=False, specified_user=None):
     """
     @param privileger a callback function to determine if the session user has
         privileges to modify ACL of the folder
     """
-
     left_user = specified_user if specified_user is not None else session_user
     data = []
     for folder in folders:
@@ -252,9 +228,14 @@ def _sp_reply2json(folders, privileger, session_user, request, is_mine=False, sp
             'is_left': _is_left(folder, left_user)
         })
 
+    if not total:
+        total = len(folders)
+
     return {
         'data': data,
-        'me': session_user
+        'me': session_user,
+        'total': total,
+        'offset': offset
     }
 
 
@@ -373,7 +354,7 @@ def json_add_shared_folder_perm(request):
     sp = get_rpc_stub(request)
 
     exception2error(sp.share_folder, (folder_name, store_id, [subject_permissions], None,
-                                      None, suppress_warnings, []),
+                                      None, suppress_warnings),
                                       _add_shared_folder_rules_errors({
         # TODO (WW) change to ALREADY_MEMBER?
         # See also org_users_view.py:json_invite_user()
