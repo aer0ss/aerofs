@@ -20,6 +20,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                 for (var i=0; i < response.data.length; i++) {
                     var folder = response.data[i];
                     folder.people = folder.owners.concat(folder.members);
+                    folder.spinnerID = i;
                     if (response.data[i].is_left) {
                         $scope.leftFolders.push(folder);
                     } else {
@@ -183,6 +184,10 @@ shadowfaxControllers.controller('SharedFoldersController',
         };
 
         $scope.leave = function(folder) {
+            var spinner = new Spinner(defaultSpinnerOptions).spin();
+            $('#folder-' + folder.spinnerID.toString() +
+                ' .folder-spinner')[0].appendChild(spinner.el);
+
             $http.post(leaveFolderUrl,
                 {
                     permissions: [],
@@ -198,11 +203,17 @@ shadowfaxControllers.controller('SharedFoldersController',
                         break;
                     }
                 }
-            }).error(showErrorMessageFromResponse);
+            }).error(function(response){
+                showErrorMessageFromResponse(response);
+                spinner.stop();
+            });
         
         };
 
         $scope.rejoin = function(folder) {
+            var spinner = new Spinner(defaultSpinnerOptions).spin();
+            $('#left-folder-' + folder.spinnerID.toString() +
+                ' .folder-spinner')[0].appendChild(spinner.el);
             $http.post(rejoinFolderUrl,
                 {
                     sid: folder.sid,
@@ -216,7 +227,10 @@ shadowfaxControllers.controller('SharedFoldersController',
                         break;
                     }
                 }
-            }).error(showErrorMessageFromResponse);
+            }).error(function(response){
+                showErrorMessageFromResponse(response);
+                spinner.stop();
+            });
         };
 
         $scope.destroyCheck = function(folder) {

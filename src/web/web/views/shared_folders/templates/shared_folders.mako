@@ -6,6 +6,7 @@
 
 <%block name="css">
     <link rel="stylesheet" href="${request.static_path('web:static/css/compiled/my-table.min.css')}"/>
+    <link rel="stylesheet" href="${request.static_path('web:static/shadowfax/css/shadowfax.css')}">
 </%block>
 
 <div ng-app="shadowfaxApp">
@@ -24,21 +25,22 @@
                             <div class="col-sm-3 col-xs-12"><strong class="visible-xs">{{folder.name}}</strong><span class="hidden-xs">{{folder.name}}</span></div>
                             <div class="col-sm-3 col-xs-4"><strong class="visible-xs">Owners: </strong>{{folder.people|byRole:"Owner"|myMembers}}</div>
                             <div class="col-sm-4 col-xs-4"><strong class="visible-xs">Members: </strong>{{folder.people|byRole:"Member"|myMembers}}</div>
-                            <div class="col-sm-2 col-xs-4">
+                            <div class="col-sm-2 col-xs-4" id="folder-{{folder.spinnerID}}">
+                                <span class="folder-spinner pull-left">&nbsp;</span>
                                 <div class="sf-actions btn-group pull-right">
                                   <button type="button" class="btn btn-plain dropdown-toggle" data-toggle="dropdown">
                                     Actions <span class="caret"></span>
                                   </button>
                                   <ul class="dropdown-menu" role="menu">
                                     <li>
-                                      <a href="#" ng-click="manage(folder)">
+                                        <a ng-click="manage(folder)">
                                         <span class="glyphicon glyphicon-user"></span> 
                                         <span ng-if="folder.is_privileged">Manage Members</span>
                                         <span ng-if="!folder.is_privileged">View Members</span>
                                       </a>
                                     </li>
                                     <li ng-if="folder.is_member">
-                                      <a href="#" ng-click="leave(folder)">
+                                      <a ng-click="leave(folder)">
                                         <span class="icon">
                                           <img src="${request.static_path('web:static/img/icons/exit.svg')}" onerror="this.onerror=null; this.src='${request.static_path('web:static/img/icons/exit.png')}'"/>
                                         </span>
@@ -46,7 +48,7 @@
                                       </a>
                                     </li>
                                     <li ng-if="folder.is_privileged">
-                                      <a href="#" ng-click="destroyCheck(folder)">
+                                      <a ng-click="destroyCheck(folder)">
                                         <span class="glyphicon glyphicon-trash"></span> 
                                           Delete
                                       </a>
@@ -82,8 +84,9 @@
                             <div class="col-xs-9">
                                 {{folder.name}}
                             </div>
-                            <div class="col-xs-3">
-                                <a href="#" class="btn btn-default pull-right" ng-click="rejoin(folder)">Rejoin</a>
+                            <div class="col-xs-3" id="left-folder-{{folder.spinnerID}}">
+                                <span class="folder-spinner pull-left">&nbsp;</span>
+                                <a class="btn btn-default pull-right" ng-click="rejoin(folder)">Rejoin</a>
                             </div>
                         </div>
                     </div>
