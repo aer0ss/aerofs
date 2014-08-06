@@ -32,7 +32,7 @@ public class UserManagement
      * Perform all the bookkeeping needed after a device is unlinked.
      *
      * Send the CRL update to verkehr. Notify all the peer devices that it is time to refresh
-     * their view of the CRLs. Clean up some sync status stuff.
+     * their view of the CRLs.
      */
     public static void propagateDeviceUnlink(
             CommandDispatcher dispatcher,
@@ -40,7 +40,7 @@ public class UserManagement
             ImmutableCollection<Long> revokedSerials)
             throws Exception
     {
-        if (revokedSerials.isEmpty())
+        if (!revokedSerials.isEmpty())
         {
             l.info("command verkehr, #serials: " + revokedSerials.size());
             ACLNotificationPublisher.verkehrFutureGet_(dispatcher.getVerkehrClient().revokeSerials(
