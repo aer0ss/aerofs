@@ -45,6 +45,7 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
@@ -169,6 +170,7 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock LocalACL acl;
     protected @Mock SIDMap sm;
     protected @Mock IStores ss;
+    protected @Mock IDID2UserDatabase did2user;
 
     protected @Mock CfgLocalUser localUser;
     protected @Mock CfgLocalDID localDID;
@@ -511,6 +513,7 @@ public class AbstractRestTest extends AbstractTest
                 bind(LocalACL.class).toInstance(acl);
                 bind(IMapSID2SIndex.class).toInstance(sm);
                 bind(IMapSIndex2SID.class).toInstance(sm);
+                bind(IDID2UserDatabase.class).toInstance(did2user);
                 bind(IPhysicalStorage.class).toInstance(ps);
                 bind(Timer.class).toInstance(getGlobalTimer());
                 bind(TransManager.class).toInstance(tm);

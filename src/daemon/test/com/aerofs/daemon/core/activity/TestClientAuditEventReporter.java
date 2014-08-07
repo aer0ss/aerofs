@@ -20,6 +20,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.daemon.lib.db.IAuditDatabase;
+import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -157,6 +158,7 @@ public final class TestClientAuditEventReporter
     private final IAuditorClient _auditorClient = mock(IAuditorClient.class);
     private final IAuditDatabase _auditDatabase = mock(IAuditDatabase.class);
     private final UserAndDeviceNames _udinfo = mock(UserAndDeviceNames.class);
+    private final IDID2UserDatabase _did2user = mock(IDID2UserDatabase.class);
 
     private ClientAuditEventReporter _caer; // sut
 
@@ -177,6 +179,7 @@ public final class TestClientAuditEventReporter
                 _tm,
                 _sidxToSid,
                 _al,
+                _did2user,
                 _auditorClient,
                 _auditDatabase);
     }

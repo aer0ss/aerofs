@@ -15,6 +15,7 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -24,6 +25,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.daemon.lib.db.IAuditDatabase;
+import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -75,6 +77,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
     private final IAuditDatabase _auditDatabase;
     private final ActivityLog _activityLog;
     private final IMapSIndex2SID _sidxTosid;
+    private final IDID2UserDatabase _did2user;
     private final SimpleDateFormat _dateFormat;
     private final AuditClient _auditClient = new AuditClient();
 
@@ -143,6 +146,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
             TransManager tm,
             IMapSIndex2SID sidxTosid,
             ActivityLog activityLog,
+            IDID2UserDatabase did2user,
             IAuditorClient auditorClient,
             IAuditDatabase auditDatabase)
     {
@@ -153,6 +157,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
         _tm = tm;
         _auditDatabase = auditDatabase;
         _activityLog = activityLog;
+        _did2user = did2user;
         _sidxTosid = sidxTosid;
         _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         _dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -364,17 +369,15 @@ public final class ClientAuditEventReporter // this can be final because it's no
             // to user cache miss. In this case we simply leave the destination user key empty in
             // the event.
 
-            // TODO (MP) before we can enable this, we need to refactor to deal with db locks.
-            // One does not simply release the core lock while using a DBIterator.
-
-            //UserID destinationUser = _udinfo.getDeviceOwnerNullable_(destinationDevice);
-            //event.embed("destination_user",
-            //        destinationUser != null ? destinationUser.getString() : "");
+            UserID destUser = _did2user.getNullable_(destinationDevice);
+            event.embed("destination_user", destUser != null ? destUser.getString() : "");
         } else if (row._dids.size() == 2) {
             // on behalf of mobile device
             DID mdid = otherDevice(row._dids);
             checkArgument(mdid.isMobileDevice());
+            UserID mobileUser = _did2user.getNullable_(mdid);
             event.embed("mobile_device", mdid.toStringFormal());
+            event.embed("mobile_user", mobileUser != null ? mobileUser.getString() : "");
         }
 
         // path

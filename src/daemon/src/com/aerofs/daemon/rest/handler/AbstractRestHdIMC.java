@@ -7,8 +7,10 @@ package com.aerofs.daemon.rest.handler;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -16,6 +18,8 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
+import com.aerofs.daemon.lib.db.IDID2UserDatabase;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.AbstractRestEBIMC;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
@@ -46,15 +50,36 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
     @Inject protected EntityTagUtil _etags;
     @Inject protected LocalACL _acl;
     @Inject protected IMapSID2SIndex _sid2sidx;
+    @Inject protected IDID2UserDatabase _did2user;
 
     @Override
     protected final void handleThrows_(T ev, Prio prio) throws Exception
     {
         try {
+            updateDID2UserMappingIfNeeded(ev._token);
             ActivityLog.onBehalfOf(ev.did());
             handleThrows_(ev);
         } finally {
             ActivityLog.onBehalfOf(null);
+        }
+    }
+
+    private void updateDID2UserMappingIfNeeded(OAuthToken token) throws SQLException
+    {
+        DID did = token.did();
+        UserID issuer = token.issuer();
+        UserID user = _did2user.getNullable_(did);
+        if (user == null) {
+            l.info("store MDID->user mapping {} {}", did, issuer);
+            Trans t = _tm.begin_();
+            try {
+                _did2user.insert_(did, issuer, t);
+                t.commit_();
+            } finally {
+                t.end_();
+            }
+        } else if (!user.equals(issuer)) {
+            l.warn("inconsistent MDID->user mapping {} {} != {}", did, issuer, user);
         }
     }
 
