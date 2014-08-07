@@ -45,6 +45,7 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -199,6 +200,7 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock Expulsion expulsion;
     protected ObjectMover om;
     protected @Mock ImmigrantCreator ic;
+    protected @Mock ICollectorStateDatabase csdb;
 
     protected @Spy InMemoryPrefix pf = new InMemoryPrefix();
 
@@ -416,6 +418,8 @@ public class AbstractRestTest extends AbstractTest
         when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
+        when(csdb.isCollectingContent_(any(SIndex.class))).thenReturn(true);
+
         when(nvc.getVersionHash_(any(SOID.class), any(CID.class))).thenReturn(VERSION_HASH);
 
         when(ic.move_(any(SOID.class), any(SOID.class), anyString(), any(PhysicalOp.class), eq(t)))
@@ -528,6 +532,7 @@ public class AbstractRestTest extends AbstractTest
                 bind(IOSUtil.class).toInstance(os);
                 bind(CfgStorageType.class).toInstance(storageType);
                 bind(CfgAbsRoots.class).toInstance(absRoots);
+                bind(ICollectorStateDatabase.class).toInstance(csdb);
             }
         });
 

@@ -69,4 +69,25 @@ public class HttpStatus
             return "Too Many Requests";
         }
     };
+
+    // RFC 4918 (WebDAV)
+    public static final StatusType INSUFFICIENT_STORAGE = new StatusType() {
+        @Override
+        public int getStatusCode()
+        {
+            return 507;
+        }
+
+        @Override
+        public Family getFamily()
+        {
+            return Family.SERVER_ERROR;
+        }
+
+        @Override
+        public String getReasonPhrase()
+        {
+            return "Insufficient Storage";
+        }
+    };
 }

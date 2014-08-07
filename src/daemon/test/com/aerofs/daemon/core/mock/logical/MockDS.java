@@ -228,7 +228,8 @@ public class MockDS
             _oa = mock(OA.class);
             when(_oa.soid()).thenReturn(_soid);
             when(_oa.name()).thenReturn(_name);
-            when(_oa.isExpelled()).thenReturn(expelled);
+            boolean parentExpelled = _parent != null &&_parent._oa.isExpelled();
+            when(_oa.isExpelled()).thenReturn(expelled || parentExpelled);
             when(_oa.isSelfExpelled()).thenReturn(expelled);
             when(_oa.parent()).thenReturn(_soid.oid().isRoot() ? _soid.oid() : _parent._soid.oid());
 

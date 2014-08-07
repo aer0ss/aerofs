@@ -21,6 +21,7 @@ public class Error
         CONFLICT,
         INTERNAL_ERROR,
         TOO_MANY_REQUESTS,
+        INSUFFICIENT_STORAGE,
     }
 
     // machine-readable descriptor

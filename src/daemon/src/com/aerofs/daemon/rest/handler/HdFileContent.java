@@ -7,6 +7,7 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.stream.MultipartStream;
 import com.aerofs.daemon.rest.stream.SimpleStream;
@@ -35,6 +36,7 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
     @Inject private IPhysicalStorage _ps;
     @Inject private MimeTypeDetector _detector;
     @Inject private OutboundEventLogger _oel;
+    @Inject private ICollectorStateDatabase _csdb;
 
     /**
      * Build Http response for file content requests
@@ -46,11 +48,22 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
     protected void handleThrows_(EIFileContent ev) throws ExNotFound, SQLException
     {
         final OA oa = _access.resolve_(ev._object, ev._token);
-        if (!oa.isFile()) throw new ExNotFound();
+        if (!oa.isFile()) throw new ExNotFound("No such file");
 
         requireAccessToFile(ev._token, Scope.READ_FILES, oa);
 
-        final CA ca = oa.caMasterThrows();
+        final CA ca = oa.caMasterNullable();
+        if (ca == null) {
+            String message;
+            if (oa.isExpelled()) {
+                message = _ds.isDeleted_(oa) ? "No such file" : "Content not synced on this device";
+            } else if (!_csdb.isCollectingContent_(oa.soid().sidx())) {
+                message = "Quota exceeded";
+            }  else {
+                message = "Content not yet available on this device";
+            }
+            throw new ExNotFound(message);
+        }
         final EntityTag etag = _etags.etagForContent(oa.soid());
 
         // conditional request: 304 Not Modified on ETAG match

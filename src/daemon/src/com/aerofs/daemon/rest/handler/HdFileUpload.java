@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.rest.event.EIFileUpload;
 import com.aerofs.daemon.rest.util.UploadID;
@@ -57,6 +58,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     @Inject  private IPhysicalStorage _ps;
     @Inject private TokenManager _tokenManager;
     @Inject private VersionUpdater _vu;
+    @Inject private ICollectorStateDatabase _csdb;
 
     @Override
     protected void handleThrows_(EIFileUpload ev) throws Exception
@@ -134,7 +136,16 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     {
         OA oa = _access.resolveWithPermissions_(ev._object, ev._token, Permissions.EDITOR);
 
-        if (!oa.isFile() || oa.isExpelled()) throw new ExNotFound();
+        if (!oa.isFile()) throw new ExNotFound("No such file");
+        if (oa.isExpelled()) {
+            throw new ExNotFound(_ds.isDeleted_(oa)
+                    ? "No such file" : "Content not synced on this device");
+        }
+        if (!_csdb.isCollectingContent_(oa.soid().sidx())) {
+            ev.setResult_(Response.status(HttpStatus.INSUFFICIENT_STORAGE)
+                    .entity(new Error(Type.INSUFFICIENT_STORAGE, "Quota exceeded")));
+            return null;
+        }
 
         requireAccessToFile(ev._token, Scope.WRITE_FILES, oa);
 

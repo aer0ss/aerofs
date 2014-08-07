@@ -24,6 +24,8 @@ public class HdObjectInfo extends AbstractRestHdIMC<EIObjectInfo>
         OA oa = _access.resolve_(ev._object, ev._token);
         if (oa.isDirOrAnchor() != (ev._type == Type.FOLDER)) throw new ExNotFound();
 
+        if (oa.isExpelled() && _ds.isDeleted_(oa)) throw new ExNotFound();
+
         requireAccessToFile(ev._token, Scope.READ_FILES, oa);
 
         _eol.log_(META_REQUEST, oa.soid(), ev.did());

@@ -19,6 +19,7 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
@@ -27,12 +28,14 @@ import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.ChildrenList;
 import com.aerofs.rest.api.CommonMetadata;
 import com.aerofs.rest.api.File;
+import com.aerofs.rest.api.File.ContentState;
 import com.aerofs.rest.api.Folder;
 import com.aerofs.rest.api.ParentPath;
 import com.aerofs.rest.util.OAuthToken;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Date;
@@ -47,10 +50,12 @@ public class MetadataBuilder
     private final MimeTypeDetector _detector;
     private final EntityTagUtil _etags;
     private final LocalACL _acl;
+    private final ICollectorStateDatabase _csdb;
 
     @Inject
     public MetadataBuilder(DirectoryService ds, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
-            IStores stores, MimeTypeDetector detector, EntityTagUtil etags, LocalACL acl)
+            IStores stores, MimeTypeDetector detector, EntityTagUtil etags, LocalACL acl,
+            ICollectorStateDatabase csdb)
     {
         _ds = ds;
         _stores = stores;
@@ -59,6 +64,7 @@ public class MetadataBuilder
         _detector = detector;
         _etags = etags;
         _acl = acl;
+        _csdb = csdb;
     }
 
     public RestObject object(SOID soid) throws ExNotFound
@@ -89,27 +95,24 @@ public class MetadataBuilder
                 ? new SOID(sidxRoot, SID.storeSID2anchorOID(sid)) : soid;
     }
 
+    private RestObject parent(OA oa, OAuthToken token) throws SQLException
+    {
+        SIndex sidx = oa.soid().sidx();
+        if (oa.parent().isRoot()) {
+            SOID soidParent = selfOrAnchorForUser(new SOID(sidx, oa.parent()), token.user());
+            return new RestObject(_sidx2sid.get_(soidParent.sidx()), soidParent.oid());
+        }
+        return new RestObject(_sidx2sid.get_(sidx), oa.parent());
+    }
+
     public CommonMetadata metadata(OA oa, OAuthToken token, Fields fields) throws ExNotFound, SQLException
     {
         SOID soid = selfOrAnchorForUser(oa.soid(), token.user());
         if (!soid.equals(oa.soid())) oa = _ds.getOA_(soid);
 
         SID sid = _sidx2sid.get_(soid.sidx());
-        RestObject object = new RestObject(sid, soid.oid());
-
-        RestObject parent;
-        if (oa.parent().isRoot()) {
-            SOID soidParent = selfOrAnchorForUser(new SOID(soid.sidx(), oa.parent()), token.user());
-            parent = new RestObject(_sidx2sid.get_(soidParent.sidx()), soidParent.oid());
-        } else {
-            parent = new RestObject(sid, oa.parent());
-        }
-
-        // TODO: handle external roots
-        String name = soid.oid().isRoot() ? "AeroFS" : oa.name();
-        CA ca = oa.isFile() ? oa.caMasterNullable() : null;
-        Date mtime = ca != null ? new Date(ca.mtime()) : null;
-        Long length = ca != null ? ca.length() : null;
+        String object = new RestObject(sid, soid.oid()).toStringFormal();
+        String parent = parent(oa, token).toStringFormal();
 
         ParentPath path = fields != null && fields.isRequested("path")
                 ? path(_ds.resolve_(oa), token) : null;
@@ -121,7 +124,7 @@ public class MetadataBuilder
                 oaDir = soidDir != null ? _ds.getOANullable_(soidDir) : null;
             }
             if (oaDir != null) {
-                children = children(object.toStringFormal(), oaDir, false, token);
+                children = children(object, oaDir, false, token);
             } else {
                 children = new ChildrenList(null, Collections.<Folder>emptyList(),
                         Collections.<File>emptyList());
@@ -129,10 +132,40 @@ public class MetadataBuilder
         }
 
         return oa.isDirOrAnchor()
-                ? new Folder(object.toStringFormal(), name, parent.toStringFormal(), path,
-                oa.isAnchor() ? SID.anchorOID2storeSID(soid.oid()).toStringFormal() : null, children)
-                : new File(object.toStringFormal(), name, parent.toStringFormal(), path, mtime, length,
-                _detector.detect(name), _etags.etagForContent(soid).getValue());
+                ? folder(oa, object, parent, path, children)
+                : file(oa, object, parent, path);
+    }
+
+    private Folder folder(OA oa, String object, String parent, @Nullable ParentPath path,
+            ChildrenList children)
+    {
+        OID oid = oa.soid().oid();
+        // TODO: handle external roots
+        String name = oid.isRoot() ? "AeroFS" : oa.name();
+        String sid = oa.isAnchor() ? SID.anchorOID2storeSID(oid).toStringFormal() : null;
+        return new Folder(object, name, parent, path, sid, children);
+    }
+
+    private File file(OA oa, String object, String parent, @Nullable ParentPath path)
+            throws SQLException
+    {
+        String mimeType = _detector.detect(oa.name());
+        String etag =  _etags.etagForContent(oa.soid()).getValue();
+
+        ContentState state;
+
+        if (oa.isExpelled()) {
+            state = ContentState.DESELECTED;
+        } else {
+            CA ca = oa.caMasterNullable();
+            if (ca != null) {
+                return new File(object, oa.name(), parent, path, new Date(ca.mtime()), ca.length(),
+                        mimeType, etag, ContentState.AVAILABLE);
+            }
+            state = _csdb.isCollectingContent_(oa.soid().sidx())
+                    ? ContentState.SYNCING : ContentState.INSUFFICIENT_STORAGE;
+        }
+        return new File(object, oa.name(), parent, state, mimeType, etag, path);
     }
 
     public ParentPath path(ResolvedPath path, OAuthToken token) throws ExNotFound, SQLException
@@ -205,18 +238,9 @@ public class MetadataBuilder
         OA coa = _ds.getOAThrows_(new SOID(sidx, c));
         String restId = new RestObject(sid, c).toStringFormal();
         if (coa.isFile()) {
-            Long size = null;
-            Date lastModified = null;
-            if (!coa.isExpelled() && coa.caMasterNullable() != null) {
-                size = coa.caMaster().length();
-                lastModified = new Date(coa.caMaster().mtime());
-            }
-            files.add(new File(restId, coa.name(), parent, lastModified, size,
-                    _detector.detect(coa.name()),
-                    _etags.etagForContent(coa.soid()).getValue()));
+            files.add(file(coa, restId, parent, null));
         } else if (shouldIncludeInResponse(coa, token)) {
-            folders.add(new Folder(restId, coa.name(), parent,
-                    coa.isAnchor() ? SID.anchorOID2storeSID(coa.soid().oid()).toStringFormal() : null));
+            folders.add(folder(coa, restId, parent, null, null));
         }
     }
 

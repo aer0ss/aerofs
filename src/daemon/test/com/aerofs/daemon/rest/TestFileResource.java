@@ -14,6 +14,7 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.rest.api.CommonMetadata;
 import com.google.common.io.ByteStreams;
@@ -89,6 +90,8 @@ public class TestFileResource extends AbstractRestTest
     {
         mockContent("f1", FILE_CONTENT);
         mockContent("f1.txt", FILE_CONTENT);
+        mds.root().dir("expelled", true).file("f2");
+        mds.root().file("f3", 0);
     }
 
     @Test
@@ -145,7 +148,58 @@ public class TestFileResource extends AbstractRestTest
                 .body("last_modified", equalTo(ISO_8601.format(new Date(FILE_MTIME))))
                 .body("mime_type", equalTo("application/octet-stream"))
                 .body("etag", equalTo(CURRENT_ETAG_VALUE))
+                .body("content_state", equalTo("AVAILABLE"))
         .when().get(RESOURCE, object("f1").toStringFormal());
+    }
+
+    @Test
+    public void shouldGetMetadataForExpelled() throws Exception
+    {
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(object("expelled/f2").toStringFormal()))
+                .body("name", equalTo("f2"))
+                .body("size", nullValue())
+                .body("last_modified", nullValue())
+                .body("mime_type", equalTo("application/octet-stream"))
+                .body("etag", equalTo(CURRENT_ETAG_VALUE))
+                .body("content_state", equalTo("DESELECTED"))
+        .when().get(RESOURCE, object("expelled/f2").toStringFormal());
+    }
+
+    @Test
+    public void shouldGetMetadataForSyncing() throws Exception
+    {
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(object("f3").toStringFormal()))
+                .body("name", equalTo("f3"))
+                .body("size", nullValue())
+                .body("last_modified", nullValue())
+                .body("mime_type", equalTo("application/octet-stream"))
+                .body("etag", equalTo(CURRENT_ETAG_VALUE))
+                .body("content_state", equalTo("SYNCING"))
+        .when().get(RESOURCE, object("f3").toStringFormal());
+    }
+
+    @Test
+    public void shouldGetMetadataForQuotaExceeded() throws Exception
+    {
+        when(csdb.isCollectingContent_(any(SIndex.class))).thenReturn(false);
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(object("f3").toStringFormal()))
+                .body("name", equalTo("f3"))
+                .body("size", nullValue())
+                .body("last_modified", nullValue())
+                .body("mime_type", equalTo("application/octet-stream"))
+                .body("etag", equalTo(CURRENT_ETAG_VALUE))
+                .body("content_state", equalTo("INSUFFICIENT_STORAGE"))
+        .when().get(RESOURCE, object("f3").toStringFormal());
     }
 
     @Test
@@ -162,6 +216,7 @@ public class TestFileResource extends AbstractRestTest
                 .body("size", equalTo(0))
                 .body("mime_type", equalTo("application/octet-stream"))
                 .body("etag", equalTo(CURRENT_ETAG_VALUE))
+                .body("content_state", equalTo("AVAILABLE"))
                 .body("path.folders", iterableWithSize(2))
                 .body("path.folders[0].name", equalTo("AeroFS"))
                 .body("path.folders[0].id", equalTo(id(mds.root().soid())))
@@ -185,6 +240,7 @@ public class TestFileResource extends AbstractRestTest
                 .body("last_modified", equalTo(ISO_8601.format(new Date(FILE_MTIME))))
                 .body("mime_type", equalTo("text/plain"))
                 .body("etag", equalTo(CURRENT_ETAG_VALUE))
+                .body("content_state", equalTo("AVAILABLE"))
         .when().get(RESOURCE, object("f1.txt").toStringFormal());
     }
 
@@ -267,6 +323,44 @@ public class TestFileResource extends AbstractRestTest
                 .body().asByteArray();
 
         Assert.assertArrayEquals(FILE_CONTENT, content);
+    }
+
+    @Test
+    public void shouldReturn404WhenGetExpelledContent() throws Exception
+    {
+        givenAccess()
+                .header("Accept", "*/*")
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("Content not synced on this device"))
+        .when().get(RESOURCE + "/content", object("expelled/f2").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenGetUnavailableContent() throws Exception
+    {
+        givenAccess()
+                .header("Accept", "*/*")
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("Content not yet available on this device"))
+        .when().get(RESOURCE + "/content", object("f3").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenGetQuotaExceededContent() throws Exception
+    {
+        when(csdb.isCollectingContent_(any(SIndex.class))).thenReturn(false);
+
+        givenAccess()
+                .header("Accept", "*/*")
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("Quota exceeded"))
+        .when().get(RESOURCE + "/content", object("f3").toStringFormal());
     }
 
     @Test
@@ -569,10 +663,8 @@ public class TestFileResource extends AbstractRestTest
     {
         givenAccess()
                 .contentType(ContentType.JSON)
-                .body(CommonMetadata.child(
-                                new RestObject(rootSID, OID.generate()).toStringFormal(),
-                                "foo"),
-                        ObjectMapperType.GSON)
+                .body(CommonMetadata.child(new RestObject(rootSID, OID.generate()).toStringFormal(),
+                                "foo"), ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)
         .when().post("/v0.10/files");
@@ -906,6 +998,34 @@ public class TestFileResource extends AbstractRestTest
                 .put("/v0.10/files/" + id(soid) + "/content");
 
         assertArrayEquals("Output Does Not match", FILE_CONTENT, pf.data());
+    }
+
+    @Test
+    public void shouldReturn507WhenUploadContentAndOutOfQuota() throws Exception
+    {
+        when(csdb.isCollectingContent_(any(SIndex.class))).thenReturn(false);
+
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        givenAccess()
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(507)
+                .body("type", equalTo("INSUFFICIENT_STORAGE"))
+                .body("message", equalTo("Quota exceeded"))
+        .when().put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldReturn404WhenUploadContentAndExpelled() throws Exception
+    {
+        givenAccess()
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("Content not synced on this device"))
+        .when().put("/v0.10/files/" + object("expelled/f2").toStringFormal() + "/content");
     }
 
     @Test

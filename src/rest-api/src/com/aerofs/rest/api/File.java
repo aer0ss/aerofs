@@ -27,25 +27,32 @@ public class File extends CommonMetadata
     // Content ETag
     public final String etag;
 
-    public File(String id, String name, @Nullable Date last_modified, @Nullable Long size,
-            String mime_type, String etag)
+    public enum ContentState
     {
-        this(id, name, null, null, last_modified, size, mime_type, etag);
+        AVAILABLE,
+        SYNCING,
+        DESELECTED,
+        INSUFFICIENT_STORAGE,
     }
 
-    public File(String id, String name, String parent, @Nullable Date last_modified,
-            @Nullable Long size, String mime_type, String etag)
+    // machine-readable
+    public final @Nullable String content_state;
+
+    public File(String id, String name, String parent, ContentState state,
+            String mime_type, String etag, @Nullable ParentPath path)
     {
-        this(id, name, parent, null, last_modified, size, mime_type, etag);
+        this(id, name, parent, path, null, null, mime_type, etag, state);
     }
 
     public File(String id, String name, String parent, @Nullable ParentPath path,
-            @Nullable Date last_modified, @Nullable Long size, String mime_type, String etag)
+            @Nullable Date last_modified, @Nullable Long size, String mime_type, String etag,
+            ContentState state)
     {
         super(id, name, parent, path);
         this.size = size;
         this.last_modified = last_modified;
         this.mime_type = mime_type;
         this.etag = etag;
+        this.content_state = state.toString();
     }
 }
