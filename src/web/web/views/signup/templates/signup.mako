@@ -3,13 +3,13 @@
 <%! from web.util import is_private_deployment %>
 
 <div class="row">
-    <div class="col-sm-4 col-sm-offset-4 text-center">
+    <div class="col-sm-6 col-sm-offset-3 text-center">
         <h1>Create an AeroFS account</h1>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-sm-4 col-sm-offset-4">
+    <div class="col-sm-6 col-sm-offset-3">
         <div class="well well-small text-center" style="margin: 0 auto;">
             You will sign up using this email:<br>
             <strong>${email_address}</strong>
@@ -19,7 +19,7 @@
 </div>
 
 <div class="row">
-    <div class="col-sm-4 col-sm-offset-4">
+    <div class="col-sm-6 col-sm-offset-3">
                 ## Always use POST to avoid disclose passwords in the URL when JS is disabled.
                 <form id="signupForm" method="post" role="form" class="form-horizontal">
                     ${self.csrf.token_input()}
@@ -180,7 +180,7 @@
                             });
 
                         } else {
-                            ## no analytics, proceed to sig-in directly
+                            ## no analytics, proceed to sign-in directly
                             sign_in();
                         }
                     }
@@ -198,7 +198,8 @@
                 }
             });
 
-            function sign_in() {
+            // after creating account, log user in.
+            var sign_in = function() {
                 ## create the login form
                 var form = document.createElement("form");
                 form.setAttribute("method", "post");
@@ -206,12 +207,11 @@
                 form.setAttribute("action", "${request.route_path('login',
                             _query={'next': request.route_path('download',
                                            _query={'msg_type': 'signup'}) })}");
-
                 var params = {
                     ${self.csrf.token_param()}
                     "${url_param_email}": "${email_address}",
                     "${url_param_password}": $("#inputPasswd").val(),
-                    "${url_param_remember_me}": "",
+                    "${url_param_remember_me}": ""
                 };
 
                 for (var key in params) {
