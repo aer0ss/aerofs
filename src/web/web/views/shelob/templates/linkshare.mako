@@ -67,6 +67,7 @@
 </%block>
 
 <%block name="css">
+    <link rel="stylesheet" href="${request.static_path('web:static/css/compiled/my-table.min.css')}"/>
     <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/shelob.css')}"/>
     <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/tree-control.css')}"/>
     <link rel="stylesheet" href="${request.static_path('web:static/shelob/css/tree-control-attribute.css')}"/>
