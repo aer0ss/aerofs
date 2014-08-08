@@ -13,7 +13,7 @@ Example:
     virtualenv testing
     ./testing/bin/pip install protobuf
     ./testing/bin/pip install requests
-    ./testing/bin/python aero-auth/main.py -h
+    ./testing/bin/python aero-oauth/main.py -h
 
 ## Usage
 
