@@ -122,6 +122,8 @@ public class BaseParam
         public static final String TOS_URL = MARKETING_HOST_URL+ "/terms#privacy";
 
         public static final String RECERTIFY_SUPPORT_URL = "https://support.aerofs.com/hc/articles/201439354";
+
+        public static final String COLLECT_LOGS_URL = getStringProperty("base.collect_logs.url", "");
     }
 
     public static class SV

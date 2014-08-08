@@ -7,7 +7,6 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.LibParam.LicenseProperties;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNotAuthenticated;
@@ -22,15 +21,14 @@ import java.util.Properties;
 
 import static org.mockito.Mockito.*;
 
-public class TestSP_SendDryadEmail extends AbstractSPTest
+public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
 {
     // used to back up default support email address.
     private String _supportEmail;
 
-    private static final String VALID_DRYAD_ID = "0000deadbeef00000000deadbeef0000";
-    private static final String INVALID_DRYAD_ID = "deadbeef";
+    private static final String DEFECT_ID = "0000deadbeef00000000deadbeef0000";
 
-    private void setupOnSiteProperties()
+private void setupOnSiteProperties()
             throws Exception
     {
         // back up the previous support e-mail address
@@ -81,15 +79,15 @@ public class TestSP_SendDryadEmail extends AbstractSPTest
     public void shouldQueueSendEmailRequestWithDefault()
             throws Exception
     {
-        service.sendDryadEmail(VALID_DRYAD_ID, "replyto@example.com", "My plops don't work!");
+        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!");
 
-        verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(eq("AeroFS"),
-                eq("support@aerofs.com"), eq("replyto@example.com"),
-                eq("AeroFS Problem #0000deadbeef00000000deadbeef0000"), eq("Customer ID: N/A\n" +
-                        "Customer Name: Unknown\n" +
-                        "Contact Email: replyto@example.com\n\n" +
-                        "My plops don't work!"), isNull(String.class)
-        );
+        verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
+                eq("AeroFS"),
+                eq("support@aerofs.com"),
+                eq("replyto@example.com"),
+                eq("AeroFS Problem #0000deadbeef00000000deadbeef0000"),
+                anyString(),
+                anyString());
     }
 
     @Test
@@ -98,19 +96,15 @@ public class TestSP_SendDryadEmail extends AbstractSPTest
     {
         setupOnSiteProperties();
 
-        service.sendDryadEmail(VALID_DRYAD_ID, "replyto@example.com", "My plops don't work!");
+        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!");
 
         verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
                 eq("AeroFS"),
                 eq("support@myplops.com"),
                 eq("replyto@example.com"),
                 eq("AeroFS Problem #0000deadbeef00000000deadbeef0000"),
-                eq("Customer ID: 9001\n" +
-                        "Customer Name: MyPlops Inc.\n" +
-                        "Contact Email: replyto@example.com\n\n" +
-                        "My plops don't work!"),
-                isNull(String.class)
-        );
+                anyString(),
+                anyString());
 
         restoreDefaultProperties();
     }
@@ -123,20 +117,13 @@ public class TestSP_SendDryadEmail extends AbstractSPTest
         //   it must be thrown from sendDryadEmail.
         session.deauthorize();
 
-        service.sendDryadEmail(VALID_DRYAD_ID, "replyto@example.com", "My plops don't work!");
+        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!");
     }
 
     @Test(expected = ExInvalidEmailAddress.class)
     public void shouldThrowOnInvalidContactEmailAddress()
             throws Exception
     {
-        service.sendDryadEmail(VALID_DRYAD_ID, "call me plops", "My plops will go on");
-    }
-
-    @Test(expected = ExFormatError.class)
-    public void shouldThrownOnInvalidDryadID()
-            throws Exception
-    {
-        service.sendDryadEmail(INVALID_DRYAD_ID, "replyto@example.com", "Plox plops");
+        service.sendPriorityDefectEmail(DEFECT_ID, "call me plops", "My plops will go on");
     }
 }

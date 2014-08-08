@@ -6,10 +6,18 @@ package com.aerofs.shell;
 
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.labeling.L;
+import com.aerofs.ui.defect.PriorityDefectReporter;
 import org.apache.commons.cli.CommandLine;
 
 public class CmdDefect extends AbstractShellCommand<ShProgram>
 {
+    private final PriorityDefectReporter _defect;
+
+    public CmdDefect(PriorityDefectReporter defect)
+    {
+        _defect = defect;
+    }
+
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
             throws Exception
@@ -24,7 +32,7 @@ public class CmdDefect extends AbstractShellCommand<ShProgram>
             sb.append(" ");
         }
 
-        s.d()._defectReporter.sendDefect(null, sb.toString(), true);
+        _defect.sendPriorityDefect(null, sb.toString(), true);
     }
 
     @Override

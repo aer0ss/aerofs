@@ -30,6 +30,8 @@ import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.IDaemonMonitor;
+import com.aerofs.ui.InfoCollector;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UnlinkUtil;
@@ -86,6 +88,9 @@ public final class CommandNotificationSubscriber
     private static final Logger l = Loggers.getLogger(CommandNotificationSubscriber.class);
 
     private final IScheduler _scheduler;
+    private final InfoCollector _infoCollector;
+    private final IDaemonMonitor _dm;
+
     private final ExponentialRetry _exponential;
     private final VerkehrPubSubClient _verkehrPubSubClient;
     private final String _topic;
@@ -93,9 +98,13 @@ public final class CommandNotificationSubscriber
     public CommandNotificationSubscriber(
             ClientSocketChannelFactory clientChannelFactory,
             IScheduler scheduler,
-            DID localDevice)
+            DID localDevice,
+            InfoCollector infoCollector,
+            IDaemonMonitor dm)
     {
         _scheduler = scheduler;
+        _infoCollector = infoCollector;
+        _dm = dm;
         _exponential = new ExponentialRetry(scheduler);
         _verkehrPubSubClient = VerkehrPubSubClient.create(
                 Verkehr.HOST,
@@ -322,7 +331,7 @@ public final class CommandNotificationSubscriber
                     // TODO (MP) finish this - for now ignore.
                     break;
                 case UPLOAD_DATABASE:
-                    UIGlobals.ic().startUploadDatabase();
+                    _infoCollector.startUploadDatabase();
                     break;
                 case CHECK_UPDATE:
                     UIGlobals.updater().checkForUpdate(true);
@@ -333,11 +342,11 @@ public final class CommandNotificationSubscriber
                 case LOG_THREADS:
                     logThreads();
                     break;
-                case UPLOAD_LOGS:
-                    // obsolete command, no-op
-                    break;
                 case OBSOLETE_WAS_CLEAN_SSS_DATABASE:
                     // obsoleted command, do no-op
+                    break;
+                case UPLOAD_LOGS:
+                    new CommandDefect(command, _dm).sendAsync();
                     break;
                 default:
                     throw new Exception("cmd type unknown");

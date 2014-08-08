@@ -1,11 +1,13 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtilWindows;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -63,6 +65,7 @@ public abstract class FileUtil
 
     private static boolean shutdownHookAdded = false;
     private static Set<File> _filesToDelete = Sets.newLinkedHashSet();
+    private static final Logger l = Loggers.getLogger(FileUtil.class);
 
     /**
      * Returns a string of characters whose positions and values represent attributes of
@@ -242,10 +245,39 @@ public abstract class FileUtil
         }
     }
 
+    /**
+     * Java's mkdirs() is _not_ thread safe!
+     * See http://www.jroller.com/ethdsy/entry/file_mkdirs_is_not_thread and
+     * http://bugs.java.com/view_bug.do?bug_id=4742723
+     *
+     * Consider using ensureDirExists(dir, retryAttempts) in multi-threaded environment.
+     */
     public static File ensureDirExists(File dir) throws IOException
     {
         if (!dir.isDirectory()) mkdirs(dir);
         return dir;
+    }
+
+    /**
+     * retry mkdirs() {@paramref retryAttempts} times because mkdirs() is not thread safe and
+     * may fail when there are concurrent mkdirs()
+     */
+    public static File ensureDirExists(File dir, int retryAttempts) throws IOException
+    {
+        for (int i = 1; i <= retryAttempts; i++) {
+            try {
+                ensureDirExists(dir);
+                return dir;
+            } catch (IOException e) {
+                if (i == retryAttempts) {
+                    throw e;
+                }
+
+                l.debug("mkdirs failed, trying again...");
+            }
+        }
+
+        throw new AssertionError("This line should be unreachable.");
     }
 
     /**

@@ -234,15 +234,6 @@ public class LibParam extends BaseParam
         public static final String CUSTOMER_NAME = "license_company";
     }
 
-    // these are configuration properties about the Dryad server intended for the Dryad client
-    public static class DryadProperties
-    {
-        public static final String ENABLED      = "base.dryad.enabled";
-        public static final String HOSTNAME     = "base.dryad.hostname";
-        public static final String PORT         = "base.dryad.port";
-        public static final String CERTIFICATE  = "base.dryad.certificate";
-    }
-
     /**
      * Parameters for identity management - signin and authentication.
      * TODO: convert members to non-static

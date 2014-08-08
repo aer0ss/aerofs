@@ -3,7 +3,8 @@ import os
 from pyramid.view import view_config
 from web.util import str2bool
 from maintenance_util import write_pem_to_file, \
-    is_certificate_formatted_correctly, format_pem, get_conf, get_conf_client
+    is_certificate_formatted_correctly, format_pem, get_conf, get_conf_client, \
+    unformat_pem
 from web.error import error
 
 log = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ def device_authorization(request):
         'device_authorization_endpoint_use_ssl':
             str2bool(conf['device.authorization.endpoint_use_ssl']),
         'device_authorization_endpoint_certificate':
-            conf['device.authorization.endpoint_certificate'].replace('\\n', '\n')
+            unformat_pem(conf['device.authorization.endpoint_certificate']),
     }
 
 @view_config(

@@ -88,12 +88,7 @@ public final class SVClient
     private static final String SV_URL =
             getStringProperty("lib.sv.url", "https://sv.aerofs.com:443/sv_beta/sv");
 
-    private static final SVRPCClient client = new SVRPCClient(SV_URL);
-
-    private static SVRPCClient getRpcClient()
-    {
-        return client;
-    }
+    private static final SVRPCClient _client = new SVRPCClient(SV_URL);
 
     private static final RecentExceptions recentExceptions = RecentExceptions.getInstance();
 
@@ -124,7 +119,7 @@ public final class SVClient
                         .setName(gzippedLog.getName()))
                 .build();
 
-        getRpcClient().doRPC(call, gzippedLog);
+        _client.doRPC(call, gzippedLog);
     }
 
     //-------------------------------------------------------------------------
@@ -215,21 +210,21 @@ public final class SVClient
                 sendFileNames);
     }
 
-    public static void logSendDefectSyncIgnoreErrors(boolean isAutoBug, String context, Throwable cause)
+    public static void logSendDefectSyncIgnoreErrors(boolean isAutoBug, String desc, Throwable cause)
     {
         try {
-            logSendDefectSync(isAutoBug, context, cause, null, false);
+            logSendDefectSync(isAutoBug, desc, cause, null, false);
         } catch (Throwable e) {
             l.error("send defect: " + Util.e(e));
         }
     }
 
-    public static void logSendDefectSyncNoLogsIgnoreErrors(boolean isAutoBug, String context, Throwable cause)
+    public static void logSendDefectSyncNoLogsIgnoreErrors(boolean isAutoBug, String desc, Throwable cause)
     {
         try {
             doLogSendDefect(
                     isAutoBug,
-                    context,
+                    desc,
                     cause,
                     newHeader(),
                     absRTRoot(),
@@ -243,13 +238,13 @@ public final class SVClient
         }
     }
 
-    public static void logSendDefectSyncNoCfgIgnoreErrors(boolean isAutoBug, String context,
+    public static void logSendDefectSyncNoCfgIgnoreErrors(boolean isAutoBug, String desc,
             Throwable cause, UserID user, String rtRoot)
     {
         try {
             doLogSendDefect(
                     isAutoBug,
-                    context,
+                    desc,
                     cause,
                     newHeader(user, null, rtRoot),
                     rtRoot,
@@ -318,7 +313,7 @@ public final class SVClient
         StringBuilder sbDesc = createDefectDescription(description, defectContents);
 
         Map<Key, String> cfgDB = Cfg.inited() ? Cfg.dumpDb() : Collections.<Key, String>emptyMap();
-        PBSVDefect pbDefect = createPBDefect(isAutoBug, header, cfgDB, rtRoot, stackTrace, sbDesc);
+        PBSVDefect pbDefect = createPBDefect(isAutoBug, cfgDB, rtRoot, stackTrace, sbDesc);
 
         File defectFilesZip = compressDefectLogs(rtRoot, sendLogs, sendDB, sendHeapDumps,
                 sendUnobfuscatedFileMapping);
@@ -333,7 +328,7 @@ public final class SVClient
         l.debug("send defect");
 
         try {
-            getRpcClient().doRPC(call, defectFilesZip);
+            _client.doRPC(call, defectFilesZip);
         } finally {
             if (defectFilesZip != null) {
                 deleteOrOnExit(defectFilesZip);
@@ -426,7 +421,7 @@ public final class SVClient
         return defectFilesZip;
     }
 
-    private static PBSVDefect createPBDefect(boolean isAutoBug, PBSVHeader header,
+    private static PBSVDefect createPBDefect(boolean isAutoBug,
             Map<Key, String> cfgDB, String rtRoot, String stackTrace, StringBuilder sbDesc)
     {
         String contactEmail = cfgDB.get(Key.CONTACT_EMAIL);

@@ -4,7 +4,7 @@ from pyramid.view import view_config
 from web.util import str2bool
 from maintenance_util import write_pem_to_file, \
     is_certificate_formatted_correctly, format_pem, get_conf, \
-    get_conf_client
+    get_conf_client, unformat_pem
 from web.error import error
 
 log = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ def auditing(request):
         'downstream_host': conf['base.audit.downstream_host'],
         'downstream_port': conf['base.audit.downstream_port'],
         'downstream_ssl_enabled': str2bool(conf['base.audit.downstream_ssl_enabled']),
-        'downstream_cert': conf['base.audit.downstream_certificate'].replace('\\n', '\n'),
+        'downstream_cert': unformat_pem(conf['base.audit.downstream_certificate']),
     }
 
 

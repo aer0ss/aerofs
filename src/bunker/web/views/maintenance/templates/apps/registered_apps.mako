@@ -1,5 +1,6 @@
 <%inherit file="../maintenance_layout.mako"/>
 <%! page_title = "Apps" %>
+<%! from web.views.maintenance.maintenance_util import unformat_pem %>
 
 ##
 ## Note: this file's structure is very similar to access_tokens.mako
@@ -38,7 +39,7 @@
                         'client_id': client['client_id'],
                         'client_secret': client['secret'],
                         'hostname': hostname,
-                        'cert': cert.replace('\\n','\n'),
+                        'cert': unformat_pem(cert),
                     }).encode('utf-8'))
                   %>
                     ## N.B. download= is not present before HTML5

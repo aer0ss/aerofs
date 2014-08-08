@@ -76,3 +76,13 @@ device.authorization.endpoint_certificate={{ device_authorization_endpoint_certi
  # `customer_id` and `license_type`
  #}
 {{ license_lines }}
+
+{# This section is properties used to persist bunker application state across
+ # appliance upgrades.
+ #}
+base.dryad.option={{ dryad_option }}
+base.dryad.host={{ dryad_host }}
+base.dryad.port={{ dryad_port }}
+base.dryad.cert={{ dryad_cert }}
+
+base.collect_logs.url=http://{{ base_host }}:8484/collect_logs

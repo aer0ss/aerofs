@@ -54,10 +54,16 @@ def get_modulus_of_key_file(key_filename):
 def format_pem(string):
     """
     Format certificate and key using this function before saving to the
-    configuration service. See also the code in identity.mako that convert
-    the string to HTML format.
+    configuration service.
     """
     return string.strip().replace('\n', '\\n').replace('\r', '')
+
+
+def unformat_pem(string):
+    """
+    Convert the formatted pem string back to HTML format.
+    """
+    return string.replace('\\n', '\n')
 
 
 def _get_modulus_helper(cmd):

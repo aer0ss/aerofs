@@ -15,19 +15,24 @@ if [ $# -ne 0 ] ; then
     exit
 fi
 
-source $(dirname $0)/aerofs-dryad-common
+OPT=$(dirname $0)
+
+source "$OPT"/aerofs-dryad-common
 checkPrivilege
 
 # Install self-signed certs
-$(dirname $0)/generate-and-install-cert custom "$NGINX_DIR"/certs
+"$OPT"/generate-and-install-cert custom "$NGINX_DIR"/certs
 
 # Provision Nginx with custom sites
-$(dirname $0)/aerofs-dryad-nginx-setup $(dirname $0)/aerofs-dryad-nginx-site $(dirname $0)/aerofs-dryad-nginx-backend
+"$OPT"/aerofs-dryad-nginx-setup "$OPT"/aerofs-dryad-nginx-site "$OPT"/aerofs-dryad-nginx-backend
 
 # create the data directory
-DATA_DIR=/data
-mkdir -p "$DATA_DIR"
-chown dryad:dryad "$DATA_DIR"
+DATA=/data
+if [ ! -d "$DATA" ]
+then
+    mkdir -p "$DATA"
+    chown dryad:dryad "$DATA"
+fi
 
 # link to upstart job and restart the services
 ln -snf /lib/init/upstart-job /etc/init.d/dryad
@@ -42,4 +47,4 @@ sleep 1
 echo
 echo "> Testing Dryad configuration..."
 echo
-$(dirname $0)/aerofs-dryad-test
+"$OPT"/aerofs-dryad-test

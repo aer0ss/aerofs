@@ -4,7 +4,7 @@ set -ue
 RESOURCES=../src/dryad/resources
 SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-CONFIG="$RESOURCES/logback.xml $RESOURCES/dryad.properties"
+CONFIG="$RESOURCES/logback.xml $RESOURCES/dryad.properties $RESOURCES/banner.txt $RESOURCES/ip_blacklist.conf $RESOURCES/user_blacklist.conf $RESOURCES/device_blacklist.conf"
 JAVA_ARGS="-Xmx1536m"
 SERVICE_ARGS="dryad.properties"
 

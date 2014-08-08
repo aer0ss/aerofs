@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) Air Computing Inc., 2014.
+  -->
+
+<web-app>
+  <!-- Default page to serve -->
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+  </welcome-file-list>
+
+  <!-- Database definitions -->
+  <context-param>
+    <param-name>sp_database_resource_reference</param-name>
+    <param-value>jdbc/SPDatabase</param-value>
+  </context-param>
+  <resource-ref>
+    <res-ref-name>jdbc/SPDatabase</res-ref-name>
+    <res-type>javax.sql.DataSource</res-type>
+    <res-auth>Container</res-auth>
+  </resource-ref>
+
+    <!-- To enforce serializable sessions. -->
+  <distributable/>
+
+  <!-- Verkehr -->
+  <context-param>
+    <param-name>verkehr_cacert</param-name>
+    <param-value>/etc/ssl/certs/AeroFS_CA.pem</param-value>
+  </context-param>
+
+  <!-- Initialization listener -->
+  <listener>
+    <listener-class>com.aerofs.sp.server.listeners.LogCollectionLifecycleListener</listener-class>
+  </listener>
+
+  <!-- Servlets -->
+  <servlet>
+    <servlet-name>ServletGetUsers</servlet-name>
+    <servlet-class>com.aerofs.sp.server.GetUsersServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <servlet-name>ServletCollectLogs</servlet-name>
+    <servlet-class>com.aerofs.sp.server.CollectLogsServlet</servlet-class>
+  </servlet>
+
+    <!-- URL mapping -->
+  <servlet-mapping>
+    <servlet-name>ServletGetUsers</servlet-name>
+    <url-pattern>/users</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>ServletCollectLogs</servlet-name>
+    <url-pattern>/collect_logs</url-pattern>
+  </servlet-mapping>
+</web-app>

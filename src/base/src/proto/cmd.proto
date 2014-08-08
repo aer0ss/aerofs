@@ -55,10 +55,7 @@ enum CommandType {
     // needed to pace out consecutive sampling requests.
     LOG_THREADS = 9;
 
-    // OBSOLETE
-    // This call has been rolled out to production, but no one used it to the best of our knowledge.
-    //
-    // Upload client-side logs to Dryad persistence endpoint.
+    // Upload the client-side logs to either an on-site server or the HC Dryad server.
     UPLOAD_LOGS = 10;
 
     // Add more commands here...
@@ -71,12 +68,20 @@ message Command {
     required uint64 epoch = 1;
     required CommandType type = 2;
 
-    // required when type = UPLOAD_LOGS, and disregarded otherwise
+    // required when type = UPLOAD_LOGS; disregarded otherwise
     optional UploadLogsArgs upload_logs_args = 3;
 }
 
-// OBSOLETE
 message UploadLogsArgs {
-    required string dryad_id = 1;
-    required string customer_id = 2;
+    required string defect_id = 1;
+    required uint64 expiry_time = 2;
+    // the presence of these args indicate that we should upload to an onsite server
+    // the absence indicates that we should upload to the HC Dryad server
+    optional UploadLogsDestination destination = 3;
+}
+
+message UploadLogsDestination {
+    required string hostname = 1;
+    required int32 port = 2;
+    required string cert = 3;
 }

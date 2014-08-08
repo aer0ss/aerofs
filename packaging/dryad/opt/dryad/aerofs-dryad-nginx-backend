@@ -1,4 +1,7 @@
 location ~* /v[0-9]+\.[0-9]+/ {
+    # Edit this file to blacklist ips, altho nginx will need to be restarted after each update
+    include /opt/dryad/ip_blacklist.conf;
+
     # Proxy to dryad, the log collection service.
     proxy_pass http://127.0.0.1:4433;
     proxy_cache off;
@@ -8,6 +11,7 @@ location ~* /v[0-9]+\.[0-9]+/ {
     proxy_ignore_headers X-Accel-Charset X-Accel-Buffering X-Accel-Limit-Rate X-Accel-Redirect X-Accel-Expires Expires Cache-Control Set-Cookie;
     proxy_read_timeout 60;
     proxy_send_timeout 60;
+
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 }

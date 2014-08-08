@@ -89,16 +89,14 @@ public class TrayMenuPopulator
 
     public void addHelpMenuItems()
     {
-        if (UIGlobals.defectReporter().isAvailable()) {
-            addMenuItem(S.REPORT_A_PROBLEM, new AbstractListener(null)
+        addMenuItem(S.REPORT_A_PROBLEM, new AbstractListener(null)
+        {
+            @Override
+            protected void handleEventImpl(Event event)
             {
-                @Override
-                protected void handleEventImpl(Event event)
-                {
-                    new DlgDefect().open();
-                }
-            });
-        }
+                new DlgDefect().open();
+            }
+        });
 
         addMenuItem("Support Center", new AbstractListener(null)
         {

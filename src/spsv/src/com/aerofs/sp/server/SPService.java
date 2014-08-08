@@ -30,7 +30,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
@@ -134,6 +133,7 @@ import com.aerofs.sp.server.authorization.DeviceAuthClient;
 import com.aerofs.sp.server.authorization.DeviceAuthEndpoint;
 import com.aerofs.sp.server.authorization.DeviceAuthParam;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
+import com.aerofs.sp.server.email.Email;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
@@ -192,9 +192,11 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.lib.Util.urlEncode;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
 
 public class SPService implements ISPService
 {
@@ -1759,7 +1761,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> sendDryadEmail(String strDryadID,
+    public ListenableFuture<Void> sendPriorityDefectEmail(String defectID,
             String contactEmail, String description)
             throws Exception
     {
@@ -1770,19 +1772,32 @@ public class SPService implements ISPService
 
         throwOnInvalidEmailAddress(contactEmail);
 
-        // validate the Dryad ID
-        UniqueID dryadID = UniqueID.fromStringFormal(strDryadID);
-
         String fromName = SPParam.EMAIL_FROM_NAME;
         String to = WWW.SUPPORT_EMAIL_ADDRESS;
         String replyTo = contactEmail;
-        String subject = L.brand() + " Problem #" + dryadID.toStringFormal();
-        String body = "Customer ID: " + _license.customerID() + "\n" +
-                "Customer Name: " + _license.customerName() + "\n" +
-                "Contact Email: " + contactEmail + "\n\n" +
-                description;
+        String subject = format("%s Problem #%s", L.brand(), defectID);
+        String header = format("%s has reported an issue while using %s.", contactEmail, L.brand());
+        String body;
 
-        _emailSender.sendPublicEmailFromSupport(fromName, to, replyTo, subject, body, null);
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
+            // private cloud e-mail content
+            String link = format("%s?defect_id=%s&email=%s&users=%s&desc=%s",
+                    WWW.COLLECT_LOGS_URL, urlEncode(defectID), urlEncode(contactEmail),
+                    urlEncode(contactEmail), urlEncode(description));
+            body = format("\n%s\n\nFollow this link to collect logs from this user:\n\n%s\n\n",
+                    description, link);
+        } else {
+            // hybrid cloud e-mail content
+            body = format("\nCustomer ID: %s\n" +
+                    "Customer Name: %s\n" +
+                    "Contact Email: %s\n\n" +
+                    "%s", _license.customerID(), _license.customerName(), contactEmail, description);
+        }
+
+        Email email = new Email();
+        email.addSection(header, body);
+        _emailSender.sendPublicEmailFromSupport(fromName, to, replyTo, subject,
+                email.getTextEmail(), email.getHTMLEmail());
 
         return createVoidReply();
     }

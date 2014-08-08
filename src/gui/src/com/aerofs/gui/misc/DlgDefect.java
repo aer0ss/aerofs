@@ -12,6 +12,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.ui.UIGlobals;
+import com.aerofs.ui.defect.PriorityDefectReporter;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -226,7 +227,8 @@ public class DlgDefect extends AeroFSJFaceDialog
             @Override
             public void run()
             {
-                UIGlobals.defectReporter().sendDefect(contactEmail, msg, dumpDaemonStatus);
+                new PriorityDefectReporter(UIGlobals.ritualClientProvider())
+                        .sendPriorityDefect(contactEmail, msg, dumpDaemonStatus);
             }
         });
     }

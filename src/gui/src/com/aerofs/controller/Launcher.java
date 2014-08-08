@@ -26,6 +26,7 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.InfoCollector;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.launch_tasks.UILaunchTasks;
@@ -279,7 +280,9 @@ public class Launcher
         new CommandNotificationSubscriber(
                 ChannelFactories.getClientChannelFactory(),
                 UIGlobals.scheduler(),
-                Cfg.did())
+                Cfg.did(),
+                new InfoCollector(),
+                UIGlobals.dm())
             .start();
 
         new BadCredentialNotifier();

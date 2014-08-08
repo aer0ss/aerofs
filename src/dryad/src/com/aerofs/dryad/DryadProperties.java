@@ -4,8 +4,6 @@
 
 package com.aerofs.dryad;
 
-import com.aerofs.base.config.ConfigurationProperties;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -19,17 +17,30 @@ public class DryadProperties extends Properties
     // stores String, the path to the storage directory for local file persistence.
     public static final String STORAGE_DIRECTORY = "dryad.storage.directory";
 
-    public DryadProperties(File source)
+    // stores String, the hostname for the server to bind to
+    public static final String SERVER_HOSTNAME = "dryad.server.hostname";
+
+    // stores Integer, the port for the server to listen on
+    public static final String SERVER_PORT = "dryad.server.port";
+
+    // stores path to the blacklist file for users
+    public static final String BLACKLIST_USERS = "dryad.blacklist.users";
+
+    // stores path to the blacklist file for devices
+    public static final String BLACKLIST_DEVICES = "dryad.blacklist.devices";
+
+    public static DryadProperties loadFromFile(File source)
             throws IOException
     {
         FileInputStream is = null;
         try {
             is = new FileInputStream(source);
-            load(is);
+
+            DryadProperties properties = new DryadProperties();
+            properties.load(is);
+            return properties;
         } finally {
             if (is != null) { is.close(); }
         }
-
-        ConfigurationProperties.setProperties(this);
     }
 }

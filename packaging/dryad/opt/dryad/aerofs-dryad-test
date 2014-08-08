@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This script tests the Dryad server configuration by making a POST call to
+# This script tests the Dryad server configuration by making a PUT call to
 # its REST API.
 #
 # Note that it will attempt to delete the logs uploaded from the previous
@@ -18,20 +18,17 @@ if [ $# -ne 0 ] ; then
     usage
 fi
 
-# Delete the logs uploaded by previous tests
-rm -rf /data/0/00000000000000000000000000000000
-
 TEMP=$(mktemp)
 echo 'yes' > "$TEMP"
 
-RESULT=$(curl -i -X POST \
+RESULT=$(curl -i -X PUT \
     --insecure \
     --header "Content-Type:application/octet-stream" \
     --data-binary "$TEMP" \
     --silent \
     --output /dev/null \
     --write-out "%{http_code}" \
-    https://localhost/v1.0/client/0/00000000000000000000000000000000/test@example.com/00000000000000000000000000000000/logs)
+    https://localhost/v1.0/defects/00000000000000000000000000000000/client/test@example.com/00000000000000000000000000000000)
 
 if [ "$RESULT" -ge 200 ] && [ "$RESULT" -lt 300 ] ; then
     echo "Success!"

@@ -38,6 +38,7 @@ class transient::services {
     include servlet::sp
     include servlet::verification
     include servlet::identity
+    include servlet::log_collection
 
     # --------------
     # Auditor

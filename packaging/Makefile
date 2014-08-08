@@ -23,6 +23,7 @@ PACKAGES= \
 	identity \
 	jeq-tools \
 	lizard \
+	log-collection \
 	middleman \
 	pagerduty \
 	repackaging \

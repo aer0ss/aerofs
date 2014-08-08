@@ -7,6 +7,7 @@ package com.aerofs.command.server.resources;
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
+import com.aerofs.sp.server.CommandUtil;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 
 import javax.ws.rs.Path;
@@ -36,13 +37,13 @@ public final class QueuesResource
             throw new WebApplicationException(BAD_REQUEST);
         }
 
-        CommandType type;
+        String commandMessage;
         try {
-            type = CommandType.valueOf(commandType);
+            commandMessage = CommandUtil.createCommandMessage(CommandType.valueOf(commandType));
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(BAD_REQUEST);
         }
 
-        return new QueueResource(type, _did, _trans, _verkehr);
+        return new QueueResource(commandMessage, _did, _trans, _verkehr);
     }
 }

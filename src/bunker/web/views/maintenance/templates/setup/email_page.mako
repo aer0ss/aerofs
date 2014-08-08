@@ -2,6 +2,7 @@
 <%namespace name="common" file="setup_common.mako"/>
 
 <%! from web.util import str2bool %>
+<%! from web.views.maintenance.maintenance_util import unformat_pem %>
 
 <%
     public_host_name = current_config['email.sender.public_host']
@@ -206,7 +207,7 @@
 <div class="row form-group">
         <div class="">
             <textarea rows="4" id="email-sender-public-cert" class="form-control" style="width: 100%;" name="email-sender-public-cert"
-                >${current_config['email.sender.public_cert'].replace('\\n', '\n')}</textarea>
+                >${unformat_pem(current_config['email.sender.public_cert'])}</textarea>
                 ## Also see setup_view.py:_format_pem() for the reversed convertion.
             <div class="help-block">This setting is not required if your mail server
                 certificate is signed by a common certificate authority.</div>

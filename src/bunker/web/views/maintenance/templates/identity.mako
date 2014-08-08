@@ -1,6 +1,8 @@
 <%inherit file="maintenance_layout.mako"/>
 <%! page_title = "Identity" %>
 
+<%! from web.views.maintenance.maintenance_util import unformat_pem %>
+
 <%namespace name="csrf" file="csrf.mako"/>
 <%namespace name="bootstrap" file="bootstrap.mako"/>
 <%namespace name="modal" file="modal.mako"/>
@@ -283,7 +285,7 @@
                     ## show up in the box.
                     ## the .replace() converts the cert from properties format to HTML format.
                     ## Also see setup_view.py:_format_pem() for the reversed convertion.
-                    >${conf['ldap.server.ca_certificate'].replace('\\n', '\n')}</textarea>
+                    >${unformat_pem(conf['ldap.server.ca_certificate'])}</textarea>
             <div class="help-block">Supply the LDAP server's certificate only
                 if the certificate is <strong>not</strong> publicly signed.</div>
         </div>

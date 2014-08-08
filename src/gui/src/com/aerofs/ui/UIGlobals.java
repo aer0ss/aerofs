@@ -15,7 +15,6 @@ import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.ui.IDaemonMonitor.Factory;
-import com.aerofs.ui.defect.DefectReporter;
 import com.aerofs.ui.update.Updater;
 
 import javax.annotation.Nonnull;
@@ -71,14 +70,11 @@ public final class UIGlobals
     private static final Progresses s_progress = new Progresses();
 
     private static final SanityPoller s_rap = new SanityPoller();
-    private static final InfoCollector s_ic = new InfoCollector();
     private static final UIScheduler s_sched = new UIScheduler();
     private static final Analytics s_analytics = new Analytics(new DesktopAnalyticsProperties());
     private static final RockLog s_rockLog = new RockLog();
 
     private static Factory _idm;
-    private static DefectReporter s_defect;
-
 
     public static void initialize_(boolean createShellextService, LaunchArgs launchArgs)
     {
@@ -86,7 +82,6 @@ public final class UIGlobals
             s_shellext = new ShellextService(getServerChannelFactory(), s_ritualProvider);
         }
         _idm = new Factory(launchArgs);
-        s_defect = new DefectReporter(s_ritualProvider, dm());
     }
 
     public static ShellextService shellext() { return s_shellext; }
@@ -109,8 +104,6 @@ public final class UIGlobals
 
     public static UIScheduler scheduler() { return s_sched; }
 
-    public static InfoCollector ic() { return s_ic; }
-
     public static IRitualClientProvider ritualClientProvider() { return s_ritualProvider; }
 
     public static RitualBlockingClient ritual() { return s_ritualProvider.getBlockingClient(); }
@@ -120,6 +113,4 @@ public final class UIGlobals
     public static Analytics analytics() { return s_analytics; }
 
     public static RockLog rockLog() { return s_rockLog; }
-
-    public static DefectReporter defectReporter() { return s_defect; }
 }
