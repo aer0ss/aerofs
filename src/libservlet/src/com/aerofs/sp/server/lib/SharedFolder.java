@@ -547,6 +547,13 @@ public class SharedFolder
         return permissions != null && permissions.covers(Permission.MANAGE) && getStateNullable(user) == JOINED;
     }
 
+    public void throwIfNotJoinedOwner(User user)
+            throws SQLException, ExNoPerm
+    {
+        if (isJoinedOwner(user)) return;
+        throw new ExNoPerm();
+    }
+
     /**
      * @return the sharer (i.e. inviter) of the given user. Return null if the user is not invited
      * by anyone (e.g. the initial owner, Team Server users).

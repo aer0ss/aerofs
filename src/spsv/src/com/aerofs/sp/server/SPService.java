@@ -1519,7 +1519,12 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(sidToCheck);
         _sqlTrans.begin();
         User requester = _session.getAuthenticatedUserLegacyProvenance();
-        sf.throwIfNoPrivilegeToChangeACL(requester);
+
+        // Use throwIfNotJoinedOwner instead of throwIfNoPrivilegeToChangeACL. We do this because
+        // we only want owners of shared folders to be able to create links. In particular, we do
+        // not want org admins to be able to create links to arbitrary content.
+        sf.throwIfNotJoinedOwner(requester);
+
         UrlShare link = _factUrlShare.save(restObject, token, requester.id());
         PBRestObjectUrl pbRestObjectUrl = link.toPB();
         _sqlTrans.commit();
