@@ -70,6 +70,9 @@ device.authorization.endpoint_path={{ device_authorization_endpoint_path }}
 device.authorization.endpoint_use_ssl={{ device_authorization_endpoint_use_ssl }}
 device.authorization.endpoint_certificate={{ device_authorization_endpoint_certificate }}
 
+mobile.device.management.enabled={{ mobile_device_management_enabled }}
+mobile.device.management.proxies={{ mobile_device_management_proxies }}
+
 {# This section will be filled with all key-value pairs stored in the
  # license-info file inside the license file.  On first boot, it will be empty;
  # otherwise, it will contain a set of key-value pairs, including at least
