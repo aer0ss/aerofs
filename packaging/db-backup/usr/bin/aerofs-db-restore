@@ -90,6 +90,15 @@ mkdir -p /opt/ca/prod
 cp -a aerofs-db-backup/ca-files/* /opt/ca/prod
 service ca-server start 1>/dev/null 2>/dev/null
 
+# Only restore verkehr topics for backups that are new enough to contain
+# backed-up topic sets.
+echo ">>> Restoring verkehr persistent topics..."
+if [ -d aerofs-db-backup/topics ] ; then
+    rm -rf /data/topics
+    mkdir -p /data/topics
+    rsync -a aerofs-db-backup/topics/. /data/topics/.
+fi
+
 echo ">>> Restoring configuration properties..."
 cp -a aerofs-db-backup/external.properties /opt/config/properties
 

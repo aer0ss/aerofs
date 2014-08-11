@@ -22,6 +22,10 @@ cp -a /opt/ca/prod aerofs-db-backup/ca-files
 echo ">>> Backing up configuration properites..."
 cp -a /opt/config/properties/external.properties aerofs-db-backup/external.properties
 
+echo ">>> Backing up verkehr persistent topics..."
+mkdir -p aerofs-db-backup/topics
+rsync -a /data/topics/. aerofs-db-backup/topics/.
+
 echo ">>> Creating backup file..."
 tar cf aerofs-db-backup.tar aerofs-db-backup/*
 gzip aerofs-db-backup.tar
