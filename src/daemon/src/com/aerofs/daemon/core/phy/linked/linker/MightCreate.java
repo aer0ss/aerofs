@@ -170,7 +170,12 @@ public class MightCreate
 
         // FID<->SOID mapping cleared asynchronously for expelled objects
         if (sourceSOID != null) {
-            if (_ds.getOA_(sourceSOID).isExpelled()) {
+            // NB: if the object is in a store that is no longer locally present
+            // but in the process of being cleaned up, getOANullable_ will return
+            // null...
+            // see LogicalStagingArea and DirectoryServiceImpl#getOANullable_
+            OA oa = _ds.getOANullable_(sourceSOID);
+            if (oa == null || oa.isExpelled()) {
                 l.info("{} -> {} expelled", fnt._fid, sourceSOID);
                 _ds.unsetFID_(sourceSOID, t);
                 sourceSOID = null;

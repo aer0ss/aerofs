@@ -283,7 +283,9 @@ public class LinkedStorage implements IPhysicalStorage
             String absPath = _rh.getPhysicalPath_(path, PathType.SOURCE).physical;
             _sa.stageDeletion_(absPath, _tlUseHistory.get(t) ? path : Path.root(path.sid()), t);
         }
-        onDeletion_(newFolder_(path, PathType.SOURCE), op, t);
+        if (!path.isEmpty()) {
+            onDeletion_(newFolder_(path, PathType.SOURCE), op, t);
+        }
     }
 
     @Override
