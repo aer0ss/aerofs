@@ -46,7 +46,7 @@ public class EntityTagUtil
         if (oa != null) {
             md.update(oa.parent().getBytes());
             md.update(BaseUtil.string2utf(oa.name()));
-            CA ca = oa.isFile() ? oa.caMasterNullable() : null;
+            CA ca = oa.isFile() && !oa.isExpelled() ? oa.caMasterNullable() : null;
             if (ca != null) {
                 md.update(BaseUtil.toByteArray(ca.length()));
                 md.update(BaseUtil.toByteArray(ca.mtime()));

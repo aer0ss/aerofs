@@ -137,8 +137,7 @@ public class OA
      */
     @Nullable public final CA caNullable(KIndex kidx)
     {
-        checkArgument(!isExpelled());
-        return casNoExpulsionCheck().get(kidx);
+        return cas().get(kidx);
     }
 
     @Nonnull public final CA caThrows(KIndex kidx) throws ExNotFound
