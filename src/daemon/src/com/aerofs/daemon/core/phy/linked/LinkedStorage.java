@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.linked;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -195,16 +196,21 @@ public class LinkedStorage implements IPhysicalStorage
         // delete aux files other than revision files. no need to register for deletion rollback
         // since these files are not important.
         String prefix = LinkedPath.makeAuxFilePrefix(sidx);
-        String absAuxRoot = _lrm.auxRoot_(physicalRoot);
+        LinkerRoot plr = _lrm.get_(physicalRoot);
+        if (plr == null) {
+            l.warn("cannot del {}, phy root {} missing", sid, physicalRoot);
+            return;
+        }
+        String absAuxRoot = plr.absAuxRoot();
         deleteFiles_(absAuxRoot, AuxFolder.CONFLICT, prefix);
         deleteFiles_(absAuxRoot, AuxFolder.PREFIX, prefix);
 
         // Unlink external store/root.
-        LinkerRoot lr = _lrm.get_(sid);
-        if (lr != null) {
+        LinkerRoot slr = _lrm.get_(sid);
+        if (slr != null) {
             checkArgument(physicalRoot.equals(sid));
             _lrm.unlink_(sid, t);
-            l.info("Unlinked {} {}", sid, lr.absRootAnchor());
+            l.info("Unlinked {} {}", sid, slr.absRootAnchor());
         }
     }
 
@@ -281,12 +287,49 @@ public class LinkedStorage implements IPhysicalStorage
     {
         if (op == PhysicalOp.APPLY) {
             String absPath = _rh.getPhysicalPath_(path, PathType.SOURCE).physical;
+            if (path.isEmpty()) {
+                absPath = stagePhysicalRoot_(path.sid(), t);
+            }
             _sa.stageDeletion_(absPath, _tlUseHistory.get(t) ? path : Path.root(path.sid()), t);
         }
         if (!path.isEmpty()) {
             onDeletion_(newFolder_(path, PathType.SOURCE), op, t);
         }
     }
+
+    /**
+     * We cannot stage a physical root directly because the GUI would throw a fit if the folder
+     * goes missing before the conf db is updated and we can't update the conf db until the
+     * cleanup is finalized.
+     *
+     * Hence this contorted approach which creates a randomly-named directory in the staging area,
+     * moves all children of the physical root into that directory and stages the tmeporary dir.
+     */
+    private String stagePhysicalRoot_(SID sid, Trans t) throws IOException
+    {
+        LinkerRoot lr = _lrm.get_(sid);
+        lr.stageDeletion(t);
+
+        InjectableFile root = _factFile.create(lr.absRootAnchor());
+
+        String absStaging = Util.join(lr.absAuxRoot(), AuxFolder.STAGING_AREA._name,
+                UniqueID.generate().toStringFormal());
+        InjectableFile staging = _factFile.create(absStaging);
+        staging.mkdir();
+
+        l.info("staging phy root {} -> {}", root, staging);
+
+        String[] children = root.list();
+        if (children != null) {
+            for (String child : children) {
+                _factFile.create(root, child)
+                        .moveInSameFileSystem(_factFile.create(staging, child));
+            }
+        }
+
+        return staging.getAbsolutePath();
+    }
+
 
     @Override
     public void scrub_(SOID soid,  @Nonnull Path historyPath, Trans t)

@@ -67,6 +67,7 @@ public class CleanupScheduler
         public void handle_()
         {
             processAndRescheduleAsNeeded_();
+            checkState(_state != State.PROCESSING);
         }
     };
 
@@ -92,12 +93,17 @@ public class CleanupScheduler
     {
         checkState(_state == State.SCHEDULED);
         _state = State.PROCESSING;
+        l.debug("{} processing", _processor.name());
         try {
             boolean hasMore = _processor.process_();
             // reset backoff interval on success
             _delay = 0;
             // do not reschedule if the staging area is empty
-            if (!hasMore) return;
+            if (!hasMore) {
+                l.debug("{} done", _processor.name());
+                _state = State.IDLE;
+                return;
+            }
         } catch (Exception e) {
             SystemUtil.fatalOnUncheckedException(e);
             // exponential backoff
@@ -105,6 +111,7 @@ public class CleanupScheduler
                     Math.max(_delay * 2, LibParam.EXP_RETRY_MIN_DEFAULT));
             l.info("cleanup failed, retry in {}", _delay, BaseLogUtil.suppress(e));
         }
+        l.debug("{} resched in {}", _processor.name(), _delay);
         _state = State.SCHEDULED;
         _sched.schedule(_ev, _delay);
     }

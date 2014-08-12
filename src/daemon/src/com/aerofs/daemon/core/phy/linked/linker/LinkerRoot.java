@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.phy.linked.FileSystemProber;
 import com.aerofs.daemon.core.phy.linked.FileSystemProber.FileSystemProperty;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
@@ -147,8 +148,23 @@ public class LinkerRoot
         return "LinkerRoot(" + _sid + ", " + _absRootAnchor + ", " + _properties + ")";
     }
 
+    public void stageDeletion(Trans t)
+    {
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void committed_()
+            {
+                _removed = true;
+            }
+        });
+    }
+
     public void mightDelete_(String absPath)
     {
+        if (_removed) {
+            l.info("ignored MDN for unlinked root {}", absPath);
+            return;
+        }
         PathCombo pc = new PathCombo(_sid, _absRootAnchor, absPath);
         try {
             _f._md.mightDelete_(pc, _f._globalBuffer);
@@ -161,6 +177,10 @@ public class LinkerRoot
 
     public void mightCreate_(String absPath)
     {
+        if (_removed) {
+            l.info("ignored MCN for unlinked root {}", absPath);
+            return;
+        }
         PathCombo pc = new PathCombo(_sid, _absRootAnchor, absPath);
         try {
             MightCreate.Result res;

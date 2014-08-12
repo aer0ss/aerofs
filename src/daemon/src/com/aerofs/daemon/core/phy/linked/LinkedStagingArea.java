@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -170,6 +171,7 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
         } finally {
             tk.reclaim_();
         }
+        l.info("linked staging area empty");
         return false;
     }
 
@@ -218,9 +220,14 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
     {
         if (f.isFile()) {
             try {
-                _revProvider.newLocalRevFile(p, f.getAbsolutePath(), KIndex.MASTER).save_();
+                if (_il.isIgnored(f.getName())) {
+                    return f.deleteIgnoreError();
+                } else {
+                    _revProvider.newLocalRevFile(p, f.getAbsolutePath(), KIndex.MASTER).save_();
+                }
                 return true;
             } catch (IOException e) {
+                l.warn("could not move to rev {} {}", f, p, BaseLogUtil.suppress(e));
                 return false;
             }
         } else if (f.isDirectory()) {
