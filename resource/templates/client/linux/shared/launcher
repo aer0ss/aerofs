@@ -29,7 +29,6 @@ check_for_binary()
 }
 
 check_for_binary ps procps
-check_for_binary java default-jre
 
 # Architecture detection without dependencies beyond coreutils.
 # ELF files start out "\x7fELF", and the following byte is
@@ -58,18 +57,7 @@ mkdir -p "$HOME/.config/autostart/"
 rm -f "$HOME/.config/autostart/$PRODUCT.desktop"
 ln -s "$DIST/$PRODUCT.desktop" "$HOME/.config/autostart/"
 
-# Find java libraries and executables
-if [ -z "$JAVA_HOME" ]; then
-    JAVA_HOME="$(dirname $(dirname $(readlink -f $(which java))))"
-fi
-# Oracle ships two "java" executables in the JDK package - one in the jre/bin/
-# folder, and the other just in the bin/ folder.  This finds the jre even if
-# the JDK java binary is the first one on the user's PATH.
-if [ -d "$JAVA_HOME/jre" ]; then
-    JRE_BASE="$JAVA_HOME/jre"
-else
-    JRE_BASE="$JAVA_HOME"
-fi
+JRE_BASE="$DIST/jre"
 
 JAVA_CMD="$JRE_BASE/bin/java"
 JRE_LIB="$JRE_BASE/lib/$JRE_LIB_ARCH"
