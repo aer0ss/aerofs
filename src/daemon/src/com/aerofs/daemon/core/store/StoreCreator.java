@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.store;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -104,16 +105,36 @@ public class StoreCreator
         return sidx;
     }
 
+    public enum Conversion
+    {
+        NONE,
+        REMOTE_ANCHOR,
+        LOCAL_ANCHOR
+    }
+
     /**
-     * @return true if the remote object specified by {@code oidRemote} is an anchor which was
-     * converted from the local object specified by {@code oidLocal}
+     * @return the type of folder->anchor conversion detected, if any
      */
-    public boolean detectFolderToAnchorConversion_(OID oidLocal, OA.Type typeLocal, OID oidRemote,
+    public Conversion detectFolderToAnchorConversion_(OID oidLocal, OA.Type typeLocal, OID oidRemote,
             OA.Type typeRemote)
     {
-        if (!(typeRemote == OA.Type.ANCHOR && typeLocal == OA.Type.DIR)) return false;
-        SID sidRemote = SID.anchorOID2storeSID(oidRemote);
-        return SID.folderOID2convertedStoreSID(oidLocal).equals(sidRemote) ||
-                SID.folderOID2legacyConvertedStoreSID(oidLocal).equals(sidRemote);
+        OID oidAnchor, oidDir;
+        Conversion conversion;
+        if (typeRemote == Type.ANCHOR && typeLocal == Type.DIR)  {
+            oidAnchor = oidRemote;
+            oidDir =  oidLocal;
+            conversion = Conversion.REMOTE_ANCHOR;
+        } else if (typeRemote == Type.DIR &&  typeLocal == Type.ANCHOR) {
+            oidAnchor =  oidLocal;
+            oidDir = oidRemote;
+            conversion = Conversion.LOCAL_ANCHOR;
+        } else {
+            return Conversion.NONE;
+        }
+
+        SID sid = SID.anchorOID2storeSID(oidAnchor);
+        return SID.folderOID2convertedStoreSID(oidDir).equals(sid) ||
+                SID.folderOID2legacyConvertedStoreSID(oidDir).equals(sid)
+                ? conversion : Conversion.NONE;
     }
 }

@@ -38,6 +38,7 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
+import com.aerofs.daemon.core.store.StoreCreator.Conversion;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
@@ -599,29 +600,44 @@ public class ReceiveAndApplyUpdate
         l.info("name conflict on {}: local {} {} remote {} {}", pLocal, soidLocal.oid(),
                 oaLocal.type(), soidRemote.oid(), typeRemote);
 
-        if (_sc.detectFolderToAnchorConversion_(soidLocal.oid(), oaLocal.type(), soidRemote.oid(),
-                typeRemote)) {
-            // The local folder has been converted to an anchor of the same name.
-            // We don't want to generate a "depends-on" from the remote anchor
-            // to the local folder to avoid cyclic dependency: if the local
-            // folder has files to be migrated to the converted store, the
-            // migration of the local folder would depend on the download of the
-            // remote anchor. (See Migration.downloadEmigrantAncestorStores_()).
+        Conversion conversion = _sc.detectFolderToAnchorConversion_(soidLocal.oid(), oaLocal.type(),
+                soidRemote.oid(), typeRemote);
+
+        if (conversion != Conversion.NONE) {
+            // race conditions FTW
             //
-            // As a workaround, the code below renames the local folder without
-            // updating its version. Hopefully soon after the anchor is
-            // downloaded the remote version of this folder will overwrite the
-            // local renaming. If not, the folder name will become permanently
-            // inconsistent with other peers.
+            // It is possible to receive download the META for an anchor before
+            // receiving the META update (deletion) for the corresponding dir.
             //
-            l.info("folder->anchor conversion detected: {}->{}", soidLocal, soidRemote);
+            // It is also possible to receive META for the not-yet-deleted dir
+            // while the anchor is already there.
+            //
+            // In both cases we want to avoid spurious renames that the regular
+            // conflict resolution algorithm would cause. Ideally we'd just
+            // trigger local migration but that's more complicated that it sounds
+            // so for now we simply temporarily rename the directory to make
+            // room for the anchor.
+            //
+            // We make sure not to bump the version of the dir when doing this
+            // rename to reduce the likelihood of it spreading to other nodes
+            // and more importantly to prevent it from persisting (the deletion
+            // has a higher META version and will eventually reach all nodes).
+            l.info("folder->anchor conversion detected: {}{}{}", soidLocal,
+                    conversion == Conversion.REMOTE_ANCHOR ? "->" : "<-", soidRemote);
+
+            // TODO: avoid this ugly rename, perform local migration instead
             String newName = oaLocal.name() + " (being converted to shared folder - do not remove)";
 
             while (_ds.resolveNullable_(pParent.append(newName)) != null) {
                 newName = Util.nextFileName(newName);
             }
 
-            _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, t);
+            if (conversion == Conversion.REMOTE_ANCHOR) {
+                _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, t);
+            } else {
+                checkState(conversion == Conversion.LOCAL_ANCHOR);
+                meta = PBMeta.newBuilder(meta).setName(newName).build();
+            }
             applyMeta_(soidRemote, meta, parent, wasPresent, metaDiff, t, soidNoNewVersion,
                     vRemote, soidMsg, cr, cxt);
             return false;
