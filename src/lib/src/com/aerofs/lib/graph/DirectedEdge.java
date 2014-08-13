@@ -4,6 +4,8 @@
 
 package com.aerofs.lib.graph;
 
+import com.google.common.base.Objects;
+
 public class DirectedEdge<V extends Comparable<V>> implements Comparable<DirectedEdge<V>>
 {
     public final V _src;
@@ -29,6 +31,12 @@ public class DirectedEdge<V extends Comparable<V>> implements Comparable<Directe
         } else {
             return dst.compareTo(e.dst);
         }
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hashCode(_src, dst);
     }
 
     @Override

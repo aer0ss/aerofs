@@ -3,6 +3,7 @@
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../resource/server/lib/dyuproject-openid-1.1.jar!/" />
       <root url="jar://$PROJECT_DIR$/../../resource/server/lib/dyuproject-util-1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/server/lib/jetty-util-6.1.14.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

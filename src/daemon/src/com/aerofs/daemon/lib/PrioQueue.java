@@ -24,7 +24,7 @@ public class PrioQueue<T> implements IDumpStatMisc
         assert Prio.values().length == 2;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private final Queue<T>[] _qs = new Queue[Prio.values().length];
 
     private final int _cap;

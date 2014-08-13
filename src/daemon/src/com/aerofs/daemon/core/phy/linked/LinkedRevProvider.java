@@ -156,6 +156,12 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         }
 
         @Override
+        public int hashCode()
+        {
+            return hexEncoded().hashCode();
+        }
+
+        @Override
         public boolean equals(Object o)
         {
             return this == o || (o != null && o instanceof RevisionInfo

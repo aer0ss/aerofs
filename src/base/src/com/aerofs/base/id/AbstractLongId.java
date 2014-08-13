@@ -18,15 +18,14 @@ public abstract class AbstractLongId<T extends AbstractLongId<T>> implements Com
 
     public int compareTo(T o)
     {
-        return BaseUtil.compare(_id, o._id);
+        return BaseUtil.compare(_id, ((AbstractLongId)o)._id);
     }
 
     @Override
     public boolean equals(Object obj)
     {
         if (this == obj) return true;
-        if (!getClass().equals(obj.getClass())) return false;
-        return _id == getClass().cast(obj)._id;
+        return getClass().equals(obj.getClass()) && _id == ((AbstractLongId)obj)._id;
     }
 
     @Override
