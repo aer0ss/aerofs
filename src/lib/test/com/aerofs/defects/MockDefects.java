@@ -26,7 +26,6 @@ public class MockDefects
         when(factory.newDefectWithLogsNoCfg(anyString(), any(UserID.class), anyString()))
                 .thenReturn(defect);
         when(factory.newFrequentDefect(anyString())).thenReturn(defect);
-        when(factory.newDefect(anyString())).thenReturn(defect);
         when(factory.newUploadCoreDatabase()).thenReturn(defect);
 
         Defects.setFactory(factory);
