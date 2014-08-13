@@ -28,7 +28,6 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Diagnostics.ChannelState;
 import com.aerofs.proto.Diagnostics.ZephyrChannel;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeRenegotiation;
@@ -65,6 +64,7 @@ import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.getZephyrClient;
+import static com.aerofs.defects.Defects.newDefect;
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -87,7 +87,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
     private static Logger l = Loggers.getLogger(ZephyrConnectionService.class);
 
-    private final RockLog rockLog;
     private final LinkStateService linkStateService;
     private final ISignallingService signallingService;
     private final IUnicastListener unicastListener;
@@ -116,7 +115,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
             ChannelTeardownHandler channelTeardownHandler,
             TransportStats transportStats,
             Timer timer,
-            RockLog rockLog,
             ChannelFactory channelFactory,
             InetSocketAddress zephyrAddress,
             Proxy proxy,
@@ -136,14 +134,11 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                         this,
                         unicastListener,
                         timer,
-                        rockLog,
                         proxy,
                         hearbeatInterval,
                         maxFailedHeartbeats,
                         zephyrHandshakeTimeout,
                         roundTripTimes));
-
-        this.rockLog = rockLog;
 
         this.linkStateService = linkStateService;
         this.signallingService = signallingService;
@@ -415,7 +410,8 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
                     // 2. immediately start negotiating the next connection
                     // doing this allows us to avoid an expensive handshake timeout
                     // on the remote peer and multiple additional roundtrips
-                    rockLog.newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION).send();
+                    newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION)
+                            .sendAsync();
                     disconnect(did, new IllegalStateException("attempted renegotiation of zephyr channel to " + did, e));
                     consumeHandshake(did, handshake);
                 }

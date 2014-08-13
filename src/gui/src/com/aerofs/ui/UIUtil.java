@@ -26,7 +26,6 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.launch_tasks.ULTRtrootMigration;
@@ -49,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class UIUtil
@@ -210,7 +210,10 @@ public class UIUtil
         try {
             task.run();
         } catch (ExFailedToMigrate e) {
-            SVClient.logSendDefectSyncIgnoreErrors(true, "Failed to migrate rtroot.", e);
+            newDefectWithLogs("rtroot_migration")
+                    .setMessage("failed to migrate rtroot")
+                    .setException(e)
+                    .sendSyncIgnoreErrors();
 
             // Since ErrorMessages doesn't support messages that depends on additional
             // information in the exception instance, default message is used.
@@ -224,8 +227,10 @@ public class UIUtil
             System.exit(0);
         } catch (ExFailedToReloadCfg e) {
             // this is similar to the message on Main.main() when Cfg fails to load
-            SVClient.logSendDefectSyncIgnoreErrors(true,
-                    "Failed to reload Cfg after rtroot migration.", e);
+            newDefectWithLogs("rtroot_migration.reload_cfg")
+                    .setMessage("failed to reload cfg after rtroot migration")
+                    .setException(e)
+                    .sendSyncIgnoreErrors();
 
             String message = L.product() + " is unable to launch.";
             ErrorMessages.show(e, message);

@@ -6,15 +6,15 @@ package com.aerofs.daemon.core.health_check;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.sv.client.SVClient;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
+
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 
 final class CoreProgressWatcher implements Runnable
 {
@@ -55,8 +55,9 @@ final class CoreProgressWatcher implements Runnable
                 Util.logAllThreadStackTraces();
             }
 
-            SVClient.logSendDefectSyncIgnoreErrors(true, "stuck daemon",
-                    new ExTimeout("stuck daemon"));
+            newDefectWithLogs("core.progress")
+                    .setMessage("stuck daemon")
+                    .sendSyncIgnoreErrors();
             SystemUtil.fatal("stuck daemon");
         }
 

@@ -1,15 +1,13 @@
 /*
- * Copyright (c) Air Computing Inc., 2013.
+ * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.lib.ex;
+package com.aerofs.defects;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.ProgramInformation;
-import com.aerofs.lib.cfg.Cfg;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 
@@ -24,17 +22,9 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.aerofs.lib.Util.join;
-import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.aerofs.lib.FileUtil.createNewFile;
 
-/**
- * Singleton class to manage recent exceptions
- * We use this to avoid sending the same defects multiple times
- *
- * Note: this class will be used by both the daemon and the gui process to write to the same file.
- * There are potentially some concurrency issues
- */
-public class RecentExceptions
+class RecentExceptions
 {
     private static final Logger l = Loggers.getLogger(RecentExceptions.class);
 
@@ -43,45 +33,31 @@ public class RecentExceptions
     private static final int RECENT_EXCEPTIONS_COUNT = 10;
 
     // An exception seen in a shorter period of time than this interval will be considered recent:
-    private static final long DEFAULT_INTERVAL = 6 * C.HOUR;
+    public static final long DEFAULT_INTERVAL = 6 * C.HOUR;
 
-    private static RecentExceptions _instance;
     private final long _interval;
     private final File _rexFile;
     private final Map<String, Long> _exceptions = Maps.newHashMap(); // protected by 'this'
 
-    public static RecentExceptions getInstance()
+    public RecentExceptions(String programName, String rtroot, long interval)
     {
-        if (_instance == null) {
-            // if we don't have a RT root yet, save the recent exceptions to the temp dir.
-            String rtRoot = Cfg.absRTRoot();
-            if (isNullOrEmpty(rtRoot)) rtRoot = System.getProperty("java.io.tmpdir");
-            _instance = new RecentExceptions(rtRoot, DEFAULT_INTERVAL);
-        }
-        return _instance;
+        _rexFile = new File(rtroot, programName + "-" + LibParam.RECENT_EXCEPTIONS);
+        _interval = interval;
+
+        loadFromFiles();
     }
 
-    /**
-     * For testing only
-     * DO NOT CALL THIS FROM PRODUCTION CODE. USE THE SINGLETON INSTANCE.
-     */
-    protected RecentExceptions(String rtRoot, long interval)
+    private void loadFromFiles()
     {
-        _interval = interval;
-        _rexFile = new File(join(rtRoot, getRexFilename()));
         try {
-            if (!_rexFile.exists()) _rexFile.createNewFile();
+            if (!_rexFile.exists()) {
+                createNewFile(_rexFile);
+            }
+
             _exceptions.putAll(read(_rexFile));
         } catch (Throwable e) {
             l.warn("reading rex file failed: ", e);
         }
-    }
-
-    private String getRexFilename()
-    {
-        String programName = (ProgramInformation.get() != null)
-                ? ProgramInformation.get().getProgramName() : "unknown-program";
-        return programName +  "-" + LibParam.RECENT_EXCEPTIONS;
     }
 
     /**

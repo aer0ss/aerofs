@@ -34,7 +34,6 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -52,6 +51,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
+import static com.aerofs.defects.Defects.newDefect;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -93,8 +93,6 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
     private final IOSUtil _osutil;
     private final InjectableDriver _dr;
 
-    private final RockLog _rl;
-
     private static class Counters
     {
         int nfc;
@@ -105,12 +103,11 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
     }
 
 
-    public DPUTFixNormalizationOSX(IOSUtil osutil, CoreDBCW dbcw, InjectableDriver dr, RockLog rocklog)
+    public DPUTFixNormalizationOSX(IOSUtil osutil, CoreDBCW dbcw, InjectableDriver dr)
     {
         _osutil = osutil;
         _dbcw = dbcw.get();
         _dr =  dr;
-        _rl = rocklog;
         _mdb = new MetaDatabase(dbcw);
         _sdb = new StoreDatabase(dbcw);
         _siddb = new SIDDatabase(dbcw);
@@ -128,9 +125,9 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
                         && Cfg.storageType() == StorageType.LINKED) {
                     Counters c = new Counters();
                     renormalize(s, c);
-                    _rl.newDefect("dput.osx.renormalize")
+                    newDefect("dput.osx.renormalize")
                             .addData("counters", c)
-                            .send();
+                            .sendAsync();
                 }
             }
         });

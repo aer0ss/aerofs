@@ -28,8 +28,6 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.rocklog.Defect;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.util.concurrent.SettableFuture;
 import org.junit.Before;
@@ -46,8 +44,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -63,11 +59,7 @@ public class TestHashQueue extends AbstractTest
     @Mock VersionUpdater vu;
     @Mock NativeVersionControl nvc;
     @Mock TransManager tm;
-    @Mock RockLog rl;
-
     @Mock Trans t;
-    @Mock Defect d;
-
     @InjectMocks HashQueue hq;
 
     final static ContentHash EMPTY_HASH = new ContentHash(SecUtil.hash(new byte [0]));
@@ -85,9 +77,6 @@ public class TestHashQueue extends AbstractTest
         mds.root().file(soid, "foo", 1);
 
         when(tm.begin_()).thenReturn(t);
-
-        when(rl.newDefect(anyString())).thenReturn(d);
-        when(d.addData(anyString(), anyObject())).thenReturn(d);
     }
 
     private InjectableFile mockContent(final byte[] c, long mtime) throws Exception
@@ -135,7 +124,7 @@ public class TestHashQueue extends AbstractTest
 
         ev.get().handle_();
 
-        verify(d).send();
+        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), eq(t));
         verifyZeroInteractions(vu);
     }
@@ -153,7 +142,7 @@ public class TestHashQueue extends AbstractTest
 
         ev.get().handle_();
 
-        verify(d).send();
+        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), eq(t));
         verify(vu).update_(new SOCKID(sokid, CID.CONTENT), t);
     }
@@ -174,7 +163,7 @@ public class TestHashQueue extends AbstractTest
 
         ev.get().handle_();
 
-        verify(d).send();
+        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), eq(t));
         verify(vu).update_(new SOCKID(sokid, CID.CONTENT), t);
     }
@@ -199,13 +188,13 @@ public class TestHashQueue extends AbstractTest
 
         evAborted.get().handle_();
 
-        verifyZeroInteractions(d);
+        verifyZeroInteractions(_defect);
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
         verifyZeroInteractions(vu);
 
         ev.get().handle_();
 
-        verify(d).send();
+        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), eq(t));
         verify(vu).update_(new SOCKID(sokid, CID.CONTENT), t);
     }
@@ -229,13 +218,13 @@ public class TestHashQueue extends AbstractTest
 
         evAborted.get().handle_();
 
-        verifyZeroInteractions(d);
+        verifyZeroInteractions(_defect);
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
         verifyZeroInteractions(vu);
 
         ev.get().handle_();
 
-        verify(d).send();
+        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(43L), eq(EMPTY_HASH), eq(t));
         verify(vu).update_(new SOCKID(sokid, CID.CONTENT), t);
     }
@@ -253,7 +242,7 @@ public class TestHashQueue extends AbstractTest
         when(f.getLength()).thenReturn(0xdeadL);
         ev.get().handle_();
 
-        verifyZeroInteractions(d);
+        verifyZeroInteractions(_defect);
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
         verifyZeroInteractions(vu);
     }
@@ -271,7 +260,7 @@ public class TestHashQueue extends AbstractTest
         when(f.lastModified()).thenReturn(43L);
         ev.get().handle_();
 
-        verifyZeroInteractions(d);
+        verifyZeroInteractions(_defect);
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
         verifyZeroInteractions(vu);
     }
@@ -290,7 +279,7 @@ public class TestHashQueue extends AbstractTest
                 Version.of(DID.generate(), new Tick(1L)), t);
         ev.get().handle_();
 
-        verifyZeroInteractions(d);
+        verifyZeroInteractions(_defect);
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
         verifyZeroInteractions(vu);
     }

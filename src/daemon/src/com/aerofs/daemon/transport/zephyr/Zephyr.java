@@ -35,7 +35,6 @@ import com.aerofs.proto.Diagnostics.ServerStatus;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
 import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Sets;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
@@ -94,7 +93,6 @@ public final class Zephyr implements ITransport
             ClientSocketChannelFactory clientSocketChannelFactory,
             final @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
             Timer timer,
-            RockLog rockLog,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
             long xmppServerConnectionLinkStateChangePingInterval,
@@ -132,10 +130,10 @@ public final class Zephyr implements ITransport
                 numPingsBeforeDisconnectingXmppServerConnection,
                 xmppServerConnectionInitialReconnectInterval,
                 xmppServerConnectionMaxReconnectInterval,
-                rockLog,
                 linkStateService);
 
-        this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
+        this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver,
+                xmppConnectionService, this, outgoingEventSink);
         PresenceService presenceService = new PresenceService();
 
 
@@ -159,7 +157,6 @@ public final class Zephyr implements ITransport
                 channelTeardownHandler,
                 transportStats,
                 timer,
-                rockLog,
                 clientSocketChannelFactory,
                 this.zephyrAddress,
                 proxy,

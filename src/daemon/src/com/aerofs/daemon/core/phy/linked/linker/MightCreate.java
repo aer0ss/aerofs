@@ -8,6 +8,7 @@ import java.util.Set;
 
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.*;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
+import static com.aerofs.defects.Defects.newDefect;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.aerofs.base.Loggers;
@@ -20,7 +21,6 @@ import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.lib.os.IOSUtil;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
@@ -68,12 +68,11 @@ public class MightCreate
     private final ILinkerFilter _filter;
     private final RepresentabilityHelper _rh;
     private final IOSUtil _osutil;
-    private final RockLog _rocklog;
 
     @Inject
     public MightCreate(IgnoreList ignoreList, DirectoryService ds, InjectableDriver driver,
             SharedFolderTagFileAndIcon sfti, MightCreateOperations mcop, LinkerRootMap lrm,
-            ILinkerFilter filter, RepresentabilityHelper rh, IOSUtil osutil, RockLog rocklog)
+            ILinkerFilter filter, RepresentabilityHelper rh, IOSUtil osutil)
     {
         _il = ignoreList;
         _ds = ds;
@@ -84,7 +83,6 @@ public class MightCreate
         _filter = filter;
         _rh = rh;
         _osutil = osutil;
-        _rocklog = rocklog;
     }
 
     public static enum Result {
@@ -127,9 +125,9 @@ public class MightCreate
 
         if (_osutil.isInvalidFileName(pcPhysical._path.last())) {
             l.error("inconsistent encoding validity: {}", pcPhysical._path.last());
-            _rocklog.newDefect("mc.invalid")
+            newDefect("mc.invalid")
                     .addData("path", pcPhysical._path.last())
-                    .send();
+                    .sendAsync();
             return Result.IGNORED;
         }
 
@@ -140,17 +138,17 @@ public class MightCreate
         } catch (ExFileNoPerm e) {
             // TODO: report to UI
             l.warn("no perm {}", pcPhysical);
-            _rocklog.newDefect("mc.fid.noperm")
-                    .send();
+            newDefect("mc.fid.noperm")
+                    .sendAsync();
         } catch (ExFileNotFound e) {
             l.warn("not found {}", pcPhysical);
-            _rocklog.newDefect("mc.fid.notfound")
-                    .send();
+            newDefect("mc.fid.notfound")
+                    .sendAsync();
         } catch (Exception e) {
             l.warn("could not determine fid {}", pcPhysical);
-            _rocklog.newDefect("mc.fid.exception")
+            newDefect("mc.fid.exception")
                     .setException(e)
-                    .send();
+                    .sendAsync();
         }
 
         // ignore files for which we cannot get an FID

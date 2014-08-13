@@ -15,7 +15,6 @@ import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableSet;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
@@ -44,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_XSC_CONNECTION_EXISTED_ON_LINK_DOWN_TO_UP_LSC;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
+import static com.aerofs.defects.Defects.newDefect;
 import static com.aerofs.lib.Util.exponentialRetryNewThread;
 import static com.google.common.collect.Maps.newConcurrentMap;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -91,7 +91,6 @@ public final class XMPPConnectionService implements ILinkStateListener
     private volatile XMPPConnection connection = null; // protect via this (volatile so that connection() can work properly)
     private boolean linkUp = false;
 
-    private final RockLog rocklog;
     private final DID localdid;
     private final InetSocketAddress xmppServerAddress;
     private final String xmppUser;
@@ -121,7 +120,6 @@ public final class XMPPConnectionService implements ILinkStateListener
             int maxPingsBeforeDisconnection,
             long initialConnectRetryInterval,
             long maxConnectRetryInterval,
-            RockLog rocklog,
             LinkStateService linkStateService)
     {
         this.localdid = localdid;
@@ -135,7 +133,6 @@ public final class XMPPConnectionService implements ILinkStateListener
         this.maxPingsBeforeDisconnection = maxPingsBeforeDisconnection;
         this.initialConnectRetryInterval = initialConnectRetryInterval;
         this.maxConnectRetryInterval = maxConnectRetryInterval;
-        this.rocklog = rocklog;
         this.timer = new Timer(transportId + "-pt", true);
 
         linkStateService.addListener(this, sameThreadExecutor()); // our implementation of onLinkStateChanged is thread-safe
@@ -256,7 +253,8 @@ public final class XMPPConnectionService implements ILinkStateListener
         } else if (!wasUp && linkUp) {
             if (connected) {
                 l.warn("unexpected connection on lsc transition");
-                rocklog.newDefect(DEFECT_NAME_XSC_CONNECTION_EXISTED_ON_LINK_DOWN_TO_UP_LSC).send();
+                newDefect(DEFECT_NAME_XSC_CONNECTION_EXISTED_ON_LINK_DOWN_TO_UP_LSC)
+                        .sendAsync();
                 safeDisconnect(connectionToCheck);
             }
             connect(false);
@@ -575,7 +573,8 @@ public final class XMPPConnectionService implements ILinkStateListener
                         }
                     } else {
                         l.warn("connection previously replaced");
-                        rocklog.newDefect(DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED).send();
+                        newDefect(DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED)
+                                .sendAsync();
                     }
                 }
 

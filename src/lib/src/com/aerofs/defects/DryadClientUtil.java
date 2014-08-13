@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.ui.defect;
+package com.aerofs.defects;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
@@ -17,9 +17,9 @@ import com.aerofs.lib.AppRoot;
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.security.GeneralSecurityException;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static java.lang.String.format;
 
 /**
@@ -32,14 +32,30 @@ public class DryadClientUtil
         // prevents instantiation
     }
 
-    public static SSLContext createPublicDryadSSLContext()
+    public static DryadClient createPublicDryadClient()
+            throws IOException, GeneralSecurityException
+    {
+        return new DryadClient(
+                getStringProperty("lib.dryad.url", "https://dryad.aerofs.com"),
+                createPublicDryadSSLContext());
+    }
+
+    public static DryadClient createPrivateDryadClient(String hostname, int port, String certData)
+            throws IOException, GeneralSecurityException
+    {
+        return new DryadClient(
+                "https://" + hostname + ":" + port,
+                createPrivateDryadSSLContext(certData));
+    }
+
+    private static SSLContext createPublicDryadSSLContext()
             throws IOException, GeneralSecurityException
     {
         return createSSLContext(new FileBasedCertificateProvider(
                 new File(AppRoot.abs(), "aerofs_public_cacert.pem").getAbsolutePath()));
     }
 
-    public static SSLContext createPrivateDryadSSLContext(String certData)
+    private static SSLContext createPrivateDryadSSLContext(String certData)
             throws IOException, GeneralSecurityException
     {
         return createSSLContext(new StringBasedCertificateProvider(certData));
@@ -53,7 +69,6 @@ public class DryadClientUtil
     }
 
     public static String createDefectLogsResource(String defectID, UserID userID, DID deviceID)
-            throws MalformedURLException
     {
         return format("/v1.0/defects/%s/client/%s/%s",
                 defectID, userID.getString(), deviceID.toStringFormal());

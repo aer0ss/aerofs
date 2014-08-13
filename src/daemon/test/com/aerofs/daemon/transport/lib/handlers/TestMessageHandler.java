@@ -10,8 +10,6 @@ import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
-import com.aerofs.rocklog.Defect;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.hamcrest.Matchers;
@@ -53,7 +51,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -78,9 +75,7 @@ public final class TestMessageHandler
     private final ChannelStateEvent openEvent = new UpstreamChannelStateEvent(channel, ChannelState.OPEN, Boolean.TRUE);
     private final ChannelStateEvent connectedEvent = new UpstreamChannelStateEvent(channel, ChannelState.CONNECTED, remoteAddress);
     private final ExceptionEvent exceptionEvent = new DefaultExceptionEvent(channel, new IOException("power switch off"));
-    private final RockLog rockLog = mock(RockLog.class);
-    private final Defect defect = mock(Defect.class);
-    private final MessageHandler handler = new MessageHandler(rockLog); // SUT
+    private final MessageHandler handler = new MessageHandler(); // SUT
 
     @Rule
     public final ExpectedException expectedException = ExpectedException.none();
@@ -93,11 +88,6 @@ public final class TestMessageHandler
         when(ctx.getPipeline()).thenReturn(pipeline);
         when(channel.getCloseFuture()).thenReturn(closeFuture);
         when(pipeline.getLast()).thenReturn(mock(ChannelHandler.class));
-
-        when(rockLog.newDefect(anyString())).thenReturn(defect);
-        when(defect.setMessage(anyString())).thenReturn(defect);
-        when(defect.setException(any(Throwable.class))).thenReturn(defect);
-        when(defect.addData(anyString(), anyString())).thenReturn(defect);
 
         handler.channelOpen(ctx, openEvent);
     }

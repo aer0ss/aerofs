@@ -22,7 +22,6 @@ import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.hidden.CmdDstat;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.defect.PriorityDefectReporter;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -142,7 +141,7 @@ public class ShProgram implements IProgram, ICallback
         _runner.addCommand_(new CmdDstat());
         _runner.addCommand_(new CmdSeed());
 
-        _runner.addCommand_(new CmdDefect(new PriorityDefectReporter(_ritualProvider)));
+        _runner.addCommand_(new CmdDefect(_ritualProvider));
     }
 
     // return the abolute path. path can be null to represent pwd

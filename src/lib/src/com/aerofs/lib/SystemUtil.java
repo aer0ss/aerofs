@@ -5,10 +5,9 @@
 package com.aerofs.lib;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.defects.Defects;
 import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.ex.ExFatal;
-import com.aerofs.rocklog.RockLog;
-import com.aerofs.sv.client.SVClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +15,9 @@ import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 
 public abstract class SystemUtil
 {
@@ -146,13 +148,16 @@ public abstract class SystemUtil
 
         if (fatalCause instanceof ExDBCorrupted) {
             ExDBCorrupted corrupted = (ExDBCorrupted) fatalCause;
-            new RockLog().newDefect("sqlite.corrupt")
+            Defects.newDefect("sqlite.corrupt")
                     .setMessage(corrupted._integrityCheckResult)
-                    .send();
+                    .sendAsync();
             l.error(corrupted._integrityCheckResult);
             ExitCode.CORRUPTED_DB.exit();
         } else {
-            SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, "FATAL:", e);
+            newDefect("system.fatal")
+                    .setMessage("FATAL:")
+                    .setException(e)
+                    .sendSyncIgnoreErrors();
             ExitCode.FATAL_ERROR.exit();
         }
 
@@ -268,8 +273,11 @@ public abstract class SystemUtil
                     @Override
                     public void uncaughtException(Thread t, Throwable e)
                     {
-                        SVClient.logSendDefectSyncIgnoreErrors(true, "uncaught exception from "
-                                + t.getName() + ". program exits now.", e);
+                        newDefectWithLogs("system.uncaught_exception")
+                                .setMessage("uncaught exception from " +
+                                        t.getName() + " . program exists now.")
+                                .setException(e)
+                                .sendSyncIgnoreErrors();
                         // must abort the process as the abnormal thread can no longer run properly
                         fatal(e);
                     }

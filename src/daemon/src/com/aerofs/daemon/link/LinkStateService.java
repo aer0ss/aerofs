@@ -9,7 +9,6 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
-import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -22,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 import static com.google.common.collect.ImmutableSet.copyOf;
 
@@ -152,7 +152,10 @@ public class LinkStateService
             l.debug("check link state");
             notifyLinkStateChange(getActiveInterfaces());
         } catch (SocketException e) {
-            SVClient.logSendDefectAsync(true, "can't check link state", e);
+            newDefectWithLogs("link_state_service.check_link_state")
+                    .setMessage("can't check link state")
+                    .setException(e)
+                    .sendAsync();
         }
     }
 

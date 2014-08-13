@@ -45,7 +45,6 @@ import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -183,7 +182,7 @@ public class TestLinkedStorage extends AbstractTest
                 mock(IOSUtil.class), mock(InjectableDriver.class), rh, stores, sidx2sid,
                 cfgAbsRoots, cfgStoragePolicy, il, null, mock(LinkedStagingArea.class),
                 new LinkedRevProvider(lrm, factFile, new LinkedRevProvider.TimeSource()),
-                mock(RockLog.class), mock(CoreScheduler.class));
+                mock(CoreScheduler.class));
 
         tm = new TransManager(new Trans.Factory(dbcw));
 

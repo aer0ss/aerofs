@@ -18,7 +18,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;

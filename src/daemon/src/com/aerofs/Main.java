@@ -2,6 +2,7 @@ package com.aerofs;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.IProgram;
@@ -21,7 +22,6 @@ import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
 import com.google.common.io.Files;
 import org.slf4j.Logger;
 
@@ -181,8 +181,7 @@ public class Main
                 temp[temp.length - 1] = "-E" + msg;
                 appArgs = temp;
             } else {
-                System.out.println("failed in main(): " + Util.e(e));
-                SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
+                System.err.println("failed in main(): " + Util.e(e));
                 ExitCode.CONFIGURATION_INIT.exit();
             }
         }
@@ -193,17 +192,27 @@ public class Main
         ProgramInformation.init_(prog);
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
+        // The defects system is useful for GUI, Shell, CLI, and Daemon.
+        // why do we need this for all other programs? I have no clues.
+        try {
+            Defects.init(prog, rtRoot, PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT);
+        } catch (Exception e) {
+            String message = "Failed to initialize the defects system: " + e.toString();
+            System.err.println(message);
+            l.error(message, e);
+            ExitCode.FAIL_TO_LAUNCH.exit();
+        }
+
         try {
             loadCfg(rtRoot, prog);
             Util.registerLibExceptions();
             launchProgram(rtRoot, prog, appArgs);
         } catch (ExDBCorrupted e) {
             // this is similar to the message on UiUtil.migrateRtRoot() when Cfg fails to load
-            System.out.println("db corrupted: " + e._integrityCheckResult);
+            System.err.println("db corrupted: " + e._integrityCheckResult);
             ExitCode.CORRUPTED_DB.exit();
         } catch (Throwable e) {
-            System.out.println("failed in main(): " + Util.e(e)); // l.error does not work here.
-            SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
+            System.err.println("failed in main(): " + Util.e(e)); // l.error does not work here.
             ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }

@@ -4,7 +4,6 @@
 
 package com.aerofs.base.ex;
 
-import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 

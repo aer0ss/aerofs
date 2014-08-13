@@ -28,7 +28,6 @@ import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -47,6 +46,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.aerofs.daemon.core.notification.Notifications.newRootsChangedNotification;
+import static com.aerofs.defects.Defects.newDefect;
 
 /**
  * Maintain a mapping of SID to {@code LinkerRoot}
@@ -62,7 +62,6 @@ public class LinkerRootMap
     private final RitualNotificationServer _rns;
     private final SharedFolderTagFileAndIcon _sfti;
     private final CfgAbsRTRoot _rtRoot;
-    private final RockLog _rl;
 
     private LinkerRoot.Factory _factLR;
     private final Map<SID, LinkerRoot> _map = Maps.newHashMap();
@@ -85,7 +84,7 @@ public class LinkerRootMap
     @Inject
     public LinkerRootMap(IOSUtil os, InjectableFile.Factory factFile, CfgAbsRoots cfgAbsRoots,
             SharedFolderTagFileAndIcon sfti, UnlinkedRootDatabase urdb, RitualNotificationServer rns,
-            CfgAbsRTRoot rtRoot, RockLog rl)
+            CfgAbsRTRoot rtRoot)
     {
         _os = os;
         _factFile = factFile;
@@ -94,7 +93,6 @@ public class LinkerRootMap
         _cfgAbsRoots = cfgAbsRoots;
         _rns = rns;
         _rtRoot = rtRoot;
-        _rl = rl;
     }
 
     // work around circular dep using explicit injection of the factory
@@ -119,10 +117,10 @@ public class LinkerRootMap
         l.info("encoding {} {}", cs, System.getProperty("file.encoding"));
         // TODO: be extra strict and abort if the default charset is not UTF-8?
         if (!cs.equals(BaseUtil.CHARSET_UTF)) {
-            _rl.newDefect("charset")
+            newDefect("charset")
                     .addData("default", cs)
                     .addData("file", System.getProperty("file.encoding"))
-                    .send();
+                    .sendAsync();
         }
 
         Map<SID, String> roots;

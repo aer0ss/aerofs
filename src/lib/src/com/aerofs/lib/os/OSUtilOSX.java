@@ -22,10 +22,11 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.inject.Inject;
+
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 
 public class OSUtilOSX extends AbstractOSUtilLinuxOSX
 {
@@ -380,7 +381,9 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         InjectableFile result = factFile.create(AppRoot.abs());
         result = result.newChild("icons").newChild(icon.name + ".icns");
         if (!result.exists()) {
-            SVClient.logSendDefectAsync(true, "icon not found: " + result.getAbsolutePath());
+            newDefectWithLogs("gui.icon_path.osx")
+                    .setMessage("icon not found: " + result.getAbsolutePath())
+                    .sendAsync();
         }
         return result.getAbsolutePath();
     }

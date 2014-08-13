@@ -13,7 +13,6 @@ import com.aerofs.ritual.RitualClient;
 import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.ui.IDaemonMonitor.Factory;
 import com.aerofs.ui.update.Updater;
 
@@ -72,7 +71,6 @@ public final class UIGlobals
     private static final SanityPoller s_rap = new SanityPoller();
     private static final UIScheduler s_sched = new UIScheduler();
     private static final Analytics s_analytics = new Analytics(new DesktopAnalyticsProperties());
-    private static final RockLog s_rockLog = new RockLog();
 
     private static Factory _idm;
 
@@ -111,6 +109,4 @@ public final class UIGlobals
     public static RitualClient ritualNonBlocking() { return s_ritualProvider.getNonBlockingClient(); }
 
     public static Analytics analytics() { return s_analytics; }
-
-    public static RockLog rockLog() { return s_rockLog; }
 }

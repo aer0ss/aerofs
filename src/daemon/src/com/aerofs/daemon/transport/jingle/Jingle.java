@@ -37,7 +37,6 @@ import com.aerofs.proto.Diagnostics.JingleDevice;
 import com.aerofs.proto.Diagnostics.JingleDiagnostics;
 import com.aerofs.proto.Diagnostics.ServerStatus;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
-import com.aerofs.rocklog.RockLog;
 import com.google.protobuf.Message;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -96,7 +95,6 @@ public class Jingle implements ITransport
             IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
             LinkStateService linkStateService,
             MaxcastFilterReceiver maxcastFilterReceiver,
-            RockLog rockLog,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IRoundTripTimes roundTripTimes)
@@ -125,7 +123,6 @@ public class Jingle implements ITransport
                 numPingsBeforeDisconnectingXmppServerConnection,
                 xmppServerConnectionInitialReconnectInterval,
                 xmppServerConnectionMaxReconnectInterval,
-                rockLog,
                 linkStateService);
 
         this.signalThread = new SignalThread(id, localjid, xmppConnectionService.getXmppPassword(), stunServerAddress, xmppServerAddress, absRtRoot, enableJingleLibraryLogging);
@@ -151,7 +148,6 @@ public class Jingle implements ITransport
                 clientSslEngineFactory,
                 serverSslEngineFactory,
                 presenceService,
-                rockLog,
                 unicast,
                 protocolHandler,
                 transportStats,
@@ -173,7 +169,8 @@ public class Jingle implements ITransport
         presenceService.addListener(monitor);
 
         // multicast
-        this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver, xmppConnectionService, this, this.outgoingEventSink);
+        this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver,
+                xmppConnectionService, this, this.outgoingEventSink);
         setupMulticastHandler(dispatcher, multicast);
 
         // Warning: it is very important that XMPPPresenceProcessor listens to the XMPPConnectionService _before_

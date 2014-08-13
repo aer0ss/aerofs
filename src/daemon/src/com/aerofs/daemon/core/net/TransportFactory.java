@@ -18,7 +18,6 @@ import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.xray.XRay;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
@@ -90,7 +89,6 @@ public final class TransportFactory
     private final Timer timer;
     private final BlockingPrioQueue<IEvent> transportEventSink;
     private final @Nullable MobileServerZephyrConnector mobileServerZephyrConnector;
-    private final RockLog rockLog;
     private final LinkStateService linkStateService;
     private final ServerSocketChannelFactory serverSocketChannelFactory;
     private final ClientSocketChannelFactory clientSocketChannelFactory;
@@ -123,7 +121,6 @@ public final class TransportFactory
             Proxy proxy,
             Timer timer,
             BlockingPrioQueue<IEvent> transportEventSink,
-            RockLog rockLog,
             LinkStateService linkStateService,
             MaxcastFilterReceiver maxcastFilterReceiver,
             @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
@@ -156,7 +153,6 @@ public final class TransportFactory
         this.proxy = proxy;
         this.timer = timer;
         this.transportEventSink = transportEventSink;
-        this.rockLog = rockLog;
         this.linkStateService = linkStateService;
         this.maxcastFilterReceiver = maxcastFilterReceiver;
         this.clientSocketChannelFactory = clientSocketChannelFactory;
@@ -207,7 +203,6 @@ public final class TransportFactory
                 clientSslEngineFactory,
                 serverSslEngineFactory,
                 timer,
-                rockLog,
                 clientSocketChannelFactory,
                 serverSocketChannelFactory,
                 roundTripTimes);
@@ -229,7 +224,6 @@ public final class TransportFactory
                 clientSocketChannelFactory,
                 mobileServerZephyrConnector,
                 timer,
-                rockLog,
                 xmppServerAddress,
                 xmppServerDomain,
                 xmppServerConnectionLinkStateChangePingInterval,
@@ -259,7 +253,6 @@ public final class TransportFactory
                 serverSslEngineFactory,
                 clientSocketChannelFactory,
                 timer,
-                rockLog,
                 xmppServerAddress,
                 xmppServerDomain,
                 xmppServerConnectionLinkStateChangePingInterval,
@@ -298,7 +291,6 @@ public final class TransportFactory
                 transportEventSink,
                 linkStateService,
                 maxcastFilterReceiver,
-                rockLog,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
                 roundTripTimes);

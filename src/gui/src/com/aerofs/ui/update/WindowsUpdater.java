@@ -7,9 +7,10 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
+
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 
 class WindowsUpdater extends Updater
 {
@@ -24,7 +25,9 @@ class WindowsUpdater extends Updater
         l.info("update to version " + newVersion);
 
         if (!hasPermissions) {
-            SVClient.logSendDefectAsync(true, "no perm 2 update on win?");
+            newDefectWithLogs("updater.update.windows")
+                    .setMessage("no perm to update on win?")
+                    .sendAsync();
             UI.get().show(MessageType.ERROR, "You have no permissions to apply" + " the update.");
 
         } else {

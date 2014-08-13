@@ -24,13 +24,13 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Core.PBCore;
-import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 
+import static com.aerofs.defects.Defects.newDefect;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
@@ -48,17 +48,16 @@ public class TransportRoutingLayer
     private Devices _devices;
     private Transports _tps;
     private UnicastInputOutputStack _stack;
-    private RockLog _rockLog;
 
     @Inject
-    public void inject_(CfgLocalDID localDID, CoreQueue q, Devices dp, Transports tps, UnicastInputOutputStack stack, RockLog rockLog)
+    public void inject_(CfgLocalDID localDID, CoreQueue q, Devices dp, Transports tps,
+            UnicastInputOutputStack stack)
     {
         _localdid = localDID.get();
         _q = q;
         _devices = dp;
         _tps = tps;
         _stack = stack;
-        _rockLog = rockLog;
     }
 
     // FIXME(AG): do _not_ use because this layer does not have the concept of available transports that we've heard from but don't know if they work or not
@@ -118,7 +117,9 @@ public class TransportRoutingLayer
         byte[] bs = os.toByteArray();
         if (bs.length > DaemonParam.MAX_UNICAST_MESSAGE_SIZE) {
             l.warn("{} packet too large", ep.did());
-            _rockLog.newDefect("net.unicast.overflow").addData("message_size", bs.length).send();
+            newDefect("net.unicast.overflow")
+                    .addData("message_size", bs.length)
+                    .sendAsync();
             return false;
         }
 

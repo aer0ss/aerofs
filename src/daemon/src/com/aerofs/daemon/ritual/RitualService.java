@@ -99,7 +99,6 @@ import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.TestGetAliasObjectReply;
 import com.aerofs.proto.Ritual.TestGetObjectIdentifierReply;
-import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -110,6 +109,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 
 /**
  * For simplicity, the RPC plugin generates only a future-based interface. Users of the RPC plugin
@@ -686,7 +687,9 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> testLogSendDefect() throws Exception
     {
-        SVClient.logSendDefectSync(false, "testing sv defect reporting", null, null, false);
+        newDefectWithLogs("ritual.test_defects")
+                .setMessage("testing defect reporting")
+                .sendSync();
         return createVoidReply();
     }
 

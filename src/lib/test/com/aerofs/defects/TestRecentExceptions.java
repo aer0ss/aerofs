@@ -1,11 +1,10 @@
 /*
- * Copyright (c) Air Computing Inc., 2013.
+ * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.lib.ex;
+package com.aerofs.defects;
 
 import com.aerofs.base.C;
-import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.Lists;
 import org.junit.Test;
 
@@ -15,15 +14,16 @@ import java.util.List;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class TestRecentExceptions extends AbstractTest
+public class TestRecentExceptions
 {
     private static final String TMP_DIR = System.getProperty("java.io.tmpdir");
+    private static final String PROGRAM_NAME = "test";
 
     @Test
     public void shouldSaveToDisk() throws IOException
     {
         // Open the rex file and clear it
-        RecentExceptions rex = new RecentExceptions(TMP_DIR, 1 * C.HOUR);
+        RecentExceptions rex = new RecentExceptions(PROGRAM_NAME, TMP_DIR, 1 * C.HOUR);
         rex.clear();
 
         Exception ex = new Exception();
@@ -36,7 +36,7 @@ public class TestRecentExceptions extends AbstractTest
         assertTrue(rex.isRecent(ex));
 
         // Re-open the file with a different instance, check that the exception is still recent
-        RecentExceptions rex2 = new RecentExceptions(TMP_DIR, 1 * C.HOUR);
+        RecentExceptions rex2 = new RecentExceptions(PROGRAM_NAME, TMP_DIR, 1 * C.HOUR);
         assertTrue(rex2.isRecent(ex));
     }
 
@@ -59,7 +59,7 @@ public class TestRecentExceptions extends AbstractTest
         exceptions.add(new Exception("e11"));
 
         // Open the rex file, clear it, and all 12 exceptions
-        RecentExceptions rex = new RecentExceptions(TMP_DIR, 1 * C.HOUR);
+        RecentExceptions rex = new RecentExceptions(PROGRAM_NAME, TMP_DIR, 1 * C.HOUR);
         rex.clear();
         for (Exception e : exceptions) {
             rex.add(e);
@@ -81,7 +81,7 @@ public class TestRecentExceptions extends AbstractTest
     public void shouldNoLongerBeRecentAfterIntervalPasses() throws IOException, InterruptedException
     {
         // Open the rex file with a short 10 ms interval
-        RecentExceptions rex = new RecentExceptions(TMP_DIR, 10 * C.SEC);
+        RecentExceptions rex = new RecentExceptions(PROGRAM_NAME, TMP_DIR, 10 * C.SEC);
         rex.clear();
 
         Exception e = new Exception();
@@ -93,5 +93,4 @@ public class TestRecentExceptions extends AbstractTest
         // Sleep 1 ms more than the recent interval, check that the exception is no longer recent
         Thread.sleep(15 * C.SEC);
         assertFalse(rex.isRecent(e));
-    }
-}
+    }}

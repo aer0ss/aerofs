@@ -17,7 +17,6 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ChannelFactories;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.MockCA;
-import com.aerofs.daemon.transport.MockRockLog;
 import com.aerofs.daemon.transport.PrivateKeyProvider;
 import com.aerofs.daemon.transport.TransportReader;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
@@ -59,8 +58,8 @@ public final class UnicastXRayDevice
     public XMPPConnectionService xmppConnectionService;
 
     public UnicastXRayDevice(Random random, SecureRandom secureRandom, String zephyrHost,
-            int zephyrPort, MockCA mockCA, MockRockLog mockRockLog,
-            UnicastTransportListener transportListener, IRoundTripTimes roundTripTimes)
+            int zephyrPort, MockCA mockCA, UnicastTransportListener transportListener,
+            IRoundTripTimes roundTripTimes)
             throws Exception
     {
         this.transportListener = transportListener;
@@ -73,7 +72,7 @@ public final class UnicastXRayDevice
 
         userID = UserID.fromExternal(String.format("user%d@arrowfs.org", random.nextInt(10)));
 
-        xmppConnectionService = new XMPPConnectionService("x", did, new InetSocketAddress("localhost", 5222), "arrowfs.org", "s", new byte[]{0}, 1000, 2, 1000, 5000, mockRockLog.getRockLog(), linkStateService);
+        xmppConnectionService = new XMPPConnectionService("x", did, new InetSocketAddress("localhost", 5222), "arrowfs.org", "s", new byte[]{0}, 1000, 2, 1000, 5000, linkStateService);
 
         StreamManager streamManager = new StreamManager();
         TransportStats transportStats = new TransportStats();
@@ -103,7 +102,6 @@ public final class UnicastXRayDevice
                 twowayChannelTeardownHandler,
                 transportStats,
                 new HashedWheelTimer(),
-                mockRockLog.getRockLog(),
                 ChannelFactories.newClientChannelFactory(),
                 new InetSocketAddress(zephyrHost, zephyrPort),
                 Proxy.NO_PROXY,

@@ -1,7 +1,6 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.RestObject;

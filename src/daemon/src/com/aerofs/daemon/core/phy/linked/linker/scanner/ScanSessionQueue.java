@@ -6,7 +6,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
-import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.defects.Defect;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
@@ -34,13 +34,15 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.Map.Entry;
 
+import static com.aerofs.defects.Defects.newFrequentDefect;
+
 /**
  * Manages scan sessions on a per-root basis
  */
 public class ScanSessionQueue implements IDumpStatMisc
 {
     private static Logger l = Loggers.getLogger(ScanSessionQueue.class);
-    private static FrequentDefectSender fds = new FrequentDefectSender();
+    private static Defect defect = newFrequentDefect("core.scan_session_queue");
 
     private static class TimeKey implements Comparable<TimeKey>
     {
@@ -371,7 +373,9 @@ public class ScanSessionQueue implements IDumpStatMisc
 
     private void onException(Exception e, final TimeKey tk, final PathKey pk)
     {
-        fds.logSendAsync("scan exception retry", e);
+        defect.setMessage("scan exception retry")
+                .setException(e)
+                .sendAsync();
 
         // schedule an exponential retry and return
         long millisecondDelay = Math.max(tk._delay * 2, LibParam.EXP_RETRY_MIN_DEFAULT);

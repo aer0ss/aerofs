@@ -32,7 +32,6 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Diagnostics.ChannelState;
 import com.aerofs.proto.Diagnostics.XRayChannel;
 import com.aerofs.proto.Diagnostics.XRayDevice;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.xray.client.IZephyrSignallingService;
 import com.aerofs.xray.client.exceptions.ExHandshakeFailed;
 import com.aerofs.xray.client.exceptions.ExHandshakeRenegotiation;
@@ -69,6 +68,7 @@ import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.daemon.transport.xray.XRayClientPipelineFactory.getZephyrClient;
+import static com.aerofs.defects.Defects.newDefect;
 import static com.aerofs.xray.proto.XRay.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -91,7 +91,6 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
 
     private static Logger l = Loggers.getLogger(XRayConnectionService.class);
 
-    private final RockLog rockLog;
     private final LinkStateService linkStateService;
     private final ISignallingService signallingService;
     private final IUnicastListener unicastListener;
@@ -120,7 +119,6 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
             ChannelTeardownHandler channelTeardownHandler,
             TransportStats transportStats,
             Timer timer,
-            RockLog rockLog,
             ChannelFactory channelFactory,
             InetSocketAddress xrayAddress,
             Proxy proxy,
@@ -140,14 +138,11 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
                         this,
                         unicastListener,
                         timer,
-                        rockLog,
                         proxy,
                         hearbeatInterval,
                         maxFailedHeartbeats,
                         xrayHandshakeTimeout,
                         roundTripTimes));
-
-        this.rockLog = rockLog;
 
         this.linkStateService = linkStateService;
         this.signallingService = signallingService;
@@ -414,7 +409,8 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
                     // 2. immediately start negotiating the next connection
                     // doing this allows us to avoid an expensive handshake timeout
                     // on the remote peer and multiple additional roundtrips
-                    rockLog.newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION).send();
+                    newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION)
+                            .sendAsync();
                     disconnect(did, new IllegalStateException("attempted renegotiation of zephyr channel to " + did, e));
                     consumeHandshake(did, handshake);
                 }

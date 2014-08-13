@@ -4,9 +4,10 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
+import com.aerofs.defects.Defect;
+import com.aerofs.defects.DefectFactory;
+import com.aerofs.defects.MockDefects;
 import com.aerofs.testlib.LoggerSetup;
-import com.aerofs.rocklog.Defect;
-import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -25,8 +26,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -40,27 +39,32 @@ public final class TestDiagnosticsHandler
         LoggerSetup.init();
     }
 
-    private RockLog rockLog = mock(RockLog.class);
     private Timer timer = mock(Timer.class);
     private ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
     private ChannelStateEvent e = mock(ChannelStateEvent.class);
     private Channel channel = mock(Channel.class);
     private ChannelPipeline pipeline = mock(ChannelPipeline.class);
-    private Defect defect = mock(Defect.class);
     private Timeout timeout = mock(Timeout.class);
 
     private ConnectionStatsHandler connectionStatsHandler;
     private TimerTask timerTask;
+
+    private DefectFactory defectFactory;
+    private Defect defect;
+
+    @Before
+    public void initMocks()
+    {
+        defectFactory = mock(DefectFactory.class);
+        defect = mock(Defect.class);
+        MockDefects.init(defectFactory, defect);
+    }
 
     @Before
     public void setup()
     {
         when(ctx.getChannel()).thenReturn(channel);
         when(ctx.getPipeline()).thenReturn(pipeline);
-
-        when(rockLog.newDefect(anyString())).thenReturn(defect);
-        when(defect.setMessage(anyString())).thenReturn(defect);
-        when(defect.addData(anyString(), anyObject())).thenReturn(defect);
 
         when(timer.newTimeout(any(TimerTask.class), anyLong(), eq(TimeUnit.MILLISECONDS))).thenAnswer(new Answer<Object>()
         {
@@ -74,7 +78,7 @@ public final class TestDiagnosticsHandler
             }
         });
 
-        connectionStatsHandler = new ConnectionStatsHandler("z", rockLog, timer);
+        connectionStatsHandler = new ConnectionStatsHandler("z", timer);
     }
 
     @Test
@@ -88,7 +92,7 @@ public final class TestDiagnosticsHandler
         assertTrue(timerTask != null);
         timerTask.run(timeout); // timeout passed; channel still open, still connecting
 
-        verify(defect).send();
+        verify(defect).sendAsync();
     }
 
     @Test
@@ -105,7 +109,7 @@ public final class TestDiagnosticsHandler
 
         timerTask.run(timeout); // now the timeout triggers
 
-        verifyNoMoreInteractions(rockLog, defect);
+        verifyNoMoreInteractions(defectFactory, defect);
     }
 
     @Test
@@ -122,6 +126,6 @@ public final class TestDiagnosticsHandler
 
         timerTask.run(timeout); // now the timer runs
 
-        verify(defect).send(); // only one defect should be sent
+        verify(defect).sendAsync(); // only one defect should be sent
     }
 }

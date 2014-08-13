@@ -15,7 +15,6 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.ImmutableMap;
 
 import javax.annotation.Nonnull;
@@ -25,6 +24,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static com.aerofs.defects.Defects.newDefectWithLogsNoCfg;
 
 public abstract class RootAnchorUtil
 {
@@ -104,8 +105,9 @@ public abstract class RootAnchorUtil
         if (!supported) {
             String r = remote.get() != null && remote.get() ? "remote " : "";
             // sync instead of async to make sure we get it
-            SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "unsupported fs: " + r + type,
-                    null, UserID.UNKNOWN, rtRoot);
+            newDefectWithLogsNoCfg("file_system.type", UserID.UNKNOWN, rtRoot)
+                    .setMessage("unsupported fs: " + r + type)
+                    .sendSyncIgnoreErrors();
 
             throw new ExUIMessage(L.product() + " doesn't support " + r + type +
                     " filesystems on " + OSUtil.getOSName() + " at this moment");

@@ -28,7 +28,6 @@ import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -115,7 +114,6 @@ public final class UnicastTCPDevice
                 tcpProtocolHandler,
                 transportStats,
                 mock(Timer.class),
-                mock(RockLog.class),
                 mock(IRoundTripTimes.class));
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);

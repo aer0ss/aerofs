@@ -19,9 +19,6 @@ import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
-import com.aerofs.rocklog.Defect;
-import com.aerofs.rocklog.Defect.Priority;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 import org.hamcrest.Description;
 import org.junit.Before;
@@ -34,11 +31,8 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
@@ -51,7 +45,6 @@ public class AbstractMightCreateTest extends AbstractTest
     @Mock LinkerRootMap lrm;
     @Mock ILinkerFilter mcf;
     @Mock RepresentabilityHelper rh;
-    @Mock RockLog rocklog;
 
     MockDS mds;
     static final String absRootAnchor = "/AeroFS";
@@ -72,13 +65,6 @@ public class AbstractMightCreateTest extends AbstractTest
 
         // 64bit fid: 8 bytes
         when(dr.getFIDLength()).thenReturn(8);
-
-        Defect d = mock(Defect.class);
-        when(d.addData(anyString(), anyObject())).thenReturn(d);
-        when(d.setException(any(Exception.class))).thenReturn(d);
-        when(d.setMessage(anyString())).thenReturn(d);
-        when(d.setPriority(any(Priority.class))).thenReturn(d);
-        when(rocklog.newDefect(anyString())).thenReturn(d);
     }
 
     void caseInsensitive()

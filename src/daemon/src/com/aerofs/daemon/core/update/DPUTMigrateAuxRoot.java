@@ -13,7 +13,6 @@ import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import org.slf4j.Logger;
 
@@ -21,13 +20,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static com.aerofs.defects.Defects.newDefectWithLogs;
+
 public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
 {
     private final static Logger l = Loggers.getLogger(DPUTMigrateAuxRoot.class);
-
-    DPUTMigrateAuxRoot()
-    {
-    }
 
     @Override
     public void run() throws Exception
@@ -52,7 +49,10 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
             }
         } catch (Throwable e) {
             l.error("Could not migrate aux root " + Util.e(e));
-            SVClient.logSendDefectSyncIgnoreErrors(true, "migrating aux root failed", e);
+            newDefectWithLogs("dput.migrate_aux_root")
+                    .setMessage("migrating aux root failed")
+                    .setException(e)
+                    .sendSyncIgnoreErrors();
             ExitCode.DPUT_MIGRATE_AUX_ROOT_FAILED.exit();
         }
     }

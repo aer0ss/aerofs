@@ -25,7 +25,6 @@ import com.aerofs.lib.S;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
@@ -35,6 +34,7 @@ import com.google.common.base.Preconditions;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotificationListener, ITrayMenu
@@ -71,7 +71,10 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                         try {
                             UIGlobals.shellext().start_();
                         } catch (Exception e) {
-                            SVClient.logSendDefectAsync(true, "cant start shellext worker", e);
+                            newDefectWithLogs("shellext")
+                                    .setMessage("can't start shellext worker")
+                                    .setException(e)
+                                    .sendAsync();
                         }
                     }
                 });

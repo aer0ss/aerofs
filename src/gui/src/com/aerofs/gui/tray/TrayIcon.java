@@ -25,7 +25,6 @@ import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
@@ -47,6 +46,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Set;
 
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.aerofs.ui.UIParam.SLOW_REFRESH_DELAY;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -314,7 +314,11 @@ public class TrayIcon implements ITrayMenuListener
             return new TrayPosition(pos.x, pos.y, Orientation.Top);
         } catch (Exception e) {
             l.warn("Failed to get tray icon position: " + Util.e(e));
-            SVClient.logSendDefectAsync(true, "failed to get tray icon position from SWT", e);
+
+            newDefectWithLogs("gui.tray_icon.osx")
+                    .setMessage("failed to get tray icon position from SWT")
+                    .setException(e)
+                    .sendAsync();
             return null;
         }
     }
@@ -329,7 +333,9 @@ public class TrayIcon implements ITrayMenuListener
 
         // If the coordinates are (0,0) the native call failed.
         if (tp.x == 0 && tp.y == 0) {
-            SVClient.logSendDefectAsync(true, "failed to get tray icon position from driver");
+            newDefectWithLogs("gui.tray_icon.windows")
+                    .setMessage("failed to get tray icon position from driver")
+                    .sendAsync();
             return null;
         }
 

@@ -29,13 +29,14 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
+
+import static com.aerofs.defects.Defects.newDefect;
 
 /**
  * To implement efficient atomic deletion of large object tree in LinkedStorage we introduce the
@@ -61,14 +62,12 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
     private final TokenManager _tokenManager;
     private final IgnoreList _il;
     private final LinkedRevProvider _revProvider;
-    private final RockLog _rl;
 
     @Inject
     public LinkedStagingArea(LinkerRootMap lrm,
             LinkedStagingAreaDatabase sadb, InjectableFile.Factory factFile,
             CoreScheduler sched, TransManager tm,
-            TokenManager tokenManager, IgnoreList il, LinkedRevProvider revProvider,
-            RockLog rl)
+            TokenManager tokenManager, IgnoreList il, LinkedRevProvider revProvider)
     {
         _sas = new CleanupScheduler(this, sched);
         _lrm = lrm;
@@ -78,7 +77,6 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
         _tokenManager = tokenManager;
         _il = il;
         _revProvider = revProvider;
-        _rl = rl;
     }
 
     @Override
@@ -128,7 +126,9 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
                     to.moveInSameFileSystem(from);
                 } catch (IOException e) {
                     l.error("db/fs inconsistent: failed to rollback move", e);
-                    _rl.newDefect("linked.rollback").setException(e).send();
+                    newDefect("linked.rollback")
+                            .setException(e)
+                            .sendAsync();
                 }
             }
         });

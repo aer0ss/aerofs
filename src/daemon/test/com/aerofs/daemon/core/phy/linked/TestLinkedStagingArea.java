@@ -31,7 +31,6 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -93,7 +92,7 @@ public class TestLinkedStagingArea extends AbstractTest
 
         lsa = new LinkedStagingArea(lrm, lsadb, factFile,
                 sched, tm, tokenManager,
-                mock(IgnoreList.class), revProvider, mock(RockLog.class));
+                mock(IgnoreList.class), revProvider);
 
         LinkerRoot lr = mock(LinkerRoot.class);
         when(lr.absRootAnchor()).thenReturn("/AeroFS");

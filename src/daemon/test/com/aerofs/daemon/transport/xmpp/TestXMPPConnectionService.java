@@ -10,7 +10,6 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableSet;
 import org.jivesoftware.smack.PacketInterceptor;
 import org.jivesoftware.smack.PacketListener;
@@ -38,7 +37,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Mockito.mock;
 
 // TODO (AG): can use the listener/semaphores to wait instead of timeouts
 
@@ -63,7 +61,6 @@ public final class TestXMPPConnectionService
 
     private final LinkStateService linkStateService = new LinkStateService();
     private TestLinkStateListener linkStateListener = new TestLinkStateListener();
-    private final RockLog rockLog = mock(RockLog.class);
     private XMPPConnectionService xmppConnectionService;
 
     @Rule
@@ -120,7 +117,6 @@ public final class TestXMPPConnectionService
                 MAX_PINGS_BEFORE_DISCONNECTION,
                 INITIAL_CONNECT_RETRY_INTERVAL_IN_MS,
                 MAX_CONNECT_RETRY_INTERVAL_IN_MS,
-                rockLog,
                 linkStateService
         );
 
@@ -314,7 +310,6 @@ public final class TestXMPPConnectionService
                 MAX_PINGS_BEFORE_DISCONNECTION,
                 INITIAL_CONNECT_RETRY_INTERVAL_IN_MS,
                 MAX_CONNECT_RETRY_INTERVAL_IN_MS,
-                rockLog,
                 linkStateService
         );
 

@@ -11,6 +11,7 @@ import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.analytics.AnalyticsEvents.UpdateEvent;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UserID;
+import com.aerofs.defects.Defects;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
@@ -24,7 +25,6 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.InfoCollector;
 import com.aerofs.ui.UI;
@@ -43,6 +43,8 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.sql.SQLException;
 
+import static com.aerofs.defects.Defects.newDefectWithLogs;
+import static com.aerofs.defects.Defects.newDefectWithLogsNoCfg;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
 
 public class Launcher
@@ -106,7 +108,9 @@ public class Launcher
         }
 
         if (msg != null) {
-            SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, msg, null, UserID.UNKNOWN, "unknown");
+            newDefectWithLogsNoCfg("launcher.platform", UserID.UNKNOWN, "unknown")
+                    .setMessage(msg)
+                    .sendSyncIgnoreErrors();
             throw new ExLaunchAborted(msg);
         }
 
@@ -195,7 +199,10 @@ public class Launcher
             startWorkerThreads();
 
         } catch (Exception ex) {
-            SVClient.logSendDefectAsync(true, "launch failed", ex);
+            newDefectWithLogs("launcher.launch")
+                    .setMessage("launch failed")
+                    .setException(ex)
+                    .sendAsync();
             if (UIGlobals.updater() != null) {
                 UIGlobals.updater().onStartupFailed();
             }
@@ -223,8 +230,11 @@ public class Launcher
                     " to download and install " + L.product() + " again. " +
                     "All your data will be intact during re-installation.";
 
-            SVClient.logSendDefectAsync(true, msg, new Exception(failedFile + " chksum failed" +
-                    new File(failedFile).length()));
+            newDefectWithLogs("launcher.launch.verify_checksum")
+                    .setMessage(msg)
+                    .setException(new Exception(failedFile + " chksum failed: "
+                            + new File(failedFile).length()))
+                    .sendAsync();
             UI.get().show(MessageType.ERROR, msg);
 
             if (UI.isGUI()) GUIUtil.launch(WWW.DOWNLOAD_URL);
@@ -242,11 +252,10 @@ public class Launcher
         if (PostUpdate.updated()) {
             // TODO: more robust event sending?
             String ver = Cfg.ver();
-            UIGlobals.rockLog()
-                    .newDefect("update")
+            Defects.newDefect("launcher.post_update")
                     .addData("previous_version", Cfg.db().get(Key.LAST_VER))
                     .addData("version", ver)
-                    .send();
+                    .sendAsync();
             Cfg.db().set(Key.LAST_VER, ver);
         }
     }
@@ -292,7 +301,10 @@ public class Launcher
                 UIGlobals.updater().start();
             }
         } catch (Exception e) {
-            SVClient.logSendDefectAsync(true, "cant start autoupdate worker", e);
+            newDefectWithLogs("launcher.launch.start_worker_threads")
+                    .setMessage("can't start autoupdate worker")
+                    .setException(e)
+                    .sendAsync();
         }
 
         UIGlobals.rnc().start();

@@ -29,7 +29,6 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
-import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -85,7 +84,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             MaxcastFilterReceiver maxcastFilterReceiver,
             LinkStateService linkStateService,
             @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
-            RockLog rocklog,
             ClientSSLEngineFactory clientSslEngineFactory,
             ServerSSLEngineFactory serverSslEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
@@ -117,7 +115,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 Proxy.NO_PROXY,
                 timer,
                 coreQueue,
-                rocklog,
                 linkStateService,
                 maxcastFilterReceiver,
                 mobileServerZephyrConnector,

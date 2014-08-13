@@ -33,7 +33,6 @@ import com.aerofs.proto.Diagnostics.ServerStatus;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Diagnostics.XRayDevice;
 import com.aerofs.proto.Diagnostics.XRayDiagnostics;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Sets;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
@@ -92,7 +91,6 @@ public final class XRay implements ITransport
             SSLEngineFactory serverSSLEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
             Timer timer,
-            RockLog rockLog,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
             long xmppServerConnectionLinkStateChangePingInterval,
@@ -130,10 +128,10 @@ public final class XRay implements ITransport
                 numPingsBeforeDisconnectingXmppServerConnection,
                 xmppServerConnectionInitialReconnectInterval,
                 xmppServerConnectionMaxReconnectInterval,
-                rockLog,
                 linkStateService);
 
-        this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
+        this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver,
+                xmppConnectionService, this, outgoingEventSink);
         this.presenceService = new PresenceService();
 
 
@@ -157,7 +155,6 @@ public final class XRay implements ITransport
                 channelTeardownHandler,
                 transportStats,
                 timer,
-                rockLog,
                 clientSocketChannelFactory,
                 this.xrayAddress,
                 proxy,

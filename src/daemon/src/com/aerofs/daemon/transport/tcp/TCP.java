@@ -41,7 +41,6 @@ import com.aerofs.proto.Diagnostics.TCPDevice;
 import com.aerofs.proto.Diagnostics.TCPDiagnostics;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Transport.PBTPHeader;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.protobuf.Message;
@@ -101,7 +100,6 @@ public class TCP implements ITransport, IAddressResolver
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             Timer timer,
-            RockLog rockLog,
             ClientSocketChannelFactory clientChannelFactory,
             ServerSocketChannelFactory serverChannelFactory,
             IRoundTripTimes roundTripTimes)
@@ -144,7 +142,6 @@ public class TCP implements ITransport, IAddressResolver
                 tcpProtocolHandler,
                 transportStats,
                 timer,
-                rockLog,
                 roundTripTimes);
         ServerBootstrap serverBootstrap = bootstrapFactory.newServerBootstrap(serverChannelFactory,
                 serverChannelTeardownHandler);

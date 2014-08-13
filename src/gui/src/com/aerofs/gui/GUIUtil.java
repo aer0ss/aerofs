@@ -11,7 +11,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
@@ -48,6 +47,8 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 
 public class GUIUtil
 {
@@ -308,7 +309,9 @@ public class GUIUtil
     {
         if (new Path(Cfg.rootSID()).equals(path)) {
             // Sharing the default root folder?
-            SVClient.logSendDefectAsync(true, "share default root?");
+            newDefectWithLogs("gui.share_folder")
+                    .setMessage("share default root?")
+                    .sendAsync();
             UI.get().show(MessageType.WARN, "The root " + L.product() + " folder can't be shared.");
             return;
         }

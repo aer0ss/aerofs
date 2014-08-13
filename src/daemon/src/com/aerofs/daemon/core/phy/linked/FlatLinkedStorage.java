@@ -29,7 +29,6 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
-import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 
 import java.io.IOException;
@@ -66,11 +65,10 @@ public class FlatLinkedStorage extends LinkedStorage
             IOSUtil os,
             LinkedStagingArea sa,
             LinkedRevProvider revProvider,
-            RockLog rl,
             CoreScheduler sched)
     {
         super(factFile, factFIDMan, lrm, os, dr, rh, stores, sidx2sid, cfgAbsRoots,
-                cfgStoragePolicy, il, sfti, sa, revProvider, rl, sched);
+                cfgStoragePolicy, il, sfti, sa, revProvider, sched);
         _os = os;
         _lacl = lacl;
         _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.USERS_DIR));

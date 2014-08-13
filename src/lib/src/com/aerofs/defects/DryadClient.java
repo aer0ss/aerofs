@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.ui.defect;
+package com.aerofs.defects;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -28,61 +28,47 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.OCTET_STREAM;
 
 /**
- * The intended usage of this class is to call uploadFiles() with output from DryadClientUtil.
- *
- * For example:
- *
- * new DryadClient(
- *      "https://dryad.aerofs.com",
- *      createPublicDryadSSLContext(),
- * ).uploadFiles(
- *      createDefectLogsResource("DefectID", Cfg.user(), Cfg.did()),
- *      new File(Cfg.absRTRoot()).listFiles()
- * );
- *
  * Optionally:
- *   setListener(), so we can kill the daemon while uploading the database files
+ *   setFileUploadListener(), so we can kill the daemon while uploading the database files
  */
 public class DryadClient
 {
+    private static final Logger l = Loggers.getLogger(DryadClient.class);
+
     private static final int CHUNK_SIZE = 4 * C.MB;
 
-    private final Logger l = Loggers.getLogger(DryadClient.class);
-
-    private final String _hostname;
-    private final int _port;
+    private final String _serverUrl;
     private final SSLContext _ssl;
 
     private FileUploadListener _listener;
 
-    public DryadClient(String hostname, int port, SSLContext ssl)
+    public DryadClient(String serverUrl, SSLContext ssl)
     {
-        _hostname = hostname;
-        _port = port;
+        _serverUrl = serverUrl;
         _ssl = ssl;
     }
 
-    public void setListener(@Nullable FileUploadListener listener)
+    public DryadClient setFileUploadListener(@Nullable FileUploadListener listener)
     {
         _listener = listener;
+        return this;
     }
 
     // N.B. if files.length == 0, the PUT request will still be made.
     // the caller is responsible for deciding whether the call should be made if files.length == 0
-    public void uploadFiles(String resourceUrl, File[] files)
+    public void uploadFiles(String resourceURL, File[] files)
             throws GeneralSecurityException, IOException
     {
-        URL url = new URL("https", _hostname, _port, resourceUrl);
-        l.info("Connecting to {}", url.toExternalForm());
-        HttpURLConnection conn = openConnection(url, _ssl);
+        HttpURLConnection conn = openConnection(_serverUrl + resourceURL, _ssl);
+
         uploadFiles(conn, files);
         handleResponse(conn);
     }
 
-    private HttpURLConnection openConnection(URL url, SSLContext ssl)
+    private HttpURLConnection openConnection(String url, SSLContext ssl)
             throws IOException
     {
-        HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+        HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
 
         conn.setSSLSocketFactory(ssl.getSocketFactory());
         conn.setDoOutput(true);
@@ -156,5 +142,19 @@ public class DryadClient
     {
         void onFileUpload(File file);
         void onFileUploaded(File file);
+    }
+
+    public static class Noop extends DryadClient
+    {
+        public Noop()
+        {
+            super("", null);
+        }
+
+        @Override
+        public void uploadFiles(String resourceUrl, File[] files)
+        {
+            // noop
+        }
     }
 }

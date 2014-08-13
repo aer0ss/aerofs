@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
-import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -18,21 +17,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.aerofs.daemon.lib.DaemonParam.SLOW_CONNECT;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_CONNECT_FAILED;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_SLOW_CONNECT;
+import static com.aerofs.defects.Defects.newDefect;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public final class ConnectionStatsHandler extends SimpleChannelHandler
 {
     private final String _transportId;
-    private final RockLog _rockLog;
     private final Timer _timer;
     private final AtomicBoolean _wasConnected = new AtomicBoolean(false);
 
     private volatile long _channelOpenTime = 0;
 
-    public ConnectionStatsHandler(String transportId, RockLog rockLog, Timer timer)
+    public ConnectionStatsHandler(String transportId, Timer timer)
     {
         _transportId = transportId;
-        _rockLog = rockLog;
         _timer = timer;
     }
 
@@ -51,10 +49,10 @@ public final class ConnectionStatsHandler extends SimpleChannelHandler
                     throws Exception
             {
                 if (!_wasConnected.get() && channel.isOpen()) {
-                    sendRockLogDefect(
-                            DEFECT_NAME_SLOW_CONNECT,
-                            String.format("establishing a connection took over %s %s", SLOW_CONNECT, MILLISECONDS),
-                            channel);
+                    sendDefect(DEFECT_NAME_SLOW_CONNECT,
+                            String.format("establishing a connection took over %s %s", SLOW_CONNECT,
+                                    MILLISECONDS), channel
+                    );
                 }
             }
         }, SLOW_CONNECT, MILLISECONDS);
@@ -88,19 +86,19 @@ public final class ConnectionStatsHandler extends SimpleChannelHandler
         }
 
         if (!_wasConnected.get()) {
-            sendRockLogDefect(DEFECT_NAME_CONNECT_FAILED, message, ctx.getChannel());
+            sendDefect(DEFECT_NAME_CONNECT_FAILED, message, ctx.getChannel());
         }
 
         super.channelClosed(ctx, e);
     }
 
-    private void sendRockLogDefect(String defectName, String defectMessage, Channel channel)
+    private void sendDefect(String defectName, String defectMessage, Channel channel)
     {
-        _rockLog.newDefect(defectName)
+        newDefect(defectName)
                 .setMessage(defectMessage)
                 .addData("transport", _transportId)
                 .addData("channel", channel.toString())
                 .addData("address", channel.getRemoteAddress())
-                .send();
+                .sendAsync();
     }
 }

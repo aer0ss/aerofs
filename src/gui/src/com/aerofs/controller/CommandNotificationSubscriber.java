@@ -13,6 +13,7 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.defects.CommandDefect.Factory;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
@@ -29,7 +30,6 @@ import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IDaemonMonitor;
 import com.aerofs.ui.InfoCollector;
 import com.aerofs.ui.UI;
@@ -54,6 +54,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newOneWayAuthClientFactory;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -89,7 +90,7 @@ public final class CommandNotificationSubscriber
 
     private final IScheduler _scheduler;
     private final InfoCollector _infoCollector;
-    private final IDaemonMonitor _dm;
+    private final Factory _defectFactory;
 
     private final ExponentialRetry _exponential;
     private final VerkehrPubSubClient _verkehrPubSubClient;
@@ -104,7 +105,8 @@ public final class CommandNotificationSubscriber
     {
         _scheduler = scheduler;
         _infoCollector = infoCollector;
-        _dm = dm;
+        _defectFactory = new Factory(dm);
+
         _exponential = new ExponentialRetry(scheduler);
         _verkehrPubSubClient = VerkehrPubSubClient.create(
                 Verkehr.HOST,
@@ -337,7 +339,9 @@ public final class CommandNotificationSubscriber
                     UIGlobals.updater().checkForUpdate(true);
                     break;
                 case SEND_DEFECT:
-                    SVClient.logSendDefectAsync(true, "cmd call");
+                    newDefectWithLogs("cmd call")
+                            .setMessage("cmd call")
+                            .sendAsync();
                     break;
                 case LOG_THREADS:
                     logThreads();
@@ -346,7 +350,8 @@ public final class CommandNotificationSubscriber
                     // obsoleted command, do no-op
                     break;
                 case UPLOAD_LOGS:
-                    new CommandDefect(command, _dm).sendAsync();
+                    _defectFactory.newCommandDefect(command)
+                            .sendAsync();
                     break;
                 default:
                     throw new Exception("cmd type unknown");

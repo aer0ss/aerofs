@@ -22,7 +22,6 @@ import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ProxiedConnectionHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.xray.client.IZephyrSignallingService;
 import com.aerofs.xray.client.handlers.ZephyrProtocolHandler;
 import org.jboss.netty.channel.Channel;
@@ -55,7 +54,6 @@ final class XRayClientPipelineFactory implements ChannelPipelineFactory
     private final TransportStats transportStats;
     private final IZephyrSignallingService xraySignallingService;
     private final IUnicastListener unicastListener;
-    private final RockLog rockLog;
     private final AddressResolverHandler resolver;
     private final Proxy proxy;
     private final long heartbeatInterval;
@@ -76,7 +74,6 @@ final class XRayClientPipelineFactory implements ChannelPipelineFactory
             IZephyrSignallingService xraySignallingService,
             IUnicastListener unicastListener,
             Timer timer,
-            RockLog rockLog,
             Proxy proxy,
             long heartbeatInterval,
             int maxFailedHeartbeats,
@@ -95,7 +92,6 @@ final class XRayClientPipelineFactory implements ChannelPipelineFactory
         this.xraySignallingService = xraySignallingService;
         this.unicastListener = unicastListener;
         this.timer = timer;
-        this.rockLog = rockLog;
         this.resolver = new AddressResolverHandler(null);
         this.proxy = proxy;
         this.heartbeatInterval = heartbeatInterval;
@@ -202,7 +198,7 @@ final class XRayClientPipelineFactory implements ChannelPipelineFactory
 
     private MessageHandler newMessageHandler()
     {
-        return new MessageHandler(rockLog);
+        return new MessageHandler();
     }
 
     private XRayClientHandler newZephyrClientHandler(IOStatsHandler ioStatsHandler, ZephyrProtocolHandler zephyrProtocolHandler)

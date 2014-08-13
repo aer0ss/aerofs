@@ -5,17 +5,18 @@
 package com.aerofs.shell;
 
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.defects.PriorityDefect.Factory;
 import com.aerofs.labeling.L;
-import com.aerofs.ui.defect.PriorityDefectReporter;
+import com.aerofs.ritual.RitualClientProvider;
 import org.apache.commons.cli.CommandLine;
 
 public class CmdDefect extends AbstractShellCommand<ShProgram>
 {
-    private final PriorityDefectReporter _defect;
+    private final Factory _defectFactory;
 
-    public CmdDefect(PriorityDefectReporter defect)
+    public CmdDefect(RitualClientProvider ritualProvider)
     {
-        _defect = defect;
+        _defectFactory = new Factory(ritualProvider);
     }
 
     @Override
@@ -32,7 +33,10 @@ public class CmdDefect extends AbstractShellCommand<ShProgram>
             sb.append(" ");
         }
 
-        _defect.sendPriorityDefect(null, sb.toString(), true);
+        _defectFactory.newPriorityDefect()
+                .setMessage(sb.toString())
+                .setSendFilenames(true)
+                .sendSyncIgnoreErrors();
     }
 
     @Override

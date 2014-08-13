@@ -19,7 +19,6 @@ import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
-import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -63,7 +62,6 @@ final class TCPBootstrapFactory
     private final TCPChannelDiagnosticsHandler serverChannelDiagnosticsHandler;
     private final TransportStats transportStats;
     private final Timer timer;
-    private final RockLog rockLog;
     private final IRoundTripTimes roundTripTimes;
 
     TCPBootstrapFactory(
@@ -80,7 +78,6 @@ final class TCPBootstrapFactory
             TCPProtocolHandler tcpProtocolHandler,
             TransportStats stats,
             Timer timer,
-            RockLog rockLog,
             IRoundTripTimes roundTripTimes)
     {
         this.localuser = localuser;
@@ -94,11 +91,12 @@ final class TCPBootstrapFactory
         this.protocolHandler = protocolHandler;
         this.tcpProtocolHandler = tcpProtocolHandler;
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
-        this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT, rockLog, roundTripTimes);
-        this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER, rockLog, roundTripTimes);
+        this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT,
+                roundTripTimes);
+        this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER,
+                roundTripTimes);
         this.transportStats = stats;
         this.timer = timer;
-        this.rockLog = rockLog;
         this.roundTripTimes = roundTripTimes;
     }
 
@@ -111,7 +109,7 @@ final class TCPBootstrapFactory
             public ChannelPipeline getPipeline()
                     throws Exception
             {
-                MessageHandler messageHandler = new MessageHandler(rockLog);
+                MessageHandler messageHandler = new MessageHandler();
                 CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
 
                 return Channels.pipeline(
@@ -147,7 +145,7 @@ final class TCPBootstrapFactory
             public ChannelPipeline getPipeline()
                     throws Exception
             {
-                MessageHandler messageHandler = new MessageHandler(rockLog);
+                MessageHandler messageHandler = new MessageHandler();
                 CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.SERVER);
 
                 return Channels.pipeline(

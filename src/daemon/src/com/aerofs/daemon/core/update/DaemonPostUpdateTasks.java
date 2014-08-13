@@ -8,7 +8,6 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.os.IOSUtil;
-import com.aerofs.rocklog.RockLog;
 
 import javax.inject.Inject;
 
@@ -25,7 +24,7 @@ public class DaemonPostUpdateTasks
 
     @Inject
     public DaemonPostUpdateTasks(IOSUtil osutil, CfgDatabase cfgDB, CoreDBCW dbcw,
-            CfgLocalUser cfgUser, InjectableDriver dr, RockLog rocklog)
+            CfgLocalUser cfgUser, InjectableDriver dr)
     {
         _cfgDB = cfgDB;
 
@@ -70,8 +69,8 @@ public class DaemonPostUpdateTasks
             new DPUTCaseSensitivityHellYeah(dbcw, dr),
             new DPUTMigrateHistoryToHex(),
             new DPUTUpdateACLFromDiscreteRolesToFlags(dbcw),
-            new DPUTUpdateNROForAliasedAndMigrated(dbcw, rocklog),
-            new DPUTFixNormalizationOSX(osutil, dbcw, dr, rocklog),
+            new DPUTUpdateNROForAliasedAndMigrated(dbcw),
+            new DPUTFixNormalizationOSX(osutil, dbcw, dr),
             new DPUTUpdateEpochTableAddAuditColumn(dbcw),
             new DPUTFixCNROsOnOSX(osutil, dbcw),
             null, // used to be DPUTResetSyncStatus

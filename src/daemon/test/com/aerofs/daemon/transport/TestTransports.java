@@ -11,6 +11,9 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.defects.Defect;
+import com.aerofs.defects.DefectFactory;
+import com.aerofs.defects.MockDefects;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.xray.server.XRayServer;
 import com.aerofs.zephyr.server.ZephyrServer;
@@ -47,6 +50,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.Mockito.mock;
 
 // FIXME (AG): send multiple streams simultaneously from both directions
 // FIXME (AG): send multiple streams and kill one
@@ -107,13 +111,18 @@ public final class TestTransports
         xrayAddress = InetSocketAddress.createUnresolved("localhost", secureRandom.nextInt(10000) + 5000);
 
         MockCA mockCA = new MockCA(String.format("testca-%d@arrowfs.org", Math.abs(secureRandom.nextInt())), secureRandom);
-        MockRockLog mockRockLog = new MockRockLog();
 
         this.transportType = transportType;
-        this.transport0 = new TransportResource(transportType, mockCA, mockRockLog, zephyrAddress, xrayAddress);
-        this.transport1 = new TransportResource(transportType, mockCA, mockRockLog, zephyrAddress, xrayAddress);
-        this.transport2 = new TransportResource(transportType, mockCA, mockRockLog, zephyrAddress, xrayAddress);
-        this.transport3 = new TransportResource(transportType, mockCA, mockRockLog, zephyrAddress, xrayAddress);
+        this.transport0 = new TransportResource(transportType, mockCA, zephyrAddress, xrayAddress);
+        this.transport1 = new TransportResource(transportType, mockCA, zephyrAddress, xrayAddress);
+        this.transport2 = new TransportResource(transportType, mockCA, zephyrAddress, xrayAddress);
+        this.transport3 = new TransportResource(transportType, mockCA, zephyrAddress, xrayAddress);
+    }
+
+    @Before
+    public void initMocks()
+    {
+        MockDefects.init(mock(DefectFactory.class), mock(Defect.class));
     }
 
     @Before

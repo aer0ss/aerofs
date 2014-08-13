@@ -52,7 +52,6 @@ import com.aerofs.proto.Core.PBGetVersionsResponse;
 import com.aerofs.proto.Core.PBGetVersionsResponseBlock;
 import com.aerofs.proto.Core.PBStoreHeader;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
-import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -70,6 +69,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
@@ -688,7 +688,10 @@ public class GetVersionsRequest
         // Throw an exception to abort the current GetVersionsResponse,
         // but on the next try the db should be fixed.
         ExAborted e = new ExAborted("GVR dup tick repair. " + loggedData);
-        SVClient.logSendDefectAsync(true, "GVR dup tick repair", e);
+        newDefectWithLogs("get_versions_request.delete_duplicate_ticks")
+                .setMessage("GVR dup tick repair")
+                .setException(e)
+                .sendAsync();
         throw e;
     }
 }

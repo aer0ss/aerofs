@@ -5,12 +5,12 @@
 package com.aerofs.umdc;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.defects.Defects;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.sv.client.SVClient;
 import com.google.common.io.Files;
 import org.slf4j.Logger;
 
@@ -64,7 +64,8 @@ public class UMDC
         obfdb.vacuum();
         obfdb.finish_();
 
-        SVClient.sendCoreDatabaseSync();
+        Defects.newUploadCoreDatabase()
+                .sendSyncIgnoreErrors();
 
         removeObfuscatedDB();
     }

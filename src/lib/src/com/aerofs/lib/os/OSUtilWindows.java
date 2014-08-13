@@ -11,7 +11,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -29,6 +28,7 @@ import java.io.StringReader;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static org.apache.commons.lang.StringUtils.isBlank;
 
 public class OSUtilWindows implements IOSUtil
@@ -254,7 +254,9 @@ public class OSUtilWindows implements IOSUtil
         String suffix = icon.hasXPStyle ? (OSUtil.isWindowsXP() ? "XP" : "Vista") : "";
         result = result.getParentFile().newChild("icons").newChild(icon.name + suffix + ".ico");
         if (!result.exists()) {
-            SVClient.logSendDefectAsync(true, "icon not found: " + result.getAbsolutePath());
+            newDefectWithLogs("gui.icon_path.windows")
+                    .setMessage("icon not found: " + result.getAbsolutePath())
+                    .sendAsync();
         }
         return result.getAbsolutePath();
     }

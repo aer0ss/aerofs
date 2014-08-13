@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Base64;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.RevisionInfo;
+import com.aerofs.defects.Defect;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Util;
 
 import java.io.File;
@@ -16,6 +16,8 @@ import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+
+import static com.aerofs.defects.Defects.newFrequentDefect;
 
 /**
  * Rename files in revision tree to use new suffix encoding scheme
@@ -27,14 +29,10 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
 {
     private final String DATE_FORMAT = "yyyyMMdd_HHmmss_SSS";
     private final DateFormat _dateFormat = new SimpleDateFormat(DATE_FORMAT);
-    private final FrequentDefectSender _fds = new FrequentDefectSender();
+    private final Defect _defect = newFrequentDefect("dput.migrate_revision_suffix");
 
     // separates file name from encoded revision suffix
     private static final char REVISION_SUFFIX_SEPARATOR = '.';
-
-    DPUTMigrateRevisionSuffixToBase64()
-    {
-    }
 
     /**
      * Return true if the input file is a valid revision file in the old scheme
@@ -69,7 +67,9 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
                     + REVISION_SUFFIX_SEPARATOR + encoded;
             FileUtil.moveInSameFileSystem(f, new File(f.getParent(), newName));
         } catch (IOException e) {
-            _fds.logSendAsync("Failed to fix revision: " + f.getAbsolutePath(), e);
+            _defect.setMessage("Failed to fix revision: " + f.getAbsolutePath())
+                    .setException(e)
+                    .sendAsync();
         }
         return true;
     }
@@ -81,7 +81,8 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
         for (File c : children) {
             if (c.isFile()) {
                 if (!fixFile(c)) {
-                    _fds.logSendAsync("Invalid revision file: " + c.getAbsolutePath());
+                    _defect.setMessage("Invalid revision file: " + c.getAbsolutePath())
+                            .sendAsync();
                 }
             } else if (c.isDirectory()) {
                 fixFolder(c);

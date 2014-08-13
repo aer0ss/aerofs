@@ -16,7 +16,6 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
@@ -29,6 +28,7 @@ import java.util.Set;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import static com.aerofs.daemon.core.phy.linked.db.LinkedStorageSchema.*;
+import static com.aerofs.defects.Defects.newDefect;
 
 /**
  * A bug in LinkedStorage caused the NRODatabase to become stale when NROs where migrated
@@ -41,12 +41,10 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
     private final static Logger l = Loggers.getLogger(DPUTUpdateNROForAliasedAndMigrated.class);
 
     private final IDBCW _dbcw;
-    private final RockLog _rocklog;
 
-    public DPUTUpdateNROForAliasedAndMigrated(CoreDBCW dbcw, RockLog rocklog)
+    public DPUTUpdateNROForAliasedAndMigrated(CoreDBCW dbcw)
     {
         _dbcw = dbcw.get();
-        _rocklog = rocklog;
     }
 
     @Override
@@ -85,13 +83,13 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
 
                 if (!nros.isEmpty()) {
                     l.info("{} {}", nros.size(), conflicts.size());
-                    _rocklog.newDefect("dput.aliasnro")
+                    newDefect("dput.aliasnro")
                             .addData("nro", nros.size())
                             .addData("conflicts", conflicts.size())
                             .addData("updated-nro", updatedNRO)
                             .addData("updated-conflicts", updatedConflict)
                             .addData("updated-sidx", updatedSIndex)
-                            .send();
+                            .sendAsync();
                 }
             }
         });
@@ -145,9 +143,9 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
                 // hopefully the botched migration will be recovered after the update
                 // if not, unlink/reinstall will be required
                 l.warn("botched migration {}", soid);
-                _rocklog.newDefect("dput.nro.migration.botched")
+                newDefect("dput.nro.migration.botched")
                         .addData("soid", soid.toString())
-                        .send();
+                        .sendAsync();
             } else if (sidx != soid.sidx().getInt()) {
                 // admitted in different store: update SIndex
                 updateSIndex(s, soid, sidx);

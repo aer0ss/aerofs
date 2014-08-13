@@ -29,7 +29,6 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UIGlobals;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -43,6 +42,8 @@ import java.util.TreeMap;
 
 import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.INSTALL_CLIENT;
 import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.REINSTALL_CLIENT;
+import static com.aerofs.defects.Defects.newDefectWithLogs;
+import static com.aerofs.defects.Defects.newDefectWithLogsNoCfg;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.commons.lang.StringUtils.isEmpty;
@@ -212,9 +213,15 @@ public class Setup
         // Don't send SV defect for bad credentials
         if (!(e instanceof ExBadCredential)) {
             if (Cfg.inited()) {
-                SVClient.logSendDefectSyncIgnoreErrors(true, "setup", e);
+                newDefectWithLogs("setup")
+                        .setMessage("setup")
+                        .setException(e)
+                        .sendSyncIgnoreErrors();
             } else {
-                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "setup", e, userId, _rtRoot);
+                newDefectWithLogsNoCfg("setup", userId, _rtRoot)
+                        .setMessage("setup")
+                        .setException(e)
+                        .sendSyncIgnoreErrors();
             }
         }
 

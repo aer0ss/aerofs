@@ -27,7 +27,6 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.inject.Inject;
@@ -42,6 +41,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
+
+import static com.aerofs.defects.Defects.newDefect;
 
 /**
  * When a file sees its timestamp change but not its length it is possible that the actual content
@@ -73,7 +74,6 @@ public class HashQueue implements IVersionControlListener
     private final DirectoryService _ds;
     private final VersionUpdater _vu;
     private final TransManager _tm;
-    private final RockLog _rl;
 
     private class HashRequest implements Runnable
     {
@@ -208,12 +208,12 @@ public class HashQueue implements IVersionControlListener
             // send rocklog defects to gather information about frequency of linker-induced
             // hashing, size distribution of affected file and benefit (or lack thereof) of
             // going through the trouble of hashing content to prevent spurious updates
-            _rl.newDefect("mcn.hash." + (same ? "same" : "change"))
+            newDefect("mcn.hash." + (same ? "same" : "change"))
                     .addData("soid", soid.toString())
                     .addData("length", length)
                     .addData("db_mtime", ca.mtime())
                     .addData("fs_mtime", mtime)
-                    .send();
+                    .sendAsync();
 
             // update CA as originally planned, leveraging content hash to hopefully avoid
             // spurious updates (as experience by some users at BB)
@@ -238,13 +238,12 @@ public class HashQueue implements IVersionControlListener
 
     @Inject
     public HashQueue(CoreScheduler sched, DirectoryService ds, NativeVersionControl nvc,
-            VersionUpdater vu, TransManager tm, RockLog rl)
+            VersionUpdater vu, TransManager tm)
     {
         _sched = sched;
         _ds = ds;
         _vu = vu;
         _tm = tm;
-        _rl = rl;
         nvc.addListener_(this);
     }
 

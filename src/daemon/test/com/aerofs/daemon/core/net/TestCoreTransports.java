@@ -22,7 +22,6 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -60,7 +59,6 @@ public class TestCoreTransports extends AbstractTest
     private @Mock CoreQueue _coreQueue;
     private @Mock MaxcastFilterReceiver _maxcastFilterReceiver;
     private @Mock LinkStateService _linkStateService;
-    private @Mock RockLog _rockLog;
     private @Mock ClientSSLEngineFactory _clientSslEngineFactory;
     private @Mock ServerSSLEngineFactory _serverSSLEngineFactory;
     private @Mock ClientSocketChannelFactory _clientSocketChannelFactory;
@@ -105,7 +103,6 @@ public class TestCoreTransports extends AbstractTest
                 _maxcastFilterReceiver,
                 _linkStateService,
                 null,
-                _rockLog,
                 _clientSslEngineFactory,
                 _serverSSLEngineFactory,
                 _clientSocketChannelFactory,
@@ -145,7 +142,6 @@ public class TestCoreTransports extends AbstractTest
                 _maxcastFilterReceiver,
                 _linkStateService,
                 null,
-                _rockLog,
                 _clientSslEngineFactory,
                 _serverSSLEngineFactory,
                 _clientSocketChannelFactory,

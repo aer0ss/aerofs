@@ -1,15 +1,15 @@
 /*
- * Copyright (c) Air Computing Inc., 2013.
+ * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.rocklog;
+package com.aerofs.defects;
 
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.defects.Defect.Priority;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.rocklog.Defect.Priority;
 import com.aerofs.testlib.AbstractTest;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -17,8 +17,11 @@ import org.junit.Test;
 import org.mockito.Mock;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -26,8 +29,14 @@ import static org.mockito.Mockito.when;
 
 public class TestDefect extends AbstractTest
 {
-    @Mock RockLog _rocklog;
     @Mock InjectableCfg _cfg;
+    @Mock RockLog _rockLog;
+    @Mock DryadClient _dryad;
+    @Mock Executor _executor;
+    @Mock RecentExceptions _recentExceptions;
+    Map<String, String> _properties = emptyMap();
+
+    Gson _gson = new Gson();
 
     /**
      * Test that the JSON output of a defect follows what the RockLog server expects.
@@ -55,17 +64,20 @@ public class TestDefect extends AbstractTest
         when(_cfg.user()).thenReturn(user);
 
         // Create a new defect
-        Defect defect = new Defect(_rocklog, _cfg, "test-defect").setException(wrapper).setMessage("hello");
+        Defect defect = new Defect("defect.test", _cfg, _rockLog, _dryad, _executor,
+                _recentExceptions, _properties)
+                .setMessage("hello")
+                .setException(wrapper);
 
         // Serialize and de-serialize the defect
-        String json = defect.getJSON();
+        String json = _gson.toJson(defect.getDefectData());
         //System.out.println("JSON: " + json);
-        JsonDefect result = new Gson().fromJson(json, JsonDefect.class);
+        JsonDefect result = _gson.fromJson(json, JsonDefect.class);
 
         // Check the basic properties of the defect
         // TODO (GS): Check timestamp
         assertNotNull(UUID.fromString(result.defect_id)); // check that a valid UUID was generated
-        assertEquals("test-defect", result.name);
+        assertEquals("defect.test", result.name);
         assertEquals("hello", result.message);
         assertEquals(Priority.Auto, result.priority);
         assertEquals(version, result.version);

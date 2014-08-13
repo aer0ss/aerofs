@@ -43,7 +43,6 @@ import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBGetComponentRequest;
 import com.aerofs.proto.Core.PBGetComponentResponse;
 import com.aerofs.proto.Core.PBMeta;
-import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -53,6 +52,7 @@ import java.sql.SQLException;
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_COMPLETION;
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_REQUEST;
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.META_REQUEST;
+import static com.aerofs.defects.Defects.newDefect;
 
 // TODO NAK for this and other primitives
 
@@ -77,14 +77,13 @@ public class GetComponentRequest
     private CfgLocalUser _cfgLocalUser;
     private OutboundEventLogger _oel;
     private TransManager _tm;
-    private RockLog _rl;
 
     @Inject
     public void inject_(TransportRoutingLayer trl, LocalACL lacl, IPhysicalStorage ps, OutboundEventLogger oel,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
             IEmigrantTargetSIDLister emc, ComponentContentSender contentSender, MapAlias2Target a2t,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser,
-            TransManager tm, RockLog rl)
+            TransManager tm)
     {
         _trl = trl;
         _lacl = lacl;
@@ -101,7 +100,6 @@ public class GetComponentRequest
         _sid2sidx = sid2sidx;
         _cfgLocalUser = cfgLocalUser;
         _tm = tm;
-        _rl = rl;
     }
 
     /**
@@ -320,11 +318,11 @@ public class GetComponentRequest
                     // send a rocklog defect.
                     // TODO: force linker update or something?
                     l.info("hash mismatch {} {} {}", sokid, db, h);
-                    _rl.newDefect("gcc.hash.mismatch")
+                    newDefect("gcc.hash.mismatch")
                             .addData("sokid", sokid)
                             .addData("db_hash", db)
                             .addData("fs_hash", h)
-                            .send();
+                            .sendAsync();
                 }
                 return;
             }

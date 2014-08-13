@@ -1,18 +1,18 @@
 package com.aerofs.gui.misc;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.defects.PriorityDefect.Factory;
 import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.S;
-import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.ui.UIGlobals;
-import com.aerofs.ui.defect.PriorityDefectReporter;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -36,6 +36,9 @@ import javax.annotation.Nullable;
 
 public class DlgDefect extends AeroFSJFaceDialog
 {
+    // FIXME(AT): find a better way to do this
+    private static final Factory _defectFactory = new Factory(UIGlobals.ritualClientProvider());
+
     private Text _txtEmailAddress;
     private Text _txtComment;
     private Button _sendDiagnosticData;
@@ -160,8 +163,9 @@ public class DlgDefect extends AeroFSJFaceDialog
         _sendDiagnosticData.setSelection(true);
         _sendDiagnosticData.setText("Send metadata (including file names)");
 
-        if (L.isMultiuser()) {
+        if (L.isMultiuser() || PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             // no plaintext file names can be collected with multiuser installs
+            // whereas we always collect filenames for private deployment
             _sendDiagnosticData.setVisible(false);
         }
 
@@ -219,18 +223,15 @@ public class DlgDefect extends AeroFSJFaceDialog
                  (_expectedException ? "" : "un") +
                  "expected error):\n" + ExceptionUtils.getFullStackTrace(_exception));
 
-        final boolean dumpDaemonStatus = _sendDiagnosticData.getSelection();
+        final boolean sendFilenames = _sendDiagnosticData.getSelection();
         final String contactEmail = _txtEmailAddress.getText();
 
-        ThreadUtil.startDaemonThread("defect-sender", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                new PriorityDefectReporter(UIGlobals.ritualClientProvider())
-                        .sendPriorityDefect(contactEmail, msg, dumpDaemonStatus);
-            }
-        });
+        _defectFactory.newPriorityDefect()
+                .setMessage(msg)
+                .setException(_exception)
+                .setContactEmail(contactEmail)
+                .setSendFilenames(sendFilenames)
+                .sendAsync();
     }
 
     /**

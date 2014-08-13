@@ -6,9 +6,10 @@ package com.aerofs.ui.logs;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExInternalError;
+import com.aerofs.defects.DryadClient;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
-import com.aerofs.sv.client.SVClient;
+import com.aerofs.lib.cfg.Cfg;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -20,6 +21,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static com.aerofs.defects.DryadClientUtil.createArchivedLogsResource;
+import static com.aerofs.defects.DryadClientUtil.createPublicDryadClient;
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.LibParam.FILE_BUF_SIZE;
 import static com.aerofs.lib.ThreadUtil.sleepUninterruptable;
@@ -131,7 +134,10 @@ public final class LogArchiver
             l.debug("upload {}", gzippedLog);
 
             try {
-                SVClient.sendGZippedLog(gzippedLog);
+                DryadClient dryad = createPublicDryadClient();
+                dryad.uploadFiles(
+                        createArchivedLogsResource(Cfg.user(), Cfg.did(), gzippedLog.getName()),
+                        new File[]{gzippedLog});
                 deleteOrOnExit(gzippedLog);
             } catch (Exception e) {
                 // suppress stack for ExInternalError. It has caused too much logging due to SV

@@ -5,11 +5,12 @@ import com.aerofs.daemon.lib.db.CoreDatabaseDumper;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.sv.client.SVClient;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 
 public class FSCK
 {
@@ -62,8 +63,9 @@ public class FSCK
             _checker.check_(repair, okay);
 
             if (!okay.get()) {
-                SVClient.logSendDefectSync(true, "fsck found inconsistency. see logs for detail",
-                        new Exception(), null, false);
+                newDefectWithLogs("fsck.consistency")
+                        .setMessage("fsck found inconsistency. see logs for detail")
+                        .sendSync();
             }
 
         } else {

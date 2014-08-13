@@ -23,7 +23,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
@@ -47,6 +46,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.HashSet;
+
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 
 public class GUI implements IUI
 {
@@ -719,8 +720,10 @@ public class GUI implements IUI
             {
                 for (Shell shell : _open) {
                     if (shell.isDisposed() || !shell.isVisible()) {
-                        SVClient.logSendDefectAsync(true, "closed shells in _open: " + shell +
-                                ": " + shell.isDisposed());
+                        newDefectWithLogs("gui.is_open")
+                                .setMessage("closed shells in _open: " + shell + ": "
+                                        + shell.isDisposed())
+                                .sendAsync();
                     }
                 }
             }
@@ -745,14 +748,18 @@ public class GUI implements IUI
         if (_open.size() != _openShells) {
             String shs = "";
             for (Shell sh : _open) shs += " " + sh;
-            SVClient.logSendDefectAsync(true, "_open != open: " + _openShells + " == " + shs);
+            newDefectWithLogs("gui.register_shell")
+                    .setMessage("_open != open: " + _openShells + " == " + shs)
+                    .sendAsync();
         }
 
         _openShells++;
         l.info("open " + _openShells);
 
         if (!_open.add(shell)) {
-            SVClient.logSendDefectAsync(true, "re-register shell: " + shell);
+            newDefectWithLogs("gui.register_shell")
+                    .setMessage("re-register shell: " + shell)
+                    .sendAsync();
         }
 
         shell.addDisposeListener(new DisposeListener()
@@ -764,14 +771,18 @@ public class GUI implements IUI
                 l.info("dispose " + _openShells);
 
                 if (!_open.remove(shell)) {
-                    SVClient.logSendDefectAsync(true, "re-unregister shell: " + shell);
+                    newDefectWithLogs("gui.register_shell")
+                            .setMessage("re-unregister shell: " + shell)
+                            .sendAsync();
                 }
 
                 if (_open.size() != _openShells) {
                     String shs = "";
                     for (Shell sh : _open) shs += " " + sh;
-                    SVClient.logSendDefectAsync(true,
-                            "_open != open: " + _openShells + " == " + shs);
+
+                    newDefectWithLogs("gui.register_shell")
+                            .setMessage("_open != open: " + _openShells + " == " + shs)
+                            .sendAsync();
                 }
             }
         });

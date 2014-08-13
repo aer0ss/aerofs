@@ -5,6 +5,7 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.controller.IViewNotifier.Type;
+import com.aerofs.defects.Defects;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.labeling.L;
@@ -313,7 +314,9 @@ public abstract class Updater
             return version;
         } catch (final IOException e) {
             l.error("Error reading version from {}", versionURL, e);
-            UIGlobals.rockLog().newDefect("updater.readServerVersion").setException(e).send();
+            Defects.newDefect("updater.get_server_version")
+                    .setException(e)
+                    .sendAsync();
             throw e;
         }
     }
@@ -404,7 +407,9 @@ public abstract class Updater
             _installationFilename = filename;
         } catch (final Exception e) {
             l.error("Error downloading update from {}", installerUrl, e);
-            UIGlobals.rockLog().newDefect("updater.downloadUpdate").setException(e).send();
+            Defects.newDefect("updater.downloadUpdate")
+                    .setException(e)
+                    .sendAsync();
             removeTempDownloadDirectory(dir);
             return false;
         }

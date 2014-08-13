@@ -73,7 +73,6 @@ public final class TransportResource extends ExternalResource
     private final TransportType transportType;
     private final String transportId;
     private final MockCA mockCA;
-    private final MockRockLog mockRockLog;
     private final InetSocketAddress zephyrAddress;
     private final InetSocketAddress xrayAddress;
     private final IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
@@ -84,7 +83,8 @@ public final class TransportResource extends ExternalResource
     private TransportReader transportReader;
     private boolean readerSet;
 
-    public TransportResource(TransportType transportType, MockCA mockCA, MockRockLog mockRockLog, InetSocketAddress zephyrAddress, InetSocketAddress xrayAddress)
+    public TransportResource(TransportType transportType, MockCA mockCA,
+            InetSocketAddress zephyrAddress, InetSocketAddress xrayAddress)
     {
         l.info("seed:{}", seed);
 
@@ -93,7 +93,6 @@ public final class TransportResource extends ExternalResource
         this.transportType = transportType;
         this.transportId = String.format("%s-%d", this.transportType.getId(), Math.abs(random.nextInt()));
         this.mockCA = mockCA;
-        this.mockRockLog = mockRockLog;
         this.zephyrAddress = zephyrAddress;
         this.xrayAddress = xrayAddress;
     }
@@ -148,7 +147,6 @@ public final class TransportResource extends ExternalResource
                 Proxy.NO_PROXY,
                 timer,
                 outgoingEventSink,
-                mockRockLog.getRockLog(),
                 linkStateService,
                 new MaxcastFilterReceiver(),
                 null,

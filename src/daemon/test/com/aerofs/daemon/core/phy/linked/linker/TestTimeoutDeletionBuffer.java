@@ -23,7 +23,6 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 
 import com.google.common.collect.ImmutableList;
@@ -45,7 +44,6 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
     @Mock ObjectDeleter od;
     @Mock OA oa;
     @Mock LinkerRootMap lrm;
-    @Mock RockLog rocklog;
     @Mock RepresentabilityHelper rh;
     @Mock IgnoreList il;
     @Mock InjectableFile.Factory factFile;

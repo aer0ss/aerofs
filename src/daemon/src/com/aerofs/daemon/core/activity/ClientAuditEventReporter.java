@@ -33,7 +33,6 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -47,6 +46,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
+import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.getOnlyElement;
 
@@ -247,7 +247,10 @@ public final class ClientAuditEventReporter // this can be final because it's no
                 } catch (Throwable t) {
                     // having auditing cause a dameon crash loop is unacceptable
                     l.error("unhandled exception in caer", t);
-                    SVClient.logSendDefectAsync(true, "fail post events from caer to auditor", t);
+                    newDefectWithLogs("audit.client.schedule_report")
+                            .setMessage("fail post events from caer to auditor")
+                            .setException(t)
+                            .sendAsync();
                 }
 
                 // reschedule

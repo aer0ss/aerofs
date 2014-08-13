@@ -11,9 +11,10 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.SID;
+import com.aerofs.defects.Defect;
+import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.LibParam.RitualNotification;
@@ -74,9 +75,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     private volatile boolean _stopping;
     private boolean _firstStart = true;
 
-    private final FrequentDefectSender _fdsDeath = new FrequentDefectSender();
-    private final FrequentDefectSender _fdsHeartbeatGone = new FrequentDefectSender();
-    private final FrequentDefectSender _fdsRestartFail = new FrequentDefectSender();
+    private final Defect _defectDeath = Defects.newFrequentDefect("dm.death");
+    private final Defect _defectHeartbeatGone = Defects.newFrequentDefect("dm.heartbeat");
+    private final Defect _defectRestartFail = Defects.newFrequentDefect("dm.restart");
     private final InjectableDriver _driver = new InjectableDriver(OSUtil.get());
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
@@ -437,7 +438,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 // wait so that the daemon.log sent along the defect will
                 // contain the lines logged right before the death.
                 ThreadUtil.sleepUninterruptable(5 * C.SEC);
-                _fdsDeath.logSendAsync("daemon died: " + getMessage(exitCode));
+
+                _defectDeath.setMessage("daemon died: " + getMessage(exitCode))
+                        .sendAsync();
             }
         });
     }
@@ -477,7 +480,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 } catch (ExNotSetup e) {
                     CORE_DB_TAMPERING.exit();
                 } catch (Exception e) {
-                    _fdsRestartFail.logSendAsync("restart daemon", e);
+                    _defectRestartFail.setMessage("restart daemon")
+                            .setException(e)
+                            .sendAsync();
                 }
 
                 l.warn("restart in " + UIParam.DM_RESTART_INTERVAL);
@@ -496,7 +501,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         try {
             UIGlobals.ritual().heartbeat(Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            _fdsHeartbeatGone.logSendAsync("daemon hb gone. " + e);
+            _defectHeartbeatGone.setMessage("daemon hb gone")
+                    .setException(e)
+                    .sendAsync();
         }
     }
 

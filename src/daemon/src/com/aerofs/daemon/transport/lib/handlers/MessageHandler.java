@@ -10,7 +10,6 @@ import com.aerofs.daemon.transport.lib.IChannelData;
 import com.aerofs.daemon.transport.lib.TransportDefects;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Queues;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -32,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.aerofs.daemon.transport.lib.TransportUtil.getChannelData;
 import static com.aerofs.daemon.transport.lib.TransportUtil.hasValidChannelData;
+import static com.aerofs.defects.Defects.newDefect;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.jboss.netty.channel.Channels.fireMessageReceived;
@@ -165,13 +165,6 @@ public final class MessageHandler extends SimpleChannelHandler
     // disconnection reason
     // explicitly set by the user, or, if an exception was thrown in the pipeline
     private final AtomicReference<Throwable> disconnectReason = new AtomicReference<Throwable>(null); // set once, to the first exception thrown, or first disconnection reason
-
-    private final RockLog rockLog;
-
-    public MessageHandler(RockLog rockLog)
-    {
-        this.rockLog = rockLog;
-    }
 
     public boolean setDisconnectReason(Throwable cause)
     {
@@ -388,10 +381,10 @@ public final class MessageHandler extends SimpleChannelHandler
             // AFAICT there's nothing in the above code that
             // should throw during iteration. If there is, that's unexpected,
             // and I really want to know about it
-            rockLog.newDefect(TransportDefects.DEFECT_NAME_THROW_DURING_FAIL_PENDING_WRITES)
+            newDefect(TransportDefects.DEFECT_NAME_THROW_DURING_FAIL_PENDING_WRITES)
                    .setMessage("throw during failing pending writes")
                    .setException(e)
-                   .sendBlocking();
+                   .sendSyncIgnoreErrors();
 
             // kill the system
             SystemUtil.fatal("unexpected exception while failing pending writes");

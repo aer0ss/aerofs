@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.sv.client.SVClient;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -16,6 +15,7 @@ import java.text.Normalizer.Form;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.T_OA;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_NAME;
+import static com.aerofs.defects.Defects.newDefect;
 
 public class DPUTGetEncodingStats implements IDaemonPostUpdateTask
 {
@@ -71,7 +71,9 @@ public class DPUTGetEncodingStats implements IDaemonPostUpdateTask
                     "null name count: " + nullNameCount + "\n" +
                     "unknown   count: " + unknownCount + "\n" +
                     "total     count: " + totalCount;
-            SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, desc, null);
+            newDefect("dput.get_encoding_stats")
+                    .setMessage(desc)
+                    .sendSyncIgnoreErrors();
         }
     }
 }

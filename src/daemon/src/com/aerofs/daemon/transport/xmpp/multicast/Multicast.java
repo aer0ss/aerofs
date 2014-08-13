@@ -19,7 +19,7 @@ import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.daemon.transport.xmpp.XMPPUtilities;
-import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.defects.Defect;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -44,6 +44,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static com.aerofs.daemon.transport.xmpp.XMPPUtilities.getBodyDigest;
+import static com.aerofs.defects.Defects.newFrequentDefect;
 import static com.google.common.base.Preconditions.checkArgument;
 
 // FIXME: This class has potential for bad state mismatches with XMPPConnectionService (and it's
@@ -53,7 +55,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
 
-    private final FrequentDefectSender frequentDefectSender = new FrequentDefectSender();
+    private final Defect defect = newFrequentDefect("transport.multicast");
     private final Map<SID, MultiUserChat> mucs = Maps.newTreeMap();
     private final Set<SID> allStores = Sets.newTreeSet();
     private final DID localdid;
@@ -170,7 +172,10 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
                         try {
                             recvMessage(msg);
                         } catch (Exception e) {
-                            frequentDefectSender.logSendAsync("process mc from " + msg.getFrom() + ": " + XMPPUtilities.getBodyDigest(msg.getBody()), e);
+                            defect.setMessage("process mc from " + msg.getFrom() + ": "
+                                    + getBodyDigest(msg.getBody()))
+                                    .setException(e)
+                                    .sendAsync();
                         }
                     }
                 }

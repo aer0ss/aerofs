@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.defects.Defect;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Lists;
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 
+import static com.aerofs.defects.Defects.newFrequentDefect;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -89,7 +90,7 @@ public class IncomingStreams
         }
     }
 
-    private final FrequentDefectSender _fds = new FrequentDefectSender();
+    private final Defect _defect = newFrequentDefect("core.incoming_stream");
     private final List<IIncomingStreamChunkListener> _listenerList = Lists.newLinkedList();
     private final Map<StreamKey, IncomingStream> _map = Maps.newTreeMap();
 
@@ -177,7 +178,9 @@ public class IncomingStreams
             l.warn("{} recv chunk after end for null stream with key", key._did, key);
         } else if (seq != ++stream._seq) {
             if (stream._invalidationReason == null) { // not aborted
-                _fds.logSendAsync("istrm " + stream._pc.ep().tp() + ":" + key + " expect seq " + stream._seq + " actual " + seq);
+                _defect.setMessage("istrm " + stream._pc.ep().tp() + ":" + key + " expect seq "
+                        + stream._seq + " actual " + seq)
+                        .sendAsync();
                 abortAndNotifyReceiver_(key, InvalidationReason.OUT_OF_ORDER); // notify receiver
                 end_(key); // notify lower layers
             } else {

@@ -18,7 +18,6 @@ import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
-import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -54,7 +53,6 @@ final class JingleBootstrapFactory
     private final Timer timer;
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
-    private final RockLog rockLog;
     private final IncomingChannelHandler incomingChannelHandler;
     private final TransportProtocolHandler protocolHandler;
     private final IUnicastListener unicastListener;
@@ -73,7 +71,6 @@ final class JingleBootstrapFactory
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IUnicastListener unicastListener,
-            RockLog rockLog,
             IIncomingChannelListener serverHandlerListener,
             TransportProtocolHandler protocolHandler,
             TransportStats transportStats,
@@ -91,7 +88,6 @@ final class JingleBootstrapFactory
         this.timer = timer;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
-        this.rockLog = rockLog;
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
         this.protocolHandler = protocolHandler;
         this.unicastListener = unicastListener;
@@ -110,7 +106,7 @@ final class JingleBootstrapFactory
             public ChannelPipeline getPipeline()
                     throws Exception
             {
-                MessageHandler messageHandler = new MessageHandler(rockLog);
+                MessageHandler messageHandler = new MessageHandler();
                 CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
 
                 return pipeline(
@@ -144,7 +140,7 @@ final class JingleBootstrapFactory
             public ChannelPipeline getPipeline()
                     throws Exception
             {
-                MessageHandler messageHandler = new MessageHandler(rockLog);
+                MessageHandler messageHandler = new MessageHandler();
                 CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.SERVER);
 
                 return pipeline(

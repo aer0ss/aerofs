@@ -17,7 +17,6 @@ import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.rocklog.RockLog;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -34,7 +33,6 @@ public class GetComponentRequestWithMocks extends AbstractClassUnderTestWithMock
     public @Mock IPhysicalStorage _ps;
     public @Mock OutboundEventLogger _oel;
     public @Mock TransManager _tm;
-    public @Mock RockLog _rl;
 
     // For GCCContentSender
     public @Mock OutgoingStreams _oss;
@@ -49,6 +47,6 @@ public class GetComponentRequestWithMocks extends AbstractClassUnderTestWithMock
         // Mockito doesn't inject an injected object (_gccContentSender) into another (_gcc).
         // So we do it manually.
         _gcc.inject_(_trl, _lacl, _ps, _oel, _ds, _rpc, _pvc, _nvc, _emc, _gccContentSender, _a2t,
-                _sidx2sid, _sid2sidx, _cfgLocalUser, _tm, _rl);
+                _sidx2sid, _sid2sidx, _cfgLocalUser, _tm);
     }
 }

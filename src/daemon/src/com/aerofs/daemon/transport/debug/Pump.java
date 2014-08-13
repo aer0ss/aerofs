@@ -43,7 +43,6 @@ import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
@@ -153,7 +152,6 @@ public final class Pump implements IProgram
         CfgScrypted scrypted = new CfgScrypted();
         CfgLolol lolol = new CfgLolol();
         Timer timer = TimerUtil.getGlobalTimer();
-        RockLog rockLog = new RockLog();
         MaxcastFilterReceiver maxcastFilterReceiver = new MaxcastFilterReceiver();
         CfgKeyManagersProvider keyProvider = new CfgKeyManagersProvider();
         CfgCACertificateProvider trustedCA = new CfgCACertificateProvider();
@@ -186,7 +184,6 @@ public final class Pump implements IProgram
                 Proxy.NO_PROXY,
                 timer,
                 incomingEventSink,
-                rockLog,
                 linkStateService,
                 maxcastFilterReceiver,
                 null,

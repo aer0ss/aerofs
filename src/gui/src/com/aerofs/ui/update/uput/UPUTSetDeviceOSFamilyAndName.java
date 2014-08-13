@@ -5,10 +5,10 @@
 package com.aerofs.ui.update.uput;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.defects.Defects;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.ui.UIGlobals;
 import org.slf4j.Logger;
 
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
@@ -28,7 +28,9 @@ public class UPUTSetDeviceOSFamilyAndName implements IUIPostUpdateTask
                             osu.getOSFamily().getString(), osu.getFullOSName());
         } catch (Throwable e) {
             l.warn("Failed to set Device OS Family and Name");
-            UIGlobals.rockLog().newDefect("ui.set_device_info").setException(e).send();
+            Defects.newDefect("uput.set_device_os_family_and_name")
+                    .setException(e)
+                    .sendAsync();
         }
     }
 }

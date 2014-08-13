@@ -42,7 +42,6 @@ import com.aerofs.lib.injectable.InjectableDriver.ReplaceFileException;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
-import com.aerofs.rocklog.RockLog;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -59,6 +58,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.aerofs.defects.Defects.newDefect;
 
 public class LinkedStorage implements IPhysicalStorage
 {
@@ -78,7 +78,6 @@ public class LinkedStorage implements IPhysicalStorage
     private final LinkedStagingArea _sa;
     private final LinkedRevProvider _revProvider;
     final RepresentabilityHelper _rh;
-    private final RockLog _rl;
     private final CoreScheduler _sched;
 
     private final TransLocal<Boolean> _tlUseHistory = new TransLocal<Boolean>() {
@@ -104,7 +103,6 @@ public class LinkedStorage implements IPhysicalStorage
             SharedFolderTagFileAndIcon sfti,
             LinkedStagingArea sa,
             LinkedRevProvider revProvider,
-            RockLog rl,
             CoreScheduler sched)
     {
         _il = il;
@@ -121,7 +119,6 @@ public class LinkedStorage implements IPhysicalStorage
         _cfgAbsRoots = cfgAbsRoots;
         _sa = sa;
         _revProvider = revProvider;
-        _rl = rl;
         _sched = sched;
     }
 
@@ -417,7 +414,9 @@ public class LinkedStorage implements IPhysicalStorage
         try {
             _dr.replaceFile(f.getAbsPath_(), p._f.getAbsolutePath(), revPath);
         } catch (ReplaceFileException e) {
-            _rl.newDefect("linked.replace").setException(e).send();
+            newDefect("linked.replace")
+                    .setException(e)
+                    .sendAsync();
             if (e.replacedMovedToBackup) {
                 try {
                     _factFile.create(revPath).moveInSameFileSystem(f._f);
@@ -562,10 +561,10 @@ public class LinkedStorage implements IPhysicalStorage
             // only send defect if the mismatch is large enough that it is unlikely to
             // arise from a race condition
             if (actual - expected > 2 * C.SEC) {
-                _rl.newDefect("linked.mtime")
+                newDefect("linked.mtime")
                         .addData("actual", actual)
                         .addData("expected", expected)
-                        .send();
+                        .sendAsync();
             }
 
             // NB: this can result in duplicate notifications in case of race conditions but
