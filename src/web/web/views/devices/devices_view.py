@@ -29,7 +29,7 @@ def my_devices(request):
     user = authenticated_userid(request)
 
     # if there aren't any devices, redirect user to download page
-    device_data = json_get_devices(request)
+    device_data = get_devices_for_user(request, user)
     if len(device_data['devices']) + len(device_data['mobile_devices']) == 0:
         return HTTPFound(request.route_path('download', _query={'msg_type': 'no_device'}))
 
@@ -170,8 +170,11 @@ def _jsonable_device_mobile(device):
     request_method='GET'
 )
 def json_get_devices(request):
-    user = authenticated_userid(request)
+    requester = authenticated_userid(request)
+    user = request.params["user"]
+    return get_devices_for_user(request, user)
 
+def get_devices_for_user(request, user):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 

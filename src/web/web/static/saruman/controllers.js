@@ -5,7 +5,11 @@ sarumanControllers.controller('DevicesController', ['$scope', '$rootScope', '$lo
         var csrftoken = $('meta[name=csrf-token]').attr('content');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
 
-        $http.get('/devices/get_devices').success(function(data){
+        $http.get('/devices/get_devices', {
+            params: {
+                user: $("#username")[0].innerHTML
+            }
+        }).success(function(data){
             $scope.devices = data.devices.concat(data.mobile_devices);
             $rootScope.devices = $scope.devices;
         }).error(function(response){
