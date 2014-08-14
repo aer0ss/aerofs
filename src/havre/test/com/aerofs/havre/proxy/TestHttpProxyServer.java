@@ -61,7 +61,7 @@ public class TestHttpProxyServer extends AbstractBaseTest
 
         expect()
                 .statusCode(401)
-                .cookie("server", isEmptyString())
+                .cookie("route", isEmptyString())
         .when()
                 .get("/");
     }
@@ -74,7 +74,7 @@ public class TestHttpProxyServer extends AbstractBaseTest
 
         expect()
                 .statusCode(503)
-                .cookie("server", isEmptyString())
+                .cookie("route", isEmptyString())
         .when()
                 .get("/");
     }
@@ -95,12 +95,36 @@ public class TestHttpProxyServer extends AbstractBaseTest
                 .thenReturn(null);
 
         given()
-                .cookie("server", did.toStringFormal())
+                .cookie("route", did.toStringFormal())
                 .header("Endpoint-Consistency", "strict")
         .expect()
                 .statusCode(503)
-                .cookie("server", isEmptyString())
+                .cookie("route", isEmptyString())
                 .when()
+                .get("/");
+    }
+
+    @Test
+    public void shouldReturn503WhenRouteNotAvailable() throws Exception
+    {
+        AuthenticatedPrincipal user = new AuthenticatedPrincipal("foo@bar.baz");
+        DID did = DID.generate();
+
+        when(auth.authenticate(any(HttpRequest.class))).thenReturn(user);
+
+        when(connector.connect(eq(user), any(DID.class), eq(false), any(Version.class),
+                any(ChannelPipeline.class)))
+                .thenReturn(mock(Channel.class));
+        when(connector.connect(eq(user), eq(did), eq(true), any(Version.class),
+                any(ChannelPipeline.class)))
+                .thenReturn(null);
+
+        given()
+                .header("Route", did.toStringFormal())
+        .expect()
+                .statusCode(503)
+                .cookie("route", isEmptyString())
+        .when()
                 .get("/");
     }
 }
