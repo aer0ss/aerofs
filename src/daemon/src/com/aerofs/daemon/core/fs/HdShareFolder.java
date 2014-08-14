@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -171,7 +172,14 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         callSP_(sid, name, SubjectPermissionsList.mapToPB(ev._subject2role), ev._emailNote,
                 ev._suppressSharedFolderRulesWarnings);
 
-        if (!alreadyShared) convertToSharedFolder_(ev._path, oa, sid);
+        if (!alreadyShared) {
+            // resolve the path again to account for aliasing of the parent
+            // TODO: gracefully handle concurrent sharing of an ancestor/descendant
+            OA noa = throwIfUnshareable_(ev._path);
+            // TODO: gracefully handle aliasing of the object itself
+            if (!noa.soid().equals(oa.soid())) throw new ExAborted();
+            convertToSharedFolder_(ev._path, noa, sid);
+        }
 
         // ensure ACLs are updated (at the very least we need an entry for the local user...)
         _aclsync.syncToLocal_();
@@ -188,7 +196,6 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     {
         return path.isEmpty() ? new File(absRoots.get(path.sid())).getName() : path.last();
     }
-
 
     private OA throwIfUnshareable_(Path path)
             throws SQLException, ExNotFound, ExNoPerm, ExExpelled, ExParentAlreadyShared,
