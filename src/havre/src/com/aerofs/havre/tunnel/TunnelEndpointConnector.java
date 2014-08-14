@@ -14,8 +14,10 @@ import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.tunnel.ITunnelConnectionListener;
 import com.aerofs.tunnel.TunnelAddress;
 import com.aerofs.tunnel.TunnelHandler;
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -28,6 +30,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.channels.ClosedChannelException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
 import java.util.SortedSet;
@@ -126,14 +129,19 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
             return _byDID.isEmpty();
         }
 
+        SortedSet<UserDevice> suitableDevices(@Nullable Version minVersion)
+        {
+            return minVersion == null
+                    ? _byVersion : _byVersion.tailSet(UserDevice.lowest(minVersion));
+        }
+
         /**
          * Pick a random device that support the requested minimum version
          */
         @Nullable TunnelHandler pick_(@Nullable Version minVersion)
         {
             // filter out endpoints with version strictly lower than minVersion
-            SortedSet<UserDevice> candidates = minVersion == null
-                    ? _byVersion : _byVersion.tailSet(UserDevice.lowest(minVersion));
+            SortedSet<UserDevice> candidates = suitableDevices(minVersion);
 
             l.debug("v: {} cand: {}", minVersion, candidates.size());
             return candidates.isEmpty() ? null
@@ -151,18 +159,66 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
         _listener = listener;
     }
 
+    private static class EndpointConstraint
+    {
+        private final AuthenticatedPrincipal principal;
+        private final @Nullable Version minVersion;
+
+        private EndpointConstraint(AuthenticatedPrincipal p, Version v)
+        {
+            principal = p;
+            minVersion = v;
+        }
+    }
+
     @Override
     public synchronized @Nullable Channel connect(AuthenticatedPrincipal principal, DID did,
             boolean strictMatch, @Nullable Version minVersion, ChannelPipeline pipeline)
     {
         TunnelHandler tunnel = getEndpoint(principal, did, strictMatch, minVersion);
-        return tunnel != null ? tunnel.newVirtualChannel(pipeline) : null;
+        Channel channel = tunnel != null ? tunnel.newVirtualChannel(pipeline) : null;
+        if  (channel != null) channel.setAttachment(new EndpointConstraint(principal, minVersion));
+        return channel;
     }
 
     @Override
     public DID device(Channel channel)
     {
         return ((TunnelAddress)channel.getRemoteAddress()).did;
+    }
+
+    @Override
+    public Iterable<DID> alternateDevices(Channel channel)
+    {
+        Object o = channel.getAttachment();
+        if (o == null || !(o instanceof EndpointConstraint)) return Collections.emptyList();
+        EndpointConstraint c = (EndpointConstraint)o;
+
+        final DID did = device(channel);
+        return Iterables.filter(
+                Iterables.concat(
+                        suitable(teamServer(c.principal), c.minVersion),
+                        suitable(c.principal.getEffectiveUserID(), c.minVersion)),
+                new Predicate<DID>() {
+            @Override
+            public boolean apply(DID o)
+            {
+                return !did.equals(o);
+            }
+        });
+    }
+
+    Iterable<DID> suitable(UserID userID, @Nullable Version minVersion)
+    {
+        UserDevices uds = _endpointsByUser.get(userID);
+        if (uds == null) return Collections.emptyList();
+        return Iterables.transform(uds.suitableDevices(minVersion), new Function<UserDevice, DID>() {
+            @Override
+            public DID apply(UserDevice ud)
+            {
+                return ud.did;
+            }
+        });
     }
 
     @Override

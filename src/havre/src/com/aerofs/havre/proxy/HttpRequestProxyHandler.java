@@ -4,6 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.Version;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;
@@ -80,8 +81,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         _channelGroup = channelGroup;
     }
 
-    private static final String COOKIE_SERVER = "server";
+    private static final String COOKIE_ROUTE = "route";
+    private static final String HEADER_ROUTE =  "Route";
     private static final String HEADER_CONSISTENCY = "Endpoint-Consistency";
+    private static final String HEADER_ALT_ROUTES = "Alternate-Routes";
 
     private static Map<String, String> getCookies(HttpRequest r)
     {
@@ -93,11 +96,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         return m;
     }
 
-    private static @Nullable DID getLastServer(Map<String, String> c)
+    private static @Nullable DID parseDID(String route)
     {
-        String id = c.get(COOKIE_SERVER);
         try {
-            return id != null ? new DID(id) : null;
+            return route != null ? new DID(route) : null;
         } catch (ExFormatError e) {
             return null;
         }
@@ -123,6 +125,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
             // remove gateway-specific header
             req.removeHeader(Names.COOKIE);
+            req.removeHeader(HEADER_ROUTE);
             req.removeHeader(HEADER_CONSISTENCY);
 
             _upstream.write(message);
@@ -138,8 +141,6 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
     private @Nullable Channel getUpstreamChannel(HttpRequest req)
     {
-        Map<String, String> cookies = getCookies(req);
-
         // First request in a given gateway connection
         //  - derive user id from OAuth token to pick an appropriate server
         //    and avoid load from unauthorized clients
@@ -151,13 +152,21 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             }
         }
 
-        DID did = getLastServer(cookies);
         Version version = Version.fromRequestPath(req.getUri());
-        boolean strictConsistency = shouldEnforceStrictConsistency(req) && did != null;
+
+        // The Route header overrides any cookie and enforces strict consistency
+        boolean strictConsistency;
+        DID did = parseDID(req.getHeader(HEADER_ROUTE));
+        if (did != null) {
+            strictConsistency = true;
+        } else {
+            did = parseDID(getCookies(req).get(COOKIE_ROUTE));
+            strictConsistency = shouldEnforceStrictConsistency(req);
+        }
 
         l.info("{} {} {}", did, strictConsistency, version);
 
-        return _endpoints.connect(_principal, did, strictConsistency, version,
+        return _endpoints.connect(_principal, did, strictConsistency && did != null, version,
                 Channels.pipeline(
                         new IdleStateHandler(_timer, 10, 30, 0, TimeUnit.SECONDS),
                         new HttpClientCodec(),
@@ -182,7 +191,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 response.setHeader(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"");
             }
             // reset server id cookie
-            addCookie(response, COOKIE_SERVER, "");
+            addCookie(response, COOKIE_ROUTE, "");
             downstream.write(response);
         }
     }
@@ -264,8 +273,11 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 HttpResponse response = (HttpResponse)m;
                 int status = response.getStatus().getCode();
 
-                // add server id
-                addCookie(response, COOKIE_SERVER, _endpoints.device(upstream).toStringFormal());
+                // add route id for session consistency
+                addCookie(response, COOKIE_ROUTE, _endpoints.device(upstream).toStringFormal());
+
+                // add list of alternate routes for flexible failure handling
+                response.setHeader(HEADER_ALT_ROUTES, join(_endpoints.alternateDevices(upstream)));
 
                 // do not count 1xx provisional responses
                 if (status < 100 || status >= 200) updateExpectations(response);
@@ -369,5 +381,15 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 _upstream.close();
             }
         }
+    }
+
+    private static String join(Iterable<? extends UniqueID> ids)
+    {
+        String s = "";
+        for (UniqueID i : ids) {
+            if (!s.isEmpty()) s += ",";
+            s += i.toStringFormal();
+        }
+        return s;
     }
 }

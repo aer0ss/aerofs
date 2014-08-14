@@ -35,4 +35,6 @@ public interface EndpointConnector
      * @return the device to which a channel obtained from {@link #connect} is associated
      */
     public DID device(Channel channel);
+
+    public Iterable<DID> alternateDevices(Channel channel);
 }
