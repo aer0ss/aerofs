@@ -34,7 +34,7 @@ import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.ex.ExFileIO;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -220,8 +220,8 @@ public class TestLinkedStorage extends AbstractTest
         try
         {
             FileUtil.getLength(new File(storage.newFile_(post, sokid.kidx()).getAbsPath_()));
-            assert false : "Should have thrown ExFileIO. postfile exists?";
-        } catch (ExFileIO expected) {}
+            fail("Should have thrown ExFileIO. postfile exists?");
+        } catch (ExFileNotFound expected) {}
     }
 
     @Test
