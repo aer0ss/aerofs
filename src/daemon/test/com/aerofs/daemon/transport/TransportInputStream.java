@@ -5,7 +5,6 @@
 package com.aerofs.daemon.transport;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -26,18 +25,16 @@ public final class TransportInputStream extends InputStream
     private final DID sourcedid;
     private final StreamID streamID;
     private final IBlockingPrioritizedEventSink<IEvent> transportQueue;
-    private final IIMCExecutor imce;
     private final ConcurrentLinkedQueue<InputStream> chunkInputStreamQueue = newConcurrentLinkedQueue();
 
     private InputStream currentChunk;
     private boolean closed;
 
-    public TransportInputStream(DID sourcedid, StreamID streamID, IBlockingPrioritizedEventSink<IEvent> transportQueue, IIMCExecutor imce)
+    public TransportInputStream(DID sourcedid, StreamID streamID, IBlockingPrioritizedEventSink<IEvent> transportQueue)
     {
         this.sourcedid = sourcedid;
         this.streamID = streamID;
         this.transportQueue = transportQueue;
-        this.imce = imce;
     }
 
     public void offer(InputStream chunkInputStream)
@@ -136,7 +133,7 @@ public final class TransportInputStream extends InputStream
             notifyAll();
         }
 
-        transportQueue.enqueueBlocking(new EORxEndStream(sourcedid, streamID, imce), Prio.LO);
+        transportQueue.enqueueBlocking(new EORxEndStream(sourcedid, streamID), Prio.LO);
     }
 
     //--------------------------------------------------------------------------------------------//

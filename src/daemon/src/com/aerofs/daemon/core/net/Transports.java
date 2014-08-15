@@ -9,8 +9,6 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.daemon.lib.IStartable;
@@ -29,6 +27,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -39,13 +38,12 @@ import javax.annotation.Nullable;
 import java.net.Proxy;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Map;
+import java.util.Set;
 
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.JINGLE;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Maps.newHashMap;
 
 /**
  * The clients of this class may assume the list of transports never changes during run time.
@@ -65,7 +63,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
 
     private static final Logger l = Loggers.getLogger(Transports.class);
 
-    private final Map<ITransport, IIMCExecutor> availableTransports = newHashMap();
+    private final Set<ITransport> availableTransports = Sets.newHashSet();
 
     private volatile boolean started = false;
 
@@ -145,24 +143,18 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
 
     private void addTransport(ITransport transport)
     {
-        IIMCExecutor imce = new QueueBasedIMCExecutor(transport.q());
-        availableTransports.put(transport, imce);
+        availableTransports.add(transport);
     }
 
     public Collection<ITransport> getAll_()
     {
-        return availableTransports.keySet();
-    }
-
-    public IIMCExecutor getIMCE_(ITransport tp)
-    {
-        return availableTransports.get(tp);
+        return availableTransports;
     }
 
     public void init_()
             throws Exception
     {
-        for (ITransport tp : availableTransports.keySet()) {
+        for (ITransport tp : availableTransports) {
             tp.init();
         }
     }
@@ -172,7 +164,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
     {
         l.info("start tps");
 
-        for (ITransport tp : availableTransports.keySet()) {
+        for (ITransport tp : availableTransports) {
             tp.start();
         }
 
@@ -193,7 +185,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
     public TransportDiagnostics dumpDiagnostics_()
     {
         TransportDiagnostics.Builder diagnostics = TransportDiagnostics.newBuilder();
-        for (ITransport transport : availableTransports.keySet()) {
+        for (ITransport transport : availableTransports) {
             transport.dumpDiagnostics(diagnostics);
         }
         return diagnostics.build();
@@ -203,7 +195,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
     public long bytesIn()
     {
         long in = 0;
-        for (ITransport tp : availableTransports.keySet()) in += tp.bytesIn();
+        for (ITransport tp : availableTransports) in += tp.bytesIn();
         return in;
     }
 
@@ -211,7 +203,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
     public long bytesOut()
     {
         long out = 0;
-        for (ITransport tp : availableTransports.keySet()) out += tp.bytesOut();
+        for (ITransport tp : availableTransports) out += tp.bytesOut();
         return out;
     }
 }

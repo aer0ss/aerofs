@@ -4,11 +4,11 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
-import com.aerofs.daemon.core.tc.CoreIMC;
+import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
@@ -19,6 +19,7 @@ import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -29,25 +30,20 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 {
     private static final Logger l = Loggers.getLogger(UnicastOutputBottomLayer.class);
 
-    // FIXME (AG): NONE OF THE TRANSPORT EVENTS ACTUALLY REQUIRES CORE/ABSTRACTEBIMC!! GAH! FUCK ME!
-
     public static class Factory
     {
         private final CoreDeviceLRU _dlru;
         private final TokenManager _tokenManager;
-        private final Transports _tps;
         private final OutgoingStreams _outgoingStreams;
         private final TransferStatisticsManager _tsm;
 
         @Inject
         public Factory(
-                Transports tps,
                 TokenManager tokenManager,
                 CoreDeviceLRU dlru,
                 OutgoingStreams oss,
                 TransferStatisticsManager tsm)
         {
-            _tps = tps;
             _tokenManager = tokenManager;
             _dlru = dlru;
             _outgoingStreams = oss;
@@ -89,10 +85,9 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 
         stream.waitIfTooManyChunks_();
 
-        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
-        EOBeginStream ev = new EOBeginStream(streamId, stream, ep.did(), bs, ep.tp(), imce, _f._tsm);
+        EOBeginStream ev = new EOBeginStream(streamId, stream, ep.did(), bs, ep.tp(), _f._tsm);
         try {
-            CoreIMC.enqueueBlocking_(ev, tk);
+            enqueueBlocking_(ep, ev, tk);
         } catch (ExNoResource e) {
             l.warn("begin stream failed (noresrc) strmid {} ep {}", streamId, ep);
             throw e;
@@ -113,10 +108,8 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         stream.throwIfFailedChunk();
         stream.waitIfTooManyChunks_();
 
-        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
-        EOChunk ev = new EOChunk(streamId, stream, seq, ep.did(), bs, ep.tp(), imce, _f._tsm);
-
-        CoreIMC.enqueueBlocking_(ev, _f._tokenManager);
+        EOChunk ev = new EOChunk(streamId, stream, seq, ep.did(), bs, ep.tp(), _f._tsm);
+        enqueueBlocking_(ep, ev, tk);
     }
 
     @Override
@@ -126,13 +119,9 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         // the transport layer shall guarantee delivery of the abortion
         // to the receiver. Like sending chunks, here we don't wait for
         // the abortion to be acknowledged.
-        //
-        // TODO don't use IEBIMC for EOTx/RxAbortStream, EOTx/RxEndStream
 
-        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
-
-        EOTxAbortStream ev = new EOTxAbortStream(streamId, reason, imce);
-        CoreIMC.enqueueBlocking_(ev, _f._tokenManager);
+        EOTxAbortStream ev = new EOTxAbortStream(streamId, reason);
+        enqueueBlocking_(ep, ev, _f._tokenManager);
     }
 
     @Override
@@ -143,19 +132,48 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         // errors after _id was set, since we're not sure if transport state
         // for this message has been established on errors.
 
-        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
-
-        EOTxEndStream ev = new EOTxEndStream(streamId, imce);
-        CoreIMC.enqueueBlocking_(ev, _f._tokenManager);
+        EOTxEndStream ev = new EOTxEndStream(streamId);
+        enqueueBlocking_(ep, ev, _f._tokenManager);
     }
 
     @Override
     public void endIncomingStream_(StreamID streamId, Endpoint ep)
             throws ExAborted, ExNoResource
     {
-        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
+        EORxEndStream ev = new EORxEndStream(ep.did(), streamId);
+        enqueueBlocking_(ep, ev, _f._tokenManager);
+    }
 
-        EORxEndStream ev = new EORxEndStream(ep.did(), streamId, imce);
-        CoreIMC.enqueueBlocking_(ev, _f._tokenManager);
+    private static void enqueueBlocking_(Endpoint ep, IEvent ev, Token tk)
+            throws ExAborted, ExNoResource
+    {
+        // try the unblocking version first, and then fall back to the blocking version
+        if (ep.tp().q().enqueue(ev, TC.currentThreadPrio())) return;
+        enqueueBlockingImpl_(ep, ev, tk);
+    }
+
+    private static void enqueueBlocking_(Endpoint ep, IEvent ev, TokenManager tokenManager)
+            throws ExNoResource, ExAborted
+    {
+        // try the unblocking version first, and then fall back to the blocking version
+        if (ep.tp().q().enqueue(ev, TC.currentThreadPrio())) return;
+
+        Token tk = tokenManager.acquireThrows_(Cat.UNLIMITED, "UOBL.enqBlocking");
+        try {
+            enqueueBlockingImpl_(ep, ev, tk);
+        } finally {
+            tk.reclaim_();
+        }
+    }
+
+    private static void enqueueBlockingImpl_(Endpoint ep, IEvent ev, Token tk)
+            throws ExNoResource, ExAborted
+    {
+        TCB tcb = tk.pseudoPause_(ev.toString());
+        try {
+            ep.tp().q().enqueueBlocking(ev, TC.currentThreadPrio());
+        } finally {
+            tcb.pseudoResumed_();
+        }
     }
 }

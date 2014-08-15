@@ -241,7 +241,7 @@ public final class TransportResource extends ExternalResource
 
     public void joinStore(SID sid)
     {
-        getTransport().q().enqueueBlocking(new EOUpdateStores(new FakeIMCExecutor(), new SID[]{sid}, new SID[]{}), PRIO);
+        getTransport().q().enqueueBlocking(new EOUpdateStores(new SID[]{sid}, new SID[]{}), PRIO);
     }
 
     public void send(DID remoteDID, byte[] payload, Prio prio)
@@ -303,6 +303,6 @@ public final class TransportResource extends ExternalResource
             streamID = new StreamID(random.nextInt());
         }
 
-        return new TransportOutputStream(did, streamID, transport, transport.q(), new FakeIMCExecutor(), transferStatisticsManager);
+        return new TransportOutputStream(did, streamID, transport, transport.q(), transferStatisticsManager);
     }
 }

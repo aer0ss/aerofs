@@ -1,18 +1,15 @@
 package com.aerofs.daemon.core.net.device;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.tc.CoreIMC;
-import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.daemon.transport.ITransport;
@@ -35,6 +32,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -42,7 +40,7 @@ import java.util.concurrent.Callable;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Devcies is responsible for managing the list of potentially-available devices,
+ * Devices is responsible for managing the list of potentially-available devices,
  * mapping those to stores, and detecting edge transitions.
  *
  * "Edge transition": device or store goes from offline to online (or vice versa).
@@ -64,21 +62,18 @@ public class Devices implements IDiagnosable
 
     private final Transports _tps;
     private final CoreScheduler _sched;
-    private final TokenManager _tokenManager;
     private final ExponentialRetry _cer;
     private final MapSIndex2Store _sidx2s;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
     public Devices(
-            TokenManager tokenManager,
             CoreScheduler sched,
             Transports tps,
             CoreExponentialRetry cer,
             MapSIndex2Store sidx2s,
             IMapSIndex2SID sidx2sid)
     {
-        _tokenManager = tokenManager;
         _sched = sched;
         _tps = tps;
         _cer = cer;
@@ -228,7 +223,7 @@ public class Devices implements IDiagnosable
     public Map<DID, Device> getOnlinePotentialMemberDevices_(SIndex sidx)
     {
         OPMDevices opm = getOPMDevices_(sidx);
-        return (opm == null) ? Collections.<DID, Device>emptyMap() : opm.getAll_();
+        return (opm == null) ? Collections.emptyMap() : opm.getAll_();
     }
 
     /**
@@ -236,24 +231,24 @@ public class Devices implements IDiagnosable
      */
     private void updateStoresForTransports_(final SID[] sidAdded, final SID[] sidRemoved)
     {
-        final Callable<Void> callable = new Callable<Void>() {
-                @Override
-                public Void call() throws ExNoResource, ExAborted
-                {
-                    for (ITransport tp : _tps.getAll_()) {
-                        EOUpdateStores ev = new EOUpdateStores(_tps.getIMCE_(tp), sidAdded, sidRemoved);
-                        CoreIMC.enqueueBlocking_(ev, _tokenManager);
-                    }
-                    return null;
+        final Iterable<ITransport> tps = Lists.newArrayList(_tps.getAll_());
+        final Callable<Void> callable = () -> {
+                Iterator<ITransport> it = tps.iterator();
+                while (it.hasNext()) {
+                    EOUpdateStores ev = new EOUpdateStores(sidAdded, sidRemoved);
+                    it.next().q().enqueueThrows(ev, TC.currentThreadPrio());
+                    // "exactly-once" semantics
+                    it.remove();
                 }
+                return null;
             };
 
-        // Always run the task in a separate core context as this method may be called in a
-        // transaction and the CoreIMC.enqueueBlocking above may yield the core lock.
+        // run the task in a separate core context as this method may be called in a transaction
         _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
+                // FIXME: exp retry makes out-of-order notifications possible for the same store
                 _cer.retry("updateStores", callable);
             }
         }, 0);

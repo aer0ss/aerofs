@@ -292,7 +292,7 @@ public final class TestTransports
                 Map<StreamID, TransportInputStream> streamMap = streamDataMap.get(did);
                 checkState(!streamMap.containsKey(streamID));
 
-                TransportInputStream transportInputStream = new TransportInputStream(did, streamID, transport1.getTransport().q(), new FakeIMCExecutor());
+                TransportInputStream transportInputStream = new TransportInputStream(did, streamID, transport1.getTransport().q());
                 streamMap.put(streamID, transportInputStream);
 
                 // create the receiver (-> transport1)

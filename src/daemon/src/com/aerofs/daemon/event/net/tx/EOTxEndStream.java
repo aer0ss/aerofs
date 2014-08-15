@@ -1,16 +1,14 @@
 package com.aerofs.daemon.event.net.tx;
 
-import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.lib.event.IEvent;
 
-public class EOTxEndStream extends AbstractEBIMC
+public class EOTxEndStream implements IEvent
 {
     public final StreamID _streamId;
 
-    public EOTxEndStream(StreamID streamId, IIMCExecutor imce)
+    public EOTxEndStream(StreamID streamId)
     {
-        super(imce);
         _streamId = streamId;
     }
 

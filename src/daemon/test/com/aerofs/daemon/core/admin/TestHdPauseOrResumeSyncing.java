@@ -9,8 +9,8 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
+import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.daemon.transport.FakeIMCExecutor;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
@@ -30,6 +30,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
     private @Mock Token _token;
     private @Mock TCB _tcb;
     private @Mock TokenManager _tokenManager;
+    private @Mock IIMCExecutor _imce;
 
     private @InjectMocks HdPauseOrResumeSyncing _handler;
 
@@ -44,7 +45,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
     public void shouldCorrectlyPauseSyncing()
             throws Exception
     {
-        EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(true, new FakeIMCExecutor());
+        EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(true, _imce);
         _handler.handle_(event, Prio.LO);
 
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);
@@ -59,7 +60,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
     public void shouldCorrectlyResumeSyncing()
             throws Exception
     {
-        EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(false, new FakeIMCExecutor());
+        EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(false, _imce);
         _handler.handle_(event, Prio.LO);
 
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);

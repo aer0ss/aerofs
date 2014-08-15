@@ -14,9 +14,7 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.core.net.ChunksCounter;
 import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
@@ -99,7 +97,6 @@ public final class Pump implements IProgram
 
         remote = (isSender ? new DID(DID.fromStringFormal(args[2])) : null);
         transport = newTransport(args[0]);
-        final IIMCExecutor transportImce = new QueueBasedIMCExecutor(transport.q());
 
         // start transport
         transport.init();
@@ -108,7 +105,7 @@ public final class Pump implements IProgram
 
         // join the root store, so that I can actually receive presence info
 
-        transport.q().enqueueBlocking(new EOUpdateStores(transportImce, new SID[]{Cfg.rootSID()}, new SID[]{}), LO);
+        transport.q().enqueueBlocking(new EOUpdateStores(new SID[]{Cfg.rootSID()}, new SID[]{}), LO);
 
         // start listening
 

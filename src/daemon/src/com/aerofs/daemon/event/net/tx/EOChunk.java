@@ -3,14 +3,16 @@ package com.aerofs.daemon.event.net.tx;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.IOutgoingStreamFeedback;
 import com.aerofs.daemon.core.net.TransferStatisticsManager;
-import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.lib.event.IEvent;
+
+import static com.google.common.base.Preconditions.checkState;
 
 //N.B. streams are always at background priority to allow atomic messages go first
 //
-public class EOChunk extends AbstractEBIMC implements IOutputBuffer
+public class EOChunk implements IEvent, IResultWaiter, IOutputBuffer
 {
     private final IOutgoingStreamFeedback _stream;
     private final String _transportId;
@@ -21,6 +23,8 @@ public class EOChunk extends AbstractEBIMC implements IOutputBuffer
     public final byte[] _bs;
     public final DID _did;
 
+    private Exception _e;
+
     public EOChunk(
             StreamID streamId,
             IOutgoingStreamFeedback stream,
@@ -28,11 +32,8 @@ public class EOChunk extends AbstractEBIMC implements IOutputBuffer
             DID did,
             byte[] bs,
             ITransport tp,
-            IIMCExecutor imce,
             TransferStatisticsManager tsm)
     {
-        super(imce);
-
         _streamId = streamId;
         _stream = stream;
         _seq = seq;
@@ -47,14 +48,17 @@ public class EOChunk extends AbstractEBIMC implements IOutputBuffer
 
     @Override
     public byte[] byteArray() {
-
         return _bs;
+    }
+
+    public Exception exception()
+    {
+        return _e;
     }
 
     @Override
     public void okay()
     {
-        super.okay();
         _stream.decChunkCount();
         _tsm.markTransferred(_transportId, _bs.length);
     }
@@ -62,7 +66,8 @@ public class EOChunk extends AbstractEBIMC implements IOutputBuffer
     @Override
     public void error(Exception e)
     {
-        super.error(e);
+        checkState(_e == null);
+        _e = e;
         _stream.decChunkCount();
         _stream.setFirstFailedChunk(this);
         _tsm.markErrored(_transportId, _bs.length);

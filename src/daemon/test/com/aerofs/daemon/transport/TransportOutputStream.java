@@ -8,7 +8,6 @@ import com.aerofs.base.C;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.IOutgoingStreamFeedback;
 import com.aerofs.daemon.core.net.TransferStatisticsManager;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.net.tx.EOBeginStream;
 import com.aerofs.daemon.event.net.tx.EOChunk;
 import com.aerofs.daemon.event.net.tx.EOTxEndStream;
@@ -33,7 +32,6 @@ public final class TransportOutputStream extends OutputStream implements IOutgoi
     private final DID did;
     private final ITransport transport;
     private final IBlockingPrioritizedEventSink<IEvent> transportQueue;
-    private final IIMCExecutor imce;
     private final TransferStatisticsManager transferStatisticsManager;
 
     private int streamChunkSeqNum = 1;
@@ -46,14 +44,12 @@ public final class TransportOutputStream extends OutputStream implements IOutgoi
             StreamID streamID,
             ITransport transport,
             IBlockingPrioritizedEventSink<IEvent> transportQueue,
-            IIMCExecutor imce,
             TransferStatisticsManager transferStatisticsManager)
     {
         this.streamID = streamID;
         this.did = did;
         this.transport = transport;
         this.transportQueue = transportQueue;
-        this.imce = imce;
         this.transferStatisticsManager = transferStatisticsManager;
     }
 
@@ -144,10 +140,10 @@ public final class TransportOutputStream extends OutputStream implements IOutgoi
             // IMPORTANT: EOChunk calls incChunkCount in its constructor
             // IMPORTANT: EOBeginStream derives from EOChunk
             if (!begun) {
-                transportQueue.enqueueBlocking(new EOBeginStream(streamID, this, did, chunk, transport, imce, transferStatisticsManager), LO);
+                transportQueue.enqueueBlocking(new EOBeginStream(streamID, this, did, chunk, transport, transferStatisticsManager), LO);
                 begun = true;
             } else {
-                transportQueue.enqueueBlocking(new EOChunk(streamID, this, streamChunkSeqNum++, did, chunk, transport, imce, transferStatisticsManager), LO);
+                transportQueue.enqueueBlocking(new EOChunk(streamID, this, streamChunkSeqNum++, did, chunk, transport, transferStatisticsManager), LO);
             }
         }
     }
@@ -164,6 +160,6 @@ public final class TransportOutputStream extends OutputStream implements IOutgoi
             throws IOException
     {
         closed = true;
-        transportQueue.enqueueBlocking(new EOTxEndStream(streamID, imce), Prio.LO);
+        transportQueue.enqueueBlocking(new EOTxEndStream(streamID), Prio.LO);
     }
 }
