@@ -2,6 +2,7 @@ package com.aerofs.lib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.ex.ExFileIO;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.os.OSUtilWindows;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
@@ -285,6 +286,7 @@ public abstract class FileUtil
      */
     private static void throwIfNotFile(File f) throws IOException
     {
+        if (!f.exists()) throw new ExFileNotFound(f);
         if (!f.isFile()) throw new ExFileIO("{} is not a file", f);
     }
 
