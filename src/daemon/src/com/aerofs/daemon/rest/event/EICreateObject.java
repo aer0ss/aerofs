@@ -1,6 +1,6 @@
 package com.aerofs.daemon.rest.event;
 
-import com.aerofs.base.Version;
+import com.aerofs.restless.Version;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.rest.util.OAuthToken;
 import com.aerofs.base.id.RestObject;

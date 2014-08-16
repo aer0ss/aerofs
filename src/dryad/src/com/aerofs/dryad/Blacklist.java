@@ -4,12 +4,12 @@
 
 package com.aerofs.dryad;
 
-import com.aerofs.base.Loggers;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
@@ -19,7 +19,7 @@ import static java.lang.String.format;
 
 public abstract class Blacklist
 {
-    private static final Logger l = Loggers.getLogger(Blacklist.class);
+    private static final Logger l = LoggerFactory.getLogger(Blacklist.class);
 
     private final String _source;
     private final Set<String> _items = Sets.newHashSet();

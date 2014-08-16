@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.rest.resources;
 
-import com.aerofs.base.Version;
+import com.aerofs.restless.Version;
 import com.aerofs.daemon.rest.event.EICreateObject;
 import com.aerofs.daemon.rest.event.EIDeleteObject;
 import com.aerofs.daemon.rest.event.EIFileContent;

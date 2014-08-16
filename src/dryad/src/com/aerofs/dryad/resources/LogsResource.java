@@ -8,10 +8,10 @@ import com.aerofs.dryad.Blacklist.DeviceBlacklist;
 import com.aerofs.dryad.Blacklist.UserBlacklist;
 import com.aerofs.dryad.LogStore;
 import com.aerofs.restless.Service;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;

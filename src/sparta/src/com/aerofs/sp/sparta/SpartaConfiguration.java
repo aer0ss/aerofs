@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.sparta;
 
-import com.aerofs.base.Version;
+import com.aerofs.restless.Version;
 import com.aerofs.rest.AbstractRestConfiguration;
 
 public class SpartaConfiguration extends AbstractRestConfiguration

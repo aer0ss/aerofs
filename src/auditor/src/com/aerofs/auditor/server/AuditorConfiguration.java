@@ -4,7 +4,7 @@
 
 package com.aerofs.auditor.server;
 
-import com.aerofs.base.Version;
+import com.aerofs.restless.Version;
 import com.aerofs.restless.Configuration;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;

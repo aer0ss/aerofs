@@ -4,11 +4,11 @@
 
 package com.aerofs.havre.tunnel;
 
-import com.aerofs.base.Version;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.havre.Version;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.testlib.AbstractBaseTest;
 import com.aerofs.tunnel.TunnelAddress;

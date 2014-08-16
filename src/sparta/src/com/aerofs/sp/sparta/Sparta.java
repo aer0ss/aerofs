@@ -11,10 +11,9 @@ import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.Version;
+import com.aerofs.restless.Version;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
-import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.oauth.TokenVerifier;
@@ -88,9 +87,9 @@ public class Sparta extends Service
 
     private final ExecutionHandler _executionHandler;
 
-    public Sparta(Injector injector, IPrivateKeyProvider kmgr)
+    public Sparta(Injector injector)
     {
-        super("sparta", listenAddress(), kmgr, injector, null);
+        super("sparta", listenAddress(), injector);
 
         _executionHandler = new ExecutionHandler(
                 new OrderedMemoryAwareThreadPoolExecutor(10, 1 * C.MB, 5 * C.MB));
@@ -130,7 +129,7 @@ public class Sparta extends Service
 
 
         // NB: we expect nginx or similar to provide ssl termination...
-        new Sparta(inj, null)
+        new Sparta(inj)
                 .start();
     }
 

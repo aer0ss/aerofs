@@ -9,7 +9,6 @@ import com.aerofs.auditor.resource.HttpRequestAuthenticator;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
@@ -37,9 +36,9 @@ public class Auditor extends Service
     private final ExecutionHandler _handler;
 
     @Inject
-    public Auditor(Injector injector, IPrivateKeyProvider kmgr)
+    public Auditor(Injector injector)
     {
-        super("auditor", new InetSocketAddress(Audit.SERVICE_PORT), kmgr, injector);
+        super("auditor", new InetSocketAddress(Audit.SERVICE_PORT), injector);
 
         // the magic numbers following are just guesses and have not been well-tuned.
         // 8: core thread pool size
@@ -76,7 +75,7 @@ public class Auditor extends Service
         Server.initialize(extra);
 
         // Note, we expect nginx or similar to provide ssl termination...
-        new Auditor(Guice.createInjector(Stage.PRODUCTION, auditorModule()), null)
+        new Auditor(Guice.createInjector(Stage.PRODUCTION, auditorModule()))
                 .start();
     }
 

@@ -41,8 +41,7 @@ public class TunnelClient extends AbstractNettyReconnectingClient
             public ChannelPipeline getPipeline() throws Exception
             {
                 TunnelHandler handler = new TunnelHandler(null, _pipelineFactory);
-                return Channels.pipeline(
-                        NettyUtil.newSslHandler(_sslEngineFactory),
+                return Channels.pipeline(_sslEngineFactory.newSslHandler(),
                         TunnelHandler.newFrameDecoder(),
                         TunnelHandler.newLengthFieldPrepender(),
                         NettyUtil.newCNameVerificationHandler(handler, _user, _did),

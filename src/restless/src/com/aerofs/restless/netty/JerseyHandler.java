@@ -3,8 +3,6 @@
  */
 package com.aerofs.restless.netty;
 
-import com.aerofs.base.BaseLogUtil;
-import com.aerofs.base.Loggers;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.sun.jersey.core.header.InBoundHeaders;
@@ -23,6 +21,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -34,7 +33,7 @@ import java.util.concurrent.Executor;
 
 public class JerseyHandler extends SimpleChannelUpstreamHandler
 {
-    private static final Logger l = Loggers.getLogger(JerseyHandler.class);
+    private static final Logger l = LoggerFactory.getLogger(JerseyHandler.class);
 
     private final Configuration _config;
     private final @Nullable Executor _executor;
@@ -125,7 +124,7 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
             // close the connection which the client which the client will interpret as an
             // unspecified error.
             l.warn("exception after response committed: ",
-                    BaseLogUtil.suppress(e, ClosedChannelException.class));
+                    suppress(e, ClosedChannelException.class));
             c.close();
         }
     }
@@ -135,7 +134,7 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
     {
         // Close the connection when an exception is raised.
         l.warn("unexpected exception:",
-                BaseLogUtil.suppress(e.getCause(), ClosedChannelException.class));
+                suppress(e.getCause(), ClosedChannelException.class));
         if (_chunkedRequestInputStream != null) _chunkedRequestInputStream.fail();
         e.getChannel().close();
     }
@@ -147,5 +146,35 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
             headers.put(name, request.getHeaders(name));
         }
         return headers;
+    }
+
+    /**
+     * Suppress the stack trace for the given throwable.
+     *
+     * This is useful to pass an abbreviated exception on to the logging subsystem.
+     */
+    private static <T extends Throwable> T suppress(T throwable)
+    {
+        Throwable t = throwable;
+        do {
+            t.setStackTrace(new StackTraceElement[0]);
+            t = t.getCause();
+        } while (t != null);
+
+        return throwable;
+    }
+
+    /**
+     * Suppress the stack trace if the throwable is an instance of one of the given
+     * exception types.
+     */
+    private static <T extends Throwable> T suppress(T throwable, Class<?>... suppressTypes)
+    {
+        for (Class<?> clazz : suppressTypes) {
+            if (clazz.isInstance(throwable)) {
+                return suppress(throwable);
+            }
+        }
+        return throwable;
     }
 }

@@ -1,13 +1,13 @@
 package com.aerofs.havre.proxy;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.Version;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;
+import com.aerofs.havre.Version;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;

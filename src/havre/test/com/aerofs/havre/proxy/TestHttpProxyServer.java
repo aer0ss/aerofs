@@ -4,11 +4,11 @@
 
 package com.aerofs.havre.proxy;
 
-import com.aerofs.base.Version;
 import com.aerofs.base.id.DID;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;
+import com.aerofs.havre.Version;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.testlib.AbstractBaseTest;
 import com.jayway.restassured.RestAssured;

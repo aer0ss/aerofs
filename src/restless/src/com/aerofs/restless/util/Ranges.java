@@ -1,6 +1,5 @@
 package com.aerofs.restless.util;
 
-import com.aerofs.base.ex.ExBadArgs;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -26,16 +25,21 @@ public class Ranges
         if (ifRange == null || etag.equals(ifRange)) {
             try {
                 return Ranges.parse(rangeset, length);
-            } catch (ExBadArgs e) {
+            } catch (InvalidRange e) {
                 // RFC 2616: MUST ignore Range header if any range spec is syntactically invalid
             }
         }
         return null;
     }
 
-    public static RangeSet<Long> parse(String rangeSet, long length) throws ExBadArgs
+    private static class InvalidRange extends RuntimeException
     {
-        if (!rangeSet.startsWith(BYTES_UNIT)) throw new ExBadArgs("Unsupported range unit");
+        private static final long serialVersionUID = 0L;
+    }
+
+    private static RangeSet<Long> parse(String rangeSet, long length) throws InvalidRange
+    {
+        if (!rangeSet.startsWith(BYTES_UNIT)) throw new InvalidRange();
         RangeSet<Long> ranges = TreeRangeSet.create();
         String[] rangeSpecs = rangeSet.substring(BYTES_UNIT.length()).split(RANGESET_SEP);
         for (String spec : rangeSpecs) {
@@ -44,16 +48,16 @@ public class Ranges
         return ranges;
     }
 
-    static Range<Long> range(String rangeSpec, long length) throws ExBadArgs
+    private static Range<Long> range(String rangeSpec, long length) throws InvalidRange
     {
         Matcher m = specPattern.matcher(rangeSpec);
-        if (!m.matches()) throw new ExBadArgs("Invalid range spec: " + rangeSpec);
+        if (!m.matches()) throw new InvalidRange();
         String start = m.group(1);
         String end = m.group(2);
         long low, high;
 
         if (start.isEmpty()) {
-            if (end.isEmpty()) throw new ExBadArgs("Invalid range spec: " + rangeSpec);
+            if (end.isEmpty()) throw new InvalidRange();
             // suffix range
             low = length - Long.parseLong(end);
             high = length;
@@ -63,7 +67,7 @@ public class Ranges
                 high = length;
             } else {
                 high = Long.parseLong(end) + 1;
-                if (low >= high) throw new ExBadArgs("Invalid range spec: " + rangeSpec);
+                if (low >= high) throw new InvalidRange();
             }
         }
 

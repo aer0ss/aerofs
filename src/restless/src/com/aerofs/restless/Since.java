@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * Method-level annotation used to implement automatic versioning of JAX-RS resource methods
  *
- * The value MUST be a valid string representation of {@link com.aerofs.base.Version}, i.e.
+ * The value MUST be a valid string representation of {@link Version}, i.e.
  * decimal major and minor versions separated by a period.
  *
  * See {@link com.aerofs.restless.jersey.VersionFilterFactory} for implementation details.

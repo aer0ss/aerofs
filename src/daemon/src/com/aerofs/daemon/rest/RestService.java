@@ -4,7 +4,9 @@
 
 package com.aerofs.daemon.rest;
 
-import com.aerofs.base.Version;
+import com.aerofs.base.net.ISslHandlerFactory;
+import com.aerofs.restless.Version;
+import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.rest.providers.FactoryReaderProvider;
 import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
 import com.aerofs.rest.providers.ParamExceptionMapper;
@@ -21,6 +23,8 @@ import com.aerofs.restless.Service;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 
 import java.net.InetSocketAddress;
@@ -38,11 +42,15 @@ public class RestService extends Service
     // configurable for firewall-friendliness
     private static final int PORT = getIntegerProperty("api.daemon.port", 0);
 
+    private final ISslHandlerFactory _sslHandlerFactory;
+
     @Inject
     RestService(Injector injector, CfgKeyManagersProvider kmgr)
     {
         // use a cached thread pool to free-up I/O threads while the requests sit in the core queue
-        super("rest", new InetSocketAddress(PORT), kmgr, injector, newCachedThreadPool());
+        super("rest", new InetSocketAddress(PORT), injector, newCachedThreadPool());
+
+        _sslHandlerFactory = SSLEngineFactory.newServerFactory(kmgr, null);
 
         enableVersioning();
 
@@ -59,6 +67,20 @@ public class RestService extends Service
     protected ServerSocketChannelFactory getServerSocketFactory()
     {
         return ChannelFactories.getServerChannelFactory();
+    }
+
+    @Override
+    protected ChannelPipelineFactory getPipelineFactory()
+    {
+        return new ChannelPipelineFactory() {
+            @Override
+            public ChannelPipeline getPipeline() throws Exception
+            {
+                ChannelPipeline p = getSpecializedPipeline();
+                p.addFirst("ssl", _sslHandlerFactory.newSslHandler());
+                return p;
+            }
+        };
     }
 
     @Override

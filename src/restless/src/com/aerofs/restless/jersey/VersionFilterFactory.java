@@ -1,7 +1,6 @@
 package com.aerofs.restless.jersey;
 
-import com.aerofs.base.Loggers;
-import com.aerofs.base.Version;
+import com.aerofs.restless.Version;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Since;
 import com.google.common.base.Preconditions;
@@ -15,6 +14,7 @@ import com.sun.jersey.spi.container.ContainerResponseFilter;
 import com.sun.jersey.spi.container.ResourceFilter;
 import com.sun.jersey.spi.container.ResourceFilterFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
 import java.util.List;
@@ -24,7 +24,7 @@ public class VersionFilterFactory implements ResourceFilterFactory
 {
     public final static String REQUEST_VERSION = "restless-request-version";
 
-    private final static Logger l = Loggers.getLogger(VersionFilterFactory.class);
+    private final static Logger l = LoggerFactory.getLogger(VersionFilterFactory.class);
 
     private final Configuration _config;
     private final Map<Version, Filter> _filters = Maps.newHashMap();

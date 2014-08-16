@@ -4,7 +4,6 @@ import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.net.NettyUtil;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
@@ -61,8 +60,9 @@ public class TokenVerificationClient
                                 VerifyTokenResponse.class)
                 );
                 if (_endpoint.getScheme().equals("https")) {
-                    p.addFirst("ssl", NettyUtil.newSslHandler(new SSLEngineFactory(
-                            Mode.Client, Platform.Desktop, null, cacert, null)));
+                    p.addFirst("ssl",
+                            new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert,
+                                    null).newSslHandler());
                 }
                 return p;
             }

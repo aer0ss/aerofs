@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
+    <orderEntry type="module" module-name="base" />
     <orderEntry type="module" module-name="restless" />
     <orderEntry type="module" module-name="oauth-verify" />
     <orderEntry type="sourceFolder" forTests="false" />

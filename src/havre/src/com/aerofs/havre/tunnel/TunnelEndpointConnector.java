@@ -6,10 +6,10 @@ package com.aerofs.havre.tunnel;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.Version;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.havre.EndpointConnector;
+import com.aerofs.havre.Version;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.tunnel.ITunnelConnectionListener;
 import com.aerofs.tunnel.TunnelAddress;

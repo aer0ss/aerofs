@@ -9,7 +9,7 @@ import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.Version;
+import com.aerofs.restless.Version;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExEmptyEmailAddress;

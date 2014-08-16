@@ -4,7 +4,9 @@
 
 package com.aerofs.base.ssl;
 
+import com.aerofs.base.net.ISslHandlerFactory;
 import com.google.common.base.Preconditions;
+import org.jboss.netty.handler.ssl.SslHandler;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
@@ -23,7 +25,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public class SSLEngineFactory
+public class SSLEngineFactory implements ISslHandlerFactory
 {
     public enum Mode { Client, Server }
     public enum Platform { Desktop, Android }
@@ -230,5 +232,20 @@ public class SSLEngineFactory
         Preconditions.checkNotNull(x509TrustManager);
 
         return new TrustManager[]{new CRLBasedTrustManager(x509TrustManager, crl)};
+    }
+
+    @Override
+    public SslHandler newSslHandler() throws IOException, GeneralSecurityException
+    {
+        SslHandler sslHandler = new SslHandler(getSSLEngine());
+        sslHandler.setCloseOnSSLException(true);
+        sslHandler.setEnableRenegotiation(false);
+        return sslHandler;
+    }
+
+    public static SSLEngineFactory newServerFactory(@Nullable IPrivateKeyProvider key,
+            @Nullable ICertificateProvider cacert)
+    {
+        return new SSLEngineFactory(Mode.Server, Platform.Desktop, key, cacert, null);
     }
 }

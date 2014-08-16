@@ -1,6 +1,5 @@
 package com.aerofs.restless.netty;
 
-import com.aerofs.base.Loggers;
 import com.google.common.collect.Queues;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
@@ -10,6 +9,7 @@ import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -31,7 +31,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class ChunkedRequestInputStream extends InputStream
 {
-    private final static Logger l = Loggers.getLogger(ChunkedRequestInputStream.class);
+    private final static Logger l = LoggerFactory.getLogger(ChunkedRequestInputStream.class);
 
     // limit number of queued chunks to avoid OOM
     // NB: the limit is enforced by disabling reads on the underlying Channel

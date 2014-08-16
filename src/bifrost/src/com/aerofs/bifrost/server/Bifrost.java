@@ -8,7 +8,6 @@ import com.aerofs.base.BaseParam.Cacert;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
-import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.bifrost.module.AccessTokenRepositoryImpl;
 import com.aerofs.bifrost.module.AuthorizationRequestRepositoryImpl;
 import com.aerofs.bifrost.module.ClientRepositoryImpl;
@@ -60,10 +59,9 @@ public class Bifrost extends Service
     private final TransactionalWrapper _trans;
 
     @Inject
-    public Bifrost(Injector injector, IPrivateKeyProvider kmgr)
+    public Bifrost(Injector injector)
     {
-        super("bifrost", new InetSocketAddress(getIntegerProperty("bifrost.port", 8700)), kmgr,
-                injector);
+        super("bifrost", new InetSocketAddress(getIntegerProperty("bifrost.port", 8700)), injector);
 
         SessionFactory sessionFactory = injector.getInstance(SessionFactory.class);
         _trans = new TransactionalWrapper(sessionFactory,
@@ -107,7 +105,7 @@ public class Bifrost extends Service
                 databaseModule(), bifrostModule(), spModule());
 
         // Note, we expect nginx or similar to provide ssl termination...
-        new Bifrost(inj, null)
+        new Bifrost(inj)
                 .start();
     }
 

@@ -1,11 +1,5 @@
 package com.aerofs.base.net;
 
-import com.aerofs.base.Loggers;
-import com.aerofs.base.ssl.ICertificateProvider;
-import com.aerofs.base.ssl.IPrivateKeyProvider;
-import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.base.ssl.SSLEngineFactory.Mode;
-import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -17,8 +11,8 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.Executors;
@@ -29,34 +23,26 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractNettyServer
 {
-    protected static final Logger l = Loggers.getLogger(AbstractNettyServer.class);
+    protected static final Logger l = LoggerFactory.getLogger(AbstractNettyServer.class);
 
     protected final String _name;
     protected final SocketAddress _listenAddress;
     protected final ServerBootstrap _bootstrap;
     protected final ChannelGroup _allChannels;
 
-    protected final SSLEngineFactory _serverSslEngineFactory;
+    protected final ISslHandlerFactory _sslHandlerFactory;
     protected final ServerSocketChannelFactory _serverChannelFactory;
 
     private Channel _listenChannel;
 
-    protected AbstractNettyServer(String name, InetSocketAddress addr,
-            @Nullable IPrivateKeyProvider key, @Nullable ICertificateProvider cacert)
-    {
-        this(name, addr, key != null
-                ? new SSLEngineFactory(Mode.Server, Platform.Desktop, key, cacert, null)
-                : null);
-    }
-
     protected AbstractNettyServer(String name, InetSocketAddress listenAddress,
-            @Nullable SSLEngineFactory serverSslEngineFactory)
+            ISslHandlerFactory sslHandlerFactory)
     {
         _name = name;
         _listenAddress = listenAddress;
         _allChannels = new DefaultChannelGroup(name);
-        _serverSslEngineFactory = serverSslEngineFactory;
 
+        _sslHandlerFactory = sslHandlerFactory;
         _serverChannelFactory = getServerSocketFactory();
 
         _bootstrap = new ServerBootstrap(_serverChannelFactory);
@@ -90,8 +76,8 @@ public abstract class AbstractNettyServer
             public ChannelPipeline getPipeline() throws Exception
             {
                 ChannelPipeline p = getSpecializedPipeline();
-                if (_serverSslEngineFactory != null) {
-                    p.addFirst("ssl", NettyUtil.newSslHandler(_serverSslEngineFactory));
+                if (_sslHandlerFactory != null) {
+                    p.addFirst("ssl", _sslHandlerFactory.newSslHandler());
                 }
                 return p;
             }
@@ -111,7 +97,8 @@ public abstract class AbstractNettyServer
         if (!allChannelsFuture.isCompleteSuccess()) {
             l.warn("unclean shutdown");
             for (ChannelFuture cf : allChannelsFuture) {
-                if (!cf.isSuccess()) l.warn("{}: {}", cf.getChannel(), cf.getCause());
+                if (!cf.isSuccess()) l.warn("{}: {}", cf.getChannel(),
+                        cf.getCause());
             }
         }
 

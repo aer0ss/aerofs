@@ -89,7 +89,7 @@ public abstract class BifrostTest extends AbstractTest
         _accessTokenRepository = _injector.getInstance(AccessTokenRepository.class);
         _resourceServerRepository = _injector.getInstance(ResourceServerRepository.class);
 
-        _service = new Bifrost(_injector, null);
+        _service = new Bifrost(_injector);
         _service.start();
         _port = _service.getListeningPort();
 

@@ -25,7 +25,6 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.util.Timer;
 
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
-import static com.aerofs.base.net.NettyUtil.newSslHandler;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newConnectTimeoutHandler;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionReader;
 import static com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.newCoreProtocolVersionWriter;
@@ -111,7 +110,7 @@ final class JingleBootstrapFactory
 
                 return pipeline(
                         newStatsHandler(transportStats),
-                        newSslHandler(clientSslEngineFactory),
+                        clientSslEngineFactory.newSslHandler(),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newCoreProtocolVersionReader(),
@@ -145,7 +144,7 @@ final class JingleBootstrapFactory
 
                 return pipeline(
                         newStatsHandler(transportStats),
-                        newSslHandler(serverSslEngineFactory),
+                        serverSslEngineFactory.newSslHandler(),
                         newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newCoreProtocolVersionReader(),

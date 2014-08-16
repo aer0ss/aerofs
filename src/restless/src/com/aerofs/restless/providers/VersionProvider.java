@@ -4,7 +4,7 @@
 
 package com.aerofs.restless.providers;
 
-import com.aerofs.base.Version;
+import com.aerofs.restless.Version;
 import com.aerofs.restless.jersey.VersionFilterFactory;
 import com.sun.jersey.api.core.HttpContext;
 import com.sun.jersey.api.model.Parameter;

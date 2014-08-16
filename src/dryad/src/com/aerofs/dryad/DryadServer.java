@@ -1,8 +1,5 @@
 package com.aerofs.dryad;
 
-import com.aerofs.base.DefaultUncaughtExceptionHandler;
-import com.aerofs.base.Loggers;
-import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.dryad.Blacklist.DeviceBlacklist;
 import com.aerofs.dryad.Blacklist.UserBlacklist;
 import com.aerofs.dryad.providers.DryadExceptionMapper;
@@ -13,6 +10,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -25,9 +24,11 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class DryadServer extends Service
 {
+    private static final Logger l = LoggerFactory.getLogger(DryadServer.class);
+
     private DryadServer(Injector injector, DryadProperties properties)
     {
-        super("dryad-upload", getServerAddressFromProperties(properties), null, injector,
+        super("dryad-upload", getServerAddressFromProperties(properties), injector,
                 newCachedThreadPool());
 
         addResource(LogsResource.class);
@@ -65,13 +66,20 @@ public class DryadServer extends Service
             System.exit(1);
         }
 
-        Loggers.init();
-        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable throwable)
+            {
+                l.error("uncaught exception thd:{} err:{} - kill system",
+                        thread.getName(), throwable, throwable);
+                System.exit(0x4655434b);
+            }
+        });
+
         ProgramBanner.logBanner("banner.txt");
 
         File propertiesFile = new File(args[0]);
         DryadProperties properties = DryadProperties.loadFromFile(propertiesFile);
-        ConfigurationProperties.setProperties(properties);
 
         DryadModule module = new DryadModule(properties);
         Injector injector = Guice.createInjector(module);

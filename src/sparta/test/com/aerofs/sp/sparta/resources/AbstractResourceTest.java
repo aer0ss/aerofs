@@ -124,7 +124,7 @@ public class AbstractResourceTest extends AbstractBaseTest
         when(sessionFactory.openSession()).thenReturn(session);
 
         // start OAuth service
-        bifrost = new Bifrost(bifrostInjector(), null);
+        bifrost = new Bifrost(bifrostInjector());
         bifrost.start();
         l.info("OAuth service at {}", bifrost.getListeningPort());
 
@@ -269,7 +269,7 @@ public class AbstractResourceTest extends AbstractBaseTest
         o.setOrganization(org, AuthorizationLevel.USER);
         sqlTrans.commit();
 
-        sparta = new Sparta(inj, null);
+        sparta = new Sparta(inj);
         sparta.start();
 
         RestAssured.baseURI = "http://localhost";

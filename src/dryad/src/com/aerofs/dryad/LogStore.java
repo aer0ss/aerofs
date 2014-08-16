@@ -4,13 +4,12 @@
 
 package com.aerofs.dryad;
 
-import com.aerofs.lib.FileUtil;
 import com.google.common.io.ByteStreams;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -26,7 +25,7 @@ public class LogStore
     public static final String DIR_ARCHIVED = "archived";
     private static final String[] SUB_DIRS = { DIR_DEFECTS, DIR_ARCHIVED };
 
-    private final Logger l = LoggerFactory.getLogger(LogStore.class);
+    private static final Logger l = LoggerFactory.getLogger(LogStore.class);
 
     private final String _storageDirectory;
 
@@ -41,7 +40,7 @@ public class LogStore
         for (String dirname : SUB_DIRS) {
             File dir = new File(_storageDirectory, dirname);
             l.info("Creating directory {}", dir.getAbsolutePath());
-            FileUtil.ensureDirExists(dir);
+            ensureDirExists(dir);
         }
     }
 
@@ -56,7 +55,7 @@ public class LogStore
         l.debug("Saving to {}", dest.getAbsolutePath());
 
         // retry 3 times before concluding this is a persistent failure
-        FileUtil.ensureDirExists(dest.getParentFile(), 3);
+        ensureDirExists(dest.getParentFile(), 3);
 
         // FIXME (AT): consider/implement an alternative where we always write to new files
         //   and never override existing files. So when there are concurrent update, each
@@ -76,6 +75,47 @@ public class LogStore
             if (out != null) {
                 out.close();
             }
+        }
+    }
+
+    /**
+     * Java's mkdirs() is _not_ thread safe!
+     * See http://www.jroller.com/ethdsy/entry/file_mkdirs_is_not_thread and
+     * http://bugs.java.com/view_bug.do?bug_id=4742723
+     *
+     * Consider using ensureDirExists(dir, retryAttempts) in multi-threaded environment.
+     */
+    public static File ensureDirExists(File dir) throws IOException
+    {
+        if (!dir.isDirectory()) mkdirs(dir);
+        return dir;
+    }
+
+    /**
+     * retry mkdirs() {@paramref retryAttempts} times because mkdirs() is not thread safe and
+     * may fail when there are concurrent mkdirs()
+     */
+    public static File ensureDirExists(File dir, int retryAttempts) throws IOException
+    {
+        for (int i = 1; i <= retryAttempts; i++) {
+            try {
+                ensureDirExists(dir);
+                return dir;
+            } catch (IOException e) {
+                if (i == retryAttempts) {
+                    throw e;
+                }
+                l.debug("mkdirs failed, trying again...");
+            }
+        }
+
+        throw new AssertionError("This line should be unreachable.");
+    }
+
+    public static void mkdirs(File dir) throws IOException
+    {
+        if (!dir.mkdirs() && !dir.isDirectory()) {
+            throw new IOException("couldn't make the directories");
         }
     }
 }

@@ -12,6 +12,8 @@ import org.jboss.netty.util.Timer;
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 
+import static com.aerofs.base.ssl.SSLEngineFactory.newServerFactory;
+
 /**
  * Transparent HTTP proxy
  *
@@ -27,7 +29,7 @@ public class HttpProxyServer extends AbstractNettyServer
 
     public HttpProxyServer(InetSocketAddress addr, @Nullable IPrivateKeyProvider key, Timer timer,
             Authenticator auth, EndpointConnector connector) {
-        super("http_proxy", addr, key, null);
+        super("http_proxy", addr, key != null ? newServerFactory(key, null) : null);
         _auth = auth;
         _timer = timer;
         _connector = connector;

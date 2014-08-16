@@ -14,6 +14,8 @@ import org.jboss.netty.util.Timer;
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 
+import static com.aerofs.base.ssl.SSLEngineFactory.newServerFactory;
+
 /**
  * Tunnel server: accepts connection form tunnel clients and generate virtual client sockets
  */
@@ -29,7 +31,7 @@ public class TunnelServer extends AbstractNettyServer
             @Nullable ICertificateProvider cacert, UserID user, DID did, Timer timer,
             ITunnelConnectionListener listener)
     {
-        super("tunnel", addr, key, cacert);
+        super("tunnel", addr, key == null ? null : newServerFactory(key, cacert));
         _user = user;
         _did = did;
         _timer = timer;

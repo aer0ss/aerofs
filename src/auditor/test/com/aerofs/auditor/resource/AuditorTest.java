@@ -62,7 +62,7 @@ public class AuditorTest extends AbstractTest
             }
         });
 
-        _service = new Auditor(_injector, null);
+        _service = new Auditor(_injector);
         _service.start();
         _port = _service.getListeningPort();
         _downstream._failureCause = null;

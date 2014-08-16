@@ -1,6 +1,6 @@
 package com.aerofs.havre.tunnel;
 
-import com.aerofs.base.Version;
+import com.aerofs.havre.Version;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;

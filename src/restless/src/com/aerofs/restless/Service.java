@@ -4,8 +4,6 @@
 
 package com.aerofs.restless;
 
-import com.aerofs.base.net.AbstractNettyServer;
-import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.restless.jersey.VersionFilterFactory;
 import com.aerofs.restless.netty.JerseyHandler;
 import com.aerofs.restless.providers.ContentStreamProvider;
@@ -23,20 +21,34 @@ import com.sun.jersey.guice.spi.container.GuiceComponentProviderFactory;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 import com.sun.jersey.spi.container.WebApplication;
 import com.sun.jersey.spi.container.WebApplicationFactory;
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.group.ChannelGroup;
+import org.jboss.netty.channel.group.ChannelGroupFuture;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for Restless service
@@ -48,13 +60,17 @@ import java.util.concurrent.ExecutorService;
  * It is basically a layer of glue between Netty, Jersey and Gson with some helpers for versioning,
  * authentication and content streaming (both input and output).
  */
-public class Service extends AbstractNettyServer
+public class Service
 {
     static {
+        org.jboss.netty.logging.InternalLoggerFactory.setDefaultFactory(new org.jboss.netty.logging.Slf4JLoggerFactory());
+
         // Jersey uses JUL, we use slf4j hence the need for bridging...
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();
     }
+
+    protected static final Logger l = LoggerFactory.getLogger(Service.class);
 
     private final static Set<Class<?>> PROVIDERS = ImmutableSet.of(
             GsonProvider.class,
@@ -71,6 +87,11 @@ public class Service extends AbstractNettyServer
     public static final String JERSEY_HANLDER = "jersey";
 
     protected final Injector _injector;
+    protected final String _name;
+    protected final SocketAddress _listenAddress;
+    protected final ServerBootstrap _bootstrap;
+    protected final ChannelGroup _allChannels;
+    protected final ServerSocketChannelFactory _serverChannelFactory;
 
     private final Executor _executor;
 
@@ -78,16 +99,23 @@ public class Service extends AbstractNettyServer
     private final ResourceConfig _resources;
     private final List<String> _requestFilters = Lists.newArrayList();
     private final WebApplication _application;
+    private Channel _listenChannel;
 
-    public Service(String name, InetSocketAddress addr, IPrivateKeyProvider kmgr, Injector injector)
+    public Service(String name, InetSocketAddress addr, Injector injector)
     {
-        this(name, addr, kmgr, injector, null);
+        this(name, addr, injector, null);
     }
 
-    public Service(String name, InetSocketAddress addr, IPrivateKeyProvider kmgr, Injector injector,
-            @Nullable Executor executor)
+    public Service(String name, InetSocketAddress addr,
+            Injector injector, @Nullable Executor executor)
     {
-        super(name, addr, kmgr, null);
+        this._name = name;
+        this._listenAddress = addr;
+        this._allChannels = new DefaultChannelGroup(name);
+
+        this._serverChannelFactory = getServerSocketFactory();
+
+        this._bootstrap = new ServerBootstrap(this._serverChannelFactory);
 
         _injector = injector;
         _executor = executor;
@@ -96,23 +124,44 @@ public class Service extends AbstractNettyServer
         _resources = getResourceConfiguration();
     }
 
-    @Override
     public void start()
     {
         if (!_application.isInitiated()) {
             _application.initiate(_resources, new GuiceComponentProviderFactory(_resources, _injector));
         }
-        super.start();
+        l.info("Starting {} server...", _name);
+        _bootstrap.setPipelineFactory(getPipelineFactory());
+        _listenChannel = _bootstrap.bind(_listenAddress);
+        _allChannels.add(_listenChannel);
+        l.info("Started {} server on {}", _name, getListeningPort());
     }
 
-    @Override
     public void stop()
     {
-        super.stop();
+        l.info("Stopping {} server...", _name);
+        ChannelGroupFuture allChannelsFuture = _allChannels.close();
+
+        // don't let the server zombify its host when channels can't be closed cleanly
+        allChannelsFuture.awaitUninterruptibly(500, TimeUnit.MILLISECONDS);
+
+        if (!allChannelsFuture.isCompleteSuccess()) {
+            l.warn("unclean shutdown");
+            for (ChannelFuture cf : allChannelsFuture) {
+                if (!cf.isSuccess()) l.warn("{}: {}", cf.getChannel(), cf.getCause());
+            }
+        }
+
+        _serverChannelFactory.releaseExternalResources();
+        _allChannels.clear();
 
         if (_executor != null && _executor instanceof ExecutorService) {
             ((ExecutorService)_executor).shutdown();
         }
+    }
+
+    public int getListeningPort()
+    {
+        return ((InetSocketAddress)_listenChannel.getLocalAddress()).getPort();
     }
 
     protected void addRequestFilter(Class<? extends ContainerRequestFilter> clazz)
@@ -135,7 +184,6 @@ public class Service extends AbstractNettyServer
         _resources.getSingletons().add(o);
     }
 
-    @Override
     public ChannelPipeline getSpecializedPipeline()
     {
         ChannelPipeline p = Channels.pipeline(
@@ -165,5 +213,23 @@ public class Service extends AbstractNettyServer
         _resources.getProperties()
                 .put(ResourceConfig.PROPERTY_RESOURCE_FILTER_FACTORIES, VersionFilterFactory.class);
         _resources.getClasses().add(VersionProvider.class);
+    }
+
+    protected ServerSocketChannelFactory getServerSocketFactory()
+    {
+        return new NioServerSocketChannelFactory(
+                Executors.newCachedThreadPool(),
+                Executors.newCachedThreadPool());
+    }
+
+    protected ChannelPipelineFactory getPipelineFactory()
+    {
+        return new ChannelPipelineFactory() {
+            @Override
+            public ChannelPipeline getPipeline() throws Exception
+            {
+                return getSpecializedPipeline();
+            }
+        };
     }
 }

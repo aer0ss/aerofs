@@ -1,8 +1,9 @@
-package com.aerofs.base;
+/*
+ * Copyright (c) Air Computing Inc., 2014.
+ */
 
-import com.aerofs.base.ex.ExFormatError;
+package com.aerofs.havre;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,7 +11,6 @@ import java.util.regex.Pattern;
 /**
  * Helper to manipulate API versions
  */
-@NoObfuscation
 public class Version implements Comparable<Version>
 {
     public final int major;
@@ -38,13 +38,6 @@ public class Version implements Comparable<Version>
         int idx = path.indexOf('/', 2);
         if (idx == -1) return null;
         return Version.fromStringNullable(path.substring(2, idx));
-    }
-
-    public static @Nonnull Version fromString(String s) throws ExFormatError
-    {
-        Version v = fromStringNullable(s);
-        if (v == null) throw new ExFormatError(s);
-        return v;
     }
 
     private static final Pattern VERSION_PATTERN = Pattern.compile("([0-9]+)\\.([0-9]+)");
@@ -86,7 +79,7 @@ public class Version implements Comparable<Version>
     @Override
     public int compareTo(Version o)
     {
-        int c = BaseUtil.compare(major, o.major);
-        return c != 0 ? c : BaseUtil.compare(minor, o.minor);
+        int c = Integer.valueOf(major).compareTo(o.major);
+        return c != 0 ? c : Integer.valueOf(minor).compareTo(o.minor);
     }
 }
