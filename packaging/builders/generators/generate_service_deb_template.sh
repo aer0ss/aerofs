@@ -60,7 +60,7 @@ Priority: required
 Maintainer: AeroFS <team@aerofs.com>
 Description: AeroFS $SERVICE package.
 Architecture: all
-Depends: default-jdk (>= 1.6)
+Depends: java8-jdk
 EOF
 
 cat << EOF >> "$DEBIAN"/preinst

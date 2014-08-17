@@ -237,8 +237,7 @@ function obfuscate_java() {
         -repackageclasses "com.aerofs" \
         -dontwarn 'com.aerofs.tools.**' \
         -dontnote 'com.aerofs.l.*' \
-        @"${local_PG_HOME}/aerofs.pro" \
-        @"${local_PG_HOME}/aerofs-$(uname).pro"
+        @"${local_PG_HOME}/aerofs.pro"
 
     rm -rf "${local_PG_AEROFS_DIR}/aerofs.unobf.jar"
 }
