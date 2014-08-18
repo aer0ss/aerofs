@@ -1,7 +1,6 @@
 class private-common {
-    # This is our production apt key. OpenStack images should only be built off
-    # production (for now).
-    $aptkey = '64E72541'
+    # TODO: in puppet >2.7, this can be file() instead of template()
+    $aptkey = template('common/aerofs-apt-key')
 
     # If there's a repo defined in hiera use that, otherwise use prod by default
     class{"common":

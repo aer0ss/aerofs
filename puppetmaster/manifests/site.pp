@@ -19,7 +19,8 @@ node default {
 
     # Common package for for apt, logs, service management, etc.
     class{"common":
-        aptkey => hiera("aptkey"),
+        # TODO: in puppet >2.7, this can be file() instead of template()
+        aptkey => template('common/aerofs-apt-key'),
         repo => $repo
     }
 

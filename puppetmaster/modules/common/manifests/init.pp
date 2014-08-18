@@ -23,7 +23,6 @@ class common (
         location    => "http://apt.aerofs.com/ubuntu/${repo}",
         repos       => "main",
         include_src => false,
-        key         => "${aptkey}",
-        key_server  => "pgp.mit.edu",
+        key_content => "${aptkey}",
     }
 }
