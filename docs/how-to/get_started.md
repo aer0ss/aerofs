@@ -42,10 +42,33 @@ Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a us
     
 will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools.
 
+## Install JDK 8
+
+[Download](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+
+You should configure your environment to pick up JDK8 instead of the default JDK6 shipped with OSX.
+For bash this can be achieved by adding the following line to your `~/.bash_profile`:
+
+    export JAVA_HOME="$(/usr/libexec/java_home -v '1.8*')"
+
+For the time being, we need *both* JDK6 and JDK8. JDK8 is still fairly recent and no Linux distros
+provide official packages for it at the time of this writing. For this reason, any package that is
+meant to be distributed externally (dryad) must be compatible with Java 6. The JDK can produce
+binaries compatible with older versions of the JRE but it requires a so-called "bootclasspath" from
+an earlier JDK to work correctly.
 
 ## Install IDEs
 
 We suggest [IntelliJ IDEA CE](http://www.jetbrains.com/idea/download/) for Java and [PyCharm](http://www.jetbrains.com/pycharm/download/) for Python.
+
+To compile from IntelliJ you may need to force it to run under Java 8. To do that:
+in /Application/IntelliJ IDEA*.app/Contents/Info.plist
+change `JVMVersion` to `1.8*`
+
+You may also need to manually point IntelliJ to the newly installed JDK:
+
+File > Project Structure... > SDKs > + > JDK
+the path should be something like /Library/Java/JavaVirtualMachines/jdk1.8.0_11.jdk/Contents/Home
 
 We require that you use either an IDE or a language validator to check syntax and formatting for code in markup and scripting languages, such as Python, HTML, CSS, and JavaScript.
 

@@ -8,11 +8,49 @@ This doc describes what must be installed and configured on the CI box. For a hi
 
 Use default account: aerofsbuild/temp123
 
+Add apt.aerofs.com to the repo list
+```
+echo "
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: SKS 1.1.4
+Comment: Hostname: http://pgp.mit.edu
+
+mQINBE/hSvgBEADIgTQqWziicSv77UWMeLLygzQQOksouwI71Yvnknf9Km/40VAoowTUd5pi
+wh8VmoZ4mSNkaRDd7Jpu/KSz0iJpG5z8FB9zP2RplRONh+pBTFGEuCjsBIZALy1wjvNqTlQq
+ZbREhFTWYl9+vRxMfVhQ1ASWYu7ecmDLTWU1HE4XdQyO/wu0k/3MfDdBW97rKKaVMt8yuMXr
+pYssSoka+G15Mj29RnQudEjOKpmsbke9ZjP8yr7VltuOEluLznSy5yEGytwR+USmR1SDyMfr
+e9ivpowFUq3Wq+h/RX0W7liXjbw/JH6ywzH3/Aq5uvKNFEDKs5Q949rEVVdpXneGaUJ4vZLP
+YeBmCOk+AreXzh1+QmuHJspx9mpuec9SifZ+dKjBU3e5hmm/N33o66SXRPU47y4gajxKb4fY
+jm7BKyzGU51G7T+NGrD6YhpmyBj9kWZGmeWrGJGgFmKskrvJjCr4R/QCmn2wPtfli5a96a3T
+3cKi8ScwkNiS01+FP7vY60uDZRyLXu4YW0XwX1YSDQiMBdKkdfD7yjSyk0j+WUgLWmUjsgwZ
+FoRsR1iUIs1OsDqmcEYQJdUtog/MLn3kp2QJnn4sQPvYbYka98jyXneHHBwK5QUF+Y+jv5xF
+8gIJ118FkYiRKImpcou/TRQiXGozumT0hJupKmqlHSJTncDuAwARAQABtC1BaXIgQ29tcHV0
+aW5nIEluYy4gKEFlcm9GUykgPHRlYW1AYWVyb2ZzLmNvbT6JAjgEEwECACIFAk/hSvgCGwMG
+CwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEBiS1l5k5yVBSgQP/AkdW8Er1olA6C3JRFkY
+miLXt/QYPHEvS36u7NH73nPYMEM1DZ38Cg+NjONhu6lG7SPiQrJcU/8+WClMdYvJG1wN9Hn9
+6mH0bvjTnPwtWu1JFbXLl3Ne/4+wJRpcWGS3Du8DSbSi2UeLAGst8pyd0oUlaxH1Xdv9ujZI
+UfQwQqqiSlBjAHUDde6k0JKy3seue3kHACzkeXI+PggsRQj1XPviW9ssIM0ezFnpTiWP2tVN
+L25JGahzNay8+ORnEZzRrMlPU5Lk4Eqi049aYueWCzl40R0KnsEcP+QB24oZlaNI8eOWBnas
+kTo5aX1dk9sdeJN9oVZpOubqy4CZg+5UgavMSISaoMY5jwTdxk31HZtqOrTfV6ztETVirOOR
+WNGHx1eo14bVvt4zk7YYzwC9WsxrUVpKrB0duvNnyNgxShsmzRtZUeJSUPSRIVLBjDqMGlEs
+G0DNVSjtVqCuiuTLV8sQgiBB6TjkyAaG2Xjm9uJ8GnPPvVDzoYHazRjpGrLRWlJYz2EXfC7z
+dGosK8EIJmnHRCPA7UYXXOfPC/RyH7TBE90Kvi0He+QJNV70/zpVUKHh9xSrgcvBTluEqARS
+NDMGrHojdLajtsEucMr1XCbcGgtn6fAVSF3igWqGQmJZoZJN/bQado8txa7jy1+1JEHw4Lfv
+delkN0o66y5O2XjH
+=/w7j
+-----END PGP PUBLIC KEY BLOCK-----" | sudo apt-key add -
+echo "deb http://apt.aerofs.com/ubuntu/public precise main" | sudo tee /etc/apt/sources.list.d/aerofs.list
+sudo apt-get update
+```
+
 Install debian packages: 
 
 ```
-sudo apt-get install openssh-server tree openjdk-6-jdk openvpn dnsmasq git python-dev python-pip python-mysqldb ant vim bridge-utils
+sudo apt-get install openssh-server tree openjdk-6-jdk openjdk-8-jdk openvpn dnsmasq git python-dev python-pip python-mysqldb ant vim bridge-utils
 ```
+
+NB: yes, you need *both* jdk6 and jdk8.
+
 
 Install mysql-server (use password "temp123"):
 
