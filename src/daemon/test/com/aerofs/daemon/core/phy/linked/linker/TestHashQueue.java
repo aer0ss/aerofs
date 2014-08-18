@@ -38,6 +38,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertFalse;
@@ -86,10 +87,9 @@ public class TestHashQueue extends AbstractTest
         when(f.lastModified()).thenReturn(mtime);
         when(f.getLength()).thenReturn((long)c.length);
         when(f.getLengthOrZeroIfNotFile()).thenReturn((long)c.length);
-        when(f.newInputStream()).thenAnswer(new Answer<Object>()
-        {
+        when(f.newInputStream()).thenAnswer(new Answer<InputStream>() {
             @Override
-            public Object answer(InvocationOnMock invocation)
+            public InputStream answer(InvocationOnMock invocation)
                     throws Throwable
             {
                 return new ByteArrayInputStream(c);
@@ -101,9 +101,9 @@ public class TestHashQueue extends AbstractTest
     Future<AbstractEBSelfHandling> whenHashed()
     {
         final SettableFuture<AbstractEBSelfHandling> ev = SettableFuture.create();
-        doAnswer(new Answer() {
+        doAnswer(new Answer<Void>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
+            public Void answer(InvocationOnMock invocation) throws Throwable
             {
                 ev.set((AbstractEBSelfHandling)invocation.getArguments()[0]);
                 return null;

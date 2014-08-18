@@ -345,6 +345,7 @@ public class AbstractRestTest extends AbstractTest
     private static class GOMF implements GsonObjectMapperFactory
     {
         @Override
+        @SuppressWarnings("rawtypes")
         public Gson create(Class cls, String charset)
         {
             return new GsonBuilder()

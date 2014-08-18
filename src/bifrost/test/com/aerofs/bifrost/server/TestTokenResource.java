@@ -389,6 +389,7 @@ public class TestTokenResource extends BifrostTest
     }
 
     @Test
+    @SuppressWarnings("rawtypes")
     public void shouldListTokensOnGet() throws Exception
     {
         Response response = given()

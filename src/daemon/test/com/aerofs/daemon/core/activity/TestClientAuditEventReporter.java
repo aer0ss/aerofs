@@ -388,7 +388,7 @@ public final class TestClientAuditEventReporter
         when(_al.getActivitesAfterIndex_(startActivityLogIndex)).thenReturn(new MockActivityLogDBIterator(1, 4));
 
         // pretend we have a failing client
-        doAnswer(new Answer()
+        doAnswer(new Answer<Void>()
         {
             int numCalls = 0;
 

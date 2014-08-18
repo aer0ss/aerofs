@@ -73,7 +73,7 @@ public final class TestCNameVerifiedHandler
         when(channel.getAttachment()).thenReturn(null).thenReturn(channelData);
 
         // store all events we attempt to send
-        doAnswer(new Answer()
+        doAnswer(new Answer<Void>()
         {
             @Override
             public Void answer(InvocationOnMock invocation)

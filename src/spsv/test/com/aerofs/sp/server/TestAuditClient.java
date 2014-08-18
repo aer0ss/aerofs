@@ -32,6 +32,7 @@ import static org.mockito.Mockito.verify;
 
 /**
  */
+@SuppressWarnings("rawtypes")
 public class TestAuditClient extends AbstractTest
 {
     @Mock IAuditorClient _httpMock;

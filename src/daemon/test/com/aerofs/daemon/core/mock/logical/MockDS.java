@@ -525,6 +525,7 @@ public class MockDS
             super.delete(t, listeners);
         }
 
+        @SuppressWarnings("rawtypes")
         private <T extends MockDSObject> T child(String name, Class<T> c, Object... param)
                 throws Exception
         {

@@ -48,7 +48,7 @@ public class TestChannelMonitor extends AbstractTest
         directory = spy(new ChannelDirectory(mock(ITransport.class), mock(IUnicastConnector.class)));
         timer = spy(TimerUtil.getGlobalTimer());
 
-        doAnswer(new Answer()
+        doAnswer(new Answer<Object>()
         {
             @Override
             public Object answer(InvocationOnMock invocation)

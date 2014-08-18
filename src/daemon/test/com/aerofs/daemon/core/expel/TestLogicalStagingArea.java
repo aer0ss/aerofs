@@ -447,9 +447,9 @@ public class TestLogicalStagingArea extends AbstractTest
         lsadb.addEntry_(soid, Path.root(rootSID), t);
 
         // for every object, fail the first call to scrub_
-        doAnswer(new Answer() {
+        doAnswer(new Answer<Void>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
+            public Void answer(InvocationOnMock invocation) throws Throwable
             {
                 doNothing().when(ps).scrub_((SOID)invocation.getArguments()[0],
                         (Path)invocation.getArguments()[1],
