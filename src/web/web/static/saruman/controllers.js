@@ -7,7 +7,7 @@ sarumanControllers.controller('DevicesController', ['$scope', '$rootScope', '$lo
 
         $http.get('/devices/get_devices', {
             params: {
-                user: $("#username")[0].innerHTML
+                user: currentUserEmail
             }
         }).success(function(data){
             $scope.devices = data.devices.concat(data.mobile_devices);

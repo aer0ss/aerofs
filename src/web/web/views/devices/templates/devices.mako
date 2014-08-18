@@ -5,9 +5,6 @@
     <link rel="stylesheet" href="${request.static_path('web:static/css/compiled/my-table.min.css')}"/>
 </%block>
 
-## oh jeez this is awful. I'm sorry guys
-<div id="username" style="display:none;">${user}</div>
-
 <div ng-app="sarumanApp">
     <div class="row">
         <div class="col-sm-12">
@@ -45,6 +42,7 @@
         unlinkURL = "${request.route_path('json.unlink_device')}";  
         eraseURL = "${request.route_path('json.erase_device')}";
         revokeTokenURL = "${request.route_path('json_delete_access_token')}";
+        currentUserEmail = "${user}";
     </script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
