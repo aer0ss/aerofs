@@ -243,7 +243,7 @@ def login_backup_code_post(request):
         elif e.get_type_name() == "NOT_FOUND":
             flash_error(request, _("You're not enrolled in two-factor auth."))
         else:
-            flash_error(request, _("An unexpected error occured"))
+            flash_error(request, _("An unexpected error occurred"))
         return HTTPFound(request.url)
     return HTTPFound(resolve_next_url(request, DEFAULT_DASHBOARD_NEXT))
 

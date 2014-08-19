@@ -1,5 +1,6 @@
 import logging
 
+import string
 from pyramid.httpexceptions import HTTPFound
 from pyramid.security import remember
 
@@ -10,6 +11,7 @@ from aerofs_sp.connection import SyncConnectionService
 # other references to this parameter when modifying handling of the next parameter.
 URL_PARAM_NEXT = 'next'
 
+ALLOWED_NEXT_CHARS = string.digits + string.letters + string.punctuation
 log = logging.getLogger(__name__)
 
 def get_next_url(request, default_route):
@@ -24,18 +26,28 @@ def get_next_url(request, default_route):
 def resolve_next_url(request, default_route):
     """
     Return the value of the 'next' parameter in the request. Return
-    default_route if the next param is not set. Always prefix with the host URL
-    to prevent attackers to insert arbitrary URLs in the parameter, e.g.:
+    default_route if the next param is not set.
+
+    Always prefix with the host URL to prevent attackers to insert arbitrary URLs
+    in the parameter, e.g.:
     aerofs.com/login?next=http%3A%2F%2Fcnn.com.
+
+    Return default_route if the next URL contains disallowed characters to prevent
+    HTTP response header injection.
     """
     next_url = get_next_url(request, default_route)
 
-    # If _get_next_url()'s return value doesn't include a leading slash, add it.
-    # This is to prevent the next_url being things like .cnn.com and @cnn.com
-    if next_url[:1] != '/': next_url = '/' + next_url
+    # If the next URL includes some invalid characters, return the default route.
+    for c in next_url:
+        if c not in ALLOWED_NEXT_CHARS:
+            return default_route
+
+    # If get_next_url()'s return value doesn't include a leading slash, add it.
+    # This is to prevent the next_url being things like .cnn.com and @cnn.com.
+    if next_url[0] != '/' :
+        next_url = '/' + next_url
 
     return request.host_url + next_url
-
 
 def redirect_to_next_page(request, headers, default_route):
     """
