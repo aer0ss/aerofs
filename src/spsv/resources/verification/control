@@ -4,4 +4,4 @@ Priority: required
 Maintainer: AeroFS <team@aerofs.com>
 Description: AeroFS verification server package.
 Architecture: all
-Depends: default-jdk (>= 1.6), tomcat6
+Depends: java8-jdk, tomcat6
