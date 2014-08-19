@@ -36,13 +36,13 @@ BUCKET=aerofs.privatecloud
 check_version_format $RELEASE_VERSION
 
 function UploadArtifacts {
-    test -d "$IMG_PATH" && Die "Given image path $IMG_PATH does not exist."
+    test -d "$IMG_PATH" || Die "Given image path $IMG_PATH does not exist."
 
     declare FileList=
     for suffix in ".ova" ".qcow2.gz"
     do
-        declare LocalFile=${IMG_PATH}/aerofs-appliance-${RELEASE_VERSION}.${suffix}
-        test -r "$LocalFile" && Die "Expected appliance file $LocalFile does not exist."
+        declare LocalFile=${IMG_PATH}/aerofs-appliance-${RELEASE_VERSION}${suffix}
+        test -r "$LocalFile" || Die "Expected appliance file $LocalFile does not exist."
 
         FileList="$FileList $LocalFile"
     done
