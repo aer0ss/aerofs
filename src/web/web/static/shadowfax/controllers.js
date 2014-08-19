@@ -9,8 +9,14 @@ shadowfaxControllers.controller('SharedFoldersController',
         $scope.paginationLimit = paginationLimit;
         $scope.offset = 0;
 
+
         var getData = function() {
-            $http.get(dataUrl + '?offset=' + $scope.offset.toString()).success(function(response){
+            // sometimes we have URL param args already, sometimes we don't
+            // need this to make sure the offset arg gets added correctly
+            if (dataUrl.indexOf("?") == -1) {
+                dataUrl = dataUrl + "?";
+            }
+            $http.get(dataUrl + '&offset=' + $scope.offset.toString()).success(function(response){
                 // reset folder data to empty
                 $scope.folders = [];
                 $scope.leftFolders = [];

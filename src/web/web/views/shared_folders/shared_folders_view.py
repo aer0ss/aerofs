@@ -54,10 +54,13 @@ def my_shared_folders(request):
 def user_shared_folders(request):
     _ = request.translate
     full_name = request.params[URL_PARAM_FULL_NAME]
+    email = request.params[URL_PARAM_USER]
 
     return _shared_folders(request,
             _("${name}'s shared folders", {'name': full_name}),
-            request.route_url('json.get_user_shared_folders'))
+            request.route_url('json.get_user_shared_folders', _query={
+                URL_PARAM_USER: email
+                }))
 
 
 @view_config(
@@ -203,7 +206,7 @@ def _sp_reply2json(folders, privileger, session_user, request, total=None, offse
     @param privileger a callback function to determine if the session user has
         privileges to modify ACL of the folder
     """
-    left_user = specified_user if specified_user is not None else session_user
+    user = specified_user or session_user
     data = []
     for folder in folders:
         # a workaround to filter folder.user_permissions_and_state into owners and members
@@ -224,7 +227,7 @@ def _sp_reply2json(folders, privileger, session_user, request, total=None, offse
             'sid': escape(id),
             'is_privileged': 1 if privileger(folder, session_user) else 0,
             'is_member': is_mine,
-            'is_left': _is_left(folder, left_user)
+            'is_left': _is_left(folder, user)
         })
 
     if not total:
