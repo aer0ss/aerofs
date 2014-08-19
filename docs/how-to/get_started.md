@@ -44,7 +44,9 @@ will launch a dialog prompting you to install XCode command line tools. Follow t
 
 ## Install JDK 8
 
-[Download](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+[JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+
+[JCE Unlimited Strength Policy](http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html)
 
 You should configure your environment to pick up JDK8 instead of the default JDK6 shipped with OSX.
 For bash this can be achieved by adding the following line to your `~/.bash_profile`:
