@@ -229,7 +229,10 @@ public class Main
         // load config
         if (!Cfg.inited()) {
             try {
-                Cfg.init_(rtRoot, ui || prog.equals(DMON_PROGRAM_NAME) || prog.equals(PUMP_PROGRAM_NAME));
+                Cfg.init_(rtRoot, ui
+                        || prog.equals(LibParam.SH_NAME)
+                        || prog.equals(DMON_PROGRAM_NAME)
+                        || prog.equals(PUMP_PROGRAM_NAME));
                 l.debug("id {}", Cfg.did().toStringFormal());
             } catch (ExNotSetup e) {
                 // gui and cli will run setup itself
