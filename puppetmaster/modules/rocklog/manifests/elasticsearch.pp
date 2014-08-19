@@ -89,7 +89,7 @@ class rocklog::elasticsearch {
     }
 
     cron { "daily_es_clean":
-        command => "/usr/bin/es_cleaner.py -u http://localhost:9200 -d 18",
+        command => "/usr/bin/es_cleaner.py -u http://localhost:9200 -d 32",
         user    => "root",
         hour    => 1,
         minute  => 0,
