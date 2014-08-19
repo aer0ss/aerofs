@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 public class TestMixpanelAPI
 {
     private static final int TEST_PORT = 8081;
-    private static final String TEST_API_ENDPOINT = "http://localhost:" + TEST_PORT  + "?data=";
+    private static final String TEST_API_ENDPOINT = "http://localhost:" + TEST_PORT  + "/?data=";
     private static final String TEST_TOKEN = "00000000000000000000000000000000";
     private static final String TEST_EVENT = "test event";
     private static final String TEST_USER = "test_user";
@@ -64,8 +64,8 @@ public class TestMixpanelAPI
                     throws Exception
             {
                 // Decode the request
-                assertTrue(request.getUri().startsWith("?data="));
-                String base64 = request.getUri().substring("?data=".length());
+                assertTrue(request.getUri().startsWith("/?data="));
+                String base64 = request.getUri().substring("/?data=".length());
                 String json = new String(Base64.decode(base64), Charsets.UTF_8);
                 Map<?, ?> map = new Gson().fromJson(json, Map.class);
                 Map<?, ?> properties = (Map<?, ?>) map.get("properties");
