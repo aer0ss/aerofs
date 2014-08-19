@@ -19,6 +19,7 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -64,6 +65,8 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *          _server.setRequestProcessor(...how the server should hanlde the request...)
  *      }
  *
+ * N.B. it only support content up to the size {@link #MAX_CONTENT_LENGTH}
+ *
  */
 public class HttpServerTest extends AbstractIdleService
 {
@@ -73,6 +76,7 @@ public class HttpServerTest extends AbstractIdleService
     }
 
     private static final Logger l = Loggers.getLogger(HttpServerTest.class);
+    private static final int MAX_CONTENT_LENGTH = 2 * C.MB;
 
     private final ChannelFactory _factory = new NioServerSocketChannelFactory(
             Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
@@ -100,12 +104,17 @@ public class HttpServerTest extends AbstractIdleService
     @Override
     protected void startUp() throws Exception
     {
+        // TODO: consolidate this with {@link com.aerofs.verkehr.client.rest.StupidHttpServer}
         _bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
             public ChannelPipeline getPipeline() throws Exception
             {
-                return Channels.pipeline(new HttpServerCodec(), new Handler());
+                return Channels.pipeline(
+                        new HttpServerCodec(),
+                        new HttpChunkAggregator(MAX_CONTENT_LENGTH),
+                        new Handler()
+                );
             }
         });
 

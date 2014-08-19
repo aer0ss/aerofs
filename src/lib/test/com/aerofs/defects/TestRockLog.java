@@ -17,15 +17,15 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
-import static java.util.Collections.emptyMap;
+import static com.google.common.collect.Maps.fromProperties;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -42,7 +42,7 @@ public class TestRockLog extends AbstractTest
     @Mock DryadClient _dryad;
     Executor _executor = MoreExecutors.sameThreadExecutor();
     @Mock RecentExceptions _recentExceptions;
-    Map<String, String> _properties = emptyMap();
+    Map<String, String> _properties = fromProperties(System.getProperties());
 
     HttpServerTest _server;
 
@@ -73,7 +73,7 @@ public class TestRockLog extends AbstractTest
                 assertEquals(HttpMethod.POST, request.getMethod());
                 assertEquals("application/json", request.getHeader("Content-Type"));
 
-                String json = new String(request.getContent().array());
+                String json = request.getContent().toString(Charset.forName("ISO-8859-1"));
                 Map<String, Object> map = (Map<String, Object>)new Gson().fromJson(json, Map.class);
 
                 // Check that everything was sent correctly
@@ -137,42 +137,5 @@ public class TestRockLog extends AbstractTest
                     .setMessage(DEFECT_MESSAGE)
                     .sendSync();
         }
-    }
-
-    // this test is ignored because it currently fails.
-    // FIXME (AT): make it pass (pretty sure this is an issue with the test)
-    @Ignore
-    @Test
-    public void shouldTransferContentOnRequestsWithLargeContent()
-            throws Exception
-    {
-        _server.setRequestProcessor(new RequestProcessor()
-        {
-            @Override
-            public HttpResponse process(HttpRequest request) throws Exception
-            {
-                // Decode the request
-                assertEquals("/defects", request.getUri());
-                assertEquals(HttpMethod.POST, request.getMethod());
-                assertEquals("application/json", request.getHeader("Content-Type"));
-
-                // FIXME (AT): this currently fails
-                assertTrue(request.getContent().array().length > 0);
-
-                return new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
-            }
-        });
-
-        RockLog rockLog = new RockLog(TEST_URL, new Gson());
-        Defect defect = new Defect(DEFECT_NAME, _cfg, rockLog, _dryad, _executor,
-                _recentExceptions, _properties)
-                .setMessage(DEFECT_MESSAGE);
-
-        for (int i = 0; i < 1000; i++) {
-            defect.addData("key" + i, "value");
-        }
-
-        boolean success = rockLog.rpc("/defects", defect.getDefectData());
-        assertTrue(success);
     }
 }
