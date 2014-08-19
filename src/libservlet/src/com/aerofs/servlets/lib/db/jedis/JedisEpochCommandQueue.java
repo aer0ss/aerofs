@@ -70,10 +70,26 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
     private static final String PREFIX_ATTEMPTS = "jeq:a/";
     private static final String PREFIX_CREATE   = "jeq:c/";
 
+    static class TimeSource
+    {
+        long currentTimeMillis()
+        {
+            return System.currentTimeMillis();
+        }
+    }
+
+    private final TimeSource _timeSource;
+
     @Inject
     public JedisEpochCommandQueue(JedisThreadLocalTransaction transaction)
     {
+        this(transaction, new TimeSource());
+    }
+
+    JedisEpochCommandQueue(JedisThreadLocalTransaction transaction, TimeSource timeSource)
+    {
         super(transaction);
+        _timeSource = timeSource;
     }
 
     //
@@ -113,7 +129,7 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
      */
     public Epoch enqueue(DID did, String commandMessage)
     {
-        String currentTime = String.valueOf(System.currentTimeMillis());
+        String currentTime = String.valueOf(_timeSource.currentTimeMillis());
 
         // Set the number of attempts to 0 if it hasn't already been set.
         getTransaction().eval(

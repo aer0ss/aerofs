@@ -29,7 +29,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
-import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -55,15 +54,19 @@ public class TestOnlineStatusNotifier
 
     // caching these since they will be used often;
     ImmutableSet<NetworkInterface> _empty = ImmutableSet.of();
-    ImmutableSet<NetworkInterface> _nonEmpty = ImmutableSet.of(mock(NetworkInterface.class));
+    ImmutableSet<NetworkInterface> _nonEmpty;
 
     // these references are used to simulate callbacks
     ConnectionListener _verkehrListener;
     ILinkStateListener _linkStateListener;
 
     @Before
-    public void setup()
+    public void setup() throws Exception
     {
+        // le sigh...
+        // NetworkInterface is final and powermock is borken...
+        _nonEmpty = ImmutableSet.of(NetworkInterface.getNetworkInterfaces().nextElement());
+
         MockitoAnnotations.initMocks(this);
 
         when(_ritualNotificationServer.getRitualNotifier()).thenReturn(_ritualNotifier);

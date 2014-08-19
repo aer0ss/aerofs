@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.C;
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.lib.Throttler;
@@ -14,7 +15,13 @@ class DownloadNotifier extends AbstractTransferNotifier
 {
     /** we use a specific type to differentiate the throttler to be created by guice */
     static class DownloadThrottler extends Throttler<TransferredItem>
-    {}
+    {
+        @Inject
+        public DownloadThrottler(ElapsedTimer.Factory factTimer)
+        {
+            super(factTimer);
+        }
+    }
 
     private final DownloadThrottler _throttler;
 

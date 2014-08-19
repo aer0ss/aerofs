@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -133,7 +134,8 @@ public class TestHdGetActivities extends AbstractTest
         addActivity(MOVEMENT_VALUE, mkpath("a"), mkpath("b"), did1, did2, did3);
 
         al = new ActivityLog(ds, nvc, aldb);
-        UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tokenManager,  tm, d2u, udndb, factSP);
+        UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tokenManager,  tm, d2u,
+                udndb, factSP, new ElapsedTimer.Factory());
 
         hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID, sidx2sid);
 

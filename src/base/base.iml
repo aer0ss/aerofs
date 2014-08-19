@@ -18,7 +18,6 @@
     <orderEntry type="library" exported="" name="gson" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="mockito" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="hamcrest" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="powermock" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="junit" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="bouncycastle" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />

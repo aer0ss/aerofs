@@ -90,7 +90,8 @@ public class UserAndDeviceNames
 
     @Inject
     public UserAndDeviceNames(CfgLocalUser localUser, TokenManager tokenManager, TransManager tm,
-            DeviceToUserMapper d2u, IUserAndDeviceNameDatabase udndb, InjectableSPBlockingClientFactory factSP)
+            DeviceToUserMapper d2u, IUserAndDeviceNameDatabase udndb, InjectableSPBlockingClientFactory factSP,
+            ElapsedTimer.Factory factTimer)
     {
         _localUser = localUser;
         _tokenManager = tokenManager;
@@ -99,7 +100,7 @@ public class UserAndDeviceNames
         _udndb = udndb;
         _factSP = factSP;
 
-        _SPUpdateFailureTimer = new ElapsedTimer();
+        _SPUpdateFailureTimer = factTimer.create();
     }
 
     // this method is exposed to TestUserAndDeviceNames so we can control the

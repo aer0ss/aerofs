@@ -2,51 +2,30 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.servlets.lib.db;
+package com.aerofs.servlets.lib.db.jedis;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Cmd.CommandType;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.DeletedElementCount;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.DeletedElementCountList;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueSize;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
+import com.aerofs.servlets.lib.db.AbstractJedisTest;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
+import static com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.*;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
+import static org.mockito.Mockito.mock;
 
-// We will be mocking statics, so use power mock.
-@RunWith(PowerMockRunner.class)
-// The statics exist in the JedisEpochCommandQueue class.
-@PrepareForTest(JedisEpochCommandQueue.class)
-@PowerMockIgnore({"ch.qos.logback.*", "org.slf4j.*"})
 public class TestJedisEpochCommandQueue extends AbstractJedisTest
 {
-    private JedisEpochCommandQueue _queue = new JedisEpochCommandQueue(getTransaction());
+    private TimeSource timeSource = mock(TimeSource.class);
+
+    private JedisEpochCommandQueue _queue = new JedisEpochCommandQueue(getTransaction(), timeSource);
 
     private final DID _d1 = new DID(UniqueID.generate());
 
     private final CommandType _ct1 = CommandType.INVALIDATE_DEVICE_NAME_CACHE;
     private final String _c1 = createCommandMessage(_ct1);
     private final String _c2 = createCommandMessage(CommandType.INVALIDATE_USER_NAME_CACHE);
-
-    @Before
-    public void setupTestJedisEpochCommandQueue()
-    {
-        // Mock the system time static method.
-        PowerMockito.mockStatic(System.class);
-        Mockito.when(System.currentTimeMillis()).thenReturn(0L);
-    }
 
     //
     // Utils

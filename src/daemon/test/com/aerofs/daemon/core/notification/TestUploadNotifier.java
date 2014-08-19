@@ -4,26 +4,18 @@
 
 package com.aerofs.daemon.core.notification;
 
-import com.aerofs.base.ElapsedTimer;
 import com.aerofs.daemon.core.notification.UploadNotifier.UploadThrottler;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
-import org.junit.runner.RunWith;
-import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ElapsedTimer.class)
-@PowerMockIgnore({"ch.qos.logback.*", "org.slf4j.*"})
 public class TestUploadNotifier extends AbstractTestNotifier
 {
-    @Spy UploadThrottler _throttler = new UploadThrottler();
+    UploadThrottler _throttler;
     UploadNotifier _uploadNotifier;
 
     @Override
@@ -53,6 +45,7 @@ public class TestUploadNotifier extends AbstractTestNotifier
     @Override
     protected void setUpImpl()
     {
+        _throttler = spy(new UploadThrottler(_factTimer));
         _uploadNotifier = new UploadNotifier(_directoryService, _userAndDeviceNames,
                 _notificationServer, _throttler);
         _uploadNotifier.filterMeta_(true);

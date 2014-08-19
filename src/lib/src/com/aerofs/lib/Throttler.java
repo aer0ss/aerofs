@@ -23,8 +23,15 @@ import static com.google.common.collect.Maps.newHashMap;
  */
 public class Throttler<ThrottledItem>
 {
+    private final ElapsedTimer.Factory _factTimer;
+
     private final Map<ThrottledItem, ElapsedTimer> _map = newHashMap();
     private long _delay;
+
+    public Throttler(ElapsedTimer.Factory factTimer)
+    {
+        _factTimer = factTimer;
+    }
 
     public void setDelay(long delay)
     {
@@ -37,7 +44,7 @@ public class Throttler<ThrottledItem>
             if (_map.get(item).elapsed() < _delay) return true;
         }
 
-        ElapsedTimer timer = new ElapsedTimer();
+        ElapsedTimer timer = _factTimer.create();
         _map.put(item, timer);
 
         return false;

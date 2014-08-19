@@ -21,22 +21,11 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Collections;
-import java.util.List;
-
+import static java.util.Collections.emptyList;
 import static org.mockito.Mockito.*;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ElapsedTimer.class)
-@PowerMockIgnore({"ch.qos.logback.*", "org.slf4j.*"})
 public class TestUserAndDeviceNames extends AbstractTest
 {
     @Mock CfgLocalUser user;
@@ -45,73 +34,78 @@ public class TestUserAndDeviceNames extends AbstractTest
     @Mock DeviceToUserMapper d2u;
     @Mock IUserAndDeviceNameDatabase udndb;
     @Mock InjectableSPBlockingClientFactory factSP;
-    @Spy UserAndDeviceNames _udn = new UserAndDeviceNames(user, tokenManager, tm, d2u, udndb, factSP);
+    @Mock ElapsedTimer.Factory factTimer;
+    @Mock ElapsedTimer timer;
     @Mock Token tk;
     @Mock SPBlockingClient spClient;
+
+    UserAndDeviceNames _udn;
 
     @Before
     public void setup() throws Exception
     {
-        // mock static so we have control on time
-        PowerMockito.mockStatic(System.class);
-
-        // TODO (DF): replace mocking of System by making an ElapsedTimer factory and injecting it
-        //            then use a mock ElapsedTimer that gives the desired responses to elapsed()
-        //            that way we no longer depend on how many times nanoTime() gets called (ewww)
-
         when(user.get()).thenReturn(UserID.fromInternal("test@aerofs.com"));
         when(tokenManager.acquireThrows_(any(Cat.class), any(String.class))).thenReturn(tk);
         doThrow(new ExBadCredential()).when(spClient).signInRemote();
         when(factSP.create()).thenReturn(spClient);
+        when(factTimer.create()).thenReturn(timer);
 
+        _udn = spy(new UserAndDeviceNames(user, tokenManager, tm, d2u, udndb, factSP, factTimer));
         _udn.setSPLoginDelay(30 * C.MIN);
     }
 
     @Test
     public void shouldThrottleToOnce() throws Exception
     {
-        // the numbers have been cooked so impl will only be invoked once
-        configureTimes(1 * C.SEC, 2 * C.SEC, 3 * C.SEC, 4 * C.SEC, 5 * C.SEC);
-        invokeManyTimes(5);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        when(timer.elapsed()).thenReturn(2 * C.SEC);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        when(timer.elapsed()).thenReturn(3 * C.SEC);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        when(timer.elapsed()).thenReturn(4 * C.SEC);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        when(timer.elapsed()).thenReturn(5 * C.SEC);
+        _udn.updateLocalDeviceInfo_(emptyList());
+
         verify(_udn, times(1)).updateLocalDeviceInfoImpl_(anyListOf(DID.class));
     }
 
     @Test
     public void shouldThrottleToTwice() throws Exception
     {
-        // the numbers have been cooked so impl will be invoked exactly twice
-        configureTimes(1 * C.MIN, 10 * C.MIN, 20 * C.MIN, 30 * C.MIN, 40 * C.MIN, 50 * C.MIN);
-        invokeManyTimes(6);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        when(timer.elapsed()).thenReturn(9 * C.MIN);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        when(timer.elapsed()).thenReturn(20 * C.MIN);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        verify(factTimer).create();
+        when(timer.elapsed()).thenReturn(10 * C.MIN);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        when(timer.elapsed()).thenReturn(20 * C.MIN);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        when(timer.elapsed()).thenReturn(50 * C.MIN);
+        _udn.updateLocalDeviceInfo_(emptyList());
+
         verify(_udn, times(2)).updateLocalDeviceInfoImpl_(anyListOf(DID.class));
     }
 
     @Test
     public void shouldNotThrottle() throws Exception
     {
-        // the numbers have been cooked so impl will be invoked every time
-        configureTimes(100 * C.MIN, // start
-                200 * C.MIN, 200 * C.MIN + 2, // elapsed(), restart()
-                300 * C.MIN, 300 * C.MIN + 2, // elapsed(), restart()
-                400 * C.MIN, 400 * C.MIN + 2, // elapsed(), restart()
-                500 * C.MIN, 500 * C.MIN + 2); // elapsed(), restart()
-        invokeManyTimes(5);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        when(timer.elapsed()).thenReturn(100 * C.MIN);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        verify(factTimer).create();
+        when(timer.elapsed()).thenReturn(100 * C.MIN);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        verify(factTimer).create();
+        when(timer.elapsed()).thenReturn(100 * C.MIN);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        verify(factTimer).create();
+        when(timer.elapsed()).thenReturn(100 * C.MIN);
+        _udn.updateLocalDeviceInfo_(emptyList());
+        verify(factTimer).create();
+
         verify(_udn, times(5)).updateLocalDeviceInfoImpl_(anyListOf(DID.class));
-    }
-
-    private void configureTimes(Long time0, Long... times)
-    {
-        Long[] nanotimes = new Long[times.length];
-        for (int i = 0; i < times.length; i++) {
-            nanotimes[i] = times[i] * C.NSEC_PER_MSEC;
-        }
-        when(System.nanoTime()).thenReturn(time0 * C.NSEC_PER_MSEC, nanotimes);
-    }
-
-    private void invokeManyTimes(int times) throws Exception
-    {
-        List<DID> list = Collections.<DID>emptyList();
-        for (int i = 0; i < times; i++) {
-            _udn.updateLocalDeviceInfo_(list);
-        }
     }
 }

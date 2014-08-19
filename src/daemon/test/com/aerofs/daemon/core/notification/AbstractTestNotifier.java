@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.C;
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.UserAndDeviceNames;
@@ -19,11 +20,11 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.ritual_notification.RitualNotifier;
+import com.aerofs.testlib.AbstractBaseTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
@@ -31,7 +32,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public abstract class AbstractTestNotifier
+public abstract class AbstractTestNotifier extends AbstractBaseTest
 {
     @Mock TCP _tcp;
 
@@ -39,6 +40,8 @@ public abstract class AbstractTestNotifier
     @Mock UserAndDeviceNames _userAndDeviceNames;
     @Mock RitualNotificationServer _notificationServer;
     @Mock RitualNotifier _ritualNotifier;
+    @Mock ElapsedTimer.Factory _factTimer;
+    @Mock ElapsedTimer _timer;
 
     OID _oid;
     DID _did;
@@ -51,8 +54,8 @@ public abstract class AbstractTestNotifier
 
     @Before public void setUp()
     {
-        PowerMockito.mockStatic(System.class);
-
+        when(_factTimer.create()).thenReturn(_timer);
+        when(_timer.elapsed()).thenReturn(0L);
         when(_notificationServer.getRitualNotifier()).thenReturn(_ritualNotifier);
 
         _oid = OID.generate();
@@ -82,50 +85,42 @@ public abstract class AbstractTestNotifier
 
     @Test public void shouldThrottle()
     {
-        configureTimes(10L, 100L, 200L, 300L);
         invoke(false, 10, 100);
+        when(_timer.elapsed()).thenReturn(100L);
         invoke(false, 20, 100);
+        when(_timer.elapsed()).thenReturn(200L);
         invoke(false, 30, 100);
+        when(_timer.elapsed()).thenReturn(300L);
         invoke(false, 40, 100);
         verify(_ritualNotifier, times(1)).sendNotification(any(PBNotification.class));
     }
 
     @Test public void shouldNotThrottle()
     {
-        configureTimes(1 * C.SEC,
-                10 * C.SEC, 10 * C.SEC + 1, // elapsed(), construct
-                20 * C.SEC, 20 * C.SEC + 1, // elapsed(), construct
-                30 * C.SEC, 30 * C.SEC + 1); // elapsed(), construct
         invoke(false, 10, 100);
+        when(_timer.elapsed()).thenReturn(10 * C.SEC);
         invoke(false, 20, 100);
+        when(_timer.elapsed()).thenReturn(20 * C.SEC);
         invoke(false, 30, 100);
+        when(_timer.elapsed()).thenReturn(30 * C.SEC);
         invoke(false, 40, 100);
         verify(_ritualNotifier, times(4)).sendNotification(any(PBNotification.class));
     }
 
     @Test public void shouldNotThrottleCompleted()
     {
-        configureTimes(10L * C.NSEC_PER_MSEC, 100L * C.NSEC_PER_MSEC);
         invoke(false, 10, 100);
+        when(_timer.elapsed()).thenReturn(10L);
         invoke(false, 100, 100);
         verify(_ritualNotifier, times(2)).sendNotification(any(PBNotification.class));
     }
 
     @Test public void shouldUntrack()
     {
-        configureTimes(10L * C.NSEC_PER_MSEC, 100L * C.NSEC_PER_MSEC);
         invoke(false, 10, 100);
+        when(_timer.elapsed()).thenReturn(100L);
         invoke(false, 100, 100);
         verifyUntracked();
-    }
-
-    private void configureTimes(Long time0, Long... times)
-    {
-        Long[] nanotimes = new Long[times.length];
-        for (int i = 0; i < times.length; i++) {
-            nanotimes[i]   = times[i] * C.NSEC_PER_MSEC; // for elapsed()
-        }
-        when(System.nanoTime()).thenReturn(time0 * C.NSEC_PER_MSEC, nanotimes);
     }
 
     void invoke(boolean isMeta, long done, long total)

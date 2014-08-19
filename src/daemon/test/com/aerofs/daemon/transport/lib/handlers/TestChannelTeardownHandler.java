@@ -6,13 +6,12 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.StreamManager;
-import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -26,20 +25,17 @@ import org.jboss.netty.channel.DefaultExceptionEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.UpstreamChannelStateEvent;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 // [sigh]
@@ -56,9 +52,6 @@ import static org.mockito.Mockito.when;
 
 // I have to put PowerMockIgnore here because of this:
 // http://stackoverflow.com/questions/8179399/javax-xml-parsers-saxparserfactory-classcastexception
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(TransportProtocolUtil.class)
-@PowerMockIgnore({"javax.management.*", "javax.xml.parsers.*", "com.sun.org.apache.xerces.internal.jaxp.*", "ch.qos.logback.*", "org.slf4j.*"})
 public final class TestChannelTeardownHandler
 {
     static
@@ -69,22 +62,21 @@ public final class TestChannelTeardownHandler
     // I can't mock out any objects here because of this bug:
     // https://code.google.com/p/powermock/issues/detail?id=414
 
-    private IBlockingPrioritizedEventSink<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(100);
-    private StreamManager streamManager = new StreamManager();
+    private IBlockingPrioritizedEventSink<IEvent> outgoingEventSink = spy(new BlockingPrioQueue<IEvent>(100));
+    private StreamManager streamManager = spy(new StreamManager());
 
     @Test
     public void shouldCloseOutboundPeerStreamsWhenChannelCloseIsCalled()
             throws Exception
     {
-        mockStatic(TransportProtocolUtil.class);
-
         ITransport transport = mock(ITransport.class);
 
         final Channel channel = mock(Channel.class);
         final ChannelFuture closeFuture = new DefaultChannelFuture(channel, false);
 
+        DID did = DID.generate();
         when(channel.getCloseFuture()).thenReturn(closeFuture);
-        when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, DID.generate()));
+        when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, did));
         doAnswer(new Answer<Void>()
         {
             @Override
@@ -105,25 +97,24 @@ public final class TestChannelTeardownHandler
 
         channel.close();
 
-        verifyStatic();
-        TransportProtocolUtil.sessionEnded(any(Endpoint.class), eq(outgoingEventSink), eq(streamManager), eq(true), eq(false));
+        verify(streamManager).removeAllOutgoingStreams(did);
+        verify(streamManager, never()).removeAllIncomingStreams(did);
+        verifyZeroInteractions(outgoingEventSink);
     }
 
     @Test
     public void shouldCloseInboundPeerStreamsWhenChannelCloseIsCalled()
             throws Exception
     {
-        mockStatic(TransportProtocolUtil.class);
-
         ITransport transport = mock(ITransport.class);
 
         final Channel channel = mock(Channel.class);
         final ChannelFuture closeFuture = new DefaultChannelFuture(channel, false);
 
+        DID did = DID.generate();
         when(channel.getCloseFuture()).thenReturn(closeFuture);
-        when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, DID.generate()));
-        doAnswer(new Answer<Void>()
-        {
+        when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, did));
+        doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation)
                     throws Throwable
@@ -142,25 +133,24 @@ public final class TestChannelTeardownHandler
 
         channel.close();
 
-        verifyStatic();
-        TransportProtocolUtil.sessionEnded(any(Endpoint.class), eq(outgoingEventSink), eq(streamManager), eq(false), eq(true));
+        verify(streamManager, never()).removeAllOutgoingStreams(did);
+        verify(streamManager).removeAllIncomingStreams(did);
+        verifyZeroInteractions(outgoingEventSink);
     }
 
     @Test
     public void shouldCloseBothInboundAndOutboundPeerStreamsWhenChannelCloseIsCalled()
             throws Exception
     {
-        mockStatic(TransportProtocolUtil.class);
-
         ITransport transport = mock(ITransport.class);
 
         final Channel channel = mock(Channel.class);
         final ChannelFuture closeFuture = new DefaultChannelFuture(channel, false);
 
+        DID did = DID.generate();
         when(channel.getCloseFuture()).thenReturn(closeFuture);
-        when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, DID.generate()));
-        doAnswer(new Answer<Void>()
-        {
+        when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, did));
+        doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation)
                     throws Throwable
@@ -179,8 +169,9 @@ public final class TestChannelTeardownHandler
 
         channel.close();
 
-        verifyStatic();
-        TransportProtocolUtil.sessionEnded(any(Endpoint.class), eq(outgoingEventSink), eq(streamManager), eq(true), eq(true));
+        verify(streamManager).removeAllOutgoingStreams(did);
+        verify(streamManager).removeAllIncomingStreams(did);
+        verifyZeroInteractions(outgoingEventSink);
     }
 
     @Test
