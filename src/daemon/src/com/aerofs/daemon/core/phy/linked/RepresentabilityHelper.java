@@ -250,7 +250,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
             try {
                 op.run_();
             } catch (IOException e) {
-                l.info("make cnro lazily: {} {}", dest, e);
+                l.info("make cnro lazily: {}", dest, e);
                 markNonRepresentable_(dest, t);
                 op.run_();
             }

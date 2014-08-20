@@ -3,11 +3,13 @@ package com.aerofs.daemon.core.phy.linked;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
+import com.aerofs.daemon.core.phy.linked.LinkedStorage.MoveToRepresentableException;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SOID;
@@ -17,6 +19,8 @@ import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.lib.injectable.InjectableFile;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolder
 {
@@ -92,7 +96,15 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
         case APPLY:
             _fidm.throwIfFIDInconsistent_();
 
-            _s.move_(this, lf, t);
+            try {
+                _s.move_(this, lf, t);
+            } catch (MoveToRepresentableException e) {
+                l.warn("failed to make nro representable {}", _soid,
+                        BaseLogUtil.suppress(e.getCause()));
+                checkState(_soid.equals(lf._soid));
+                // no physical changes, skip fallthrough
+                break;
+            }
             // fallthrough
         case MAP:
             _s.onDeletion_(this, op, t);

@@ -59,6 +59,7 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.aerofs.defects.Defects.newDefect;
+import static com.google.common.base.Preconditions.checkState;
 
 public class LinkedStorage implements IPhysicalStorage
 {
@@ -231,13 +232,7 @@ public class LinkedStorage implements IPhysicalStorage
             throws IOException
     {
         InjectableFile folder = _factFile.create(Util.join(absAuxRoot, af._name));
-        InjectableFile[] fs = folder.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name)
-            {
-                return name.startsWith(prefix);
-            }
-        });
+        InjectableFile[] fs = folder.listFiles((dir, name) -> name.startsWith(prefix));
 
         if (fs != null) for (InjectableFile f : fs) f.deleteOrThrowIfExist();
     }
@@ -261,17 +256,13 @@ public class LinkedStorage implements IPhysicalStorage
         final ImmutableCollection.Builder<NonRepresentableObject> bd = ImmutableList.builder();
 
         for (LinkerRoot r : _lrm.getAllRoots_()) {
-            _rh.forNonRepresentableObjects_(r.sid(), new Function<SOID, Void>() {
-                @Override
-                public @Nullable Void apply(@Nullable SOID soid)
-                {
-                    try {
-                        bd.add(new NonRepresentableObject(soid, _rh.getConflict_(soid)));
-                    } catch (SQLException e) {
-                        l.error("could not determine conflict status {}", soid, e);
-                    }
-                    return null;
+            _rh.forNonRepresentableObjects_(r.sid(), soid -> {
+                try {
+                    bd.add(new NonRepresentableObject(soid, _rh.getConflict_(soid)));
+                } catch (SQLException e) {
+                    l.error("could not determine conflict status {}", soid, e);
                 }
+                return null;
             });
         }
 
@@ -398,13 +389,7 @@ public class LinkedStorage implements IPhysicalStorage
         // downloaded, we first create an empty file in the target location, use ReplaceFile
         // and then delete the dummy file from revision history
         if (!wasPresent) {
-            _rh.try_(f, t,  new IPhysicalOperation() {
-                @Override
-                public void run_() throws IOException
-                {
-                    f._f.createNewFile();
-                }
-            });
+            f.createNewFile_(t);
         }
 
         // behold the magic incantation that will preserve ACLs, stream and other Windows stuff
@@ -465,13 +450,7 @@ public class LinkedStorage implements IPhysicalStorage
                 f._f.getAbsolutePath(), f._sokid.kidx());
         rev.save_();
 
-        TransUtil.onRollback_(f._f, t, new IPhysicalOperation() {
-            @Override
-            public void run_() throws IOException
-            {
-                rev.rollback_();
-            }
-        });
+        TransUtil.onRollback_(f._f, t, rev::rollback_);
 
         // wait until commit in case we need to put this file back (as in a delete operation
         // that rolls back). This is an unsubtle limit - more nuanced storage policies will
@@ -509,21 +488,38 @@ public class LinkedStorage implements IPhysicalStorage
         }
     };
 
+    static class MoveToRepresentableException extends IOException
+    {
+        private static final long serialVersionUID = 0L;
+        MoveToRepresentableException(Throwable cause) { super(cause); }
+    }
+
     void move_(final AbstractLinkedObject from, final AbstractLinkedObject to, final Trans t)
         throws IOException, SQLException
     {
         // if the source and destination path are physically equivalent we need to bypass the
         // default retry logic
+        IPhysicalOperation op = () -> TransUtil.moveWithRollback_(from._f, to._f, t);
+
         if (isPhysicallyEquivalent(from._path, to._path)) {
-            TransUtil.moveWithRollback_(from._f, to._f, t);
+            op.run_();
+        } else if (from.soid().equals(to.soid())
+                && from._path.isNonRepresentable()
+                && to._path.isRepresentable()) {
+            // When attempting to move an NRO back into the realm of representable objects
+            // we cannot simply use RepresentabilityHelper#try_ because it would try to
+            // mark the object as non-representable which would fail in the DB layer because
+            // the object *already* is non-representable.
+            // In some cases, e.g. if the linker is trying to rename a file to avoid name
+            // conflicts, the exception simply tells us that the object is still a CNRO and can
+            // safely be ignored.
+            try {
+                op.run_();
+            } catch (IOException e) {
+                throw new MoveToRepresentableException(e);
+            }
         } else {
-            _rh.try_(to, t, new IPhysicalOperation() {
-                    @Override
-                    public void run_() throws IOException
-                    {
-                        TransUtil.moveWithRollback_(from._f, to._f, t);
-                    }
-                });
+            _rh.try_(to, t, op);
         }
     }
 

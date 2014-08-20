@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.TransUtil;
@@ -26,7 +27,9 @@ import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 
 import com.aerofs.lib.id.SOKID;
 
+import static com.aerofs.daemon.core.phy.linked.LinkedStorage.MoveToRepresentableException;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
 {
@@ -63,20 +66,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
 
         switch (op) {
         case APPLY:
-            _s._rh.try_(this, t, new IPhysicalOperation() {
-                    @Override
-                    public void run_() throws IOException
-                    {
-                        _f.createNewFile();
-                    }
-                });
-            TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
-                @Override
-                public void run_() throws IOException
-                {
-                    _f.delete();
-                }
-            });
+            createNewFile_(t);
             // fallthrough
         case MAP:
             created_(t);
@@ -84,6 +74,14 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
         default:
             assert op == PhysicalOp.NOP;
         }
+    }
+
+    void createNewFile_(Trans t) throws IOException, SQLException
+    {
+        _s._rh.try_(this, t, () -> {
+            _f.createNewFile();
+            TransUtil.onRollback_(_f, t, _f::delete);
+        });
     }
 
     /**
@@ -111,7 +109,15 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
             // forgiving in case of inconsistency to avoid getting stuck
             if (_path.isRepresentable()) _fidm.throwIfFIDInconsistent_();
 
-            _s.move_(this, lf, t);
+            try {
+                _s.move_(this, lf, t);
+            } catch (MoveToRepresentableException e) {
+                l.warn("failed to make nro representable {}", _sokid,
+                        BaseLogUtil.suppress(e.getCause()));
+                checkState(_sokid.equals(lf._sokid));
+                // no physical changes, skip fallthrough
+                break;
+            }
             // fallthrough
         case MAP:
             _s.onDeletion_(this, op, t);

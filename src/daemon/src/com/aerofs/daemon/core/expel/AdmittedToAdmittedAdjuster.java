@@ -31,6 +31,8 @@ class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
     public void adjust_(ResolvedPath pathOld, SOID soid, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
+        checkState(!pathOld.isEmpty());
+        checkState(soid.equals(pathOld.soid()));
         OA oa = _ds.getOA_(soid);
         ResolvedPath pNew = _ds.resolve_(oa);
         if (oa.isFile()) {
