@@ -34,18 +34,14 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.testlib.AbstractTest;
-import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableSet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.mockito.verification.VerificationMode;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -62,6 +58,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -103,25 +100,16 @@ public class TestLogicalStagingArea extends AbstractTest
         when(nvc.getLocalVersion_(any(SOCKID.class)))
                 .thenReturn(Version.of(DID.generate(), new Tick(1)));
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                SOID soid  = (SOID)invocation.getArguments()[0];
-                OA oa = ds.getOA_(soid);
-                doReturn(null).when(oa).fidNoExpulsionCheck();
-                return null;
-            }
+        doAnswer(invocation -> {
+            SOID soid  = (SOID)invocation.getArguments()[0];
+            OA oa = ds.getOA_(soid);
+            doReturn(null).when(oa).fidNoExpulsionCheck();
+            return null;
         }).when(ds).unsetFID_(any(SOID.class), eq(t));
 
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-            {
-                ((AbstractEBSelfHandling)invocation.getArguments()[0]).handle_();
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((AbstractEBSelfHandling)invocation.getArguments()[0]).handle_();
+            return null;
         }).when(sched).schedule(any(IEvent.class), anyLong());
 
         mds.root()
@@ -165,16 +153,11 @@ public class TestLogicalStagingArea extends AbstractTest
 
     private void assertStagingDatabaseContains(String... lp) throws SQLException
     {
-        assertStagingDatabaseContains(Collections2.transform(Arrays.asList(lp),
-                new Function<String, ResolvedPath>() {
-            @Override
-            public ResolvedPath apply(@Nullable String s)
-            {
-                try {
-                    return ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, s)));
-                } catch (Exception e) {
-                    throw new AssertionError(e);
-                }
+        assertStagingDatabaseContains(Collections2.transform(Arrays.asList(lp), s -> {
+            try {
+                return ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, s)));
+            } catch (Exception e) {
+                throw new AssertionError(e);
             }
         }));
     }
@@ -455,15 +438,11 @@ public class TestLogicalStagingArea extends AbstractTest
         lsadb.addEntry_(soid, Path.root(rootSID), t);
 
         // for every object, fail the first call to scrub_
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                doNothing().when(ps).scrub_((SOID)invocation.getArguments()[0],
-                        (Path)invocation.getArguments()[1],
-                        (Trans)invocation.getArguments()[2]);
-                throw new IOException("" + invocation.getArguments()[0]);
-            }
+        doAnswer(invocation -> {
+            doNothing().when(ps).scrub_((SOID)invocation.getArguments()[0],
+                    (Path)invocation.getArguments()[1],
+                    (Trans)invocation.getArguments()[2]);
+            throw new IOException("" + invocation.getArguments()[0]);
         }).when(ps).scrub_(any(SOID.class), any(Path.class), eq(t));
 
         lsa.start_();
