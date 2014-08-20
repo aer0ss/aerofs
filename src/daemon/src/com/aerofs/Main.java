@@ -209,10 +209,14 @@ public class Main
             launchProgram(rtRoot, prog, appArgs);
         } catch (ExDBCorrupted e) {
             // this is similar to the message on UiUtil.migrateRtRoot() when Cfg fails to load
-            System.err.println("db corrupted: " + e._integrityCheckResult);
+            String message = "db corrupted: " + e._integrityCheckResult;
+            System.err.println(message);
+            l.error(message, e);
             ExitCode.CORRUPTED_DB.exit();
         } catch (Throwable e) {
-            System.err.println("failed in main(): " + Util.e(e)); // l.error does not work here.
+            String message = "failed in main(): " + Util.e(e);
+            System.err.println(message);
+            l.error("l.error: " + message, e);
             ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }

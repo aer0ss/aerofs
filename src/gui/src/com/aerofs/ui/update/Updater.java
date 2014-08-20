@@ -314,7 +314,7 @@ public abstract class Updater
             return version;
         } catch (final IOException e) {
             l.error("Error reading version from {}", versionURL, e);
-            Defects.newDefect("updater.get_server_version")
+            Defects.newDefect("updater.readServerVersion")
                     .setException(e)
                     .sendAsync();
             throw e;
