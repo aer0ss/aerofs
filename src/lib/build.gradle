@@ -22,6 +22,7 @@ sourceSets {
 evaluationDependsOn(':src/base')
 
 dependencies {
+    compile name: 'aerofsd'
     compile name: 'aerofsjn'
     compile name: 'guice-aerofs'
     compile name: 'guice-multibindings-aerofs'
@@ -30,7 +31,6 @@ dependencies {
     compile 'ch.qos.logback:logback-core:1.1.0'
     compile 'ch.qos.logback:logback-classic:1.1.0'
     compile project(':src/base')
-    testCompile 'org.powermock:powermock-mockito-release-full:1.5.4'
     // http://gradle.1045684.n5.nabble.com/Subproject-test-source-depends-on-another-subproject-s-test-binaries-td4621181.html
     testCompile project(':src/base').sourceSets.test.runtimeClasspath
 }

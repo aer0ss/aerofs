@@ -4,6 +4,11 @@
 
 archivesBaseName = 'aerofs-sparta'
 
+test {
+    // unit tests fail if we don't fork due to bad isolation
+    forkEvery = 1
+}
+
 sourceSets {
     main {
         java {

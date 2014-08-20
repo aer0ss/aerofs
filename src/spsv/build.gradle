@@ -4,6 +4,11 @@
 
 archivesBaseName = 'aerofs-sp'
 
+test {
+    // unit tests fail if we don't fork due to bad isolation
+    forkEvery = 1
+}
+
 sourceSets {
     main {
         java {
@@ -24,10 +29,10 @@ evaluationDependsOn(':src/libservlet')
 dependencies {
     compile 'com.googlecode.json-simple:json-simple:1.1'
     compile 'commons-codec:commons-codec:1.6'
+    compile 'org.mortbay.jetty:jetty:6.1.14'
     compile name:'dyuproject-util-1.1'
     compile project(':src/libservlet')
     testCompile name:'rest-assured-1.8.1'
     testCompile restAssuredDependencies
-    testCompile 'org.mortbay.jetty:jetty:6.1.14'
     testCompile project(':src/libservlet').sourceSets.test.runtimeClasspath
 }

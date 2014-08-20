@@ -4,6 +4,13 @@
 
 archivesBaseName = 'aerofs-dryad'
 
+sourceCompatibility = JavaVersion.VERSION_1_6
+targetCompatibility = JavaVersion.VERSION_1_6
+
+compileJava {
+    options.bootClasspath = rootProject.ext.properties.bootstrapClassPath
+}
+
 sourceSets {
     main {
         java {
@@ -13,6 +20,9 @@ sourceSets {
 }
 
 dependencies {
-    compile project(':src/lib')
+    // logback
+    compile 'ch.qos.logback:logback-core:1.1.0'
+    compile 'ch.qos.logback:logback-classic:1.1.0'
+    // inheirited from restless
     compile project(':src/restless')
 }

@@ -4,6 +4,13 @@
 
 archivesBaseName = 'aerofs-restless'
 
+sourceCompatibility = JavaVersion.VERSION_1_6
+targetCompatibility = JavaVersion.VERSION_1_6
+
+compileJava {
+    options.bootClasspath = rootProject.ext.properties.bootstrapClassPath
+}
+
 sourceSets {
     main {
         java {
@@ -13,10 +20,23 @@ sourceSets {
 }
 
 dependencies {
+    // Guice injection depends at runtime on javax.inject
     compile name: 'guice-aerofs'
+    runtime name: 'javax.inject'
+    // Jersey
     compile 'com.sun.jersey:jersey-core:1.17.1'
     compile 'com.sun.jersey:jersey-server:1.17.1'
     compile 'com.sun.jersey:jersey-guice:1.17.1'
+    // Netty
+    compile 'org.jboss.netty:netty:3.6.5'
+    // Gson
+    compile 'com.google.code.gson:gson:2.2.2'
+    // Guava
+    compile 'com.google.guava:guava:14.0.1'
+    // SLF4J
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    compile 'org.slf4j:jcl-over-slf4j:1.7.5'
     compile 'org.slf4j:jul-to-slf4j:1.7.5'
-    compile project(':src/base')
+    // JSR305 (aka @Nonnull)
+    compile 'com.google.code.findbugs:jsr305:2.0.1'
 }
