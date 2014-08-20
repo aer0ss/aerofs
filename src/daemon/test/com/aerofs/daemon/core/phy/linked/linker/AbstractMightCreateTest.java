@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.mock.logical.IsSOIDAtPath;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.Representability;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
@@ -51,7 +52,7 @@ public class AbstractMightCreateTest extends AbstractTest
     final SID rootSID = SID.generate();
 
     @Before
-    public void setUpAbstract()
+    public void setUpAbstract() throws Exception
     {
         when(lrm.absRootAnchor_(rootSID)).thenReturn(absRootAnchor);
         when(lrm.isPhysicallyEquivalent_(any(Path.class), any(Path.class))).thenAnswer(new Answer<Boolean>() {
@@ -62,6 +63,8 @@ public class AbstractMightCreateTest extends AbstractTest
                 return args[0].equals(args[1]);
             }
         });
+
+        when(rh.representability_(any(OA.class))).thenReturn(Representability.REPRESENTABLE);
 
         // 64bit fid: 8 bytes
         when(dr.getFIDLength()).thenReturn(8);

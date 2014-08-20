@@ -15,7 +15,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.Representability;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
+import com.aerofs.defects.Defects;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
@@ -202,7 +204,7 @@ public class MightCreate
             return Result.IGNORED;
         }
 
-        Set<Operation> ops = determineUpdateOperation_(pcPhysical, sourceSOID, targetSOID, fnt);
+        Set<Operation> ops = determineUpdateOperation_(pcPhysical, sourceSOID, targetSOID, fnt, t);
 
         // reduce log volume by ignoring update op on existing object
         if (!(sourceSOID != null && sourceSOID.equals(targetSOID) && ops.equals(EnumSet.of(UPDATE)))) {
@@ -282,7 +284,7 @@ public class MightCreate
      * @return update operations required to bring the logical mapping up-to-date
      */
     private Set<Operation> determineUpdateOperation_(@Nonnull PathCombo pc,
-            @Nullable SOID sourceSOID, @Nullable SOID targetSOID, @Nonnull FIDAndType fnt)
+            @Nullable SOID sourceSOID, @Nullable SOID targetSOID, @Nonnull FIDAndType fnt, Trans t)
             throws SQLException
     {
         @Nullable OA sourceOA = sourceSOID != null ? _ds.getOA_(sourceSOID) : null;
@@ -310,10 +312,30 @@ public class MightCreate
         // TimeoutDeletionBuffer).
         //
         // The only safe way to deal with such corner cases is to rename the NRO
-        if (_rh.isNonRepresentable_(targetOA)) {
-            l.info("nro in mc {} {}", targetSOID, _rh.getConflict_(targetSOID));
-            return Sets.union(renameTargetAndUpdateSource(sourceSOID, sourceSameType),
-                    EnumSet.of(NON_REPRESENTABLE_TARGET));
+        Representability r = _rh.representability_(targetOA);
+        if (r != Representability.REPRESENTABLE) {
+            // If the object is marked as NRO but is not actually present in the auxroot,
+            // simply mark it as representable and update it.
+            // This is mostly an attempt to recover from an old bug wherein the NRO db would not
+            // always be updated correctly when deleting physical object.
+            // See git commit 438aad45fac21e545a7bfa68495c227c4b37cade
+            // This condition may also arise if the auxroot is tampered with or lost in translation,
+            // which can easily happen because CompRootAnchorUpdater is oblivious to this fragile
+            // relationship. See ENG-1596
+            if (r == Representability.CONTEXTUAL_NRO &&
+                    _rh.markRepresentable_(pc._path.sid(), targetOA, t)) {
+                l.warn("nro marked as representable {} {}", targetSOID, pc._path);
+                newDefect("mc.nro.fix")
+                        .addData("soid", targetSOID)
+                        .sendAsync();
+            } else {
+                l.info("nro in mc {} {}", targetSOID, _rh.getConflict_(targetSOID));
+                newDefect("mc.nro.move")
+                        .addData("soid", targetSOID)
+                        .sendAsync();
+                return Sets.union(renameTargetAndUpdateSource(sourceSOID, sourceSameType),
+                        EnumSet.of(NON_REPRESENTABLE_TARGET));
+            }
         }
 
         if (sourceSameType && targetSOID.equals(sourceSOID)) return EnumSet.of(UPDATE);

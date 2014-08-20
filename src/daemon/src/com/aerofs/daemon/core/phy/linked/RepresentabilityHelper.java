@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Helper class that abstracts out most of the complexity of dealing with Non-Representable Objects
@@ -87,9 +88,23 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
         _ds = ds;
     }
 
+    public enum Representability
+    {
+        REPRESENTABLE,
+        INHERENT_NRO,
+        CONTEXTUAL_NRO
+    }
+
+
+    public Representability representability_(OA oa) throws SQLException
+    {
+        if (_os.isInvalidFileName(oa.name())) return Representability.INHERENT_NRO;
+        return _nrodb.isNonRepresentable_(oa.soid()) ? Representability.CONTEXTUAL_NRO : Representability.REPRESENTABLE;
+    }
+
     public boolean isNonRepresentable_(OA oa) throws SQLException
     {
-        return _os.isInvalidFileName(oa.name()) || _nrodb.isNonRepresentable_(oa.soid());
+        return representability_(oa) != Representability.REPRESENTABLE;
     }
 
     enum PathType
@@ -135,6 +150,23 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
         }
 
         return LinkedPath.representable(path, _lrm.absRootAnchor_(path.sid()));
+    }
+
+    /**
+     * When running into an NRO during a scan, it may be safe and desirable in some corner cases
+     * to simply mark it as representable and keep going.
+     *
+     * @pre #representability_ returned CONTEXTUAL_NRO for the given object
+     * @return whether the given object was marked as representable
+     */
+    public boolean markRepresentable_(SID sid, OA oa, Trans t) throws SQLException
+    {
+        SOID soid = oa.soid();
+        String absPath = _lrm.auxFilePath_(sid, soid, AuxFolder.NON_REPRESENTABLE);
+        if (_factFile.create(absPath).exists()) return false;
+        if (_nrodb.getConflict_(soid) != null) return false;
+        _nrodb.setRepresentable_(soid, t);
+        return true;
     }
 
     /**

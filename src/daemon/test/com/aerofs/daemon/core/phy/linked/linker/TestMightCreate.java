@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.Representability;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation;
 import com.aerofs.daemon.core.mock.logical.MockDS;
@@ -467,7 +468,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID target = ds.resolveNullable_(mkpath("f1"));
         generateFileFnt(target);
 
-        when(rh.isNonRepresentable_(oaAt("f1"))).thenReturn(true);
+        when(rh.representability_(oaAt("f1"))).thenReturn(Representability.CONTEXTUAL_NRO);
 
         SOID source = ds.resolveNullable_(mkpath("d4"));
         FIDAndType fnt = generateFileFnt(source);
@@ -501,7 +502,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateFileFnt(soid);
         FIDAndType fnt = generateFileFnt();
 
-        when(rh.isNonRepresentable_(oaAt("f1"))).thenReturn(true);
+        when(rh.representability_(oaAt("f1"))).thenReturn(Representability.CONTEXTUAL_NRO);
 
         assertEquals(Result.FILE, mightCreate("f1", fnt));
 
@@ -518,7 +519,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateDirFnt(soid);
         FIDAndType fnt = generateDirFnt();
 
-        when(rh.isNonRepresentable_(oaAt("d0"))).thenReturn(true);
+        when(rh.representability_(oaAt("d0"))).thenReturn(Representability.CONTEXTUAL_NRO);
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d0", fnt));
 

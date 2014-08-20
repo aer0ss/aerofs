@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalTree;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.Representability;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter.AcceptAll;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.mock.logical.MockDir;
@@ -132,8 +133,12 @@ public abstract class AbstractTestMightCreate extends AbstractTest
         });
 
         when(osutil.isInvalidFileName(anyString())).thenReturn(false);
+
+        RepresentabilityHelper rh = mock(RepresentabilityHelper.class);
+        when(rh.representability_(any(OA.class))).thenReturn(Representability.REPRESENTABLE);
+
         mc = new MightCreate(il, ds, dr, sfti, mcop, lrm, new AcceptAll(),
-                mock(RepresentabilityHelper.class), osutil);
+                rh, osutil);
 
         osRoot.mock(factFile, dr);
         logicRoot.mock(rootSID, ds, null, null);
