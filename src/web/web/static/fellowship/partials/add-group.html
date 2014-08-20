@@ -3,22 +3,51 @@
     <h4 ng-if="group">Edit Group</h4>
 </div>
 <div class="modal-body">
-    <form role="form" class="form-horizontal" ng-submit="ok()" name="form">
+    <form role="form" class="form-horizontal" name="form">
         <div class="form-group">
             <label for="group-name" class="col-sm-3">Name:</label>
             <div class="col-sm-9">
-                <input type="text" id="name" name="name" class="form-control" 
-                    ng-model="newGroup.name" aero-groupname>
-                <span ng-show="form.name.$error.groupname">This group name is unavailable.</span>
+                <div aero-groupname
+                    ng-model="newGroup"
+                    is-invalid="nonUniqueName"></div>
             </div>
         </div>
+    </form>
+    <form role="form" class="form-horizontal" name="form" ng-submit="addMember()">
         <div class="form-group">
-            <label for="group-members" class="col-sm-3">Members:</label>
+            <label for="group-members" class="col-sm-3">Members:
+                <span class="help-block">
+                    <span ng-hide="maxMembers > newGroup.members.length * 2 - 1" ng-class="{'text-danger': newGroup.members.length >= maxMembers}">{{ newGroup.members.length }}/{{maxMembers}} members</span>
+                </span>
+            </label>
             <div class="col-sm-9">
-                <textarea id="group-members" class="form-control" rows="6"
-                    ng-model="newGroup.rawMembers">
-                </textarea>
-                <p class="help-block">Enter email addresses separated by linebreaks, spaces, or commas.</p>
+                <div ng-repeat="member in newGroup.members">
+                    <p>{{member.email}}
+                    <button type="button" class="close" ng-click="removeMember(member)">
+                        <span aria-hidden="true">&times;</span>
+                    </button></p>
+                </div>
+                <span class="text-danger"
+                    ng-show="newGroup.members.length >= maxMembers">This group is now full.</span>
+                <div class="row">
+                    <div class="col-xs-9">
+                        <div id="group-members" 
+                            aero-typeahead
+                            label=""
+                            ng-disabled="newGroup.members.length >= maxMembers"
+                            ng-model="newGroup.newMember"
+                            async-data="{{userDataURL}}"
+                            async-attr="data"
+                            placeholder="Email address of new member" 
+                            title="Invite users by email address"
+                            ></div>
+                    </div>
+                    <div class="col-xs-3">
+                        <a href="#" class="btn btn-default pull-right" 
+                            ng-disabled="newGroup.newMember.indexOf('@') == -1 || newGroup.members.length >= maxMembers"
+                            ng-click="addMember()">Add</a>
+                    </div>
+                </div>
             </div>
         </div>
     </form>
@@ -26,8 +55,11 @@
 <div class="modal-footer">
     <div class="pull-right">
         <a href="#" class="btn btn-default" ng-click="cancel()">Cancel</a>
-        <a href="#" class="btn btn-primary" 
+        <a href="#" ng-if="!group" class="btn btn-primary" 
             ng-click="ok()" 
-            ng-disabled="form.name.$error.groupname">Create</a>
+            ng-disabled="!group && nonUniqueName">Create</a>
+        <a href="#" ng-if="group" class="btn btn-primary" 
+            ng-click="ok()" 
+            ng-disabled="nonUniqueName">Edit</a>
     </div>
 </div>

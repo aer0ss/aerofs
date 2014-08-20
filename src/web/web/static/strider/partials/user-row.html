@@ -7,7 +7,7 @@
             <span ng-show="user.is_admin" data-toggle="tooltip" 
                 tooltip="An admin can provision Team Servers, manage users and shared folders, add/remove other admins, and other organization functions." 
                 class="admin_label label">admin</span>
-            <span ng-show="user.is_publisher" data-toggle="tooltip" 
+            <span ng-if="isAdmin" ng-show="user.is_publisher" data-toggle="tooltip" 
                 tooltip="A publisher is a user in your organization who can be made an editor of externally shared folders. Since you have enabled external sharing restrictions, users in your organization cannot edit externally shared folders by default." 
                 class="publisher_label label label-warning">publisher</span>
         </div>
@@ -15,12 +15,15 @@
             {{user.email}}
         </div>
         <div class="col-sm-1">
-            <span ng-show="user.has_two_factor" class="glyphicon glyphicon-phone help"
+            <span 
+                ng-if="isAdmin" 
+                ng-show="user.has_two_factor" 
+                class="glyphicon glyphicon-phone help"
                 data-toggle="tooltip"
                 tooltip="This user has two-factor authentication enabled." ></span>
         </div>
         <div class="col-sm-2">
-            <div class="btn-group pull-right actions">
+            <div class="btn-group pull-right actions" ng-if="isAdmin">
                 <button type="button" class="btn btn-plain dropdown-toggle" data-toggle="dropdown">
                     Actions <span class="caret"></span>
                 </button>

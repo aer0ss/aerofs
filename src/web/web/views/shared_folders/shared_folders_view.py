@@ -14,7 +14,7 @@ from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
 from web.auth import is_admin
 from web.sp_util import exception2error
-from web.util import get_rpc_stub, parse_rpc_error_exception, is_restricted_external_sharing_enabled
+from web.util import get_rpc_stub, parse_rpc_error_exception, is_restricted_external_sharing_enabled, GROUP_PREFIX
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException, WRITE, MANAGE
@@ -194,12 +194,27 @@ def _jsonable_person(person):
         'email': person.user.user_email
     }
 
+def _jsonable_group(group_perm):
+    can_edit = WRITE in group_perm.permissions.permission
+    is_owner = MANAGE in group_perm.permissions.permission
+    return {
+        'name': group_perm.group.common_name,
+        'id': group_perm.group.group_id,
+        'is_owner': is_owner,
+        'can_edit': can_edit,
+        'is_group': True,
+        'showMembers': False,
+        'members': []
+    }
+
 def _jsonable_people(people_list, session_user):
     """ Converts list of protobuf user objects to a list of dictionaries 
     that json can handle, then moves "me" to end of the list, if necessary"""
     json_people = (_jsonable_person(p) for p in people_list)
     return sorted(json_people, key=lambda x: x.get('email') == session_user)
 
+def _jsonable_groups(group_list):
+    return [_jsonable_group(group) for group in group_list]
 
 def _sp_reply2json(folders, privileger, session_user, request, total=None, offset=0, is_mine=False, specified_user=None):
     """
@@ -216,6 +231,7 @@ def _sp_reply2json(folders, privileger, session_user, request, total=None, offse
             folder.user_permissions_and_state)
         members = filter(lambda urs: urs.state in (JOINED, LEFT, PENDING) and MANAGE not in urs.permissions.permission, 
             member_folder.user_permissions_and_state)
+        group_perms = member_folder.group_permissions
 
         id = _encode_store_id(folder.store_id)
         reordered_owners_list = _jsonable_people(list(owners), session_user)
@@ -224,6 +240,7 @@ def _sp_reply2json(folders, privileger, session_user, request, total=None, offse
             'name': escape(folder.name),
             'owners': reordered_owners_list,
             'members': reordered_members_list,
+            'groups': _jsonable_groups(group_perms),
             'sid': escape(id),
             'is_privileged': 1 if privileger(folder, session_user) else 0,
             'is_member': is_mine,
@@ -329,14 +346,14 @@ def json_add_shared_folder_perm(request):
     """
     _ = request.translate
 
-    user_id = request.json_body['user_id']
+    subject_id = (GROUP_PREFIX if request.json_body['is_group'] else "") + str(request.json_body['subject_id'])
     store_id = _decode_store_id(request.json_body['store_id'])
     folder_name = request.json_body['folder_name']
     permissions = request.json_body['permissions']
     suppress_warnings = request.json_body['suppress_sharing_rules_warnings']
 
     subject_permissions = common.PBSubjectPermissions()
-    subject_permissions.subject = user_id
+    subject_permissions.subject = subject_id
 
     # stupid fscking moronic Googlers and their dumb fscking "optimizations"
     #   1. you can't just set a nested message field, that would be too simple
@@ -399,14 +416,14 @@ def json_set_shared_folder_perm(request):
     """
     _ = request.translate
 
-    storeid = _decode_store_id(request.json_body['store_id'])
-    userid = request.json_body['user_id']
+    store_id = _decode_store_id(request.json_body['store_id'])
+    subject_id = (GROUP_PREFIX if request.json_body['is_group'] else "") + str(request.json_body['subject_id'])
     permissions = _pb_permissions_from_json(request.json_body['permissions'])
     suppress_warnings = request.json_body['suppress_sharing_rules_warnings']
 
     sp = get_rpc_stub(request)
 
-    exception2error(sp.update_acl, (storeid, userid, permissions, suppress_warnings),
+    exception2error(sp.update_acl, (store_id, subject_id, permissions, suppress_warnings),
         _add_shared_folder_rules_errors({
             PBException.NO_PERM: _("You don't have permission to change roles"),
         }))
@@ -418,12 +435,12 @@ def json_set_shared_folder_perm(request):
     request_method = 'POST'
 )
 def json_delete_shared_folder_perm(request):
-    storeid = _decode_store_id(request.json_body['store_id'])
-    userid = request.json_body['user_id']
+    store_id = _decode_store_id(request.json_body['store_id'])
+    subject_id = (GROUP_PREFIX if 'is_group' in request.json_body else "") + str(request.json_body['subject_id'])
 
     sp = get_rpc_stub(request)
     try:
-        sp.delete_acl(storeid, userid)
+        sp.delete_acl(store_id, subject_id)
         return {'success': True}
     except Exception as e:
         error = parse_rpc_error_exception(request, e)

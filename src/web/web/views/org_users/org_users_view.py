@@ -11,6 +11,7 @@ from web.sp_util import exception2error
 from web.util import error_on_invalid_email, get_rpc_stub, is_private_deployment, str2bool, is_restricted_external_sharing_enabled
 from web.auth import is_admin
 from web.views.payment import stripe_util
+from web.views.org_groups.org_groups_view import json_list_org_groups
 from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 
 # URL param keys
@@ -26,7 +27,7 @@ log = logging.getLogger(__name__)
 @view_config(
     route_name = 'org_users',
     renderer = 'org_users.mako',
-    permission = 'admin'
+    permission = 'user'
 )
 def org_users(request):
     return {
@@ -54,16 +55,17 @@ def json_list_org_invitees(request):
     route_name = 'json.list_org_users',
     renderer = 'json',
     http_cache = 0,
-    permission = 'admin'
+    permission = 'user'
 )
 def json_list_org_users(request):
     count = int(request.params.get('count', PAGE_LIMIT))
     offset = int(request.params.get('offset', 0))
+    substring = request.params.get('substring', None)
 
     session_user = authenticated_userid(request)
 
     sp = get_rpc_stub(request)
-    reply = sp.list_organization_members(count, offset, None)
+    reply = sp.list_organization_members(count, offset, substring)
 
     use_restricted = is_restricted_external_sharing_enabled(request.registry.settings)
     if use_restricted:
@@ -81,7 +83,9 @@ def json_list_org_users(request):
                 'is_publisher': ul.user.user_email in publishers,
                 'email': markupsafe.escape(ul.user.user_email),
                 'has_two_factor': ul.user.two_factor_enforced,
+                'name': ul.user.first_name + ' ' + ul.user.last_name + ' (' + markupsafe.escape(ul.user.user_email) + ')'
             } for ul in reply.user_and_level]
+
 
     return {
         'total': reply.total_count,
@@ -91,6 +95,19 @@ def json_list_org_users(request):
         'me': session_user
     }
 
+
+@view_config(
+    route_name = 'json.list_org_users_and_groups',
+    renderer = 'json',
+    permission = 'user'
+)
+def json_list_org_users_and_groups(request):
+    user_data = json_list_org_users(request)['data'] or []
+    group_data = json_list_org_groups(request)['groups'] or []
+    data = group_data + user_data
+    return {
+        'results': data
+    }
 
 @view_config(
     route_name = 'json.invite_user',

@@ -1,11 +1,12 @@
-var striderControllers = angular.module('striderControllers', []);
+var striderControllers = angular.module('striderControllers', ['ngSanitize']);
 
-striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log', '$modal', '$http',
-    function($scope, $rootScope, $log, $modal, $http){
+striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log', '$modal', '$http', '$sanitize',
+    function($scope, $rootScope, $log, $modal, $http, $sanitize){
         var csrftoken = $('meta[name=csrf-token]').attr('content');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
         $scope.userFoldersURL = userFoldersURL;
         $scope.userDevicesURL = userDevicesURL;
+        $scope.isAdmin = isAdmin;
         $rootScope.isPrivate = isPrivate;
         var getUsersData = function(message){
             $log.info(message);
@@ -17,7 +18,6 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                 $scope.users = response.data;
                 $rootScope.use_restricted = response.use_restricted;
                 $rootScope.me = response.me;
-
                 $scope.paginationInfo.total = response.total;
             }).error(function(response){
                 $log.warn(response);

@@ -8,21 +8,53 @@ fellowshipDirectives.directive('aeroGroupRow', function() {
     };
 });
 
-fellowshipDirectives.directive('aeroGroupname', ['$rootScope', function($rootScope){
+fellowshipDirectives.directive('aeroGroupname', ['$http', '$log', function($http, $log){
     return {
-        require: 'ngModel',
+        restrict: 'A',
+        scope: {
+            isInvalid: '=',
+            newGroup: '=ngModel'
+        },
+        template:   '<input type="text" id="name" name="name" class="form-control"' +
+                    'ng-model="newGroup.name">' +
+                    '<span class="help-block" ng-show="isInvalid"><span class="text-danger">' +
+                    'This group name is unavailable.</span></span>',
         link: function(scope, elm, attrs, ctrl) {
-          ctrl.$parsers.unshift(function(viewValue) {
-            if ($rootScope.knownGroupNames.indexOf(viewValue) === -1) {
-              // it is valid
-              ctrl.$setValidity('groupname', true);
-              return viewValue;
-            } else {
-              // it is invalid, return undefined (no model update)
-              ctrl.$setValidity('groupname', false);
-              return undefined;
-            }
-          });
+            scope.knownGroupNames = [];
+            scope.isInvalid = false;
+            scope.oldGroup = angular.copy(scope.newGroup);
+            console.log(scope.newGroup.name);
+
+            var isUniqueName = function(name){
+                $http.get(getGroupsURL, {
+                    params: {
+                        substring: name
+                    }
+                }).success(function(response){
+                    for (var i = 0; i < response.groups.length; i++) {
+                        if (response.groups[i].name == name) {
+                            scope.isInvalid = true;
+                            scope.knownGroupNames.push(name);
+                            return;
+                        }
+                    }
+                    scope.isInvalid = false;
+                }).error(function(response, status){
+                    $log.error('Failed to check group name for uniqueness.');
+                    scope.isInvalid = false;
+                });
+            };
+            scope.$watch('newGroup.name', function(newValue, oldValue){
+                if (newValue != scope.oldGroup.name) {
+                    if (scope.knownGroupNames.indexOf(newValue) === -1) {
+                        isUniqueName(newValue);
+                    } else {
+                        scope.isInvalid = true;
+                    }
+                } else {
+                    scope.isInvalid = false;
+                }
+            });
         }
     };
 }]);

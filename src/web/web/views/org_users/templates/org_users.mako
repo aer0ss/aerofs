@@ -3,6 +3,7 @@
 
 <%!
     from web.util import is_private_deployment
+    from web.auth import is_admin
 %>
 
 <%namespace name="modal" file="modal.mako"/>
@@ -21,7 +22,7 @@
                         <div class="col-sm-4 hidden-xs">Name</div>
                         <div class="col-sm-1 hidden-xs"></div>
                         <div class="col-sm-4 hidden-xs">Email</div>
-                        <div class="col-sm-1 hidden-xs">2FA</div>
+                        <div ng-show="isAdmin" class="col-sm-1 hidden-xs">2FA</div>
                         <div class="col-sm-2 hidden-xs"></div>
                     </div>
                     <div class="my-table-body">
@@ -37,7 +38,7 @@
                     callback="paginationInfo.callback(offset)"></div>
             </div>
             <br>
-
+        %if is_admin(request):
             <h3>Invite people to organization</h3>
             <br>
             <div ng-controller="InviteesController">
@@ -57,6 +58,7 @@
                     </div>
                 </div>
             </div>
+        %endif
         </div>
     </div>
 </div>
@@ -67,6 +69,12 @@
             isPrivate = true;
         %else:
             isPrivate = false;
+        %endif
+
+        %if is_admin(request):
+            isAdmin = true;
+        %else:
+            isAdmin = false;
         %endif
 
         adminLevel = ${admin_level};
@@ -89,6 +97,7 @@
     </script>
 
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.11/angular-sanitize.js"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
     <script src="${request.static_path('web:static/strider/app.js')}"></script>
     <script src="${request.static_path('web:static/ng-modules/pagination/pagination.js')}"></script>

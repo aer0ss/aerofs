@@ -102,6 +102,8 @@
 <%block name="scripts">
     <%spinner:scripts/>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/angular-lib/angular-strap/angular-strap.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/angular-lib/angular-strap/angular-strap.tpl.min.js')}"></script>
     <script type="text/javascript">
         canAdminister = "${can_administer}" == "True" ? true : false;
         dataUrl = "${data_url}";
@@ -112,9 +114,14 @@
         destroyFolderUrl = "${request.route_path('json.destroy_shared_folder')}";
         rejoinFolderUrl = "${request.route_path('json.accept_folder_invitation')}";
         paginationLimit = parseInt("${pagination_limit}", 10);
+        getGroupsURL = "${request.route_path('json.list_org_groups')}";
+        getUsersURL = "${request.route_path('json.list_org_users')}";
+        getUsersAndGroupsURL = "${request.route_path('json.list_org_users_and_groups')}";
+        getGroupMembersURL = "${request.route_path('json.list_group_members')}";
     </script>
     <script src="${request.static_path('web:static/shadowfax/app.js')}"></script>
     <script src="${request.static_path('web:static/shadowfax/filters.js')}"></script>
     <script src="${request.static_path('web:static/ng-modules/pagination/pagination.js')}"></script>
+    <script src="${request.static_path('web:static/ng-modules/typeahead/typeahead.js')}"></script>
     <script src="${request.static_path('web:static/shadowfax/controllers.js')}"></script>
 </%block>

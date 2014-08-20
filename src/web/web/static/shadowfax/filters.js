@@ -3,8 +3,14 @@ var shadowfaxFilters = angular.module('shadowfaxFilters', []);
 var get_first_name = function(user, rootscope) {
         if (user.email == rootscope.me) {
             return 'me';
-        } else {
+        } else if (user.first_name) {
             return user.first_name;
+        // a group
+        } else if (user.name) {
+            return user.name;
+        // an invitee who hasn't signed up yet, or other
+        } else {
+            return "Anonymous";
         }
     };
 
@@ -17,8 +23,14 @@ shadowfaxFilters.filter('myName', ['$rootScope', function($rootScope){
         var first = get_first_name(input, $rootScope);
         if (first == "me") {
             return first;
-        } else {
+        // an invitee who hasn't signed up yet
+        } else if (first == "Anonymous" && input.email) {
+            return input.email;
+        } else if (input.last_name) {
             return get_full_name(input);
+        // no full name for some reason
+        } else {
+            return first;
         }
     };
 }]);

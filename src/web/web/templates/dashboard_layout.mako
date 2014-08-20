@@ -163,7 +163,14 @@
 
 <%def name="render_left_navigation_for_nonadmin()">
     <ul class="nav nav-list left-nav">
-        ${render_nonadmin_links()}
+        <li class="nav-header">My AeroFS</li>
+        <ul>
+            ${render_nonadmin_links()}
+        </ul>
+        <li class="nav-header">My Organization</li>
+        <ul>
+            ${render_org_links()}
+        </ul>
     </ul>
 </%def>
 
@@ -175,6 +182,7 @@
         </ul>
         <li class="nav-header">My Organization</li>
         <ul>
+            ${render_org_links()}
             ${render_admin_org_links()}
         </ul>
         %if is_private_deployment(request.registry.settings):
@@ -200,14 +208,24 @@
     % endfor
 </%def>
 
-<%def name="render_admin_org_links()">
+<%def name="render_org_links()">
     <%
         links = [
             ('org_users', _("Users")),
-            # ('org_groups', _("Groups")),
+            ('org_groups', _("Groups"))
+        ]
+    %>
+    % for link in links:
+        ${navigation.link(link)}
+    % endfor
+</%def>
+
+<%def name="render_admin_org_links()">
+    <%
+        links = [
             ('org_shared_folders', _("Shared Folders")),
             ('team_server_devices', _("Team Servers")),
-            ('org_settings', _("Settings")),
+            ('org_settings', _("Settings"))
         ]
     %>
     % for link in links:

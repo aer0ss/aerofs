@@ -18,13 +18,19 @@
         </div>
         <div class="my-table-body">
             <div class="row my-row" 
-                ng-repeat="person in people | orderBy:['is_pending', '-is_owner', '-can_edit', 'email']">
+                ng-repeat="entity in people | orderBy:['is_pending', '-is_owner', '-can_edit', 'is_group', 'email', 'group_name']">
                 <div class="col-sm-6 col-xs-8">
-                    <span ng-hide="person.is_pending">{{person|myName}}
-                        <span class="help" ng-show="person.email != me"><a ng-href="mailto:{{person.email}}" title="Email this user">{{person.email}}</a></span>
+                    <span ng-if='!entity.is_group'>
+                        <span ng-hide="entity.is_pending">{{entity|myName}}
+                            <span class="help" ng-show="entity.email != me"><a ng-href="mailto:{{entity.email}}" title="Email this user">{{entity.email}}</a></span>
+                        </span>
+                        <span ng-show="entity.is_pending" class="help">
+                            {{entity.email}} <span class="help">(pending)</span>
+                        </span>
                     </span>
-                    <span ng-show="person.is_pending" class="help">
-                        {{person.email}} <span class="help">(pending)</span>
+                    <span ng-if='entity.is_group'>
+                        Group {{entity.name}}
+                        <div><a ng-show="entity.members.length" ng-click="entity.showMembers = !!!entity.showMembers">View members ({{ entity.members.length }}) <span class="caret"></span></a></div>
                     </span>
                 </div>
                 <div class="col-sm-6 col-xs-4">
@@ -36,26 +42,33 @@
                     </span>
                     <div class="btn-group" ng-show="canAdminister || (is_privileged && person.email != me)">
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                            <span ng-show="person.is_owner && person.can_edit">Owner</span>
-                            <span ng-show="!person.is_owner && person.can_edit">Editor</span>
-                            <span ng-show="!person.is_owner && !person.can_edit">Viewer</span>
-                            <span ng-show="person.is_owner && !person.can_edit">Manager</span> <span class="caret"></span>
+                            <span ng-show="entity.is_owner && entity.can_edit">Owner</span>
+                            <span ng-show="!entity.is_owner && entity.can_edit">Editor</span>
+                            <span ng-show="!entity.is_owner && !entity.can_edit">Viewer</span>
+                            <span ng-show="entity.is_owner && !entity.can_edit">Manager</span> <span class="caret"></span>
                         </button>
                         <ul class="dropdown-menu" role="menu">
-                            <li><a href="#" ng-click="changePerms(person, 'Owner')">
-                                <span ng-show="person.is_owner && person.can_edit" class="glyphicon glyphicon-ok"></span>
+                            <li><a href="#" ng-click="changePerms(entity, 'Owner')">
+                                <span ng-show="entity.is_owner && entity.can_edit" class="glyphicon glyphicon-ok"></span>
                                 Owner <span class="help">(read, write, and manage membership)</span>
                             </a></li>
-                            <li><a href="#" ng-click="changePerms(person, 'Editor')">
-                                <span ng-show="!person.is_owner && person.can_edit" class="glyphicon glyphicon-ok"></span>
+                            <li><a href="#" ng-click="changePerms(entity, 'Editor')">
+                                <span ng-show="!entity.is_owner && entity.can_edit" class="glyphicon glyphicon-ok"></span>
                                 Editor <span class="help">(read and write)</span>
                             </a></li>
-                            <li><a href="#" ng-click="changePerms(person, 'Viewer')">
-                                <span ng-show="!person.is_owner && !person.can_edit" class="glyphicon glyphicon-ok"></span>
+                            <li><a href="#" ng-click="changePerms(entity, 'Viewer')">
+                                <span ng-show="!entity.is_owner && !entity.can_edit" class="glyphicon glyphicon-ok"></span>
                                 Viewer <span class="help">(read)</span>
                             </a></li>
                             <li class="divider"></li>
-                            <li><a href="#" ng-click="remove(person)">Remove from folder</a></li>
+                            <li><a href="#" ng-click="remove(entity)">Remove from folder</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-xs-12" ng-show='entity.is_group && entity.showMembers'>
+                    <div class="group-members member-list">
+                        <ul>
+                            <li ng-repeat="member in entity.members"><span>{{member|myName}}</span></li>
                         </ul>
                     </div>
                 </div>
@@ -65,10 +78,18 @@
     <div class="row">
         <form id="modal-invite-form" role="form" method="post" 
             ng-if="is_privileged" 
-            ng-submit="inviteMembers(invitees, inviteeRole); invitees = '';">
-            <div class="col-xs-12"><strong>Invite new members:</strong></div>
+            ng-submit="inviteMembers(invitees.name, inviteeRole); invitees = '';">
+            <div class="col-xs-12">
+                <strong>Invite new members:</strong></div>
             <div id="invite-user-inputs" class="col-sm-6 col-xs-12">
-                <input type="text" class="form-control" id="modal-invitee-email" ng-model="invitees" placeholder="Add email addresses" title="Invite multiple users by separating email addresses with commas">
+                <div id="modal-invitee-email" 
+                    aero-typeahead
+                    label=""
+                    ng-model="invitees"
+                    async-data="{{getUsersAndGroupsURL}}"
+                    placeholder="Email address or group name" 
+                    title="Invite users by email address or groups by name"
+                    ></div>
             </div>
             <div class="col-sm-2 col-xs-6">
                 <input type="hidden" id="modal-invite-role">

@@ -13,6 +13,8 @@ from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
 log = logging.getLogger(__name__)
 
+# TODO (RD) consolidate this with the string in SubjectPermissions.java
+GROUP_PREFIX = "g:"
 
 def show_welcome_image_and_set_cookie(request):
     """Checks if the user has seen the splash welcome image before.

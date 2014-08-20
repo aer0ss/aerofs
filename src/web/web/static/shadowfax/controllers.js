@@ -28,7 +28,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                 $scope.paginationInfo.total = response.total;
                 for (var i=0; i < response.data.length; i++) {
                     folder = response.data[i];
-                    folder.people = folder.owners.concat(folder.members);
+                    folder.people = folder.owners.concat(folder.members).concat(folder.groups);
                     folder.spinnerID = i;
                     if (response.data[i].is_left) {
                         $scope.leftFolders.push(folder);
@@ -62,6 +62,27 @@ shadowfaxControllers.controller('SharedFoldersController',
               $scope.canAdminister = canAdminister || false;
               // See if this is being requested in IE 8 or lower
               var isOldIE = $('html').is('.ie6, .ie7, .ie8');
+              $scope.getUsersAndGroupsURL = getUsersAndGroupsURL;
+
+              // make groups know their own members
+              // inside of member management modal
+              var getGroupMembers = function(entity) {
+                $http.get(getGroupMembersURL, {
+                    params: {
+                        id: entity.id
+                    }
+                }).success(function(response){
+                    entity.members = response.members || [];
+                }).error(function(response, status){
+                    $log.error(response);
+                });
+              };
+              for (var i = 0; i < $scope.people.length; i++) {
+                var entity = $scope.people[i];
+                if (entity.is_group) {
+                    getGroupMembers(entity);
+                }
+              }
 
               $scope.newMember = function(){
                 return {
@@ -110,27 +131,45 @@ shadowfaxControllers.controller('SharedFoldersController',
                 };
               };
 
-              var _make_member_request = function(email, permissions) {
-                $log.info("Adding member " + email);
+              var _make_member_request = function(identifier, permissions, group_name) {
+                $log.info("Adding member " + identifier);
                 $scope.error = false;
                 $http.post(addMemberUrl,
                     {
-                        user_id: email,
+                        subject_id: identifier,
                         permissions: permissions,
+                        is_group: !!group_name,
                         store_id: $scope.folder.sid,
                         folder_name: $scope.folder.name,
                         suppress_sharing_rules_warnings: false
                     }
-                ).success(function() {
+                ).success(function(response) {
                     $scope.invitees = '';
-                    var person = $scope.newMember();
-                    person.email = email;
+                    var entity = $scope.newMember();
                     if (permissions.indexOf('MANAGE') != -1 && permissions.indexOf('WRITE') != -1) {
-                        person.is_owner = true;
+                        entity.is_owner = true;
                     } else if (permissions.indexOf('WRITE') != -1) {
-                        person.can_edit = true;
+                        entity.can_edit = true;
                     }
-                    $scope.people.push(person);
+                    if (group_name) {
+                        entity.id = identifier;
+                        entity.members = [];
+                        $http.get(getGroupMembersURL, {
+                            params: {
+                              id: entity.id
+                            }
+                        }).success(function(response){
+                           entity.members = response.members;
+                        }).error(function(response, status){
+                            $log.error(status);
+                            $log.error(response);
+                        });
+                        entity.name = group_name;
+                        entity.is_group = true;
+                    } else {
+                        entity.email = identifier;
+                    }
+                    $scope.people.push(entity);
                 }).error(showModalErrorMessage("Sorry, the invitation failed."));
               };
 
@@ -138,48 +177,90 @@ shadowfaxControllers.controller('SharedFoldersController',
                 $modalInstance.close();
               };
 
-              $scope.inviteMembers = function (invitees, inviteeRole) {
+              $scope.inviteMembers = function (inviteeString, inviteeRole) {
                 startModalSpinner();
-                var email_list = $.trim(invitees).split(/\s*[,;\s]\s*/).filter(function(item){
+                var splitList = $.trim(inviteeString).split(/\s*[,;()]\s*/);
+                var emailList = splitList.filter(function(item){
                     return item.split("").indexOf('@') != -1;
                 });
+
+                // Look up non email address to see if there's one and only one
+                // group with that name and they're not already invited
+                // If so, invite it to the folder!
+                var nonEmailList = splitList.filter(
+                    function(groupName){
+                        if (groupName.indexOf('@') != -1) {
+                            // TODO (RD) currently no guarantee on what characters a group name has
+                            return false;
+                        }
+                        for (var j = 0; j < $scope.people.length; j++) {
+                            if ($scope.people[j].name === groupName) {
+                                // TODO: error message
+                                // telling people the group's already invited
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+
                 var permissions = _get_json_permissions(inviteeRole);
-                for (var i = 0; i < email_list.length; i++) {
-                    _make_member_request(email_list[i], permissions);
+
+                for (var i = 0; i < nonEmailList.length; i++) {
+                    // TODO (RD) should already have groupID, don't need to make separate request for it
+                    $http.get(getGroupsURL, {
+                        params: {
+                            substring: nonEmailList[i]
+                        }
+                    }).then(function(res) {
+                        if (res.data.groups.length === 1) {
+                            var group = res.data.groups[0];
+                            $log.info("Invite group " + group.name + " to folder.");
+                            _make_member_request(group.id, permissions, group.name);
+                        }
+                    });
+                }
+
+                for (var i = 0; i < emailList.length; i++) {
+                    _make_member_request(emailList[i], permissions);
                 }
                 stopModalSpinner();
               };
 
-              $scope.changePerms = function(person, role) {
-                $log.info("Changing permissions for " + person.email + " on folder " + folder.name);
+              $scope.changePerms = function(entity, role) {
                 startModalSpinner();
+
+                var identifier = entity.email || entity.id;
+                $log.info("Changing permissions for " + (entity.email || entity.name) + " on folder " + folder.name);
 
                 $http.post(setPermUrl, {
                     store_id: $scope.folder.sid,
-                    user_id: person.email,
+                    subject_id: identifier,
+                    is_group: entity.is_group,
                     permissions: _get_json_permissions(role),
                     suppress_sharing_rules_warnings: false
                 }).success(function(response){
                     // casting to boolean
-                    person.is_owner = role === "Owner";
-                    person.can_edit = (role === "Owner" || role === "Editor");
+                    entity.is_owner = role === "Owner";
+                    entity.can_edit = (role === "Owner" || role === "Editor");
                     stopModalSpinner();
                 }).error(showModalErrorMessage("Sorry, the permissions change failed."));
               };
 
-              $scope.remove = function(person) {
-                $log.info("Removing " + person.email + " from folder " + folder.name);
+              $scope.remove = function(entity) {
+                var identifier = entity.email || entity.id;
+                $log.info("Removing " + (entity.email || entity.name) + " from folder " + folder.name);
                 startModalSpinner();
                 $http.post(
                     removeMemberUrl,
                     {
-                        user_id: person.email,
+                        subject_id: identifier,
+                        is_group: entity.is_group,
                         store_id: $scope.folder.sid
                     }
                 )
                 .success(function() {
                     for (var i=0; i < $scope.people.length; i++) {
-                        if ($scope.people[i].email === person.email) {
+                        if (($scope.people[i].email || $scope.people[i].id) === identifier) {
                             $scope.people.splice(i,1);
                             break;
                         }
@@ -188,7 +269,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                 })
                 .error(function (jqXHR, textStatus, errorThrown) {
                     showErrorMessageUnsafe("Failed to remove member " +
-                        person.email + ": " + errorThrown);
+                        identifier + ": " + errorThrown);
                     stopModalSpinner();
                 });
               };
