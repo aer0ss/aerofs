@@ -348,57 +348,6 @@ div.jumbo_banner > h2 {
 }
 
 ////////
-// Datatables
-
-.datatable_body {
-  margin-bottom: 15px;
-  tbody > tr > td {
-    vertical-align: middle;
-  }
-}
-
-.dataTables_paginate ul {
-  padding: 0;
-  a {
-    .btn();
-    .btn-sm();
-    .btn-default();
-  }
-
-  .prev a {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    margin-left: -1px;
-  }
-
-  .next a {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
-
-  .disabled a {
-    .btn.disabled();
-  }
-}
-
-// Force dataTables info text (e.g. "1-10 of 100") stay close to pagination
-// buttons. The sDom parameter must place the text _after_ pagination,
-// e.g. "<'col-sm-3'pi>". See invocations to dataTable() in shared_folder.mako,
-// org_users.mako, etc for examples.
-.dataTables_info {
-  display: inline;
-  float: right;
-  margin-right: 10px;
-}
-
-.pagination ul {
-  list-style-type: none;
-  li {
-    display: inline-block;
-  }
-}
-
-////////
 // Misc
 
 img.screenshot {
@@ -514,4 +463,8 @@ div.arch-image {
 .btn-plain, .btn-plain:active, .btn-group.open .dropdown-toggle.btn-plain {
     background: none;
     box-shadow: none;
+}
+
+.org-user .tooltip-inner {
+  width: 300px;
 }

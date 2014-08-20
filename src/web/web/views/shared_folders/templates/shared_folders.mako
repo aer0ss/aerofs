@@ -62,16 +62,7 @@
             </div>
         </div>
         <br>
-        <div class="pagination pull-right" ng-show="pages.length > 1" ng-cloak>
-            <a ng-hide="getCurrentPage() === 1" ng-click="showPage(getCurrentPage()-1)">&laquo;</a>
-            <span ng-show="getCurrentPage() === 1">&laquo;</span>
-            <span ng-repeat="number in pages">
-                <a ng-click="showPage(number)" ng-hide="getCurrentPage() === number">{{number}}</a>
-                <span ng-show="getCurrentPage() === number">{{number}}</span>
-            </span>
-            <a ng-hide="getCurrentPage() === pages.length" ng-click="showPage(getCurrentPage()+1)">&raquo;</a>
-            <span ng-show="getCurrentPage() === pages.length">&raquo;</span>
-        </div>
+        <div aero-pagination></div>
         <br><br>
         <div class="row" ng-show="leftFolders.length > 0" ng-cloak>
             <div class="col-sm-12">
@@ -115,5 +106,6 @@
     </script>
     <script src="${request.static_path('web:static/shadowfax/app.js')}"></script>
     <script src="${request.static_path('web:static/shadowfax/filters.js')}"></script>
+    <script src="${request.static_path('web:static/shadowfax/pagination.js')}"></script>
     <script src="${request.static_path('web:static/shadowfax/controllers.js')}"></script>
 </%block>

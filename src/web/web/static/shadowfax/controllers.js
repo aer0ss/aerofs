@@ -5,10 +5,6 @@ shadowfaxControllers.controller('SharedFoldersController',
     function($scope, $rootScope, $log, $modal, $http){
         var csrftoken = $('meta[name=csrf-token]').attr('content');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
-        // paginationLimit set by server, gets inserted into the mako template
-        $scope.paginationLimit = paginationLimit;
-        $scope.offset = 0;
-
 
         var getData = function() {
             // sometimes we have URL param args already, sometimes we don't
@@ -16,7 +12,11 @@ shadowfaxControllers.controller('SharedFoldersController',
             if (dataUrl.indexOf("?") == -1) {
                 dataUrl = dataUrl + "?";
             }
-            $http.get(dataUrl + '&offset=' + $scope.offset.toString()).success(function(response){
+            $http.get(dataUrl, {
+                params: {
+                    offset: $scope.offset.toString()
+                }
+            }).success(function(response){
                 // reset folder data to empty
                 $scope.folders = [];
                 $scope.leftFolders = [];
@@ -35,18 +35,13 @@ shadowfaxControllers.controller('SharedFoldersController',
                 }
                 $rootScope.me = response.me;
 
-                $scope.pages = [];
-                // do we need pagination? if so, let's count up pages
-                if ($scope.total != response.data.length) {
-                    for (var j=1; j < Math.ceil($scope.total / $scope.paginationLimit) + 1; j++) {
-                        $scope.pages.push(j);
-                    }
-                }
+                $scope.calculatePages(response.data.length);
             }).error(function(response){
                 $log.warn('Shared folders data failed to load.');
                 showErrorMessageFromResponse(response);
             });
         };
+        $scope = pagination.activate($scope, paginationLimit, getData);
         getData();
 
         $scope.manage = function(folder) {
@@ -277,18 +272,5 @@ shadowfaxControllers.controller('SharedFoldersController',
                     }
                 }
             });
-        };
-
-        $scope.getCurrentPage = function() {
-            return Math.ceil($scope.offset/$scope.paginationLimit) + 1;
-        };
-
-        $scope.showPage = function(pageNum) {
-            if (pageNum > 0) {
-                // change offset to where the target page will start
-                $scope.offset = (pageNum - 1) * $scope.paginationLimit;
-                // refresh page data
-                getData();
-            }
         };
 }]);

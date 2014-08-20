@@ -1,0 +1,226 @@
+var striderControllers = angular.module('striderControllers', []);
+
+striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log', '$modal', '$http',
+    function($scope, $rootScope, $log, $modal, $http){
+        var csrftoken = $('meta[name=csrf-token]').attr('content');
+        $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
+        $scope.userFoldersURL = userFoldersURL;
+        $scope.userDevicesURL = userDevicesURL;
+        $rootScope.isPrivate = isPrivate;
+
+        var getUsersData = function(){
+            $http.get(userDataURL, {
+                params: {
+                    offset: $scope.offset.toString()
+                }
+            }).success(function(response){
+                $scope.users = response.data;
+                $rootScope.use_restricted = response.use_restricted;
+                $rootScope.me = response.me;
+
+                $scope.total = response.total;
+                $scope.calculatePages(response.data.length);
+            }).error(function(response){
+                $log.warn(response);
+            });
+        };
+        $scope = pagination.activate($scope, paginationLimit, getUsersData);
+        getUsersData();
+
+        $scope.toggleAdmin = function(user) {
+            user.is_admin = !user.is_admin;
+            $http.post(setAuthURL, {
+                'user': user.email,
+                'level': user.is_admin ? adminLevel : userLevel
+            }).success(function(response){
+                if (user.is_admin) {
+                    $log.info('User ' + user.email + ' is now an admin.');
+                } else {
+                    $log.info('User ' + user.email + ' is no longer an admin.');
+                }
+            }).error(function(response){
+                showErrorMessageFromResponse(response);
+                user.is_admin = !user.is_admin;
+            });
+        };
+
+        $scope.togglePublisher = function(user) {
+            user.is_publisher = !user.is_publisher;
+            $http.post(setPubURL, {
+                'user': user.email,
+                'is_publisher': user.is_publisher
+            }).success(function(response){
+                if (user.is_publisher) {
+                    $log.info('User ' + user.email + ' is now a publisher.');
+                } else {
+                    $log.info('User ' + user.email + ' is no longer a publisher.');
+                }
+            }).error(function(response){
+                showErrorMessageFromResponse(response);
+                user.is_publisher = !user.is_publisher;
+            });
+        };
+
+        $scope.disable2fa = function(user) {
+            var disable2faModalCtrl = function ($scope, $modalInstance, user) {
+                $scope.user = user;
+                $scope.cancel = function () {
+                    $modalInstance.close();
+                };
+
+                $scope.ok = function () {
+                    $scope.user.has_two_factor = false;
+                    $.post(disable2faURL, {
+                            "user": $scope.user.email
+                        }
+                    ).success(function(response) {
+                        $log.info("Two factor authentication has been disabled for " +
+                            $scope.user + ".");
+                        $modalInstance.close();
+                    }).error(function(response){
+                        showErrorMessageFromResponse(response);
+                        $scope.user.has_two_factor = true;
+                        $modalInstance.close();
+                    });
+                };
+            };
+            var modalInstance = $modal.open({
+                templateUrl: '/static/strider/partials/disable-2fa-modal.html',
+                controller: disable2faModalCtrl,
+                resolve: {
+                    user: function() {
+                        return user;
+                    }
+                }
+            });
+        };
+
+        $scope.remove = function(user) {
+            var removeUserModalCtrl = function ($scope, $modalInstance, user, users) {
+                $scope.user = user;
+                $scope.users = users;
+
+                $scope.cancel = function () {
+                    $modalInstance.close();
+                };
+
+                $scope.ok = function () {
+                    user.has_two_factor = false;
+                    $http.post(removeUserURL, {
+                            "user": $scope.user.email
+                        }
+                    ).success(function(response) {
+                        $log.info($scope.user.email + " has been removed from your organization.");
+                        // remove from list of users
+                        for (var i = 0; i < $scope.users.length; i++) {
+                            if ($scope.users[i].email == $scope.user.email) {
+                                $scope.users.splice(i,1);
+                            }
+                        }
+                        $modalInstance.close();
+                    }).error(function(response){
+                        showErrorMessageFromResponse(response);
+                        $modalInstance.close();
+                    });
+                };
+            };
+            var modalInstance = $modal.open({
+                templateUrl: '/static/strider/partials/remove-user-modal.html',
+                controller: removeUserModalCtrl,
+                resolve: {
+                    user: function() {
+                        return user;
+                    },
+                    users: function() {
+                        return $scope.users;
+                    }
+                }
+            });
+        };
+
+        $scope.delete = function(user) {
+            var deleteUserModalCtrl = function ($scope, $modalInstance, user, users) {
+                $scope.user = user;
+                $scope.users = users;
+
+                $scope.cancel = function () {
+                    $modalInstance.close();
+                };
+
+                $scope.ok = function () {
+                    $http.post(deleteUserURL, {
+                            "user": $scope.user.email,
+                            "erase_devices": $scope.user.eraseDevices ? true : false
+                        }
+                    ).success(function(response) {
+                        $log.info(user.email + " has been deleted.");
+                        // remove from list of users
+                        for (var i = 0; i < $scope.users.length; i++) {
+                            if ($scope.users[i].email == $scope.user.email) {
+                                $scope.users.splice(i,1);
+                            }
+                        }
+                        $modalInstance.close();
+                    }).error(function(response){
+                        showErrorMessageFromResponse(response);
+                        $modalInstance.close();
+                    });
+                };
+            };
+            var modalInstance = $modal.open({
+                templateUrl: '/static/strider/partials/delete-user-modal.html',
+                controller: deleteUserModalCtrl,
+                resolve: {
+                    user: function() {
+                        return user;
+                    },
+                    users: function() {
+                        return $scope.users;
+                    }
+                }
+            });
+        };
+    }]);
+
+striderControllers.controller('InviteesController', ['$scope', '$log', '$http',
+    function($scope, $log, $http){
+        var csrftoken = $('meta[name=csrf-token]').attr('content');
+        $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
+        $scope.newInvitee = '';
+
+        $http.get(inviteeDataURL).success(function(response){
+            $scope.invitees = response.invitees;
+        }).error(function(response){
+            $log.warn(response);
+        });
+
+        $scope.invite = function() {
+            $http.post(inviteURL, {
+                'user': $scope.newInvitee
+            }).success(function(response){
+                $log.info('Invitation has been sent.');
+                $scope.invitees.push({
+                    email: $scope.newInvitee
+                });
+                $scope.newInvitee = '';
+            }).error(function(response){
+                showErrorMessageFromResponse(response);
+            });
+        };
+
+        $scope.uninvite = function(invitee) {
+            $http.post(uninviteURL, {
+                'user': invitee.email
+            }).success(function(response){
+                $log.info('Invitation has been revoked.');
+                for (var i = 0; i < $scope.invitees.length; i++) {
+                    if ($scope.invitees[i].email == invitee.email) {
+                        $scope.invitees.splice(i,1);
+                        break;
+                    }
+                }
+            }).error(function(response){
+                showErrorMessageFromResponse(response);
+            });
+        };
+    }]);

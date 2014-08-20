@@ -8,14 +8,25 @@ var get_first_name = function(user, rootscope) {
         }
     };
 
+var get_full_name = function(user) {
+    return user.first_name + ' ' + user.last_name;
+};
+
 shadowfaxFilters.filter('myName', ['$rootScope', function($rootScope){
     return function(input) {
         var first = get_first_name(input, $rootScope);
         if (first == "me") {
             return first;
         } else {
-            return first + ' ' + input.last_name;
+            return get_full_name(input);
         }
+    };
+}]);
+
+
+shadowfaxFilters.filter('fullName', ['$rootScope', function($rootScope){
+    return function(input) {
+        return get_full_name(input);
     };
 }]);
 

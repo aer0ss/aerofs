@@ -204,6 +204,7 @@
     <%
         links = [
             ('org_users', _("Users")),
+            # ('org_groups', _("Groups")),
             ('org_shared_folders', _("Shared Folders")),
             ('team_server_devices', _("Team Servers")),
             ('org_settings', _("Settings")),

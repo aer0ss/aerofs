@@ -1,0 +1,59 @@
+<div class="col-sm-12">
+    <div class="row org-user" style="padding-bottom: 10px;">
+        <div class="col-sm-4">
+            {{user|myName}}
+        </div>
+        <div class="col-sm-1">
+            <span ng-show="user.is_admin" data-toggle="tooltip" 
+                tooltip="An admin can provision Team Servers, manage users and shared folders, add/remove other admins, manage payment, and other organization functions." 
+                class="admin_label label">admin</span>
+            <span ng-show="user.is_publisher" data-toggle="tooltip" 
+                tooltip="A publisher is a user in your organization who can be made an editor of externally shared folders. Since you have enabled external sharing restrictions, users in your organization cannot edit externally shared folders by default." 
+                class="publisher_label label label-warning">publisher</span>
+        </div>
+        <div class="col-sm-4">
+            {{user.email}}
+        </div>
+        <div class="col-sm-1">
+            <span ng-show="user.has_two_factor" class="glyphicon glyphicon-phone help"
+                data-toggle="tooltip"
+                tooltip="This user has two-factor authentication enabled." ></span>
+        </div>
+        <div class="col-sm-2">
+            <div class="btn-group pull-right actions">
+                <button type="button" class="btn btn-plain dropdown-toggle" data-toggle="dropdown">
+                    Actions <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu pull-right" role="menu">
+                    <li><a href="{{userFoldersURL}}?user={{user.email}}&full_name={{user|fullName}}">View Shared Folders</a></li>
+                    <li><a href="{{userDevicesURL}}?user={{user.email}}&full_name={{user|fullName}}">View Devices</a></li>
+
+                    <li ng-if="user.email != me" class="divider"></li>
+                    <li ng-if="user.email != me">
+                        <a ng-click="toggleAdmin(user)">
+                            <span ng-show="user.is_admin">Remove as Admin</span>
+                            <span ng-hide="user.is_admin">Add as Admin</span>
+                        </a>
+                    </li>
+                    <li ng-if="user.email != me && use_restricted">
+                        <a ng-click="togglePublisher(user)">
+                            <span ng-show="user.is_publisher">Remove as Publisher</span>
+                            <span ng-hide="user.is_publisher">Add as Publisher</span>
+                        </a>
+                    </li>
+                    <li ng-if="user.email != me" ng-show="user.has_two_factor">
+                        <a ng-click="disable2fa(user)">Disable Two-Factor Auth</a>
+                    </li>
+
+                    <li ng-if="user.email != me && !isPrivate">
+                        <a ng-click="remove(user)">Remove from Organization</a>
+                    </li>
+
+                    <li ng-if="user.email != me">
+                        <a ng-click="delete(user)">Delete User</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

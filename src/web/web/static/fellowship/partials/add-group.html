@@ -1,0 +1,33 @@
+<div class="modal-header">
+    <h4 ng-if="!group">New Group</h4>
+    <h4 ng-if="group">Edit Group</h4>
+</div>
+<div class="modal-body">
+    <form role="form" class="form-horizontal" ng-submit="ok()" name="form">
+        <div class="form-group">
+            <label for="group-name" class="col-sm-3">Name:</label>
+            <div class="col-sm-9">
+                <input type="text" id="name" name="name" class="form-control" 
+                    ng-model="newGroup.name" aero-groupname>
+                <span ng-show="form.name.$error.groupname">This group name is unavailable.</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="group-members" class="col-sm-3">Members:</label>
+            <div class="col-sm-9">
+                <textarea id="group-members" class="form-control" rows="6"
+                    ng-model="newGroup.rawMembers">
+                </textarea>
+                <p class="help-block">Enter email addresses separated by linebreaks, spaces, or commas.</p>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <div class="pull-right">
+        <a href="#" class="btn btn-default" ng-click="cancel()">Cancel</a>
+        <a href="#" class="btn btn-primary" 
+            ng-click="ok()" 
+            ng-disabled="form.name.$error.groupname">Create</a>
+    </div>
+</div>

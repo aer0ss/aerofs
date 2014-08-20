@@ -9,6 +9,7 @@ __all__ = [
     'shared_folders',
     'org_users',
     'org_settings',
+    'org_groups',
     'password_reset',
     'unsubscribe',
     'accept',

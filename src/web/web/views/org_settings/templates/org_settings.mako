@@ -3,11 +3,6 @@
 
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
 
-<%block name="css">
-    <link href="${request.static_path('web:static/css/datatables-bootstrap.css')}"
-          rel="stylesheet">
-</%block>
-
 <h2 class="page-block">Organization settings</h2>
 
 <form class="page-block form-horizontal" action="${request.route_path('org_settings')}" method="post" role="form">

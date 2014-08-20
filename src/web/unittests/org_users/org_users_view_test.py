@@ -18,9 +18,10 @@ class TeamMembersViewTest(TestBase):
             Mock(return_value=self.reply)
 
     def test_should_call_list_organization_invited_users(self):
-        from web.views.org_users.org_users_view import org_users
-        ret = org_users(testing.DummyRequest())
-        self.assertTrue(ret['invited_users'] == [_USER_ID])
+        from web.views.org_users.org_users_view import json_list_org_invitees
+        ret = json_list_org_invitees(testing.DummyRequest())
+        print ret['invitees']
+        self.assertTrue(ret['invitees'] == [{'email': _USER_ID}])
 
 def test_suite():
     loader = unittest.TestLoader()

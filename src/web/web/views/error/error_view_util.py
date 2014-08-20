@@ -19,7 +19,7 @@ def force_login(request):
     # regardless whether it's an XHR. But how?
     #
     # TODO (WW) the browser should cache forbidden errors and automatically
-    # redirect to login page. Also see datatables.js:forceLogout().
+    # redirect to login page.
     if request.is_xhr: return HTTPForbidden()
 
     # Most auth failures should get sent to login, but if you have already

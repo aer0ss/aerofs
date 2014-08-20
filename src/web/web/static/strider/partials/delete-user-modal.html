@@ -1,0 +1,18 @@
+<div class="modal-header">
+    <h4>Delete user</h4>
+</div>
+<div class="modal-body">
+    <p>Are you sure that you want to delete <strong>{{user.email}}</strong>?
+        This user will no longer be able to sign in to AeroFS, and
+        all the AeroFS clients owned by this user will be automatically unlinked.</p>
+    <p>
+        <label class="checkbox">
+            <input type="checkbox" ng-model="user.eraseDevices">
+            Also erase AeroFS files from the user's devices.
+        </label>
+    </p>
+</div>
+<div class="modal-footer">
+    <a class="btn btn-default" ng-click="cancel()">Cancel</a>
+    <a class="btn btn-danger" ng-click="ok()">Delete User</a>
+</div>

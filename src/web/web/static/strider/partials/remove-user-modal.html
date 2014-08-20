@@ -1,0 +1,14 @@
+<div class="modal-header">
+    <h4>Remove user from organization</h4>
+</div>
+<div class="modal-body">
+    <p>Are you sure that you want to remove <strong class="user_email">{{user.email}}</strong> from your organization?</p>
+    <p>This user will still have access to all folders currently shared with them, but their
+        data will no longer be backed up on the AeroFS Team Server.</p>
+    <p>If you would like to unlink or erase this user's devices, visit 
+        <a href="{{userDevicesURL}}?user={{user.email}}&full_name={{user|fullName}}">the user's devices page</a> prior to removing the user from your organization.</p>
+</div>
+<div class="modal-footer">
+    <a class="btn btn-default" ng-click="cancel()">Cancel</a>
+    <a class="btn btn-danger" ng-click="ok()">Remove User From Team</a>
+</div>

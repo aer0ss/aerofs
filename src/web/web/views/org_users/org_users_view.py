@@ -18,6 +18,8 @@ URL_PARAM_LEVEL = 'level'
 URL_PARAM_FULL_NAME = 'full_name'
 URL_PARAM_ERASE_DEVICES = 'erase_devices'
 
+PAGE_LIMIT = 20
+
 log = logging.getLogger(__name__)
 
 @view_config(
@@ -26,19 +28,24 @@ log = logging.getLogger(__name__)
     permission = 'admin'
 )
 def org_users(request):
-    # It's very weird that if we use get_rpc_stub instead of
-    # helper_functions.get_rpc_stub here, the unit test would fail.
-    sp = util.get_rpc_stub(request)
-    invited_users = sp.list_organization_invited_users()
     return {
-        'stripe_publishable_key': stripe_util.STRIPE_PUBLISHABLE_KEY,
-        'url_param_user': URL_PARAM_USER,
-        'url_param_level': URL_PARAM_LEVEL,
-        'url_param_stripe_card_token': stripe_util.URL_PARAM_STRIPE_CARD_TOKEN,
-        'url_param_erase_devices': URL_PARAM_ERASE_DEVICES,
-        'invited_users': invited_users.user_id,
         'admin_level': ADMIN,
-        'user_level': USER
+        'user_level': USER,
+        'pagination_limit': PAGE_LIMIT
+    }
+
+@view_config(
+    route_name = 'json.list_org_invitees',
+    renderer = 'json',
+    permission = 'admin'
+)
+def json_list_org_invitees(request):
+    sp = util.get_rpc_stub(request)
+    reply = sp.list_organization_invited_users()
+    return {
+        'invitees': [{
+            'email': email
+        } for email in reply.user_id]
     }
 
 @view_config(
@@ -47,9 +54,9 @@ def org_users(request):
     permission = 'admin'
 )
 def json_list_org_users(request):
-    echo = str(request.GET['sEcho'])
-    count = int(request.GET['iDisplayLength'])
-    offset = int(request.GET['iDisplayStart'])
+    count = int(request.params.get('count', PAGE_LIMIT))
+    offset = int(request.params.get('offset', 0))
+
     session_user = authenticated_userid(request)
 
     sp = get_rpc_stub(request)
@@ -65,58 +72,21 @@ def json_list_org_users(request):
         publishers = set()
 
     data = [{
-                'name': _render_full_name(ul.user, session_user),
-                'label': _render_label(ul.level, ul.user.user_email in publishers),
+                'first_name': ul.user.first_name,
+                'last_name': ul.user.last_name,
+                'is_admin': ul.level == ADMIN,
+                'is_publisher': ul.user.user_email in publishers,
                 'email': markupsafe.escape(ul.user.user_email),
-                'two_factor_icon': "<span class='glyphicon glyphicon-phone tooltip_2fa' style='color: #BBB;'></span>" if ul.user.two_factor_enforced else "",
-                'options': _render_user_options_link(request, ul, session_user,
-                    ul.user.user_email in publishers if use_restricted else None)
+                'has_two_factor': ul.user.two_factor_enforced,
             } for ul in reply.user_and_level]
 
     return {
-        'sEcho': echo,
-        'iTotalRecords': reply.total_count,
-        "iTotalDisplayRecords": reply.total_count,
-        'aaData': data
+        'total': reply.total_count,
+        'pagination_limit': PAGE_LIMIT,
+        'data': data,
+        'use_restricted': use_restricted,
+        'me': session_user
     }
-
-def _render_label(level, is_publisher):
-    admin_hidden = '' if level == ADMIN else 'hidden'
-    publisher_hidden = '' if is_publisher else 'hidden'
-    return '''
-    <span class="admin_label label {} tooltip_admin">admin</span>
-    <span class="publisher_label label label-warning {} tooltip_publisher">publisher</span>
-    '''.format(admin_hidden, publisher_hidden)
-
-def _render_user_options_link(request, user_and_level, session_user, is_publisher):
-    user = user_and_level.user
-    user_is_session_user = (user.user_email == session_user)
-
-    if user_is_session_user:
-        shared_folders_url = request.route_url('my_shared_folders')
-        devices_url = request.route_url('my_devices')
-    else:
-        params = {URL_PARAM_USER: user.user_email,
-                  URL_PARAM_FULL_NAME: user.first_name + " " + user.last_name}
-
-        shared_folders_url = request.route_url('user_shared_folders', _query=params)
-        devices_url = request.route_url('user_devices', _query=params)
-
-    return render('actions_menu.mako', {
-                                        'user_is_session_user': user_is_session_user,
-                                        'shared_folders_url': shared_folders_url,
-                                        'devices_url': devices_url,
-                                        'email': user.user_email,
-                                        'is_admin': (user_and_level.level == ADMIN),
-                                        'is_private': is_private_deployment(request.registry.settings),
-                                        'is_publisher': is_publisher,
-                                        'use_restricted': is_publisher is not None,
-                                        'two_factor_enforced': user.two_factor_enforced,
-        }, request=request)
-
-
-def _render_full_name(user, session_user):
-    return "me" if user.user_email == session_user else user.first_name + " " + user.last_name
 
 
 @view_config(
@@ -128,7 +98,7 @@ def _render_full_name(user, session_user):
 def json_invite_user(request):
     _ = request.translate
 
-    user = request.params[URL_PARAM_USER]
+    user = request.json_body[URL_PARAM_USER]
     error_on_invalid_email(user)
 
     sp = get_rpc_stub(request)
@@ -161,7 +131,7 @@ def json_invite_user(request):
     request_method = 'POST'
 )
 def json_delete_org_invitation(request):
-    user = request.params[URL_PARAM_USER]
+    user = request.json_body[URL_PARAM_USER]
     sp = get_rpc_stub(request)
     stripe_data = sp.delete_organization_invitation_for_user(user).stripe_data
     stripe_util.update_stripe_subscription(stripe_data)
@@ -174,8 +144,8 @@ def json_delete_org_invitation(request):
     request_method = 'POST'
 )
 def json_set_auth_level(request):
-    user = request.params[URL_PARAM_USER]
-    level = int(request.params[URL_PARAM_LEVEL])
+    user = request.json_body[URL_PARAM_USER]
+    level = int(request.json_body[URL_PARAM_LEVEL])
     sp = get_rpc_stub(request)
 
     # When demoting a user, remove any admin tokens they may have auth'ed:
@@ -195,7 +165,7 @@ def json_set_auth_level(request):
     request_method = 'POST'
 )
 def json_remove_user(request):
-    user = request.params[URL_PARAM_USER]
+    user = request.json_body[URL_PARAM_USER]
     sp = get_rpc_stub(request)
     stripe_data = sp.remove_user_from_organization(user).stripe_data
     stripe_util.update_stripe_subscription(stripe_data)
@@ -209,8 +179,8 @@ def json_remove_user(request):
 )
 
 def json_deactivate_user(request):
-    user = request.params[URL_PARAM_USER]
-    erase_devices = str2bool(request.params[URL_PARAM_ERASE_DEVICES])
+    user = request.json_body[URL_PARAM_USER]
+    erase_devices = str2bool(request.json_body[URL_PARAM_ERASE_DEVICES])
 
     r = delete_all_tokens(request, user)
     if not r.ok:
@@ -223,27 +193,19 @@ def json_deactivate_user(request):
     return HTTPOk()
 
 @view_config(
-    route_name = 'json.make_publisher',
+    route_name = 'json.set_publisher_status',
     renderer = 'json',
     permission = 'admin',
     request_method = 'POST'
 )
-def json_make_publisher(request):
-    user = request.params[URL_PARAM_USER]
+def json_set_publisher_status(request):
+    user = request.json_body[URL_PARAM_USER]
+    is_publisher = request.json_body['is_publisher']
     sp = get_rpc_stub(request)
-    sp.add_user_to_whitelist(user)
-    return HTTPOk()
-
-@view_config(
-    route_name = 'json.remove_publisher',
-    renderer = 'json',
-    permission = 'admin',
-    request_method = 'POST'
-)
-def json_remove_publisher(request):
-    user = request.params[URL_PARAM_USER]
-    sp = get_rpc_stub(request)
-    sp.remove_user_from_whitelist(user)
+    if is_publisher:
+        sp.add_user_to_whitelist(user)
+    else:
+        sp.remove_user_from_whitelist(user)
     return HTTPOk()
 
 @view_config(

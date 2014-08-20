@@ -153,15 +153,9 @@ def json_get_user_shared_folders(request, is_me=False):
     permission = 'admin'
 )
 def json_get_org_shared_folders(request):
-    try:
-        count = int(request.params['count'])
-    except KeyError:
-        count = PAGE_LIMIT
-
-    try:
-        offset = int(request.params['offset'])
-    except KeyError:
-        offset = 0
+    count = int(request.params.get('count', PAGE_LIMIT))
+    offset = int(request.params.get('offset', 0))
+    
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
