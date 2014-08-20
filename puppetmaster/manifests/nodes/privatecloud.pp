@@ -4,23 +4,13 @@ node "privatecloud.aerofs.com" inherits default {
     }
 
     # Include license website
-    include lizard
+    class { "lizard":
+        mysql_password => hiera("mysql_password"),
+    }
     # Include nginx configurations
     include lizard::nginx
 
-    # Include mysql
+
+    # Include mysql (for mysql client)
     include mysql
-    class {'mysql::server':
-        config_hash => {
-            'bind_address' => "127.0.0.1"
-        },
-    }
-    # Remove extra users
-    class {'mysql::server::account_security': }
-    mysql::db {'lizard':
-        user => 'lizard',
-        password => '',
-        host => 'localhost',
-        grant => [all],
-    }
 }

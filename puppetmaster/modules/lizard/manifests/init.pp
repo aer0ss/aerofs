@@ -1,4 +1,6 @@
-class lizard {
+class lizard (
+    $mysql_password,
+) {
     package{"aerofs-lizard":
         ensure => latest,
         notify => [ Service["lizard"], Service["lizard-internal"], ],
@@ -9,7 +11,7 @@ class lizard {
 
     file{"/opt/lizard/additional_config.py":
         ensure => present,
-        source => "puppet:///modules/lizard/additional_config.py",
+        content => template("lizard/additional_config.py.erb"),
         require => Package["aerofs-lizard"],
         notify => [ Service["lizard"], Service["lizard-internal"], ],
     }
