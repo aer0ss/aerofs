@@ -1,9 +1,9 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
@@ -15,17 +15,15 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Core.PBCore.Type;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Creates and maintains mappings from DID->UserID.
@@ -55,7 +53,7 @@ public class DeviceToUserMapper
     private static final Logger l = Loggers.getLogger(DeviceToUserMapper.class);
 
     private final Map<DID, UserID> _mappingCache = Maps.newHashMap();
-    private final Multimap<DID, TCB> _resolutionWaiters = HashMultimap.create();
+    private final Map<DID, TCB> _resolutionWaiters = Maps.newHashMap();
     private final TransportRoutingLayer _transportRoutingLayer;
     private final TokenManager _tokenManager;
     private final IDID2UserDatabase _mappingStore;
@@ -78,14 +76,7 @@ public class DeviceToUserMapper
 
         // mappings for old (i.e. devices that are not used within
         // this process lifetime) are removed from the in-memory cache
-        deviceLRU.addEvictionListener_(new IDeviceEvictionListener()
-        {
-            @Override
-            public void evicted_(DID did)
-            {
-                _mappingCache.remove(did);
-            }
-        });
+        deviceLRU.addEvictionListener_(_mappingCache::remove);
     }
 
     /**
@@ -140,17 +131,25 @@ public class DeviceToUserMapper
             return cachedUserID;
         }
 
+        // do not allow concurrent resolutions
+        // rationale: maxcast are only used for NEWS_UPDATE and similar signals
+        // that can deal with message loss. No point wasting core threads on
+        // low-value messages from unkown devices.
+        if (_resolutionWaiters.containsKey(did)) {
+            throw new ExNoResource("maxcast resolution cap for " + did);
+        }
+
         l.info("{} send resolve", did);
         _transportRoutingLayer.sendUnicast_(did, CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_REQUEST).build());
 
         Token tk = _tokenManager.acquireThrows_(Cat.RESOLVE_USER_ID, did.toString());
         try {
             TCB tcb = TC.tcb();
-            _resolutionWaiters.put(did, tcb);
+            checkState(_resolutionWaiters.put(did, tcb) == null);
             try {
                 tk.pause_(Cfg.timeout(), String.format("d2u %s", did));
             } finally {
-                _resolutionWaiters.remove(did, tcb);
+                checkState(_resolutionWaiters.remove(did) == tcb);
             }
         } finally {
             tk.reclaim_();
@@ -160,7 +159,7 @@ public class DeviceToUserMapper
         // if the resolution succeeds then both
         // _mappingStore and _mappingCache have been refreshed
         UserID userID = _mappingCache.get(did);
-        Preconditions.checkState(userID != null);
+        checkState(userID != null);
         return userID;
     }
 
@@ -200,7 +199,7 @@ public class DeviceToUserMapper
             _deviceLRU.addDevice_(did);
         }
 
-        wakeResolutionWaiters_(did, userID);
+        wakeResolutionWaiter_(did, userID);
     }
 
     /**
@@ -222,7 +221,7 @@ public class DeviceToUserMapper
             _deviceLRU.addDevice_(did);
         }
 
-        wakeResolutionWaiters_(did, userID);
+        wakeResolutionWaiter_(did, userID);
     }
 
     // Sets the DID->UserID mapping in the persistent store
@@ -238,7 +237,7 @@ public class DeviceToUserMapper
         if (persistedUserID == null) {
             _mappingStore.insert_(did, userID, t);
         } else {
-            Preconditions.checkState(persistedUserID.equals(userID), "exp:%s act:%s", userID, persistedUserID);
+            checkState(persistedUserID.equals(userID), "exp:%s act:%s", userID, persistedUserID);
         }
 
         _mappingCache.put(did, userID);
@@ -247,16 +246,14 @@ public class DeviceToUserMapper
 
     // Verifies that the in-memory cache has been updated
     // and wakes any threads waiting on the UserID having been resolved
-    private void wakeResolutionWaiters_(DID did, UserID userID)
+    private void wakeResolutionWaiter_(DID did, UserID userID)
     {
         UserID cachedUserID = _mappingCache.get(did);
-        Preconditions.checkState(cachedUserID.equals(userID), "userID:%s", cachedUserID);
+        checkState(cachedUserID.equals(userID), "userID:%s", cachedUserID);
 
-        Collection<TCB> waiters = _resolutionWaiters.get(did);
-        if (!waiters.isEmpty()) {
-            for (TCB tcb : waiters) {
-                tcb.resume_();
-            }
+        TCB waiter = _resolutionWaiters.get(did);
+        if (waiter != null) {
+            waiter.resume_();
         }
     }
 }

@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
@@ -128,8 +129,9 @@ public class CoreProtocolReactor implements IUnicastInputLayer
 
             processIncomingMessage_(new DigestedMessage(pb, is, ep, userID, null), true);
         } catch (Exception e) {
-            l.warn("{} fail process mc", did,
-                    LogUtil.suppress(e, ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class, ExSIDNotFound.class));
+            l.warn("{} fail process mc", did, LogUtil.suppress(e,
+                    ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class,
+                    ExSIDNotFound.class, ExNoResource.class));
             SystemUtil.fatalOnUncheckedException(e);
         }
     }
