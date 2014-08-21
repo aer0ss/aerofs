@@ -27,6 +27,7 @@ public class TestLicense
     @Before
     public void setupConfiguration()
     {
+        ConfigurationProperties.setProperties(new Properties());
         savedIsPrivateDeployment = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
         PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
     }
