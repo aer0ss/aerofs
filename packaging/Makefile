@@ -14,8 +14,8 @@ PACKAGES= \
 	ca-server \
 	ca-tools \
 	charlie \
-	cmd-server \
 	cmd-tools \
+	command \
 	config \
 	db-backup \
 	dryad \

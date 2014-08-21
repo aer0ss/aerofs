@@ -40,3 +40,10 @@ task clientJar(type: Jar) {
 artifacts {
     client clientJar
 }
+
+jar {
+    manifest.attributes(
+        'Main-Class': 'com.aerofs.zephyr.server.Zephyr',
+        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+    )
+}

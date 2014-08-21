@@ -32,6 +32,10 @@ dependencies {
     compile name: 'jedis-2.2.5'
     compile jedisDependencies
     compile project(':src/lib')
+    // I suspect there's something wrong with the following dep.
+    // Running `gradle -q :src/libservlet:dependencies`
+    // appears to indicate no inheirited deps from src/verkehr, even though the
+    // rest client totally runtime-depends on jackson-databind.
     compile project(path: ':src/verkehr', configuration: 'restClient')
     testCompile 'org.subethamail:subethasmtp:3.1.7'
     testCompile project(':src/lib').sourceSets.test.runtimeClasspath

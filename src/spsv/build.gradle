@@ -30,7 +30,18 @@ dependencies {
     compile 'org.mortbay.jetty:jetty:6.1.14'
     compile name:'dyuproject-util-1.1'
     compile project(':src/libservlet')
+    // FIXME: libservlet deps on verkehr as:
+    //   compile project(path: ':src/verkehr', configuration: 'restClient')
+    // but for some reason, the verkehr rest client's dep on jackson-databind doesn't get propagated,
+    // so I'm adding it explicitly here to make things work.
+    runtime 'com.fasterxml.jackson.core:jackson-databind:2.2.1'
     testCompile name:'rest-assured-1.8.1'
     testCompile restAssuredDependencies
     testCompile project(':src/libservlet').sourceSets.test.runtimeClasspath
+}
+
+jar {
+    manifest.attributes(
+        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+    )
 }

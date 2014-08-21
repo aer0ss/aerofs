@@ -27,11 +27,7 @@ done
 cp $RESOURCES/bootstrap.conf $OUTPUT_DIR/etc/init/
 
 # Java-related file copies.
-cp ../out.ant/artifacts/$SERVICE/*.jar $OPT/
-for jar in bootstrap-taskfile bootstrap-command
-do
-    cp ../out.ant/artifacts/$jar/$jar.jar $OPT/
-done
+cp ../out.gradle/$SERVICE/dist/*.jar $OPT/
 
 cp $RESOURCES/logback-stdout.xml $OPT
 cp $RESOURCES/bootstrap.yml $OPT

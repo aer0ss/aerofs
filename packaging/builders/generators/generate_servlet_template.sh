@@ -17,12 +17,13 @@ PACKAGE_NAME="$SERVLET_NAME"
 BUILDROOT="build/$PACKAGE_NAME"
 
 RESOURCES="$BASEDIR"/src/"$PROJDIR"/resources/"$SERVLET_NAME"
-INSTALL="$BUILDROOT"/usr/share/aerofs-"$PACKAGE_NAME"/"$SERVLET_NAME"
+INSTALL="$BUILDROOT"/usr/share/aerofs-"$PACKAGE_NAME"/"$SERVLET_NAME"/WEB-INF
 CONTEXT="$BUILDROOT"/etc/tomcat6/Catalina/localhost
 DEBIAN="$BUILDROOT"/DEBIAN
 
 mkdir -p "$BUILDROOT"
-mkdir -p "$INSTALL"
+mkdir -p "$INSTALL/lib"
+mkdir -p "$INSTALL/classes"
 mkdir -p "$CONTEXT"
 mkdir -p "$DEBIAN"
 
@@ -32,6 +33,17 @@ do
     cp -R "$RESOURCES"/$F "$DEBIAN"
 done
 
-# package-data files
-cp -R "$BASEDIR"/out.ant/artifacts/"$SERVLET_NAME"/exploded/* "$INSTALL"/
-cp -a "$RESOURCES"/web.xml "$INSTALL"/WEB-INF/
+# Jars and dependency jars
+cp -R "$BASEDIR"/out.gradle/spsv/dist/* "$INSTALL/lib/"
+# DB migrations, if applicable
+if [ -d $RESOURCES/db ] ; then
+    cp -a "$RESOURCES"/db "$INSTALL/classes/"
+fi
+
+# Add configuration properties if not deploying to public or CI (mild hack)
+if [ "$BIN" != "PUBLIC" -a "$BIN" != "CI" ] ; then
+    echo "config.loader.is_private_deployment=true" > $INSTALL/classes/configuration.properties
+fi
+
+# web.xml (specifies servlet entry point, among other things)
+cp -a "$RESOURCES"/web.xml "$INSTALL"/

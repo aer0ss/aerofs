@@ -133,7 +133,7 @@ chdir /opt/$SERVICE
 exec /usr/bin/java -XX:+HeapDumpOnOutOfMemoryError      \\
         -XX:HeapDumpPath=/var/log/$SERVICE              \\
         $JAVA_ARGS                                      \\
-        -jar /opt/$SERVICE/$SERVICE.jar $SERVICE_ARGS
+        -jar /opt/$SERVICE/aerofs-$SERVICE.jar $SERVICE_ARGS
 
 EOF
 
@@ -148,4 +148,4 @@ do
 done
 
 # Java-related file copies.
-cp ../out.ant/artifacts/$SERVICE/*.jar $OPT/
+cp ../out.gradle/$SERVICE/dist/*.jar $OPT/

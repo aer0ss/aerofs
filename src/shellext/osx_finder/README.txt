@@ -24,7 +24,8 @@ You should now have the 'protoc-gen-objc' executable in /usr/local/bin
 Making a release build
 ----------------------
 
-	ant clean && ant proto
+	cd repos/aerofs
+	./invoke proto
 	cd src/shellext/osx_finder/tools
 	./make-release
 

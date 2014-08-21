@@ -69,8 +69,8 @@ function _package()
     local repo=''
     repo=$(_uppercase_repo)
 
-    local clean='clean'
-    local target='servers'
+    local clean='clean proto'
+    local target='all'
     if [ $# -eq 1 ]
     then
         target="$1"
@@ -79,11 +79,8 @@ function _package()
 
     _check-aerofs-apt-reachable
 
-    do_in $AEROFS_ROOT ant ${clean} package_${target} upload_versions \
-        -Dproduct=CLIENT \
-        -Dmode=PRIVATE \
-        -Drepo="$repo"
-    do_in $AEROFS_ROOT/packaging make packagelist
+    do_in $AEROFS_ROOT ./invoke ${clean} build_servers
+    do_in $AEROFS_ROOT/packaging env BIN=$(echo $USER | tr [:lower:] [:upper:]) make "$target" upload-versions packagelist
 }
 
 function _package_clients()

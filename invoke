@@ -455,21 +455,15 @@ def clean(args):
     subprocess.check_call(["make", "clean"], cwd=os.path.join(GIT_ROOT, "src", "web", "web"))
 
 def build_servers(args):
-    # Commented: the gradle-compatible version
-    #subprocess.check_call(["gradle", "dist"], cwd=GIT_ROOT)
-    subprocess.check_call(["ant", "build"], cwd=GIT_ROOT)
+    subprocess.check_call(["gradle", "dist"], cwd=GIT_ROOT)
     print colored("All servers built.", Colors.GREEN)
 
-# Gradle version infers mode from bin
-#@required_args('bin')
-@required_args('mode')
+@required_args('bin')
 def package_servers(args):
-    # Commented: the gradle-compatible version
-    #PACKAGING_DIR=os.path.join(GIT_ROOT, "packaging")
-    #env = dict(os.environ)
-    #env["BIN"] = args.bin
-    #subprocess.check_call(["make", "all"], cwd=PACKAGING_DIR, env=env)
-    subprocess.check_call(["ant", "-Dmode={}".format(args.mode), "package_servers"])
+    PACKAGING_DIR=os.path.join(GIT_ROOT, "packaging")
+    env = dict(os.environ)
+    env["BIN"] = args.bin
+    subprocess.check_call(["make", "all"], cwd=PACKAGING_DIR, env=env)
     print colored("All servers packaged.", Colors.GREEN)
 
 def _markdown(watch):
@@ -477,7 +471,6 @@ def _markdown(watch):
     args = [ executable ] + \
            ( [ "-f" ] if watch else [] ) + \
            [ "-r", os.path.join(GIT_ROOT, "docs"), os.path.join(BUILD_DIR, "docs") ]
-    print args
     subprocess.check_call(args, cwd=GIT_ROOT)
 
 def markdown(args):
@@ -741,7 +734,7 @@ def main():
     parser.add_argument("--approot", action='store', default=os.path.join(GIT_ROOT, 'approot'))
     parser.add_argument("--bin", action='store', default=os.environ["USER"].upper())
     parser.add_argument("--format", action='append', choices=['ova', 'qcow2', 'raw', 'vdi'])
-    parser.add_argument("--mode", action='store', choices=['PUBLIC', 'PRIVATE', 'CI'])
+    parser.add_argument("--mode", action='store', choices=['PUBLIC', 'PRIVATE'])
     parser.add_argument("--product", action='store', choices=['CLIENT', 'TEAM_SERVER'])
     parser.add_argument("--release-version", action='store')
     parser.add_argument("--signed", action='store_const', dest='signed', const=True)

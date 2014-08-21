@@ -9,6 +9,11 @@ sourceSets {
         java {
             srcDir 'src'
         }
+        resources {
+            // Include flyway db migration scripts
+            srcDir 'resources'
+            include 'db/**'
+        }
     }
     test {
         java {
@@ -30,7 +35,15 @@ dependencies {
     compile 'org.flywaydb:flyway-core:2.2.1'
     compile project(':src/lib')
     compile project(':src/restless')
+    runtime 'mysql:mysql-connector-java:5.1.20'
     testCompile name:'rest-assured-1.8.1'
     testCompile restAssuredDependencies
     testCompile project(':src/lib').sourceSets.test.runtimeClasspath
+}
+
+jar {
+    manifest.attributes(
+        'Main-Class': 'com.aerofs.bifrost.server.Bifrost',
+        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+    )
 }

@@ -26,3 +26,10 @@ dependencies {
     testCompile restAssuredDependencies
     testCompile project(':src/base').sourceSets.test.runtimeClasspath
 }
+
+jar {
+    manifest.attributes(
+        'Main-Class': 'com.aerofs.havre.Havre',
+        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+    )
+}
