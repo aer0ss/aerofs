@@ -45,13 +45,7 @@ elif [ x`echo $OS | grep linux` != x ]; then
     esac
     # We need to set the LD_LIBRARY_PATH to include the JRE directories so that
     # aerofsd will successfully launch
-    JRE_BASE="$(dirname $(dirname $(readlink -f $(which java))))"
-    # Oracle ships two "java" executables in the JDK package - one in the
-    # jre/bin/ folder, and the other just in the bin/ folder.  This finds the
-    # jre even if the JDK java binary is the first one on the user's PATH.
-    if [ -d "$JRE_BASE/jre" ]; then
-        JRE_BASE="$JRE_BASE/jre"
-    fi
+    JRE_BASE="$PPWD/jre"
     JAVA="$JRE_BASE/bin/java"
     JRE_LIB="$JRE_BASE/lib/$JRE_LIB_ARCH"
     export LD_LIBRARY_PATH=$PPWD:$JRE_LIB:$JRE_LIB/server:$LD_LIBRARY_PATH
