@@ -8,6 +8,7 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseSecUtil.KeyDerivation;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.RestObject;
@@ -27,6 +28,8 @@ import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.util.Collection;
 
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+
 /**
  * This class represents a mapping of URL key => (token, SOID, expiry, password)
  *
@@ -45,24 +48,36 @@ public class UrlShare
     {
         private UrlSharingDatabase _db;
 
+        // Whether URL sharing is enabled
+        private final boolean ENABLED = getBooleanProperty("url_sharing.enabled", true);
+
         @Inject
         public Factory(UrlSharingDatabase db)
         {
             _db = db;
         }
 
+        /**
+         * @throws ExNoPerm if URL sharing is disabled
+         */
         public UrlShare create(@Nonnull String key)
+                throws ExNoPerm
         {
+            if (!ENABLED) throw new ExNoPerm("URL sharing is disabled");
+
             return new UrlShare(this, key);
         }
 
         /**
-         * Create and return a new UrlShare object with a random unique key
+         * Create and return a new UrlShare object with a random unique key.
+         * @throws ExNoPerm if URL sharing is disabled
          */
         public UrlShare save(@Nonnull RestObject restObject, @Nonnull String token,
                 @Nonnull UserID createdBy)
-                throws SQLException
+                throws SQLException, ExNoPerm
         {
+            if (!ENABLED) throw new ExNoPerm("URL sharing is disabled");
+
             Preconditions.checkArgument(restObject.getSID() != null);
             Preconditions.checkArgument(restObject.getOID() != null);
             while (true) {
