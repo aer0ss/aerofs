@@ -30,7 +30,7 @@ import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.defects.DefectUtils.newDefectID;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.getFactory;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class PriorityDefect
@@ -127,14 +127,14 @@ public class PriorityDefect
             logThreads();
         }
 
-        newDefect("defect.priority")
+        getFactory().newAutoDefect("defect.priority")
                 .setDefectID(defectID)
                 .setPriority(Priority.User)
+                .setFilesToUpload(AutoDefect.UPLOAD_LOGS | AutoDefect.UPLOAD_HEAP_DUMPS |
+                        (_sendFilenames ? AutoDefect.UPLOAD_FILENAMES : AutoDefect.UPLOAD_NONE))
                 .setMessage(_message)
                 .setException(_exception)
                 .addData("daemon_status", getDaemonStatus())
-                .setFilesToUpload(Defect.UPLOAD_LOGS | Defect.UPLOAD_HEAP_DUMPS |
-                        (_sendFilenames ? Defect.UPLOAD_FILENAMES : Defect.UPLOAD_NONE))
                 .sendSync();
 
         newMutualAuthClientFactory().create()

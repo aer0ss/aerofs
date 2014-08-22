@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_XSC_CONNECTION_EXISTED_ON_LINK_DOWN_TO_UP_LSC;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 import static com.aerofs.lib.Util.exponentialRetryNewThread;
 import static com.google.common.collect.Maps.newConcurrentMap;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -253,7 +253,7 @@ public final class XMPPConnectionService implements ILinkStateListener
         } else if (!wasUp && linkUp) {
             if (connected) {
                 l.warn("unexpected connection on lsc transition");
-                newDefect(DEFECT_NAME_XSC_CONNECTION_EXISTED_ON_LINK_DOWN_TO_UP_LSC)
+                newMetric(DEFECT_NAME_XSC_CONNECTION_EXISTED_ON_LINK_DOWN_TO_UP_LSC)
                         .sendAsync();
                 safeDisconnect(connectionToCheck);
             }
@@ -573,7 +573,7 @@ public final class XMPPConnectionService implements ILinkStateListener
                         }
                     } else {
                         l.warn("connection previously replaced");
-                        newDefect(DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED)
+                        newMetric(DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED)
                                 .sendAsync();
                     }
                 }

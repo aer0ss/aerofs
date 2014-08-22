@@ -252,7 +252,7 @@ public class Launcher
         if (PostUpdate.updated()) {
             // TODO: more robust event sending?
             String ver = Cfg.ver();
-            Defects.newDefect("launcher.post_update")
+            Defects.newMetric("launcher.post_update")
                     .addData("previous_version", Cfg.db().get(Key.LAST_VER))
                     .addData("version", ver)
                     .sendAsync();

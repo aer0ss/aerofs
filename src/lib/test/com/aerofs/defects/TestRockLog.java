@@ -39,10 +39,7 @@ public class TestRockLog extends AbstractTest
     private static final String DEFECT_MESSAGE = "Hello";
 
     @Mock InjectableCfg _cfg;
-    @Mock DryadClient _dryad;
     Executor _executor = MoreExecutors.sameThreadExecutor();
-    @Mock RecentExceptions _recentExceptions;
-    Map<String, String> _properties = fromProperties(System.getProperties());
 
     HttpServerTest _server;
 
@@ -86,11 +83,10 @@ public class TestRockLog extends AbstractTest
         });
 
         RockLog rockLog = new RockLog(TEST_URL, new Gson());
-        Defect defect = new Defect(DEFECT_NAME, _cfg, rockLog, _dryad, _executor,
-                _recentExceptions, _properties)
+        Defect defect = new Defect(DEFECT_NAME, _cfg, rockLog, _executor)
                 .setMessage(DEFECT_MESSAGE);
 
-        boolean success = rockLog.rpc("/defects", defect.getDefectData());
+        boolean success = rockLog.rpc("/defects", defect.getData());
         assertTrue(success);
     }
 
@@ -108,11 +104,10 @@ public class TestRockLog extends AbstractTest
         });
 
         com.aerofs.defects.RockLog rockLog = new com.aerofs.defects.RockLog(TEST_URL, new Gson());
-        Defect defect = new Defect(DEFECT_NAME, _cfg, rockLog, _dryad, _executor, _recentExceptions,
-                _properties)
+        Defect defect = new Defect(DEFECT_NAME, _cfg, rockLog, _executor)
                 .setMessage(DEFECT_MESSAGE);
 
-        boolean success = rockLog.rpc("/defects", defect.getDefectData());
+        boolean success = rockLog.rpc("/defects", defect.getData());
         assertFalse(success);
     }
 
@@ -132,8 +127,7 @@ public class TestRockLog extends AbstractTest
         RockLog rockLog = new RockLog(TEST_URL, new Gson());
 
         for (int i = 0; i < 1000; i++) {
-            new Defect(DEFECT_NAME, _cfg, rockLog, _dryad, _executor, _recentExceptions,
-                    _properties)
+            new Defect(DEFECT_NAME, _cfg, rockLog, _executor)
                     .setMessage(DEFECT_MESSAGE)
                     .sendSync();
         }

@@ -17,7 +17,7 @@ import org.jboss.netty.channel.SimpleChannelHandler;
 
 import java.net.InetSocketAddress;
 
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 
 @Sharable
 final class TCPChannelDiagnosticsHandler extends SimpleChannelHandler implements IChannelDiagnosticsHandler
@@ -49,7 +49,7 @@ final class TCPChannelDiagnosticsHandler extends SimpleChannelHandler implements
             channelBuilder.setRemoteAddress(TransportUtil.fromInetSockAddress(address, false));
         } else {
             // FIXME (AG): according to the netty codebase this can happen sometimes on Windows when the socket is closed. I'm suspicious.
-            newDefect(TransportDefects.DEFECT_NAME_NULL_REMOTE_ADDRESS)
+            newMetric(TransportDefects.DEFECT_NAME_NULL_REMOTE_ADDRESS)
                     .addData("state", TransportUtil.getChannelState(channel))
                     .sendAsync();
         }

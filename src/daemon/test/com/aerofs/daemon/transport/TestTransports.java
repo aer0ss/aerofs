@@ -122,7 +122,7 @@ public final class TestTransports
     @Before
     public void initMocks()
     {
-        MockDefects.init(mock(DefectFactory.class), mock(Defect.class));
+        MockDefects.init();
     }
 
     @Before

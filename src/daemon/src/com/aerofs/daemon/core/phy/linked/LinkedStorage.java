@@ -42,7 +42,6 @@ import com.aerofs.lib.injectable.InjectableDriver.ReplaceFileException;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -51,14 +50,12 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkState;
 
 public class LinkedStorage implements IPhysicalStorage
@@ -399,7 +396,7 @@ public class LinkedStorage implements IPhysicalStorage
         try {
             _dr.replaceFile(f.getAbsPath_(), p._f.getAbsolutePath(), revPath);
         } catch (ReplaceFileException e) {
-            newDefect("linked.replace")
+            newMetric("linked.replace")
                     .setException(e)
                     .sendAsync();
             if (e.replacedMovedToBackup) {
@@ -557,7 +554,7 @@ public class LinkedStorage implements IPhysicalStorage
             // only send defect if the mismatch is large enough that it is unlikely to
             // arise from a race condition
             if (actual - expected > 2 * C.SEC) {
-                newDefect("linked.mtime")
+                newMetric("linked.mtime")
                         .addData("actual", actual)
                         .addData("expected", expected)
                         .sendAsync();

@@ -13,7 +13,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 
 final class DeadlockDetector implements Runnable
 {
@@ -48,7 +48,7 @@ final class DeadlockDetector implements Runnable
 
         // NOTE: I want to send this in a blocking fashion so
         // that we get the data to RockLog before the system goes down
-        newDefect(DaemonDefects.DAEMON_DEADLOCK)
+        newMetric(DaemonDefects.DAEMON_DEADLOCK)
                 .addData("threads", threadStacks)
                 .sendSyncIgnoreErrors();
 

@@ -314,7 +314,7 @@ public abstract class Updater
             return version;
         } catch (final IOException e) {
             l.error("Error reading version from {}", versionURL, e);
-            Defects.newDefect("updater.readServerVersion")
+            Defects.newMetric("updater.readServerVersion")
                     .setException(e)
                     .sendAsync();
             throw e;
@@ -407,7 +407,7 @@ public abstract class Updater
             _installationFilename = filename;
         } catch (final Exception e) {
             l.error("Error downloading update from {}", installerUrl, e);
-            Defects.newDefect("updater.downloadUpdate")
+            Defects.newMetric("updater.downloadUpdate")
                     .setException(e)
                     .sendAsync();
             removeTempDownloadDirectory(dir);

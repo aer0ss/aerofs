@@ -5,7 +5,6 @@
 package com.aerofs.lib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.defects.Defects;
 import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.ex.ExFatal;
 import org.slf4j.Logger;
@@ -16,8 +15,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static com.aerofs.defects.Defects.newDefect;
-import static com.aerofs.defects.Defects.newDefectWithLogs;
+import static com.aerofs.defects.Defects.*;
 
 public abstract class SystemUtil
 {
@@ -148,7 +146,7 @@ public abstract class SystemUtil
 
         if (fatalCause instanceof ExDBCorrupted) {
             ExDBCorrupted corrupted = (ExDBCorrupted) fatalCause;
-            Defects.newDefect("sqlite.corrupt")
+            newMetric("sqlite.corrupt")
                     .setMessage(corrupted._integrityCheckResult)
                     .sendAsync();
             l.error(corrupted._integrityCheckResult);

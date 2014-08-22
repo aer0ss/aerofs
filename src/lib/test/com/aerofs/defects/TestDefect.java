@@ -64,13 +64,12 @@ public class TestDefect extends AbstractTest
         when(_cfg.user()).thenReturn(user);
 
         // Create a new defect
-        Defect defect = new Defect("defect.test", _cfg, _rockLog, _dryad, _executor,
-                _recentExceptions, _properties)
+        Defect defect = new Defect("defect.test", _cfg, _rockLog, _executor)
                 .setMessage("hello")
                 .setException(wrapper);
 
         // Serialize and de-serialize the defect
-        String json = _gson.toJson(defect.getDefectData());
+        String json = _gson.toJson(defect.getData());
         //System.out.println("JSON: " + json);
         JsonDefect result = _gson.fromJson(json, JsonDefect.class);
 

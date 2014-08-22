@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.aerofs.daemon.lib.DaemonParam.SLOW_CONNECT;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_CONNECT_FAILED;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_SLOW_CONNECT;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public final class ConnectionStatsHandler extends SimpleChannelHandler
@@ -94,7 +94,7 @@ public final class ConnectionStatsHandler extends SimpleChannelHandler
 
     private void sendDefect(String defectName, String defectMessage, Channel channel)
     {
-        newDefect(defectName)
+        newMetric(defectName)
                 .setMessage(defectMessage)
                 .addData("transport", _transportId)
                 .addData("channel", channel.toString())

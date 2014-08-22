@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
@@ -117,7 +117,7 @@ public class TransportRoutingLayer
         byte[] bs = os.toByteArray();
         if (bs.length > DaemonParam.MAX_UNICAST_MESSAGE_SIZE) {
             l.warn("{} packet too large", ep.did());
-            newDefect("net.unicast.overflow")
+            newMetric("net.unicast.overflow")
                     .addData("message_size", bs.length)
                     .sendAsync();
             return false;

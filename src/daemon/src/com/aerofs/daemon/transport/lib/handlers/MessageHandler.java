@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.aerofs.daemon.transport.lib.TransportUtil.getChannelData;
 import static com.aerofs.daemon.transport.lib.TransportUtil.hasValidChannelData;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.jboss.netty.channel.Channels.fireMessageReceived;
@@ -381,7 +381,7 @@ public final class MessageHandler extends SimpleChannelHandler
             // AFAICT there's nothing in the above code that
             // should throw during iteration. If there is, that's unexpected,
             // and I really want to know about it
-            newDefect(TransportDefects.DEFECT_NAME_THROW_DURING_FAIL_PENDING_WRITES)
+            newMetric(TransportDefects.DEFECT_NAME_THROW_DURING_FAIL_PENDING_WRITES)
                    .setMessage("throw during failing pending writes")
                    .setException(e)
                    .sendSyncIgnoreErrors();

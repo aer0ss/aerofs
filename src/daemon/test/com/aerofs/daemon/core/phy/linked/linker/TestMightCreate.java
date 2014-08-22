@@ -146,7 +146,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         when(dr.getFIDAndTypeNullable(eq(pc._absPath))).thenThrow(new ExFileNotFound(pc._path));
 
         assertEquals(Result.IGNORED, mc.mightCreate_(pc, delBuffer, og, t));
-        verify(_defectFactory).newDefect("mc.fid.notfound");
+        verify(_defectFactory).newMetric("mc.fid.notfound");
     }
 
     @Test
@@ -156,7 +156,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         when(dr.getFIDAndTypeNullable(eq(pc._absPath))).thenThrow(new ExFileNoPerm(new File(pc._absPath)));
 
         assertEquals(Result.IGNORED, mc.mightCreate_(pc, delBuffer, og, t));
-        verify(_defectFactory).newDefect("mc.fid.noperm");
+        verify(_defectFactory).newMetric("mc.fid.noperm");
     }
 
     @Test
@@ -166,7 +166,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         when(dr.getFIDAndTypeNullable(eq(pc._absPath))).thenThrow(new IOException("foo"));
 
         assertEquals(Result.IGNORED, mc.mightCreate_(pc, delBuffer, og, t));
-        verify(_defectFactory).newDefect("mc.fid.exception");
+        verify(_defectFactory).newMetric("mc.fid.exception");
     }
 
     @Test

@@ -68,7 +68,7 @@ import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.daemon.transport.xray.XRayClientPipelineFactory.getZephyrClient;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 import static com.aerofs.xray.proto.XRay.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -409,7 +409,7 @@ final class XRayConnectionService implements ILinkStateListener, IUnicastInterna
                     // 2. immediately start negotiating the next connection
                     // doing this allows us to avoid an expensive handshake timeout
                     // on the remote peer and multiple additional roundtrips
-                    newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION)
+                    newMetric(DEFECT_NAME_HANDSHAKE_RENEGOTIATION)
                             .sendAsync();
                     disconnect(did, new IllegalStateException("attempted renegotiation of zephyr channel to " + did, e));
                     consumeHandshake(did, handshake);

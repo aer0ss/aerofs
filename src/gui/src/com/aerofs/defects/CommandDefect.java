@@ -23,7 +23,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.DiscardOldestPolicy;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.getFactory;
 import static com.aerofs.defects.DryadClientUtil.createPrivateDryadClient;
 import static com.aerofs.defects.DryadClientUtil.createPublicDryadClient;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -71,10 +71,10 @@ public class CommandDefect
             throws Exception
     {
         l.info("Sending command defect: {}", _defectID);
-        newDefect("defect.command", _dryad)
+        getFactory().newAutoDefect("defect.command", _dryad)
                 .setDefectID(_defectID)
                 .setPriority(Priority.Command)
-                .setFilesToUpload(Defect.UPLOAD_ALL_FILES)
+                .setFilesToUpload(AutoDefect.UPLOAD_ALL_FILES)
                 .sendSync();
     }
 

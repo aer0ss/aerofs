@@ -28,7 +28,7 @@ import java.util.Set;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import static com.aerofs.daemon.core.phy.linked.db.LinkedStorageSchema.*;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 
 /**
  * A bug in LinkedStorage caused the NRODatabase to become stale when NROs where migrated
@@ -83,7 +83,7 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
 
                 if (!nros.isEmpty()) {
                     l.info("{} {}", nros.size(), conflicts.size());
-                    newDefect("dput.aliasnro")
+                    newMetric("dput.aliasnro")
                             .addData("nro", nros.size())
                             .addData("conflicts", conflicts.size())
                             .addData("updated-nro", updatedNRO)
@@ -143,7 +143,7 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
                 // hopefully the botched migration will be recovered after the update
                 // if not, unlink/reinstall will be required
                 l.warn("botched migration {}", soid);
-                newDefect("dput.nro.migration.botched")
+                newMetric("dput.nro.migration.botched")
                         .addData("soid", soid.toString())
                         .sendAsync();
             } else if (sidx != soid.sidx().getInt()) {

@@ -42,7 +42,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 
 /**
  * When a file sees its timestamp change but not its length it is possible that the actual content
@@ -208,7 +208,7 @@ public class HashQueue implements IVersionControlListener
             // send rocklog defects to gather information about frequency of linker-induced
             // hashing, size distribution of affected file and benefit (or lack thereof) of
             // going through the trouble of hashing content to prevent spurious updates
-            newDefect("mcn.hash." + (same ? "same" : "change"))
+            newMetric("mcn.hash." + (same ? "same" : "change"))
                     .addData("soid", soid.toString())
                     .addData("length", length)
                     .addData("db_mtime", ca.mtime())

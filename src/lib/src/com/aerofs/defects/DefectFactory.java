@@ -42,7 +42,22 @@ public class DefectFactory
         _properties = properties;
     }
 
+    // also used by other types of defects in the same package
+    protected AutoDefect newAutoDefect(String name)
+    {
+        return newAutoDefect(name, _dryad);
+    }
+
+    // used by command defects
+    protected AutoDefect newAutoDefect(String name, DryadClient dryad)
+    {
+        return new AutoDefect(name, _cfg, _rockLog, dryad, _executor, _recentExceptions,
+                _properties);
+    }
+
     /**
+     * A simple defect that only sends a small defect report to RockLog
+     *
      * The defect name allows us to easily search and aggregate defects in RockLog.
      *
      * How to pick a good defect name:
@@ -57,43 +72,46 @@ public class DefectFactory
      * Bad names:
      * "Name With Spaces", "daemon.linker.someMethod_failed" <-- "failed" is redundant
      */
-    public Defect newDefect(String name)
+    public Defect newMetric(String name)
     {
-        return newDefect(name, _dryad);
+        return new Defect(name, _cfg, _rockLog, _executor);
     }
 
-    public Defect newDefect(String name, DryadClient dryad)
+    /**
+     * see {@link #newMetric(String)}
+     */
+    public Defect newDefect(String name)
     {
-        return new Defect(name, _cfg, _rockLog, dryad, _executor, _recentExceptions, _properties)
-                .setFilesToUpload(Defect.UPLOAD_NONE);
+        return newAutoDefect(name)
+                .setFilesToUpload(AutoDefect.UPLOAD_NONE);
     }
 
     public Defect newDefectWithLogs(String name)
     {
-        return newDefect(name)
-                .setFilesToUpload(Defect.UPLOAD_LOGS | Defect.UPLOAD_HEAP_DUMPS);
+        return newAutoDefect(name)
+                .setFilesToUpload(AutoDefect.UPLOAD_LOGS | AutoDefect.UPLOAD_HEAP_DUMPS);
     }
 
     public Defect newDefectWithLogsNoCfg(String name, UserID userID, String absRTRoot)
     {
-        return newDefect(name)
+        return newAutoDefect(name)
                 .setUserID(userID)
                 .setAbsRTRoot(absRTRoot)
-                .setFilesToUpload(Defect.UPLOAD_LOGS | Defect.UPLOAD_HEAP_DUMPS);
+                .setFilesToUpload(AutoDefect.UPLOAD_LOGS | AutoDefect.UPLOAD_HEAP_DUMPS);
     }
 
     public Defect newFrequentDefect(String name)
     {
         return new FrequentDefect(name, _cfg, _rockLog, _dryad, _executor, _recentExceptions,
                 _properties)
-                .setFilesToUpload(Defect.UPLOAD_LOGS | Defect.UPLOAD_HEAP_DUMPS);
+                .setFilesToUpload(AutoDefect.UPLOAD_LOGS | AutoDefect.UPLOAD_HEAP_DUMPS);
     }
 
     public Defect newUploadCoreDatabase()
     {
-        return newDefect("upload_core_database")
+        return newAutoDefect("upload_core_database")
                 .setPriority(Priority.Command)
-                .setFilesToUpload(Defect.UPLOAD_DB);
+                .setFilesToUpload(AutoDefect.UPLOAD_DB);
     }
 
     // achievement unlocked: FactoryFactory

@@ -28,7 +28,7 @@ public class UPUTSetDeviceOSFamilyAndName implements IUIPostUpdateTask
                             osu.getOSFamily().getString(), osu.getFullOSName());
         } catch (Throwable e) {
             l.warn("Failed to set Device OS Family and Name");
-            Defects.newDefect("ui.set_device_info")
+            Defects.newMetric("ui.set_device_info")
                     .setException(e)
                     .sendAsync();
         }

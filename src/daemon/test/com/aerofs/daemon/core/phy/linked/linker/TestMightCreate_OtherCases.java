@@ -26,7 +26,7 @@ public class TestMightCreate_OtherCases extends AbstractTestMightCreate
         when(dr.getFIDAndTypeNullable(Util.join(pRoot, physicalObj))).thenThrow(
                 new ExFileNotFound(mkpath("dummy/path")));
         assertEquals(Result.IGNORED, mightCreate(physicalObj));
-        verify(_defectFactory).newDefect("mc.fid.notfound");
+        verify(_defectFactory).newMetric("mc.fid.notfound");
     }
 
     @Test
@@ -37,6 +37,6 @@ public class TestMightCreate_OtherCases extends AbstractTestMightCreate
         when(dr.getFIDAndTypeNullable(Util.join(pRoot, physicalObj))).thenThrow(
                 new ExFileNoPerm(new File("dummy/path")));
         assertEquals(Result.IGNORED, mightCreate(physicalObj));
-        verify(_defectFactory).newDefect("mc.fid.noperm");
+        verify(_defectFactory).newMetric("mc.fid.noperm");
     }
 }

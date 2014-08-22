@@ -36,7 +36,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 
 /**
  * To implement efficient atomic deletion of large object tree in LinkedStorage we introduce the
@@ -126,7 +126,7 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
                     to.moveInSameFileSystem(from);
                 } catch (IOException e) {
                     l.error("db/fs inconsistent: failed to rollback move", e);
-                    newDefect("linked.rollback")
+                    newMetric("linked.rollback")
                             .setException(e)
                             .sendAsync();
                 }

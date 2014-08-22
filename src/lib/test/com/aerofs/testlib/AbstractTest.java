@@ -1,6 +1,6 @@
 package com.aerofs.testlib;
 
-import com.aerofs.defects.Defect;
+import com.aerofs.defects.AutoDefect;
 import com.aerofs.defects.DefectFactory;
 import com.aerofs.defects.MockDefects;
 import com.aerofs.lib.AppRoot;
@@ -17,7 +17,7 @@ public abstract class AbstractTest extends AbstractBaseTest
     }
 
     @Mock protected DefectFactory _defectFactory;
-    @Mock protected Defect _defect;
+    @Mock protected AutoDefect _defect;
 
     @Override
     @Before

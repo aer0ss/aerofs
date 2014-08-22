@@ -8,7 +8,7 @@ import java.util.Set;
 
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.*;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.aerofs.base.Loggers;
@@ -17,7 +17,6 @@ import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.Representability;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
-import com.aerofs.defects.Defects;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
@@ -127,7 +126,7 @@ public class MightCreate
 
         if (_osutil.isInvalidFileName(pcPhysical._path.last())) {
             l.error("inconsistent encoding validity: {}", pcPhysical._path.last());
-            newDefect("mc.invalid")
+            newMetric("mc.invalid")
                     .addData("path", pcPhysical._path.last())
                     .sendAsync();
             return Result.IGNORED;
@@ -140,15 +139,15 @@ public class MightCreate
         } catch (ExFileNoPerm e) {
             // TODO: report to UI
             l.warn("no perm {}", pcPhysical);
-            newDefect("mc.fid.noperm")
+            newMetric("mc.fid.noperm")
                     .sendAsync();
         } catch (ExFileNotFound e) {
             l.warn("not found {}", pcPhysical);
-            newDefect("mc.fid.notfound")
+            newMetric("mc.fid.notfound")
                     .sendAsync();
         } catch (Exception e) {
             l.warn("could not determine fid {}", pcPhysical);
-            newDefect("mc.fid.exception")
+            newMetric("mc.fid.exception")
                     .setException(e)
                     .sendAsync();
         }
@@ -325,12 +324,12 @@ public class MightCreate
             if (r == Representability.CONTEXTUAL_NRO &&
                     _rh.markRepresentable_(pc._path.sid(), targetOA, t)) {
                 l.warn("nro marked as representable {} {}", targetSOID, pc._path);
-                newDefect("mc.nro.fix")
+                newMetric("mc.nro.fix")
                         .addData("soid", targetSOID)
                         .sendAsync();
             } else {
                 l.info("nro in mc {} {}", targetSOID, _rh.getConflict_(targetSOID));
-                newDefect("mc.nro.move")
+                newMetric("mc.nro.move")
                         .addData("soid", targetSOID)
                         .sendAsync();
                 return Sets.union(renameTargetAndUpdateSource(sourceSOID, sourceSameType),

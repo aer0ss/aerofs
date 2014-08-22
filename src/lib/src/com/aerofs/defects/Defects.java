@@ -12,6 +12,12 @@ import java.security.GeneralSecurityException;
 import static com.aerofs.defects.DefectFactory.newFactory;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * The purpose of this class is to act as a static wrapper to a global defect factory. It should
+ * redirect all of its methods to the actual instance so that we can:
+ * 1 - mock the instance in unit tests.
+ * 2 - unit test the defect factory instance separately.
+ */
 public class Defects
 {
     // protected so that test suites can override it
@@ -24,7 +30,8 @@ public class Defects
         setFactory(newFactory(programName, rtroot, isPrivateDeployment));
     }
 
-    private static DefectFactory getFactory()
+    // used by frequent, command, and priority defects
+    protected static DefectFactory getFactory()
     {
         return checkNotNull(_factory);
     }
@@ -36,17 +43,19 @@ public class Defects
     }
 
     /**
-     * See {@link com.aerofs.defects.DefectFactory#newDefect(String)}
+     * see {@link com.aerofs.defects.DefectFactory#newMetric(String)}
+     */
+    public static Defect newMetric(String name)
+    {
+        return getFactory().newMetric(name);
+    }
+
+    /**
+     * see {@link com.aerofs.defects.DefectFactory#newDefect(String)}
      */
     public static Defect newDefect(String name)
     {
         return getFactory().newDefect(name);
-    }
-
-    // for command defect
-    protected static Defect newDefect(String name, DryadClient dryad)
-    {
-        return getFactory().newDefect(name, dryad);
     }
 
     public static Defect newDefectWithLogs(String name)

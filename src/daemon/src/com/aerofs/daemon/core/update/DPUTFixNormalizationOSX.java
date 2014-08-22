@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -125,7 +125,7 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
                         && Cfg.storageType() == StorageType.LINKED) {
                     Counters c = new Counters();
                     renormalize(s, c);
-                    newDefect("dput.osx.renormalize")
+                    newMetric("dput.osx.renormalize")
                             .addData("counters", c)
                             .sendAsync();
                 }

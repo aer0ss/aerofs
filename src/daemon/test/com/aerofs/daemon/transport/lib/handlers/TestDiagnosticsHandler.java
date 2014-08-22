@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
+import com.aerofs.defects.AutoDefect;
 import com.aerofs.defects.Defect;
 import com.aerofs.defects.DefectFactory;
 import com.aerofs.defects.MockDefects;
@@ -17,6 +18,8 @@ import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -50,13 +53,13 @@ public final class TestDiagnosticsHandler
     private TimerTask timerTask;
 
     private DefectFactory defectFactory;
-    private Defect defect;
+    private AutoDefect defect;
 
     @Before
     public void initMocks()
     {
         defectFactory = mock(DefectFactory.class);
-        defect = mock(Defect.class);
+        defect = mock(AutoDefect.class);
         MockDefects.init(defectFactory, defect);
     }
 

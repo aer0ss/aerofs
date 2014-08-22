@@ -16,6 +16,7 @@ import java.text.Normalizer.Form;
 import static com.aerofs.daemon.lib.db.CoreSchema.T_OA;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_NAME;
 import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 
 public class DPUTGetEncodingStats implements IDaemonPostUpdateTask
 {
@@ -71,7 +72,7 @@ public class DPUTGetEncodingStats implements IDaemonPostUpdateTask
                     "null name count: " + nullNameCount + "\n" +
                     "unknown   count: " + unknownCount + "\n" +
                     "total     count: " + totalCount;
-            newDefect("dput.get_encoding_stats")
+            newMetric("dput.get_encoding_stats")
                     .setMessage(desc)
                     .sendSyncIgnoreErrors();
         }

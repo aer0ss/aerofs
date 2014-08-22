@@ -52,7 +52,7 @@ import java.sql.SQLException;
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_COMPLETION;
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_REQUEST;
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.META_REQUEST;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 
 // TODO NAK for this and other primitives
 
@@ -318,7 +318,7 @@ public class GetComponentRequest
                     // send a rocklog defect.
                     // TODO: force linker update or something?
                     l.info("hash mismatch {} {} {}", sokid, db, h);
-                    newDefect("gcc.hash.mismatch")
+                    newMetric("gcc.hash.mismatch")
                             .addData("sokid", sokid)
                             .addData("db_hash", db)
                             .addData("fs_hash", h)

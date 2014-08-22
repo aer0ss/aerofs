@@ -46,7 +46,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.aerofs.daemon.core.notification.Notifications.newRootsChangedNotification;
-import static com.aerofs.defects.Defects.newDefect;
+import static com.aerofs.defects.Defects.newMetric;
 
 /**
  * Maintain a mapping of SID to {@code LinkerRoot}
@@ -117,7 +117,7 @@ public class LinkerRootMap
         l.info("encoding {} {}", cs, System.getProperty("file.encoding"));
         // TODO: be extra strict and abort if the default charset is not UTF-8?
         if (!cs.equals(BaseUtil.CHARSET_UTF)) {
-            newDefect("charset")
+            newMetric("charset")
                     .addData("default", cs)
                     .addData("file", System.getProperty("file.encoding"))
                     .sendAsync();
