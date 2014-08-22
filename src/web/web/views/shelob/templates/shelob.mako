@@ -7,6 +7,14 @@
 
 ## if you modify the list of scripts, make sure to update jstest/shelob/e2e/index.html
 <%block name="scripts">
+    <%! from web.util import is_private_deployment, is_linksharing_enabled %>
+    <script type="text/javascript">
+        %if is_linksharing_enabled(request.registry.settings):
+            enableLinksharing = true;
+        %else:
+            enableLinksharing = false;
+        %endif
+    </script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular-route.min.js')}"></script>
     <script src="${request.static_path('web:static/shelob/js/app.js')}"></script>
@@ -18,7 +26,6 @@
     <script src="${request.static_path('web:static/js/angular-lib/angular-tree-control.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/modernizr.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/datepicker/bootstrap-datepicker.js')}"></script>
-    <%! from web.util import is_private_deployment %>
     %if is_private_deployment(request.registry.settings):
         <script src="${request.static_path('web:static/shelob/js/config/config_private.js')}"></script>
     %else:

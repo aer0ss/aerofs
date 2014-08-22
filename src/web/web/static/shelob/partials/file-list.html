@@ -1,6 +1,6 @@
 <div ng-show="currentFolder || isSingleObject">
 
-<div id="breadcrumb-and-actions">
+<div id="breadcrumb-and-actions" ng-if="!share || enableLinksharing">
   <div id="actions" ng-hide="share">
     <span aero-file-upload class="btn btn-primary" id="upload-file"></span>
     <button type="button" class="btn btn-default" id="new-folder" ng-click="newFolder.hidden=false">New Folder</button>
@@ -27,7 +27,7 @@
   </div>
 </div>
 
-<div id="file-list">
+<div id="file-list" ng-if="!share || enableLinksharing">
   <div class="my-table-head row">
       <div class="hidden-xs">
         <div ng-class="{

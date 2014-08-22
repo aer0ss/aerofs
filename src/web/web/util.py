@@ -184,6 +184,9 @@ def str2bool(v):
 def is_private_deployment(settings):
     return str2bool(settings.get('config.loader.is_private_deployment', False))
 
+def is_linksharing_enabled(settings):
+    return str2bool(settings.get('url_sharing.enabled', True));
+
 def is_restricted_external_sharing_enabled(settings):
     return str2bool(settings.get('sharing_rules.restrict_external_sharing', False))
 

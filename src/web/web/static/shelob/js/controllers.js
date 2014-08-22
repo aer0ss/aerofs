@@ -34,8 +34,10 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // $scope.objects contains all folder/file data.
     // $scope.links contains all link data. Added to $scope.objects by _populateLinks().
     // $scope.currentFolder is an object describing the current active folder.
-    $rootScope.linkPasswordEntered, $scope.objects, $scope.links, $scope.currentFolder;
+    $rootScope.linkPasswordEntered, $scope.objects, $scope.links, $scope.currentFolder, $scope.enableLinksharing;
 
+    // See if linksharing has been turned off
+    $scope.enableLinksharing = enableLinksharing;
     // Headers for request, in case user isn't logged in
     // and requests a linkshare page
     $scope.requestHeaders = {};
@@ -86,7 +88,8 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             $scope.objects = response.data.children.folders.concat(response.data.children.files);
 
             // check if link data's done loading, if so, populate link data
-            // (if not, will populate via the _getLinks call once it's done)
+            // (if not, will populate via the _getLinks call once it's done,
+            // or, if $scope.enableLinksharing is false, won't run at all)
             if ($scope.links) {
                 _populateLinks();
             }
@@ -177,33 +180,44 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     }
     // Different behavior for linkshare pages and my files page
     if ($scope.share) {
-        // ping get_url_info for link's password-needed, expiry, token, and soid
-        // if login's already run, and successfully, there'll be a password attached
-        $http.post('/url_info/' + $scope.share, {
-            password: $rootScope.linkPasswordEntered
-        }).success(function(response){
-            $scope.requestHeaders = response;
-            // linkshare root is never 'root', fixing it
-            if ($scope.rootFolder === 'root') {
-                $scope.rootFolder = response.soid;
-            }
-            // manual expiration checking
-            if (response.expires < 0) {
-                _handleFailure({status: 404});
-            } else {
-                // ping API for folder / file data
-                _getFolders();
-            }
-        }).error(function(response, status){
-            /* If 401, will redirect to login
-               Otherwise, shows error message. */
-            _handleFailure({
-                status: status
+        // is linksharing turned off?
+        if ($scope.enableLinksharing) {
+            // ping get_url_info for link's password-needed, expiry, token, and soid
+            // if login's already run, and successfully, there'll be a password attached
+            $http.post('/url_info/' + $scope.share, {
+                password: $rootScope.linkPasswordEntered
+            }).success(function(response){
+                $scope.requestHeaders = response;
+                // linkshare root is never 'root', fixing it
+                if ($scope.rootFolder === 'root') {
+                    $scope.rootFolder = response.soid;
+                }
+                // manual expiration checking
+                if (response.expires < 0) {
+                    _handleFailure({status: 404});
+                } else {
+                    // ping API for folder / file data
+                    _getFolders();
+                }
+            }).error(function(response, status){
+                /* If 401, will redirect to login
+                   Otherwise, shows error message. */
+                _handleFailure({
+                    status: status
+                });
             });
-        });
+        } else {
+            // links created before admin turned off linksharing
+            // will behave as if they have expired
+            _handleFailure({
+                status: 400
+            });
+        }
     } else {
         _getFolders();
-        _getLinks();
+        if ($scope.enableLinksharing) {
+            _getLinks();
+        }
     }
 
     // This should find an object with a given view and remove it from the current view
@@ -607,15 +621,19 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // Generates a link, then...
     // Lets user see link URL and specify link permissions
     $scope.showLink = function(object) {
-        // if there is no link yet, create one
-        if (object.links === undefined) {
-            object.links = [];
-        }
-        if (object.links.length === 0) {
-            $scope.createLink(object);
+        if ($scope.enableLinksharing) {
+            // if there is no link yet, create one
+            if (object.links === undefined) {
+                object.links = [];
+            }
+            if (object.links.length === 0) {
+                $scope.createLink(object);
+            } else {
+                // otherwise, just show the link(s)
+                $scope.toggleLink(object);
+            }
         } else {
-            // otherwise, just show the link(s)
-            $scope.toggleLink(object);
+            showErrorMessage("Link-based sharing has been turned off for your organization.");
         }
     };
 

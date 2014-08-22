@@ -27,7 +27,10 @@
           {{object.last_modified | date: 'short'}}
         </div>
         <div class="col-xs-1 link-status">
-          <a ng-show="object.links.length > 0" ng-click="toggleLink(object)" title="Link settings">
+          <a ng-if="enableLinksharing" 
+             ng-show="object.links.length > 0" 
+             ng-click="toggleLink(object)" 
+             title="Link settings">
             <span class="glyphicon glyphicon-link"></span> 
             <span class="extra-settings-icons">
               <span ng-show="object.links[0].expires.value" class="glyphicon glyphicon-time"></span> 
@@ -42,7 +45,7 @@
                     Actions <span class="caret"></span>
                   </button>
                   <ul class="dropdown-menu pull-right" role="menu">
-                    <li><a
+                    <li ng-if="enableLinksharing"><a
                        ng-click="showLink(object)"
                        class="edit action action-link">
                         <span class="glyphicon glyphicon-link"></span> 
