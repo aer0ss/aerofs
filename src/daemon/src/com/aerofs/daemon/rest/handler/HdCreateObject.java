@@ -38,8 +38,8 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
         Trans t = _tm.begin_();
         SOID soid;
         try {
-            soid = _oc.create_(ev._folder ? Type.DIR : Type.FILE, oaParent.soid(), ev._name,
-                    PhysicalOp.APPLY, t);
+            soid = _oc.createMeta_(ev._folder ? Type.DIR : Type.FILE,
+                    oaParent.soid(), ev._name, PhysicalOp.APPLY, t);
             t.commit_();
         } catch (ExAlreadyExist e) {
             ev.setResult_(Response

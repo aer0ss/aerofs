@@ -53,6 +53,19 @@ public class ObjectCreator
     }
 
     /**
+     * Create metadata for a new object.
+     *
+     * May create an empty folder but will NOT create empty files
+     */
+    public SOID createMeta_(Type type, SOID soidParent, String name, PhysicalOp op, Trans t)
+            throws Exception
+    {
+        SOID soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
+        createMeta_(type, soid, soidParent.oid(), name, 0, op, false, true, t);
+        return soid;
+    }
+
+    /**
      * Create a new object. Create an empty physical file if it's a file and it's not
      * linker-initiated.
      */

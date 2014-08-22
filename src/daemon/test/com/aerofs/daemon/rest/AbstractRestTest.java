@@ -29,6 +29,7 @@ import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
+import com.aerofs.daemon.core.mock.logical.MockDS.MockDSObject;
 import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
@@ -424,22 +425,18 @@ public class AbstractRestTest extends AbstractTest
         when(nvc.getVersionHash_(any(SOID.class), any(CID.class))).thenReturn(VERSION_HASH);
 
         when(ic.move_(any(SOID.class), any(SOID.class), anyString(), any(PhysicalOp.class), eq(t)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable
-                    {
-                        SOID soid = (SOID)invocation.getArguments()[0];
-                        SOID soidToParent = (SOID)invocation.getArguments()[1];
-                        String toName = (String)invocation.getArguments()[2];
-                        PhysicalOp op = (PhysicalOp)invocation.getArguments()[3];
-                        if (soidToParent.sidx().equals(soid.sidx())) {
-                            om.moveInSameStore_(soid, soidToParent.oid(), toName, op, true,
-                                    t);
-                            return soid;
-                        } else {
-                            return ic.createImmigrantRecursively_(ds.resolve_(soid).parent(), soid,
-                                    soidToParent, toName, op, t);
-                        }
+                .thenAnswer(invocation -> {
+                    SOID soid = (SOID)invocation.getArguments()[0];
+                    SOID soidToParent = (SOID)invocation.getArguments()[1];
+                    String toName = (String)invocation.getArguments()[2];
+                    PhysicalOp op = (PhysicalOp)invocation.getArguments()[3];
+                    if (soidToParent.sidx().equals(soid.sidx())) {
+                        om.moveInSameStore_(soid, soidToParent.oid(), toName, op, true,
+                                t);
+                        return soid;
+                    } else {
+                        return ic.createImmigrantRecursively_(ds.resolve_(soid).parent(), soid,
+                                soidToParent, toName, op, t);
                     }
                 });
 
@@ -540,14 +537,10 @@ public class AbstractRestTest extends AbstractTest
         // wire event handlers (no queue, events are immediately executed)
         ICoreEventHandlerRegistrar reg = inj.getInstance(RestCoreEventHandlerRegistar.class);
         final CoreEventDispatcher disp = new CoreEventDispatcher(Collections.singleton(reg));
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                Object[] args = invocation.getArguments();
-                disp.dispatch_((IEvent)args[0], (Prio)args[1]);
-                return null;
-            }
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            disp.dispatch_((IEvent)args[0], (Prio)args[1]);
+            return null;
         }).when(imce).execute_(any(IEvent.class), any(Prio.class));
 
         return inj;
@@ -724,20 +717,27 @@ public class AbstractRestTest extends AbstractTest
         SOID p = ds.resolveFollowAnchorThrows_(Path.fromString(rootSID, parent));
         final SettableFuture<SOID> soid = SettableFuture.create();
 
-        when(oc.create_(eq(type), eq(p), eq(name), eq(PhysicalOp.APPLY), eq(t)))
-                .thenAnswer(new Answer<Object>()
-                {
-                    @Override
-                    public Object answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        Object[] args = invocation.getArguments();
-                        MockDSDir d = mds.root().dir((String)args[2]);
-                        soid.set(d.soid());
-                        return d.soid();
+        when(oc.createMeta_(eq(type), eq(p), eq(name), eq(PhysicalOp.APPLY), eq(t)))
+                .thenAnswer(invocation -> {
+                    MockDSDir pp = mds.cd(ds.resolve_(p));
+                    if (pp.hasChild(name)) throw new ExAlreadyExist();
+                    MockDSObject o;
+                    switch (type) {
+                    case FILE:
+                        o = pp.file(name, 0);
+                        break;
+                    case DIR:
+                        o = pp.dir(name);
+                        break;
+                    case ANCHOR:
+                        o = pp.anchor(name);
+                        break;
+                    default:
+                        throw new AssertionError();
                     }
-                })
-                .thenThrow(new ExAlreadyExist());
+                    soid.set(o.soid());
+                    return o.soid();
+                });
 
         return soid;
     }
@@ -748,45 +748,35 @@ public class AbstractRestTest extends AbstractTest
         final SOID parentSoid = ds.resolveFollowAnchorThrows_(Path.fromString(rootSID, parentName));
         final SOID objectSoid = ds.resolveThrows_(Path.fromString(rootSID, objectName));
         final SettableFuture<SOID> soid = SettableFuture.create();
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
-            {
-                Object[] args = invocation.getArguments();
-                OA oa = (OA)args[0];
-                OA parent = (OA)args[1];
-                Path pathTo = ds.resolve_(parent).append((String)args[2]);
-                if (ds.resolveNullable_(pathTo) == null) {
-                    mds.move(ds.resolve_(oa).toStringRelative(), pathTo.toStringRelative(), t);
-                    soid.set(oa.soid());
-                } else {
-                    throw new ExAlreadyExist();
-                }
-                return null;
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            OA oa = (OA)args[0];
+            OA parent = (OA)args[1];
+            Path pathTo = ds.resolve_(parent).append((String)args[2]);
+            if (ds.resolveNullable_(pathTo) == null) {
+                mds.move(ds.resolve_(oa).toStringRelative(), pathTo.toStringRelative(), t);
+                soid.set(oa.soid());
+            } else {
+                throw new ExAlreadyExist();
             }
+            return null;
         }).when(ds).setOAParentAndName_(any(OA.class), any(OA.class), anyString(), eq(t));
         when(ic.createImmigrantRecursively_(any(ResolvedPath.class), eq(objectSoid), eq(parentSoid),
                 eq(newName), eq(PhysicalOp.APPLY), eq(t)))
-                .thenAnswer(new Answer<Object>()
-                {
-                    @Override
-                    public Object answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        Object[] args = invocation.getArguments();
-                        SOID objectSoid = (SOID)args[1];
-                        SOID parentSoid = (SOID)args[2];
-                        String pathFrom = ds.resolve_(objectSoid).toStringRelative();
-                        String pathTo = ds.resolve_(parentSoid).append((String)args[3]).toStringRelative();
-                        if (mds.resolve(new Path(rootSID, pathTo.split("/"))) == null) {
-                            // does not exist yet
-                            mds.move(pathFrom, pathTo, t);
-                            SOID r = new SOID(parentSoid.sidx(), objectSoid.oid());
-                            soid.set(r);
-                            return r;
-                        } else { // already exists
-                            throw new ExAlreadyExist();
-                        }
+                .thenAnswer(invocation -> {
+                    Object[] args = invocation.getArguments();
+                    SOID objectSoid1 = (SOID)args[1];
+                    SOID parentSoid1 = (SOID)args[2];
+                    String pathFrom = ds.resolve_(objectSoid1).toStringRelative();
+                    String pathTo = ds.resolve_(parentSoid1).append((String)args[3]).toStringRelative();
+                    if (mds.resolve(new Path(rootSID, pathTo.split("/"))) == null) {
+                        // does not exist yet
+                        mds.move(pathFrom, pathTo, t);
+                        SOID r = new SOID(parentSoid1.sidx(), objectSoid1.oid());
+                        soid.set(r);
+                        return r;
+                    } else { // already exists
+                        throw new ExAlreadyExist();
                     }
                 });
 

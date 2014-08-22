@@ -73,13 +73,7 @@ public class TestFileResource extends AbstractRestTest
         mds.root().file(path).caMaster(content.length, FILE_MTIME);
         IPhysicalFile pf = mock(IPhysicalFile.class);
         when(pf.exists_()).thenReturn(true);
-        when(pf.newInputStream_()).thenAnswer(new Answer<InputStream>() {
-            @Override
-            public InputStream answer(InvocationOnMock invocation) throws Throwable
-            {
-                return new ByteArrayInputStream(content);
-            }
-        });
+        when(pf.newInputStream_()).thenAnswer(invocation -> new ByteArrayInputStream(content));
         when(ps.newFile_(eq(ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, path)))),
                 eq(KIndex.MASTER)))
                 .thenReturn(pf);
@@ -590,6 +584,9 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(201)
                 .body("id", equalToFutureObject(soid))
                 .body("name", equalTo("foo.txt"))
+                .body("content_state", equalTo("SYNCING"))
+                .body("size", nullValue())
+                .body("last_modified", nullValue())
         .when().post("/v0.10/files");
     }
 
@@ -605,6 +602,9 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(201)
                 .body("id", equalToFutureObject(soid))
                 .body("name", equalTo("foo.txt"))
+                .body("content_state", equalTo("SYNCING"))
+                .body("size", nullValue())
+                .body("last_modified", nullValue())
         .when().post("/v1.2/files");
     }
 
@@ -623,6 +623,9 @@ public class TestFileResource extends AbstractRestTest
                 .statusCode(201)
                 .body("id", equalToFutureObject(soid))
                 .body("name", equalTo("foo.txt"))
+                .body("content_state", equalTo("SYNCING"))
+                .body("size", nullValue())
+                .body("last_modified", nullValue())
         .when().post("/v0.10/files");
     }
 

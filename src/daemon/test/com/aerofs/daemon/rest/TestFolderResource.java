@@ -368,6 +368,7 @@ public class TestFolderResource extends AbstractRestTest
                 .statusCode(201)
                 .body("id", equalToFutureObject(soid))
                 .body("name", equalTo("foo"))
+                .body("is_shared", equalTo(false))
         .when().log().everything()
                 .post("/v0.10/folders");
     }
@@ -384,6 +385,7 @@ public class TestFolderResource extends AbstractRestTest
                 .statusCode(201)
                 .body("id", equalToFutureObject(soid))
                 .body("name", equalTo("foo"))
+                .body("is_shared", equalTo(false))
         .when().log().everything()
                 .post("/v0.10/folders");
     }
@@ -403,6 +405,7 @@ public class TestFolderResource extends AbstractRestTest
                 .statusCode(201)
                 .body("id", equalToFutureObject(soid))
                 .body("name", equalTo("foo"))
+                .body("is_shared", equalTo(false))
         .when().log().everything()
                 .post("/v0.10/folders");
     }
