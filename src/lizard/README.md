@@ -3,7 +3,7 @@ Getting Started
 ```bash
 cd ~/repos/aerofs/src/lizard
 virtualenv env
-env/bin/pip install -r requirements.txt
+env/bin/pip install -r requirements-exact.txt
 env/bin/pip install --editable ../licensing
 ./rundebug.py
 ```

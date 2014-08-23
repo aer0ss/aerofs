@@ -32,7 +32,7 @@ def login_page():
         if not admin:
             # This user doesn't exist.
             flash(u"Email or password is incorrect", 'error')
-        elif not scrypt.check_password_hash(form.password.data, admin.pw_hash, admin.salt):
+        elif not scrypt.check_password_hash(form.password.data.encode('utf8'), admin.pw_hash.encode('utf8'), admin.salt.encode('utf8')):
             # The password was wrong.
             flash(u"Email or password is incorrect", 'error')
         else:
