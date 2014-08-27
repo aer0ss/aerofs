@@ -153,8 +153,8 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 $log.error('My Files call failed with ' + status);
             }
             if (status == 503 && $scope.share) {
-                showErrorMessage("This file is currently unavailable because none of the AeroFS clients containing the file are online right now. " +
-                "Please check with the person who shared this link to make sure their AeroFS client is running.");
+                showErrorMessageUnsafe("This file is currently unavailable because <a href='https://support.aerofs.com/hc/en-us/articles/203143390'>all sharer AeroFS clients are offline</a>. " +
+                "Please check with the person who shared this link.");
             } else if (status == 503) {
                 showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
             } else if (status == 401) {
