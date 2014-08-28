@@ -183,17 +183,24 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
         // This function should only be called on the GUI thread.
         Preconditions.checkState(GUI.get().isUIThread(),
                 "tried to rebuild menu from non-GUI thread");
-        Menu newMenu = populateNewMenu();
 
+        // note that we can totally dispose the old menu first because no other events will be
+        // processed, including repaint and relayout, while we are holding the event lock.
         boolean enabled = _lastMenu.isEnabled();
         boolean visible = _lastMenu.isVisible();
-        newMenu.setEnabled(enabled);
-        newMenu.setVisible(visible);
-        _lastMenu.setEnabled(false);
-        _lastMenu.setVisible(false);
-        notifyListeners(newMenu);
+        new TrayMenuPopulator(_lastMenu).clearAllMenuItems();
         _lastMenu.dispose();
-        _lastMenu = newMenu;
+
+        _lastMenu = populateNewMenu();
+        _lastMenu.setEnabled(enabled);
+        _lastMenu.setVisible(visible);
+
+        // note that notifying the listener will cause the only listener, TrayIcon, to call
+        // setMenu() with the new menu.
+        //
+        // For reasons unknown, this will cause the old menu to lose references to all of its
+        // children and make it harder to clean up unused references.
+        notifyListeners(_lastMenu);
     }
 
     private void unsafeRepopulateExistingMenu()
