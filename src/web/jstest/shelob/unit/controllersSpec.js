@@ -18,7 +18,7 @@ describe('Shelob Controllers', function() {
                     }, 0);
                     return config || $q.when(config);
                 }
-            }
+            };
         });
     }));
 
@@ -27,6 +27,7 @@ describe('Shelob Controllers', function() {
         var $httpBackend, $rootScope, $controller, routeParams, modal, FileListCtrl;
         var modalObject;
         var folder_1, folder_2, file, folder_1_object, folder_2_object, file_object;
+        enableLinksharing = true;
 
         function get_object_by_id(id) {
             for (var i = 0; i < $rootScope.objects.length; i++) {
