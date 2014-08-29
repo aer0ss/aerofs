@@ -10,7 +10,7 @@ shelobServices.factory('OutstandingRequestsCounter', [
             push: function() { counter += 1; return counter; },
             pop: function() { counter -= 1; return counter; },
             get: function() { return counter; }
-        }
+        };
     }
 ]);
 
@@ -68,7 +68,8 @@ shelobServices.factory('Token', ['$http', '$q', '$log', 'OutstandingRequestsCoun
         }
         return $q.when(token.promise);
     }
-}}]);
+    };
+}]);
 
 // API methods return an angular promise (http://docs.angularjs.org/api/ng/service/$q)
 // The promise is an object with a then(success, failure, notify) function that takes
@@ -221,7 +222,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
                 reader.readAsArrayBuffer(blob);
             }
 
-            if (file.size == 0) {
+            if (file.size === 0) {
                 deferred.resolve({uploaded: 0});
             } else {
                 readAndUploadChunk(0);
@@ -270,7 +271,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
             //          progress: number between 0 and 1 indicating the upload progress
             //
             chunkedUpload: _chunkedUpload,
-        }
+        };
     }
 ]);
 

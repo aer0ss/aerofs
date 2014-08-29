@@ -65,7 +65,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             // this is used as the last element of the breadcrumb trail
             $scope.currentFolder = {
                 id: $scope.rootFolder,
-                name: response.data.name,
+                name: response.data.name
             };
 
             // omit the root AeroFS folder from the breadcrumb trail, since we will always
@@ -277,7 +277,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // data controlling the "new folder" table row and input
     $scope.newFolder = {
         hidden: true,
-        name: '',
+        name: ''
     };
 
     // This is called when a user submits the name for a new folder
@@ -711,7 +711,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     $scope.changeExpiration = function(link) {
         if (link.expires.value < 0) {
             var data = $($('#expiry-modal input')[0]).val().split('-');
-            var date = new Date(parseInt(data[0],10),parseInt(data[1],10)-1,parseInt(data[2],10),23,59,59);
+            var date = new Date(parseInt(data[0],10), parseInt(data[1],10)-1, parseInt(data[2],10),23,59,59);
             var elapsed = Math.floor((date - Date.now())/1000) - date.getTimezoneOffset() * 60;
             var custom = {
                 value: elapsed,

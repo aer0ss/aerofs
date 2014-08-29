@@ -84,7 +84,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                 else showErrorMessageUnsafe(getInternalErrorText());
             });
         };
-    },
+    }
 };
 });
 
@@ -131,8 +131,9 @@ shelobDirectives.directive('inPlaceEdit', function($timeout) { return {
         elem.bind("blur", function(event) {
             scope.onSubmit();
         });
-    },
-}});
+    }
+};
+});
 
 
 shelobDirectives.directive('aeroIcon', function() { return {
@@ -148,8 +149,9 @@ shelobDirectives.directive('aeroIcon', function() { return {
 
     link: function(scope, elem, attrs) {
         scope.filename = getFilename(scope.mimeType);
-    },
-}});
+    }
+};
+});
 
 
 // This function maintains a mapping of mimetypes to icon file names.

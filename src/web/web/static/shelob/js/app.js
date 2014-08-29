@@ -12,13 +12,13 @@ shelobApp.config(['$routeProvider', function($routeProvider) {
     $routeProvider.
         when('/login', {
             templateUrl: '/static/shelob/partials/login.html',
-            controller: 'LoginCtrl',
+            controller: 'LoginCtrl'
         }).when('/:oid', {
             templateUrl: '/static/shelob/partials/file-list.html',
-            controller: 'FileListCtrl',
+            controller: 'FileListCtrl'
         }).when('/', {
             templateUrl: '/static/shelob/partials/file-list.html',
-            controller: 'FileListCtrl',
+            controller: 'FileListCtrl'
         }).
         otherwise({
             redirectTo: '/root'
