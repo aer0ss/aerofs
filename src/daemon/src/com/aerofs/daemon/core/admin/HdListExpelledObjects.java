@@ -27,7 +27,7 @@ public class HdListExpelledObjects extends AbstractHdIMC<EIListExpelledObjects>
     @Override
     protected void handleThrows_(EIListExpelledObjects ev, Prio prio) throws Exception
     {
-        ImmutableList.Builder<Path> bdExpelled = new ImmutableList.Builder<Path>();
+        ImmutableList.Builder<Path> bdExpelled = new ImmutableList.Builder<>();
 
         IDBIterator<SOID> iter = _expulsion.getExpelledObjects_();
         try {

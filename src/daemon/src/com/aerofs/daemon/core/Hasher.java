@@ -166,7 +166,7 @@ public class Hasher
         if (waitingThreads == null) {
             // No other thread is computing hash, so current thread
             // will compute hash.
-            waitingThreads = new HashSet<TCB>();
+            waitingThreads = new HashSet<>();
             Util.verify(_map.put(sokid, waitingThreads) == null);
             Exception abortException = null;
             try {

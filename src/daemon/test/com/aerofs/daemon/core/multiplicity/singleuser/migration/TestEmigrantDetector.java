@@ -27,8 +27,6 @@ import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -81,7 +79,6 @@ public class TestEmigrantDetector extends AbstractTest
 
     SOCID socidAnchorTarget = new SOCID(soidAnchorTarget, CID.META);
     SOCID socidAnchorTargetParent = new SOCID(soidAnchorTargetParent, CID.META);
-    SOCID socidSource = new SOCID(soidSource, CID.META);
     SOCID socidTarget = new SOCID(soidTarget, CID.META);
 
     OID oidSourceParentFrom = new OID(UniqueID.generate());
@@ -105,7 +102,7 @@ public class TestEmigrantDetector extends AbstractTest
 
     private void mockChildren() throws ExNotDir, ExNotFound, SQLException
     {
-        HashSet<OID> children = new HashSet<OID>();
+        HashSet<OID> children = new HashSet<>();
         children.add(new OID(UniqueID.generate()));
         children.add(new OID(UniqueID.generate()));
         children.add(new OID(UniqueID.generate()));
@@ -126,32 +123,22 @@ public class TestEmigrantDetector extends AbstractTest
         // Target and target-parent stores are absent
         mockStore(null, sidTargetGrandParent, sidxTargetGrandParent, sidxRoot, null, null, sid2sidx, null);
 
-        sidsTargetAncestor = new ArrayList<ByteString>();
+        sidsTargetAncestor = new ArrayList<>();
         sidsTargetAncestor.add(sidTargetParent.toPB());
         sidsTargetAncestor.add(sidTargetGrandParent.toPB());
 
         when(ds.getOANullable_(soidSource)).thenReturn(oa);
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock)
-                    throws Throwable
-            {
-                mockStore(null, sidTargetParent, sidxTargetParent, sidxTargetGrandParent, null,
-                        null, sid2sidx, null);
-                return null;
-            }
+        doAnswer(invocationOnMock -> {
+            mockStore(null, sidTargetParent, sidxTargetParent, sidxTargetGrandParent, null,
+                    null, sid2sidx, null);
+            return null;
         }).when(cxt).downloadSync_(eq(socidAnchorTargetParent), any(DependencyType.class));
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock)
-                    throws Throwable
-            {
-                mockStore(null, sidTarget, sidxTarget, sidxTargetParent, null, null, sid2sidx,
-                        null);
-                return null;
-            }
+        doAnswer(invocationOnMock -> {
+            mockStore(null, sidTarget, sidxTarget, sidxTargetParent, null, null, sid2sidx,
+                    null);
+            return null;
         }).when(cxt).downloadSync_(eq(socidAnchorTarget), any(DependencyType.class));
     }
 

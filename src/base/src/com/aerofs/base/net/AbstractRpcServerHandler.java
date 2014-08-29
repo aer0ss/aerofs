@@ -42,32 +42,26 @@ public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHand
 
             final ListenableFuture<byte[]> future = react(message);
 
-            previous.addListener(new Runnable() {
+            previous.addListener(() -> Futures.addCallback(future, new FutureCallback<byte[]>()
+            {
                 @Override
-                public void run()
+                public void onSuccess(byte[] response)
                 {
-                    Futures.addCallback(future, new FutureCallback<byte[]>()
-                    {
-                        @Override
-                        public void onSuccess(byte[] response)
-                        {
-                            try {
-                                channel.write(ChannelBuffers.wrappedBuffer(response));
-                            } finally {
-                                next.set(null);
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Throwable throwable)
-                        {
-                            next.setException(throwable);
-                            l.warn("Received an exception from the reactor. This should never happen.");
-                            Channels.fireExceptionCaught(ctx.getChannel(), throwable);
-                        }
-                    });
+                    try {
+                        channel.write(ChannelBuffers.wrappedBuffer(response));
+                    } finally {
+                        next.set(null);
+                    }
                 }
-            }, MoreExecutors.sameThreadExecutor());
+
+                @Override
+                public void onFailure(Throwable throwable)
+                {
+                    next.setException(throwable);
+                    l.warn("Received an exception from the reactor. This should never happen.");
+                    Channels.fireExceptionCaught(ctx.getChannel(), throwable);
+                }
+            }), MoreExecutors.sameThreadExecutor());
 
         } catch (Exception ex) {
             l.warn("RPC error", ex);

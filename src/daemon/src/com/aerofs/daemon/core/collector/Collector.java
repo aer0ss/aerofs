@@ -126,24 +126,18 @@ public class Collector implements IDumpStatMisc
 
     public void online_(final DID did)
     {
-        _f._er.retry("online", new Callable<Void>()
-        {
-            @Override
-            public Void call()
-                    throws Exception
-            {
-                if (_cfs.loadDBFilter_(did)) {
-                    l.debug("{} online triggers collector 4 {}", did, _sidx);
-                    resetBackoffInterval_();
-                    if (_it.started_()) {
-                        _cfs.setCSFilterFromDB_(did, _it.cs_());
-                    } else {
-                        start_();
-                    }
+        _f._er.retry("online", () -> {
+            if (_cfs.loadDBFilter_(did)) {
+                l.debug("{} online triggers collector 4 {}", did, _sidx);
+                resetBackoffInterval_();
+                if (_it.started_()) {
+                    _cfs.setCSFilterFromDB_(did, _it.cs_());
+                } else {
+                    start_();
                 }
-
-                return null;
             }
+
+            return null;
         });
     }
 
@@ -181,15 +175,11 @@ public class Collector implements IDumpStatMisc
         checkState(!_it.started_());
         final int startSeq = ++_startSeq;
 
-        _f._er.retry("start", new Callable<Void>() {
-            @Override
-            public Void call() throws Exception
-            {
-                // stop this retry thread if someone called start_() again
-                if (startSeq != _startSeq) return null;
-                collect_();
-                return null;
-            }
+        _f._er.retry("start", () -> {
+            // stop this retry thread if someone called start_() again
+            if (startSeq != _startSeq) return null;
+            collect_();
+            return null;
         });
     }
 
@@ -390,16 +380,11 @@ public class Collector implements IDumpStatMisc
         public void tokenReclaimed_(final @Nonnull Runnable cascade)
         {
             l.debug("start continuation");
-            _f._er.retry("continuation", new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    checkState(_it.started_());
-                    collect_();
-                    cascade.run();
-                    return null;
-                }
+            _f._er.retry("continuation", () -> {
+                checkState(_it.started_());
+                collect_();
+                cascade.run();
+                return null;
             });
         }
     }

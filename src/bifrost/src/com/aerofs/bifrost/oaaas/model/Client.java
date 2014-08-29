@@ -92,7 +92,7 @@ public class Client extends AbstractEntity
   private String thumbNailUrl;
 
   @ElementCollection(fetch= FetchType.EAGER)
-  private List<String> redirectUris = new ArrayList<String>();
+  private List<String> redirectUris = new ArrayList<>();
 
   @Column
   private boolean skipConsent;

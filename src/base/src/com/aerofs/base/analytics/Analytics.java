@@ -22,9 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -62,17 +60,10 @@ public class Analytics
         _dateformat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         _executor = MoreExecutors.listeningDecorator(
-                Executors.newSingleThreadExecutor(new ThreadFactory()
-                {
-                    @Override
-                    public
-                    @Nonnull
-                    Thread newThread(@Nonnull Runnable r)
-                    {
-                        Thread t = new Thread(r);
-                        t.setPriority(Thread.MIN_PRIORITY);
-                        return t;
-                    }
+                Executors.newSingleThreadExecutor(r -> {
+                    Thread t = new Thread(r);
+                    t.setPriority(Thread.MIN_PRIORITY);
+                    return t;
                 }));
     }
 
@@ -86,10 +77,10 @@ public class Analytics
         Futures.addCallback(trackImpl(event), new FutureCallback<Void>()
         {
             @Override
-            public void onSuccess(Void v) { }
+            public void onSuccess(@Nonnull Void v) { }
 
             @Override
-            public void onFailure(Throwable e)
+            public void onFailure(@Nonnull Throwable e)
             {
                 l.warn("sending analytics failed: {}", e.toString()); // do not print stack trace
             }
@@ -98,45 +89,39 @@ public class Analytics
 
     private ListenableFuture<Void> trackImpl(final IAnalyticsEvent event)
     {
-        return _executor.submit(new Callable<Void>()
-        {
-            @Override
-            public Void call()
-                    throws Exception
-            {
-                Map<String, String> properties = Maps.newHashMap();
+        return _executor.submit(() -> {
+            Map<String, String> properties = Maps.newHashMap();
 
-                UserID user = _properties.getUserID();
-                DID did = _properties.getDid();
+            UserID user = _properties.getUserID();
+            DID did = _properties.getDid();
 
-                String userStr = (user != null) ? user.getString() : null;
-                String didStr = (did != null) ? did.toStringFormal() : null;
+            String userStr = (user != null) ? user.getString() : null;
+            String didStr = (did != null) ? did.toStringFormal() : null;
 
-                // teamID cannot be null. If the teamID is null, we should not put things into
-                // Analytics as the teamID is used as a unique identifier.
+            // teamID cannot be null. If the teamID is null, we should not put things into
+            // Analytics as the teamID is used as a unique identifier.
 
-                String teamID = checkNotNull(_properties.getOrgID());
+            String teamID = checkNotNull(_properties.getOrgID());
 
-                // Add the default properties that we send with all events
-                addIfNonNull(properties, Properties.USER_ID, userStr);
-                addIfNonNull(properties, Properties.DID, didStr);
-                addIfNonNull(properties, Properties.VERSION, _properties.getVersion());
-                addIfNonNull(properties, Properties.OS_FAMILY, _properties.getOSFamily());
-                addIfNonNull(properties, Properties.OS_NAME, _properties.getOSName());
-                addIfNonNull(properties, Properties.TEAM_ID, teamID);
+            // Add the default properties that we send with all events
+            addIfNonNull(properties, Properties.USER_ID, userStr);
+            addIfNonNull(properties, Properties.DID, didStr);
+            addIfNonNull(properties, Properties.VERSION, _properties.getVersion());
+            addIfNonNull(properties, Properties.OS_FAMILY, _properties.getOSFamily());
+            addIfNonNull(properties, Properties.OS_NAME, _properties.getOSName());
+            addIfNonNull(properties, Properties.TEAM_ID, teamID);
 
-                long signupDate = _properties.getSignupDate();
-                if (signupDate > 0) {
-                    properties.put(Properties.SIGNUP_DATE, _dateformat.format(new Date(signupDate)));
-                }
-
-                // Add any additional property supplied by the event
-                event.saveProperties(properties);
-
-                _mixpanel.track(event.getName(), teamID, properties);
-
-                return null;
+            long signupDate = _properties.getSignupDate();
+            if (signupDate > 0) {
+                properties.put(Properties.SIGNUP_DATE, _dateformat.format(new Date(signupDate)));
             }
+
+            // Add any additional property supplied by the event
+            event.saveProperties(properties);
+
+            _mixpanel.track(event.getName(), teamID, properties);
+
+            return null;
         });
 
     }

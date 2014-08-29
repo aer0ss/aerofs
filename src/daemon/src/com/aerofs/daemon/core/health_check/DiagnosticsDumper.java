@@ -118,7 +118,7 @@ final class DiagnosticsDumper implements Runnable
 
     private @Nullable Message getDiagnostics(final StringBuilder builder, final IDiagnosable component)
     {
-        final AtomicReference<Message> diagnostics = new AtomicReference<Message>(null);
+        final AtomicReference<Message> diagnostics = new AtomicReference<>(null);
 
         _q.enqueueBlocking(new AbstractEBSelfHandling()
         {

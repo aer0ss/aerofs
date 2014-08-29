@@ -50,15 +50,11 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class Transports implements IStartable, IDiagnosable, ITransferStat
 {
-    public static final Comparator<ITransport> PREFERENCE_COMPARATOR = new Comparator<ITransport>()
-    {
-        @Override
-        public int compare(ITransport tp0, ITransport tp1)
-        {
-            int comp = tp0.rank() - tp1.rank();
-            checkArgument(tp0 == tp1 || comp != 0, "different transports have identical preferences tp0:" + tp0 + " tp1:" + tp1);
-            return comp;
-        }
+    public static final Comparator<ITransport> PREFERENCE_COMPARATOR = (tp0, tp1) -> {
+        int comp = tp0.rank() - tp1.rank();
+        checkArgument(tp0 == tp1 || comp != 0,
+                "different transports have identical preferences tp0:" + tp0 + " tp1:" + tp1);
+        return comp;
     };
 
     private static final Logger l = Loggers.getLogger(Transports.class);

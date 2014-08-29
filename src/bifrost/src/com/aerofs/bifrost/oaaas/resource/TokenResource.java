@@ -118,7 +118,7 @@ public class TokenResource
             List<AccessToken> tokens = accessTokenRepository.findByOwner(owner);
 
             List<TokenResponseObject> tokenResponseObjects =
-                    new ArrayList<TokenResponseObject>(tokens.size());
+                    new ArrayList<>(tokens.size());
             for (AccessToken t : tokens) {
                 tokenResponseObjects.add(new TokenResponseObject(t));
             }

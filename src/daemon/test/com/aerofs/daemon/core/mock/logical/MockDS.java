@@ -105,60 +105,45 @@ public class MockDS
         _nextSidx = 1;
         _rootSID = rootSID;
 
-        when(ds.resolveNullable_(any(Path.class))).thenAnswer(new Answer<SOID>() {
-            @Override
-            public SOID answer(InvocationOnMock invocation) throws Throwable
-            {
-                return resolve((Path)invocation.getArguments()[0]);
-            }
+        when(ds.resolveNullable_(any(Path.class))).thenAnswer(
+                invocation -> resolve((Path)invocation.getArguments()[0]));
+
+        when(_ds.hasChildren_(any(SOID.class))).thenAnswer(invocation -> {
+            final SOID soid = (SOID)invocation.getArguments()[0];
+            return !_ds.getChildren_(soid).isEmpty();
         });
 
-        when(_ds.hasChildren_(any(SOID.class))).thenAnswer(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                final SOID soid = (SOID)invocation.getArguments()[0];
-                return !_ds.getChildren_(soid).isEmpty();
-            }
-        });
+        when(_ds.listChildren_(any(SOID.class))).thenAnswer(invocation -> {
+            final SOID soid = (SOID)invocation.getArguments()[0];
+            return new IDBIterator<OID>() {
+                int i = -1;
+                boolean closed = false;
+                final ImmutableList<OID> oids = ImmutableList.copyOf(_ds.getChildren_(soid));
 
-        when(_ds.listChildren_(any(SOID.class))).thenAnswer(new Answer<Object>()
-        {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
-            {
-                final SOID soid = (SOID)invocation.getArguments()[0];
-                return new IDBIterator<OID>() {
-                    int i = -1;
-                    boolean closed = false;
-                    final ImmutableList<OID> oids = ImmutableList.copyOf(_ds.getChildren_(soid));
+                @Override
+                public OID get_() throws SQLException
+                {
+                    return oids.get(i);
+                }
 
-                    @Override
-                    public OID get_() throws SQLException
-                    {
-                        return oids.get(i);
-                    }
+                @Override
+                public boolean next_()
+                {
+                    return ++i < oids.size();
+                }
 
-                    @Override
-                    public boolean next_()
-                    {
-                        return ++i < oids.size();
-                    }
+                @Override
+                public void close_()
+                {
+                    closed = true;
+                }
 
-                    @Override
-                    public void close_()
-                    {
-                        closed = true;
-                    }
-
-                    @Override
-                    public boolean closed_()
-                    {
-                        return closed;
-                    }
-                };
-            }
+                @Override
+                public boolean closed_()
+                {
+                    return closed;
+                }
+            };
         });
 
         if (stores != null) {
@@ -483,17 +468,11 @@ public class MockDS
 
             final MockDSDir _this = this;
             when(_ds.getChild_(eq(_soid.sidx()), eq(_soid.oid()), anyString()))
-                    .then(new Answer<OID>()
-                    {
-                        @Override
-                        public OID answer(InvocationOnMock invocation)
-                                throws Throwable
-                        {
-                            Object[] args = invocation.getArguments();
-                            String name = (String)args[2];
-                            MockDSObject o = _this._children.get(name);
-                            return o != null ? o.soid().oid() : null;
-                        }
+                    .then(invocation -> {
+                        Object[] args = invocation.getArguments();
+                        String name = (String)args[2];
+                        MockDSObject o = _this._children.get(name);
+                        return o != null ? o.soid().oid() : null;
                     });
 
             if (!_oa.isExpelled() && !_soid.oid().isRoot()) {

@@ -17,7 +17,7 @@ import java.util.Map;
  */
 public class MockAuthRequestDAO extends AuthorizationRequestDAO
 {
-    private Map<String, AuthorizationRequest> m_code = new HashMap<String, AuthorizationRequest>();
+    private Map<String, AuthorizationRequest> m_code = new HashMap<>();
 
     @Inject
     public MockAuthRequestDAO(SessionFactory sessionFactory)

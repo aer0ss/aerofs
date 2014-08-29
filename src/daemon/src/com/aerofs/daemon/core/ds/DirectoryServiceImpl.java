@@ -79,8 +79,8 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         _sidx2sid = sidx2sid;
         _pathResolver = pathResolver;
 
-        _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
-        _cacheOA = new DBCache<SOID, OA>(tm, DaemonParam.DB.OA_CACHE_SIZE);
+        _cacheDS = new DBCache<>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
+        _cacheOA = new DBCache<>(tm, DaemonParam.DB.OA_CACHE_SIZE);
 
         storeDeletionOperators.addDeferred_(this);
     }

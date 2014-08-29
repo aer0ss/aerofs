@@ -33,5 +33,5 @@ public class MockResourceServerDAO extends ResourceServerDAO
         return srv;
     }
 
-    private Map<String, ResourceServer> m_byServerKey = new HashMap<String, ResourceServer>();
+    private Map<String, ResourceServer> m_byServerKey = new HashMap<>();
 }

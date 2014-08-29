@@ -31,7 +31,7 @@ public final class TestDeviceToUserMapper extends AbstractTest
     private final InMemorySQLiteDBCW _dbcw = new InMemorySQLiteDBCW();
     private final DID2UserDatabase _db = Mockito.spy(new DID2UserDatabase(_dbcw.getCoreDBCW()));
     private final CoreDeviceLRU _deviceLRU = Mockito.mock(CoreDeviceLRU.class);
-    private final AtomicReference<IDeviceEvictionListener> _evictionListener = new AtomicReference<IDeviceEvictionListener>(null);
+    private final AtomicReference<IDeviceEvictionListener> _evictionListener = new AtomicReference<>(null);
 
     private DeviceToUserMapper _deviceToUserMapper;
 
@@ -40,15 +40,9 @@ public final class TestDeviceToUserMapper extends AbstractTest
             throws SQLException
     {
         // store the eviction listener
-        Mockito.doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                _evictionListener.set((IDeviceEvictionListener) invocation.getArguments()[0]);
-                return null;
-            }
+        Mockito.doAnswer(invocation -> {
+            _evictionListener.set((IDeviceEvictionListener) invocation.getArguments()[0]);
+            return null;
         }).when(_deviceLRU).addEvictionListener_(Mockito.any(IDeviceEvictionListener.class));
 
         // have to initialize this here so that the

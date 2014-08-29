@@ -33,14 +33,9 @@ abstract class DaemonLaunchTask extends AbstractEBSelfHandling
     @Override
     public void handle_()
     {
-        new ExponentialRetry(_sched).retry(getClass().getSimpleName(), new Callable<Void>()
-        {
-            @Override
-            public Void call() throws Exception
-            {
-                run_();
-                return null;
-            }
+        new ExponentialRetry(_sched).retry(getClass().getSimpleName(), () -> {
+            run_();
+            return null;
         });
     }
 

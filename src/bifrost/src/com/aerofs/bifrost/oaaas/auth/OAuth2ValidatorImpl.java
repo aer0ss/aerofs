@@ -43,9 +43,9 @@ import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.V
  */
 public class OAuth2ValidatorImpl implements OAuth2Validator {
 
-  private static final Set<String> RESPONSE_TYPES = new HashSet<String>();
+  private static final Set<String> RESPONSE_TYPES = new HashSet<>();
 
-  private static final Set<String> GRANT_TYPES = new HashSet<String>();
+  private static final Set<String> GRANT_TYPES = new HashSet<>();
 
   static {
     RESPONSE_TYPES.add(IMPLICIT_GRANT_RESPONSE_TYPE);

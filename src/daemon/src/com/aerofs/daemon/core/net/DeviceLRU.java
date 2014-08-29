@@ -32,22 +32,15 @@ public class DeviceLRU
     public DeviceLRU(int numDevices)
     {
         l = Loggers.getLogger(DeviceLRU.class);
-        listeners_ = new HashSet<IDeviceEvictionListener>();
+        listeners_ = new HashSet<>();
 
-        LRUCache.IEvictionListener<DID, Object> el =
-            new LRUCache.IEvictionListener<DID, Object>() {
-                @Override
-                public void evicted_(DID d, Object o)
-                {
-                    l.debug("evict d:" + d);
+        LRUCache.IEvictionListener<DID, Object> el = (d, o) -> {
+            l.debug("evict d:" + d);
 
-                    for (IDeviceEvictionListener l : listeners_) {
-                        l.evicted_(d);
-                    }
-                }
-            };
+            for (IDeviceEvictionListener l : listeners_) l.evicted_(d);
+        };
 
-        devices_ = new LRUCache<DID, Object>(true, numDevices, el);
+        devices_ = new LRUCache<>(true, numDevices, el);
     }
 
     public void addDevice_(DID d)

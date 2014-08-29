@@ -282,10 +282,7 @@ public class GetComponentResponse
             l.info("{} ok {}", msg.ep(), socid);
 
         // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
-        } catch (Exception e) {
-            rollbackCause = e;
-            throw e;
-        } catch (Error e) {
+        } catch (Exception | Error e) {
             rollbackCause = e;
             throw e;
         } finally {

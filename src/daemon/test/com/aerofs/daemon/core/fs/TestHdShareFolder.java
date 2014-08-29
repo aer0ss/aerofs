@@ -138,7 +138,7 @@ public class TestHdShareFolder extends AbstractTest
 
     private void handle(Path path, UserID... users) throws Exception
     {
-        ImmutableMap.Builder<UserID, Permissions> roles = new ImmutableMap.Builder<UserID, Permissions>();
+        ImmutableMap.Builder<UserID, Permissions> roles = new ImmutableMap.Builder<>();
         for (UserID u : users) roles.put(u, Permissions.EDITOR);
         hd.handleThrows_(new EIShareFolder(path, roles.build(), "", false), Prio.LO);
     }

@@ -88,7 +88,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
         _f = f;
         _lower = lower;
-        _deviceQ = new HashMap<DID, ILimiter>();
+        _deviceQ = new HashMap<>();
 
         Cfg.db().addListener(this);
 

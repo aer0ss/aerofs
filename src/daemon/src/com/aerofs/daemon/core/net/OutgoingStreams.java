@@ -142,8 +142,8 @@ public class OutgoingStreams
     private final Map<StreamID, OutgoingStream> _streams = Maps.newConcurrentMap();
 
     // these are streams that have failed to abort or end
-    private final List<OutgoingStream> _failedToAbort = new LinkedList<OutgoingStream>();
-    private final List<OutgoingStream> _failedToEnd = new LinkedList<OutgoingStream>();
+    private final List<OutgoingStream> _failedToAbort = new LinkedList<>();
+    private final List<OutgoingStream> _failedToEnd = new LinkedList<>();
 
     private final UnicastInputOutputStack _stack;
 

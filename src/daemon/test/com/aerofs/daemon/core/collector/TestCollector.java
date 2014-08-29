@@ -85,25 +85,15 @@ public class TestCollector extends AbstractTest
         idbcw.init_();
 
         when(tm.begin_()).thenReturn(t);
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                ((ITransListener)invocation.getArguments()[0]).committed_();
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((ITransListener)invocation.getArguments()[0]).committed_();
+            return null;
         }).when(t).addListener_(any(ITransListener.class));
 
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                l.info("sched");
-                ((AbstractEBSelfHandling)invocation.getArguments()[0]).handle_();
-                return null;
-            }
+        doAnswer(invocation -> {
+            l.info("sched");
+            ((AbstractEBSelfHandling)invocation.getArguments()[0]).handle_();
+            return null;
         }).when(sched).schedule(any(IEvent.class), anyLong());
 
         Store store = mock(Store.class);

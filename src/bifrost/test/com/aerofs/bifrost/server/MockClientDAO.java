@@ -23,7 +23,7 @@ public class MockClientDAO extends ClientDAO
     public MockClientDAO(SessionFactory sessionFactory)
     {
         super(sessionFactory);
-        m_map = new HashMap<String, Client>();
+        m_map = new HashMap<>();
     }
 
     @Override
@@ -42,7 +42,7 @@ public class MockClientDAO extends ClientDAO
     public List<Client> list(Query query)
     {
       // always returns all clients, regardless of criteria
-      return new ArrayList<Client>(m_map.values());
+      return new ArrayList<>(m_map.values());
     }
 
     @Override

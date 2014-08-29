@@ -26,7 +26,7 @@ class LineServerHandler extends SimpleChannelHandler
     static final long   DELAY = C.SEC / 10;
     static final long   MAX_ATTEMPTS = 450;
 
-    Queue<String> recd  = new ConcurrentLinkedQueue<String>();
+    Queue<String> recd  = new ConcurrentLinkedQueue<>();
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)

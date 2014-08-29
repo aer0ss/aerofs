@@ -130,7 +130,7 @@ abstract class AbstractLimiter implements ILimiter
         _pendingFillRate = _NO_PENDING_FILL_RATE;
         _lastConfirmTime = 0;
         _nextTimeout = null;
-        _q = new PrioQueue<Outgoing>(pendingSize);
+        _q = new PrioQueue<>(pendingSize);
     }
 
     public void respondToTimeIn_()
@@ -360,7 +360,7 @@ abstract class AbstractLimiter implements ILimiter
     {
         assert !_q.isEmpty_();
 
-        OutArg<Prio> peekPrio = new OutArg<Prio>(Prio.LO);
+        OutArg<Prio> peekPrio = new OutArg<>(Prio.LO);
         _q.peek_(peekPrio);
         return peekPrio.get();
     }
@@ -392,7 +392,7 @@ abstract class AbstractLimiter implements ILimiter
         if (!_q.isEmpty_()) {
             l.trace("{}: pnd q ne", name());
 
-            OutArg<Prio> peekPrio = new OutArg<Prio>(Prio.LO);
+            OutArg<Prio> peekPrio = new OutArg<>(Prio.LO);
             Outgoing o = _q.peek_(peekPrio);
 
             long timeDiff =

@@ -95,7 +95,7 @@ class Download
     protected class Cxt implements IDownloadContext
     {
         private DID did;
-        final Stack<SOCID> chain = new Stack<SOCID>();
+        final Stack<SOCID> chain = new Stack<>();
         final Set<SOCID> resolved = Sets.newHashSet();
         final DownloadDependenciesGraph deps = new DownloadDependenciesGraph();
 
@@ -287,11 +287,7 @@ class Download
     {
         try {
             return _f._gcc.remoteRequestComponent_(_socid, did, _tk);
-        } catch (SQLException e) {
-            throw e;
-        } catch (ExAborted e) {
-            throw e;
-        } catch (ExNoAvailDevice e) {
+        } catch (SQLException | ExAborted | ExNoAvailDevice e) {
             throw e;
         } catch (Exception e) {
             throw new ExRemoteCallFailed(e);
@@ -337,11 +333,7 @@ class Download
             cxt.downloadSync_(new SOCID(_socid.sidx(), e._ocid), e._type);
         } catch (ExUpdateInProgress e) {
             onUpdateInProgress(msg.did());
-        } catch (SQLException e) {
-            throw e;
-        } catch (ExAborted e) {
-            throw e;
-        } catch (ExUnsatisfiedDependency e) {
+        } catch (SQLException | ExAborted | ExUnsatisfiedDependency e) {
             throw e;
         } catch (ExRestartWithHashComputed e) {
             // retry
@@ -352,10 +344,8 @@ class Download
                 // hmm, this may be more of a remote error, should the wrapping be changed?
                 throw new ExProcessReplyFailed(cxt.did, e);
             }
-        } catch (ExUnsolvedMetaMetaConflict e) {
-            // TODO: metric/defect?
-            throw new ExProcessReplyFailed(cxt.did, e);
         } catch (Exception e) {
+            // TODO: metric/defect?
             throw new ExProcessReplyFailed(cxt.did, e);
         }
         return false;

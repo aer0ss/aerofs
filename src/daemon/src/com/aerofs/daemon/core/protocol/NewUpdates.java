@@ -72,23 +72,19 @@ public class NewUpdates implements IVersionControlListener
 
         // TODO: refine delay pattern?
         _dsNewUpdateMessage = new DelayedScheduler(sched, DaemonParam.NEW_UPDATE_MESSAGE_DELAY,
-                new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        checkState(!_updated.isEmpty());
+                () -> {
+                    checkState(!_updated.isEmpty());
 
-                        try {
-                            // send a NEW_UPDATE message for all the stores that have been updated
-                            // since the last NEW_UPDATE.
-                            send_(_updated);
-                        } catch (Exception e) {
-                            // failed to push.
-                            l.warn("ignored: " + Util.e(e));
-                        }
-
-                        _updated.clear();
+                    try {
+                        // send a NEW_UPDATE message for all the stores that have been updated
+                        // since the last NEW_UPDATE.
+                        send_(_updated);
+                    } catch (Exception e) {
+                        // failed to push.
+                        l.warn("ignored: " + Util.e(e));
                     }
+
+                    _updated.clear();
                 });
     }
 

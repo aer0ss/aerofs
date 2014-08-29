@@ -79,22 +79,16 @@ public final class ACLNotificationSubscriber
                 @Override
                 public void handle_()
                 {
-                    _exponential.retry("aclsync", new Callable<Void>()
-                    {
-                        @Override
-                        public Void call()
-                                throws Exception
-                        {
-                            if (currentACLSyncSeqNum != _aclSyncSeqNum) return null;
-                            l.debug("sync to local");
-                            if (payload != null) {
-                                long aclEpoch = PBACLNotification.parseFrom(payload).getAclEpoch();
-                                _aclSynchronizer.syncToLocal_(aclEpoch);
-                            } else {
-                                _aclSynchronizer.syncToLocal_();
-                            }
-                            return null;
+                    _exponential.retry("aclsync", () -> {
+                        if (currentACLSyncSeqNum != _aclSyncSeqNum) return null;
+                        l.debug("sync to local");
+                        if (payload != null) {
+                            long aclEpoch = PBACLNotification.parseFrom(payload).getAclEpoch();
+                            _aclSynchronizer.syncToLocal_(aclEpoch);
+                        } else {
+                            _aclSynchronizer.syncToLocal_();
                         }
+                        return null;
                     }, IOException.class);
                 }
             }, 0);

@@ -408,7 +408,7 @@ public final class TestClientAuditEventReporter
 
         _caer.init_();
 
-        AtomicReference<Exception> thrown = new AtomicReference<Exception>(null);
+        AtomicReference<Exception> thrown = new AtomicReference<>(null);
         try {
             _caer.reportEventsForUnitTestOnly_();
         } catch (Exception e) {

@@ -840,11 +840,8 @@ public class ReceiveAndApplyUpdate
             // If we trusted the filesystem and had a way to (de)serialize the
             // internal state of the SHA256 computation we could avoid the
             // redundant computation altogether. For now this will have to do.
-            InputStream is = prefix.newInputStream_();
-            try {
+            try (InputStream is = prefix.newInputStream_()) {
                 ByteStreams.copy(is, new DigestOutputStream(ByteStreams.nullOutputStream(), md));
-            } finally {
-                is.close();
             }
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
@@ -900,8 +897,7 @@ public class ReceiveAndApplyUpdate
                         matchingLocalBranch);
 
                 try {
-                    InputStream is = file.newInputStream_();
-                    try {
+                    try (InputStream is = file.newInputStream_()) {
                         // release core lock to avoid blocking while copying a large prefix
                         TCB tcb = tk.pseudoPause_("cp-prefix");
                         try {
@@ -909,8 +905,6 @@ public class ReceiveAndApplyUpdate
                         } finally {
                             tcb.pseudoResumed_();
                         }
-                    } finally {
-                        is.close();
                     }
                 } catch (FileNotFoundException e) {
                     SOCKID conflict = new SOCKID(k.socid(), matchingLocalBranch);

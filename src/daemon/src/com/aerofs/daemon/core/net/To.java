@@ -58,9 +58,9 @@ public class To
 
     private final SIndex _sidx;
 
-    private final Set<DID> _dids = new HashSet<DID>();
+    private final Set<DID> _dids = new HashSet<>();
 
-    private final Set<DID> _avoid = new HashSet<DID>();
+    private final Set<DID> _avoid = new HashSet<>();
 
     public static class Factory
     {

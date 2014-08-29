@@ -286,13 +286,7 @@ class BlockStorage implements IPhysicalStorage
 
     private void deletePrefixFilesMatching_(final String prefix) throws IOException
     {
-        InjectableFile[] fs = _prefixDir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name)
-            {
-                return name.startsWith(prefix);
-            }
-        });
+        InjectableFile[] fs = _prefixDir.listFiles((dir, name) -> name.startsWith(prefix));
 
         if (fs != null) for (InjectableFile f : fs) f.deleteOrThrowIfExist();
     }

@@ -27,17 +27,12 @@ public class TimerUtil
         @Override
         protected @Nonnull Timer create()
         {
-            ThreadNameDeterminer determiner = new ThreadNameDeterminer()
-            {
-                @Override
-                public String determineThreadName(String currentThreadName, String proposedThreadName)
-                        throws Exception
-                {
-                    return "tm" + THREAD_ID_COUNTER.getAndIncrement();
-                }
-            };
+            ThreadNameDeterminer determiner = (currentThreadName, proposedThreadName) ->
+                    "tm" + THREAD_ID_COUNTER.getAndIncrement();
 
-            return new HashedWheelTimer(Executors.defaultThreadFactory(), determiner, 200, TimeUnit.MILLISECONDS, 512) { // 512 comes from looking at netty defaults
+            // 512 comes from looking at netty defaults
+            return new HashedWheelTimer(Executors.defaultThreadFactory(), determiner, 200,
+                    TimeUnit.MILLISECONDS, 512) {
                 @Override
                 public Set<Timeout> stop() {
                     // a Timer cannot be restarted after being stopped

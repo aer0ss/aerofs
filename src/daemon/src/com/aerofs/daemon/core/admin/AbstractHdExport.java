@@ -59,19 +59,12 @@ public abstract class AbstractHdExport<T extends IEBIMC> extends AbstractHdIMC<T
     protected void export_(final InputStream is, File dst) throws Exception
     {
         try {
-            final OutputStream os = new FileOutputStream(dst);
-            try {
-                _coreLockReleasingExecutor.execute_(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception
-                    {
-                        ByteStreams.copy(is, os);
-                        os.flush();
-                        return null;
-                    }
+            try (OutputStream os = new FileOutputStream(dst)) {
+                _coreLockReleasingExecutor.execute_(() -> {
+                    ByteStreams.copy(is, os);
+                    os.flush();
+                    return null;
                 }, "export");
-            } finally {
-                os.close();
             }
         } finally {
             is.close();

@@ -131,7 +131,7 @@ public class EmigrantDetector implements IEmigrantDetector
             IDownloadContext cxt, SID sidTarget)
             throws Exception
     {
-        Queue<SID> sids = new ArrayDeque<SID>(sidsEmigrantTargetAncestor.size() + 1);
+        Queue<SID> sids = new ArrayDeque<>(sidsEmigrantTargetAncestor.size() + 1);
         sids.add(sidTarget);
         for (ByteString bstr : sidsEmigrantTargetAncestor) {
             SID sidAncestor = new SID(bstr);

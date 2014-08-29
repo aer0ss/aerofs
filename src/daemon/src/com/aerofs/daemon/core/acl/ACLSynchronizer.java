@@ -216,13 +216,7 @@ public class ACLSynchronizer
                 if (!sid.isUserRoot() && L.isMultiuser()) {
                     newMembers.put(sidx, Sets.filter(
                             Sets.difference(info._roles.keySet(), info._externalMembers),
-                            new Predicate<UserID>() {
-                                @Override
-                                public boolean apply(UserID user)
-                                {
-                                    return !user.isTeamServerID();
-                                }
-                            }));
+                            user -> !user.isTeamServerID()));
                 }
             } catch (Exception ex) {
                 // ignore errors to allow incremental progress but prevent epoch bump

@@ -103,7 +103,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
     private static TreeSet<Map.Entry<DID, TransmitInfo>> createOrderedByBwMap()
     {
-        return new TreeSet<Map.Entry<DID, TransmitInfo>>(
+        return new TreeSet<>(
                 new Comparator<Map.Entry<DID, TransmitInfo>>()
                 {
                     @Override
@@ -155,7 +155,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         _upperUnicastInput = upperUnicastInput;
         _lowerUnicastOutput = lowerUnicastOutput;
         _lowerInput = lowerUnicastOutput; // [sigh] HACK -> see notes above
-        _transmitMap = new HashMap<DID, TransmitInfo>();
+        _transmitMap = new HashMap<>();
         setBandwidth_(Cfg.db().getLong(Key.MAX_DOWN_RATE));
 
         Cfg.db().addListener(this);

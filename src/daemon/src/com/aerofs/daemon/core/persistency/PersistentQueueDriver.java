@@ -61,7 +61,7 @@ public class PersistentQueueDriver<I, O>
 
         public <I, O> PersistentQueueDriver<I, O> create(IPersistentQueue<I, O> q)
         {
-            return new PersistentQueueDriver<I, O>(this, q);
+            return new PersistentQueueDriver<>(this, q);
         }
     }
 
@@ -117,16 +117,10 @@ public class PersistentQueueDriver<I, O>
             public void handle_()
             {
                 final long _seq = ++_scanSeq;
-                _er.retry("pqscan", new Callable<Void>()
-                {
-                    @Override
-                    public Void call()
-                            throws Exception
-                    {
-                        if (_scanSeq != _seq) return null;
-                        scanImpl_();
-                        return null;
-                    }
+                _er.retry("pqscan", () -> {
+                    if (_scanSeq != _seq) return null;
+                    scanImpl_();
+                    return null;
                 }, excludes);
             }
         }, 0);

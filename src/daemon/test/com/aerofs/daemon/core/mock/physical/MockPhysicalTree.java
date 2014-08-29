@@ -74,27 +74,19 @@ public class MockPhysicalTree
     public void mock(Factory fact, @Nullable InjectableDriver dr) throws IOException, ExNotFound
     {
         // mock the factory's default behavior.
-        doAnswer(new Answer<InjectableFile>() {
-            @Override
-            public InjectableFile answer(InvocationOnMock invocation)
-            {
-                InjectableFile f = Mockito.mock(InjectableFile.class);
-                when(f.getAbsolutePath()).thenReturn((String)invocation.getArguments()[0]);
-                when(f.exists()).thenReturn(false);
-                return f;
-            }
+        doAnswer(invocation -> {
+            InjectableFile f = Mockito.mock(InjectableFile.class);
+            when(f.getAbsolutePath()).thenReturn((String)invocation.getArguments()[0]);
+            when(f.exists()).thenReturn(false);
+            return f;
         }).when(fact).create(anyString());
-        doAnswer(new Answer<InjectableFile>() {
-            @Override
-            public InjectableFile answer(InvocationOnMock invocation)
-            {
-                InjectableFile f = Mockito.mock(InjectableFile.class);
-                String parent = (String)invocation.getArguments()[0];
-                String name = (String)invocation.getArguments()[1];
-                when(f.getAbsolutePath()).thenReturn(Util.join(parent, name));
-                when(f.exists()).thenReturn(false);
-                return f;
-            }
+        doAnswer(invocation -> {
+            InjectableFile f = Mockito.mock(InjectableFile.class);
+            String parent = (String)invocation.getArguments()[0];
+            String name = (String)invocation.getArguments()[1];
+            when(f.getAbsolutePath()).thenReturn(Util.join(parent, name));
+            when(f.exists()).thenReturn(false);
+            return f;
         }).when(fact).create(anyString(), anyString());
 
         mockRecursively(fact, dr, null);
@@ -164,18 +156,13 @@ public class MockPhysicalTree
         for (int i = 0; i < names.length; i++) names[i] = children[i].getName();
         when(parent.list()).thenReturn(names);
 
-        when(parent.listFiles(any(FilenameFilter.class))).thenAnswer(new Answer<InjectableFile[]>()
-        {
-            @Override
-            public InjectableFile[] answer(InvocationOnMock invocationOnMock) throws Throwable
-            {
-                FilenameFilter filter = (FilenameFilter) invocationOnMock.getArguments()[0];
-                ArrayList<InjectableFile> ret = new ArrayList<InjectableFile>(children.length);
-                for (InjectableFile child : children) {
-                    if (filter.accept(null, child.getName())) ret.add(child);
-                }
-                return ret.toArray(new InjectableFile[0]);
+        when(parent.listFiles(any(FilenameFilter.class))).thenAnswer(invocationOnMock -> {
+            FilenameFilter filter = (FilenameFilter) invocationOnMock.getArguments()[0];
+            ArrayList<InjectableFile> ret = new ArrayList<>(children.length);
+            for (InjectableFile child : children) {
+                if (filter.accept(null, child.getName())) ret.add(child);
             }
+            return ret.toArray(new InjectableFile[0]);
         });
     }
 

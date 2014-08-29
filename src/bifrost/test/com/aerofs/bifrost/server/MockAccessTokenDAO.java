@@ -26,7 +26,7 @@ public class MockAccessTokenDAO extends AccessTokenDAO
     public MockAccessTokenDAO(SessionFactory sessionFactory)
     {
         super(sessionFactory);
-        m_map = new HashMap<String, AccessToken>();
+        m_map = new HashMap<>();
     }
 
     @Override
@@ -35,7 +35,7 @@ public class MockAccessTokenDAO extends AccessTokenDAO
     @Override
     public List<AccessToken> findByOwner(String owner)
     {
-        List<AccessToken> list = new ArrayList<AccessToken>(m_map.size());
+        List<AccessToken> list = new ArrayList<>(m_map.size());
         for (Entry<String, AccessToken> e : m_map.entrySet()) {
             if (e.getValue().getOwner().equals(owner)) list.add(e.getValue());
         }

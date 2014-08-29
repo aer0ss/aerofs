@@ -6,7 +6,7 @@ package com.aerofs.base;
 public class C
 {
     // Time
-    public static final long NSEC_PER_MSEC = 1000000L;
+    public static final long NSEC_PER_MSEC = 1_000_000L;
     public static final long SEC = 1000;
     public static final long MIN = 60 * SEC;
     public static final long HOUR = 60 * MIN;

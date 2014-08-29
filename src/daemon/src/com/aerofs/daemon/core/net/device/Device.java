@@ -69,7 +69,7 @@ public class Device implements Comparable<Device>
     }
 
     final private SortedMap<ITransport, TransportState> _tpsAvailable =
-            new TreeMap<ITransport, TransportState>(Transports.PREFERENCE_COMPARATOR);
+            new TreeMap<>(Transports.PREFERENCE_COMPARATOR);
 
     Device(DID did)
     {
@@ -146,7 +146,7 @@ public class Device implements Comparable<Device>
         }
 
         // make a copy to avoid concurrent modification exception
-        return offline_(tp, new ArrayList<SIndex>(en._sidcsAvailable));
+        return offline_(tp, new ArrayList<>(en._sidcsAvailable));
     }
 
     private TransportState getOrCreate_(ITransport tp)

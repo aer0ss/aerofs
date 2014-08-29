@@ -124,7 +124,7 @@ public class ClientsResource
             List<Client> clientList = clientRepository.listAll();
 
             List<ClientResponseObject> clientResponseObjectList =
-                    new ArrayList<ClientResponseObject>(clientList.size());
+                    new ArrayList<>(clientList.size());
             for (Client client : clientList) {
                 clientResponseObjectList.add(new ClientResponseObject(
                         client.getClientId(),

@@ -41,7 +41,6 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -51,10 +50,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
-import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -108,13 +104,8 @@ public class TestBlockStorage extends AbstractBlockTest
     ResolvedPath mkpath(String path, final SOID soid)
     {
         List<String> elems = ImmutableList.copyOf(path.split("/"));
-        List<SOID> soids = Lists.newArrayList(Lists.transform(elems, new Function<String, SOID>() {
-            @Override
-            public SOID apply(@Nullable String s)
-            {
-                return new SOID(soid.sidx(), OID.generate());
-            }
-        }));
+        List<SOID> soids = Lists.newArrayList(Lists.transform(elems,
+                s -> new SOID(soid.sidx(), OID.generate())));
         soids.set(elems.size() - 1, soid);
         return new ResolvedPath(rootSID, soids, elems);
     }
@@ -131,35 +122,18 @@ public class TestBlockStorage extends AbstractBlockTest
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         String testTempDir = testTempDirFactory.getTestTempDir().getAbsolutePath();
         when(auxRoot.get()).thenReturn(testTempDir);
-        when(storagePolicy.useHistory()).thenAnswer(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                return useHistory;
-            }
-        });
+        when(storagePolicy.useHistory()).thenAnswer(invocation -> useHistory);
 
         // no encoding is performed by the mock backend
-        when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(new Answer<Object>()
-        {
-            @Override
-            public Object answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                Object[] args = invocation.getArguments();
-                return new EncoderWrapping((OutputStream)args[0], null);
-            }
+        when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            return new EncoderWrapping((OutputStream)args[0], null);
         });
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                Object[] args = invocation.getArguments();
-                ((AbstractEBSelfHandling)args[0]).handle_();
-                return null;
-            }
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            ((AbstractEBSelfHandling)args[0]).handle_();
+            return null;
         }).when(sched).schedule(any(IEvent.class), anyLong());
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
@@ -678,13 +652,9 @@ public class TestBlockStorage extends AbstractBlockTest
         String testPath = "foo/clean/deleteme";
         SOKID sokid = newSOKID();
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                listeners.add((ITransListener)invocation.getArguments()[0]);
-                return null;
-            }
+        doAnswer(invocation -> {
+            listeners.add((ITransListener)invocation.getArguments()[0]);
+            return null;
         }).when(t).addListener_(any(ITransListener.class));
 
         useHistory = false;
@@ -707,13 +677,9 @@ public class TestBlockStorage extends AbstractBlockTest
         String testPath = "foo/clean/replaceme";
         SOKID sokid = newSOKID();
 
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                listeners.add((ITransListener)invocation.getArguments()[0]);
-                return null;
-            }
+        doAnswer(invocation -> {
+            listeners.add((ITransListener)invocation.getArguments()[0]);
+            return null;
         }).when(t).addListener_(any(ITransListener.class));
 
         useHistory = false;
@@ -934,15 +900,9 @@ public class TestBlockStorage extends AbstractBlockTest
         bsdb.updateFileInfo(mkpath("foo/bar/baz"), info, t);
 
         final List<ITransListener> listeners = Lists.newArrayList();
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                listeners.add((ITransListener)invocation.getArguments()[0]);
-                return null;
-            }
+        doAnswer(invocation -> {
+            listeners.add((ITransListener)invocation.getArguments()[0]);
+            return null;
         }).when(t).addListener_(any(ITransListener.class));
 
         bs.deleteStore_(sid, sidx, sid, t);

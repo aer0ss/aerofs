@@ -150,24 +150,17 @@ public class TestHdGetActivities extends AbstractTest
         when(factSP.create()).thenReturn(sp);
         when(sp.signInRemote()).thenReturn(sp);
 
-        when(sp.getDeviceInfo(anyCollectionOf(ByteString.class))).thenAnswer(
-                new Answer<GetDeviceInfoReply>()
-                {
-                    @Override
-                    public GetDeviceInfoReply answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        Iterable<ByteString> dids = (Iterable<ByteString>) invocation.getArguments()[0];
+        when(sp.getDeviceInfo(anyCollectionOf(ByteString.class))).thenAnswer(invocation -> {
+            Iterable<ByteString> dids = (Iterable<ByteString>) invocation.getArguments()[0];
 
-                        Builder bdReply = GetDeviceInfoReply.newBuilder();
-                        if (dids != null) {
-                            for (@SuppressWarnings("unused") ByteString did : dids) {
-                                bdReply.addDeviceInfo(PBDeviceInfo.getDefaultInstance());
-                            }
-                        }
-                        return bdReply.build();
-                    }
-                });
+            Builder bdReply = GetDeviceInfoReply.newBuilder();
+            if (dids != null) {
+                for (@SuppressWarnings("unused") ByteString did : dids) {
+                    bdReply.addDeviceInfo(PBDeviceInfo.getDefaultInstance());
+                }
+            }
+            return bdReply.build();
+        });
     }
 
     @Test

@@ -71,7 +71,7 @@ public class AbstractBaseTest
             guess *= 2;
             if (guess <= 0) guess = Integer.MAX_VALUE;
         }
-        List<Thread> list = new ArrayList<Thread>(count);
+        List<Thread> list = new ArrayList<>(count);
         for (int i = 0; i < count; ++i) list.add(threads[i]);
         return list;
     }

@@ -131,7 +131,7 @@ public class Exceptions
         // Note (GS): This is not formally needed, it is just here as a safeguard against potential
         // programming mistakes. Feel free to lift this requirement in the future if it turns out
         // to be useful
-        Set<Type> intersection = new HashSet<Type>(_types.keySet());
+        Set<Type> intersection = new HashSet<>(_types.keySet());
         intersection.retainAll(types.keySet());
         if (!intersection.isEmpty()) {
             throw new IllegalArgumentException("Cannot register exception type twice: " +

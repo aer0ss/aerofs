@@ -142,7 +142,7 @@ public class ActivityLog extends DirectoryServiceAdapter implements IVersionCont
      * Hence the use of a thread local. See {@link com.aerofs.daemon.rest.handler.AbstractRestHdIMC}
      * for the actual usage pattern.
      */
-    private final static ThreadLocal<DID> _tlOrigin = new ThreadLocal<DID>();
+    private final static ThreadLocal<DID> _tlOrigin = new ThreadLocal<>();
 
     /**
      * When doing a modification on behalf of an REST API client we want to tag activity log entries
