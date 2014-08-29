@@ -21,6 +21,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -51,11 +52,12 @@ public class MetadataBuilder
     private final EntityTagUtil _etags;
     private final LocalACL _acl;
     private final ICollectorStateDatabase _csdb;
+    private final CfgAbsRoots _cfgAbsRoots;
 
     @Inject
     public MetadataBuilder(DirectoryService ds, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
             IStores stores, MimeTypeDetector detector, EntityTagUtil etags, LocalACL acl,
-            ICollectorStateDatabase csdb)
+            ICollectorStateDatabase csdb, CfgAbsRoots cfgAbsRoots)
     {
         _ds = ds;
         _stores = stores;
@@ -65,6 +67,7 @@ public class MetadataBuilder
         _etags = etags;
         _acl = acl;
         _csdb = csdb;
+        _cfgAbsRoots = cfgAbsRoots;
     }
 
     public RestObject object(SOID soid) throws ExNotFound
@@ -136,12 +139,31 @@ public class MetadataBuilder
                 : file(oa, object, parent, path);
     }
 
+    /**
+     * For a given root - which may be a shared folder or the user's root store,
+     * get a reasonable human-readable name.
+     *
+     * If the object given is the root store, the name is assumed to be AeroFS.
+     *
+     * If the object given is the root of an external folder, we look it up from the db.
+     *
+     * NOTE this returns the folder name of the external folder on _this_ client only. There
+     * is no "global" name for an external folder, really.
+     */
+    private String getRootFolderName(OA oa) throws SQLException
+    {
+        ResolvedPath resolvedPath = _ds.resolve_(oa);
+        String absPath = _cfgAbsRoots.getNullable(resolvedPath.sid());
+
+        return (resolvedPath.sid().isUserRoot()) ?
+                "AeroFS" : new java.io.File(absPath).getName();
+    }
+
     private Folder folder(OA oa, String object, String parent, @Nullable ParentPath path,
-            ChildrenList children)
+            ChildrenList children) throws SQLException
     {
         OID oid = oa.soid().oid();
-        // TODO: handle external roots
-        String name = oid.isRoot() ? "AeroFS" : oa.name();
+        String name = oid.isRoot() ? getRootFolderName(oa) : oa.name();
         String sid = oa.isAnchor() ? SID.anchorOID2storeSID(oid).toStringFormal() : null;
         return new Folder(object, name, parent, path, sid, children);
     }

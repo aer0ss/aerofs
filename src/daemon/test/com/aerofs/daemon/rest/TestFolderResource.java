@@ -123,6 +123,25 @@ public class TestFolderResource extends AbstractRestTest
         .when().get(RESOURCE, sid.toStringFormal());
     }
 
+    // TODO: add similar test for external root
+    @Test
+    public void shouldGetMetadataForStore() throws Exception
+    {
+        mds.root().anchor("a0").file("f1");
+
+        SID sid = mds.root().getPath().sid();
+        String oid = sid.toStringFormal() + OID.ROOT.toStringFormal();
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(oid))
+                .body("name", equalTo("AeroFS"))
+                .body("is_shared", equalTo(false))
+                .body("parent", equalTo(oid))
+        .when().get(RESOURCE, sid.toStringFormal()).prettyPrint();
+    }
+
     @Test
     public void shouldGetMetadataWithOnDemandFields() throws Exception
     {
