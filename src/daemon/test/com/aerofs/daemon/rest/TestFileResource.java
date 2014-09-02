@@ -26,14 +26,11 @@ import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -68,9 +65,14 @@ public class TestFileResource extends AbstractRestTest
         super(useProxy);
     }
 
-    void mockContent(String path, final byte[] content) throws Exception
+    void mockFile(String path, final byte[] content) throws Exception
     {
         mds.root().file(path).caMaster(content.length, FILE_MTIME);
+        mockContent(path, content);
+    }
+
+    void mockContent(String path, final byte[] content) throws Exception
+    {
         IPhysicalFile pf = mock(IPhysicalFile.class);
         when(pf.exists_()).thenReturn(true);
         when(pf.newInputStream_()).thenAnswer(invocation -> new ByteArrayInputStream(content));
@@ -82,10 +84,12 @@ public class TestFileResource extends AbstractRestTest
     @Before
     public void mockFile() throws Exception
     {
-        mockContent("f1", FILE_CONTENT);
-        mockContent("f1.txt", FILE_CONTENT);
+        mockFile("f1", FILE_CONTENT);
+        mockFile("f1.txt", FILE_CONTENT);
         mds.root().dir("expelled", true).file("f2");
         mds.root().file("f3", 0);
+        mds.root().dir("d0").anchor("a0").file("f0").caMaster(FILE_CONTENT.length, FILE_MTIME);
+        mockContent("d0/a0/f0", FILE_CONTENT);
     }
 
     @Test
@@ -317,6 +321,51 @@ public class TestFileResource extends AbstractRestTest
                 .body().asByteArray();
 
         Assert.assertArrayEquals(FILE_CONTENT, content);
+    }
+
+    @Test
+    public void shouldGetContentThroughLinkSharing() throws Exception
+    {
+        when(acl.check_(eq(user), any(SIndex.class), any(Permissions.class))).thenReturn(true);
+
+        byte[] content =
+        givenLinkShareReadAccessTo(object("d0"))
+                .header("Accept", "*/*")
+        .expect()
+                .statusCode(200)
+                .contentType("application/octet-stream")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
+                .header("Etag", CURRENT_ETAG)
+        .when().log().everything().get(RESOURCE + "/content", object("d0/a0/f0").toStringFormal())
+                .body().asByteArray();
+
+        Assert.assertArrayEquals(FILE_CONTENT, content);
+    }
+
+    @Test
+    public void shouldReturn403WhenGetContentWithUnrelatedLinkSharingToken() throws Exception
+    {
+        when(acl.check_(eq(user), any(SIndex.class), any(Permissions.class))).thenReturn(true);
+
+        givenLinkShareReadAccessTo(object("f1"))
+                .header("Accept", "*/*")
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+                .body("message", equalTo("Token lacks required scope"))
+        .when().log().everything().get(RESOURCE + "/content", object("d0/a0/f0").toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn403WhenGetContentThroughLinkWithoutManagePermission() throws Exception
+    {
+        givenLinkShareReadAccessTo(object("d0"))
+                .header("Accept", "*/*")
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+                .body("message", equalTo("Token lacks required scope"))
+        .when().get(RESOURCE + "/content", object("d0/a0/f0").toStringFormal());
     }
 
     @Test
