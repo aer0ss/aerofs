@@ -196,7 +196,7 @@ public class RestObjectResolver
         OID anchor = SID.storeSID2anchorOID(sid);
         for (SIndex sidxParent : _stores.getParents_(sidx)) {
             OA oa = _ds.getOANullable_(new SOID(sidxParent, anchor));
-            if (oa != null && !oa.isExpelled() && _acl.check_(user, sidx, VIEWER)) {
+            if (oa != null && !oa.isExpelled() && _acl.check_(user, sidxParent, VIEWER)) {
                 return oa;
             }
         }
@@ -223,6 +223,11 @@ public class RestObjectResolver
             sidx = anchor.soid().sidx();
         }
         l.debug("resolve {} for {} -> {}", oa.soid(), user, p);
+
+        // sanity check
+        SID sid = p.sid();
+        checkState(!sid.isUserRoot() || sid.equals(SID.rootSID(user)), "%s %s", sid, user);
+
         return p;
     }
 }

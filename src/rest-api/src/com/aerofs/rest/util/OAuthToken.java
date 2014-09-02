@@ -14,6 +14,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
 import com.aerofs.oauth.Scope;
 import com.aerofs.oauth.VerifyTokenResponse;
+import com.google.common.base.Joiner;
 
 import java.util.Collections;
 import java.util.Map;
@@ -69,5 +70,11 @@ public class OAuthToken implements IUserAuthToken
     public boolean hasUnrestrictedPermission(Scope scope)
     {
         return !Scope.isQualifiable(scope) || Collections.emptySet().equals(scopes.get(scope));
+    }
+
+    @Override
+    public String toString()
+    {
+        return "{" + Joiner.on(',').join(issuer, user, did, scopes) + "}";
     }
 }

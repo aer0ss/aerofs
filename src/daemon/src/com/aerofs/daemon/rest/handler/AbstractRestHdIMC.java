@@ -125,6 +125,8 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
     {
         ResolvedPath path = _access.resolve(oa, token.user());
 
+        l.debug("check {} {} {} {}", oa.soid(), token, scope, path);
+
         if (hasAccessToFile(token, scope, oa, path)) return path;
 
         throw new WebApplicationException(Response
