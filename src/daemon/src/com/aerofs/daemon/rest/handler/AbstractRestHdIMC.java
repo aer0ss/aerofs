@@ -34,6 +34,7 @@ import com.aerofs.rest.util.OAuthToken;
 import com.google.inject.Inject;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.sql.SQLException;
@@ -128,6 +129,7 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
 
         throw new WebApplicationException(Response
                 .status(Status.FORBIDDEN)
+                .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(new Error(Type.FORBIDDEN, "Token lacks required scope"))
                 .build());
     }
