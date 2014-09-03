@@ -19,12 +19,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class ObjectMover
 {
-    private final DirectoryService _ds;
-    private final VersionUpdater _vu;
-    private final Expulsion _expulsion;
+    private DirectoryService _ds;
+    private VersionUpdater _vu;
+    private Expulsion _expulsion;
 
     @Inject
-    public ObjectMover(VersionUpdater vu, DirectoryService ds, Expulsion expulsion)
+    public void inject_(VersionUpdater vu, DirectoryService ds, Expulsion expulsion)
     {
         _vu = vu;
         _ds = ds;

@@ -4,6 +4,8 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
+import com.aerofs.daemon.core.protocol.MetaUpdater;
+import com.aerofs.daemon.core.protocol.MetaUpdater.CausalityResult;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -26,7 +28,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 
-import static com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -54,7 +55,7 @@ public class Aliasing
     private DirectoryService _ds;
     private NativeVersionControl _nvc;
     private VersionUpdater _vu;
-    private ReceiveAndApplyUpdate _ru;
+    private MetaUpdater _mu;
     private AliasingMover _almv;
     private MapAlias2Target _a2t;
     private TransManager _tm;
@@ -62,13 +63,13 @@ public class Aliasing
 
     @Inject
     public void inject_(DirectoryService ds, NativeVersionControl nvc, TransManager tm,
-            VersionUpdater vu, ReceiveAndApplyUpdate ru, AliasingMover almv, MapAlias2Target a2t,
+            VersionUpdater vu, MetaUpdater mu, AliasingMover almv, MapAlias2Target a2t,
             CfgLocalDID localDID)
     {
         _ds = ds;
         _nvc = nvc;
         _vu = vu;
-        _ru = ru;
+        _mu = mu;
         _almv = almv;
         _a2t = a2t;
         _tm = tm;
@@ -338,9 +339,9 @@ public class Aliasing
         // Although CausalityResult is only used in applyUpdateMetaAndContent_()
         // when no name conflict is detected it's necessary to compute it before
         // applyMeta_().
-        CausalityResult cr = _ru.computeCausalityForMeta_(target, vRemoteTargetMeta, metaDiff);
+        CausalityResult cr = _mu.computeCausality_(target, vRemoteTargetMeta, metaDiff);
 
-        boolean oidsAliasedOnNameConflict = _ru.applyMeta_(target, meta, oidParent,
+        boolean oidsAliasedOnNameConflict = _mu.applyMeta_(target, meta, oidParent,
                 false, // Since this is a new object to be received, wasPresent is false.
                 metaDiff, t,
                 alias, // noNewVersion
@@ -352,7 +353,7 @@ public class Aliasing
         // Don't applyUpdate() if a name conflict was detected and
         // performAliasingOnLocallyAvailableObjects_() was invoked.
         if (!oidsAliasedOnNameConflict) {
-            _ru.applyUpdateMetaAndContent_(k, vRemoteTargetMeta, cr, t);
+            _mu.updateVersion_(k, vRemoteTargetMeta, cr, t);
         }
         l.debug("Done receiving new target object");
     }

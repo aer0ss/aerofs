@@ -16,36 +16,38 @@ import com.aerofs.daemon.core.protocol.GetComponentRequest;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * This class contains a NewUpdates object with its supporting mock objects
  */
 public class GetComponentRequestWithMocks extends AbstractClassUnderTestWithMocks
 {
-    public @Mock IEmigrantTargetSIDLister _emc;
-    public @Mock PrefixVersionControl _pvc;
-    public @Mock NativeVersionControl _nvc;
-    public @Mock MapAlias2Target _a2t;
-    public @Mock DirectoryService _ds;
-    public @Mock IPhysicalStorage _ps;
-    public @Mock OutboundEventLogger _oel;
-    public @Mock TransManager _tm;
+    public final IEmigrantTargetSIDLister _emc = mock(IEmigrantTargetSIDLister.class);
+    public final PrefixVersionControl _pvc = mock(PrefixVersionControl.class);
+    public final NativeVersionControl _nvc = mock(NativeVersionControl.class);
+    public final MapAlias2Target _a2t = mock(MapAlias2Target.class);
+    public final DirectoryService _ds = mock(DirectoryService.class);
+    public final IPhysicalStorage _ps = mock(IPhysicalStorage.class);
+    public final OutboundEventLogger _oel = mock(OutboundEventLogger.class);
+    public final TransManager _tm = mock(TransManager.class);
 
     // For GCCContentSender
-    public @Mock OutgoingStreams _oss;
-    public @Mock UploadState _ulstate;
-    public @Mock TokenManager _tokenManager;
+    public final OutgoingStreams _oss = mock(OutgoingStreams.class);
+    public final UploadState _ulstate = mock(UploadState.class);
+    public final TokenManager _tokenManager = mock(TokenManager.class);
 
-    public @InjectMocks ComponentContentSender _gccContentSender;
-    public @InjectMocks GetComponentRequest _gcc;
+    public final ComponentContentSender _gccContentSender =
+            new ComponentContentSender(_ulstate, _oss, _trl, _ps, _nvc, _m, _ds, _tokenManager);
+    public final GetComponentRequest _gcc = new GetComponentRequest();
 
     public GetComponentRequestWithMocks()
     {
-        // Mockito doesn't inject an injected object (_gccContentSender) into another (_gcc).
-        // So we do it manually.
+        when(_tm.begin_()).thenAnswer(invocation -> mock(Trans.class));
         _gcc.inject_(_trl, _lacl, _ps, _oel, _ds, _rpc, _pvc, _nvc, _emc, _gccContentSender, _a2t,
                 _sidx2sid, _sid2sidx, _cfgLocalUser, _tm);
     }

@@ -109,8 +109,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
 import javax.ws.rs.core.EntityTag;
@@ -405,7 +403,9 @@ public class AbstractRestTest extends AbstractTest
         mds = new MockDS(rootSID, ds, sm, sm, ss);
         mds.root();  // setup sid<->sidx mapping for root..
 
-        om = spy(new ObjectMover(vu, ds, expulsion));
+        om = new ObjectMover();
+        om.inject_(vu, ds, expulsion);
+        om = spy(om);
 
         when(ps.newPrefix_(any(SOCKID.class), anyString())).thenReturn(pf);
 

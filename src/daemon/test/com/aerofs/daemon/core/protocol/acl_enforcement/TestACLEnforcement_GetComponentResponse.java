@@ -96,16 +96,11 @@ public class TestACLEnforcement_GetComponentResponse extends AbstractTest
                 .thenReturn(MetaDiff.NAME | MetaDiff.PARENT);
 
         // connect replier to the caller
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                PBCore pb = (PBCore)invocation.getArguments()[1];
-                caller._gcr.processResponse_(k.socid(), newDigestedMessage(replier.user(), pb),
-                        mock(IDownloadContext.class));
-                return null;
-            }
+        doAnswer(invocation -> {
+            PBCore pb = (PBCore)invocation.getArguments()[1];
+            caller._gcr.processResponse_(k.socid(), newDigestedMessage(replier.user(), pb),
+                    mock(IDownloadContext.class));
+            return null;
         }).when(replier._trl).sendUnicast_(any(Endpoint.class), any(PBCore.class));
 
         run(k);
@@ -145,16 +140,11 @@ public class TestACLEnforcement_GetComponentResponse extends AbstractTest
         when(replier._ds.getOA_(k.soid())).thenReturn(oa);
 
         // connect replier to the caller
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                ByteArrayOutputStream os = (ByteArrayOutputStream)invocation.getArguments()[3];
-                caller._gcr.processResponse_(k.socid(), newDigestedMessage(replier.user(), os),
-                        mock(IDownloadContext.class));
-                return null;
-            }
+        doAnswer(invocation -> {
+            ByteArrayOutputStream os = (ByteArrayOutputStream)invocation.getArguments()[3];
+            caller._gcr.processResponse_(k.socid(), newDigestedMessage(replier.user(), os),
+                    mock(IDownloadContext.class));
+            return null;
         }).when(replier._trl).sendUnicast_(any(Endpoint.class), anyString(), anyInt(),
                 any(ByteArrayOutputStream.class));
 

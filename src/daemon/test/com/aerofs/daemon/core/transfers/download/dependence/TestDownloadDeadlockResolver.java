@@ -8,12 +8,12 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
+import com.aerofs.daemon.core.protocol.MetaUpdater;
+import com.aerofs.daemon.core.protocol.MetaUpdater.CausalityResult;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.protocol.MetaDiff;
-import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
-import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -44,7 +44,7 @@ public class TestDownloadDeadlockResolver extends AbstractTest
     @Mock IDownloadContext cxt;
     @Mock private DirectoryService _ds;
     @Mock private TransManager _tm;
-    @Mock private ReceiveAndApplyUpdate _ru;
+    @Mock private MetaUpdater _mu;
     @Mock MetaDiff _mdiff;
 
     @InjectMocks private DownloadDeadlockResolver _ddr;
@@ -79,7 +79,7 @@ public class TestDownloadDeadlockResolver extends AbstractTest
 
         when(_tm.begin_()).thenReturn(_t);
 
-        when(_ru.computeCausalityForMeta_(any(SOID.class), any(Version.class), anyInt()))
+        when(_mu.computeCausality_(any(SOID.class), any(Version.class), anyInt()))
                 .thenReturn(mock(CausalityResult.class));
 
         // Because it is uninteresting to use a real MetaDiff object in these tests, and to use a
@@ -133,7 +133,7 @@ public class TestDownloadDeadlockResolver extends AbstractTest
     private void verifyThatNameConflictIsResolvedByRenaming()
             throws Exception
     {
-        verify(_ru).resolveNameConflictByRenaming_(eq(_socidRemAncestor.soid()),
+        verify(_mu).resolveNameConflictByRenaming_(eq(_socidRemAncestor.soid()),
                 eq(_socidLocalChild.soid()), anyBoolean(), eq(_oidCommonParent), any(Path.class),
                 any(Version.class), any(PBMeta.class), anyInt(), any(SOID.class),
                 any(CausalityResult.class), eq(cxt), eq(_t));

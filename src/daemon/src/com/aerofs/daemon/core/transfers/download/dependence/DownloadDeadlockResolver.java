@@ -6,12 +6,12 @@ package com.aerofs.daemon.core.transfers.download.dependence;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.daemon.core.protocol.MetaUpdater;
+import com.aerofs.daemon.core.protocol.MetaUpdater.CausalityResult;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.protocol.MetaDiff;
-import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
-import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -40,16 +40,16 @@ public class DownloadDeadlockResolver
 
     private final TransManager _tm;
     private final DirectoryService _ds;
-    private final ReceiveAndApplyUpdate _ru;
+    private final MetaUpdater _mu;
     private final MetaDiff _mdiff;
 
     @Inject
-    public DownloadDeadlockResolver(DirectoryService ds, TransManager tm, ReceiveAndApplyUpdate ru,
+    public DownloadDeadlockResolver(DirectoryService ds, TransManager tm, MetaUpdater mu,
             MetaDiff mdiff)
     {
         _ds = ds;
         _tm = tm;
-        _ru = ru;
+        _mu = mu;
         _mdiff = mdiff;
     }
 
@@ -245,18 +245,15 @@ public class DownloadDeadlockResolver
 
         Trans t = _tm.begin_();
         try {
-            CausalityResult cr = _ru.computeCausalityForMeta_(socidRemote.soid(), vRemote,
+            CausalityResult cr = _mu.computeCausality_(socidRemote.soid(), vRemote,
                     metaDiff);
             assert cr != null : socidRemote + " " + vRemote + " " + metaDiff + " " + cycle;
-            _ru.resolveNameConflictByRenaming_(socidRemote.soid(),
+            _mu.resolveNameConflictByRenaming_(socidRemote.soid(),
                     socidLocal.soid(), wasPresent, dependency._parent, pParent, vRemote,
                     dependency._meta, metaDiff, dependency._soidMsg, cr, cxt, t);
-            _ru.applyUpdateMetaAndContent_(sockidRemote, vRemote, cr, t);
+            _mu.updateVersion_(sockidRemote, vRemote, cr, t);
             t.commit_();
-        } catch (IOException e) {
-            // Assert false as we want to know when exceptions happen in the DeadlockResolver
-            assert false : Util.e(e) + " " + cycle;
-        } catch (ExNotFound e) {
+        } catch (IOException | ExNotFound e) {
             // Assert false as we want to know when exceptions happen in the DeadlockResolver
             assert false : Util.e(e) + " " + cycle;
         } finally {

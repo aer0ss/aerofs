@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.transfers.download;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge;
@@ -264,7 +265,11 @@ class Download
     {
         boolean ok = false;
         DigestedMessage msg = remoteCall_(did);
-        assert did.equals(msg.did()) : did + " " + msg.did();
+        if (!did.equals(msg.did())) {
+            l.error("did mismatch {} {}", did, msg.did());
+            throw new ExProcessReplyFailed(did,
+                    new ExProtocolError("did mismatch " + did + " " + msg.did()));
+        }
 
         try {
             assert _cxt.did == null || did.equals(_cxt.did) : _cxt + " " + msg;

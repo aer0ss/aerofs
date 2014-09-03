@@ -1,13 +1,8 @@
 package com.aerofs.daemon.core.protocol;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Set;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.AntiEntropy;
@@ -15,6 +10,7 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -23,19 +19,22 @@ import com.aerofs.daemon.lib.DelayedScheduler;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCKID;
+import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBNewUpdates;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.proto.Core.PBCore.Type;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 

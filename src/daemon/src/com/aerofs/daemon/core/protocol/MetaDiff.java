@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Core.PBMeta;
 import com.google.inject.Inject;
