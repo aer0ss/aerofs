@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.DBUtil;
@@ -68,17 +67,12 @@ public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation()
-        {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                clearImmigrantKMLs(s, _dbcw.getConnection());
-                clearNativeKMLs(s, _dbcw.getConnection());
-                updateMaxTicks(s);
-                clearCollectorQueue(s);
-                clearPulledDevices(s);
-            }
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            clearImmigrantKMLs(s, _dbcw.getConnection());
+            clearNativeKMLs(s, _dbcw.getConnection());
+            updateMaxTicks(s);
+            clearCollectorQueue(s);
+            clearPulledDevices(s);
         });
     }
 
@@ -210,11 +204,8 @@ public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
         {
             psGet.setInt(1, sidx);
             psGet.setBytes(2, did);
-            ResultSet rs = psGet.executeQuery();
-            try {
+            try (ResultSet rs = psGet.executeQuery()) {
                 return rs.next() ? rs.getLong(1) : 0;
-            } finally {
-                rs.close();
             }
         }
     }

@@ -5,14 +5,10 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.phy.linked.db.LinkedStorageSchema;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.dbcw.IDBCW;
-
-import java.sql.SQLException;
-import java.sql.Statement;
 
 public class DPUTAddPhysicalStagingArea implements IDaemonPostUpdateTask
 {
@@ -28,12 +24,7 @@ public class DPUTAddPhysicalStagingArea implements IDaemonPostUpdateTask
     {
         if (Cfg.storageType() != StorageType.LINKED) return;
 
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                LinkedStorageSchema.createPhysicalStagingAreaTable_(s, _dbcw);
-            }
-        });
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw,
+                s -> LinkedStorageSchema.createPhysicalStagingAreaTable_(s, _dbcw));
     }
 }

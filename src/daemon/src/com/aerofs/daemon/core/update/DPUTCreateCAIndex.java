@@ -4,13 +4,9 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
-
-import java.sql.SQLException;
-import java.sql.Statement;
 
 public class DPUTCreateCAIndex implements IDaemonPostUpdateTask
 {
@@ -24,12 +20,6 @@ public class DPUTCreateCAIndex implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                CoreSchema.createCAIndex(s);
-            }
-        });
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, CoreSchema::createCAIndex);
     }
 }

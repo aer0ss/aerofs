@@ -4,12 +4,8 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
-
-import java.sql.SQLException;
-import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.T_SC;
 
@@ -29,14 +25,10 @@ public class DPUTFixStoreContributors implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                // clean table to avoid constraint violation when inserting
-                s.executeUpdate("delete from " + T_SC);
-                DPUTAddContributorsTable.fillContributorsTable(s, _dbcw);
-            }
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            // clean table to avoid constraint violation when inserting
+            s.executeUpdate("delete from " + T_SC);
+            DPUTAddContributorsTable.fillContributorsTable(s, _dbcw);
         });
     }
 }

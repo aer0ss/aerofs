@@ -8,7 +8,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.DBUtil;
@@ -21,7 +20,6 @@ import org.slf4j.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Set;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
@@ -39,45 +37,41 @@ public class DPUTCreateLeaveQueueTable implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                CoreSchema.createUpdateQueueTable(s, _dbcw);
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            CoreSchema.createUpdateQueueTable(s, _dbcw);
 
-                ResultSet rs = s.executeQuery(DBUtil.selectWhere(T_OA,
-                        C_OA_TYPE + "=" + Type.ANCHOR.ordinal(),
-                        C_OA_SIDX, C_OA_OID));
+            ResultSet rs = s.executeQuery(DBUtil.selectWhere(T_OA,
+                    C_OA_TYPE + "=" + Type.ANCHOR.ordinal(),
+                    C_OA_SIDX, C_OA_OID));
 
-                /**
-                 * Theoretically we do not allow nested stores however the user may move anchor
-                 * around, effectively achieving some nested stores and leaving dead anchors in the
-                 * db.
-                 *
-                 * It would be very bad if we ended up leaving a store just because its anchor was
-                 * migrated so we keep track of all anchors, live and dead, and only leave stores
-                 * for which we have found a dead anchor but no live one.
-                 */
-                Set<OID> deletedAnchors = Sets.newHashSet();
-                Set<OID> liveAnchors = Sets.newHashSet();
-                try {
-                    while (rs.next()) {
-                        SOID soid = new SOID(new SIndex(rs.getInt(1)), new OID(rs.getBytes(2)));
-                        if (isDeleted_(soid)) {
-                            l.info("dead anchor " + soid);
-                            deletedAnchors.add(soid.oid());
-                        } else {
-                            l.info("live anchor " + soid);
-                            liveAnchors.add(soid.oid());
-                        }
+            /**
+             * Theoretically we do not allow nested stores however the user may move anchor
+             * around, effectively achieving some nested stores and leaving dead anchors in the
+             * db.
+             *
+             * It would be very bad if we ended up leaving a store just because its anchor was
+             * migrated so we keep track of all anchors, live and dead, and only leave stores
+             * for which we have found a dead anchor but no live one.
+             */
+            Set<OID> deletedAnchors = Sets.newHashSet();
+            Set<OID> liveAnchors = Sets.newHashSet();
+            try {
+                while (rs.next()) {
+                    SOID soid = new SOID(new SIndex(rs.getInt(1)), new OID(rs.getBytes(2)));
+                    if (isDeleted_(soid)) {
+                        l.info("dead anchor " + soid);
+                        deletedAnchors.add(soid.oid());
+                    } else {
+                        l.info("live anchor " + soid);
+                        liveAnchors.add(soid.oid());
                     }
-                } finally {
-                    rs.close();
                 }
+            } finally {
+                rs.close();
+            }
 
-                for (OID oid : deletedAnchors) {
-                    if (!liveAnchors.contains(oid)) addLeaveCommand_(SID.anchorOID2storeSID(oid));
-                }
+            for (OID oid : deletedAnchors) {
+                if (!liveAnchors.contains(oid)) addLeaveCommand_(SID.anchorOID2storeSID(oid));
             }
         });
     }
@@ -106,11 +100,8 @@ public class DPUTCreateLeaveQueueTable implements IDaemonPostUpdateTask
                 DBUtil.selectWhere(T_OA, C_OA_SIDX + "=? and " + C_OA_OID + "=?", C_OA_PARENT));
         ps.setInt(1, sidx.getInt());
         ps.setBytes(2, oid.getBytes());
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             return rs.next() ? new OID(rs.getBytes(1)) : null;
-        } finally {
-            rs.close();
         }
     }
 }

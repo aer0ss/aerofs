@@ -4,13 +4,11 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import java.sql.SQLException;
-import java.sql.Statement;
 
 final class DPUTCreateActivityLogTables implements IDaemonPostUpdateTask
 {
@@ -24,12 +22,7 @@ final class DPUTCreateActivityLogTables implements IDaemonPostUpdateTask
     @Override
     public void run() throws SQLException
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                CoreSchema.createActivityLogTables(s, _dbcw);
-            }
-        });
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw,
+                s -> CoreSchema.createActivityLogTables(s, _dbcw));
     }
 }

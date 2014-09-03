@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.LinkedPath;
 import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.ISIDDatabase;
@@ -117,29 +116,23 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                if (_osutil.getOSFamily() == OSFamily.OSX
-                        && Cfg.storageType() == StorageType.LINKED) {
-                    Counters c = new Counters();
-                    renormalize(s, c);
-                    newMetric("dput.osx.renormalize")
-                            .addData("counters", c)
-                            .sendAsync();
-                }
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            if (_osutil.getOSFamily() == OSFamily.OSX
+                    && Cfg.storageType() == StorageType.LINKED) {
+                Counters c = new Counters();
+                renormalize(s, c);
+                newMetric("dput.osx.renormalize")
+                        .addData("counters", c)
+                        .sendAsync();
             }
         });
     }
 
     private void renormalize(Statement s, Counters c) throws SQLException
     {
-        ResultSet rs = s.executeQuery(DBUtil.selectWhere(T_OA,
-                C_OA_FLAGS + "=0",
-                C_OA_SIDX, C_OA_OID, C_OA_NAME));
 
-        try {
+        try (ResultSet rs = s.executeQuery(
+                DBUtil.selectWhere(T_OA, C_OA_FLAGS + "=0", C_OA_SIDX, C_OA_OID, C_OA_NAME))) {
             while (rs.next()) {
                 SOID soid = new SOID(new SIndex(rs.getInt(1)), new OID(rs.getBytes(2)));
                 String name = rs.getString(3);
@@ -151,8 +144,6 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
                     }
                 }
             }
-        } finally {
-            rs.close();
         }
     }
 

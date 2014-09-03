@@ -4,14 +4,11 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.EnumSet;
 
 import static com.aerofs.daemon.core.phy.block.BlockStorageSchema.*;
@@ -42,15 +39,8 @@ public class DPUTFixBlockHistory implements IDaemonPostUpdateTask
         // this fix is only required for BlockStorage derivatives, i.e. LOCAL and S3 at this time
         if (!EnumSet.of(StorageType.LOCAL, StorageType.S3).contains(Cfg.storageType())) return;
 
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                // dir id -1 is NOT_FOUND and -2 is ROOT, use -3 as a temporary storage
-                s.executeUpdate("update " + T_DirHist
-                        + " set " + C_DirHist_Parent + "=-3"
-                        + " where " + C_DirHist_Parent + "=-2");
-            }
-        });
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> s.executeUpdate("update " + T_DirHist
+                + " set " + C_DirHist_Parent + "=-3"
+                + " where " + C_DirHist_Parent + "=-2"));
     }
 }

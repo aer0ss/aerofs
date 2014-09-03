@@ -11,7 +11,6 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
@@ -90,15 +89,10 @@ public class DPUTMigrateDeadAnchorsAndEmigratedNames implements IDaemonPostUpdat
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation()
-        {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                updateAnchorOIDs(s);
-                updateUnknownAnchorOIDs(s);
-                updateDeletedObjectNames(s);
-            }
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            updateAnchorOIDs(s);
+            updateUnknownAnchorOIDs(s);
+            updateDeletedObjectNames(s);
         });
     }
 

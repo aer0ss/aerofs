@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
@@ -52,45 +51,38 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
     {
         // the NRO table is only present for LINKED storage
         if (Cfg.storageType() != StorageType.LINKED) return;
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                ResultSet rs = s.executeQuery(DBUtil.select(T_NRO,
-                        C_NRO_SIDX, C_NRO_OID, C_NRO_CONFLICT_OID));
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
 
-                Set<SOID> nros = Sets.newHashSet();
-                Set<SOID> conflicts = Sets.newHashSet();
+            Set<SOID> nros = Sets.newHashSet();
+            Set<SOID> conflicts = Sets.newHashSet();
 
-                try {
-                    while (rs.next()) {
-                        SIndex sidx = new SIndex(rs.getInt(1));
-                        OID nro = new OID(rs.getBytes(2));
-                        nros.add(new SOID(sidx, nro));
-                        byte[] conflict = rs.getBytes(3);
-                        if (conflict != null) conflicts.add(new SOID(sidx, new OID(conflict)));
-                    }
-                } finally {
-                    rs.close();
+            try (ResultSet rs = s.executeQuery(
+                    DBUtil.select(T_NRO, C_NRO_SIDX, C_NRO_OID, C_NRO_CONFLICT_OID))) {
+                while (rs.next()) {
+                    SIndex sidx = new SIndex(rs.getInt(1));
+                    OID nro = new OID(rs.getBytes(2));
+                    nros.add(new SOID(sidx, nro));
+                    byte[] conflict = rs.getBytes(3);
+                    if (conflict != null) conflicts.add(new SOID(sidx, new OID(conflict)));
                 }
+            }
 
-                int updatedNRO = updateOIDs(s, C_NRO_OID, nros);
-                int updatedConflict = updateOIDs(s, C_NRO_CONFLICT_OID, conflicts);
+            int updatedNRO = updateOIDs(s, C_NRO_OID, nros);
+            int updatedConflict = updateOIDs(s, C_NRO_CONFLICT_OID, conflicts);
 
-                // migration invariants do not hold on TS
-                // I'm reasonably sure the SIndex update would be a noop anyway
-                int updatedSIndex = L.isMultiuser() ? -1 : updateSIndex(s, nros);
+            // migration invariants do not hold on TS
+            // I'm reasonably sure the SIndex update would be a noop anyway
+            int updatedSIndex = L.isMultiuser() ? -1 : updateSIndex(s, nros);
 
-                if (!nros.isEmpty()) {
-                    l.info("{} {}", nros.size(), conflicts.size());
-                    newMetric("dput.aliasnro")
-                            .addData("nro", nros.size())
-                            .addData("conflicts", conflicts.size())
-                            .addData("updated-nro", updatedNRO)
-                            .addData("updated-conflicts", updatedConflict)
-                            .addData("updated-sidx", updatedSIndex)
-                            .sendAsync();
-                }
+            if (!nros.isEmpty()) {
+                l.info("{} {}", nros.size(), conflicts.size());
+                newMetric("dput.aliasnro")
+                        .addData("nro", nros.size())
+                        .addData("conflicts", conflicts.size())
+                        .addData("updated-nro", updatedNRO)
+                        .addData("updated-conflicts", updatedConflict)
+                        .addData("updated-sidx", updatedSIndex)
+                        .sendAsync();
             }
         });
     }
@@ -157,15 +149,12 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
 
     private Set<SIndex> stores(Statement s) throws SQLException
     {
-        ResultSet rs = s.executeQuery(DBUtil.select(T_STORE, C_STORE_SIDX));
-        try {
+        try (ResultSet rs = s.executeQuery(DBUtil.select(T_STORE, C_STORE_SIDX))) {
             Set<SIndex> r = Sets.newHashSet();
             while (rs.next()) {
                 r.add(new SIndex(rs.getInt(1)));
             }
             return r;
-        } finally {
-            rs.close();
         }
     }
 
@@ -177,24 +166,11 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
         for (SIndex sidx : stores) {
             ps.setInt(1, sidx.getInt());
             ps.setBytes(2, soid.oid().getBytes());
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 if (DBUtil.binaryCount(rs)) return sidx.getInt();
-            } finally {
-                rs.close();
             }
         }
         return -1;
-    }
-
-    private void removeNRO(Statement s, SOID soid) throws SQLException
-    {
-        l.info("remove {}", soid);
-        PreparedStatement ps = s.getConnection().prepareStatement(DBUtil.deleteWhere(T_NRO,
-                C_NRO_SIDX + "=? and " + C_NRO_OID + "=?"));
-        ps.setInt(1, soid.sidx().getInt());
-        ps.setBytes(2, soid.oid().getBytes());
-        ps.executeUpdate();
     }
 
     private void updateSIndex(Statement s, SOID soid, int newSIndex)

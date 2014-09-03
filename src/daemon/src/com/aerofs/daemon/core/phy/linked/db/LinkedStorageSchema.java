@@ -28,6 +28,13 @@ public class LinkedStorageSchema implements ISchema
     @Override
     public void create_(Statement s, IDBCW dbcw) throws SQLException
     {
+        createNROTable_(s, dbcw);
+        createPhysicalStagingAreaTable_(s, dbcw);
+    }
+
+    public static void createNROTable_(Statement s, IDBCW dbcw)
+            throws SQLException
+    {
         s.executeUpdate("create table " + T_NRO + "("
                 + C_NRO_SIDX + " integer not null,"
                 + C_NRO_OID + dbcw.uniqueIdType() + " not null,"
@@ -39,8 +46,6 @@ public class LinkedStorageSchema implements ISchema
         // which allow a new "winner" to be efficiently selected whenever the representable
         // object is deleted/renamed
         s.executeUpdate(DBUtil.createIndex(T_NRO, 0, C_NRO_SIDX, C_NRO_CONFLICT_OID));
-
-        createPhysicalStagingAreaTable_(s, dbcw);
     }
 
     public static void createPhysicalStagingAreaTable_(Statement s, IDBCW dbcw)

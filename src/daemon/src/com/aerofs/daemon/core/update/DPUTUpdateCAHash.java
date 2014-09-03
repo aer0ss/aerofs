@@ -5,12 +5,8 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.C;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
-
-import java.sql.SQLException;
-import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
@@ -33,14 +29,8 @@ public class DPUTUpdateCAHash implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                s.executeUpdate("update " + T_CA
-                        + " set " + C_CA_HASH + "=null"
-                        + " where " + C_CA_LENGTH + ">" + (4 * C.MB));
-            }
-        });
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> s.executeUpdate("update " + T_CA
+                + " set " + C_CA_HASH + "=null"
+                + " where " + C_CA_LENGTH + ">" + (4 * C.MB)));
     }
 }

@@ -1,13 +1,9 @@
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.T_PD;
-
-import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  * Early versions of {@link DPUTCleanupGhostKML} did not clear the table of pulled devices
@@ -30,12 +26,6 @@ public class DPUTRefreshBloomFilters implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                s.executeUpdate("delete from " + T_PD);
-            }
-        });
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> s.executeUpdate("delete from " + T_PD));
     }
 }

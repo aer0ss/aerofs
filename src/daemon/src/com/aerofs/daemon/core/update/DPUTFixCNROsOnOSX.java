@@ -9,7 +9,6 @@ import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.ISIDDatabase;
@@ -80,13 +79,7 @@ public class DPUTFixCNROsOnOSX implements IDaemonPostUpdateTask
     {
         if (Cfg.storageType() != StorageType.LINKED || !OSUtil.isOSX()) return;
 
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                fixCNROs(s);
-            }
-        });
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, this::fixCNROs);
     }
 
     private void fixCNROs(Statement s) throws SQLException

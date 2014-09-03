@@ -4,12 +4,8 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
-
-import java.sql.SQLException;
-import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.C_ACL_ROLE;
 import static com.aerofs.daemon.lib.db.CoreSchema.T_ACL;
@@ -33,14 +29,8 @@ public class DPUTUpdateACLFromDiscreteRolesToFlags implements IDaemonPostUpdateT
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                s.executeUpdate("update " + T_ACL
-                        + " set " + C_ACL_ROLE + "=3"
-                        + " where " + C_ACL_ROLE + "=2");
-            }
-        });
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> s.executeUpdate("update " + T_ACL
+                + " set " + C_ACL_ROLE + "=3"
+                + " where " + C_ACL_ROLE + "=2"));
     }
 }

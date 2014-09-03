@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
@@ -35,14 +34,10 @@ public class DPUTClearSyncStatusColumns implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                clearColumn(s, T_STORE, C_STORE_DIDS);
-                clearColumn(s, T_OA, C_OA_SYNC);
-                clearColumn(s, T_OA, C_OA_AG_SYNC);
-            }
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            clearColumn(s, T_STORE, C_STORE_DIDS);
+            clearColumn(s, T_OA, C_OA_SYNC);
+            clearColumn(s, T_OA, C_OA_AG_SYNC);
         });
     }
 

@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
@@ -36,14 +35,7 @@ public class DPUTMorphStoreTables implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation()
-        {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                morph_(s);
-            }
-        });
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, this::morph_);
     }
 
     private static class StoreRow {
@@ -69,8 +61,7 @@ public class DPUTMorphStoreTables implements IDaemonPostUpdateTask
     {
         List<StoreRow> srs = Lists.newArrayList();
 
-        ResultSet rs = s.executeQuery(DBUtil.select(T_STORE, C_STORE_SIDX, C_STORE_PARENT));
-        try {
+        try (ResultSet rs = s.executeQuery(DBUtil.select(T_STORE, C_STORE_SIDX, C_STORE_PARENT))) {
             while (rs.next()) {
                 StoreRow sr = new StoreRow();
                 sr._sidx = new SIndex(rs.getInt(1));
@@ -79,8 +70,6 @@ public class DPUTMorphStoreTables implements IDaemonPostUpdateTask
                 assert !rs.wasNull();
                 srs.add(sr);
             }
-        } finally {
-            rs.close();
         }
 
         return srs;

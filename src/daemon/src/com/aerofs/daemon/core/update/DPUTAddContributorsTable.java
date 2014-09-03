@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.DBUtil;
@@ -31,17 +30,13 @@ public class DPUTAddContributorsTable implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                CoreSchema.createStoreContributorsTable(s, _dbcw);
-                fillContributorsTable(s, _dbcw);
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            CoreSchema.createStoreContributorsTable(s, _dbcw);
+            fillContributorsTable(s, _dbcw);
 
-                // now that the contributors table is ready we can cleanup the old
-                // index whose only purpose was to speed up getAllVersionDIDs
-                deleteVersionIndex(s);
-            }
+            // now that the contributors table is ready we can cleanup the old
+            // index whose only purpose was to speed up getAllVersionDIDs
+            deleteVersionIndex(s);
         });
     }
 
@@ -69,11 +64,7 @@ public class DPUTAddContributorsTable implements IDaemonPostUpdateTask
     private static void fetchContributors(Statement s, Map<Integer, Set<DID>> contrib,
             String t, String c_sidx, String c_did) throws SQLException
     {
-        ResultSet rs = s.executeQuery("select distinct "
-                + c_sidx + "," + c_did
-                + " from " + t);
-
-        try {
+        try (ResultSet rs = s.executeQuery(DBUtil.select(t, "distinct " + c_sidx, c_did))) {
             while (rs.next()) {
                 int sidx = rs.getInt(1);
                 Set<DID> dids = contrib.get(sidx);
@@ -83,8 +74,6 @@ public class DPUTAddContributorsTable implements IDaemonPostUpdateTask
                 }
                 dids.add(new DID(rs.getBytes(2)));
             }
-        } finally {
-            rs.close();
         }
     }
 

@@ -9,7 +9,6 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.update.DPUTUtil;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IAuditDatabase;
 import com.aerofs.lib.db.DBUtil;
@@ -63,24 +62,20 @@ public class DLTCleanActivityLog extends DaemonLaunchTask
         try {
             final long lastReported = _auditdb.getLastReportedActivityRow_();
 
-            DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-                @Override
-                public void run_(Statement s) throws SQLException
-                {
-                    final long min = selectIdx_(s, "min(" + C_AL_IDX + ")");
-                    final long max = selectIdx_(s, "max(" + C_AL_IDX + ")");
+            DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+                final long min = selectIdx_(s, "min(" + C_AL_IDX + ")");
+                final long max = selectIdx_(s, "max(" + C_AL_IDX + ")");
 
-                    // derive highest activity index that may be cleaned given that:
-                    //    * we always preserve the last few entries
-                    //    * we should not clean unreported activities if audit is enabled
-                    final long maxCleanable = bound(max - CLEANUP_THRESHOLD, lastReported);
+                // derive highest activity index that may be cleaned given that:
+                //    * we always preserve the last few entries
+                //    * we should not clean unreported activities if audit is enabled
+                final long maxCleanable = bound(max - CLEANUP_THRESHOLD, lastReported);
 
-                    final long numCleanable = maxCleanable - min;
+                final long numCleanable = maxCleanable - min;
 
-                    if (maxCleanable > 0) {
-                        long chunkSize = Math.min(numCleanable, CLEANUP_CHUNK_SIZE);
-                        delete_(s, min + chunkSize, max);
-                    }
+                if (maxCleanable > 0) {
+                    long chunkSize = Math.min(numCleanable, CLEANUP_CHUNK_SIZE);
+                    delete_(s, min + chunkSize, max);
                 }
             });
         } catch (SQLException e) {
@@ -97,14 +92,11 @@ public class DLTCleanActivityLog extends DaemonLaunchTask
 
     private static long selectIdx_(Statement s, String expr) throws SQLException
     {
-        ResultSet rs = s.executeQuery(DBUtil.select(T_AL, expr));
-        try {
+        try (ResultSet rs = s.executeQuery(DBUtil.select(T_AL, expr))) {
             checkState(rs.next());
             long r = rs.getLong(1);
             checkState(!rs.next());
             return r;
-        } finally {
-            rs.close();
         }
     }
 

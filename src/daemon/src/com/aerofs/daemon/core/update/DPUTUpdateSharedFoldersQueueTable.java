@@ -5,12 +5,8 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.multiplicity.singleuser.ISharedFolderOp.SharedFolderOpType;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
-
-import java.sql.SQLException;
-import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.C_SPQ_NAME;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_SPQ_TYPE;
@@ -31,19 +27,15 @@ public class DPUTUpdateSharedFoldersQueueTable implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                if (!_dbcw.columnExists(T_SPQ, C_SPQ_TYPE)) {
-                    s.executeUpdate("alter table " + T_SPQ +
-                            " add column " + C_SPQ_TYPE + _dbcw.longType() + _dbcw.notNull()
-                            + "default " + SharedFolderOpType.LEAVE.getValue());
-                }
-                if (!_dbcw.columnExists(T_SPQ, C_SPQ_NAME)) {
-                    s.executeUpdate("alter table " + T_SPQ +
-                            " add column " + C_SPQ_NAME + _dbcw.nameType());
-                }
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            if (!_dbcw.columnExists(T_SPQ, C_SPQ_TYPE)) {
+                s.executeUpdate("alter table " + T_SPQ +
+                        " add column " + C_SPQ_TYPE + _dbcw.longType() + _dbcw.notNull()
+                        + "default " + SharedFolderOpType.LEAVE.getValue());
+            }
+            if (!_dbcw.columnExists(T_SPQ, C_SPQ_NAME)) {
+                s.executeUpdate("alter table " + T_SPQ +
+                        " add column " + C_SPQ_NAME + _dbcw.nameType());
             }
         });
     }

@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -60,25 +59,21 @@ public class DPUTRemoveBackupTicks implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                // NB: need this wrapping as the DPUT could be interrupted during vacuum
-                if (_dbcw.tableExists(T_BKUPT)) {
-                    moveBackupTicks_(s);
-                }
-
-                // vacuum cannot be called inside a transaction
-                s.execute("commit");
-
-                l.info("vacuum");
-                s.execute("vacuum");
-                l.info("vacuumed");
-
-                // sqlite jdbc needs to always be inside a transaction
-                s.execute("begin exclusive transaction");
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            // NB: need this wrapping as the DPUT could be interrupted during vacuum
+            if (_dbcw.tableExists(T_BKUPT)) {
+                moveBackupTicks_(s);
             }
+
+            // vacuum cannot be called inside a transaction
+            s.execute("commit");
+
+            l.info("vacuum");
+            s.execute("vacuum");
+            l.info("vacuumed");
+
+            // sqlite jdbc needs to always be inside a transaction
+            s.execute("begin exclusive transaction");
         });
     }
 

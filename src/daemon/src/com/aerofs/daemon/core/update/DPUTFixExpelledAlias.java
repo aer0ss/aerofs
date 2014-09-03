@@ -4,14 +4,11 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
@@ -36,37 +33,33 @@ public class DPUTFixExpelledAlias implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                // select all SOIDs which are:
-                // 1. "source" aka "alias" of an alias relation
-                // 2. present in the table of expelled objects
-                ResultSet rs = s.executeQuery("select "
-                        + C_ALIAS_SIDX + "," + C_ALIAS_SOURCE_OID
-                        + " from " + T_ALIAS
-                        + " inner join " + T_EX
-                        + " on " + C_ALIAS_SIDX + "=" + C_EX_SIDX
-                        + " and " + C_ALIAS_SOURCE_OID + "=" + C_EX_OID
-                        );
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            // select all SOIDs which are:
+            // 1. "source" aka "alias" of an alias relation
+            // 2. present in the table of expelled objects
+            ResultSet rs = s.executeQuery("select "
+                    + C_ALIAS_SIDX + "," + C_ALIAS_SOURCE_OID
+                    + " from " + T_ALIAS
+                    + " inner join " + T_EX
+                    + " on " + C_ALIAS_SIDX + "=" + C_EX_SIDX
+                    + " and " + C_ALIAS_SOURCE_OID + "=" + C_EX_OID
+                    );
 
-                // remove these SOIDs in batch from the table of expelled objects
-                PreparedStatement ps = s.getConnection().prepareStatement("delete from " + T_EX
-                        + " where " + C_EX_SIDX + "=? and " + C_EX_OID + "=?");
+            // remove these SOIDs in batch from the table of expelled objects
+            PreparedStatement ps = s.getConnection().prepareStatement("delete from " + T_EX
+                    + " where " + C_EX_SIDX + "=? and " + C_EX_OID + "=?");
 
-                try {
-                    while (rs.next()) {
-                        ps.setInt(1, rs.getInt(1));
-                        ps.setBytes(2, rs.getBytes(2));
-                        ps.addBatch();
-                    }
-                } finally {
-                    rs.close();
+            try {
+                while (rs.next()) {
+                    ps.setInt(1, rs.getInt(1));
+                    ps.setBytes(2, rs.getBytes(2));
+                    ps.addBatch();
                 }
-
-                ps.executeBatch();
+            } finally {
+                rs.close();
             }
+
+            ps.executeBatch();
         });
     }
 }

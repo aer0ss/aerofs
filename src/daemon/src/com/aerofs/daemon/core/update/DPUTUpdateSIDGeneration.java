@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
@@ -120,96 +119,88 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation()
-        {
-            @Override
-            public void run_(Statement s) throws SQLException
-            {
-                Connection c = _dbcw.getConnection();
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
+            Connection c = _dbcw.getConnection();
 
-                // check that anchors are not aliased
-                // NB: this is not strictly required by this task but after talking with Mark about
-                // the likelihood of this happening we decided to do it just in case...
-                Util.verify(countAnchors(T_ALIAS, C_ALIAS_SOURCE_OID) == 0);
-                Util.verify(countAnchors(T_ALIAS, C_ALIAS_TARGET_OID) == 0);
+            // check that anchors are not aliased
+            // NB: this is not strictly required by this task but after talking with Mark about
+            // the likelihood of this happening we decided to do it just in case...
+            Util.verify(countAnchors(T_ALIAS, C_ALIAS_SOURCE_OID) == 0);
+            Util.verify(countAnchors(T_ALIAS, C_ALIAS_TARGET_OID) == 0);
 
-                // Create backup SID table
-                s.executeUpdate("create table " + T_SID_BACKUP + "(" +
-                        C_SID_BACKUP_SIDX + " integer primary key, " +
-                        C_SID_BACKUP_SID + _dbcw.uniqueIdType() + " unique not null" +
-                        ")" + _dbcw.charSet());
+            // Create backup SID table
+            s.executeUpdate("create table " + T_SID_BACKUP + "(" +
+                    C_SID_BACKUP_SIDX + " integer primary key, " +
+                    C_SID_BACKUP_SID + _dbcw.uniqueIdType() + " unique not null" +
+                    ")" + _dbcw.charSet());
 
-                // fill backup SID table with content from SID table
-                s.executeUpdate("insert into " + T_SID_BACKUP + "(" +
-                        C_SID_BACKUP_SIDX + "," +
-                        C_SID_BACKUP_SID + ")" +
-                        " select " +
-                        C_SID_SIDX + "," +
-                        C_SID_SID +
-                        " from " +
-                        T_SID);
+            // fill backup SID table with content from SID table
+            s.executeUpdate("insert into " + T_SID_BACKUP + "(" +
+                    C_SID_BACKUP_SIDX + "," +
+                    C_SID_BACKUP_SID + ")" +
+                    " select " +
+                    C_SID_SIDX + "," +
+                    C_SID_SID +
+                    " from " +
+                    T_SID);
 
-                // Fix SIDs
-                // NB: the root SID obtained this way will already have the version nibble set to 3
-                byte[] rootSID = SID.rootSID(_cfgLocalUser.get()).getBytes();
+            // Fix SIDs
+            // NB: the root SID obtained this way will already have the version nibble set to 3
+            byte[] rootSID = SID.rootSID(_cfgLocalUser.get()).getBytes();
 
-                int rootCount = 0;
-                Map<SIndex, Map<OID, OID>> anchorFixes = Maps.newHashMap();
-                ResultSet rs = s.executeQuery("select " +
-                        C_SID_BACKUP_SIDX + "," + C_SID_BACKUP_SID + " from " + T_SID_BACKUP);
-                try {
-                    while (rs.next()) {
-                        int sidx = rs.getInt(1);
-                        byte[] sid = rs.getBytes(2);
+            int rootCount = 0;
+            Map<SIndex, Map<OID, OID>> anchorFixes = Maps.newHashMap();
+            try (ResultSet rs = s.executeQuery("select " +
+                    C_SID_BACKUP_SIDX + "," + C_SID_BACKUP_SID + " from " + T_SID_BACKUP)) {
+                while (rs.next()) {
+                    int sidx = rs.getInt(1);
+                    byte[] sid = rs.getBytes(2);
 
-                        // make a copy of sid and force version nibble to 3 to detect root sid
-                        byte[] fixedSID = Arrays.copyOf(sid, SID.LENGTH);
-                        SID.setVersionNibble(fixedSID, 3);
+                    // make a copy of sid and force version nibble to 3 to detect root sid
+                    byte[] fixedSID = Arrays.copyOf(sid, SID.LENGTH);
+                    SID.setVersionNibble(fixedSID, 3);
 
-                        if (Arrays.equals(fixedSID, rootSID)) {
-                            // fix root SID: set version nibble to 3
-                            l.info("store " + sidx + ":" + BaseUtil.hexEncode(sid) + " [root]");
-                            updateSID(sidx, fixedSID);
-                            ++rootCount;
-                        } else {
-                            l.info("store " + sidx + ":" + BaseUtil.hexEncode(sid));
+                    if (Arrays.equals(fixedSID, rootSID)) {
+                        // fix root SID: set version nibble to 3
+                        l.info("store " + sidx + ":" + BaseUtil.hexEncode(sid) + " [root]");
+                        updateSID(sidx, fixedSID);
+                        ++rootCount;
+                    } else {
+                        l.info("store " + sidx + ":" + BaseUtil.hexEncode(sid));
 
-                            // fix regular SID: set version nibble to 0
-                            SID.setVersionNibble(fixedSID, 0);
-                            updateSID(sidx, fixedSID);
+                        // fix regular SID: set version nibble to 0
+                        SID.setVersionNibble(fixedSID, 0);
+                        updateSID(sidx, fixedSID);
 
-                            // keep track of fixed anchors to update bloom filters
-                            for (SIndex parent : getStoresWithAnchor(sid)) {
-                                l.info("  anchor in " + parent);
-                                Map<OID, OID> m = anchorFixes.get(parent);
-                                if (m == null) {
-                                    m = Maps.newHashMap();
-                                    anchorFixes.put(parent, m);
-                                }
-                                m.put(OID.legacyValue(sid), new OID(fixedSID));
+                        // keep track of fixed anchors to update bloom filters
+                        for (SIndex parent : getStoresWithAnchor(sid)) {
+                            l.info("  anchor in " + parent);
+                            Map<OID, OID> m = anchorFixes.get(parent);
+                            if (m == null) {
+                                m = Maps.newHashMap();
+                                anchorFixes.put(parent, m);
                             }
-
-                            // fix anchor OID in all table that directly reference it
-                            updateOID(c, sid, fixedSID);
+                            m.put(OID.legacyValue(sid), new OID(fixedSID));
                         }
+
+                        // fix anchor OID in all table that directly reference it
+                        updateOID(c, sid, fixedSID);
                     }
-                } finally {
-                    rs.close();
                 }
+            }
 
-                // Make sure there was exactly one root store candidate. If the user updates AeroFS
-                // from a very old version, the core may not have created the root store yet.
-                // Therefore, we also allow zero root stores.
-                //
-                assert rootCount == 0 || rootCount == 1 : rootCount;
+            // Make sure there was exactly one root store candidate. If the user updates AeroFS
+            // from a very old version, the core may not have created the root store yet.
+            // Therefore, we also allow zero root stores.
+            //
+            assert rootCount == 0 || rootCount == 1 : rootCount;
 
-                // update bloom filters (sender/collector)
-                for (Entry<SIndex, Map<OID, OID>> store : anchorFixes.entrySet()) {
-                    l.info("update filters for " + store.getValue().size() + " anchors in store "
-                            + store.getKey());
-                    updateSenderFilters(s, c, store.getKey(), store.getValue());
-                    updateCollectorFilters(s, c, store.getKey(), store.getValue());
-                }
+            // update bloom filters (sender/collector)
+            for (Entry<SIndex, Map<OID, OID>> store : anchorFixes.entrySet()) {
+                l.info("update filters for " + store.getValue().size() + " anchors in store "
+                        + store.getKey());
+                updateSenderFilters(s, c, store.getKey(), store.getValue());
+                updateCollectorFilters(s, c, store.getKey(), store.getValue());
             }
         });
     }
@@ -270,14 +261,11 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
                 " where " + C_OA_TYPE + "=?");
         ps.setInt(1, Type.ANCHOR.ordinal());
 
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             Util.verify(rs.next());
             int count = rs.getInt(1);
             Util.verify(!rs.next());
             return count;
-        } finally {
-            rs.close();
         }
     }
 
@@ -293,14 +281,11 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
         ps.setInt(2, Type.ANCHOR.ordinal());
 
         Set<SIndex> r = Sets.newHashSet();
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 r.add(new SIndex(rs.getInt(1)));
             }
             return r;
-        } finally {
-            rs.close();
         }
     }
 
@@ -308,28 +293,14 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
             throws SQLException
     {
         updateFilters(s, c, T_SF, C_SF_SIDX, C_SF_SFIDX, C_SF_FILTER, sidx, anchors,
-                new IFieldTransfer() {
-                    @Override
-                    public void transfer(ResultSet rs, PreparedStatement ps, int idx)
-                            throws SQLException
-                    {
-                        ps.setLong(2, rs.getLong(2));
-                    }
-                });
+                (rs, ps, idx) -> ps.setLong(idx, rs.getLong(idx)));
     }
 
     static void updateCollectorFilters(Statement s, Connection c, SIndex sidx, Map<OID, OID> anchors)
             throws SQLException
     {
         updateFilters(s, c, T_CF, C_CF_SIDX, C_CF_DID, C_CF_FILTER, sidx, anchors,
-                new IFieldTransfer() {
-                    @Override
-                    public void transfer(ResultSet rs, PreparedStatement ps, int idx)
-                            throws SQLException
-                    {
-                        ps.setBytes(2, rs.getBytes(2));
-                    }
-                });
+                (rs, ps, idx) -> ps.setBytes(idx, rs.getBytes(idx)));
     }
 
     private static interface IFieldTransfer
@@ -349,10 +320,9 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
                 "replace into " + table + "(" +
                         cSidx + "," + cSecondaryKey + "," + cFilter + ") values (?,?,?)");
 
-        ResultSet rs = s.executeQuery("select " + cFilter + "," + cSecondaryKey + " from "
-                + table + " where " + cSidx + "=" + sidx.getInt());
-
-        try {
+        try (ResultSet rs = s.executeQuery(
+                "select " + cFilter + "," + cSecondaryKey + " from " + table
+                        + " where " + cSidx + "=" + sidx.getInt())) {
             while (rs.next()) {
                 BFOID bf = new BFOID(rs.getBytes(1));
 
@@ -364,8 +334,6 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
                 ps.addBatch();
                 ++n;
             }
-        } finally {
-            rs.close();
         }
         int[] rowCounts = ps.executeBatch();
         assert rowCounts.length == n;
