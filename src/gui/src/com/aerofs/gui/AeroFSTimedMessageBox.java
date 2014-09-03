@@ -74,7 +74,7 @@ public class AeroFSTimedMessageBox extends AeroFSMessageBox
         if (_countdown <= 0) {
             setReturnCode(IDialogConstants.OK_ID);
         } else {
-            getMessageLabel().setText(String.format(_format, _countdown));
+            setMessage(String.format(_format, _countdown));
         }
     }
 

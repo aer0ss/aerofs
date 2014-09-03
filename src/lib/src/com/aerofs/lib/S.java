@@ -217,10 +217,16 @@ public class S
 
             SERVER_OFFLINE_TOOLTIP = L.product() + " is offline.",
 
-            CHILD_ALREADY_SHARED = "You can't share a folder that contains a shared folder.",
-            PARENT_ALREADY_SHARED = "You can't share a folder under an already shared folder.",
-            SIGN_IN_TO_RECERTIFY_ACTION = "To continue syncing files with " + L.product() +
-                    " on this device, please sign in to your account now.",
+            CHILD_ALREADY_SHARED = L.product() + " does not support sharing a folder that already " +
+                    "contains another shared folder.\n\n" +
+                    "<a href=\"https://support.aerofs.com/hc/en-us/articles/202222050\">" +
+                    "Why can't I share a folder containing shared folders</a>?",
+            PARENT_ALREADY_SHARED = L.product() + " does not support sharing a folder under an " +
+                    "already shared folder.\n\n" +
+                    "<a href=\"https://support.aerofs.com/hc/en-us/articles/202222050\">" +
+                    "Why can't I share sub-folders of a shared folder</a>?",
+            SIGN_IN_TO_RECERTIFY_ACTION = "To continue syncing files with " + L.product() + " " +
+                    "on this device, please sign in to your account now.",
             SIGN_IN_TO_RECERTIFY_EXPLANATION = "(<a>Why is this needed?</a>)",
             ADMIN_EMAIL = "Admin email",
             ADMIN_PASSWD = "Admin password",

@@ -42,6 +42,7 @@ public class PriorityDefect
 
     private String _message;
     private Throwable _exception;
+    private boolean _expected;
     private String _contactEmail;
     private boolean _sampleCPU;
     private boolean _sendFilenames;
@@ -62,6 +63,12 @@ public class PriorityDefect
     public PriorityDefect setException(@Nullable Throwable exception)
     {
         _exception = exception;
+        return this;
+    }
+
+    public PriorityDefect setExpected(boolean expected)
+    {
+        _expected = expected;
         return this;
     }
 
@@ -135,6 +142,9 @@ public class PriorityDefect
                 .setMessage(_message)
                 .setException(_exception)
                 .addData("daemon_status", getDaemonStatus())
+                // for reason unknown, the ElasticSearch's indexer is expecting the field
+                // "expected" to be a long. Hence we use the "is_expected" for the field's key.
+                .addData("is_expected", _expected)
                 .sendSync();
 
         newMutualAuthClientFactory().create()

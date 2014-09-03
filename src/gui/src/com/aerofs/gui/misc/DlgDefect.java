@@ -218,17 +218,14 @@ public class DlgDefect extends AeroFSJFaceDialog
 
     private void sendDefect()
     {
-        final String msg = _txtComment.getText() + (_exception == null ? "" :
-                 "\n\nTechical detail (" +
-                 (_expectedException ? "" : "un") +
-                 "expected error):\n" + ExceptionUtils.getFullStackTrace(_exception));
-
-        final boolean sendFilenames = _sendDiagnosticData.getSelection();
-        final String contactEmail = _txtEmailAddress.getText();
+        String msg = _txtComment.getText();
+        String contactEmail = _txtEmailAddress.getText();
+        boolean sendFilenames = _sendDiagnosticData.getSelection();
 
         _defectFactory.newPriorityDefect()
                 .setMessage(msg)
                 .setException(_exception)
+                .setExpected(_expectedException)
                 .setContactEmail(contactEmail)
                 .setSendFilenames(sendFilenames)
                 .sendAsync();

@@ -4,17 +4,19 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.layout.GridData;
 
 import org.eclipse.swt.widgets.Button;
 
 import javax.annotation.Nullable;
+
+import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 
 public class AeroFSMessageBox extends AeroFSJFaceDialog {
 
@@ -42,7 +44,7 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     public static final int OK_ID = IDialogConstants.OK_ID;
     public static final int CANCEL_ID = IDialogConstants.CANCEL_ID;
 
-    private Label _lblMessage;
+    private Link _lnkMessage;
     private final String _msg;
     private final IconType _it;
     private final ButtonType _bt;
@@ -50,11 +52,17 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     private final String _okayLabel, _cancelLabel;
     private final boolean _allowClose;
 
+    /**
+     * @param msg, see {@link #setMessage(String)}
+     */
     public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it)
     {
         this(parentShell, sheet, msg, it, ButtonType.OKAY);
     }
 
+    /**
+     * @param msg, see {@link #setMessage(String)}
+     */
     public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it,
             ButtonType bt)
     {
@@ -62,6 +70,9 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
                 IDialogConstants.CANCEL_LABEL, true);
     }
 
+    /**
+     * @param msg, see {@link #setMessage(String)}
+     */
     public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it,
             ButtonType bt, String okayLabel, String cancelLabel, boolean allowClose)
     {
@@ -109,11 +120,12 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
         lblIcon.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, true, 1, 1));
         lblIcon.setImage(getShell().getDisplay().getSystemImage(icon));
 
-        _lblMessage = new Label(container, SWT.WRAP);
+        _lnkMessage = new Link(container, SWT.WRAP);
         GridData gd__text = new GridData(SWT.FILL, SWT.CENTER, true, true, 1, 1);
         gd__text.widthHint = 360;
-        _lblMessage.setLayoutData(gd__text);
-        _lblMessage.setText(_msg);
+        _lnkMessage.setLayoutData(gd__text);
+        _lnkMessage.setText(_msg);
+        checkForLinks(_lnkMessage);
 
         if (!_allowClose) {
             getShell().addListener(SWT.Traverse, new Listener() {
@@ -152,9 +164,22 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
         }
     }
 
-    public Label getMessageLabel()
+    /**
+     * AeroFSMessageBox detects a pattern in the message and replaces it with a hyperlink.
+     *
+     * The exact pattern is:
+     *      <a href=\"url\">label</a>
+     *
+     * The pattern _is_ white space sensitive and strict. It will allow the callers to embed one
+     * hyperlink in the message and _all_ clicks on _any_ hyperlink direct end user's browser to the
+     * url indicated in the first hyperlink.
+     *
+     * FIXME (AT): this should be improved so that markup and message boxes are bound in a more
+     * cohesive way.
+     */
+    protected void setMessage(String message)
     {
-        return _lblMessage;
+        _lnkMessage.setText(message);
     }
 
     public Button getOkayBtn()
@@ -168,5 +193,23 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     public @Nullable Button getCancelBtn()
     {
         return _cancelBtn;
+    }
+
+    /**
+     * Checks for the presence of hyperlinks and add selection listener to open the first
+     * hyperlink if any hyperlink is clicked.
+     */
+    private void checkForLinks(Link link)
+    {
+        String prefix = "<a href=\"";
+        String text = link.getText();
+
+        int index = text.indexOf(prefix);
+        if (index >= 0) {
+            index += prefix.length();
+            int endIndex = text.indexOf("\"", index + 1);
+            String url = text.substring(index, endIndex);
+            link.addSelectionListener(createUrlLaunchListener(url));
+        }
     }
 }
